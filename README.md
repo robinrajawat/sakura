@@ -1,0 +1,201 @@
+# Sakura — Outliner & Tree Editor
+
+Sakura is a single-file, browser-based outliner for structuring notes, plans, and documents as a nested tree. It runs entirely client-side — there's no server and no account — and stores its data locally in the browser. Optional AI features (rewrite, outline generation, and similar) are the one exception: those call out to an AI provider using a key you supply yourself.
+
+## Contents
+
+- [Overview](#overview)
+- [Core Editing](#core-editing)
+- [Documents & Tabs](#documents--tabs)
+- [Panels](#panels)
+- [Tags, Focus & Backlinks](#tags-focus--backlinks)
+- [AI Features](#ai-features)
+- [Quick Assist & Node Quick Assist](#quick-assist--node-quick-assist)
+- [Theming & Appearance](#theming--appearance)
+- [Installing as an App (PWA)](#installing-as-an-app-pwa)
+- [Data & Backup](#data--backup)
+- [Settings Reference](#settings-reference)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Browser Support](#browser-support)
+- [Known Limitations](#known-limitations)
+
+## Overview
+
+Sakura is a single `.html` file. Open it in a browser and it runs — no install, no build step, no network dependency for core functionality. All documents, folders, templates, and settings are stored in the browser's local storage, scoped to that exact file.
+
+Key capabilities:
+
+- Nested outline editing with indent/outdent, drag-and-drop reordering and nesting, duplication, and multi-select
+- Bold, italic, underline, strike, highlight, and text color formatting per node
+- Heading 1–6 per node, applied independent of tree depth, with its own color gradient and Preview support
+- Lightweight semantic styling via plain-text conventions: `[Section]`, `(note)`, `!alert`, and `` `code` ``
+- Fold/unfold subtrees, with a "+N hidden" badge that's clickable to expand
+- `#tags` on nodes, `[[@mention]]` backlinks between nodes, and a "Focus" mode to zoom into one branch
+- Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad, and an app-level To-Dos list
+- Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection — using your own API key with any of six built-in providers or a custom one
+- Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, and settings)
+- In-document search and a global header search across settings, help, documents, and templates
+- Folders and templates in the sidebar, with drag-and-drop filing and nesting
+- Export to Markdown, plain text, DOCX, PNG (tree as image), or clipboard; print support; import from DOCX, OPML, or pasted unstructured text
+- Multiple documents open as independent tabs
+- Deep theming: Light/Dark/System/Schedule auto-theme, seven accent colors, five Chrome background presets, and node-text color presets
+- Installable as a desktop/mobile app (PWA) in supporting browsers
+- Two-tier automatic backup (live file backup + a local safety copy), in addition to manual export/import
+
+## Core Editing
+
+- **Enter** — new sibling node below; **Shift+Enter** — split the node at the cursor (text after the cursor becomes a new sibling below); **Ctrl/Cmd+Enter** — new child node
+- **Tab / Shift+Tab** — indent / outdent the selected node
+- **Drag a row** — drop above/below to reorder, or onto the middle of another row to nest it as a child
+- **Right-click a node with children** — sort children A→Z, Z→A, or by depth
+- Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand
+- Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
+- Hover any node (Settings → Editing → "Node hover toolbar") to reveal quick Menu and Zoom-in buttons next to its bullet, without needing to select it first
+- `Ctrl/Cmd+Space` while editing a node opens **Node Quick Assist** — a small menu for inserting an em dash, en dash, arrow, checkmark, date/time, opening Note/Code/Tags, or inserting a decision log, without leaving the keyboard
+
+## Documents & Tabs
+
+Sakura supports multiple open documents at once, shown as tabs above the toolbar — similar to browser tabs.
+
+- Clicking a document in the sidebar, or the **+** at the end of the tab strip, opens it as a tab
+- **Each tab keeps its own undo/redo history, scroll position, and selection independently.** Switching tabs does not reset undo history the way switching documents used to
+- **Double-click a tab** to rename it
+- The **X icon** on a tab closes the tab only — the document itself is not deleted and remains in the sidebar
+- The **dropdown arrow** at the right of the tab strip opens a searchable list of all open tabs (arrow keys + Enter to jump, or click a result) — useful once you have more tabs open than fit on screen
+- **Settings → General → "Reopen tabs on launch"** controls whether your previously open tabs come back automatically, or whether each session starts with just one
+
+## Panels
+
+Beyond the outline itself, several floating or docked panels attach richer content to a node or a document. All are individually toggleable in Settings → Features (or that panel's own Settings section), and turning one off only hides it — existing content is preserved and comes back when re-enabled.
+
+- **Note** — every node can hold a rich-text note (bold/italic/underline/strike, bullet/numbered lists, links, tables, pasted images, AI Rewrite/Summarise). Floating and draggable, with a compact popover view and a full-screen mode. Shows a Backlinks section for any node that `@mentions` it, plus created/last-modified timestamps. Open via toolbar, right-click → More → Note, or `Ctrl/Cmd+Shift+N`.
+- **Code Block** — every node can hold one plain-text code block (language picker: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown), in the same kind of floating, resizable window as Note. Open via toolbar, right-click → More → Code block, or `Ctrl/Cmd+Shift+K`.
+- **Decision Log** — inserts a structured record under a node: a timestamped header (with optional author) plus configurable child prompts for Context, Decision, Rationale, Alternatives, Impact, and Status. Exportable as its own Excel sheet across a document. Insert via the toolbar's Decision Log button or right-click → More → Decision log.
+- **Pad** — one whole-document scratchpad, separate from per-node Notes, with the same rich-text toolbar (minus subtree-summarise, since there's no subtree at the document level). Open via the floating panel icon or `Ctrl/Cmd+Shift+P`.
+- **To-Dos** — an app-level task list, not tied to any document or node — one shared list across your whole workspace. Supports priority, due dates (with a Today/Tomorrow/Next week quick-pick popover), links, drag-to-reorder, quick-find, and an overdue-count badge. Typing `#tag` or `@name`/`@date`/`@status` directly in a task's text renders it as a colored chip with autocomplete, both when editing an existing task and while typing a new one. Open via the app bar/status bar button or `Ctrl/Cmd+Shift+U`.
+
+## Tags, Focus & Backlinks
+
+- **Tags** — select a node and click the tag icon, or right-click → Tags, to open a popover of existing document tags as toggleable chips (type a new name + Enter to add one). Tags render as `#chips` directly on the node row; clicking one filters the whole tree to that tag.
+- **Backlinks** — while editing a node, type `@` to reference another node by name from a filtering dropdown. The reference saves as `[[Node name]]`, renders as a clickable link, and shows up in the target node's Note panel under Backlinks. Deleting a referenced node removes its `[[mentions]]` elsewhere automatically.
+- **Focus** — right-click a node → Zoom in (or `Ctrl/Cmd+.`, or the toolbar's zoom icon) to show only that node and its descendants, with a breadcrumb trail back to the root. Exit with `Ctrl/Cmd+,` or by clicking the root crumb. Focus state is per-tab and not saved between sessions.
+
+## AI Features
+
+AI features are entirely optional and require your own API key for one of the built-in providers (Gemini, Groq, Claude API, OpenRouter, Cerebras, GitHub Models — all free-tier friendly) or a custom OpenAI-compatible/Gemini-style/Anthropic-style endpoint. Configure this at Settings → AI → Provider.
+
+- **Rewrite** — the ✦ toolbar button rewrites the selected node (or a batch, if multiple are selected, or just a highlighted portion of text). The rewrite prompt itself is fully customizable in Settings, with a one-click reset to the default grammar-and-spelling-only wording.
+- **Auto-rewrite on commit** (off by default) — automatically runs Rewrite on a node as soon as you finish typing it (pastes/drops are excluded). Batches multiple nodes into a single request after a configurable idle pause or queue size, rather than firing one request per node, to avoid burning through rate limits. A status-bar chip shows the live queued/countdown/rewriting state and doubles as its own on/off toggle.
+- **Generate outline** (`Ctrl/Cmd+Shift+O`) — describe a topic and get an AI-generated nested outline inserted into the current document (or a new blank one).
+- **Restructure text** (`Ctrl/Cmd+Shift+R`, or Import ▾) — paste messy or unstructured text (notes, an email, a transcript) and it's organized into a proper outline in a new document, without inventing facts not present in the source.
+- **Word import** (Import ▾ → Word) — a `.docx` file's own heading/list structure converts directly to nodes with no AI involved when that structure already exists; only a heading-less wall of text falls back to AI restructuring. Legacy binary `.doc` isn't supported, only `.docx`.
+- **Expand node**, **Suggest tags**, **Suggest icon**, and **Summarise selection into parent** — additional one-click AI actions available from the toolbar's AI group or right-click menu, for breaking a dense label into a subtree, tagging a node from its content, picking a fitting emoji prefix, and rolling up a multi-node selection under a new AI-written parent label, respectively.
+- **Provider fallback** — an optional toggle that automatically retries with the next configured provider (in your chosen order) if the active one fails for any reason other than a bad key, which always surfaces directly instead of silently falling back.
+- **Usage today** — a local, best-effort request counter per provider, shown in Settings; it's a rough gauge only, not fetched from the provider, and can drift slightly from that provider's own reset clock.
+
+## Quick Assist & Node Quick Assist
+
+- **Quick Assist** (`Ctrl/Cmd+Space` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, and settings/help topics show up as **Go to** results.
+- **Node Quick Assist** (`Ctrl/Cmd+Space` while actively editing a node) opens a smaller, node-specific menu instead — inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time, or opening Note/Code block/Tags/Decision log — configurable in Settings → Editing.
+
+## Theming & Appearance
+
+- **Light/Dark theme** with an **Auto theme** mode: Off (manual only), System (follows the OS/browser's dark-mode setting live), or Schedule (switches at hours you set). Manually overriding the theme while in System/Schedule mode holds as a temporary override until the automatic value naturally catches up and matches it again.
+- **Accent color** — seven presets plus an intensity slider, used for buttons, borders, and highlights (not node text itself).
+- **Chrome background** — five presets (Default, Slate, Sand, Ink, Rose) that recolor the toolbar, sidebar, status bar, app bar, and menus, independent of both the accent color and the Light/Dark theme. The editor/canvas writing surface is untouched by this.
+- **Node text color** — four presets (Default, Black, Charcoal, Slate) for node text specifically, separate from both the accent color and Chrome background.
+- **Editor's Choice preset** (Settings → Appearance, or Quick Assist → "editor's choice") — one click reconfigures the toolbar, sidebar, Pad, hover toolbar, status bar, and app bar into a curated, leaner, writing-focused layout. Doesn't touch accent or node text color. Applying it from Quick Assist gives a one-click Undo that restores every setting it touched.
+- Further layout controls: hide tree lines, row selection style (Fill/Outline/Left bar/Dot), compact rows, text size (85–140%), branch indent width, and collapse depth.
+
+## Installing as an App (PWA)
+
+Sakura can be installed as a standalone app (its own window, taskbar/dock icon, no browser chrome) via a bundled web app manifest (`display: "standalone"`) and service worker. Look for an install icon in the address bar (desktop Chrome/Edge) or "Add to Home screen" (mobile Chrome). Once installed and open, the app window's title bar color follows your in-app Light/Dark theme (and any active Chrome background preset) live.
+
+One asymmetry worth knowing rather than being surprised by: the manifest's own `background_color` and `theme_color` are a fixed neutral gray (`#8a8886`), used for the brief install splash screen and, on Android, the task-switcher card color. Unlike the open window's title bar, this is read by the OS/browser shell before any of the app's own code runs, so it can't follow your Light/Dark preference the way the live title bar does — it's a platform constraint, not an oversight. The neutral gray is a deliberate compromise: it won't exactly match either theme, but it won't look jarringly wrong in either one either. The actual app window still corrects to your real theme immediately after the splash.
+
+## Data & Backup
+
+Everything is stored locally in the browser, scoped to this exact file. Opening a different copy or a newer version of the file starts with empty storage — this is a browser limitation (local storage is partitioned per file URL), not a bug.
+
+Sakura offers three layers of protection, from lightest to most durable:
+
+1. **Local safety copy** (Settings → Data) — a copy of your data is automatically mirrored into a separate browser storage area (IndexedDB) on every save. If the primary storage is ever cleared, "Restore" can recover from this copy. This is still inside the same browser, not an external backup.
+2. **Auto-backup to file** (Settings → Data) — connects a real file on disk and writes a live backup to it as you work, using the File System Access API. Available in Chrome and Edge only. If the browser's file permission lapses (it can, by design, after a reload or restart), the status bar shows a chip to reconnect in one click. If you disconnect it yourself, that same chip stays visible with a plain "Connect" prompt rather than disappearing.
+3. **Export / Import** (Settings → Data) — saves everything (documents, folders, templates) to a single downloadable JSON file, and restores from one. This is the only option that produces a file outside the browser, and the only reliable way to move data between different files, browsers, or computers.
+
+**Recommended workflow when moving to a new copy of this file:** Export from the old copy, open the new copy, then Import immediately.
+
+## Settings Reference
+
+Selected settings worth knowing about (Settings panel, organized by section):
+
+| Setting | Section | Default | Notes |
+|---|---|---|---|
+| Search bar | Header | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+Space`) folds this in regardless of this setting |
+| Reopen tabs on launch | General | On | Turn off to always start with a single tab |
+| Start each session blank | General | Off | New blank document every launch, instead of restoring the last state |
+| Confirm before delete | General | On | Adds a confirmation dialog before deleting nodes or documents |
+| Auto theme | Appearance | Off | Off / System / Schedule — see Theming & Appearance above |
+| Chrome background | Appearance | Default | Five presets; independent of theme and accent color |
+| Expanded toolbar | Toolbar | Off | Shows "Extras" actions as buttons instead of a dropdown menu |
+| Format buttons | Toolbar | All shown | Hide individual Bold/Italic/Underline/Strike/Highlight/Text color/Heading buttons independently, without affecting the shortcuts |
+| AI Capabilities | Features | On | Master switch for all AI features; each still needs its own provider key |
+| Auto-rewrite on commit | AI | Off | See AI Features above; needs a configured API key |
+| Provider fallback | AI | Off | Auto-retries with the next configured provider on failure (except a bad key) |
+| To-Dos | Features | On | App-level task list; independent of any single document |
+| Node hover toolbar | Editing | Off | Menu + Zoom-in buttons on hover, without selecting the node first |
+| Focus | Editing | On | Zoom into a branch; can be turned off entirely |
+| Auto-backup to file | Data | Off (not connected) | Chrome/Edge only; see Data & Backup above |
+| Local safety copy | Data | Always on | Automatic; "Restore" button is the only manual action |
+| Skip folded nodes in exports | Data/Export | On | Collapsed subtrees are omitted from exports unless expanded first |
+
+## Keyboard Shortcuts
+
+| Action | Shortcut |
+|---|---|
+| Edit node | Enter / F2 |
+| New sibling below | Enter |
+| Split node at cursor | Shift+Enter |
+| New child | Ctrl/Cmd+Enter |
+| Indent / Outdent | Tab / Shift+Tab |
+| Move node up/down | Alt+↑ / Alt+↓ |
+| Bold / Italic / Underline | Ctrl/Cmd+B / I / U |
+| Strike | Ctrl/Cmd+Shift+S |
+| Highlight | Ctrl/Cmd+Shift+H |
+| Text color | Ctrl/Cmd+Shift+F |
+| Heading 1–6 / Body text | Ctrl/Cmd+Alt+1–6 / Ctrl/Cmd+Alt+0 |
+| Collapse / expand selected | ← / → |
+| Collapse all / Expand all | Ctrl/Cmd+Shift+[ / Ctrl/Cmd+Shift+] |
+| Hide tree lines | Ctrl/Cmd+Shift+L |
+| Zoom into branch (Focus) / Exit | Ctrl/Cmd+. / Ctrl/Cmd+, |
+| Search this document | Ctrl/Cmd+F |
+| Quick Assist (command + search) | Ctrl/Cmd+Space |
+| Node Quick Assist (while editing a node) | Ctrl/Cmd+Space |
+| Open/close Pad | Ctrl/Cmd+Shift+P |
+| Open/close Note | Ctrl/Cmd+Shift+N |
+| Open/close Code block | Ctrl/Cmd+Shift+K |
+| Open/close To-Dos | Ctrl/Cmd+Shift+U |
+| Generate outline (AI) | Ctrl/Cmd+Shift+O |
+| Restructure text (AI) | Ctrl/Cmd+Shift+R |
+| Show/hide toolbar | Ctrl/Cmd+Shift+T |
+| Save now | Ctrl/Cmd+S |
+| New document | Ctrl/Cmd+Alt+N |
+| Copy selection | Ctrl/Cmd+Shift+C |
+| Select all | Ctrl/Cmd+A |
+| Undo / Redo | Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z |
+
+If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space`, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item always works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
+
+## Browser Support
+
+Sakura works in any modern browser. Two features are the exception:
+
+- **Auto-backup to file** requires the File System Access API, supported in Chrome and Edge. In Safari and Firefox, the control is disabled with an explanation, and the **Local safety copy** and manual **Export** remain available as alternatives.
+- **Installing as an app (PWA)** depends on the browser's own install support — Chrome and Edge on desktop, and Chrome on mobile ("Add to Home screen"), are the most consistently supported. Safari and Firefox have more limited or absent PWA install support; the app still works normally as a regular browser tab either way.
+
+## Known Limitations
+
+- Storage is scoped per file URL. A renamed, moved, or re-downloaded copy of this file starts with empty storage — export/import is the way to carry data across.
+- The local safety copy and auto-backup both protect against accidental data loss within normal use, but neither replaces taking an occasional Export as a true external backup.
+- There is no real-time multi-device sync; this is a single-browser, local-first tool. The To-Dos list, like everything else, is local to one browser/file and isn't shared across devices.
+- AI features send node/selection text to whichever third-party provider you configure, using an API key you supply and manage yourself — review that provider's own data-handling terms if that matters for your use case. The in-app "Usage today" counter is a local approximation, not an authoritative quota reading.
