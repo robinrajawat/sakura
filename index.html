@@ -17232,7 +17232,15 @@ function enterPresenterMode(){
   }
   el('preview-overlay')?.classList.add('pv-presenting');
   el('preview-present-btn')?.classList.add('active');
-  try{ el('preview-overlay')?.requestFullscreen?.(); }catch(e){}
+  // Fullscreen document.documentElement (the whole page), not #preview-overlay itself —
+  // matching Zen mode's approach below. The native Fullscreen API's "top layer" only
+  // renders the fullscreened element and its descendants, completely outside normal
+  // z-index/stacking; fullscreening a sub-element would silently exclude siblings like
+  // #sakura-modal-overlay, #toast, and #appbar no matter how high their z-index is set.
+  // Fullscreening the document root instead makes everything a descendant, so nothing
+  // is excluded — exitPresenterMode()'s plain document.exitFullscreen() below already
+  // works the same regardless of which element was originally fullscreened.
+  if(document.documentElement.requestFullscreen && !document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
   if(previewAutoLaser)previewSetLaser(true);
   if(previewPresenterTimerEnabled)startPresenterTimer();
   applyPresenterState();
