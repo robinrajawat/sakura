@@ -14629,7 +14629,7 @@ async function resetSettingsToDefault(){
   // reload below and re-writes the very keys we just removed with the still-in-memory
   // (pre-reset) values — silently undoing the reset before the fresh load ever runs.
   suppressPrefsSaveOnUnload=true;
-  try{ localStorage.removeItem(PREFS_KEY); localStorage.removeItem(LEGACY_PREFS_KEY); localStorage.removeItem(EDITORS_CHOICE_UNDO_KEY); }catch(e){}
+  try{ localStorage.removeItem(PREFS_KEY); localStorage.removeItem(LEGACY_PREFS_KEY); localStorage.removeItem(EDITORS_CHOICE_UNDO_KEY); localStorage.removeItem(DOC_MODE_UNDO_KEY); }catch(e){}
   showToast('Settings reset — reloading…');
   setTimeout(()=>location.reload(),600);
 }
