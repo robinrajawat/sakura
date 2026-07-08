@@ -14427,6 +14427,19 @@ async function findDriveFileId(){
     return json.files&&json.files.length?json.files[0].id:null;
   }catch(e){ return null }
 }
+async function describeDriveApiError(res){
+  // Google's error body has the actual diagnosable detail (reason like accessNotConfigured,
+  // insufficientPermissions, dailyLimitExceededUnreg, etc.) — surfacing it means a 403 tells
+  // you WHY instead of just that it happened, without needing to open DevTools to find out.
+  let detail='';
+  try{
+    const body=await res.clone().json();
+    detail=body?.error?.errors?.[0]?.reason||body?.error?.message||'';
+  }catch(e){}
+  if(res.status===401)return 'Google session expired — reconnect';
+  if(res.status===403)return 'Google Drive denied access (403)'+(detail?': '+detail:'')+' — check the Drive API is enabled and your account is added as a test user in Google Cloud Console';
+  return 'Google Drive returned an error ('+res.status+')'+(detail?': '+detail:'');
+}
 async function saveBackupToDrive(){
   if(!cloudDriveAccessToken){ showToast('Connect Google Drive first'); return; }
   const btn=el('cloud-drive-save-btn'); if(btn){btn.disabled=true; btn.textContent='Saving…'}
@@ -14443,7 +14456,7 @@ async function saveBackupToDrive(){
       const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
       res=await driveApiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body});
     }
-    if(!res.ok){ showToast(res.status===401?'Google session expired — reconnect':'Google Drive returned an error ('+res.status+')'); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
     const json=await res.json();
     saveCloudBackupPrefs({driveFileId:json.id||fileId,driveLastSyncAt:Date.now()});
     updateCloudDriveStatus();
@@ -14459,7 +14472,7 @@ async function loadBackupFromDrive(){
     const fileId=d.driveFileId||await findDriveFileId();
     if(!fileId){ showToast('No Sakura backup found in this Google Drive account'); return; }
     const res=await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
-    if(!res.ok){ showToast(res.status===401?'Google session expired — reconnect':'Google Drive returned an error ('+res.status+')'); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
     const payload=await res.json();
     saveCloudBackupPrefs({driveFileId:fileId,driveLastSyncAt:Date.now()});
     await importAllDataFromPayload(payload,{preserveKeys:CLOUD_UNSAFE_KEYS});
