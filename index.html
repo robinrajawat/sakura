@@ -2450,6 +2450,29 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <p>Also runnable from Quick Assist ("apply editor's choice") — same effect as clicking Apply. Applying always leaves an <strong>Undo</strong> that restores every setting it touched, until you use it or apply again.</p>
               </div>
             </div>
+            <div class="preset-card">
+              <div class="preset-card-head">
+                <div class="preset-card-title">Documentation mode</div>
+                <div class="preset-card-actions">
+                  <button id="doc-mode-preset-btn" class="btn primary data-io-btn">Apply</button>
+                  <button id="doc-mode-undo-btn" class="btn data-io-btn" style="display:none">Undo</button>
+                </div>
+              </div>
+              <div class="preset-card-desc">
+                <p>Built for long-form structured documentation rather than presenting — full toolbar, full status bar, Decision Log and Tags front and center. The opposite instinct from Editor's Choice.</p>
+                <div class="preset-changes">
+                  <div class="preset-changes-row"><span class="preset-changes-label">Toolbar, Sidebar, Pad</span><span class="preset-changes-val">Visible, full button set</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Hover toolbar</span><span class="preset-changes-val">On</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Tree lines</span><span class="preset-changes-val">Visible</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Status bar</span><span class="preset-changes-val">Everything visible</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Node Quick Assist</span><span class="preset-changes-val">Full labels, every action</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Decision Log, Tags, Backlinks</span><span class="preset-changes-val">On · colored, bold labels</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Editor backgrounds</span><span class="preset-changes-val">Code block stays distinct</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Presenter mode</span><span class="preset-changes-val">Off</span></div>
+                </div>
+                <p>Also runnable from Quick Assist ("apply documentation mode"). Applying always leaves an <strong>Undo</strong> that restores every setting it touched, until you use it or apply again.</p>
+              </div>
+            </div>
           </div>
           <div class="settings-section" data-cat="editing">
             <div class="settings-section-title">Editing</div>
@@ -7206,6 +7229,11 @@ const QA_ACTIONS=[
    run:()=>{
      applyEditorsChoicePresetWithUndo(true); // silent: qaExecuteAction shows its own "Done: …" toast with Undo right after run() returns
      return {success:true, undo:()=>{ undoEditorsChoicePresetFromSettings(true); }};
+   }},
+  {id:'doc-mode-preset',label:'Documentation mode preset',keywords:['documentation mode','doc mode','apply documentation mode','apply doc mode'],requiresSelection:false,
+   run:()=>{
+     applyDocModePresetWithUndo(true);
+     return {success:true, undo:()=>{ undoDocModePresetFromSettings(true); }};
    }},
   // AI actions below all reuse the same functions as their toolbar/right-click equivalents —
   // no separate AI logic lives here. Each already handles its own missing-key error (via
@@ -18808,6 +18836,151 @@ function undoEditorsChoicePresetFromSettings(fromQa){
 el('editors-choice-preset-btn')?.addEventListener('click',()=>applyEditorsChoicePresetWithUndo());
 el('editors-choice-undo-btn')?.addEventListener('click',()=>undoEditorsChoicePresetFromSettings());
 updateEditorsChoiceUndoUI();
+
+// Documentation mode: the opposite instinct from Editor's Choice — full toolbar, full status
+// bar, Decision Log and Tags front and center, Presenter mode left off entirely. Built for
+// long-form structured documentation (SAP integration write-ups, decision records) rather
+// than writing-and-presenting.
+function applyDocModePreset(silent){
+  // Toolbar: nothing trimmed, fully visible — every group and button available.
+  toolbarHiddenGroups=[]; applyToolbarGroupVisibility();
+  historyHiddenButtons=[]; historyTbGroup.apply();
+  structureHiddenButtons=[]; structureTbGroup.apply();
+  moveHiddenButtons=[]; moveTbGroup.apply();
+  formatHiddenButtons=[]; applyFormatButtonVisibility();
+  foldHiddenButtons=[]; foldTbGroup.apply();
+  insertHiddenButtons=[]; applyInsertButtonVisibility();
+  aiHiddenButtons=[]; aiTbGroup.apply();
+  deleteHiddenButtons=[]; deleteTbGroup.apply();
+  extrasHiddenButtons=[]; applyExtrasButtonVisibility();
+  setToolbarVisible(true,false);
+
+  // Sidebar and Pad open — full workspace for cross-referencing while writing.
+  setSidebarOpen(true);
+  setPadOpen(true,false);
+
+  // Hover toolbar on — quick access to Note/Tags/Decision Log without leaving the row.
+  setHoverToolbarEnabled(true,false);
+
+  // Layout: tree lines visible — hierarchy connectors matter when navigating deep,
+  // multi-level integration outlines.
+  setHideTreeLines(false,false);
+
+  // Status bar: everything visible — node/word counts worth tracking in long documents.
+  statusbarHiddenItems=[];
+  applyStatusbarItemVisibility();
+
+  // App bar visible, not decluttered; Quick Assist stays docked in the status bar.
+  setAppbarVisible(true,false);
+  setAppbarDecluttered(false,false);
+  setQaLocation('statusbar',false);
+
+  // Node Quick Assist: full label list, every action available — no trimming.
+  setNqaIconOnly(false,false);
+  nodeQuickAssistActions=[...NODE_QA_ACTION_ORDER];
+  NODE_QA_ACTION_ORDER.forEach(a=>{ const cb=el('nqaq-'+a); if(cb)cb.checked=true; });
+
+  // Presenter mode: explicitly off. This preset is about writing structured
+  // documentation, not presenting it.
+  setPreviewAutoLaser(false,false);
+  setPreviewAutoPresenter(false,false);
+  setPreviewPresenterBranding(false,false);
+  setPresenterAutoExpandNoteCards(false,false);
+
+  // Editor backgrounds: Code block stays visually distinct — config/ABAP snippets read
+  // clearer set apart from the outline canvas. Note and Pad blend in as supplementary text.
+  setNoteBgMatch(true,false);
+  setCodeBgMatch(false,false);
+  setPadBgMatch(true,false);
+
+  // Decision Log and Tags are the backbone of this workflow — make sure both (and
+  // backlinks, for cross-referencing) are on, with Decision Log entries reading clearly.
+  setFeatureEnabled('decisionlog',true,false);
+  setFeatureEnabled('tagging',true,false);
+  setFeatureEnabled('backlinks',true,false);
+  setDecisionLogColors(true,false);
+  setDecisionLogLabelBold(true,false);
+
+  refreshAllToolbarSummaries();
+  savePrefs(); scheduleAutoSave();
+  if(!silent)showToast('Documentation mode applied');
+}
+function captureDocModeSnapshot(){
+  return {
+    toolbarVisible, toolbarHiddenGroups:[...toolbarHiddenGroups],
+    historyHiddenButtons:[...historyHiddenButtons], structureHiddenButtons:[...structureHiddenButtons],
+    moveHiddenButtons:[...moveHiddenButtons], formatHiddenButtons:[...formatHiddenButtons],
+    foldHiddenButtons:[...foldHiddenButtons], insertHiddenButtons:[...insertHiddenButtons],
+    aiHiddenButtons:[...aiHiddenButtons], deleteHiddenButtons:[...deleteHiddenButtons],
+    extrasHiddenButtons:[...extrasHiddenButtons],
+    sidebarOpen, padOpen, hoverToolbarEnabled, hideTreeLines,
+    statusbarHiddenItems:[...statusbarHiddenItems],
+    appbarVisible, appbarDecluttered, qaLocation,
+    nqaIconOnly, nodeQuickAssistActions:[...nodeQuickAssistActions],
+    previewAutoLaser, previewAutoPresenter, previewPresenterBranding, presenterAutoExpandNoteCards,
+    noteMatchEditorBg, codeMatchEditorBg, padMatchEditorBg,
+    featureDecisionLogEnabled, featureTaggingEnabled, backlinksEnabled,
+    decisionLogColors, decisionLogLabelBold
+  };
+}
+function restoreDocModeSnapshot(snap){
+  toolbarHiddenGroups=snap.toolbarHiddenGroups; applyToolbarGroupVisibility();
+  historyHiddenButtons=snap.historyHiddenButtons; historyTbGroup.apply();
+  structureHiddenButtons=snap.structureHiddenButtons; structureTbGroup.apply();
+  moveHiddenButtons=snap.moveHiddenButtons; moveTbGroup.apply();
+  formatHiddenButtons=snap.formatHiddenButtons; applyFormatButtonVisibility();
+  foldHiddenButtons=snap.foldHiddenButtons; foldTbGroup.apply();
+  insertHiddenButtons=snap.insertHiddenButtons; applyInsertButtonVisibility();
+  aiHiddenButtons=snap.aiHiddenButtons; aiTbGroup.apply();
+  deleteHiddenButtons=snap.deleteHiddenButtons; deleteTbGroup.apply();
+  extrasHiddenButtons=snap.extrasHiddenButtons; applyExtrasButtonVisibility();
+  setToolbarVisible(snap.toolbarVisible,false);
+  setSidebarOpen(snap.sidebarOpen);
+  setPadOpen(snap.padOpen,false);
+  setHoverToolbarEnabled(snap.hoverToolbarEnabled,false);
+  setHideTreeLines(snap.hideTreeLines,false);
+  statusbarHiddenItems=snap.statusbarHiddenItems; applyStatusbarItemVisibility();
+  setAppbarVisible(snap.appbarVisible,false);
+  setAppbarDecluttered(snap.appbarDecluttered,false);
+  setQaLocation(snap.qaLocation,false);
+  setNqaIconOnly(snap.nqaIconOnly,false);
+  nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>snap.nodeQuickAssistActions.includes(a));
+  NODE_QA_ACTION_ORDER.forEach(a=>{ const cb=el('nqaq-'+a); if(cb)cb.checked=nodeQuickAssistActions.includes(a); });
+  setPreviewAutoLaser(snap.previewAutoLaser,false);
+  setPreviewAutoPresenter(snap.previewAutoPresenter,false);
+  setPreviewPresenterBranding(snap.previewPresenterBranding,false);
+  setPresenterAutoExpandNoteCards(snap.presenterAutoExpandNoteCards,false);
+  setNoteBgMatch(snap.noteMatchEditorBg,false);
+  setCodeBgMatch(snap.codeMatchEditorBg,false);
+  setPadBgMatch(snap.padMatchEditorBg,false);
+  setFeatureEnabled('decisionlog',snap.featureDecisionLogEnabled,false);
+  setFeatureEnabled('tagging',snap.featureTaggingEnabled,false);
+  setFeatureEnabled('backlinks',snap.backlinksEnabled,false);
+  setDecisionLogColors(snap.decisionLogColors,false);
+  setDecisionLogLabelBold(snap.decisionLogLabelBold,false);
+  refreshAllToolbarSummaries();
+  savePrefs(); scheduleAutoSave();
+}
+const DOC_MODE_UNDO_KEY='sakura_doc_mode_undo_v1';
+function saveDocModeUndoSnapshot(snap){ try{ localStorage.setItem(DOC_MODE_UNDO_KEY,JSON.stringify(snap)); }catch(e){} updateDocModeUndoUI(); }
+function loadDocModeUndoSnapshot(){ try{ const raw=localStorage.getItem(DOC_MODE_UNDO_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function clearDocModeUndoSnapshot(){ try{ localStorage.removeItem(DOC_MODE_UNDO_KEY); }catch(e){} updateDocModeUndoUI(); }
+function updateDocModeUndoUI(){ const btn=el('doc-mode-undo-btn'); if(btn)btn.style.display=loadDocModeUndoSnapshot()?'':'none'; }
+function applyDocModePresetWithUndo(silent){
+  const snap=captureDocModeSnapshot();
+  applyDocModePreset(silent);
+  saveDocModeUndoSnapshot(snap);
+}
+function undoDocModePresetFromSettings(fromQa){
+  const snap=loadDocModeUndoSnapshot();
+  if(!snap){ showToast('Nothing to undo'); return; }
+  restoreDocModeSnapshot(snap);
+  clearDocModeUndoSnapshot();
+  showToast('Documentation mode undone',undefined,!!fromQa);
+}
+el('doc-mode-preset-btn')?.addEventListener('click',()=>applyDocModePresetWithUndo());
+el('doc-mode-undo-btn')?.addEventListener('click',()=>undoDocModePresetFromSettings());
+updateDocModeUndoUI();
 
 // Consolidated "Toolbar Buttons" and "Right-click Menu" modals — same open/close shape as
 // the Keyboard Shortcuts modal (see openKeyboardShortcutsModal above), so the many
