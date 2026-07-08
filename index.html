@@ -468,13 +468,15 @@ body.toolbar-hidden #quick-bar{display:none}
    built for a one-line label plus a switch, not a multi-sentence paragraph. This gives the
    description real line-height and lets the actions sit as a stable column on the right rather
    than being vertically centered against however tall the paragraph happens to be. */
-.preset-card{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:14px 16px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--bg) 90%,transparent)}
-.preset-card-body{flex:1 1 auto;min-width:0}
-.preset-card-title{font:700 12.5px 'Inter',sans-serif;color:var(--fg);margin:0 0 6px}
-.preset-card-desc{font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.65;margin:0}
-.preset-card-actions{display:flex;flex-direction:column;gap:7px;flex:0 0 auto;padding-top:1px}
-.preset-card-actions .btn{min-width:92px}
-@media (max-width:700px){.preset-card{flex-direction:column;gap:12px}.preset-card-actions{flex-direction:row}}
+.preset-card{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--bg) 90%,transparent)}
+.preset-card-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.preset-card-title{font:700 13px 'Inter',sans-serif;color:var(--fg);margin:0}
+.preset-card-actions{display:flex;gap:8px;flex:0 0 auto}
+.preset-card-actions .btn{min-width:76px}
+.preset-card-desc{font:400 12.5px 'Inter',sans-serif;color:var(--muted);line-height:1.65}
+.preset-card-desc p{margin:0 0 10px}
+.preset-card-desc p:last-child{margin-bottom:0}
+@media (max-width:700px){.preset-card-head{flex-direction:column;align-items:stretch;gap:10px}.preset-card-actions{justify-content:flex-end}}
 .settings-subsection-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 5px;padding-top:12px;border-top:1px solid var(--border)}
 .settings-subsection-label:first-of-type{margin-top:8px;padding-top:0;border-top:none}
 .settings-section{display:grid;gap:12px;margin:0;padding:13px 14px 14px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 82%,transparent)}
@@ -2420,13 +2422,19 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <div class="settings-section" data-cat="presets">
             <div class="settings-section-title">Presets</div>
             <div class="preset-card">
-              <div class="preset-card-body">
+              <div class="preset-card-head">
                 <div class="preset-card-title">Editor's choice</div>
-                <p class="preset-card-desc">Configures the toolbar, sidebar, Pad, hover toolbar, status bar, app bar, Quick Assist location, editor backgrounds, Node Quick Assist, layout, and Presenter mode in one click for a leaner, writing-and-presenting-focused set: toolbar, sidebar, and Pad start hidden; hover toolbar is turned off; tree lines are hidden for a cleaner indented view; the status bar is trimmed to just Words, Depth, Saved status, and the auto-rewrite indicator (node count, max depth, node word count, the backup-connection chip, the Secure Storage lock chip, the theme chip, the text-size control, and the author field are hidden); the app bar stays visible with Quick Assist docked in it. Node Quick Assist (Ctrl/Cmd+Space mid-edit) switches to its icon-only row, trimmed to Note, Code block, Tags, Decision log, and Rewrite. Presenter mode gets the laser pointer and Sakura branding turned on, Preview opens straight into fullscreen presenting, and note cards expand automatically instead of needing a click each — the floating notes panel's own toolbar is trimmed to Bullet list, Timestamp, and AI Rewrite. Your accent color and node text color are left exactly as they are — this preset never touches either. Note, Code block, and Pad all switch off "Match editor background," so each reads as visually distinct chrome rather than blending into the outline canvas. The toolbar's own button set — Highlight, Text color, Collapse, Expand, Date/time, Decision log, Note, Code block, Tags, Rewrite, and Delete — is ready for whenever you bring the toolbar back; the right-click quick row gets Focus, Rewrite, Note, Code block, Date/time, Decision log, Tags, and Delete. Everything else is hidden — you can still adjust anything individually below afterward. Also runnable from Quick Assist as a <strong>Run</strong> action ("editor's choice" or "apply editor's choice") — it applies immediately, same as clicking Apply here. However you apply it, an <strong>Undo</strong> button appears below (and Quick Assist's own toast gets one too) that restores every setting it touched — that undo sticks around across a reload, until you use it or apply the preset again.</p>
+                <div class="preset-card-actions">
+                  <button id="editors-choice-preset-btn" class="btn primary data-io-btn">Apply</button>
+                  <button id="editors-choice-undo-btn" class="btn data-io-btn" style="display:none">Undo</button>
+                </div>
               </div>
-              <div class="preset-card-actions">
-                <button id="editors-choice-preset-btn" class="btn primary data-io-btn">Apply</button>
-                <button id="editors-choice-undo-btn" class="btn data-io-btn" style="display:none">Undo</button>
+              <div class="preset-card-desc">
+                <p>One click reconfigures the toolbar, sidebar, Pad, hover toolbar, status bar, app bar, Quick Assist location, editor backgrounds, Node Quick Assist, layout, and Presenter mode into a leaner, writing-and-presenting-focused set.</p>
+                <p>Toolbar, sidebar, and Pad start hidden; hover toolbar is off; tree lines are hidden for a cleaner indented view. The status bar keeps only Words, Depth, Saved status, and the auto-rewrite indicator — node count, max depth, node word count, the backup-connection chip, the Secure Storage lock chip, the theme chip, text size, and author are all hidden. The app bar stays visible with Quick Assist docked in it.</p>
+                <p>Node Quick Assist (Ctrl/Cmd+Space mid-edit) switches to its icon-only row, trimmed to Note, Code block, Tags, Decision log, and Rewrite. The toolbar's own button set — Highlight, Text color, Collapse, Expand, Date/time, Decision log, Note, Code block, Tags, Rewrite, and Delete — is ready for whenever you bring the toolbar back; the right-click quick row gets Focus, Rewrite, Note, Code block, Date/time, Decision log, Tags, and Delete. Note, Code block, and Pad all switch off "Match editor background," so each reads as visually distinct chrome. Your accent color and node text color are left exactly as they are — this preset never touches either.</p>
+                <p>Presenter mode gets the laser pointer and Sakura branding turned on, Preview opens straight into fullscreen presenting, and note cards expand automatically instead of needing a click each — the floating notes panel's own toolbar is trimmed to Bullet list, Timestamp, and AI Rewrite.</p>
+                <p>Also runnable from Quick Assist as a <strong>Run</strong> action ("editor's choice" or "apply editor's choice") — same effect as clicking Apply here. However you apply it, an <strong>Undo</strong> appears (Quick Assist's own toast gets one too) that restores every setting it touched — it sticks around across a reload, until you use it or apply the preset again.</p>
               </div>
             </div>
           </div>
