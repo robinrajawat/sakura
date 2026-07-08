@@ -3488,7 +3488,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>Settings → Pad → "Header" (off by default) adds a title bar with its own close button — turning it on hides the toolbar's close button so there's only ever one; "Match editor background" controls whether Pad's writing surface looks like the outline's canvas or reads as visually distinct chrome — personal preference, no right answer</li>
 <li>Settings → Pad → "Toolbar buttons" lets you hide individual buttons (Bold, Table, AI Rewrite, etc.) you don't use</li>
 <li>Toolbar mirrors the Note panel: <strong>B I U S</strong>, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered lists, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> link (with its own display-text field, separate from the URL), <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table insert with resizable columns, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> image paste/insert (click to select, drag the corner handle to resize, double-click to reset), and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite (rewrites the selection, or the whole Pad if nothing's selected). No subtree-summarise here — there's no subtree at the document level</li>
-<li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Pad, or paste one you've copied from your file manager — any of the three inserts a small chip showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
+<li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Pad, or paste one you've copied from your file manager — any of the three inserts a small chip (with a file-type icon — PDF, image, spreadsheet, doc, slides, archive, audio, video, or code, based on extension) showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
+<li>Running <strong>AI Rewrite</strong> with nothing selected replaces the Pad's entire content with plain rewritten text — which would silently remove any attachments, images, or tables it contains. A confirmation prompt now catches this case and tells you what would be lost before it happens; select just the text you want rewritten instead if you'd rather keep everything else untouched</li>
 <li>Pad has its own undo history, separate from the outline's — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo typing, AI Rewrite, and "Clear pad" for the current document's Pad. It never appears on the outline's own Ctrl/Cmd+Z stack, since Pad content isn't part of that snapshot — the two undo histories are independent, and Pad's is per-document, cleared on reload the same way the outline's is</li>
 </ul>
 </div>
@@ -19795,6 +19796,30 @@ el('ptb-ai-rewrite')?.addEventListener('click', async () => {
     inputText=editor.innerText.trim();
   }
   if(!inputText) return;
+
+  // Rewriting with nothing selected replaces the ENTIRE editor with plain rewritten
+  // text (see the insertText call below) — that silently destroys any attachment
+  // chips, images, or tables in the Pad, not just formatting. Pre-existing behavior
+  // for images/tables; attachments raise the stakes since they're real files, so
+  // this now confirms first rather than losing them without warning.
+  if(!hasSelection){
+    const nAttach=editor.querySelectorAll('.pad-attachment').length;
+    const nImg=editor.querySelectorAll('img').length;
+    const nTable=editor.querySelectorAll('table').length;
+    if(nAttach||nImg||nTable){
+      const parts=[];
+      if(nAttach) parts.push(`${nAttach} attachment${nAttach===1?'':'s'}`);
+      if(nImg) parts.push(`${nImg} image${nImg===1?'':'s'}`);
+      if(nTable) parts.push(`${nTable} table${nTable===1?'':'s'}`);
+      const ok=await sakuraConfirm({
+        icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
+        title:'Rewrite the whole Pad?',
+        body:`This replaces all of the Pad's content with plain AI-rewritten text, which will remove ${parts.join(', ')}. Select just the text you want rewritten instead if you'd like to keep them.`,
+        confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
+      });
+      if(!ok) return;
+    }
+  }
 
   btn.classList.add('ai-busy');
   try {
