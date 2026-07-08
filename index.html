@@ -66,7 +66,11 @@ For updates: use the maintained source file
     if (!statusbarVisible) cls.push('presetup-statusbar-hidden');
     if (!toolbarVisible) cls.push('presetup-toolbar-hidden');
     if (appbarDecluttered) cls.push('presetup-appbar-decluttered');
-    statusbarHiddenItems.forEach(function(key){ if (SB_ITEM_EL_ID[key]) cls.push('presetup-sbhide-' + key); });
+    // Hiding the item itself isn't enough — its leading divider dot (e.g. #sb-maxdepth-divider)
+    // defaults to visible in the markup and is only reconciled by refreshStatusbarDividers()
+    // once the main script runs, so without this it flashes as an orphan "·" on reload even
+    // though the item text next to it is correctly hidden from the very first frame.
+    statusbarHiddenItems.forEach(function(key){ if (SB_ITEM_EL_ID[key]) { cls.push('presetup-sbhide-' + key); cls.push('presetup-sbhide-divider-' + key); } });
     if (cls.length) document.documentElement.className += ' ' + cls.join(' ');
   }catch(e){}
 })();
@@ -86,6 +90,15 @@ For updates: use the maintained source file
 .presetup-sbhide-theme #sb-theme{display:none}
 .presetup-sbhide-scale #scale-wrap{display:none}
 .presetup-sbhide-author #sb-author{display:none}
+.presetup-sbhide-divider-nodecount #sb-nodecount-divider{display:none}
+.presetup-sbhide-divider-maxdepth #sb-maxdepth-divider{display:none}
+.presetup-sbhide-divider-wordcount #sb-wordcount-divider{display:none}
+.presetup-sbhide-divider-depth #sb-depth-divider{display:none}
+.presetup-sbhide-divider-nodewords #sb-nodewords-divider{display:none}
+.presetup-sbhide-divider-saved #sb-saved-divider{display:none}
+.presetup-sbhide-divider-theme #sb-theme-divider{display:none}
+.presetup-sbhide-divider-scale #sb-scale-divider{display:none}
+.presetup-sbhide-divider-author #sb-author-divider{display:none}
 </style>
 <style>
 *{box-sizing:border-box;margin:0;padding:0} :root{--editor-scale:1;--row-density:1;--accent-text-blend:45%;--accent-border-blend:30%;--accent-hint-blend:25%} html,body{height:100%;overflow:hidden}
@@ -690,6 +703,7 @@ body.show-toolbar-labels .quick-sep{margin-top:9px}
 .qa-hint-phrases{display:flex;flex-wrap:wrap;gap:6px}
 .qa-hint-phrase{font:400 12px 'Inter',sans-serif;color:var(--hint);line-height:1.4;background:var(--hover);border:1px solid var(--border);border-radius:999px;padding:4px 11px;white-space:nowrap;cursor:pointer;transition:color .12s,border-color .12s,background .12s}
 .qa-hint-phrase:hover{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--hover))}
+.qa-hint-phrase:focus-visible{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--hover));outline:2px solid var(--accent);outline-offset:1px}
 .qa-hint-cheatsheet-btn{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:8px 2px 2px;display:block}
 .qa-hint-cheatsheet-btn:hover{text-decoration:underline}
 .qa-results{display:flex;flex-direction:column;gap:1px}
@@ -3763,12 +3777,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <div class="qa-hint" id="qa-hint">
             <div class="qa-hint-label">Try things like</div>
             <div class="qa-hint-phrases">
-              <span class="qa-hint-phrase">hide sidebar</span>
-              <span class="qa-hint-phrase">toggle dark mode</span>
-              <span class="qa-hint-phrase">hide toolbar</span>
-              <span class="qa-hint-phrase">close pad</span>
-              <span class="qa-hint-phrase">notes: budget</span>
-              <span class="qa-hint-phrase">apply editor's choice</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">hide sidebar</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">toggle dark mode</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">hide toolbar</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">close pad</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">notes: budget</span>
+              <span class="qa-hint-phrase" tabindex="0" role="button">apply editor's choice</span>
             </div>
             <button type="button" id="qa-hint-cheatsheet-btn" class="qa-hint-cheatsheet-btn">Browse all shortcuts →</button>
           </div>
@@ -7673,8 +7687,7 @@ el('qa-hint-cheatsheet-btn')?.addEventListener('click',()=>{ setQaOpen(false); d
 // click event even fires) — without it the results would render but arrow keys/Enter
 // wouldn't reach qa-input's own keydown handler anymore.
 el('qa-hint')?.addEventListener('mousedown',e=>{ if(e.target.closest('.qa-hint-phrase'))e.preventDefault(); });
-el('qa-hint')?.addEventListener('click',e=>{
-  const phrase=e.target.closest('.qa-hint-phrase'); if(!phrase)return;
+function qaActivateHintPhrase(phrase){
   const input=el('qa-input'); if(!input)return;
   input.value=phrase.textContent;
   if(qaRenderDebounceTimer){clearTimeout(qaRenderDebounceTimer); qaRenderDebounceTimer=null;}
@@ -7682,6 +7695,17 @@ el('qa-hint')?.addEventListener('click',e=>{
   qaRender(); // not qaFlushPendingRender() — that only flushes an ALREADY-scheduled debounce
               // and silently no-ops otherwise, which is exactly why clicking a hint did nothing
   input.focus();
+}
+el('qa-hint')?.addEventListener('click',e=>{
+  const phrase=e.target.closest('.qa-hint-phrase'); if(!phrase)return;
+  qaActivateHintPhrase(phrase);
+});
+// The phrases are given tabindex="0" so Tab reaches them in order and arrow keys reach
+// qa-input's own results-navigation once a phrase is activated — but the chips themselves
+// still need their own Enter/Space handling, same as any custom (non-<button>) control.
+el('qa-hint')?.addEventListener('keydown',e=>{
+  const phrase=e.target.closest('.qa-hint-phrase'); if(!phrase)return;
+  if(e.key==='Enter'||e.key===' '){ e.preventDefault(); qaActivateHintPhrase(phrase); }
 });
 el('qa-hint-enabled-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaHintEnabled(!qaHintEnabled);}});
 el('qa-search-cap-select')?.addEventListener('change',e=>setQaSearchResultCap(e.target.value));
