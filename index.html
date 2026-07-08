@@ -2438,6 +2438,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row" id="todos-location-row"><div class="settings-row-text"><span class="settings-switch-text">Dock in status bar</span><span class="settings-row-desc" id="todos-location-desc">Move the To-Dos button down into the status bar instead of the app bar.</span></div><button id="todos-location-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Dock To-Dos in the status bar instead of the app bar"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Overdue count badge</span><span class="settings-row-desc">Show a small count badge on the To-Dos button itself when you have overdue tasks, so you can tell at a glance without opening the panel.</span></div><button id="todos-overdue-badge-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show overdue count badge on the To-Dos button"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">"On hover" keeps rows compact and reveals drag/priority/due/rewrite/delete only when you point at a row. "Always visible" keeps them in place permanently — less compact, but nothing moves or hides.</span></div><select id="todos-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Collapse sub-tasks by default</span><span class="settings-row-desc">New sub-task checklists start collapsed instead of expanded, showing just the progress count until you click to open them.</span></div><button id="todos-subtasks-collapse-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Collapse sub-tasks by default"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Automatically delete completed tasks after this long. "Never" keeps them until you delete them yourself.</span></div><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep at most</span><span class="settings-row-desc">Once completed tasks exceed this count, the oldest completions are dropped first. "No limit" keeps everything until expiry or manual delete.</span></div><select id="todos-cap-select" class="select" style="width:auto"><option value="0">No limit</option><option value="10">10 tasks</option><option value="25">25 tasks</option><option value="50">50 tasks</option><option value="100">100 tasks</option></select></div>
             </div>
@@ -20064,7 +20065,7 @@ function _addTagPopoverFromInput(){
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
   const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=720;
   let todosWidth=380; // default matches the CSS fallback (min(380px, calc(100vw - 32px)))
-  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', showOverdueBadge:true };
+  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false };
 
   function loadTodos(){
     try{
@@ -20099,6 +20100,7 @@ function _addTagPopoverFromInput(){
         settings.sortMode = ['manual','priority','due'].includes(d.sortMode) ? d.sortMode : 'manual';
         settings.priorityFilter = ['all','high','med','low','none'].includes(d.priorityFilter) ? d.priorityFilter : 'all';
         settings.showOverdueBadge = d.showOverdueBadge===undefined ? true : !!d.showOverdueBadge;
+        settings.subtasksCollapsedByDefault = d.subtasksCollapsedByDefault===undefined ? false : !!d.subtasksCollapsedByDefault;
       }
     }catch(e){}
   }
@@ -20189,8 +20191,9 @@ function _addTagPopoverFromInput(){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
     if(!Array.isArray(t.subtasks)) t.subtasks=[];
+    const isFirst=t.subtasks.length===0;
     t.subtasks.push({id:subUid(), text:trimmed.slice(0,300), done:false});
-    t.subtasksOpen=true;
+    if(isFirst) t.subtasksOpen=!settings.subtasksCollapsedByDefault;
     t.repeat=null; // recurring todos don't carry subtasks
     recomputeParentDone(t);
     pruneCompleted();
@@ -20620,6 +20623,16 @@ function _addTagPopoverFromInput(){
     body.querySelectorAll('.todo-subtask-delete').forEach(btn=>{
       btn.addEventListener('click',()=>deleteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
     });
+    body.querySelectorAll('.todo-row').forEach(row=>{
+      row.addEventListener('contextmenu', e=>{
+        if(e.target.closest('.todo-text') || e.target.closest('.todo-subtask-row') || e.target.closest('.todo-subtask-input-row')) return;
+        const id=row.getAttribute('data-id');
+        const t=todos.find(x=>x.id===id);
+        if(!t) return;
+        e.preventDefault();
+        showSbContextMenu(e.clientX, e.clientY, todoContextItems(t));
+      });
+    });
     body.querySelectorAll('.todo-text').forEach(elx=>{
       elx.addEventListener('blur',()=>{
         closeTodoAtSuggest();
@@ -20880,6 +20893,73 @@ function _addTagPopoverFromInput(){
     +`</div>`;
     return html;
   }
+  function duplicateTodo(id){
+    const idx=todos.findIndex(x=>x.id===id);
+    if(idx<0) return;
+    const t=todos[idx];
+    const copy={
+      id: uid(), text: t.text, done:false, createdAt: Date.now(), completedAt: null,
+      priority: t.priority||'none', dueDate: t.dueDate||null, link: t.link||null, linkLabel: t.linkLabel||null,
+      repeat: t.repeat||null,
+      subtasks: (t.subtasks||[]).map(s=>({id:subUid(), text:s.text, done:false})),
+      subtasksOpen: t.subtasksOpen!==false
+    };
+    todos.splice(idx+1,0,copy);
+    saveTodos();
+    renderTodos();
+    showTodosActionToast('Task duplicated');
+  }
+  async function copyTodoText(id){
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    try{ await navigator.clipboard.writeText(t.text); showTodosActionToast('Copied to clipboard'); }
+    catch(e){}
+  }
+  function moveTodoEdge(id, toTop){
+    const idx=todos.findIndex(x=>x.id===id);
+    if(idx<0) return;
+    const t=todos[idx];
+    todos.splice(idx,1);
+    if(t.done){
+      if(toTop){
+        const firstDoneIdx=todos.findIndex(x=>x.done);
+        if(firstDoneIdx<0) todos.push(t); else todos.splice(firstDoneIdx,0,t);
+      } else {
+        todos.push(t);
+      }
+    } else {
+      if(toTop){
+        todos.unshift(t);
+      } else {
+        let insertIdx=todos.findIndex(x=>x.done);
+        if(insertIdx<0) insertIdx=todos.length;
+        todos.splice(insertIdx,0,t);
+      }
+    }
+    saveTodos();
+    renderTodos();
+  }
+  function todoContextItems(t){
+    const items=[];
+    const hasSubtasks=!!(t.subtasks && t.subtasks.length);
+    if(!hasSubtasks){
+      items.push({label: t.done?'Mark as open':'Mark as complete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', onClick: async()=>{ toggleTodo(t.id); }});
+    }
+    items.push({label:'Duplicate task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ duplicateTodo(t.id); }});
+    items.push({label:'Copy task text', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
+    items.push({divider:true});
+    items.push({label:'Move to top', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, true); }});
+    items.push({label:'Move to bottom', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, false); }});
+    if(hasSubtasks){
+      items.push({divider:true});
+      const open=t.subtasksOpen!==false;
+      items.push({label: open?'Collapse sub-tasks':'Expand sub-tasks', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>', onClick: async()=>{ toggleSubtasksOpen(t.id); }});
+    }
+    items.push({divider:true});
+    items.push({label:'Delete task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
+    return items;
+  }
+
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
@@ -21475,6 +21555,17 @@ function _addTagPopoverFromInput(){
     if(actionsModeSel){
       actionsModeSel.value=settings.rowActionsMode;
       actionsModeSel.addEventListener('change',()=>setTodosActionsMode(actionsModeSel.value));
+    }
+    const subtasksCollapseToggle=document.getElementById('todos-subtasks-collapse-toggle');
+    if(subtasksCollapseToggle){
+      subtasksCollapseToggle.classList.toggle('on', settings.subtasksCollapsedByDefault);
+      subtasksCollapseToggle.setAttribute('aria-checked', String(settings.subtasksCollapsedByDefault));
+      subtasksCollapseToggle.addEventListener('click',()=>{
+        settings.subtasksCollapsedByDefault=!settings.subtasksCollapsedByDefault;
+        saveSettings();
+        subtasksCollapseToggle.classList.toggle('on', settings.subtasksCollapsedByDefault);
+        subtasksCollapseToggle.setAttribute('aria-checked', String(settings.subtasksCollapsedByDefault));
+      });
     }
     applyTodosActionsMode();
     // feat-todos-toggle itself is wired generically by initFeatureActivationPanel()
