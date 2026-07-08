@@ -19459,11 +19459,41 @@ function formatAttachSize(bytes){
   if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
   return (bytes/(1024*1024)).toFixed(1)+' MB';
 }
+// Icon-by-extension for attachment chips — same 24x24 stroke style as the rest of the
+// toolbar's icon set. Falls back to a generic file glyph for anything unrecognized.
+const PAD_ATTACH_ICON_EXT={
+  pdf:['pdf'],
+  image:['png','jpg','jpeg','gif','webp','svg','bmp','heic','heif','tiff','avif'],
+  spreadsheet:['xls','xlsx','csv','numbers','ods','tsv'],
+  doc:['doc','docx','txt','rtf','odt','pages','md'],
+  slides:['ppt','pptx','key','odp'],
+  archive:['zip','rar','7z','tar','gz','bz2'],
+  audio:['mp3','wav','m4a','ogg','flac','aac','wma'],
+  video:['mp4','mov','avi','mkv','webm','m4v'],
+  code:['js','ts','jsx','tsx','py','html','htm','css','json','xml','java','c','cpp','h','sh','rb','go','php','sql','yml','yaml']
+};
+const PAD_ATTACH_ICON_SVG={
+  pdf:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>',
+  image:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  spreadsheet:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>',
+  doc:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+  slides:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="8" y1="22" x2="16" y2="22"/><line x1="12" y1="18" x2="12" y2="22"/></svg>',
+  archive:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="9" y1="4" x2="9" y2="20"/><path d="M9 8h2M9 12h2M9 16h2"/></svg>',
+  audio:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  video:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+  code:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  generic:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+};
+function padAttachmentIconSvg(name){
+  const ext=String(name).split('.').pop().toLowerCase();
+  for(const cat in PAD_ATTACH_ICON_EXT){ if(PAD_ATTACH_ICON_EXT[cat].includes(ext)) return PAD_ATTACH_ICON_SVG[cat]; }
+  return PAD_ATTACH_ICON_SVG.generic;
+}
 function padAttachmentChipHtml(name, size, dataUrl){
   const safeName=escAttr(name);
   return `<span class="pad-attachment" contenteditable="false">`
     +`<a class="pad-attachment-link" href="${dataUrl}" download="${safeName}" data-tip="Download ${escAttr(name)}">`
-    +`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`
+    +padAttachmentIconSvg(name)
     +`<span class="pad-attachment-name">${esc(name)}</span>`
     +`<span class="pad-attachment-size">${esc(formatAttachSize(size))}</span>`
     +`</a>`
