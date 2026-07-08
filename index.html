@@ -1118,6 +1118,16 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #pad-editor{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
 #pad-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #pad-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
+.pad-attachment{display:inline-flex;align-items:center;gap:4px;vertical-align:middle;background:var(--hover);border:1px solid var(--border);border-radius:7px;padding:3px 4px 3px 8px;margin:0 2px;font-family:'Inter',sans-serif;max-width:100%}
+.pad-attachment-link{display:inline-flex;align-items:center;gap:5px;color:var(--fg);text-decoration:none;min-width:0}
+.pad-attachment-link:hover{color:var(--accent)}
+.pad-attachment-link svg{flex:0 0 auto;color:var(--hint)}
+.pad-attachment-link:hover svg{color:var(--accent)}
+.pad-attachment-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.pad-attachment-size{font-size:10.5px;color:var(--hint);flex:0 0 auto}
+.pad-attachment-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:3px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s;opacity:0}
+.pad-attachment:hover .pad-attachment-remove{opacity:1}
+.pad-attachment-remove:hover{color:var(--sem-alert,#b85450);background:var(--bg)}
 #pad-editor ul,#pad-editor ol{margin:6px 0;padding-left:26px}
 #pad-editor li{margin:2px 0;padding-left:2px}
 #pad-editor li ul,#pad-editor li ol{margin:2px 0}
@@ -2387,6 +2397,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-link" checked /> Link</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-table" checked /> Table</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-image" checked /> Image</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-attach" checked /> Attach file</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-timestamp" checked /> Timestamp</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ai-rewrite" checked /> AI Rewrite</label>
               </div>
@@ -3477,6 +3488,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>Settings → Pad → "Header" (off by default) adds a title bar with its own close button — turning it on hides the toolbar's close button so there's only ever one; "Match editor background" controls whether Pad's writing surface looks like the outline's canvas or reads as visually distinct chrome — personal preference, no right answer</li>
 <li>Settings → Pad → "Toolbar buttons" lets you hide individual buttons (Bold, Table, AI Rewrite, etc.) you don't use</li>
 <li>Toolbar mirrors the Note panel: <strong>B I U S</strong>, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered lists, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> link (with its own display-text field, separate from the URL), <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table insert with resizable columns, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> image paste/insert (click to select, drag the corner handle to resize, double-click to reset), and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite (rewrites the selection, or the whole Pad if nothing's selected). No subtree-summarise here — there's no subtree at the document level</li>
+<li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Pad, or paste one you've copied from your file manager — any of the three inserts a small chip showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
 <li>Pad has its own undo history, separate from the outline's — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo typing, AI Rewrite, and "Clear pad" for the current document's Pad. It never appears on the outline's own Ctrl/Cmd+Z stack, since Pad content isn't part of that snapshot — the two undo histories are independent, and Pad's is per-document, cleared on reload the same way the outline's is</li>
 </ul>
 </div>
@@ -3865,14 +3877,15 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <button class="note-tb-btn" id="ptb-link" data-tip="Insert / edit link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
     <button class="note-tb-btn" id="ptb-table" data-tip="Insert table (2×2 to start)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
     <button class="note-tb-btn" id="ptb-image" data-tip="Insert image from file"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+    <button class="note-tb-btn" id="ptb-attach" data-tip="Attach a file (max 5 MB)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
     <button class="note-tb-btn" id="ptb-timestamp" data-tip="Insert date/time"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
     <span class="note-tb-sep"></span>
     <button class="note-tb-btn" id="ptb-ai-rewrite" data-tip="Rewrite Pad (AI) — rewrites selection or full pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button id="pad-panel-close-toolbar" data-tip="Close Pad (Ctrl/Cmd+Shift+P)" aria-label="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
-  <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links."></div>
+  <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links, attach files."></div>
   <div id="pad-panel-footer">
-    <span class="note-footer-hint">Images paste directly</span>
+    <span class="note-footer-hint">Images paste directly · files attach up to 5 MB</span>
     <div class="note-footer-actions">
       <button class="note-clear-btn" id="pad-clear-btn">Clear pad</button>
     </div>
@@ -4602,7 +4615,7 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 // execution reaches it — that ordering bug was the actual cause of Presenter settings
 // reverting to defaults on every reload despite saving correctly.
 let previewSlideDepth=0; let previewAutoLaser=false; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true; let previewPresenterNotesExpanded=false; let presenterAutoExpandNoteCards=false;
-const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','timestamp','ai-rewrite'];
+const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
 const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai'];
 const INSERT_TB_BUTTONS=['smart-paste','date-time','decision-log','note','codeblock','checkbox','tags'];
 const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-btn','decision-log':'qb-decision-log','note':'qb-note','codeblock':'qb-codeblock','checkbox':'qb-checkbox','tags':'qb-tags'};
@@ -4614,7 +4627,7 @@ const DL_FIELDS=[
   {key:'impact', text:'Impact: What systems or people are affected?'},
   {key:'status', text:'Status: Proposed'},
 ];
-const PAD_TB_BTN_ID={bold:'ptb-bold',italic:'ptb-italic',underline:'ptb-underline',strike:'ptb-strike',ul:'ptb-ul',ol:'ptb-ol',link:'ptb-link',table:'ptb-table',image:'ptb-image',timestamp:'ptb-timestamp','ai-rewrite':'ptb-ai-rewrite'};
+const PAD_TB_BTN_ID={bold:'ptb-bold',italic:'ptb-italic',underline:'ptb-underline',strike:'ptb-strike',ul:'ptb-ul',ol:'ptb-ol',link:'ptb-link',table:'ptb-table',image:'ptb-image',attach:'ptb-attach',timestamp:'ptb-timestamp','ai-rewrite':'ptb-ai-rewrite'};
 const NOTE_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','timestamp','ai-rewrite','ai-summarise'];
 const TOOLBAR_GROUPS=['history','structure','move','format','fold','inserts','extras','ai','delete'];
 // Per-button visibility tables for every toolbar group, mirroring INSERT_TB_BUTTONS above —
@@ -19434,6 +19447,80 @@ el('ptb-image')?.addEventListener('click', () => {
   input.click();
 });
 
+// ── Pad file attachments ────────────────────────────────────────────────
+// Stored the same way pasted images already are: as a data: URI baked directly
+// into the Pad's saved HTML, so they automatically ride along with every existing
+// backup path (local safety copy, auto-backup-to-file, export/import) with zero
+// extra plumbing. The trade-off is localStorage's shared per-origin quota, which
+// is why arbitrary large files aren't safe here — capped well below typical quota.
+const PAD_ATTACH_MAX_BYTES=5*1024*1024; // 5 MB raw file size (base64 adds ~33% on top)
+function formatAttachSize(bytes){
+  if(bytes<1024) return bytes+' B';
+  if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(1)+' MB';
+}
+function padAttachmentChipHtml(name, size, dataUrl){
+  const safeName=escAttr(name);
+  return `<span class="pad-attachment" contenteditable="false">`
+    +`<a class="pad-attachment-link" href="${dataUrl}" download="${safeName}" data-tip="Download ${escAttr(name)}">`
+    +`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>`
+    +`<span class="pad-attachment-name">${esc(name)}</span>`
+    +`<span class="pad-attachment-size">${esc(formatAttachSize(size))}</span>`
+    +`</a>`
+    +`<button type="button" class="pad-attachment-remove" aria-label="Remove attachment" data-tip="Remove attachment"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+    +`</span>\u00A0`; // trailing nbsp gives the caret somewhere to land right after the atomic chip
+}
+function insertPadAttachment(file){
+  if(!file) return;
+  if(file.size>PAD_ATTACH_MAX_BYTES){
+    showToast(`"${file.name}" is over the 5 MB attachment limit`);
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    el('pad-editor')?.focus();
+    pushPadUndo();
+    document.execCommand('insertHTML', false, padAttachmentChipHtml(file.name, file.size, evt.target.result));
+    markDirty();
+  };
+  reader.readAsDataURL(file);
+}
+el('ptb-attach')?.addEventListener('click', () => {
+  const input=document.createElement('input');
+  input.type='file';
+  input.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+  document.body.appendChild(input);
+  input.addEventListener('change', () => {
+    const file=input.files?.[0];
+    input.remove();
+    if(file) insertPadAttachment(file);
+  });
+  input.click();
+});
+// Removing a chip is a structural edit (like deleting a table or image), not a text
+// keystroke — route it through the same explicit undo checkpoint the toolbar inserts use.
+el('pad-editor')?.addEventListener('click', e=>{
+  const removeBtn=e.target.closest('.pad-attachment-remove');
+  if(!removeBtn) return;
+  const chip=removeBtn.closest('.pad-attachment');
+  if(!chip) return;
+  pushPadUndo();
+  chip.remove();
+  markDirty();
+});
+// Drag-and-drop file onto the Pad — same size cap and insertion path as the toolbar button.
+el('pad-editor')?.addEventListener('dragover', e=>{
+  if(!e.dataTransfer?.types?.includes('Files')) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='copy';
+});
+el('pad-editor')?.addEventListener('drop', e=>{
+  const files=e.dataTransfer?.files;
+  if(!files || !files.length) return;
+  e.preventDefault();
+  Array.from(files).forEach(f=>insertPadAttachment(f));
+});
+
 el('pad-editor')?.addEventListener('paste', e => {
   // See the equivalent handler on the node Note editor for why this only intercepts
   // genuine image-only pastes and otherwise lets the browser's native paste through.
@@ -19455,6 +19542,16 @@ el('pad-editor')?.addEventListener('paste', e => {
       const reader=new FileReader();
       reader.onload=evt=>{ document.execCommand('insertImage', false, evt.target.result); markDirty(); };
       reader.readAsDataURL(file);
+      return;
+    }
+  }
+  // No image on the clipboard, but a copied file (e.g. from Finder/Explorer) still
+  // shows up as a plain file item here — attach it the same way the toolbar button does.
+  for(const item of items){
+    if(item.kind==='file'){
+      e.preventDefault();
+      const file=item.getAsFile();
+      if(file) insertPadAttachment(file);
       return;
     }
   }
@@ -21948,6 +22045,7 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-desc">Floating, draggable, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand full-screen</span></li>
           <li><span class="cs-desc"><strong>Pad</strong> — one per document, not tied to a node</span> · <span class="cs-combo" data-cs-shortcut="togglePad"></span></li>
           <li><span class="cs-desc">Both: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
+          <li><span class="cs-desc">Pad only: attach a file (button, drag, or paste) — up to 5 MB, shown as a downloadable chip; stored inline so it's covered by every existing backup path</span></li>
           <li><span class="cs-desc">Note adds a subtree-summarise button; Pad doesn't (no subtree)</span></li>
           <li><span class="cs-desc">"Clear pad" isn't on the undo stack — per-node note clear is</span></li>
           <li><span class="cs-desc">Note panel shows <strong>Backlinks</strong> — nodes that @mention this one (click to jump)</span></li>
