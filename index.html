@@ -1999,6 +1999,36 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-link.set{display:inline-flex}
 .todo-row:hover .todo-link{display:inline-flex}
 .todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.todo-repeat.set{display:inline-flex;color:var(--accent)}
+.todo-row:hover .todo-repeat{display:inline-flex}
+.todo-repeat:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+#todos-panel.actions-fixed .todo-repeat{display:inline-flex}
+.todo-check:disabled{cursor:default;opacity:.75}
+.todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:2px}
+.todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
+.todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
+.todo-subtasks-chevron{transition:transform .15s}
+.todo-subtasks-chevron.open{transform:rotate(90deg)}
+.todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
+.todo-row:hover .todo-subtask-add-btn{display:inline-flex}
+.todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
+#todos-panel.actions-fixed .todo-subtask-add-btn{display:inline-flex}
+.todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
+.todo-subtask-row{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
+.todo-subtask-row:hover{background:var(--hover)}
+.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-subtask-check:hover{border-color:var(--accent)}
+.todo-subtask-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
+.todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--accent);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtask-text{flex:1;font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere}
+.todo-subtask-text.completed{color:var(--muted);text-decoration:line-through}
+.todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.todo-subtask-row:hover .todo-subtask-delete{opacity:1}
+.todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.todo-subtask-input-row{margin-top:3px}
+.todo-subtask-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
+.todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
 #todo-due-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
 #todo-due-popover.open{display:block}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
@@ -20024,7 +20054,8 @@ function _addTagPopoverFromInput(){
   const TODOS_WIDTH_KEY='sakura_todos_width_v1';
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
-  let todos=[]; // {id, text, done, createdAt, completedAt, priority, dueDate, link} — array order IS open-task order
+  let todos=[]; // {id, text, done, createdAt, completedAt, priority, dueDate, link, repeat, subtasks, subtasksOpen} — array order IS open-task order
+  const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
   const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=720;
   let todosWidth=380; // default matches the CSS fallback (min(380px, calc(100vw - 32px)))
@@ -20038,7 +20069,10 @@ function _addTagPopoverFromInput(){
         priority: PRIORITIES.includes(t.priority)?t.priority:'none',
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
         link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
-        linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null
+        linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
+        repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
+        subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
+        subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
       })); }
     }catch(e){ todos=[]; }
   }
@@ -20092,16 +20126,96 @@ function _addTagPopoverFromInput(){
   function addTodo(text){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
-    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', dueDate:null, link:null });
+    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', dueDate:null, link:null, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
   }
   function toggleTodo(id){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
+    if(t.subtasks && t.subtasks.length) return; // completion is derived from subtasks, not manually toggled
+    if(!t.done && t.repeat){
+      t.dueDate = nextRepeatDate(t.dueDate, t.repeat);
+      saveTodos();
+      renderTodos();
+      showTodosActionToast(`Recurring task moved to ${fmtDue(t.dueDate)}`);
+      return;
+    }
     t.done=!t.done;
     t.completedAt = t.done ? Date.now() : null;
     pruneCompleted();
+    saveTodos();
+    renderTodos();
+  }
+  // ── Recurring todos ─────────────────────────────────────────────────────
+  function nextRepeatDate(fromDateStr, repeat){
+    const parsed=parseISODate(fromDateStr);
+    let d;
+    if(parsed){ d=new Date(parsed.getTime()); }
+    else { d=new Date(); d.setHours(0,0,0,0); }
+    if(repeat==='daily'){ d.setDate(d.getDate()+1); }
+    else if(repeat==='weekly'){ d.setDate(d.getDate()+7); }
+    else if(repeat==='weekdays'){ do{ d.setDate(d.getDate()+1); } while(d.getDay()===0||d.getDay()===6); }
+    return toISODate(d);
+  }
+  function repeatLabel(r){ return r==='daily'?'Daily':r==='weekdays'?'Weekdays':r==='weekly'?'Weekly':'Repeat'; }
+  function repeatTitle(r){ return r?('Repeats '+repeatLabel(r).toLowerCase()):'Set repeat'; }
+  function cycleRepeat(id){
+    const t=todos.find(x=>x.id===id);
+    if(!t || (t.subtasks && t.subtasks.length)) return;
+    const idx=REPEATS.indexOf(t.repeat||null);
+    t.repeat=REPEATS[(idx+1)%REPEATS.length];
+    saveTodos();
+    renderTodos();
+  }
+  // ── Sub-tasks ────────────────────────────────────────────────────────────
+  function subUid(){ return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function recomputeParentDone(t){
+    if(!t.subtasks || !t.subtasks.length) return;
+    const allDone=t.subtasks.every(s=>s.done);
+    if(allDone!==t.done){
+      t.done=allDone;
+      t.completedAt=allDone ? Date.now() : null;
+    }
+  }
+  function addSubtask(parentId, text){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t) return;
+    const trimmed=String(text||'').trim();
+    if(!trimmed) return;
+    if(!Array.isArray(t.subtasks)) t.subtasks=[];
+    t.subtasks.push({id:subUid(), text:trimmed.slice(0,300), done:false});
+    t.subtasksOpen=true;
+    t.repeat=null; // recurring todos don't carry subtasks
+    recomputeParentDone(t);
+    pruneCompleted();
+    saveTodos();
+    renderTodos();
+  }
+  function toggleSubtask(parentId, subId){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t || !t.subtasks) return;
+    const s=t.subtasks.find(x=>x.id===subId);
+    if(!s) return;
+    s.done=!s.done;
+    recomputeParentDone(t);
+    pruneCompleted();
+    saveTodos();
+    renderTodos();
+  }
+  function deleteSubtask(parentId, subId){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t || !t.subtasks) return;
+    t.subtasks=t.subtasks.filter(s=>s.id!==subId);
+    recomputeParentDone(t);
+    pruneCompleted();
+    saveTodos();
+    renderTodos();
+  }
+  function toggleSubtasksOpen(parentId){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t) return;
+    t.subtasksOpen=!t.subtasksOpen;
     saveTodos();
     renderTodos();
   }
@@ -20457,6 +20571,40 @@ function _addTagPopoverFromInput(){
     body.querySelectorAll('.todo-link').forEach(btn=>{
       btn.addEventListener('click',()=>openLinkEditor(btn));
     });
+    body.querySelectorAll('.todo-repeat').forEach(btn=>{
+      btn.addEventListener('click',()=>cycleRepeat(btn.getAttribute('data-id')));
+    });
+    body.querySelectorAll('.todo-subtasks-toggle').forEach(btn=>{
+      btn.addEventListener('click',()=>toggleSubtasksOpen(btn.getAttribute('data-id')));
+    });
+    body.querySelectorAll('.todo-subtask-add-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const id=btn.getAttribute('data-id');
+        const row=body.querySelector(`.todo-subtask-input-row[data-id="${id}"]`);
+        if(!row) return;
+        row.style.display='block';
+        const input=row.querySelector('.todo-subtask-input');
+        if(input) input.focus();
+      });
+    });
+    body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
+      inp.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){ e.preventDefault(); addSubtask(inp.getAttribute('data-id'), inp.value); }
+        else if(e.key==='Escape'){ e.preventDefault(); inp.value=''; inp.blur(); }
+      });
+      inp.addEventListener('blur',()=>{
+        if(!inp.value.trim()){
+          const row=inp.closest('.todo-subtask-input-row');
+          if(row) row.style.display='none';
+        }
+      });
+    });
+    body.querySelectorAll('.todo-subtask-check').forEach(cb=>{
+      cb.addEventListener('change',()=>toggleSubtask(cb.getAttribute('data-parent'), cb.getAttribute('data-sub')));
+    });
+    body.querySelectorAll('.todo-subtask-delete').forEach(btn=>{
+      btn.addEventListener('click',()=>deleteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
+    });
     body.querySelectorAll('.todo-text').forEach(elx=>{
       elx.addEventListener('blur',()=>{
         closeTodoAtSuggest();
@@ -20685,6 +20833,37 @@ function _addTagPopoverFromInput(){
     return p==='high'?'High':p==='med'?'Medium':p==='low'?'Low':'Priority';
   }
 
+  function subtasksSectionHtml(t){
+    const subs=t.subtasks||[];
+    const doneCount=subs.filter(s=>s.done).length;
+    const open=t.subtasksOpen!==false;
+    let html=`<div class="todo-subtasks-toggle-row">`;
+    if(subs.length){
+      html+=`<button type="button" class="todo-subtasks-toggle" data-id="${t.id}" aria-label="Toggle subtasks">`
+        +`<svg class="todo-subtasks-chevron${open?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`
+        +`<span>${doneCount}/${subs.length}</span>`
+      +`</button>`;
+    }
+    if(!t.repeat){
+      html+=`<button type="button" class="todo-subtask-add-btn" data-id="${t.id}" data-tip="Add subtask" aria-label="Add subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Subtask</span></button>`;
+    }
+    html+=`</div>`;
+    if(subs.length && open){
+      html+=`<div class="todo-subtasks-list">`;
+      subs.forEach(s=>{
+        html+=`<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
+          +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
+          +`<span class="todo-subtask-text${s.done?' completed':''}">${esc(s.text)}</span>`
+          +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+        +`</div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`<div class="todo-subtask-input-row" data-id="${t.id}" style="display:none">`
+      +`<input type="text" class="todo-subtask-input" data-id="${t.id}" placeholder="Add a subtask…" maxlength="300" />`
+    +`</div>`;
+    return html;
+  }
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
@@ -20692,9 +20871,10 @@ function _addTagPopoverFromInput(){
     const link=t.link;
     const linkLabel=t.linkLabel||'';
     const linkDisplay=linkLabel||fmtLink(link);
+    const hasSubtasks=!!(t.subtasks && t.subtasks.length);
     return `<div class="todo-row${t.done?' completed':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
-      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} aria-label="Mark task complete" />`
+      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`<div class="todo-meta-row">`
@@ -20710,7 +20890,12 @@ function _addTagPopoverFromInput(){
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
         +`<span>${link?esc(linkDisplay):'Link'}</span>`
       +`</button>`
+      + (hasSubtasks ? '' : `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
+        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
+        +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
+      +`</button>`)
       +`</div>`
+      + subtasksSectionHtml(t)
       +`</div>`
       + `<span class="todo-actions">${link?`<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`;
