@@ -4834,6 +4834,42 @@ const AI_CURATED_MODELS={
 function defaultModelForProvider(providerId){const list=AI_CURATED_MODELS[providerId]; return list&&list.length?list[0].v:''}
 const SAKURA_EXPORT_FORMAT_VERSION = 1;
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+// Sanitizes rich HTML (Pad content, Note content) before it's ever assigned via innerHTML.
+// These fields are stored as raw HTML (needed for the WYSIWYG editors) and can arrive from
+// three places: this browser's own editing (already trusted), a local file import, or a
+// cloud backup (GitHub Gist / Google Drive) round-tripped through an account or token that
+// could in principle be compromised. Any of the untrusted paths could otherwise smuggle in
+// a script tag or an onerror/onload handler that runs the moment the content is inserted
+// into the live editor. This strips executable content while preserving normal formatting
+// (bold, lists, tables, colors, links) — parsing happens in a detached element, so nothing
+// in it can execute before the strip pass runs.
+const SAKURA_SANITIZE_BLOCKED_TAGS=['script','iframe','object','embed','link','meta','base','form','style'];
+function sakuraSanitizeRichHtml(html){
+  if(!html)return '';
+  try{
+    const container=document.createElement('div');
+    container.innerHTML=String(html);
+    SAKURA_SANITIZE_BLOCKED_TAGS.forEach(tag=>{
+      container.querySelectorAll(tag).forEach(el=>el.remove());
+    });
+    container.querySelectorAll('*').forEach(el=>{
+      [...el.attributes].forEach(attr=>{
+        const name=attr.name.toLowerCase();
+        const value=attr.value||'';
+        // event handler attributes (onerror, onclick, onload, ...) never belong on
+        // imported/stored content — the editor itself never writes these.
+        if(name.startsWith('on')){ el.removeAttribute(attr.name); return; }
+        // javascript: (and similarly-schemed) URLs in href/src/action — strip control
+        // characters first since "jav\tascript:" is a known filter-bypass trick.
+        if((name==='href'||name==='src'||name==='action'||name==='formaction')&&/^\s*javascript:/i.test(value.replace(/[\x00-\x1f]/g,''))){
+          el.removeAttribute(attr.name); return;
+        }
+        if(name==='style'&&/javascript:|expression\(/i.test(value)){ el.removeAttribute(attr.name); return; }
+      });
+    });
+    return container.innerHTML;
+  }catch(e){ return ''; } // fail closed — if sanitizing itself throws, discard rather than risk raw insertion
+}
 function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
@@ -5029,7 +5065,7 @@ function loadDocFromStorage(id){
     focusedId=Number.isFinite(d.focusedId)&&nodes.some(n=>n.id===d.focusedId)?d.focusedId:null;
     if(el('header-title'))el('header-title').value=d.title||'';
     if(el('doc-author'))el('doc-author').value=d.author||'';
-    if(el('pad-editor'))el('pad-editor').innerHTML=d.pad||'';
+    if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     return true;
   }catch(e){} return false;
 }
@@ -5072,7 +5108,7 @@ function applyTabSnapshot(tab){
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; padUndoStack=tab.padUndoStack||[]; padRedoStack=tab.padRedoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
-  if(el('pad-editor'))el('pad-editor').innerHTML=tab.pad||'';
+  if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -9110,7 +9146,7 @@ function renderBacklinkPanel(nodeId){
     const arrow=document.createElement('span'); arrow.className='bl-item-arrow'; arrow.textContent='↗';
     const txt=document.createElement('span'); txt.className='bl-item-text';
     const raw=String(nodes[bidx].text||'');
-    txt.innerHTML=raw.replace(/\[\[([\s\S]*?)\]\](?!\])/g,'<em>[[$1]]</em>').slice(0,80);
+    txt.innerHTML=esc(raw.slice(0,80)).replace(/\[\[([\s\S]*?)\]\](?!\])/g,'<em>[[$1]]</em>');
     item.appendChild(arrow); item.appendChild(txt);
     item.addEventListener('click',()=>{closeNotePanel(false); setSingleSelection(bid); render(); scrollToNode(bid);});
     panel.appendChild(item);
@@ -14753,7 +14789,7 @@ function openNotePanel(id, anchorRectOverride) {
   if (!panel) return;
   const editor = el('note-editor');
   if (editor) {
-    editor.innerHTML = nodes[idx].note || '';
+    editor.innerHTML = sakuraSanitizeRichHtml(nodes[idx].note || '');
     // move cursor to end
     try {
       const range = document.createRange();
