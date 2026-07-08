@@ -19470,20 +19470,29 @@ function padAttachmentChipHtml(name, size, dataUrl){
     +`<button type="button" class="pad-attachment-remove" aria-label="Remove attachment" data-tip="Remove attachment"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
     +`</span>\u00A0`; // trailing nbsp gives the caret somewhere to land right after the atomic chip
 }
-function insertPadAttachment(file){
-  if(!file) return;
+function insertPadAttachment(file, range){
+  if(!file) return Promise.resolve();
   if(file.size>PAD_ATTACH_MAX_BYTES){
     showToast(`"${file.name}" is over the 5 MB attachment limit`);
-    return;
+    return Promise.resolve();
   }
-  const reader=new FileReader();
-  reader.onload=evt=>{
-    el('pad-editor')?.focus();
-    pushPadUndo();
-    document.execCommand('insertHTML', false, padAttachmentChipHtml(file.name, file.size, evt.target.result));
-    markDirty();
-  };
-  reader.readAsDataURL(file);
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=evt=>{
+      el('pad-editor')?.focus();
+      if(range){
+        const sel=window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      pushPadUndo();
+      document.execCommand('insertHTML', false, padAttachmentChipHtml(file.name, file.size, evt.target.result));
+      markDirty();
+      resolve();
+    };
+    reader.onerror=()=>resolve();
+    reader.readAsDataURL(file);
+  });
 }
 el('ptb-attach')?.addEventListener('click', () => {
   const input=document.createElement('input');
@@ -19509,6 +19518,16 @@ el('pad-editor')?.addEventListener('click', e=>{
   markDirty();
 });
 // Drag-and-drop file onto the Pad — same size cap and insertion path as the toolbar button.
+// Resolves the actual drop point into a Range first (rather than whatever the caret was
+// last left at) so a file dropped mid-paragraph lands there, not wherever you clicked last.
+function caretRangeFromDropPoint(x, y){
+  if(document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+  if(document.caretPositionFromPoint){
+    const pos=document.caretPositionFromPoint(x, y);
+    if(pos){ const r=document.createRange(); r.setStart(pos.offsetNode, pos.offset); r.collapse(true); return r; }
+  }
+  return null;
+}
 el('pad-editor')?.addEventListener('dragover', e=>{
   if(!e.dataTransfer?.types?.includes('Files')) return;
   e.preventDefault();
@@ -19518,7 +19537,14 @@ el('pad-editor')?.addEventListener('drop', e=>{
   const files=e.dataTransfer?.files;
   if(!files || !files.length) return;
   e.preventDefault();
-  Array.from(files).forEach(f=>insertPadAttachment(f));
+  const range=caretRangeFromDropPoint(e.clientX, e.clientY);
+  // Chained rather than fired in parallel: each insert moves the selection to just past
+  // itself, so starting the next file's read before the previous insert lands would race
+  // and could interleave chips out of drop order (or insert at a now-stale position).
+  let chain=Promise.resolve();
+  Array.from(files).forEach((f,i)=>{
+    chain=chain.then(()=>insertPadAttachment(f, i===0?range:null));
+  });
 });
 
 el('pad-editor')?.addEventListener('paste', e => {
