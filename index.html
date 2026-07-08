@@ -1999,6 +1999,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-link.set{display:inline-flex}
 .todo-row:hover .todo-link{display:inline-flex}
 .todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-due.recurring{display:inline-flex}
+.todo-due-repeat-icon{opacity:.75;margin-left:1px}
 .todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-repeat.set{display:inline-flex;color:var(--accent)}
 .todo-row:hover .todo-repeat{display:inline-flex}
@@ -2026,9 +2028,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-row:hover .todo-subtask-delete{opacity:1}
 .todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
-.todo-subtask-input-row{margin-top:3px}
-.todo-subtask-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
+.todo-subtask-input-row{margin-top:3px;display:flex;align-items:center;gap:6px}
+.todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
 .todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
+.todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
+.todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
 #todo-due-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
 #todo-due-popover.open{display:block}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
@@ -20588,6 +20593,16 @@ function _addTagPopoverFromInput(){
       });
     });
     body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
+      const updateCount=()=>{
+        const row=inp.closest('.todo-subtask-input-row');
+        const counter=row ? row.querySelector('.todo-subtask-charcount') : null;
+        if(!counter) return;
+        const len=inp.value.length;
+        counter.textContent=`${len}/300`;
+        counter.classList.toggle('warn', len>=270 && len<300);
+        counter.classList.toggle('max', len>=300);
+      };
+      inp.addEventListener('input', updateCount);
       inp.addEventListener('keydown',e=>{
         if(e.key==='Enter'){ e.preventDefault(); addSubtask(inp.getAttribute('data-id'), inp.value); }
         else if(e.key==='Escape'){ e.preventDefault(); inp.value=''; inp.blur(); }
@@ -20861,6 +20876,7 @@ function _addTagPopoverFromInput(){
     }
     html+=`<div class="todo-subtask-input-row" data-id="${t.id}" style="display:none">`
       +`<input type="text" class="todo-subtask-input" data-id="${t.id}" placeholder="Add a subtask…" maxlength="300" />`
+      +`<span class="todo-subtask-charcount" data-id="${t.id}">0/300</span>`
     +`</div>`;
     return html;
   }
@@ -20882,9 +20898,10 @@ function _addTagPopoverFromInput(){
         +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
         +`<span>${priorityLabel(priority)}</span>`
       +`</button>`
-      +`<button class="todo-due${due?' set':''}${overdue?' overdue':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?'Change due date':'Set due date'}">`
+      +`<button class="todo-due${due?' set':''}${overdue?' overdue':''}${t.repeat?' recurring':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
         +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
+        + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>`
       +`<button class="todo-link${link?' set':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-tip="${link?'Change link':'Attach a link'}">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
