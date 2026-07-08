@@ -3446,6 +3446,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><strong>Compact view</strong> — click the compact icon next to Maximize to shrink the note to a minimal popover: just the editor plus Rewrite and Clear (relocated into the header row), with backlinks, timestamps, and the rest of the toolbar hidden. Click it again to expand back to the full view. Compact and Maximize are mutually exclusive — switching to either one always drops out of the other, since a fullscreen note with only Rewrite, or a tiny popover with the full toolbar, isn't a real state. Settings → Note panel → "Open notes in compact view" sets whether newly-opened notes start compact by default; expanding an individual note back to full view is a one-off for that note and doesn't change the default</li>
 <li>Toolbar: <strong>B I U S</strong> for bold / italic / underline / strikethrough; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet list and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered list; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> insert or edit a link, with its own display-text field separate from the URL; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table icon inserts a 2×2 table; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite rewrites the whole note or just selected text; the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></span> summarise button reads the node's child subtree and appends a prose summary to the note</li>
 <li><span class="help-kbd">Tab</span> → indents a list item (when inside a list) or inserts spaces in plain text; <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> → outdent a list item</li>
+<li>Rewriting with nothing selected replaces the note's entire content with plain AI-rewritten text, which would otherwise silently remove any images or tables in it — a confirmation prompt catches this and tells you what would be lost before it happens. Select just the text you want rewritten instead if you'd rather keep the rest untouched</li>
 <li>Paste images directly into the note — they embed inline and are stored with the note. Click a pasted image to select it, then drag the handle at its corner to resize; double-click it to reset back to its original size</li>
 <li>Tables: drag the thin border handle between columns to resize column widths</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo edits made in this note while it's open — its own undo history, separate from the outline's, reset each time you open a note and cleared when you close it. The whole session still counts as one step on the outline's own undo when you close the panel. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> or <span class="help-kbd">Esc</span> → close and save; "Clear note" removes it entirely (undoable)</li>
@@ -15860,6 +15861,26 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
   }
 
   if (!inputText) return;
+
+  // Same bug as the Pad's whole-content AI rewrite (fixed above): with nothing
+  // selected, this selects the ENTIRE note and replaces it with plain rewritten
+  // text — silently destroying any embedded images or tables. Confirm first.
+  if(!hasSelection){
+    const nImg=editor.querySelectorAll('img').length;
+    const nTable=editor.querySelectorAll('table').length;
+    if(nImg||nTable){
+      const parts=[];
+      if(nImg) parts.push(`${nImg} image${nImg===1?'':'s'}`);
+      if(nTable) parts.push(`${nTable} table${nTable===1?'':'s'}`);
+      const ok=await sakuraConfirm({
+        icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
+        title:'Rewrite the whole note?',
+        body:`This replaces all of the note's content with plain AI-rewritten text, which will remove ${parts.join(', ')}. Select just the text you want rewritten instead if you'd like to keep them.`,
+        confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
+      });
+      if(!ok) return;
+    }
+  }
 
   btn.classList.add('ai-busy');
   try {
