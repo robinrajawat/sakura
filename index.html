@@ -476,6 +476,11 @@ body.toolbar-hidden #quick-bar{display:none}
 .preset-card-desc{font:400 12.5px 'Inter',sans-serif;color:var(--muted);line-height:1.65}
 .preset-card-desc p{margin:0 0 10px}
 .preset-card-desc p:last-child{margin-bottom:0}
+.preset-changes{border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px}
+.preset-changes-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:6px 10px;font-size:12px}
+.preset-changes-row+.preset-changes-row{border-top:1px solid var(--border)}
+.preset-changes-label{color:var(--fg);font-weight:500;flex:0 0 auto}
+.preset-changes-val{color:var(--muted);text-align:right;flex:1 1 auto;min-width:0}
 @media (max-width:700px){.preset-card-head{flex-direction:column;align-items:stretch;gap:10px}.preset-card-actions{justify-content:flex-end}}
 .settings-subsection-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 5px;padding-top:12px;border-top:1px solid var(--border)}
 .settings-subsection-label:first-of-type{margin-top:8px;padding-top:0;border-top:none}
@@ -2430,11 +2435,19 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 </div>
               </div>
               <div class="preset-card-desc">
-                <p>One click reconfigures the toolbar, sidebar, Pad, hover toolbar, status bar, app bar, Quick Assist location, editor backgrounds, Node Quick Assist, layout, and Presenter mode into a leaner, writing-and-presenting-focused set.</p>
-                <p>Toolbar, sidebar, and Pad start hidden; hover toolbar is off; tree lines are hidden for a cleaner indented view. The status bar keeps only Words, Depth, Saved status, and the auto-rewrite indicator — node count, max depth, node word count, the backup-connection chip, the Secure Storage lock chip, the theme chip, text size, and author are all hidden. The app bar stays visible with Quick Assist docked in it.</p>
-                <p>Node Quick Assist (Ctrl/Cmd+Space mid-edit) switches to its icon-only row, trimmed to Note, Code block, Tags, Decision log, and Rewrite. The toolbar's own button set — Highlight, Text color, Collapse, Expand, Date/time, Decision log, Note, Code block, Tags, Rewrite, and Delete — is ready for whenever you bring the toolbar back; the right-click quick row gets Focus, Rewrite, Note, Code block, Date/time, Decision log, Tags, and Delete. Note, Code block, and Pad all switch off "Match editor background," so each reads as visually distinct chrome. Your accent color and node text color are left exactly as they are — this preset never touches either.</p>
-                <p>Presenter mode gets the laser pointer and Sakura branding turned on, Preview opens straight into fullscreen presenting, and note cards expand automatically instead of needing a click each — the floating notes panel's own toolbar is trimmed to Bullet list, Timestamp, and AI Rewrite.</p>
-                <p>Also runnable from Quick Assist as a <strong>Run</strong> action ("editor's choice" or "apply editor's choice") — same effect as clicking Apply here. However you apply it, an <strong>Undo</strong> appears (Quick Assist's own toast gets one too) that restores every setting it touched — it sticks around across a reload, until you use it or apply the preset again.</p>
+                <p>A leaner layout for writing and presenting — trims the chrome around the outline and tunes Presenter mode for showing your work. Accent color and node text color are left untouched.</p>
+                <div class="preset-changes">
+                  <div class="preset-changes-row"><span class="preset-changes-label">Toolbar, Sidebar, Pad</span><span class="preset-changes-val">Hidden</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Hover toolbar</span><span class="preset-changes-val">Off</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Tree lines</span><span class="preset-changes-val">Hidden</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Status bar</span><span class="preset-changes-val">Words, Depth, Saved, Auto-rewrite only</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">App bar</span><span class="preset-changes-val">Visible · Quick Assist docked here</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Node Quick Assist</span><span class="preset-changes-val">Icon-only · Note, Code, Tags, Decision log, Rewrite</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Editor backgrounds</span><span class="preset-changes-val">Note/Code/Pad don't match canvas</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Toolbar buttons</span><span class="preset-changes-val">Curated set, ready when shown again</span></div>
+                  <div class="preset-changes-row"><span class="preset-changes-label">Presenter mode</span><span class="preset-changes-val">Laser, branding, auto-start, notes expanded</span></div>
+                </div>
+                <p>Also runnable from Quick Assist ("apply editor's choice") — same effect as clicking Apply. Applying always leaves an <strong>Undo</strong> that restores every setting it touched, until you use it or apply again.</p>
               </div>
             </div>
           </div>
@@ -2983,7 +2996,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Customize shortcuts</span><span class="settings-row-desc" id="shortcuts-summary-desc">All shortcuts are at their defaults</span></div><button class="btn" id="shortcuts-open-modal-btn">Open…</button></div>
             </div>
           </div>
-          <div class="muted-help">Everything here is stored locally in your browser — nothing leaves this tab.</div>
+          <div class="muted-help">Everything is stored locally in your browser by default — nothing leaves this tab unless you turn on an opt-in feature. AI actions (Rewrite, Expand, etc.) send that node's content to whichever AI provider you've configured, and Cloud Backup (Gist/Drive) uploads a copy to that service, but only while connected and only when you use them.</div>
             </div>
           </div>
         </div>
