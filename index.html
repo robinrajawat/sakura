@@ -14129,11 +14129,16 @@ window.addEventListener('beforeunload',e=>{
   if(!dirty&&!needsStrictBackupWarning&&!needsAutoRewriteWarning)return;
   e.preventDefault(); e.returnValue='';
   if(needsStrictBackupWarning){
-    // Only fires if the tab is still alive a moment later — i.e. the person cancelled the
-    // native prompt above rather than actually leaving. If the tab actually closes, this
-    // timer's context is torn down before it runs, so nothing shows — that's the trade a
-    // 'strict' close attempt makes for guaranteeing a last chance rather than nagging blindly.
-    setTimeout(promptSessionBackup,300);
+    // Only fires if the tab is still alive AND still the foreground page a moment later —
+    // i.e. the person actually cancelled the native prompt above rather than leaving. Just
+    // hoping the JS context survives isn't reliable enough on its own: on some browsers/
+    // timings the outgoing page doesn't tear down instantly on a real navigation (e.g. a
+    // plain refresh), so this setTimeout could still fire and paint the modal for a frame
+    // before the new page replaces it — seen as a flash of "No backup taken this session"
+    // on reload. visibilityState flips to 'hidden' before a cross-document unload completes,
+    // so checking it here catches a genuine "they left" case even when the timer itself
+    // still runs.
+    setTimeout(()=>{ if(document.visibilityState==='visible') promptSessionBackup(); },300);
   }
 })
 document.addEventListener('visibilitychange',()=>{
