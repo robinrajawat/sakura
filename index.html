@@ -2039,6 +2039,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-link.set{display:inline-flex}
 .todo-row:hover .todo-link{display:inline-flex}
 .todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-link.link-missing{color:var(--sem-alert,#b85450);border-style:dashed;border-color:color-mix(in srgb,var(--sem-alert,#b85450) 40%,transparent)}
 .todo-due.recurring{display:inline-flex}
 .todo-due-repeat-icon{opacity:.75;margin-left:1px}
 .todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
@@ -2095,8 +2096,23 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .due-pop-clear-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:3px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
 .due-pop-clear-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .due-pop-clear-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
-#todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:240px;font-family:'Inter',sans-serif}
+#todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:280px;font-family:'Inter',sans-serif}
 #todo-link-popover.open{display:block}
+.link-pop-tabs{display:flex;gap:2px;margin-bottom:9px;background:var(--hover);border-radius:7px;padding:2px}
+.link-pop-tab{flex:1;appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:5px 4px;border-radius:5px;cursor:pointer;transition:background .12s,color .12s}
+.link-pop-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+#link-pop-node-search-row{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--edit-bg);border-radius:6px;padding:5px 8px;margin-bottom:6px;transition:border-color .12s,box-shadow .12s}
+#link-pop-node-search-row:focus-within{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+#link-pop-node-search-row svg{flex:0 0 auto;color:var(--hint)}
+#link-pop-node-search-input{flex:1;min-width:0;appearance:none;border:none;background:none;color:var(--fg);font:400 12px 'Inter',sans-serif;outline:none}
+#link-pop-node-search-input::placeholder{color:var(--hint)}
+#link-pop-node-results{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.link-pop-node-item{display:flex;flex-direction:column;gap:1px;padding:5px 7px;border-radius:6px;cursor:pointer;text-align:left;border:none;background:none;font-family:'Inter',sans-serif;width:100%}
+.link-pop-node-item:hover{background:var(--hover)}
+.link-pop-node-item-text{font:400 11.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-pop-node-item-meta{font:400 10px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-pop-node-empty{font:400 11px 'Inter',sans-serif;color:var(--hint);padding:8px 4px;text-align:center}
+#todo-link-popover.node-tab #link-pop-save-btn{display:none}
 #link-pop-input-row{margin-bottom:9px;display:flex;flex-direction:column;gap:7px}
 #link-pop-input,#link-pop-label-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
 #link-pop-input:focus,#link-pop-label-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
@@ -3580,7 +3596,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>Hover a task for a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button — both sit as an overlay rather than reserving space, so task text keeps the full row width when you're not hovering. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick</li>
 <li>The <strong>Completed</strong> section header shows a <strong>Clear completed</strong> button whenever it has tasks (respecting the current priority filter) to remove them all in one action, with its own in-panel Undo toast — a batch counterpart to deleting one at a time. All To-Dos toasts (Undo prompts, export confirmation, AI rewrite errors) show inside the panel while it's open rather than the app's global toast, so acting on one never closes the panel</li>
 <li>An overdue count badge can appear on the To-Dos button itself (app bar or status bar) whenever you have open, overdue tasks — visible without opening the panel. Toggle it off at Settings → To-Dos → "Overdue count badge" if you'd rather not see it</li>
-<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with an optional display-text field, a URL field, a Save button, and a Remove link option; a bare domain or path is treated as an https:// link automatically, and the chip shows your display text if you set one, or the link's hostname otherwise. Once a link is attached, an <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span> open-link button appears in the row's hover actions, next to Rewrite and Delete, to open it in a new tab without going through the editor popover</li>
+<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over every node in your active documents — the same lookup Quick Assist and Global Search use — pick a result to attach it), plus a Remove link option that clears either kind. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a node-link chip shows that node's own text and a small hierarchy icon instead of the link-chain icon, so it reads as "jumps within Sakura" rather than "opens a website" — and it stays live, tracking the node's current text rather than a snapshot. Once either kind of link is attached, an open/jump button appears in the row's hover actions, next to Rewrite and Delete: for a web link it opens a new tab; for a node link it switches to that document if needed, scrolls to the node, and briefly flashes it, the same way backlinks do. If the node or its document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" toast instead of failing silently</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Hover a task and click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
 <li>Right-click a task for a context menu — mark complete/open, duplicate the task, copy its text, move it to the top or bottom of the list, expand/collapse its sub-tasks, or delete it. Right-clicking directly on the task's own text, or on a sub-task row, falls through to the normal browser menu instead, so copy/paste and spellcheck still work there</li>
@@ -4058,9 +4074,22 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 </div>
 
 <div id="todo-link-popover" role="dialog" aria-label="Attach a link">
-  <div id="link-pop-input-row">
-    <input id="link-pop-label-input" type="text" placeholder="Display text (optional)" autocomplete="off" spellcheck="false" maxlength="80" />
-    <input id="link-pop-input" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" maxlength="2000" />
+  <div class="link-pop-tabs" role="tablist" aria-label="Link type">
+    <button type="button" class="link-pop-tab" id="link-pop-tab-web" role="tab" aria-selected="true">Web link</button>
+    <button type="button" class="link-pop-tab" id="link-pop-tab-node" role="tab" aria-selected="false">Link to a node</button>
+  </div>
+  <div id="link-pop-web-panel">
+    <div id="link-pop-input-row">
+      <input id="link-pop-label-input" type="text" placeholder="Display text (optional)" autocomplete="off" spellcheck="false" maxlength="80" />
+      <input id="link-pop-input" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" maxlength="2000" />
+    </div>
+  </div>
+  <div id="link-pop-node-panel" style="display:none">
+    <div id="link-pop-node-search-row">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="link-pop-node-search-input" type="text" placeholder="Search nodes…" autocomplete="off" spellcheck="false" maxlength="200" />
+    </div>
+    <div id="link-pop-node-results"></div>
   </div>
   <div class="link-pop-footer">
     <button type="button" class="due-pop-clear-btn" id="link-pop-remove-btn">Remove link</button>
@@ -21648,7 +21677,10 @@ function _addTagPopoverFromInput(){
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
   const STATUSES=['none','waiting','progress','blocked','review'];
-  let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, repeat, subtasks, subtasksOpen} — array order IS open-task order
+  let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, linkLabel, nodeRef, repeat, subtasks, subtasksOpen} — array order IS open-task order
+  // nodeRef ({docId,nodeId}|null) and link/linkLabel are mutually exclusive — a task's "attach a
+  // link" slot holds either a web URL or a reference to a node in one of your documents, never
+  // both. Whichever is set is what todo-link/todo-link-open render and act on.
   const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
   const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=720;
@@ -21667,10 +21699,11 @@ function _addTagPopoverFromInput(){
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
         link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
         linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
+        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && typeof t.nodeRef.nodeId==='string' && t.nodeRef.nodeId) ? {docId:t.nodeRef.docId, nodeId:t.nodeRef.nodeId} : null,
         repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
-      })); }
+      })); todos.forEach(t=>{ if(t.nodeRef){ t.link=null; t.linkLabel=null; } }); }
     }catch(e){ todos=[]; }
   }
   function saveTodos(){
@@ -21726,7 +21759,7 @@ function _addTagPopoverFromInput(){
   function addTodo(text){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
-    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, repeat:null, subtasks:[], subtasksOpen:true });
+    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
   }
@@ -21942,8 +21975,76 @@ function _addTagPopoverFromInput(){
     t.link = normalizeLinkUrl(rawUrl);
     const label=String(rawLabel||'').trim().slice(0,80);
     t.linkLabel = t.link ? (label || null) : null;
+    if(t.link) t.nodeRef = null;
     saveTodos();
     renderTodos();
+  }
+  function setNodeRef(id, docId, nodeId){
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    t.nodeRef = (docId && nodeId) ? {docId, nodeId} : null;
+    if(t.nodeRef){ t.link=null; t.linkLabel=null; }
+    saveTodos();
+    renderTodos();
+  }
+  function clearTodoAttachment(id){
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    t.link=null; t.linkLabel=null; t.nodeRef=null;
+    saveTodos();
+    renderTodos();
+  }
+  // Looks up a nodeRef's live text/doc title without switching tabs or disturbing editor state —
+  // same "prefer in-memory, fall back to storage" approach getDocNodesForSearch uses elsewhere.
+  // Only active (non-trashed) documents count as a valid target: a doc in Trash is effectively
+  // gone for this purpose, same as one that's been permanently deleted.
+  function resolveNodeRef(ref){
+    if(!ref || !ref.docId || !ref.nodeId) return {missing:true};
+    const idxEntry=(typeof loadActiveDocsIndex==='function'?loadActiveDocsIndex():[]).find(d=>d.id===ref.docId);
+    if(!idxEntry) return {missing:true};
+    if(typeof getDocNodesForSearch!=='function') return {missing:true};
+    const {docNodes, docTitle}=getDocNodesForSearch(ref.docId, idxEntry);
+    if(!Array.isArray(docNodes)) return {missing:true};
+    const node=docNodes.find(n=>n.id===ref.nodeId);
+    if(!node) return {missing:true};
+    return {missing:false, text:String(node.text||'').trim(), docTitle:docTitle||'Untitled'};
+  }
+  // Same switch-doc/expand/scroll/flash behavior Notes and Tags search results already use
+  // (revealNodeInDoc) — a direct reference doesn't warrant reopening the find-bar the way a
+  // fresh text search (jumpToNodeInDoc) does.
+  function jumpToTodoNodeRef(ref){
+    const info=resolveNodeRef(ref);
+    if(!info || info.missing){
+      showTodosToast('That node no longer exists');
+      return;
+    }
+    closeTodosPanel();
+    if(typeof revealNodeInDoc==='function') revealNodeInDoc(ref.docId, ref.nodeId);
+  }
+  // Node picker for the "Link to a node" tab of the attach-a-link popover — same search
+  // primitives (qaTokenizeQuery/qaHayMatches/buildMatchSnippetHtml) and doc-scanning approach
+  // (loadActiveDocsIndex/getDocNodesForSearch) collectNodeTextMatches uses for Quick Assist and
+  // Global Search, just returning plain data instead of ready-to-render QA result rows.
+  function searchNodesForTodoLink(q){
+    const out=[];
+    const tokens=(typeof qaTokenizeQuery==='function')?qaTokenizeQuery(q):String(q||'').split(/\s+/).filter(Boolean);
+    const hayMatch=(typeof qaHayMatches==='function')?qaHayMatches:((hay,toks)=>toks.every(tok=>hay.toLowerCase().includes(tok.toLowerCase())));
+    const snippet=(typeof buildMatchSnippetHtml==='function')?buildMatchSnippetHtml:((text)=>esc(text));
+    const docsIdx=(typeof loadActiveDocsIndex==='function')?loadActiveDocsIndex():[];
+    for(const d of docsIdx){
+      if(out.length>=8) break;
+      if(typeof getDocNodesForSearch!=='function') break;
+      const {docNodes, docTitle}=getDocNodesForSearch(d.id, d);
+      if(!Array.isArray(docNodes)) continue;
+      let perDoc=0;
+      for(const n of docNodes){
+        if(perDoc>=3||out.length>=8) break;
+        const text=String(n.text||''); if(!text.trim()||!hayMatch(text,tokens)) continue;
+        perDoc++;
+        out.push({docId:d.id, nodeId:n.id, docTitle:docTitle||'Untitled', snippetHtml:snippet(text.slice(0,90),q)});
+      }
+    }
+    return out;
   }
   function reorderOpenTodos(draggedId, targetId, placeBefore){
     const openIds = todos.filter(t=>!t.done).map(t=>t.id);
@@ -22201,6 +22302,13 @@ function _addTagPopoverFromInput(){
     });
     body.querySelectorAll('.todo-link').forEach(btn=>{
       btn.addEventListener('click',()=>openLinkEditor(btn));
+    });
+    body.querySelectorAll('.todo-nodejump-open').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.preventDefault();
+        const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
+        if(t && t.nodeRef) jumpToTodoNodeRef(t.nodeRef);
+      });
     });
     body.querySelectorAll('.todo-repeat').forEach(btn=>{
       btn.addEventListener('click',()=>cycleRepeat(btn.getAttribute('data-id')));
@@ -22532,6 +22640,7 @@ function _addTagPopoverFromInput(){
     const copy={
       id: uid(), text: t.text, done:false, createdAt: Date.now(), completedAt: null,
       priority: t.priority||'none', status: t.status||'none', dueDate: t.dueDate||null, link: t.link||null, linkLabel: t.linkLabel||null,
+      nodeRef: t.nodeRef ? {docId:t.nodeRef.docId, nodeId:t.nodeRef.nodeId} : null,
       repeat: t.repeat||null,
       subtasks: (t.subtasks||[]).map(s=>({id:subUid(), text:s.text, done:false})),
       subtasksOpen: t.subtasksOpen!==false
@@ -22592,14 +22701,24 @@ function _addTagPopoverFromInput(){
     return items;
   }
 
+  // Small hierarchy glyph for node-linked tasks — deliberately distinct from the web-link chain
+  // icon so a glance at the chip tells you whether it jumps within Sakura or opens a website.
+  function nodeRefIconSvg(size){
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M5 8v10"/><path d="M5 12h13"/></svg>`;
+  }
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
     const priority=t.priority||'none';
     const status=t.status||'none';
     const link=t.link;
+    const nodeRef=t.nodeRef||null;
+    const nodeRefInfo=nodeRef?resolveNodeRef(nodeRef):null;
+    const hasAttachment=!!(link||nodeRef);
     const linkLabel=t.linkLabel||'';
-    const linkDisplay=linkLabel||fmtLink(link);
+    const linkDisplay=nodeRef
+      ? (nodeRefInfo.missing ? 'Node not found' : (nodeRefInfo.text ? nodeRefInfo.text.slice(0,60) : '(untitled node)'))
+      : (linkLabel||fmtLink(link));
     const hasSubtasks=!!(t.subtasks && t.subtasks.length);
     const hidden=settings.hiddenElements||[];
     const showPriority=!hidden.includes('priority'), showStatus=!hidden.includes('status'),
@@ -22624,9 +22743,9 @@ function _addTagPopoverFromInput(){
         +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>` : '')
-      + (showLink ? `<button class="todo-link${link?' set':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-tip="${link?'Change link':'Attach a link'}">`
-        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
-        +`<span>${link?esc(linkDisplay):'Link'}</span>`
+      + (showLink ? `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-noderef-doc="${nodeRef?esc(nodeRef.docId):''}" data-noderef-node="${nodeRef?esc(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
+        + (nodeRef ? nodeRefIconSvg(10) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
+        +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
       +`</button>` : '')
       + (showRepeat&&!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
@@ -22635,7 +22754,10 @@ function _addTagPopoverFromInput(){
       +`</div>`
       + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
-      + `<span class="todo-actions">${(link&&showLink)?`<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
+      + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
+          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?'That node no longer exists':'Jump to node'}" aria-label="Jump to node">${nodeRefIconSvg(12)}</button>`
+          : `<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+        ):''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`;
   }
 
@@ -22767,17 +22889,51 @@ function _addTagPopoverFromInput(){
 
   // ── Link popover ──────────────────────────────────────────────────────
   let _linkId=null;
+  let _linkPopMode='web'; // 'web' | 'node'
+
+  function setLinkPopMode(mode){
+    _linkPopMode = mode==='node' ? 'node' : 'web';
+    const pop=document.getElementById('todo-link-popover');
+    if(pop) pop.classList.toggle('node-tab', _linkPopMode==='node');
+    const webTab=document.getElementById('link-pop-tab-web'), nodeTab=document.getElementById('link-pop-tab-node');
+    webTab?.classList.toggle('active', _linkPopMode==='web'); webTab?.setAttribute('aria-selected', String(_linkPopMode==='web'));
+    nodeTab?.classList.toggle('active', _linkPopMode==='node'); nodeTab?.setAttribute('aria-selected', String(_linkPopMode==='node'));
+    const webPanel=document.getElementById('link-pop-web-panel'); if(webPanel) webPanel.style.display=_linkPopMode==='web'?'':'none';
+    const nodePanel=document.getElementById('link-pop-node-panel'); if(nodePanel) nodePanel.style.display=_linkPopMode==='node'?'':'none';
+  }
+
+  function renderNodeSearchResults(q){
+    const box=document.getElementById('link-pop-node-results');
+    if(!box) return;
+    const query=String(q||'').trim();
+    if(!query){ box.innerHTML='<div class="link-pop-node-empty">Type to search nodes across your documents</div>'; return; }
+    const results=searchNodesForTodoLink(query);
+    if(!results.length){ box.innerHTML='<div class="link-pop-node-empty">No matching nodes</div>'; return; }
+    box.innerHTML='';
+    results.forEach(r=>{
+      const item=document.createElement('button');
+      item.type='button';
+      item.className='link-pop-node-item';
+      const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.innerHTML=r.snippetHtml;
+      const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent=r.docTitle||'Untitled';
+      item.appendChild(txt); item.appendChild(meta);
+      item.addEventListener('click', ()=>commitNodeRef(r.docId, r.nodeId));
+      box.appendChild(item);
+    });
+  }
 
   function openLinkEditor(btn){
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-link')||'';
     const currentLabel=btn.getAttribute('data-linklabel')||'';
+    const refDoc=btn.getAttribute('data-noderef-doc')||'';
+    const refNode=btn.getAttribute('data-noderef-node')||'';
     _linkId=id;
 
     const pop=document.getElementById('todo-link-popover');
     if(!pop) return;
     const rect=btn.getBoundingClientRect();
-    const pw=240;
+    const pw=280;
     let left=rect.left;
     if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
     if(left<8) left=8;
@@ -22789,14 +22945,22 @@ function _addTagPopoverFromInput(){
     const labelInput=document.getElementById('link-pop-label-input');
     if(labelInput) labelInput.value=currentLabel;
     const removeBtn=document.getElementById('link-pop-remove-btn');
-    if(removeBtn) removeBtn.disabled=!current;
+    if(removeBtn) removeBtn.disabled=!(current||refNode);
+
+    setLinkPopMode(refNode ? 'node' : 'web');
+    const nodeSearchInput=document.getElementById('link-pop-node-search-input');
+    if(nodeSearchInput) nodeSearchInput.value='';
+    renderNodeSearchResults('');
 
     pop.classList.add('open');
     const pr=pop.getBoundingClientRect();
     if(pr.bottom>window.innerHeight-8){
       pop.style.top=Math.max(8, rect.top-pr.height-4)+'px';
     }
-    setTimeout(()=>{ input?.focus(); input?.select(); },30);
+    setTimeout(()=>{
+      if(_linkPopMode==='web'){ input?.focus(); input?.select(); }
+      else { nodeSearchInput?.focus(); }
+    },30);
   }
 
   function closeLinkEditor(){
@@ -22811,13 +22975,32 @@ function _addTagPopoverFromInput(){
     closeLinkEditor();
   }
 
+  function commitNodeRef(docId, nodeId){
+    if(_linkId===null) return;
+    setNodeRef(_linkId, docId, nodeId);
+    closeLinkEditor();
+  }
+
   (function initLinkPopover(){
     const pop=document.getElementById('todo-link-popover');
     if(!pop) return;
     const input=document.getElementById('link-pop-input');
     const labelInput=document.getElementById('link-pop-label-input');
+    const nodeSearchInput=document.getElementById('link-pop-node-search-input');
+    document.getElementById('link-pop-tab-web')?.addEventListener('click', ()=>{
+      setLinkPopMode('web');
+      setTimeout(()=>{ input?.focus(); input?.select(); },10);
+    });
+    document.getElementById('link-pop-tab-node')?.addEventListener('click', ()=>{
+      setLinkPopMode('node');
+      setTimeout(()=>{ nodeSearchInput?.focus(); },10);
+    });
     document.getElementById('link-pop-save-btn')?.addEventListener('click', ()=>commitLink(input?.value, labelInput?.value));
-    document.getElementById('link-pop-remove-btn')?.addEventListener('click', ()=>commitLink(null, null));
+    document.getElementById('link-pop-remove-btn')?.addEventListener('click', ()=>{
+      if(_linkId===null) return;
+      clearTodoAttachment(_linkId);
+      closeLinkEditor();
+    });
     input?.addEventListener('keydown', e=>{
       if(e.key==='Enter'){ e.preventDefault(); commitLink(input.value, labelInput?.value); }
       else if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
@@ -22826,6 +23009,14 @@ function _addTagPopoverFromInput(){
       if(e.key==='Enter'){ e.preventDefault(); commitLink(input?.value, labelInput.value); }
       else if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
     });
+    nodeSearchInput?.addEventListener('input', e=>renderNodeSearchResults(e.target.value));
+    nodeSearchInput?.addEventListener('keydown', e=>{
+      if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
+      else if(e.key==='Enter'){
+        e.preventDefault();
+        document.querySelector('#link-pop-node-results .link-pop-node-item')?.click();
+      }
+    });
     document.addEventListener('keydown', e=>{
       if(e.key==='Escape' && pop.classList.contains('open')){ e.stopPropagation(); closeLinkEditor(); }
     }, true);
@@ -22833,6 +23024,7 @@ function _addTagPopoverFromInput(){
       if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.todo-link')) closeLinkEditor();
     }, true);
   })();
+
 
   // ── Manual AI rewrite ────────────────────────────────────────────────────
   async function rewriteTodo(id){
