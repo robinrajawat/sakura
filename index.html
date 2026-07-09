@@ -2955,7 +2955,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Export &amp; print</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included. Applies to Markdown, Word, OPML, Text, and the header Print button — not PDF or PowerPoint, since those render from Preview/Presenter, which already has its own fold state under your direct control there (click any section to expand or collapse it) and is left exactly as you set it.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page in PDF</span><span class="settings-row-desc">Add a title page (document title, author, date) before the contents page when exporting to PDF.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page in PDF"></button></div>
             </div>
             <div class="settings-field" id="export-menu-buttons-field" style="margin-top:12px">
@@ -3346,7 +3346,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> button next to Rewrite, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">O</span> → Generate outline (AI): describe a topic and it inserts an AI-generated nested outline into the current document — into a blank doc, or after the current selection; also available as "Generate with AI" on the blank-document screen. Uses the same provider/model/key as Rewrite (Settings → AI → Provider), but its own fixed instructions, not the customizable rewrite prompt</li>
 <li><strong>Restructure text (AI)</strong> — Import ▾ → "Restructure text", or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">R</span>: paste messy or unstructured text (notes, an email, a transcript) and it organizes it into a tree, cleaning up wording as needed (fixing broken line wraps, tightening long sentences) so it reads well as outline nodes — it will not invent facts that are not in your text, but it is not a verbatim copy either. If the pasted text already has clear structure (bullets, consistent indentation, or literal tree-connector characters), it is parsed directly with no AI call at all. Unlike Generate outline, this always opens as a new document rather than inserting into the one you have open, so an import can never accidentally merge into unrelated work — your original pasted text is kept in that new document's Pad so you can check it against the result</li>
 <li><strong>Word import</strong> — Import ▾ → "Word (.docx)": converts the file's own heading and list structure directly into nodes — no AI involved when the document actually uses heading styles, since that structure is already explicit in the file. If a document has no heading styles at all (just a wall of plain paragraphs), its text is automatically handed to the same AI restructuring used above instead of being imported as one long flat list. Tables import as a node per row with each column as a child node; images are dropped but left as a "[image]" placeholder so nothing vanishes silently. Always opens as a new document, with the extracted text kept in its Pad. Legacy <span class="help-kbd">.doc</span> files (pre-2007 binary format) are not supported — only modern <span class="help-kbd">.docx</span></li>
-<li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → Presenter mode → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, its direct children as bullet text, and any images marked "Feature as diagram" (right-click an image in a note) embedded as pictures sized to fit, correctly scaled to their real aspect ratio. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. Regular note text (not marked as a diagram) isn't included, since a slide with a diagram plus a full note's worth of prose would be unreadably dense — trim the note to what belongs on the slide via the bullets themselves if you want more control over what's on it</li>
+<li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → Presenter mode → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, its direct children as bullet text, and any images marked "Feature as diagram" (right-click an image in a note) embedded as pictures sized to fit, correctly scaled to their real aspect ratio. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. Regular note text (not marked as a diagram) isn't included, since a slide with a diagram plus a full note's worth of prose would be unreadably dense — trim the note to what belongs on the slide via the bullets themselves if you want more control over what's on it. Whichever sections are currently folded in Preview/Presenter (not the main outline editor, and not Settings → Export & print → "Skip folded sections") are what's left out of the deck — fold or expand a section there first if you want to change what exports</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/></svg></span> button next to Outline → Suggest icon: picks a fitting emoji for the selected node's label and adds it as a prefix (e.g. "🛒 Webshop"). With multiple nodes selected, applies one straight away to each, picked from a keyword list first and an exact match against icons already used elsewhere in your documents/templates, falling to AI only when neither matches. For a single node, if more than one good option turns up, a small popover appears above it to pick from; right-click → <span class="help-kbd">More</span> → Suggest icons for all nodes runs it over the whole tree (asks to confirm first). Since the icon is just leading text, removing or changing it is normal editing — double-click the node and edit it like any other text</li>
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
 <li><strong>Expand node (AI)</strong> — select a single node and click the expand button in the AI toolbar group to break it into child nodes. Useful for dense labels like "Distribution model (OPML, localStorage, multi-tab sync)" → a proper subtree. AI generates 3–8 children; result is undoable</li>
@@ -3366,7 +3366,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <ul>  
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">S</span> → save now (kept in-app — doesn't trigger the browser's "Save Page As")</li>
 <li>Print button in the header (next to Import ▾ / Export ▾) → prints the document with all UI chrome hidden; choose "Save as PDF" in the browser's print dialog to get a clean PDF. Checked nodes and tag chips render correctly in print; the sidebar, toolbar, and status bar are all hidden automatically</li>  
-<li>Export ▾ is grouped into Copy / Document / Data / AI sections. Everything in it respects Settings → Export & print → "Skip folded sections" the same way — folded branches are included or skipped consistently across Markdown, Word, PowerPoint, OPML, and the items below, not just whichever one you happen to use</li>
+<li>Export ▾ is grouped into Copy / Document / Data / AI sections. Markdown, Word, OPML, Text, and Print all respect Settings → Export & print → "Skip folded sections" the same way — folded branches are included or skipped consistently across all of them, not just whichever one you happen to use. PDF and PowerPoint are the exception: both render from Preview/Presenter, which has its own independent fold state you control directly by clicking a section to expand or collapse it there — whatever that's currently set to is exactly what goes into the PDF or deck, regardless of "Skip folded sections"</li>
 <li>Import ▾ (next to Export ▾) is grouped into "From a file" (OPML, Word) and "From pasted text" (Restructure text, AI) — see the AI section above for how Restructure text and Word import handle structure</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span> Diagram ✦ (Export ▾ → AI) — copies a prompt to your clipboard that turns the current outline into a styled draw.io flowchart when pasted into Claude or any other AI assistant. Lines ending in "?" are flagged as decision points so the result gets diamonds/branches instead of plain boxes; the prompt also pins exact colors and styling to cut down on manual touch-ups afterward. If clipboard access is blocked, a dialog shows the prompt in a text box to copy manually instead</li>  
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M19 16v6"/><path d="M16 19l3 3 3-3"/></svg></span> Save AI Diagram (Export ▾ → AI) — paste the AI's reply to the Diagram ✦ prompt here to turn it into a real <span class="help-kbd">.drawio</span> file. Code fences and any stray sentences the AI adds before/after the XML are stripped automatically; if what you pasted isn't actually valid draw.io XML, it tells you why instead of saving a broken file</li>  
@@ -10665,8 +10665,12 @@ function buildPptxPackage(){
 }
 function exportPptx(){
   const wasPreviewActive=previewActive;
-  const savedPreviewCollapsedIds=previewCollapsedIds;
-  previewCollapsedIds=skipFoldedInExports?new Set(collapsedIds):new Set();
+  // See exportPdfDirect's identical comment above — same fix, same reasoning: respect
+  // Preview's own current fold state rather than silently re-deriving it from the outline
+  // editor's unrelated collapsedIds.
+  if(!wasPreviewActive){
+    previewCollapsedIds = previewAlwaysExpand ? new Set() : new Set(nodes.filter((n,i)=>(n.depth||0)===collapseDepth&&nodeHasChildren(i)).map(n=>n.id));
+  }
   renderPreviewBody();
   try{
     const bytes=buildPptxPackage();
@@ -10681,7 +10685,6 @@ function exportPptx(){
     console.error('[sakura] PPTX export failed:',e);
     showToast('PPTX export failed — see console');
   }finally{
-    previewCollapsedIds=savedPreviewCollapsedIds;
     if(wasPreviewActive)renderPreviewBody();
   }
 }
@@ -18086,11 +18089,18 @@ el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 function exportPdfDirect(){
   if(previewPresenting)exitPresenterMode();
   const wasPreviewActive=previewActive;
-  const savedPreviewCollapsedIds=previewCollapsedIds;
-  previewCollapsedIds=skipFoldedInExports?new Set(collapsedIds):new Set();
+  // Previously this always re-derived fold state from the outline editor's collapsedIds
+  // (gated by "Skip folded sections"), discarding whatever was actually folded/expanded in
+  // Preview itself — so folding a section in Presenter mode specifically to hide it from an
+  // audience had no effect on what the PDF actually contained. Now: if Preview has already
+  // been opened this session, its current fold state (previewCollapsedIds) is left alone —
+  // the export matches what's on screen. Only seed a default (mirroring openPreview()'s own
+  // logic) if Preview has never been opened, since there's no established state to respect yet.
+  if(!wasPreviewActive){
+    previewCollapsedIds = previewAlwaysExpand ? new Set() : new Set(nodes.filter((n,i)=>(n.depth||0)===collapseDepth&&nodeHasChildren(i)).map(n=>n.id));
+  }
   renderPreviewBody();
   exportPreviewAsPdf(()=>{
-    previewCollapsedIds=savedPreviewCollapsedIds;
     if(wasPreviewActive)renderPreviewBody();
   });
 }
