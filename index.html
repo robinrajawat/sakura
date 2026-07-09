@@ -2139,6 +2139,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .link-pop-node-item-text{font:400 11.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .link-pop-node-item-meta{font:400 10px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .link-pop-node-empty{font:400 11px 'Inter',sans-serif;color:var(--hint);padding:8px 4px;text-align:center}
+.link-pop-node-group-label{font:600 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:6px 7px 3px;user-select:none}
+.link-pop-node-group-label:first-child{padding-top:2px}
 #todo-link-popover.node-tab #link-pop-save-btn{display:none}
 #link-pop-input-row{margin-bottom:9px;display:flex;flex-direction:column;gap:7px}
 #link-pop-input,#link-pop-label-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
@@ -2213,11 +2215,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   // Accent color gets the same treatment below, now that it's been reported as an actual
   // problem: the hardcoded --accent baked into .theme-light/.theme-dark above happens to be
   // the terracotta preset, so anyone on a different preset (or a custom color) saw a flash of
-  // terracotta on every reload — most visibly on the filled Export button. Only the base
-  // ACCENT_PRESETS table is duplicated here (a small static lookup, cheap to keep in sync);
-  // the accent-text/border/hint blend percentages applyAccentBlend() also computes are left
-  // alone, same "not worth duplicating more logic" call as the theme scheduling above — those
-  // only shift already-muted idle button borders/text, not a filled, always-visible button.
+  // terracotta on every reload — most visibly on the filled Export button. The base
+  // ACCENT_PRESETS table and the ACCENT_BLEND_BASE table (used for the accent-text/border/hint
+  // blend percentages idle button borders/text use) are both duplicated here — small, static
+  // lookups, cheap to keep in sync with the real ones near applyAccentColor/applyAccentBlend.
   (function(){
     try{
       var raw=localStorage.getItem('sakura_v001_prefs')||localStorage.getItem('tree_editor_v163_prefs');
@@ -2244,6 +2245,17 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         accentColor=p[isDark?'dark':'light'];
       }
       document.body.style.setProperty('--accent',accentColor);
+
+      var ACCENT_BLEND_BASE_PP={light:{text:{terracotta:44.0,teal:50.5,indigo:49.0,violet:51.0,plum:53.0,moss:45.5,amber:58.5},border:{terracotta:30.0,teal:28.0,indigo:34.5,violet:35.5,plum:36.5,moss:25.5,amber:29.5},hint:{terracotta:24.5,teal:24.0,indigo:29.5,violet:31.3,plum:33.0,moss:21.0,amber:25.5}},dark:{text:{terracotta:45.0,teal:40.5,indigo:63.0,violet:66.5,plum:70.0,moss:36.5,amber:46.0},border:{terracotta:30.0,teal:34.0,indigo:26.5,violet:26.0,plum:25.5,moss:43.0,amber:32.5},hint:{terracotta:25.0,teal:28.5,indigo:22.5,violet:22.0,plum:21.5,moss:35.0,amber:28.5}}};
+      var blendTable=ACCENT_BLEND_BASE_PP[isDark?'dark':'light'];
+      var factor=Math.max(0,(Number(d.accentIntensity)||100)/100);
+      var pid=ACCENT_PRESETS_PP[preset]?preset:'teal';
+      var textPct=Math.min(95,blendTable.text[pid]*factor);
+      var borderPct=Math.min(95,blendTable.border[pid]*factor);
+      var hintPct=Math.min(95,blendTable.hint[pid]*factor);
+      document.body.style.setProperty('--accent-text-blend',textPct.toFixed(1)+'%');
+      document.body.style.setProperty('--accent-border-blend',borderPct.toFixed(1)+'%');
+      document.body.style.setProperty('--accent-hint-blend',hintPct.toFixed(1)+'%');
     }catch(e){}
   })();
   </script>
@@ -3640,7 +3652,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>Hover a task for a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button — both sit as an overlay rather than reserving space, so task text keeps the full row width when you're not hovering. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick</li>
 <li>The <strong>Completed</strong> section header shows a <strong>Clear completed</strong> button whenever it has tasks (respecting the current priority filter) to remove them all in one action, with its own in-panel Undo toast — a batch counterpart to deleting one at a time. All To-Dos toasts (Undo prompts, export confirmation, AI rewrite errors) show inside the panel while it's open rather than the app's global toast, so acting on one never closes the panel</li>
 <li>An overdue count badge can appear on the To-Dos button itself (app bar or status bar) whenever you have open, overdue tasks — visible without opening the panel. Toggle it off at Settings → To-Dos → "Overdue count badge" if you'd rather not see it</li>
-<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over every node in your active documents — the same lookup Quick Assist and Global Search use — pick a result to attach it), plus a Remove link option that clears either kind. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a node-link chip shows that node's own text and a small hierarchy icon instead of the link-chain icon, so it reads as "jumps within Sakura" rather than "opens a website" — and it stays live, tracking the node's current text rather than a snapshot. Once either kind of link is attached, an open/jump button appears in the row's hover actions, next to Rewrite and Delete: for a web link it opens a new tab; for a node link it switches to that document if needed, scrolls to the node, and briefly flashes it, the same way backlinks do. If the node or its document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" toast instead of failing silently</li>
+<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over your active documents — the same lookup Quick Assist and Global Search use — with results grouped into Documents, for linking the whole document, and Nodes, for one specific spot in it; pick either to attach it), plus a Remove link option that clears whichever kind is set. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a document-link chip shows the document's title with a plain document icon, and a node-link chip shows that node's own text with a small hierarchy icon, in place of the link-chain icon, so either reads as "jumps within Sakura" rather than "opens a website" — and both stay live, tracking the current title/text rather than a snapshot. Once any kind of link is attached, an open/jump button appears in the row's hover actions, next to Rewrite and Delete: for a web link it opens a new tab; for a document or node link it switches to that document if needed (scrolling to and briefly flashing the node, the same way backlinks do, when it's a node link specifically). If the node or document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" (or "That document no longer exists") toast instead of failing silently</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Hover a task and click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
 <li>Right-click a task for a context menu — mark complete/open, duplicate the task, copy its text, move it to the top or bottom of the list, expand/collapse its sub-tasks, or delete it. Right-clicking directly on the task's own text, or on a sub-task row, falls through to the normal browser menu instead, so copy/paste and spellcheck still work there</li>
@@ -4131,7 +4143,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   <div id="link-pop-node-panel" style="display:none">
     <div id="link-pop-node-search-row">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="link-pop-node-search-input" type="text" placeholder="Search nodes…" autocomplete="off" spellcheck="false" maxlength="200" />
+      <input id="link-pop-node-search-input" type="text" placeholder="Search documents &amp; nodes…" autocomplete="off" spellcheck="false" maxlength="200" />
     </div>
     <div id="link-pop-node-results"></div>
   </div>
@@ -21746,7 +21758,7 @@ function _addTagPopoverFromInput(){
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
         link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
         linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
-        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && typeof t.nodeRef.nodeId==='string' && t.nodeRef.nodeId) ? {docId:t.nodeRef.docId, nodeId:t.nodeRef.nodeId} : null,
+        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || (typeof t.nodeRef.nodeId==='string' && t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId||null)} : null,
         repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
@@ -21754,7 +21766,16 @@ function _addTagPopoverFromInput(){
     }catch(e){ todos=[]; }
   }
   function saveTodos(){
-    try{ localStorage.setItem(TODOS_KEY, JSON.stringify(todos)); }catch(e){}
+    try{
+      localStorage.setItem(TODOS_KEY, JSON.stringify(todos));
+    }catch(e){
+      // Previously silent — a full localStorage quota (or private-browsing restrictions in some
+      // browsers) meant a change looked like it worked for the rest of the session but quietly
+      // never made it to disk, so it was gone on the next reload with no indication why. Surface
+      // it instead of pretending the save succeeded.
+      console.warn('[sakura] saveTodos failed — this change will not survive a reload:', e);
+      showTodosToast('Could not save — your device storage may be full');
+    }
     updateOverdueBadge();
   }
   function uid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
@@ -22026,10 +22047,13 @@ function _addTagPopoverFromInput(){
     saveTodos();
     renderTodos();
   }
+  // nodeId may be null here — that's a deliberate second mode ("link to a document") rather
+  // than a missing value: docId is always required, nodeId narrows it to one node within that
+  // document when present.
   function setNodeRef(id, docId, nodeId){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
-    t.nodeRef = (docId && nodeId) ? {docId, nodeId} : null;
+    t.nodeRef = docId ? {docId, nodeId: nodeId||null} : null;
     if(t.nodeRef){ t.link=null; t.linkLabel=null; }
     saveTodos();
     renderTodos();
@@ -22044,29 +22068,47 @@ function _addTagPopoverFromInput(){
   // Looks up a nodeRef's live text/doc title without switching tabs or disturbing editor state —
   // same "prefer in-memory, fall back to storage" approach getDocNodesForSearch uses elsewhere.
   // Only active (non-trashed) documents count as a valid target: a doc in Trash is effectively
-  // gone for this purpose, same as one that's been permanently deleted.
+  // gone for this purpose, same as one that's been permanently deleted. A whole-document ref
+  // (ref.nodeId is null) only needs the document itself to still exist.
   function resolveNodeRef(ref){
-    if(!ref || !ref.docId || !ref.nodeId) return {missing:true};
+    if(!ref || !ref.docId) return {missing:true};
     const idxEntry=(typeof loadActiveDocsIndex==='function'?loadActiveDocsIndex():[]).find(d=>d.id===ref.docId);
     if(!idxEntry) return {missing:true};
+    if(!ref.nodeId) return {missing:false, isDoc:true, docTitle:idxEntry.title||'Untitled'};
     if(typeof getDocNodesForSearch!=='function') return {missing:true};
     const {docNodes, docTitle}=getDocNodesForSearch(ref.docId, idxEntry);
     if(!Array.isArray(docNodes)) return {missing:true};
     const node=docNodes.find(n=>n.id===ref.nodeId);
     if(!node) return {missing:true};
-    return {missing:false, text:String(node.text||'').trim(), docTitle:docTitle||'Untitled'};
+    return {missing:false, isDoc:false, text:String(node.text||'').trim(), docTitle:docTitle||'Untitled'};
   }
   // Same switch-doc/expand/scroll/flash behavior Notes and Tags search results already use
   // (revealNodeInDoc) — a direct reference doesn't warrant reopening the find-bar the way a
-  // fresh text search (jumpToNodeInDoc) does.
+  // fresh text search (jumpToNodeInDoc) does. A whole-document ref just switches documents,
+  // the same action collectDocMatches' own search results already use for "open this doc".
   function jumpToTodoNodeRef(ref){
     const info=resolveNodeRef(ref);
     if(!info || info.missing){
-      showTodosToast('That node no longer exists');
+      showTodosToast(ref&&!ref.nodeId ? 'That document no longer exists' : 'That node no longer exists');
       return;
     }
     closeTodosPanel();
-    if(typeof revealNodeInDoc==='function') revealNodeInDoc(ref.docId, ref.nodeId);
+    if(info.isDoc){
+      if(typeof switchDoc==='function' && ref.docId!==currentDocId) switchDoc(ref.docId);
+    } else if(typeof revealNodeInDoc==='function'){
+      revealNodeInDoc(ref.docId, ref.nodeId);
+    }
+  }
+  // Document picker for the "Link to a node" tab — same title-matching collectDocMatches uses
+  // for Quick Assist/Global Search's "Documents" group, just returning plain data instead of a
+  // ready-to-render QA result row. Sits alongside searchNodesForTodoLink below so a search can
+  // offer "link the whole document" next to "link this specific node" in one box.
+  function searchDocsForTodoLink(q){
+    const tokens=(typeof qaTokenizeQuery==='function')?qaTokenizeQuery(q):String(q||'').split(/\s+/).filter(Boolean);
+    const hayMatch=(typeof qaHayMatches==='function')?qaHayMatches:((hay,toks)=>toks.every(tok=>hay.toLowerCase().includes(tok.toLowerCase())));
+    const titleHtml=(typeof buildFullLabelMarkHtml==='function')?buildFullLabelMarkHtml:((text)=>esc(text));
+    const docsIdx=(typeof loadActiveDocsIndex==='function')?loadActiveDocsIndex():[];
+    return docsIdx.filter(d=>hayMatch(d.title||'Untitled',tokens)).slice(0,5).map(d=>({docId:d.id, titleHtml:titleHtml(d.title||'Untitled',q)}));
   }
   // Node picker for the "Link to a node" tab of the attach-a-link popover — same search
   // primitives (qaTokenizeQuery/qaHayMatches/buildMatchSnippetHtml) and doc-scanning approach
@@ -22753,6 +22795,11 @@ function _addTagPopoverFromInput(){
   function nodeRefIconSvg(size){
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M5 8v10"/><path d="M5 12h13"/></svg>`;
   }
+  // Plain document glyph for whole-document links — same folded-corner shape used for Word
+  // import elsewhere in the app, so it reads as "a document" rather than "a spot inside one".
+  function docRefIconSvg(size){
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+  }
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
@@ -22760,11 +22807,14 @@ function _addTagPopoverFromInput(){
     const status=t.status||'none';
     const link=t.link;
     const nodeRef=t.nodeRef||null;
+    const isDocRef=!!(nodeRef && !nodeRef.nodeId);
     const nodeRefInfo=nodeRef?resolveNodeRef(nodeRef):null;
     const hasAttachment=!!(link||nodeRef);
     const linkLabel=t.linkLabel||'';
     const linkDisplay=nodeRef
-      ? (nodeRefInfo.missing ? 'Node not found' : (nodeRefInfo.text ? nodeRefInfo.text.slice(0,60) : '(untitled node)'))
+      ? (nodeRefInfo.missing
+          ? (isDocRef ? 'Document not found' : 'Node not found')
+          : (isDocRef ? (nodeRefInfo.docTitle||'Untitled') : (nodeRefInfo.text ? nodeRefInfo.text.slice(0,60) : '(untitled node)')))
       : (linkLabel||fmtLink(link));
     const hasSubtasks=!!(t.subtasks && t.subtasks.length);
     const hidden=settings.hiddenElements||[];
@@ -22790,8 +22840,8 @@ function _addTagPopoverFromInput(){
         +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>` : '')
-      + (showLink ? `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-noderef-doc="${nodeRef?esc(nodeRef.docId):''}" data-noderef-node="${nodeRef?esc(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
-        + (nodeRef ? nodeRefIconSvg(10) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
+      + (showLink ? `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-noderef-doc="${nodeRef?esc(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?esc(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
+        + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
         +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
       +`</button>` : '')
       + (showRepeat&&!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
@@ -22802,7 +22852,7 @@ function _addTagPopoverFromInput(){
       + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
       + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
-          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?'That node no longer exists':'Jump to node'}" aria-label="Jump to node">${nodeRefIconSvg(12)}</button>`
+          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
           : `<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
         ):''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`;
@@ -22953,20 +23003,39 @@ function _addTagPopoverFromInput(){
     const box=document.getElementById('link-pop-node-results');
     if(!box) return;
     const query=String(q||'').trim();
-    if(!query){ box.innerHTML='<div class="link-pop-node-empty">Type to search nodes across your documents</div>'; return; }
-    const results=searchNodesForTodoLink(query);
-    if(!results.length){ box.innerHTML='<div class="link-pop-node-empty">No matching nodes</div>'; return; }
+    if(!query){ box.innerHTML='<div class="link-pop-node-empty">Type to search documents and nodes</div>'; return; }
+    const docResults=searchDocsForTodoLink(query);
+    const nodeResults=searchNodesForTodoLink(query);
+    if(!docResults.length && !nodeResults.length){ box.innerHTML='<div class="link-pop-node-empty">No matching documents or nodes</div>'; return; }
     box.innerHTML='';
-    results.forEach(r=>{
-      const item=document.createElement('button');
-      item.type='button';
-      item.className='link-pop-node-item';
-      const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.innerHTML=r.snippetHtml;
-      const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent=r.docTitle||'Untitled';
-      item.appendChild(txt); item.appendChild(meta);
-      item.addEventListener('click', ()=>commitNodeRef(r.docId, r.nodeId));
-      box.appendChild(item);
-    });
+    if(docResults.length){
+      const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Documents';
+      box.appendChild(label);
+      docResults.forEach(r=>{
+        const item=document.createElement('button');
+        item.type='button';
+        item.className='link-pop-node-item link-pop-doc-item';
+        const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.innerHTML=r.titleHtml;
+        const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent='Entire document';
+        item.appendChild(txt); item.appendChild(meta);
+        item.addEventListener('click', ()=>commitNodeRef(r.docId, null));
+        box.appendChild(item);
+      });
+    }
+    if(nodeResults.length){
+      const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Nodes';
+      box.appendChild(label);
+      nodeResults.forEach(r=>{
+        const item=document.createElement('button');
+        item.type='button';
+        item.className='link-pop-node-item';
+        const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.innerHTML=r.snippetHtml;
+        const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent=r.docTitle||'Untitled';
+        item.appendChild(txt); item.appendChild(meta);
+        item.addEventListener('click', ()=>commitNodeRef(r.docId, r.nodeId));
+        box.appendChild(item);
+      });
+    }
   }
 
   function openLinkEditor(btn){
@@ -22974,7 +23043,6 @@ function _addTagPopoverFromInput(){
     const current=btn.getAttribute('data-link')||'';
     const currentLabel=btn.getAttribute('data-linklabel')||'';
     const refDoc=btn.getAttribute('data-noderef-doc')||'';
-    const refNode=btn.getAttribute('data-noderef-node')||'';
     _linkId=id;
 
     const pop=document.getElementById('todo-link-popover');
@@ -22992,9 +23060,12 @@ function _addTagPopoverFromInput(){
     const labelInput=document.getElementById('link-pop-label-input');
     if(labelInput) labelInput.value=currentLabel;
     const removeBtn=document.getElementById('link-pop-remove-btn');
-    if(removeBtn) removeBtn.disabled=!(current||refNode);
+    if(removeBtn) removeBtn.disabled=!(current||refDoc);
 
-    setLinkPopMode(refNode ? 'node' : 'web');
+    // refDoc alone is the reliable "has a nodeRef" signal — a whole-document link legitimately
+    // has an empty data-noderef-node, so checking that instead would wrongly default to the
+    // Web link tab for those.
+    setLinkPopMode(refDoc ? 'node' : 'web');
     const nodeSearchInput=document.getElementById('link-pop-node-search-input');
     if(nodeSearchInput) nodeSearchInput.value='';
     renderNodeSearchResults('');
@@ -23024,7 +23095,7 @@ function _addTagPopoverFromInput(){
 
   function commitNodeRef(docId, nodeId){
     if(_linkId===null) return;
-    setNodeRef(_linkId, docId, nodeId);
+    setNodeRef(_linkId, docId, nodeId||null);
     closeLinkEditor();
   }
 
