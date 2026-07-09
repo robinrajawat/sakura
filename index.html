@@ -5059,6 +5059,13 @@ function cleanEditorHtml(editor){
 // alt text is invisible in the note editor itself, so this is the only way to set it.
 async function setImageCaption(img){
   if(!img) return;
+  // The caption modal (like every sakuraPrompt/sakuraConfirm) lives outside #note-panel in
+  // the DOM, so without this, clicking its Save button — or even just the click that closes
+  // the note's own right-click menu to open the modal — reads as "clicked outside the note
+  // panel" to the global listener a few hundred lines down and closes the panel immediately,
+  // before this function ever gets to persist the caption. Same suppression flag "Clear
+  // note" already uses for its own confirm dialog.
+  _notePanelSuppressClickOutside=true;
   const value=await sakuraPrompt({
     icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
     title:'Image caption',
@@ -5066,6 +5073,7 @@ async function setImageCaption(img){
     defaultValue: img.getAttribute('alt')||'',
     confirmLabel:'Save'
   });
+  _notePanelSuppressClickOutside=false;
   if(value===null) return; // cancelled
   const trimmed=value.trim();
   if(trimmed) img.setAttribute('alt',trimmed); else img.removeAttribute('alt');
@@ -5089,6 +5097,22 @@ function toggleImageDiagramFeature(img){
 }
 // Pulls any diagram-featured images out of a note's HTML for prominent rendering, returning
 // the remaining HTML separately so the small note card doesn't show the same image twice.
+// True if html has anything a reader would actually see — real text, or a meaningful
+// element like an image/table/list. Contenteditable areas routinely leave behind structural
+// leftovers (e.g. an empty "<div><br></div>" line) even when visually blank, so a plain
+// string .trim() on the HTML itself isn't enough to tell "empty" from "not empty" — this
+// checks rendered content instead. Used so a note that's now just a diagram (after its
+// image is pulled out for prominent display) doesn't still show an openable "has a note"
+// dot/chip for what would be an empty card.
+function htmlHasVisibleContent(html){
+  if(!html) return false;
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    if(div.querySelector('img,table,ul,ol,hr')) return true;
+    return div.textContent.replace(/\u200b/g,'').trim().length>0;
+  }catch(e){ return !!String(html).trim(); }
+}
 function splitNoteDiagramImages(noteHtml){
   if(!noteHtml) return {diagrams:[], restHtml:noteHtml||''};
   try{
@@ -10595,6 +10619,15 @@ function handleGenericQaKeydown(e,target){
   if(nodeQuickAssistEnabled&&matchesShortcut(e,'quickAssist')){e.preventDefault(); e.stopPropagation(); openGenericQuickAssist(target); return true}
   return false;
 }
+// Node Quick Assist (the node-editing version) closes itself via each node textarea's own
+// blur handler — but note-editor/pad-editor/code-editor/todo-text/todos-input have no
+// equivalent blur-driven cleanup for this generic version, so without this, clicking
+// anywhere outside the popup (rather than pressing a key) left it stuck open indefinitely.
+document.addEventListener('mousedown',e=>{
+  if(!_gqaState) return;
+  const pop=el('node-qa-suggest');
+  if(pop && !pop.contains(e.target)) closeGenericQuickAssist();
+});
 function renderNodeQuickAssist(){
   const pop=el('node-qa-suggest'); if(!pop||!_nqaState)return;
   const {inputEl}=_nqaState;
@@ -17221,6 +17254,12 @@ function renderPreviewBody(){
       mainEl=row; contentEl=txt;
     }
     const ownNote=!!(node.note&&node.note.trim());
+    // Computed once here (rather than separately down near the inline blocks) so the fold
+    // chip and note dot above agree with the actual inline card below about whether there's
+    // any non-diagram content — otherwise a diagram-only note shows an openable "has a note"
+    // indicator that opens onto an empty card.
+    const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
+    const noteHasContent = noteSplit ? htmlHasVisibleContent(noteSplit.restHtml) : ownNote;
     const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
@@ -17236,7 +17275,7 @@ function renderPreviewBody(){
         chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
         contentEl.appendChild(chip);
       }
-      if(ownNote||previewSubtreeHasNote(idx)){
+      if(noteHasContent||previewSubtreeHasNote(idx)){
         const chip=document.createElement('span'); chip.className='pv-hidden-chip pv-hidden-chip-note'; chip.dataset.tip='Contains a note — click to expand';
         chip.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
         chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
@@ -17255,7 +17294,7 @@ function renderPreviewBody(){
           contentEl.appendChild(chip);
         });
       }
-      if(featureNoteEnabled&&ownNote){
+      if(featureNoteEnabled&&noteHasContent){
         const isOpen=previewOpenNoteIds.has(node.id);
         const dot=document.createElement('span'); dot.className='node-note-dot'+(isOpen?' pv-dot-open':''); dot.dataset.tip=isOpen?'Hide note':'This node has a note — click to show';
         dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
@@ -17279,7 +17318,6 @@ function renderPreviewBody(){
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
-      const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
       if(noteSplit&&noteSplit.diagrams.length){
         noteSplit.diagrams.forEach(d=>{
           const fig=document.createElement('figure'); fig.className='pv-diagram-figure'; fig.style.paddingLeft=inlinePad;
@@ -17290,7 +17328,7 @@ function renderPreviewBody(){
         });
       }
       const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
-      if(featureNoteEnabled&&ownNote&&previewOpenNoteIds.has(node.id)&&noteRestHtml&&noteRestHtml.trim()){
+      if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct');
@@ -22351,6 +22389,7 @@ function _addTagPopoverFromInput(){
     }
   });
   document.getElementById('todos-input')?.addEventListener('keydown',e=>{
+    if(typeof handleGenericQaKeydown==='function'&&handleGenericQaKeydown(e,e.target)) return;
     if(_todoAtState && _todoAtState.elx===e.target){
       const cands=getTodoAtCandidates(_todoAtState.query);
       if(e.key==='ArrowDown'){e.preventDefault(); _todoAtActiveIdx=Math.min(_todoAtActiveIdx+1,cands.length-1); renderTodoAtSuggest(); return}
