@@ -1163,6 +1163,10 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #note-panel.note-bg-distinct #note-editor{background:var(--tb-bg)}
 #note-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #note-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
+#note-editor img.sakura-diagram-img{outline:2px solid var(--accent);outline-offset:2px}
+.pv-diagram-figure{margin:10px 0 14px}
+.pv-diagram-img{max-width:100%;max-height:70vh;display:block;border-radius:8px;border:1px solid var(--border);margin:0 auto}
+.pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:6px}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -3473,6 +3477,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><span class="help-kbd">Tab</span> → indents a list item (when inside a list) or inserts spaces in plain text; <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> → outdent a list item</li>
 <li>Rewriting with nothing selected replaces the note's entire content with plain AI-rewritten text, which would otherwise silently remove any images or tables in it — a confirmation prompt catches this and tells you what would be lost before it happens. Select just the text you want rewritten instead if you'd rather keep the rest untouched</li>
 <li>Paste images directly into the note — they embed inline and are stored with the note. Click a pasted image to select it, then drag the handle at its corner to resize; double-click it to reset back to its original size</li>
+<li><strong>Feature as diagram</strong> — right-click any image in a note and choose "Feature as diagram" (e.g. for architecture diagrams) to have it pulled out of the small collapsible note card in Preview and Presenter mode and shown instead as a large, always-visible figure right under the node's text — no click needed to reveal it. The image's alt text (if it has one) shows underneath as a caption. Right-click it again to turn this off and return it to normal note behavior. This also applies to PDF exports, since those render from the same Preview output</li>
 <li>Tables: drag the thin border handle between columns to resize column widths</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo edits made in this note while it's open — its own undo history, separate from the outline's, reset each time you open a note and cleared when you close it. The whole session still counts as one step on the outline's own undo when you close the panel. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> or <span class="help-kbd">Esc</span> → close and save; "Clear note" removes it entirely (undoable)</li>
 <li>A chat-bubble dot on a node row signals it has a note — click it to open that note; this also selects that node</li>
@@ -5041,6 +5046,37 @@ function cleanEditorHtml(editor){
   const clone=editor.cloneNode(true);
   clone.querySelectorAll('.editor-img-selected').forEach(el=>el.classList.remove('editor-img-selected'));
   return clone.innerHTML;
+}
+// "Feature as diagram" — an image marked this way (right-click it in the Note editor) is
+// pulled out of its small collapsible note card in Preview/Presenter mode and rendered as
+// a large, always-visible figure right under the node's text instead — for things like
+// architecture diagrams that are the actual point of the slide, not a footnote you have to
+// click to reveal. The marker is just a class on the <img>, so it round-trips through the
+// existing note save/load path with no new storage needed.
+function toggleImageDiagramFeature(img){
+  if(!img) return;
+  img.classList.toggle('sakura-diagram-img');
+  const featured=img.classList.contains('sakura-diagram-img');
+  const editor=el('note-editor');
+  if(notePanelNodeId!==null&&editor){
+    const idx=getIndex(notePanelNodeId);
+    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); markDirty(); }
+  }
+  showToast(featured?'Featured as diagram — shows full-size in Preview/Presenter':'No longer featured as a diagram');
+}
+// Pulls any diagram-featured images out of a note's HTML for prominent rendering, returning
+// the remaining HTML separately so the small note card doesn't show the same image twice.
+function splitNoteDiagramImages(noteHtml){
+  if(!noteHtml) return {diagrams:[], restHtml:noteHtml||''};
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=noteHtml;
+    const imgs=[...div.querySelectorAll('img.sakura-diagram-img')];
+    if(!imgs.length) return {diagrams:[], restHtml:noteHtml};
+    const diagrams=imgs.map(img=>({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''}));
+    imgs.forEach(img=>img.remove());
+    return {diagrams, restHtml:div.innerHTML};
+  }catch(e){ return {diagrams:[], restHtml:noteHtml}; }
 }
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
@@ -12830,7 +12866,11 @@ window.addEventListener('beforeunload',e=>{
   saveToStorage(); if(!suppressPrefsSaveOnUnload)savePrefs(); persistOpenTabs(); captureActiveTabSnapshot();
   if(suppressBeforeUnloadOnce)return;
   const needsStrictBackupWarning=sessionBackupPromptMode==='strict'&&!sessionBackupPromptDismissed&&sessionHasUnbackedChanges();
-  if(!dirty&&!needsStrictBackupWarning)return;
+  // autoRewriteQueue is in-memory only — nothing persists it, so a refresh or close silently
+  // drops whatever's still queued (and never sent) with no way to recover it. Warn the same
+  // way an unsaved edit does, rather than losing pending AI-rewrite text without notice.
+  const needsAutoRewriteWarning=autoRewriteQueue.size>0;
+  if(!dirty&&!needsStrictBackupWarning&&!needsAutoRewriteWarning)return;
   e.preventDefault(); e.returnValue='';
   if(needsStrictBackupWarning){
     // Only fires if the tab is still alive a moment later — i.e. the person cancelled the
@@ -15260,6 +15300,7 @@ el('note-editor')?.addEventListener('contextmenu', e => {
   const hasText = sel && !sel.isCollapsed;
   const inTable = !!e.target.closest('table');
   const inCell  = e.target.closest('td, th');
+  const imgTarget = e.target.closest('img');
 
   // ── Formatting ──
   menu.appendChild(_noteCtxGroupLabel('Format'));
@@ -15332,6 +15373,18 @@ el('note-editor')?.addEventListener('contextmenu', e => {
     menu.appendChild(_noteCtxItem(
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>',
       'Delete table', true, () => { inCell.closest('table')?.remove(); }
+    ));
+  }
+
+  // ── Image actions ──
+  if (imgTarget) {
+    menu.appendChild(_noteCtxDivider());
+    menu.appendChild(_noteCtxGroupLabel('Image'));
+    const isFeatured = imgTarget.classList.contains('sakura-diagram-img');
+    menu.appendChild(_noteCtxItem(
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>',
+      isFeatured ? 'Remove diagram feature' : 'Feature as diagram', false,
+      () => toggleImageDiagramFeature(imgTarget)
     ));
   }
 
@@ -17087,11 +17140,22 @@ function renderPreviewBody(){
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
-      if(featureNoteEnabled&&ownNote&&previewOpenNoteIds.has(node.id)){
+      const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
+      if(noteSplit&&noteSplit.diagrams.length){
+        noteSplit.diagrams.forEach(d=>{
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure'; fig.style.paddingLeft=inlinePad;
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram';
+          fig.appendChild(img);
+          if(d.alt){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.alt; fig.appendChild(cap); }
+          slideTarget.appendChild(fig);
+        });
+      }
+      const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
+      if(featureNoteEnabled&&ownNote&&previewOpenNoteIds.has(node.id)&&noteRestHtml&&noteRestHtml.trim()){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct');
-        inner.innerHTML=node.note;
+        inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
       }
