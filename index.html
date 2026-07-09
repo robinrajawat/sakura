@@ -2143,6 +2143,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+<!-- PowerPoint export: pptxgenjs, MIT licensed (https://github.com/gitbrent/PptxGenJS). Pinned to
+     4.0.1 via jsDelivr (pptxgenjs isn't mirrored on cdnjs) rather than hand-rolling OOXML — real
+     PowerPoint's OOXML parser has more undocumented strictness than the spec alone reveals, and
+     this library has been shaken out against it by a large user base for years. Bundle build
+     includes its only dependency (JSZip) inlined, so this is still a single extra <script> tag,
+     same pattern as xlsx/mammoth above. -->
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js"></script>
 </head>
 <body class="theme-light">
   <script>
@@ -10495,15 +10502,13 @@ function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title|
 // (title slide + one per slide-break node): the node's own text as the slide title, its
 // direct children's text as bullets, and any diagram-featured images from its note embedded
 // as pictures, laid out in a row below the bullets and scaled to fit.
-// XML 1.0 forbids raw control characters other than tab/LF/CR anywhere in a document, even
-// inside otherwise-correctly-escaped text — a single stray one (easy to pick up from pasting
-// content that originated in a PDF, certain rich-text sources, or OCR output) makes that XML
-// part invalid outright. This is exactly the class of "can't open this file" failure real
-// PowerPoint throws on, even though some more lenient tools silently tolerate it. Stripped
-// here, once, ahead of the standard entity escaping below, so every piece of text that goes
-// through pptxEscXml (titles, bullets, captions) is covered.
+// XML 1.0 forbids raw control characters other than tab/LF/CR anywhere in a document — a single
+// stray one (easy to pick up from pasting content that originated in a PDF, certain rich-text
+// sources, or OCR output) makes that XML part invalid outright, which is exactly the class of
+// "can't open this file" failure real PowerPoint throws on. pptxgenjs escapes entities itself,
+// but doesn't strip these, so every piece of text handed to it (titles, bullets) goes through
+// this first.
 function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,''); }
-function pptxEscXml(s){return pptxStripIllegalXmlChars(String(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
 function pptxDataUrlToBytes(dataUrl){
   const comma=dataUrl.indexOf(',');
   if(comma<0) return null;
@@ -10541,7 +10546,6 @@ function pptxImageDims(bytes,mime){
   }catch(e){}
   return {width:800,height:600};
 }
-function pptxExtForMime(mime){ return mime==='image/png'?'png':(mime==='image/gif'?'gif':(mime==='image/jpeg'?'jpeg':'png')); }
 // Sniffs the real format from the file's own magic bytes rather than trusting the declared
 // MIME type on the data URI — screenshot tools and file pickers don't always agree with what
 // they claim (WEBP masquerading as a generic type, etc.), and embedding bytes that don't
@@ -10588,29 +10592,20 @@ function pptxEnsureCompatibleImage(bytes,declaredMime){
 }
 // Lays a row of images out left-to-right, each scaled uniformly so the row's total width
 // fits areaW, capped by areaH — a single big diagram gets the full height; two or three
-// share the row rather than stacking into an ever-taller slide.
+// share the row rather than stacking into an ever-taller slide. Works in inches (pptxgenjs'
+// native unit), unlike the old EMU-based version this replaced.
 function pptxLayoutImageRow(images,areaX,areaY,areaW,areaH){
-  const gap=182880; // 0.2in
-  let widths=images.map(img=>Math.round(areaH*(img.width/Math.max(1,img.height))));
+  const gap=0.2; // inches
+  let widths=images.map(img=>areaH*(img.width/Math.max(1,img.height)));
   let totalW=widths.reduce((a,b)=>a+b,0)+gap*(images.length-1);
   const scale=totalW>areaW?areaW/totalW:1;
-  const finalH=Math.round(areaH*scale);
-  widths=widths.map(w=>Math.max(304800,Math.round(w*scale)));
+  const finalH=areaH*scale;
+  widths=widths.map(w=>Math.max(0.33,w*scale));
   totalW=widths.reduce((a,b)=>a+b,0)+gap*(images.length-1);
-  let x=areaX+Math.max(0,Math.round((areaW-totalW)/2));
+  let x=areaX+Math.max(0,(areaW-totalW)/2);
   return widths.map(w=>{ const pos={x,y:areaY,w,h:finalH}; x+=w+gap; return pos; });
 }
-function pptxTitleShape(id,text){
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="11277600" cy="1143000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${pptxEscXml(text)}</a:t></a:r></a:p></p:txBody></p:sp>`;
-}
-function pptxBodyShape(id,bullets,x,y,w,h){
-  const paras=bullets.length?bullets.map(b=>`<a:p><a:pPr marL="285750" indent="-285750"><a:buFont typeface="Arial"/><a:buChar char="&#8226;"/></a:pPr><a:r><a:rPr lang="en-US" sz="2000" dirty="0"/><a:t>${pptxEscXml(b)}</a:t></a:r></a:p>`).join('') : '<a:p><a:endParaRPr lang="en-US"/></a:p>';
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Content"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody></p:sp>`;
-}
-function pptxPictureShape(id,rId,x,y,w,h){
-  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Picture ${id}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
-}
-const PPTX_SLIDE_W=12192000, PPTX_SLIDE_H=6858000;
+const PPTX_SLIDE_W=13.333, PPTX_SLIDE_H=7.5; // inches — matches pptxgenjs' LAYOUT_WIDE (16:9)
 async function pptxGatherSlidesData(){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
@@ -10650,94 +10645,57 @@ async function pptxGatherSlidesData(){
   if(!slidesData.length) slidesData.push({title, bullets: author?[author]:[], images:[]});
   return slidesData;
 }
-function buildPptxPackage(slidesData){
+// Builds the actual PptxGenJS Presentation object from the gathered per-slide data. This
+// replaces the old buildPptxPackage, which hand-assembled the OOXML parts (presentation.xml,
+// slideMaster, slideLayout, theme, per-slide XML, and the zip itself) directly. That approach
+// kept surfacing gaps between "spec-valid" and "what real PowerPoint actually accepts" — cases
+// more lenient tools (LibreOffice, python-pptx, Google Slides) tolerate but Office's own opener
+// doesn't. pptxgenjs owns all of that OOXML generation now (including a correct, real
+// PowerPoint-tested slideMaster/theme/content-types set) — the code below only decides *what*
+// goes on each slide, not how it's serialized.
+async function buildPptxPresentation(slidesData){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
   const author=String(meta.author||'');
-  const mediaFiles=[];
-  const slideParts=slidesData.map((sd,i)=>{
-    const slideNum=i+1;
-    let shapeId=2;
-    let shapesXml=pptxTitleShape(shapeId++, sd.title);
+  const pres=new window.PptxGenJS();
+  pres.layout='LAYOUT_WIDE'; // 13.333in x 7.5in — matches the previous custom slide size (16:9)
+  if(title) pres.title=pptxStripIllegalXmlChars(title);
+  if(author) pres.author=pptxStripIllegalXmlChars(author);
+  pres.company='Sakura';
+
+  const MARGIN=0.5; // inches, was 457200 EMU
+  const TITLE_Y=0.3, TITLE_H=1.25;
+  const BODY_Y=1.75;
+
+  slidesData.forEach(sd=>{
+    const slide=pres.addSlide();
+    slide.background={color:'FFFFFF'};
+    slide.addText(pptxStripIllegalXmlChars(sd.title||''), {
+      x:MARGIN, y:TITLE_Y, w:PPTX_SLIDE_W-2*MARGIN, h:TITLE_H,
+      fontFace:'Calibri', fontSize:28, bold:true, color:'1F1C14', valign:'top'
+    });
     const hasImages=sd.images.length>0;
-    const bodyY=1600200;
-    const bodyH=hasImages?1600200:4800000;
-    if(sd.bullets.length||!hasImages) shapesXml+=pptxBodyShape(shapeId++, sd.bullets, 457200, bodyY, PPTX_SLIDE_W-914400, bodyH);
-    let relsXml=null;
-    if(hasImages){
-      const areaY=bodyY+bodyH+91440;
-      const areaH=Math.max(914400, PPTX_SLIDE_H-areaY-365760);
-      const positions=pptxLayoutImageRow(sd.images, 457200, areaY, PPTX_SLIDE_W-914400, areaH);
-      let relEntries='';
-      sd.images.forEach((img,k)=>{
-        const ext=pptxExtForMime(img.mime);
-        const mediaName=`slide${slideNum}_image${k+1}.${ext}`;
-        mediaFiles.push({name:`ppt/media/${mediaName}`, data:img.bytes});
-        const rId=`rId${k+1}`;
-        relEntries+=`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${mediaName}"/>`;
-        const pos=positions[k];
-        shapesXml+=pptxPictureShape(shapeId++, rId, pos.x, pos.y, pos.w, pos.h);
+    const bodyH=hasImages?1.75:5.25;
+    if(sd.bullets.length||!hasImages){
+      const textRuns=sd.bullets.length
+        ? sd.bullets.map(b=>({text:pptxStripIllegalXmlChars(b), options:{bullet:{code:'2022'}, breakLine:true}}))
+        : [{text:'', options:{}}];
+      slide.addText(textRuns, {
+        x:MARGIN, y:BODY_Y, w:PPTX_SLIDE_W-2*MARGIN, h:bodyH,
+        fontFace:'Calibri', fontSize:20, color:'1F1C14', valign:'top'
       });
-      relsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relEntries}</Relationships>`;
     }
-    // <p:clrMapOvr> is technically optional per the base schema, but real PowerPoint is known
-    // to reject/flag-for-repair hand-built slides that omit it — LibreOffice, Google Slides,
-    // and python-pptx are all more lenient here and don't reveal the problem, but Microsoft's
-    // own parser does. <a:masterClrMapping/> just inherits the master's color map, same as
-    // every real PowerPoint-authored slide with no per-slide override.
-    const slideXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapesXml}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
-    return {slideXml, relsXml};
+    if(hasImages){
+      const areaY=BODY_Y+bodyH+0.1;
+      const areaH=Math.max(1, PPTX_SLIDE_H-areaY-0.4);
+      const positions=pptxLayoutImageRow(sd.images, MARGIN, areaY, PPTX_SLIDE_W-2*MARGIN, areaH);
+      sd.images.forEach((img,k)=>{
+        const pos=positions[k];
+        slide.addImage({data:`data:${img.mime};base64,${b64FromBytes(img.bytes)}`, x:pos.x, y:pos.y, w:pos.w, h:pos.h});
+      });
+    }
   });
-
-  const coreXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${pptxEscXml(title)}</dc:title>${author?`<dc:creator>${pptxEscXml(author)}</dc:creator>`:''}<cp:lastModifiedBy>${pptxEscXml(author||'Sakura')}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`;
-  const appXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Sakura</Application><Company></Company></Properties>`;
-  const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
-  const themeXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Sakura"><a:themeElements><a:clrScheme name="Sakura"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F1C14"/></a:dk2><a:lt2><a:srgbClr val="F5F3EE"/></a:lt2><a:accent1><a:srgbClr val="A8442E"/></a:accent1><a:accent2><a:srgbClr val="2C4A6E"/></a:accent2><a:accent3><a:srgbClr val="4A6F9E"/></a:accent3><a:accent4><a:srgbClr val="79756B"/></a:accent4><a:accent5><a:srgbClr val="5C584F"/></a:accent5><a:accent6><a:srgbClr val="D6D2C7"/></a:accent6><a:hlink><a:srgbClr val="2C4A6E"/></a:hlink><a:folHlink><a:srgbClr val="79756B"/></a:folHlink></a:clrScheme><a:fontScheme name="Sakura"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Sakura"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
-  const masterXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="11277600" cy="1143000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Title</a:t></a:r></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="1600200"/><a:ext cx="11277600" cy="4800000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Body</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`;
-  const masterRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`;
-  const layoutXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="obj" preserve="1"><p:cSld name="Title and Content"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Title</a:t></a:r></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Body</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sldLayout>`;
-  const layoutRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`;
-  const sldIdEntries=slideParts.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+2}"/>`).join('');
-  const presentationXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${sldIdEntries}</p:sldIdLst><p:sldSz cx="${PPTX_SLIDE_W}" cy="${PPTX_SLIDE_H}" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`;
-  const presentationRelEntries=slideParts.map((_,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`).join('');
-  const themeRelId=slideParts.length+2;
-  const presPropsRelId=slideParts.length+3;
-  const viewPropsRelId=slideParts.length+4;
-  const tableStylesRelId=slideParts.length+5;
-  // presProps.xml/viewProps.xml/tableStyles.xml aren't schema-required for a presentation to
-  // be valid, but every file real PowerPoint itself ever saves includes all three — omitting
-  // them is exactly the kind of gap independent parsers (python-pptx, LibreOffice) don't
-  // enforce but Office's own opener might, so they're included here purely for maximum
-  // real-world compatibility rather than because the spec demands it.
-  const presPropsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`;
-  const viewPropsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:slideViewPr><p:cSldViewPr><p:cViewPr varScale="1"><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr></p:cSldViewPr></p:slideViewPr><p:notesTextViewPr><p:cViewPr><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr></p:notesTextViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`;
-  const tableStylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
-  const presentationRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${presentationRelEntries}<Relationship Id="rId${themeRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/><Relationship Id="rId${presPropsRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/><Relationship Id="rId${viewPropsRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/><Relationship Id="rId${tableStylesRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/></Relationships>`;
-  const slideOverrides=slideParts.map((_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
-  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/><Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
-
-  const files=[
-    {name:'[Content_Types].xml', data:contentTypes},
-    {name:'_rels/.rels', data:rootRels},
-    {name:'docProps/core.xml', data:coreXml},
-    {name:'docProps/app.xml', data:appXml},
-    {name:'ppt/presentation.xml', data:presentationXml},
-    {name:'ppt/_rels/presentation.xml.rels', data:presentationRels},
-    {name:'ppt/presProps.xml', data:presPropsXml},
-    {name:'ppt/viewProps.xml', data:viewPropsXml},
-    {name:'ppt/tableStyles.xml', data:tableStylesXml},
-    {name:'ppt/slideMasters/slideMaster1.xml', data:masterXml},
-    {name:'ppt/slideMasters/_rels/slideMaster1.xml.rels', data:masterRels},
-    {name:'ppt/slideLayouts/slideLayout1.xml', data:layoutXml},
-    {name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels', data:layoutRels},
-    {name:'ppt/theme/theme1.xml', data:themeXml},
-  ];
-  slideParts.forEach((sp,i)=>{
-    files.push({name:`ppt/slides/slide${i+1}.xml`, data:sp.slideXml});
-    if(sp.relsXml) files.push({name:`ppt/slides/_rels/slide${i+1}.xml.rels`, data:sp.relsXml});
-  });
-  mediaFiles.forEach(m=>files.push(m));
-  return docxZipStore(files);
+  return pres;
 }
 async function exportPptx(){
   const wasPreviewActive=previewActive;
@@ -10749,14 +10707,13 @@ async function exportPptx(){
   }
   renderPreviewBody();
   try{
+    if(!window.PptxGenJS) throw new Error('pptxgenjs failed to load (offline, or the CDN is blocked)');
     const slidesData=await pptxGatherSlidesData();
-    const bytes=buildPptxPackage(slidesData);
+    const pres=await buildPptxPresentation(slidesData);
     const meta=getMeta(); const title=(meta.title||'presentation').replace(/[\\/:*?"<>|]+/g,'_');
     suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
-    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`${title}.pptx`; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    // writeFile handles the Blob + download link + revoke internally.
+    await pres.writeFile({fileName:`${title}.pptx`});
     showToast('PPTX exported');
   }catch(e){
     console.error('[sakura] PPTX export failed:',e);
