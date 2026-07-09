@@ -2966,7 +2966,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-section-title">Export &amp; print</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included. Applies to Markdown, Word, OPML, Text, and the header Print button — not PDF or PowerPoint, since those render from Preview/Presenter, which already has its own fold state under your direct control there (click any section to expand or collapse it) and is left exactly as you set it.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page in PDF</span><span class="settings-row-desc">Add a title page (document title, author, date) before the contents page when exporting to PDF.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page in PDF"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (Sakura mark, document title, author, word/read-time/decision stats) before the contents page when exporting to PDF or Word.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
             </div>
             <div class="settings-field" id="export-menu-buttons-field" style="margin-top:12px">
               <button type="button" class="settings-collapsible-header" id="export-menu-buttons-header" aria-expanded="false" aria-controls="export-menu-buttons-body">
@@ -3356,6 +3356,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> button next to Rewrite, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">O</span> → Generate outline (AI): describe a topic and it inserts an AI-generated nested outline into the current document — into a blank doc, or after the current selection; also available as "Generate with AI" on the blank-document screen. Uses the same provider/model/key as Rewrite (Settings → AI → Provider), but its own fixed instructions, not the customizable rewrite prompt</li>
 <li><strong>Restructure text (AI)</strong> — Import ▾ → "Restructure text", or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">R</span>: paste messy or unstructured text (notes, an email, a transcript) and it organizes it into a tree, cleaning up wording as needed (fixing broken line wraps, tightening long sentences) so it reads well as outline nodes — it will not invent facts that are not in your text, but it is not a verbatim copy either. If the pasted text already has clear structure (bullets, consistent indentation, or literal tree-connector characters), it is parsed directly with no AI call at all. Unlike Generate outline, this always opens as a new document rather than inserting into the one you have open, so an import can never accidentally merge into unrelated work — your original pasted text is kept in that new document's Pad so you can check it against the result</li>
 <li><strong>Word import</strong> — Import ▾ → "Word (.docx)": converts the file's own heading and list structure directly into nodes — no AI involved when the document actually uses heading styles, since that structure is already explicit in the file. If a document has no heading styles at all (just a wall of plain paragraphs), its text is automatically handed to the same AI restructuring used above instead of being imported as one long flat list. Tables import as a node per row with each column as a child node; images are dropped but left as a "[image]" placeholder so nothing vanishes silently. Always opens as a new document, with the extracted text kept in its Pad. Legacy <span class="help-kbd">.doc</span> files (pre-2007 binary format) are not supported — only modern <span class="help-kbd">.docx</span></li>
+<li><strong>Word export</strong> — Export ▾ → "Word (.docx)": a genuine, editable document — real heading styles (so Word's own navigation pane and outline view work), an updatable Table of Contents with clickable page references (right-click → Update Field if headings change later), and Decision Log entries rendered as bordered/shaded cards with the same accent-colored status and field labels as Preview. Notes carry through with their actual formatting — bold, italic, underline, strike, and links all become real Word formatting rather than flattening to plain text; bullet/numbered lists inside a note get a simple prefix treatment, and a table inside a note flattens to one line per row (cells joined by " | ") rather than a real Word table grid. Images marked "Feature as diagram" (right-click an image in a note) embed as real pictures, same as PowerPoint export, scaled to fit while keeping their aspect ratio; a diagram that can't be read or converted is skipped with the rest of the document still exporting normally. Settings → Export & print → "Cover page" (on by default, shared with PDF) adds a title page — Sakura mark, document title, a divider rule, author, and a word count/read time/decisions-logged line — before the Table of Contents</li>
 <li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → Presenter mode → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, its direct children as bullet text, and any images marked "Feature as diagram" (right-click an image in a note) embedded as pictures sized to fit, correctly scaled to their real aspect ratio. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. Regular note text (not marked as a diagram) isn't included, since a slide with a diagram plus a full note's worth of prose would be unreadably dense — trim the note to what belongs on the slide via the bullets themselves if you want more control over what's on it. Whichever sections are currently folded in Preview/Presenter (not the main outline editor, and not Settings → Export & print → "Skip folded sections") are what's left out of the deck — fold or expand a section there first if you want to change what exports. Settings → Preview → Presenter mode → "Sakura branding" (off by default) adds a small "SAKURA" mark to the bottom-right corner of every slide, the same mark and setting used in the Presenter bar</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/></svg></span> button next to Outline → Suggest icon: picks a fitting emoji for the selected node's label and adds it as a prefix (e.g. "🛒 Webshop"). With multiple nodes selected, applies one straight away to each, picked from a keyword list first and an exact match against icons already used elsewhere in your documents/templates, falling to AI only when neither matches. For a single node, if more than one good option turns up, a small popover appears above it to pick from; right-click → <span class="help-kbd">More</span> → Suggest icons for all nodes runs it over the whole tree (asks to confirm first). Since the icon is just leading text, removing or changing it is normal editing — double-click the node and edit it like any other text</li>
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
@@ -10369,6 +10370,7 @@ async function importDocxFile(file){
 }
 function triggerDocxImport(){ el('sakura-docx-file-input')?.click(); }
 function docxXmlText(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function docxXmlAttr(s){return docxXmlText(s).replace(/"/g,'&quot;')}
 function docxCrc32(bytes){let c=~0; for(let i=0;i<bytes.length;i++){c^=bytes[i]; for(let j=0;j<8;j++) c=(c>>>1)^(0xEDB88320&-(c&1))} return (~c)>>>0}
 function docxDosDateTime(date=new Date()){const year=Math.max(1980,date.getFullYear()); const dosTime=((date.getHours()&31)<<11)|((date.getMinutes()&63)<<5)|((Math.floor(date.getSeconds()/2))&31); const dosDate=(((year-1980)&127)<<9)|(((date.getMonth()+1)&15)<<5)|(date.getDate()&31); return {dosTime,dosDate}}
 function docxZipStore(files){const encoder=new TextEncoder(); const list=files.map(f=>{const data=f.data instanceof Uint8Array?f.data:encoder.encode(String(f.data)); const nameBytes=encoder.encode(f.name); return {...f,data,nameBytes,crc:docxCrc32(data),size:data.length}}); let localSize=0, centralSize=0; list.forEach(f=>{localSize+=30+f.nameBytes.length+f.size; centralSize+=46+f.nameBytes.length}); const out=new Uint8Array(localSize+centralSize+22); const view=new DataView(out.buffer); let offset=0; const central=[]; const {dosTime,dosDate}=docxDosDateTime(); const writeBytes=arr=>{out.set(arr,offset); offset+=arr.length}; const u16=v=>{view.setUint16(offset,v,true); offset+=2}; const u32=v=>{view.setUint32(offset,v>>>0,true); offset+=4}; list.forEach(f=>{const localOffset=offset; u32(0x04034b50); u16(20); u16(0); u16(0); u16(dosTime); u16(dosDate); u32(f.crc); u32(f.size); u32(f.size); u16(f.nameBytes.length); u16(0); writeBytes(f.nameBytes); writeBytes(f.data); central.push({f,localOffset})}); const centralOffset=offset; central.forEach(({f,localOffset})=>{u32(0x02014b50); u16(20); u16(20); u16(0); u16(0); u16(dosTime); u16(dosDate); u32(f.crc); u32(f.size); u32(f.size); u16(f.nameBytes.length); u16(0); u16(0); u16(0); u16(0); u32(0); u32(localOffset); writeBytes(f.nameBytes)}); const centralLength=offset-centralOffset; u32(0x06054b50); u16(0); u16(0); u16(list.length); u16(list.length); u32(centralLength); u32(centralOffset); u16(0); return out}
@@ -10394,27 +10396,129 @@ function docxStatusColor(value){
 }
 let _docxBookmarkCounter=0;
 function docxNextBookmarkId(){return ++_docxBookmarkCounter}
-// Converts a node's rich-text note (stored as HTML) to plain lines for the docx export — full
-// formatting fidelity would need walking the HTML tree run-by-run; for a note block (visually
-// secondary, already de-emphasized) plain text with line breaks preserved is a reasonable trade.
-function docxHtmlToPlainLines(html){
-  const tmp=document.createElement('div');
-  tmp.innerHTML=String(html||'');
-  tmp.querySelectorAll('br').forEach(br=>br.replaceWith('\n'));
-  tmp.querySelectorAll('p,div,li,tr,h1,h2,h3').forEach(elx=>{ elx.insertAdjacentText('afterend','\n'); });
-  const text=(tmp.textContent||'').replace(/\n{3,}/g,'\n\n').trim();
-  return text.split('\n').map(l=>l.trim());
+// Tracks relationships that need registering beyond the fixed styles/settings ones (images,
+// external hyperlinks) — reset per export since ids must be unique within one document.xml.rels.
+// Starts well above the fixed rId1-rId3 range so there's no risk of collision.
+let _docxExtraRels=[]; let _docxRelIdCounter=100; let _docxMediaFiles=[]; let _docxImageExtsUsed=new Set();
+function docxAddRel(type,target,targetMode){
+  const id='rId'+(++_docxRelIdCounter);
+  _docxExtraRels.push({id,type,target,targetMode});
+  return id;
+}
+const DOCX_IMAGE_CONTENT_TYPES={png:'image/png',jpeg:'image/jpeg',gif:'image/gif'};
+// Embeds one raster image as a real inline picture (not a link) — registers the bytes as a
+// word/media part, a relationship, and this drawing XML referencing it by relationship id.
+// Width is capped to the available column width for the node's indent level and scaled down
+// keeping aspect ratio; never scaled up past the image's natural size.
+function docxImageDrawingXml(relId,picId,widthPx,heightPx,maxWidthEmu,altText){
+  const EMU_PER_PX=9525;
+  let cx=Math.max(1,Math.round((widthPx||400)*EMU_PER_PX)), cy=Math.max(1,Math.round((heightPx||300)*EMU_PER_PX));
+  if(cx>maxWidthEmu){ const scale=maxWidthEmu/cx; cx=maxWidthEmu; cy=Math.round(cy*scale); }
+  const descr=docxXmlAttr(altText||'Diagram');
+  return `<w:p><w:pPr><w:spacing w:before="60" w:after="140"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${picId}" name="Picture ${picId}" descr="${descr}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${picId}" name="Picture ${picId}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+}
+// Registers image bytes as a media part + relationship and returns the drawing paragraph XML,
+// or '' if the image couldn't be embedded (mirrors the pptx export's per-image skip-not-abort
+// behavior — one bad image shouldn't fail the whole document).
+async function docxEmbedDiagramImage(src,alt,maxWidthEmu){
+  const decoded=await pptxDataUrlToBytes(src);
+  if(!decoded)return '';
+  const {result:safe}=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
+  if(!safe)return '';
+  const ext=safe.mime==='image/jpeg'?'jpeg':(safe.mime==='image/gif'?'gif':'png');
+  const dims=pptxImageDims(safe.bytes,safe.mime);
+  const picId=_docxMediaFiles.length+1;
+  const mediaName=`image${picId}.${ext}`;
+  _docxMediaFiles.push({name:'word/media/'+mediaName,data:safe.bytes});
+  _docxImageExtsUsed.add(ext);
+  const relId=docxAddRel('http://schemas.openxmlformats.org/officeDocument/2006/relationships/image','media/'+mediaName);
+  return docxImageDrawingXml(relId,picId,dims.width,dims.height,maxWidthEmu,alt);
+}
+// Converts a node's rich-text note (stored as HTML) into real docx paragraphs/runs — bold,
+// italic, underline, strike, and links carry through as actual formatting (links become real
+// clickable hyperlink relationships) rather than flattening to plain text. Lists get a simple
+// bullet/number-prefix treatment rather than real OOXML numbering (w:numPr) — that needs its
+// own numbering.xml part and list-definition bookkeeping for what's usually a couple of short
+// lines inside an already visually secondary note block; not worth the added part for that.
+// Tables inside notes are flattened to one line per row, cells joined by " | " — informational
+// fidelity without building real OOXML table grids for what's a rare case inside a note.
+// Inline images pasted directly into note text (as opposed to a diagram marked via the
+// lightbox) are dropped silently, same trade-off Word import already makes for images in the
+// other direction.
+function docxNoteInlineRuns(node,fmt){
+  if(node.nodeType===Node.TEXT_NODE) return node.nodeValue?docxRun(node.nodeValue,fmt):'';
+  if(node.nodeType!==Node.ELEMENT_NODE) return '';
+  const tag=node.tagName.toLowerCase();
+  if(tag==='br') return '<w:r><w:br/></w:r>';
+  if(tag==='script'||tag==='style'||tag==='img') return '';
+  const childFmt={...fmt};
+  if(tag==='b'||tag==='strong') childFmt.bold=true;
+  if(tag==='i'||tag==='em') childFmt.italic=true;
+  if(tag==='u') childFmt.underline=true;
+  if(tag==='s'||tag==='strike'||tag==='del') childFmt.strike=true;
+  if(tag==='code') childFmt.code=true;
+  if(tag==='a'&&node.getAttribute('href')){
+    const relId=docxAddRel('http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',node.getAttribute('href'),'External');
+    const linkFmt={...childFmt,underline:true,color:'2563EB'};
+    const inner=Array.from(node.childNodes).map(c=>docxNoteInlineRuns(c,linkFmt)).join('')||docxRun(node.textContent||'',linkFmt);
+    return `<w:hyperlink r:id="${relId}">${inner}</w:hyperlink>`;
+  }
+  return Array.from(node.childNodes).map(c=>docxNoteInlineRuns(c,childFmt)).join('');
+}
+function docxNoteBlocks(html){
+  const tmp=document.createElement('div'); tmp.innerHTML=String(html||'');
+  const baseFmt={italic:true,size:20,color:'3D3929'};
+  const out=[]; let sawBlock=false;
+  Array.from(tmp.childNodes).forEach(child=>{
+    if(child.nodeType===Node.TEXT_NODE){
+      if(child.nodeValue.trim()){ sawBlock=true; out.push({runs:docxNoteInlineRuns(child,baseFmt),prefix:''}); }
+      return;
+    }
+    if(child.nodeType!==Node.ELEMENT_NODE)return;
+    const tag=child.tagName.toLowerCase();
+    if(tag==='ul'||tag==='ol'){
+      let n=0;
+      Array.from(child.children).filter(li=>li.tagName.toLowerCase()==='li').forEach(li=>{
+        n++; sawBlock=true;
+        const runs=Array.from(li.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
+        if(runs)out.push({runs,prefix:tag==='ol'?(n+'.  '):'•  '});
+      });
+      return;
+    }
+    if(tag==='table'){
+      sawBlock=true;
+      Array.from(child.querySelectorAll('tr')).forEach(tr=>{
+        const cells=Array.from(tr.children).map(td=>td.textContent.trim()).filter(Boolean);
+        if(cells.length)out.push({runs:docxRun(cells.join('  |  '),baseFmt),prefix:''});
+      });
+      return;
+    }
+    if(['p','div','h1','h2','h3','h4','blockquote'].includes(tag)){
+      const runs=Array.from(child.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
+      if(runs){ sawBlock=true; out.push({runs,prefix:''}); }
+      return;
+    }
+    const runs=docxNoteInlineRuns(child,baseFmt);
+    if(runs){ sawBlock=true; out.push({runs,prefix:''}); }
+  });
+  if(!sawBlock){ const runs=docxNoteInlineRuns(tmp,baseFmt); if(runs)out.push({runs,prefix:''}); }
+  return out;
+}
+function docxNoteBlock(html,leftTwips){
+  const blocks=docxNoteBlocks(html);
+  if(!blocks.length)return '';
+  const paras=[`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="20"/></w:pPr>${docxRun('NOTE',{bold:true,size:14,color:'938F84'})}</w:p>`];
+  blocks.forEach((b,i)=>{
+    const prefixRun=b.prefix?docxRun(b.prefix,{italic:true,size:20,color:'938F84'}):'';
+    const after=i===blocks.length-1?'80':'20';
+    paras.push(`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="${after}"/></w:pPr>${prefixRun}${b.runs}</w:p>`);
+  });
+  return paras.join('');
 }
 function docxLinesToRuns(lines,fmt){
   let out='';
   lines.forEach((l,i)=>{ if(i>0)out+='<w:r><w:br/></w:r>'; out+=docxRun(l||' ',fmt); });
   return out;
-}
-function docxNoteBlock(html,leftTwips){
-  const lines=docxHtmlToPlainLines(html).filter(Boolean);
-  if(!lines.length)return '';
-  const runs=docxRun('NOTE',{bold:true,size:14,color:'938F84'})+'<w:r><w:br/></w:r>'+docxLinesToRuns(lines,{italic:true,color:'3D3929',size:20});
-  return `<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/></w:pPr>${runs}</w:p>`;
 }
 function docxCodeBlockPara(code,leftTwips){
   const lines=String(code||'').split('\n');
@@ -10480,6 +10584,29 @@ function docxBuildDecisionCard(list,headerIdx,fieldIdxs,leftTwips){
 // works if headings change later, and it's pre-populated with real entries so it isn't blank
 // before the user ever does that. Page numbers are PAGEREF fields against bookmarks placed at
 // each heading; word/settings.xml's updateFields flag makes Word recalculate them on open.
+// Mirrors the PDF cover page (Settings → Export & print → "Cover page") — same wordmark/title/
+// rule/author/stats-line content, laid out for a Word title page instead of a print stylesheet.
+// Shares that one setting rather than getting its own toggle, since the point is parity: turning
+// the setting on should mean "both exports get a cover page," not two separate switches to keep
+// in sync.
+function docxBuildCoverPage(title,author){
+  const center=(runsXml,spacingXml)=>`<w:p><w:pPr><w:jc w:val="center"/>${spacingXml||''}</w:pPr>${runsXml}</w:p>`;
+  const wordCount=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0);
+  const readMins=Math.max(1,Math.round(wordCount/200));
+  const {groups:coverDlGroups}=(typeof previewDetectDecisionLogs==='function')?previewDetectDecisionLogs(nodes):{groups:[]};
+  const metaParts=[`${wordCount.toLocaleString()} word${wordCount===1?'':'s'}`,`${readMins} min read`];
+  if(lastSavedAt)metaParts.push(`Updated ${new Date(lastSavedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}`);
+  if(coverDlGroups.length)metaParts.push(`${coverDlGroups.length} decision${coverDlGroups.length===1?'':'s'} logged`);
+  const paras=[];
+  paras.push('<w:p><w:pPr><w:spacing w:before="2600"/></w:pPr></w:p>');
+  paras.push(center(docxRun('SAKURA',{bold:true,size:16,color:'C96442'}),'<w:spacing w:after="440"/>'));
+  paras.push(center(docxRun(title,{bold:true,size:44,color:'1F1C14'}),'<w:spacing w:after="200"/>'));
+  paras.push(`<w:p><w:pPr><w:jc w:val="center"/><w:pBdr><w:bottom w:val="single" w:sz="18" w:space="1" w:color="C96442"/></w:pBdr><w:ind w:left="4500" w:right="4500"/><w:spacing w:after="360"/></w:pPr></w:p>`);
+  if(String(author||'').trim())paras.push(center(docxRun(author,{size:22,color:'5C584F'}),'<w:spacing w:after="80"/>'));
+  paras.push(center(docxRun(metaParts.join('   ·   '),{size:19,color:'79756B'})));
+  paras.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+  return paras.join('');
+}
 function docxBuildToc(headingEntries){
   if(!headingEntries.length)return '';
   const title=`<w:p><w:pPr><w:pStyle w:val="TocHeading"/></w:pPr>${docxRun('Contents',{})}</w:p>`;
@@ -10492,19 +10619,20 @@ function docxBuildToc(headingEntries){
   const spacer='<w:p><w:pPr><w:spacing w:after="160"/></w:pPr></w:p>';
   return title+begin+entries+end+spacer;
 }
-function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); _docxBookmarkCounter=0; const paras=[]; paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:'C96442'})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
+async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); _docxBookmarkCounter=0; _docxExtraRels=[]; _docxRelIdCounter=100; _docxMediaFiles=[]; _docxImageExtsUsed=new Set(); const paras=[]; if(coverPageEnabled)paras.push(docxBuildCoverPage(rawTitle,rawAuthor)); paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:'C96442'})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
   const scopeForDocx=getScopedNodes(true,foldOverride);
   const docxNumbers=computeOutlineNumbers(scopeForDocx);
   const {consumed:dlConsumed,groups:dlGroups}=(typeof previewDetectDecisionLogs==='function')?previewDetectDecisionLogs(scopeForDocx):{consumed:new Set(),groups:[]};
   const dlByHeader=new Map(dlGroups.map(g=>[g.headerIdx,g]));
   const headingEntries=[];
   const bodyParas=[];
-  scopeForDocx.forEach((n,idx)=>{
-    if(dlConsumed.has(idx)&&!dlByHeader.has(idx))return; // absorbed into a decision card below
+  for(let idx=0;idx<scopeForDocx.length;idx++){
+    const n=scopeForDocx[idx];
+    if(dlConsumed.has(idx)&&!dlByHeader.has(idx))continue; // absorbed into a decision card below
     const left=Math.max(0, Number(n.depth||0))*420;
     if(dlByHeader.has(idx)){
       bodyParas.push(docxBuildDecisionCard(scopeForDocx,idx,dlByHeader.get(idx).fieldIdxs,left));
-      return;
+      continue;
     }
     const headingLevel=Number(n.styles?.heading||0);
     const isCheckbox=!!n.isCheckbox;
@@ -10520,9 +10648,19 @@ function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=Str
     if(n.tags&&n.tags.length){
       bodyParas.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:ind w:left="${left}"/><w:spacing w:before="0" w:after="60"/></w:pPr>${docxRun(n.tags.map(t=>'#'+t).join('  '),{size:18,color:'9B9890'})}</w:p>`);
     }
-    if(n.note&&n.note.trim()){ const nb=docxNoteBlock(n.note,left); if(nb)bodyParas.push(nb); }
+    if(n.note&&n.note.trim()){
+      const split=splitNoteDiagramImages(n.note);
+      const nb=docxNoteBlock(split.restHtml,left); if(nb)bodyParas.push(nb);
+      if(split.diagrams.length){
+        const maxWidthEmu=Math.max(2743200, Math.round((9746-Math.min(left,4000))*635));
+        for(const d of split.diagrams){
+          const imgXml=await docxEmbedDiagramImage(d.src,d.alt,maxWidthEmu);
+          if(imgXml)bodyParas.push(imgXml);
+        }
+      }
+    }
     if(n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()){ const cb=docxCodeBlockPara(n.codeBlock.code,left); if(cb)bodyParas.push(cb); }
-  });
+  }
   const tocXml=docxBuildToc(headingEntries);
   paras.push(tocXml, ...bodyParas);
   const documentXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -10535,14 +10673,16 @@ const appXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Sakura</Application><Company></Company></Properties>`;
 const settingsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/></w:settings>`;
+const imageContentTypeOverrides=Array.from(_docxImageExtsUsed).map(ext=>`<Default Extension="${ext}" ContentType="${DOCX_IMAGE_CONTENT_TYPES[ext]}"/>`).join('');
 const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageContentTypeOverrides}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
 const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
+const extraRelsXml=_docxExtraRels.map(r=>`<Relationship Id="${r.id}" Type="${r.type}" Target="${docxXmlAttr(r.target)}"${r.targetMode?` TargetMode="${r.targetMode}"`:''}/>`).join('');
 const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`;
-return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'docProps/core.xml',data:coreXml},{name:'docProps/app.xml',data:appXml},{name:'word/document.xml',data:documentXml},{name:'word/styles.xml',data:stylesXml},{name:'word/settings.xml',data:settingsXml},{name:'word/_rels/document.xml.rels',data:docRels}])}
-function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); const bytes=buildDocxPackage(foldOverride); suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('DOCX exported')}
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${extraRelsXml}</Relationships>`;
+return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'docProps/core.xml',data:coreXml},{name:'docProps/app.xml',data:appXml},{name:'word/document.xml',data:documentXml},{name:'word/styles.xml',data:stylesXml},{name:'word/settings.xml',data:settingsXml},{name:'word/_rels/document.xml.rels',data:docRels},..._docxMediaFiles])}
+async function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); const bytes=await buildDocxPackage(foldOverride); suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('DOCX exported')}
 
 // === PowerPoint (.pptx) export ===
 // Builds a genuine .pptx via pptxgenjs (see buildPptxPresentation below) from the same slide
@@ -11688,7 +11828,7 @@ el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('t
 el('templates-set-default-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); setCurrentAsDefaultTemplate()});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
 el('scale-popover-slider').addEventListener('input',e=>setEditorScale(e.target.value,true));
-document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
+document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')await exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
 document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); const type=item.dataset.import; if(type==='opml')triggerOpmlImport(); else if(type==='docx')triggerDocxImport(); else if(type==='ai-restructure')restructureTextWithAi();})); ['clear-btn','sort-root-az-btn','sort-root-za-btn','sort-root-depth-btn'].forEach(id=>el(id).addEventListener('click',()=>el('more-menu').classList.remove('open')));
 document.addEventListener('click',e=>{ const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')},true);
 // Dedicated capture-phase listener for Node Quick Assist's outside-click dismissal.
