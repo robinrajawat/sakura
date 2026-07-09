@@ -6385,7 +6385,7 @@ const FEATURE_FLAGS={
   note:{get:()=>featureNoteEnabled,set:v=>{featureNoteEnabled=v; if(!v){try{closeNotePanel(true)}catch(e){}}}},
   codeblock:{get:()=>featureCodeEnabled,set:v=>{featureCodeEnabled=v; if(!v){try{closeCodePanel(true)}catch(e){}}}},
   pad:{get:()=>padEnabled,set:v=>{setPadEnabled(v); return}},
-  ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v;}},
+  ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
   decisionlog:{get:()=>featureDecisionLogEnabled,set:v=>{featureDecisionLogEnabled=v;}},
   tagging:{get:()=>featureTaggingEnabled,set:v=>{featureTaggingEnabled=v;}},
   backlinks:{get:()=>backlinksEnabled,set:v=>{setBacklinksEnabled(v); return}},
@@ -6436,6 +6436,11 @@ function applyFeatureVisibility(){
   });
   filterSettingsByFeatures();
   filterHelpByFeatures();
+  // The auto-rewrite status-bar chip isn't gated by a feature-off-* CSS rule (it's a
+  // JS-controlled display:none, like the other status-bar items) — it needs an explicit
+  // refresh here so switching "AI Capabilities" off hides it immediately, not just after
+  // whatever next calls updateAutoRewriteStatusChip() on its own.
+  if(typeof updateAutoRewriteStatusChip==='function')updateAutoRewriteStatusChip();
   // filterSettingsByFeatures/filterHelpByFeatures set section visibility purely based on
   // whether the feature is on, with no awareness of which rail category (or search query)
   // is currently active. Left alone, turning a feature back on pops its settings/help
@@ -11885,7 +11890,7 @@ function resumeAutoRewriteIfPaused(){
 function updateAutoRewriteStatusChip(){
   const chip=el('sb-auto-rewrite-chip'); const divider=el('sb-auto-rewrite-divider');
   if(!chip||!divider)return;
-  if(statusbarHiddenItems.includes('autorewrite')){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
+  if(statusbarHiddenItems.includes('autorewrite')||!featureAiEnabled){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
   if(!autoRewriteEnabled){
     chip.textContent='✦ Auto-rewrite: Off'; chip.style.color='var(--hint)';
