@@ -1164,9 +1164,17 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #note-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #note-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
 #note-editor img.sakura-diagram-img{outline:2px solid var(--accent);outline-offset:2px}
-.pv-diagram-figure{margin:10px 0 14px}
-.pv-diagram-img{max-width:100%;max-height:70vh;display:block;border-radius:8px;border:1px solid var(--border);margin:0 auto}
+.pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:flex-start}
+.pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0}
+.pv-diagram-img{max-width:100%;max-height:70vh;display:block;border-radius:8px;border:1px solid var(--border);margin:0 auto;cursor:zoom-in}
+.pv-diagram-row-multi .pv-diagram-img{max-height:42vh}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:6px}
+#diagram-lightbox{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.88);cursor:zoom-out;flex-direction:column;align-items:center;justify-content:center;padding:40px}
+#diagram-lightbox.open{display:flex}
+#diagram-lightbox img{max-width:100%;max-height:calc(100vh - 120px);object-fit:contain;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#diagram-lightbox figcaption{color:#e8e6e0;font:500 13px 'Inter',sans-serif;margin-top:14px;text-align:center;max-width:800px}
+#diagram-lightbox-close{position:fixed;top:20px;right:24px;background:none;border:none;color:#e8e6e0;cursor:pointer;padding:8px;opacity:.8}
+#diagram-lightbox-close:hover{opacity:1}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -2953,7 +2961,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               <div class="settings-collapsible-body" id="export-menu-buttons-body">
-                <span class="settings-row-desc">Hide items you don't use from the header's Export ▾ menu. Default: Copy as Image, Word, and PDF — the rest are hidden but a click away here.</span>
+                <span class="settings-row-desc">Hide items you don't use from the header's Export ▾ menu. Default: Copy as Image, Word, PDF, and PowerPoint — the rest are hidden but a click away here.</span>
                 <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="etbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="etbsec-none-btn">Hide all</button></div>
                 <div class="settings-grid" id="export-menu-buttons-grid" style="margin-top:6px">
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-clipboard" /> Copy as Text</label>
@@ -2962,6 +2970,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-txt" /> Tree (.txt)</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-docx" checked /> Word</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-pdf" checked /> PDF</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-pptx" checked /> PowerPoint</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-opml" /> OPML</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-decision-log-xlsx" /> Decision Log (.xlsx)</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="etbsec-diagram-prompt" /> Diagram ✦</label>
@@ -3333,7 +3342,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> button next to Rewrite, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">O</span> → Generate outline (AI): describe a topic and it inserts an AI-generated nested outline into the current document — into a blank doc, or after the current selection; also available as "Generate with AI" on the blank-document screen. Uses the same provider/model/key as Rewrite (Settings → AI → Provider), but its own fixed instructions, not the customizable rewrite prompt</li>
 <li><strong>Restructure text (AI)</strong> — Import ▾ → "Restructure text", or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">R</span>: paste messy or unstructured text (notes, an email, a transcript) and it organizes it into a tree, cleaning up wording as needed (fixing broken line wraps, tightening long sentences) so it reads well as outline nodes — it will not invent facts that are not in your text, but it is not a verbatim copy either. If the pasted text already has clear structure (bullets, consistent indentation, or literal tree-connector characters), it is parsed directly with no AI call at all. Unlike Generate outline, this always opens as a new document rather than inserting into the one you have open, so an import can never accidentally merge into unrelated work — your original pasted text is kept in that new document's Pad so you can check it against the result</li>
 <li><strong>Word import</strong> — Import ▾ → "Word (.docx)": converts the file's own heading and list structure directly into nodes — no AI involved when the document actually uses heading styles, since that structure is already explicit in the file. If a document has no heading styles at all (just a wall of plain paragraphs), its text is automatically handed to the same AI restructuring used above instead of being imported as one long flat list. Tables import as a node per row with each column as a child node; images are dropped but left as a "[image]" placeholder so nothing vanishes silently. Always opens as a new document, with the extracted text kept in its Pad. Legacy <span class="help-kbd">.doc</span> files (pre-2007 binary format) are not supported — only modern <span class="help-kbd">.docx</span></li>
-<li><strong>Word export</strong> — Export ▾ → "Word (.docx)": headings use Word's real Heading 1–6 styles, so Word's Navigation Pane and its own auto-generated outline both work on the file. A genuine, updatable Table of Contents is included when the document has any headings — right-click it in Word → Update Field if you edit headings afterward, it isn't a frozen snapshot. Decision Logs export as a bordered, status-colored card matching Preview's card design, including nested Rationale/Alternatives/Impact content (numbered lists keep their numbers, plain lists get bullets) — which fields show is the same Settings → Decision Log → "Decision card fields" used everywhere else. Checkboxes carry their ☐/☑ state, tags show under the node, and notes/code blocks are both included as their own labeled blocks (previously dropped entirely). Highlight and custom text color both carry over, mapped to the closest color Word itself supports</li>
+<li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → Presenter mode → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, its direct children as bullet text, and any images marked "Feature as diagram" (right-click an image in a note) embedded as pictures sized to fit, correctly scaled to their real aspect ratio. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. Regular note text (not marked as a diagram) isn't included, since a slide with a diagram plus a full note's worth of prose would be unreadably dense — trim the note to what belongs on the slide via the bullets themselves if you want more control over what's on it</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/></svg></span> button next to Outline → Suggest icon: picks a fitting emoji for the selected node's label and adds it as a prefix (e.g. "🛒 Webshop"). With multiple nodes selected, applies one straight away to each, picked from a keyword list first and an exact match against icons already used elsewhere in your documents/templates, falling to AI only when neither matches. For a single node, if more than one good option turns up, a small popover appears above it to pick from; right-click → <span class="help-kbd">More</span> → Suggest icons for all nodes runs it over the whole tree (asks to confirm first). Since the icon is just leading text, removing or changing it is normal editing — double-click the node and edit it like any other text</li>
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
 <li><strong>Expand node (AI)</strong> — select a single node and click the expand button in the AI toolbar group to break it into child nodes. Useful for dense labels like "Distribution model (OPML, localStorage, multi-tab sync)" → a proper subtree. AI generates 3–8 children; result is undoable</li>
@@ -3353,7 +3362,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <ul>  
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">S</span> → save now (kept in-app — doesn't trigger the browser's "Save Page As")</li>
 <li>Print button in the header (next to Import ▾ / Export ▾) → prints the document with all UI chrome hidden; choose "Save as PDF" in the browser's print dialog to get a clean PDF. Checked nodes and tag chips render correctly in print; the sidebar, toolbar, and status bar are all hidden automatically</li>  
-<li>Export ▾ is grouped into Copy / Document / Data / AI sections. Everything in it respects Settings → Export & print → "Skip folded sections" the same way — folded branches are included or skipped consistently across Markdown, Word, OPML, and the items below, not just whichever one you happen to use</li>
+<li>Export ▾ is grouped into Copy / Document / Data / AI sections. Everything in it respects Settings → Export & print → "Skip folded sections" the same way — folded branches are included or skipped consistently across Markdown, Word, PowerPoint, OPML, and the items below, not just whichever one you happen to use</li>
 <li>Import ▾ (next to Export ▾) is grouped into "From a file" (OPML, Word) and "From pasted text" (Restructure text, AI) — see the AI section above for how Restructure text and Word import handle structure</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span> Diagram ✦ (Export ▾ → AI) — copies a prompt to your clipboard that turns the current outline into a styled draw.io flowchart when pasted into Claude or any other AI assistant. Lines ending in "?" are flagged as decision points so the result gets diamonds/branches instead of plain boxes; the prompt also pins exact colors and styling to cut down on manual touch-ups afterward. If clipboard access is blocked, a dialog shows the prompt in a text box to copy manually instead</li>  
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M19 16v6"/><path d="M16 19l3 3 3-3"/></svg></span> Save AI Diagram (Export ▾ → AI) — paste the AI's reply to the Diagram ✦ prompt here to turn it into a real <span class="help-kbd">.drawio</span> file. Code fences and any stray sentences the AI adds before/after the XML are stripped automatically; if what you pasted isn't actually valid draw.io XML, it tells you why instead of saving a broken file</li>  
@@ -3593,6 +3602,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <button class="export-item" data-save="txt"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg></span><span class="export-label">Tree <span class="export-ext">.txt</span></span></button>
           <button class="export-item" data-save="docx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="export-label">Word <span class="export-ext">.docx</span></span></button>
           <button class="export-item" data-save="pdf"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span><span class="export-label">PDF <span class="export-ext">.pdf</span></span></button>
+          <button class="export-item" data-save="pptx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/></svg></span><span class="export-label">PowerPoint <span class="export-ext">.pptx</span></span></button>
           <button class="export-item" data-save="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
           <div class="export-divider" id="export-divider-data"></div>
           <div class="export-section-label" id="export-label-data">Data</div>
@@ -4273,6 +4283,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
+    <div id="diagram-lightbox" role="dialog" aria-label="Enlarged diagram"><button type="button" id="diagram-lightbox-close" aria-label="Close"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><img id="diagram-lightbox-img" src="" alt="" /><figcaption id="diagram-lightbox-caption"></figcaption></div>
     <div id="presenter-notes-panel" role="complementary" aria-label="Presenter notes">
       <div id="presenter-notes-header" data-tip="Drag to move"><span>Notes</span><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
       <div id="presenter-notes-body"></div>
@@ -4650,7 +4661,7 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 // reverting to defaults on every reload despite saving correctly.
 let previewSlideDepth=0; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true; let previewPresenterNotesExpanded=false; let presenterAutoExpandNoteCards=false;
 const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
-const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai'];
+const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','pptx','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai'];
 const INSERT_TB_BUTTONS=['smart-paste','date-time','decision-log','note','codeblock','checkbox','tags'];
 const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-btn','decision-log':'qb-decision-log','note':'qb-note','codeblock':'qb-codeblock','checkbox':'qb-checkbox','tags':'qb-tags'};
 const DL_FIELDS=[
@@ -8034,18 +8045,22 @@ el('qa-hint')?.addEventListener('keydown',e=>{
   const focusables=[...hint.querySelectorAll('.qa-hint-phrase'),el('qa-hint-cheatsheet-btn')].filter(Boolean);
   const curIdx=focusables.indexOf(document.activeElement);
   if(curIdx<0)return;
+  // stopPropagation on every branch here: a plain <span role="button"> isn't a recognized
+  // "control target" to the global outline keydown handler further down, so without this,
+  // the same Arrow/Tab press that moves focus here ALSO bubbled up and moved the selected
+  // node or indented it — two things happening from one keypress.
   if(e.key==='ArrowRight'||e.key==='ArrowDown'||(e.key==='Tab'&&!e.shiftKey)){
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     focusables[(curIdx+1)%focusables.length].focus();
     return;
   }
   if(e.key==='ArrowLeft'||e.key==='ArrowUp'||(e.key==='Tab'&&e.shiftKey)){
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     focusables[(curIdx-1+focusables.length)%focusables.length].focus();
     return;
   }
   const phrase=e.target.closest('.qa-hint-phrase');
-  if(phrase&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); qaActivateHintPhrase(phrase); }
+  if(phrase&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); e.stopPropagation(); qaActivateHintPhrase(phrase); }
 });
 el('qa-hint-enabled-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaHintEnabled(!qaHintEnabled);}});
 el('qa-search-cap-select')?.addEventListener('change',e=>setQaSearchResultCap(e.target.value));
@@ -10468,6 +10483,199 @@ const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`;
 return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'docProps/core.xml',data:coreXml},{name:'docProps/app.xml',data:appXml},{name:'word/document.xml',data:documentXml},{name:'word/styles.xml',data:stylesXml},{name:'word/settings.xml',data:settingsXml},{name:'word/_rels/document.xml.rels',data:docRels}])}
 function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); const bytes=buildDocxPackage(foldOverride); suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('DOCX exported')}
+
+// === PowerPoint (.pptx) export ===
+// Builds a genuine OOXML .pptx from scratch — same store-only zip approach as the DOCX
+// export above (docxZipStore is fully generic, reused as-is). One slide per Presenter slide
+// (title slide + one per slide-break node): the node's own text as the slide title, its
+// direct children's text as bullets, and any diagram-featured images from its note embedded
+// as pictures, laid out in a row below the bullets and scaled to fit.
+function pptxEscXml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;')}
+function pptxDataUrlToBytes(dataUrl){
+  const comma=dataUrl.indexOf(',');
+  if(comma<0) return null;
+  const meta=dataUrl.slice(5,comma);
+  const mime=(meta.split(';')[0]||'image/png').toLowerCase();
+  try{ return {bytes:bytesFromB64(dataUrl.slice(comma+1)), mime}; }catch(e){ return null; }
+}
+// Reads real pixel dimensions straight from the file header so embedded pictures keep their
+// correct aspect ratio — without this every image would need a guessed/default ratio, and
+// wide diagrams would come out stretched or squashed. Falls back to a plausible 4:3 default
+// for formats not worth hand-parsing (webp, svg) rather than failing the whole export.
+function pptxImageDims(bytes,mime){
+  try{
+    if(mime==='image/png'&&bytes.length>24){
+      const dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+      const w=dv.getUint32(16), h=dv.getUint32(20);
+      if(w>0&&h>0) return {width:w,height:h};
+    } else if((mime==='image/jpeg'||mime==='image/jpg')&&bytes.length>4){
+      let i=2;
+      while(i+9<bytes.length){
+        if(bytes[i]!==0xFF){ i++; continue; }
+        const marker=bytes[i+1];
+        if(marker===0xD8||marker===0x01||(marker>=0xD0&&marker<=0xD7)){ i+=2; continue; }
+        const len=(bytes[i+2]<<8)|bytes[i+3];
+        if(marker>=0xC0&&marker<=0xCF&&marker!==0xC4&&marker!==0xC8&&marker!==0xCC){
+          const h=(bytes[i+5]<<8)|bytes[i+6], w=(bytes[i+7]<<8)|bytes[i+8];
+          if(w>0&&h>0) return {width:w,height:h};
+        }
+        i+=2+len;
+      }
+    } else if(mime==='image/gif'&&bytes.length>10){
+      const w=bytes[6]|(bytes[7]<<8), h=bytes[8]|(bytes[9]<<8);
+      if(w>0&&h>0) return {width:w,height:h};
+    }
+  }catch(e){}
+  return {width:800,height:600};
+}
+function pptxExtForMime(mime){ return mime==='image/png'?'png':(mime==='image/gif'?'gif':(mime==='image/jpeg'?'jpeg':'png')); }
+// Lays a row of images out left-to-right, each scaled uniformly so the row's total width
+// fits areaW, capped by areaH — a single big diagram gets the full height; two or three
+// share the row rather than stacking into an ever-taller slide.
+function pptxLayoutImageRow(images,areaX,areaY,areaW,areaH){
+  const gap=182880; // 0.2in
+  let widths=images.map(img=>Math.round(areaH*(img.width/Math.max(1,img.height))));
+  let totalW=widths.reduce((a,b)=>a+b,0)+gap*(images.length-1);
+  const scale=totalW>areaW?areaW/totalW:1;
+  const finalH=Math.round(areaH*scale);
+  widths=widths.map(w=>Math.max(304800,Math.round(w*scale)));
+  totalW=widths.reduce((a,b)=>a+b,0)+gap*(images.length-1);
+  let x=areaX+Math.max(0,Math.round((areaW-totalW)/2));
+  return widths.map(w=>{ const pos={x,y:areaY,w,h:finalH}; x+=w+gap; return pos; });
+}
+function pptxTitleShape(id,text){
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="11277600" cy="1143000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${pptxEscXml(text)}</a:t></a:r></a:p></p:txBody></p:sp>`;
+}
+function pptxBodyShape(id,bullets,x,y,w,h){
+  const paras=bullets.length?bullets.map(b=>`<a:p><a:pPr marL="285750" indent="-285750"><a:buFont typeface="Arial"/><a:buChar char="&#8226;"/></a:pPr><a:r><a:rPr lang="en-US" sz="2000" dirty="0"/><a:t>${pptxEscXml(b)}</a:t></a:r></a:p>`).join('') : '<a:p><a:endParaRPr lang="en-US"/></a:p>';
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Content"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/>${paras}</p:txBody></p:sp>`;
+}
+function pptxPictureShape(id,rId,x,y,w,h){
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Picture ${id}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
+const PPTX_SLIDE_W=12192000, PPTX_SLIDE_H=6858000;
+function buildPptxPackage(){
+  const meta=getMeta();
+  const title=String(meta.title||'Untitled');
+  const author=String(meta.author||'');
+
+  // Gather per-slide content from the same previewSlides list Preview/Presenter renders
+  // from — caller is responsible for having just called renderPreviewBody() so this is
+  // current.
+  const slidesData=previewSlides.map(slide=>{
+    if(slide.nodeId===null) return {title, bullets: author?[author]:[], images:[]};
+    const idx=getIndex(slide.nodeId);
+    if(idx<0) return {title:slide.label, bullets:[], images:[]};
+    const node=nodes[idx];
+    const bullets=[];
+    for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
+      if(nodes[j].depth===node.depth+1){
+        const t=String(nodes[j].text||'').trim();
+        if(t) bullets.push(t);
+      }
+    }
+    const images=[];
+    if(node.note){
+      const split=splitNoteDiagramImages(node.note);
+      split.diagrams.forEach(d=>{
+        const decoded=pptxDataUrlToBytes(d.src);
+        if(!decoded) return;
+        const dims=pptxImageDims(decoded.bytes,decoded.mime);
+        images.push({bytes:decoded.bytes, mime:decoded.mime, width:dims.width, height:dims.height, alt:d.alt});
+      });
+    }
+    return {title:slide.label, bullets, images};
+  });
+  if(!slidesData.length) slidesData.push({title, bullets: author?[author]:[], images:[]});
+
+  const mediaFiles=[];
+  const slideParts=slidesData.map((sd,i)=>{
+    const slideNum=i+1;
+    let shapeId=2;
+    let shapesXml=pptxTitleShape(shapeId++, sd.title);
+    const hasImages=sd.images.length>0;
+    const bodyY=1600200;
+    const bodyH=hasImages?1600200:4800000;
+    if(sd.bullets.length||!hasImages) shapesXml+=pptxBodyShape(shapeId++, sd.bullets, 457200, bodyY, PPTX_SLIDE_W-914400, bodyH);
+    let relsXml=null;
+    if(hasImages){
+      const areaY=bodyY+bodyH+91440;
+      const areaH=Math.max(914400, PPTX_SLIDE_H-areaY-365760);
+      const positions=pptxLayoutImageRow(sd.images, 457200, areaY, PPTX_SLIDE_W-914400, areaH);
+      let relEntries='';
+      sd.images.forEach((img,k)=>{
+        const ext=pptxExtForMime(img.mime);
+        const mediaName=`slide${slideNum}_image${k+1}.${ext}`;
+        mediaFiles.push({name:`ppt/media/${mediaName}`, data:img.bytes});
+        const rId=`rId${k+1}`;
+        relEntries+=`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${mediaName}"/>`;
+        const pos=positions[k];
+        shapesXml+=pptxPictureShape(shapeId++, rId, pos.x, pos.y, pos.w, pos.h);
+      });
+      relsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relEntries}</Relationships>`;
+    }
+    const slideXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapesXml}</p:spTree></p:cSld></p:sld>`;
+    return {slideXml, relsXml};
+  });
+
+  const coreXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${pptxEscXml(title)}</dc:title>${author?`<dc:creator>${pptxEscXml(author)}</dc:creator>`:''}<cp:lastModifiedBy>${pptxEscXml(author||'Sakura')}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`;
+  const appXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Sakura</Application><Company></Company></Properties>`;
+  const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`;
+  const themeXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Sakura"><a:themeElements><a:clrScheme name="Sakura"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F1C14"/></a:dk2><a:lt2><a:srgbClr val="F5F3EE"/></a:lt2><a:accent1><a:srgbClr val="A8442E"/></a:accent1><a:accent2><a:srgbClr val="2C4A6E"/></a:accent2><a:accent3><a:srgbClr val="4A6F9E"/></a:accent3><a:accent4><a:srgbClr val="79756B"/></a:accent4><a:accent5><a:srgbClr val="5C584F"/></a:accent5><a:accent6><a:srgbClr val="D6D2C7"/></a:accent6><a:hlink><a:srgbClr val="2C4A6E"/></a:hlink><a:folHlink><a:srgbClr val="79756B"/></a:folHlink></a:clrScheme><a:fontScheme name="Sakura"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Sakura"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
+  const masterXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="274638"/><a:ext cx="11277600" cy="1143000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Title</a:t></a:r></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="1600200"/><a:ext cx="11277600" cy="4800000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Body</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`;
+  const masterRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`;
+  const layoutXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="obj" preserve="1"><p:cSld name="Title and Content"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Title</a:t></a:r></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Body Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>Body</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sldLayout>`;
+  const layoutRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`;
+  const sldIdEntries=slideParts.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+2}"/>`).join('');
+  const presentationXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${sldIdEntries}</p:sldIdLst><p:sldSz cx="${PPTX_SLIDE_W}" cy="${PPTX_SLIDE_H}" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`;
+  const presentationRelEntries=slideParts.map((_,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`).join('');
+  const themeRelId=slideParts.length+2;
+  const presentationRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${presentationRelEntries}<Relationship Id="rId${themeRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/></Relationships>`;
+  const slideOverrides=slideParts.map((_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('');
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slideOverrides}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`;
+
+  const files=[
+    {name:'[Content_Types].xml', data:contentTypes},
+    {name:'_rels/.rels', data:rootRels},
+    {name:'docProps/core.xml', data:coreXml},
+    {name:'docProps/app.xml', data:appXml},
+    {name:'ppt/presentation.xml', data:presentationXml},
+    {name:'ppt/_rels/presentation.xml.rels', data:presentationRels},
+    {name:'ppt/slideMasters/slideMaster1.xml', data:masterXml},
+    {name:'ppt/slideMasters/_rels/slideMaster1.xml.rels', data:masterRels},
+    {name:'ppt/slideLayouts/slideLayout1.xml', data:layoutXml},
+    {name:'ppt/slideLayouts/_rels/slideLayout1.xml.rels', data:layoutRels},
+    {name:'ppt/theme/theme1.xml', data:themeXml},
+  ];
+  slideParts.forEach((sp,i)=>{
+    files.push({name:`ppt/slides/slide${i+1}.xml`, data:sp.slideXml});
+    if(sp.relsXml) files.push({name:`ppt/slides/_rels/slide${i+1}.xml.rels`, data:sp.relsXml});
+  });
+  mediaFiles.forEach(m=>files.push(m));
+  return docxZipStore(files);
+}
+function exportPptx(){
+  const wasPreviewActive=previewActive;
+  const savedPreviewCollapsedIds=previewCollapsedIds;
+  previewCollapsedIds=skipFoldedInExports?new Set(collapsedIds):new Set();
+  renderPreviewBody();
+  try{
+    const bytes=buildPptxPackage();
+    const meta=getMeta(); const title=(meta.title||'presentation').replace(/[\\/:*?"<>|]+/g,'_');
+    suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
+    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${title}.pptx`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast('PPTX exported');
+  }catch(e){
+    console.error('[sakura] PPTX export failed:',e);
+    showToast('PPTX export failed — see console');
+  }finally{
+    previewCollapsedIds=savedPreviewCollapsedIds;
+    if(wasPreviewActive)renderPreviewBody();
+  }
+}
 function insertDateTime(targetEditorId){
   if(targetEditorId){
     const editor=el(targetEditorId);
@@ -10919,7 +11127,7 @@ el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('t
 el('templates-set-default-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); setCurrentAsDefaultTemplate()});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
 el('scale-popover-slider').addEventListener('input',e=>setEditorScale(e.target.value,true));
-document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
+document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
 document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); const type=item.dataset.import; if(type==='opml')triggerOpmlImport(); else if(type==='docx')triggerDocxImport(); else if(type==='ai-restructure')restructureTextWithAi();})); ['clear-btn','sort-root-az-btn','sort-root-za-btn','sort-root-depth-btn'].forEach(id=>el(id).addEventListener('click',()=>el('more-menu').classList.remove('open')));
 document.addEventListener('click',e=>{ const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')},true);
 // Dedicated capture-phase listener for Node Quick Assist's outside-click dismissal.
@@ -11626,7 +11834,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); togglePresenterNotes(); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'expandAll')) { e.preventDefault(); fireShortcut('expandAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); selectAllMode=false; clearMultiSelection(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){selectedId=nodes[vis[pos-1]].id; selectionAnchorId=selectedId; render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); selectAllMode=false; clearMultiSelection(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){selectedId=nodes[vis[pos+1]].id; selectionAnchorId=selectedId; render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&el('diagram-lightbox')?.classList.contains('open')){e.preventDefault(); closeDiagramLightbox(); return;} if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); togglePresenterNotes(); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'expandAll')) { e.preventDefault(); fireShortcut('expandAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); selectAllMode=false; clearMultiSelection(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){selectedId=nodes[vis[pos-1]].id; selectionAnchorId=selectedId; render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); selectAllMode=false; clearMultiSelection(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){selectedId=nodes[vis[pos+1]].id; selectionAnchorId=selectedId; render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
 // --- AI Rewrite ---
 function loadAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); const validIds=getAllAiProviders().map(p=>p.id); if(d.provider&&validIds.includes(d.provider))aiProvider=d.provider; if(d.modelByProvider&&typeof d.modelByProvider==='object')aiModelByProvider={...d.modelByProvider}; if(d.model&&typeof d.model==='string')aiModel=d.model; if(aiModelByProvider[aiProvider])aiModel=aiModelByProvider[aiProvider]; if(d.prompt&&typeof d.prompt==='string')aiRewritePrompt=d.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions()}catch(e){}}
 function saveAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); d.provider=aiProvider; d.model=aiModel; aiModelByProvider[aiProvider]=aiModel; d.modelByProvider=aiModelByProvider; d.prompt=aiRewritePrompt; localStorage.setItem(AI_PREFS_KEY,JSON.stringify(d))}catch(e){}}
@@ -17337,13 +17545,17 @@ function renderPreviewBody(){
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
       if(noteSplit&&noteSplit.diagrams.length){
+        const multi=noteSplit.diagrams.length>1;
+        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
         noteSplit.diagrams.forEach(d=>{
-          const fig=document.createElement('figure'); fig.className='pv-diagram-figure'; fig.style.paddingLeft=inlinePad;
-          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram';
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram'; img.dataset.tip='Click to enlarge';
+          img.addEventListener('click',()=>openDiagramLightbox(d.src,d.alt));
           fig.appendChild(img);
           if(d.alt){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.alt; fig.appendChild(cap); }
-          slideTarget.appendChild(fig);
+          row.appendChild(fig);
         });
+        slideTarget.appendChild(row);
       }
       const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
       if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)){
@@ -17618,6 +17830,20 @@ function updatePresenterTimerDisplay(){
   const el2=el('presenter-timer'); if(el2)el2.textContent=text;
 }
 
+// Click-to-zoom for featured diagrams — architecture diagrams tend to have fine text that's
+// unreadable at the slide's fixed max-height, so this is a plain, full-viewport image view,
+// no pan/zoom controls beyond the browser's own — click the image, click anywhere (or the ✕,
+// or Escape) to close.
+function openDiagramLightbox(src,alt){
+  const box=el('diagram-lightbox'); if(!box)return;
+  const img=el('diagram-lightbox-img'); const cap=el('diagram-lightbox-caption');
+  if(img){ img.src=src; img.alt=alt||'Diagram'; }
+  if(cap){ cap.textContent=alt||''; cap.style.display=alt?'block':'none'; }
+  box.classList.add('open');
+}
+function closeDiagramLightbox(){ el('diagram-lightbox')?.classList.remove('open'); }
+el('diagram-lightbox')?.addEventListener('click',e=>{ if(e.target.id!=='diagram-lightbox-img') closeDiagramLightbox(); });
+el('diagram-lightbox-close')?.addEventListener('click',closeDiagramLightbox);
 // Slide overview grid — a label-based grid (not visual thumbnails; rendering a live screenshot
 // of each slide would need drawing every one to a canvas, a lot of machinery for what's really
 // just a faster way to jump around during Q&A) showing every slide's number and label, click one
@@ -19502,7 +19728,7 @@ function updateRightclickMenuSummaryDesc(){
 // empty, buttonless headers rather than actually disappearing.
 const EXPORT_MENU_SECTIONS=[
   {label:'export-label-copy',divider:null,keys:['clipboard','image']},
-  {label:'export-label-doc',divider:'export-divider-doc',keys:['md','txt','docx','pdf','opml']},
+  {label:'export-label-doc',divider:'export-divider-doc',keys:['md','txt','docx','pdf','pptx','opml']},
   {label:'export-label-data',divider:'export-divider-data',keys:['decision-log-xlsx']},
   {label:'export-label-ai',divider:'export-divider-ai',keys:['diagram-prompt','drawio-from-ai']},
 ];
@@ -21017,7 +21243,20 @@ function _addTagPopoverFromInput(){
   function taskMatchesSearch(t, query){
     const q=String(query||'').trim().toLowerCase();
     if(!q) return true;
-    return String(t.text||'').toLowerCase().includes(q);
+    if(String(t.text||'').toLowerCase().includes(q)) return true;
+    const priority=t.priority||'none';
+    if(priority!=='none'&&priorityLabel(priority).toLowerCase().includes(q)) return true;
+    const status=t.status||'none';
+    if(status!=='none'&&statusLabel(status).toLowerCase().includes(q)) return true;
+    if(t.dueDate){
+      if(t.dueDate.toLowerCase().includes(q)) return true;
+      const fmted=fmtDue(t.dueDate);
+      if(fmted&&fmted.toLowerCase().includes(q)) return true;
+    }
+    if(t.repeat&&repeatLabel(t.repeat).toLowerCase().includes(q)) return true;
+    if(t.link&&t.link.toLowerCase().includes(q)) return true;
+    if(t.linkLabel&&t.linkLabel.toLowerCase().includes(q)) return true;
+    return false;
   }
 
   // Undo toasts for todo actions render inside the panel itself (rather than the app's
