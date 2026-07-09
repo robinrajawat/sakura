@@ -2176,6 +2176,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #link-pop-node-results{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
 .link-pop-node-item{display:flex;flex-direction:column;gap:1px;padding:5px 7px;border-radius:6px;cursor:pointer;text-align:left;border:none;background:none;font-family:'Inter',sans-serif;width:100%}
 .link-pop-node-item:hover{background:var(--hover)}
+.link-pop-node-item-row{display:flex;align-items:center;gap:5px;min-width:0}
+.link-pop-node-item-row svg{flex:0 0 auto;color:var(--hint)}
 .link-pop-node-item-text{font:400 11.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .link-pop-node-item-meta{font:400 10px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .link-pop-node-empty{font:400 11px 'Inter',sans-serif;color:var(--hint);padding:8px 4px;text-align:center}
@@ -23062,9 +23064,12 @@ function _addTagPopoverFromInput(){
         const item=document.createElement('button');
         item.type='button';
         item.className='link-pop-node-item link-pop-doc-item';
+        const row=document.createElement('span'); row.className='link-pop-node-item-row';
+        row.innerHTML=docRefIconSvg(11);
         const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.innerHTML=r.titleHtml;
+        row.appendChild(txt);
         const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent='Entire document';
-        item.appendChild(txt); item.appendChild(meta);
+        item.appendChild(row); item.appendChild(meta);
         item.addEventListener('click', ()=>commitNodeRef(r.docId, null));
         box.appendChild(item);
       });
