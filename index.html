@@ -1167,6 +1167,10 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:flex-start}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0}
 .pv-diagram-img{max-width:100%;max-height:70vh;display:block;border-radius:8px;border:1px solid var(--border);margin:0 auto;cursor:zoom-in}
+#preview-overlay.laser-active .pv-diagram-img,
+#preview-overlay.laser-active #diagram-lightbox,
+#preview-overlay.laser-active #diagram-lightbox-img,
+#preview-overlay.laser-active #diagram-lightbox-close{cursor:none}
 .pv-diagram-row-multi .pv-diagram-img{max-height:42vh}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:6px}
 #diagram-lightbox{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.88);cursor:zoom-out;flex-direction:column;align-items:center;justify-content:center;padding:40px}
@@ -1664,7 +1668,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-ctx-dot{width:9px;height:9px;border-radius:50%;background:#e0312f;flex-shrink:0;box-shadow:0 0 5px rgba(224,49,47,.7)}
 .pv-ctx-check{margin-left:auto;opacity:0;color:var(--accent);font-size:11px}
 .pv-ctx-item.active .pv-ctx-check{opacity:1}
-#preview-laser-dot{display:none;position:fixed;z-index:1103;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
+#preview-laser-dot{display:none;position:fixed;z-index:1450;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
 #preview-laser-dot.on{display:block}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
 
@@ -10614,7 +10618,12 @@ function buildPptxPackage(){
       });
       relsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relEntries}</Relationships>`;
     }
-    const slideXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapesXml}</p:spTree></p:cSld></p:sld>`;
+    // <p:clrMapOvr> is technically optional per the base schema, but real PowerPoint is known
+    // to reject/flag-for-repair hand-built slides that omit it — LibreOffice, Google Slides,
+    // and python-pptx are all more lenient here and don't reveal the problem, but Microsoft's
+    // own parser does. <a:masterClrMapping/> just inherits the master's color map, same as
+    // every real PowerPoint-authored slide with no per-slide override.
+    const slideXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapesXml}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
     return {slideXml, relsXml};
   });
 
@@ -17729,7 +17738,7 @@ let previewLaserOn=false;
 function previewSetLaser(on){
   previewLaserOn=on;
   const overlay=el('preview-overlay'), dot=el('preview-laser-dot');
-  if(overlay)overlay.style.cursor=on?'none':'';
+  if(overlay){ overlay.style.cursor=on?'none':''; overlay.classList.toggle('laser-active',on); }
   dot?.classList.toggle('on',on);
   el('preview-laser-toggle')?.classList.toggle('active',on);
 }
