@@ -1995,6 +1995,15 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-priority[data-priority="med"]{color:#d1a23a}
 .todo-priority[data-priority="high"]{color:#c2553d}
 .todo-priority svg{fill:currentColor}
+.todo-status{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.todo-status.set{display:inline-flex}
+.todo-row:hover .todo-status{display:inline-flex}
+.todo-status:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-status[data-status="waiting"]{color:#8a7fc9}
+.todo-status[data-status="progress"]{color:#5aa970}
+.todo-status[data-status="blocked"]{color:#c2553d}
+.todo-status[data-status="review"]{color:#c98f4a}
+.todo-status svg{fill:currentColor}
 .todo-meta-row{display:flex;align-items:center;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .todo-text{font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
@@ -2100,6 +2109,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #todos-panel.actions-fixed .todo-drag-handle{opacity:.7}
 #todos-panel.actions-fixed .todo-actions{opacity:1;pointer-events:auto}
 #todos-panel.actions-fixed .todo-priority{display:inline-flex}
+#todos-panel.actions-fixed .todo-status{display:inline-flex}
 #todos-panel.actions-fixed .todo-due{display:inline-flex}
 #todos-panel.actions-fixed .todo-link{display:inline-flex}
 #editor-todos-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
@@ -20270,7 +20280,8 @@ function _addTagPopoverFromInput(){
   const TODOS_WIDTH_KEY='sakura_todos_width_v1';
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
-  let todos=[]; // {id, text, done, createdAt, completedAt, priority, dueDate, link, repeat, subtasks, subtasksOpen} — array order IS open-task order
+  const STATUSES=['none','waiting','progress','blocked','review'];
+  let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, repeat, subtasks, subtasksOpen} — array order IS open-task order
   const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
   const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=720;
@@ -20283,6 +20294,7 @@ function _addTagPopoverFromInput(){
       if(raw){ const parsed=JSON.parse(raw); if(Array.isArray(parsed)) todos=parsed.map(t=>({
         id:t.id, text:t.text, done:!!t.done, createdAt:t.createdAt||Date.now(), completedAt:t.completedAt||null,
         priority: PRIORITIES.includes(t.priority)?t.priority:'none',
+        status: STATUSES.includes(t.status)?t.status:'none',
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
         link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
         linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
@@ -20343,7 +20355,7 @@ function _addTagPopoverFromInput(){
   function addTodo(text){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
-    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', dueDate:null, link:null, repeat:null, subtasks:[], subtasksOpen:true });
+    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
   }
@@ -20526,6 +20538,14 @@ function _addTagPopoverFromInput(){
     if(!t) return;
     const idx=PRIORITIES.indexOf(t.priority||'none');
     t.priority=PRIORITIES[(idx+1)%PRIORITIES.length];
+    saveTodos();
+    renderTodos();
+  }
+  function cycleStatus(id){
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    const idx=STATUSES.indexOf(t.status||'none');
+    t.status=STATUSES[(idx+1)%STATUSES.length];
     saveTodos();
     renderTodos();
   }
@@ -20782,6 +20802,9 @@ function _addTagPopoverFromInput(){
     });
     body.querySelectorAll('.todo-priority').forEach(btn=>{
       btn.addEventListener('click',()=>cyclePriority(btn.getAttribute('data-id')));
+    });
+    body.querySelectorAll('.todo-status').forEach(btn=>{
+      btn.addEventListener('click',()=>cycleStatus(btn.getAttribute('data-id')));
     });
     body.querySelectorAll('.todo-due').forEach(btn=>{
       btn.addEventListener('click',()=>openDueDateEditor(btn));
@@ -21071,6 +21094,14 @@ function _addTagPopoverFromInput(){
     return p==='high'?'High':p==='med'?'Medium':p==='low'?'Low':'Priority';
   }
 
+  function statusTitle(s){
+    return s==='waiting'?'Status: Waiting (click to cycle)':s==='progress'?'Status: In Progress (click to cycle)':s==='blocked'?'Status: Blocked (click to cycle)':s==='review'?'Status: Review (click to cycle)':'Status: None (click to set)';
+  }
+
+  function statusLabel(s){
+    return s==='waiting'?'Waiting':s==='progress'?'In Progress':s==='blocked'?'Blocked':s==='review'?'Review':'Status';
+  }
+
   function subtasksSectionHtml(t){
     const subs=t.subtasks||[];
     const doneCount=subs.filter(s=>s.done).length;
@@ -21109,7 +21140,7 @@ function _addTagPopoverFromInput(){
     const t=todos[idx];
     const copy={
       id: uid(), text: t.text, done:false, createdAt: Date.now(), completedAt: null,
-      priority: t.priority||'none', dueDate: t.dueDate||null, link: t.link||null, linkLabel: t.linkLabel||null,
+      priority: t.priority||'none', status: t.status||'none', dueDate: t.dueDate||null, link: t.link||null, linkLabel: t.linkLabel||null,
       repeat: t.repeat||null,
       subtasks: (t.subtasks||[]).map(s=>({id:subUid(), text:s.text, done:false})),
       subtasksOpen: t.subtasksOpen!==false
@@ -21174,6 +21205,7 @@ function _addTagPopoverFromInput(){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
     const priority=t.priority||'none';
+    const status=t.status||'none';
     const link=t.link;
     const linkLabel=t.linkLabel||'';
     const linkDisplay=linkLabel||fmtLink(link);
@@ -21187,6 +21219,10 @@ function _addTagPopoverFromInput(){
       +`<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
         +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
         +`<span>${priorityLabel(priority)}</span>`
+      +`</button>`
+      +`<button class="todo-status${status!=='none'?' set':''}" data-id="${t.id}" data-status="${status}" data-tip="${statusTitle(status)}" aria-label="Cycle status">`
+        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${status!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
+        +`<span>${statusLabel(status)}</span>`
       +`</button>`
       +`<button class="todo-due${due?' set':''}${overdue?' overdue':''}${t.repeat?' recurring':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
@@ -21829,6 +21865,7 @@ function _addTagPopoverFromInput(){
     open.forEach(t=>{
       const bits=[];
       if(t.priority&&t.priority!=='none') bits.push(priorityLabel(t.priority));
+      if(t.status&&t.status!=='none') bits.push(statusLabel(t.status));
       if(t.dueDate) bits.push('Due '+t.dueDate);
       if(t.link) bits.push('Link: '+t.link);
       lines.push('[ ] '+t.text+(bits.length?' ('+bits.join(', ')+')':''));
