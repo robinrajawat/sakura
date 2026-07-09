@@ -10533,6 +10533,50 @@ function pptxImageDims(bytes,mime){
   return {width:800,height:600};
 }
 function pptxExtForMime(mime){ return mime==='image/png'?'png':(mime==='image/gif'?'gif':(mime==='image/jpeg'?'jpeg':'png')); }
+// Sniffs the real format from the file's own magic bytes rather than trusting the declared
+// MIME type on the data URI — screenshot tools and file pickers don't always agree with what
+// they claim (WEBP masquerading as a generic type, etc.), and embedding bytes that don't
+// actually match their declared format is exactly the kind of mismatch PowerPoint's parser
+// rejects outright even though more lenient tools (LibreOffice, python-pptx) don't care.
+function pptxSniffFormat(bytes){
+  if(bytes.length>=8&&bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4E&&bytes[3]===0x47) return 'png';
+  if(bytes.length>=3&&bytes[0]===0xFF&&bytes[1]===0xD8&&bytes[2]===0xFF) return 'jpeg';
+  if(bytes.length>=6&&bytes[0]===0x47&&bytes[1]===0x49&&bytes[2]===0x46) return 'gif';
+  if(bytes.length>=12&&bytes[0]===0x52&&bytes[1]===0x49&&bytes[2]===0x46&&bytes[3]===0x46&&bytes[8]===0x57&&bytes[9]===0x45&&bytes[10]===0x42&&bytes[11]===0x50) return 'webp';
+  if(bytes.length>=2&&bytes[0]===0x42&&bytes[1]===0x4D) return 'bmp';
+  return null; // unrecognized, including SVG (text-based — no fixed binary signature)
+}
+// Anything that isn't natively PNG/JPEG/GIF gets re-encoded as real PNG bytes via canvas
+// before embedding, so what's declared always matches what's actually there — sidesteps not
+// just the mismatch above but also WEBP/SVG support gaps in older PowerPoint versions.
+// Resolves null (caller skips the image) if the browser can't decode it at all.
+function pptxEnsureCompatibleImage(bytes,declaredMime){
+  const sniffed=pptxSniffFormat(bytes);
+  if(sniffed==='png') return Promise.resolve({bytes,mime:'image/png'});
+  if(sniffed==='jpeg') return Promise.resolve({bytes,mime:'image/jpeg'});
+  if(sniffed==='gif') return Promise.resolve({bytes,mime:'image/gif'});
+  return new Promise(resolve=>{
+    let blob; try{ blob=new Blob([bytes],{type:declaredMime||'image/png'}); }catch(e){ resolve(null); return; }
+    const url=URL.createObjectURL(blob);
+    const cleanup=()=>{ try{URL.revokeObjectURL(url)}catch(e){} };
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas');
+        canvas.width=img.naturalWidth||800; canvas.height=img.naturalHeight||600;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0);
+        canvas.toBlob(pngBlob=>{
+          cleanup();
+          if(!pngBlob){ resolve(null); return; }
+          pngBlob.arrayBuffer().then(buf=>resolve({bytes:new Uint8Array(buf),mime:'image/png'})).catch(()=>resolve(null));
+        },'image/png');
+      }catch(e){ cleanup(); resolve(null); }
+    };
+    img.onerror=()=>{ cleanup(); resolve(null); };
+    img.src=url;
+  });
+}
 // Lays a row of images out left-to-right, each scaled uniformly so the row's total width
 // fits areaW, capped by areaH — a single big diagram gets the full height; two or three
 // share the row rather than stacking into an ever-taller slide.
@@ -10558,18 +10602,20 @@ function pptxPictureShape(id,rId,x,y,w,h){
   return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Picture ${id}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
 }
 const PPTX_SLIDE_W=12192000, PPTX_SLIDE_H=6858000;
-function buildPptxPackage(){
+async function pptxGatherSlidesData(){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
   const author=String(meta.author||'');
 
   // Gather per-slide content from the same previewSlides list Preview/Presenter renders
   // from — caller is responsible for having just called renderPreviewBody() so this is
-  // current.
-  const slidesData=previewSlides.map(slide=>{
-    if(slide.nodeId===null) return {title, bullets: author?[author]:[], images:[]};
+  // current. Async because each diagram image may need to go through
+  // pptxEnsureCompatibleImage first.
+  const slidesData=[];
+  for(const slide of previewSlides){
+    if(slide.nodeId===null){ slidesData.push({title, bullets: author?[author]:[], images:[]}); continue; }
     const idx=getIndex(slide.nodeId);
-    if(idx<0) return {title:slide.label, bullets:[], images:[]};
+    if(idx<0){ slidesData.push({title:slide.label, bullets:[], images:[]}); continue; }
     const node=nodes[idx];
     const bullets=[];
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
@@ -10581,17 +10627,24 @@ function buildPptxPackage(){
     const images=[];
     if(node.note){
       const split=splitNoteDiagramImages(node.note);
-      split.diagrams.forEach(d=>{
+      for(const d of split.diagrams){
         const decoded=pptxDataUrlToBytes(d.src);
-        if(!decoded) return;
-        const dims=pptxImageDims(decoded.bytes,decoded.mime);
-        images.push({bytes:decoded.bytes, mime:decoded.mime, width:dims.width, height:dims.height, alt:d.alt});
-      });
+        if(!decoded) continue;
+        const safe=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
+        if(!safe) continue; // undecodable — skip this one image rather than risk the whole export
+        const dims=pptxImageDims(safe.bytes,safe.mime);
+        images.push({bytes:safe.bytes, mime:safe.mime, width:dims.width, height:dims.height, alt:d.alt});
+      }
     }
-    return {title:slide.label, bullets, images};
-  });
+    slidesData.push({title:slide.label, bullets, images});
+  }
   if(!slidesData.length) slidesData.push({title, bullets: author?[author]:[], images:[]});
-
+  return slidesData;
+}
+function buildPptxPackage(slidesData){
+  const meta=getMeta();
+  const title=String(meta.title||'Untitled');
+  const author=String(meta.author||'');
   const mediaFiles=[];
   const slideParts=slidesData.map((sd,i)=>{
     const slideNum=i+1;
@@ -10663,7 +10716,7 @@ function buildPptxPackage(){
   mediaFiles.forEach(m=>files.push(m));
   return docxZipStore(files);
 }
-function exportPptx(){
+async function exportPptx(){
   const wasPreviewActive=previewActive;
   // See exportPdfDirect's identical comment above — same fix, same reasoning: respect
   // Preview's own current fold state rather than silently re-deriving it from the outline
@@ -10673,7 +10726,8 @@ function exportPptx(){
   }
   renderPreviewBody();
   try{
-    const bytes=buildPptxPackage();
+    const slidesData=await pptxGatherSlidesData();
+    const bytes=buildPptxPackage(slidesData);
     const meta=getMeta(); const title=(meta.title||'presentation').replace(/[\\/:*?"<>|]+/g,'_');
     suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
     const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
@@ -11139,7 +11193,7 @@ el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('t
 el('templates-set-default-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); setCurrentAsDefaultTemplate()});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
 el('scale-popover-slider').addEventListener('input',e=>setEditorScale(e.target.value,true));
-document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
+document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='diagram-prompt')await exportDiagramPrompt(); else if(type==='drawio-from-ai')openPasteDrawioModal()}));
 document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); const type=item.dataset.import; if(type==='opml')triggerOpmlImport(); else if(type==='docx')triggerDocxImport(); else if(type==='ai-restructure')restructureTextWithAi();})); ['clear-btn','sort-root-az-btn','sort-root-za-btn','sort-root-depth-btn'].forEach(id=>el(id).addEventListener('click',()=>el('more-menu').classList.remove('open')));
 document.addEventListener('click',e=>{ const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')},true);
 // Dedicated capture-phase listener for Node Quick Assist's outside-click dismissal.
