@@ -14287,6 +14287,28 @@ function reloadCurrentDocFromOtherTab(){
 }
 window.addEventListener('storage', e=>{
   if(!e.key)return; // some browsers fire a no-key event for localStorage.clear() elsewhere — nothing actionable here
+  if(e.key===PREFS_KEY||e.key===LEGACY_PREFS_KEY){
+    // Settings changed in another tab/window. savePrefs() always writes the FULL settings
+    // blob, not a per-field diff — so if this tab still has the old value in memory (e.g.
+    // hover toolbar was just turned off over in another tab), the next time *anything*
+    // here triggers savePrefs() — even something unrelated — it silently overwrites the
+    // other tab's newer change back to the stale value, with no warning. Reloading prefs
+    // immediately keeps this tab's in-memory state current so its own future saves don't
+    // clobber changes made elsewhere. Functional checks that read these variables live
+    // (like the hover toolbar's own enabled check) are correct again right away; toggle
+    // switches in an open Settings panel here may still show the old position until it's
+    // next opened, but that's cosmetic — the underlying behavior and the next save are not.
+    loadPrefs();
+    applyFeatureVisibility();
+    applyStatusbarItemVisibility();
+    applyToolbarGroupVisibility();
+    applyFormatButtonVisibility();
+    applyExtrasButtonVisibility();
+    applyContextHiddenActions();
+    applyAutoRewriteExclusionSettings();
+    if(typeof updateAutoRewriteStatusChip==='function')updateAutoRewriteStatusChip();
+    return;
+  }
   const openTab=openTabs.find(t=>docKey(t.docId)===e.key);
   if(openTab){
     if(openTab.docId===currentDocId){
