@@ -5016,6 +5016,17 @@ function sakuraSanitizeRichHtml(html){
   }catch(e){ return ''; } // fail closed — if sanitizing itself throws, discard rather than risk raw insertion
 }
 function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+// The image-resize selection outline (.editor-img-selected) is a transient UI state,
+// not content — it must never be baked into saved note/pad HTML, or the accent border
+// shows up permanently on reload/reopen even though nothing is actually selected.
+// Every place that reads editor.innerHTML for persistence should go through this.
+function cleanEditorHtml(editor){
+  if(!editor) return '';
+  if(!editor.querySelector('.editor-img-selected')) return editor.innerHTML;
+  const clone=editor.cloneNode(true);
+  clone.querySelectorAll('.editor-img-selected').forEach(el=>el.classList.remove('editor-img-selected'));
+  return clone.innerHTML;
+}
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
 let lastHighlightColor=(()=>{try{const v=localStorage.getItem('sakura_lastHighlightColor'); return HIGHLIGHT_COLORS[v]?v:'yellow'}catch(e){return 'yellow'}})();
@@ -5169,7 +5180,7 @@ function saveToStorage(){
   try{
     if(!currentDocId)return;
     maybeAutoSnapshotBeforeSave(currentDocId);
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:el('pad-editor')?.innerHTML||''};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor'))};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -5228,7 +5239,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=el('pad-editor')?.innerHTML||'';
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor'));
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -6948,7 +6959,7 @@ function stripHtmlToText(html){
   return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
 }
 function getDocNodesForSearch(docId,indexEntry){
-  if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:el('pad-editor')?.innerHTML||''};
+  if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
   const openTab=findOpenTab(docId);
   if(openTab)return {docNodes:openTab.nodes,docTitle:openTab.title||indexEntry?.title||'Untitled',docPad:openTab.pad||''};
   const stored=loadTabFromStorageObj(docId);
@@ -15719,7 +15730,7 @@ el('note-editor')?.addEventListener('keydown', e => {
       const editor = el('note-editor');
       if (notePanelNodeId !== null && editor) {
         const idx = getIndex(notePanelNodeId);
-        if (idx >= 0) { nodes[idx].note = editor.innerHTML; markDirty(); }
+        if (idx >= 0) { nodes[idx].note = cleanEditorHtml(editor); markDirty(); }
       }
     }
     return;
@@ -15925,7 +15936,7 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
     // so the rewrite was unrecoverable once the Note panel closed.
     if (notePanelNodeId !== null) {
       const idx = getIndex(notePanelNodeId);
-      if (idx >= 0) { pushUndo(); nodes[idx].note = editor.innerHTML; markDirty(); }
+      if (idx >= 0) { pushUndo(); nodes[idx].note = cleanEditorHtml(editor); markDirty(); }
     }
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   } catch (err) {
@@ -15977,7 +15988,7 @@ el('ntb-ai-summarise')?.addEventListener('click', async () => {
     // Persist
     if (notePanelNodeId !== null) {
       const tidx = getIndex(notePanelNodeId);
-      if (tidx >= 0) { nodes[tidx].note = editor.innerHTML; markDirty(); }
+      if (tidx >= 0) { nodes[tidx].note = cleanEditorHtml(editor); markDirty(); }
     }
     showToast('Summary appended ✦', 'success');
   } catch (err) {
@@ -18052,7 +18063,7 @@ function _imgResizeSelect(img,editorId){
 function _imgResizePersist(){
   if(_imgResizeEditorId==='note-editor'&&notePanelNodeId!==null){
     const idx=getIndex(notePanelNodeId); const editor=el('note-editor');
-    if(idx>=0&&editor)nodes[idx].note=editor.innerHTML;
+    if(idx>=0&&editor)nodes[idx].note=cleanEditorHtml(editor);
   }
   markDirty();
 }
