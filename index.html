@@ -3416,7 +3416,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>Notes render as their real rich content (images, lists, links) inside a card, not the small dot from the editor</li>
 <li>Decision logs become a card with a "Decision Log" header — Status always shows there as a colored badge — including its unedited default of "Proposed", since that's a real status rather than a placeholder question (color is guessed from the word itself: approved/accepted/implemented/resolved/done/confirmed → green, rejected/declined/blocked/abandoned/cancelled → red, hold/pending/review → orange, anything else → gray). Each other answered field gets its own labeled block below, in order — and if you've written the actual answer as child nodes under a field (e.g. a numbered list under Rationale, or bullet points under Impact) rather than on the field's own line, that nested content renders as a list inside the block, numbered automatically if your items start with "1.", "2.", etc. A field only shows if it has real content — either its own line has been edited past the default question, or it has children. Which fields appear at all is configurable in Settings → Preview → "Decision card fields" (Context + Decision by default; this only affects how Preview summarizes a log, not what the Decision Log feature itself inserts)</li>
 <li>Right-click anywhere in Preview → Laser pointer, for pointing at things while presenting without your real cursor in the way. Turns off automatically when you close Preview</li>
-<li>Export buttons in the header (Markdown / Word) are the same export as everywhere else in Sakura — Preview just gives you a one-click path to them while you're already looking at the rendered result</li>
+<li>Export buttons in the header (PDF / Word) are the same export as everywhere else in Sakura — Preview just gives you a one-click path to them while you're already looking at the rendered result</li>
 </ul>
 </div>
           <div class="help-section" data-cat="editing">
@@ -4275,7 +4275,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         <button type="button" id="preview-collapse-all-btn" data-tip="Collapse all"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
         <button type="button" id="preview-expand-all-btn" data-tip="Expand all"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 8 12 13 18 8"/><polyline points="6 14 12 19 18 14"/></svg></button>
         <button type="button" id="preview-copy-rich-btn" data-tip="Copy as rich text — paste into Word, OneNote, Notion, email, etc."><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>
-        <button type="button" id="preview-export-md-btn" data-tip="Export as Markdown"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Markdown</button>
+        <button type="button" id="preview-export-docx-btn" data-tip="Export as Word"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Word</button>
         <button type="button" id="preview-export-pdf-btn" data-tip="Export as PDF — opens print dialog"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="9" x2="10" y2="9"/></svg>PDF</button>
         <button type="button" id="preview-close-btn" data-tip="Close preview" aria-label="Close preview"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
       </div>
@@ -18769,7 +18769,7 @@ applyPreviewTocWidth(previewTocWidth);
 el('preview-body')?.addEventListener('scroll',updatePreviewProgress);
 el('preview-collapse-all-btn')?.addEventListener('click',previewCollapseAll);
 el('preview-expand-all-btn')?.addEventListener('click',previewExpandAll);
-el('preview-export-md-btn')?.addEventListener('click',()=>exportMarkdown(previewCollapsedIds));
+el('preview-export-docx-btn')?.addEventListener('click',()=>exportDocx(previewCollapsedIds));
 el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 // PDF export triggered directly from the Export menu, without opening the preview overlay.
 // Fold state must match every other export item (md/txt/docx/opml), i.e. governed by
@@ -21367,10 +21367,11 @@ document.addEventListener('DOMContentLoaded', function(){
       const items=card.querySelectorAll('li');
       let cardHasMatch=!q;
       items.forEach(li=>{
+        clearHelpSearchHighlights(li);
         const match=!q||li.textContent.toLowerCase().includes(q);
         li.classList.toggle('cs-hidden',!match);
         li.classList.toggle('cs-match',!!q&&match);
-        if(match)cardHasMatch=true;
+        if(match){cardHasMatch=true; if(q)highlightHelpSearchNode(li,q);}
       });
       card.classList.toggle('cs-hidden',!cardHasMatch);
       if(cardHasMatch)anyVisible=true;
