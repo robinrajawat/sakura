@@ -18772,11 +18772,9 @@ el('preview-expand-all-btn')?.addEventListener('click',previewExpandAll);
 el('preview-export-docx-btn')?.addEventListener('click',()=>exportDocx(previewCollapsedIds));
 el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 // PDF export triggered directly from the Export menu, without opening the preview overlay.
-// Fold state must match every other export item (md/txt/docx/opml), i.e. governed by
-// collapsedIds + skipFoldedInExports — NOT by previewCollapsedIds, which is a separate,
-// preview-only expand/collapse state with its own independent default. Using previewCollapsedIds
-// here would make this button silently disagree with the "Folded sections are skipped in
-// exports & print" note shown in the same menu.
+// Fold state follows Preview's own previewCollapsedIds, same as PowerPoint and Word — see the
+// comment inside exportPdfDirect below for why, and Settings → Export & print → "Skip folded
+// sections" for the (deliberately different) behavior of Markdown/OPML/Text/Print.
 function exportPdfDirect(){
   if(previewPresenting)exitPresenterMode();
   const wasPreviewActive=previewActive;
@@ -23627,7 +23625,9 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-combo" data-cs-shortcut="copyAsImage"></span> <span class="cs-desc">copy selection as image</span></li>
           <li><span class="cs-desc">Markdown</span> <span class="help-kbd">.md</span></li>
           <li><span class="cs-desc">Tree</span> <span class="help-kbd">.txt</span></li>
-          <li><span class="cs-desc">Word</span> <span class="help-kbd">.docx</span> <span class="cs-desc">— real Heading styles + updatable TOC, Decision Log cards, checkboxes, notes/code blocks</span></li>
+          <li><span class="cs-desc">PDF</span> <span class="help-kbd">.pdf</span> <span class="cs-desc">— prints Preview/Presenter's actual rendered output, follows its fold state</span></li>
+          <li><span class="cs-desc">PowerPoint</span> <span class="help-kbd">.pptx</span> <span class="cs-desc">— real editable slides + bullets, diagram images embedded, follows Preview's fold state</span></li>
+          <li><span class="cs-desc">Word</span> <span class="help-kbd">.docx</span> <span class="cs-desc">— real Heading styles + updatable TOC, Decision Log cards, checkboxes, rich-formatted notes, diagram images, optional cover page, follows Preview's fold state</span></li>
           <li data-feature-item="decisionlog"><span class="cs-desc">Decision Log → Excel</span> <span class="help-kbd">.xlsx</span></li>
           <li><span class="cs-desc">Export ▾ / Import ▾ in header — document-level (Markdown, Word, OPML…)</span></li>
           <li><span class="cs-desc">Sidebar footer → Backup / Restore — full app data</span></li>
