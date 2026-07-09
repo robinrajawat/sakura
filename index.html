@@ -21807,7 +21807,11 @@ function _addTagPopoverFromInput(){
         dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
         link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
         linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
-        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || (typeof t.nodeRef.nodeId==='string' && t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId||null)} : null,
+        // nodeId is a *number* — node ids come from normalizeNode()'s Number.isFinite(n.id)
+        // check/nextId counter, never a string. Requiring it to be a non-empty string here
+        // (an easy mistake given docId legitimately is one) silently nulled out every saved
+        // nodeRef on load, which looked exactly like "the link doesn't survive a reload".
+        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || Number.isFinite(t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId===null?null:t.nodeRef.nodeId)} : null,
         repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
@@ -23051,7 +23055,13 @@ function _addTagPopoverFromInput(){
   function renderNodeSearchResults(q){
     const box=document.getElementById('link-pop-node-results');
     if(!box) return;
-    const query=String(q||'').trim();
+    // qaTokenizeQuery/qaHayMatches (and the buildFullLabelMarkHtml/buildMatchSnippetHtml
+    // highlighters built on them) all assume the caller already lowercased the query — every
+    // other caller in the app gets this for free because qaRender() does it once before ever
+    // reaching them. This popover has its own input, so it has to do the same normalization
+    // itself, or a query like "Pricing" would silently match nothing against a lowercased
+    // "pricing plan" haystack.
+    const query=String(q||'').trim().toLowerCase().replace(/\s+/g,' ');
     if(!query){ box.innerHTML='<div class="link-pop-node-empty">Type to search documents and nodes</div>'; return; }
     const docResults=searchDocsForTodoLink(query);
     const nodeResults=searchNodesForTodoLink(query);
