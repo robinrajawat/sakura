@@ -10742,22 +10742,60 @@ function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x
 // idea as the rest of the export tracking the live theme instead of a fixed palette.
 const PPTX_DL_LABEL_COLOR_KEY={'Context':'fcBlue','Decision':'fcRed','Rationale':'fcPurple','Alternatives':'fcGray','Impact':'fcOrange','Status':'fcGreen'};
 const PPTX_DL_HEADER_RE=/^Decision Log(?:\s·|$)/;
+// A field's real content sometimes isn't its own inline "Label: value" text at all — Rationale/
+// Alternatives/Impact in particular are just as often answered as a numbered or bulleted list of
+// child nodes under the field (see previewRenderDlList), with the field's own text left as the
+// unanswered placeholder question. Flattens that nested tree (built via the app's own
+// previewBuildNodeTree, so ordered/unordered detection and multi-level nesting match Presenter
+// exactly) into {text, indent} rows for layout, stripping the leading "1. "/"2. " Presenter
+// itself strips before display for ordered lists.
+function pptxBuildDlList(startIdx, endIdx){
+  const out=[];
+  function walk(items, depth){
+    if(!items||!items.length) return;
+    const isOrdered=/^\d+[.)]\s+/.test(String(items[0].node.text||'').trim());
+    items.forEach((item,i)=>{
+      let text=String(item.node.text||'').trim();
+      if(isOrdered) text=text.replace(/^\d+[.)]\s+/,'');
+      out.push({text, indent:depth, ordered:isOrdered, num:i+1});
+      walk(item.children, depth+1);
+    });
+  }
+  walk(previewBuildNodeTree(startIdx,endIdx), 0);
+  return out;
+}
 // Shared by both places a decision log can appear: as a slide-break node's own text (the whole
 // slide IS the log — the natural structure when "one slide per decision" is the intent), or as
-// a child of a bigger slide (see the items loop below). headerIdx's direct children (depth+1)
-// are read as "Label: value" fields, same parsing Presenter itself uses.
+// a child of a bigger slide (see the items loop below). Mirrors previewRenderDecisionCard
+// field-by-field: a fully unanswered placeholder field (no inline value AND no child list) is
+// skipped entirely, same as Presenter hides it; a field disabled via Settings → Preview →
+// decision log fields (previewDlFields) is skipped too, so the export doesn't show fields the
+// person has chosen not to display.
 function pptxParseDecisionLogFields(headerIdx){
   const headerNode=nodes[headerIdx];
   const {timestamp,author}=previewParseDlHeader(headerNode.text);
-  const fields=[];
-  for(let k=headerIdx+1;k<nodes.length&&nodes[k].depth>headerNode.depth;k++){
-    if(nodes[k].depth!==headerNode.depth+1) continue;
-    const raw=String(nodes[k].text||'').trim();
-    if(!raw) continue;
-    const {label,value}=previewSplitDlLabel(raw);
-    fields.push(label?{label,value:value.trim()}:{label:'',value:raw});
+  const fieldIdxs=[];
+  for(let j=headerIdx+1;j<nodes.length&&nodes[j].depth>headerNode.depth;j++){
+    if(nodes[j].depth===headerNode.depth+1) fieldIdxs.push(j);
   }
-  let statusValue=''; fields.forEach(f=>{ if(f.label.toLowerCase()==='status') statusValue=f.value; });
+  let statusValue='';
+  fieldIdxs.forEach(fi=>{
+    const raw=String(nodes[fi].text||'').trim();
+    const {label,value}=previewSplitDlLabel(raw);
+    if(label.toLowerCase()==='status') statusValue=value.trim();
+  });
+  const fields=[];
+  fieldIdxs.forEach(fi=>{
+    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
+    const end=getSubtreeEnd(fi);
+    const hasChildren=end>fi+1;
+    const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
+    if(isPlaceholder&&!hasChildren) return; // fully unanswered — Presenter shows nothing for this field either
+    const {label,value}=previewSplitDlLabel(raw);
+    if(!label||label.toLowerCase()==='status') return;
+    if(!previewDlFields.includes(label.toLowerCase())) return;
+    fields.push({label, value:isPlaceholder?'':value.trim(), list:hasChildren?pptxBuildDlList(fi+1,end):[]});
+  });
   return {type:'decisionLog', timestamp, author, statusValue, statusColor:previewStatusBadgeColor(statusValue), fields};
 }
 async function pptxGatherSlidesData(){
@@ -10868,48 +10906,90 @@ async function buildPptxPresentation(slidesData){
   const MARGIN=0.6; // inches
   const FONT='Inter'; // same face Presenter mode uses; PowerPoint substitutes a default if not installed
 
-  // Rough text-flow estimate: pptxgenjs/PowerPoint don't report back how many lines a string
-  // actually wraps to at a given box width and font size, so this approximates it the same way
-  // any text-layout estimate has to — an average glyph width for a proportional sans-serif
-  // (Inter/Calibri-ish) at a given point size, in inches. Good enough to size a box so text
-  // doesn't overlap the next element; not pixel-exact, which is why cardH computation below
-  // still has a little breathing room built in rather than packing fields edge-to-edge.
-  function pptxEstimateLines(text, boxWidthIn, fontSizePt){
+  // pptxgenjs/PowerPoint don't report back how many lines a string actually wraps to at a given
+  // box width and font size, so this measures it for real instead of guessing via a fixed
+  // chars-per-line ratio — a ratio badly underestimates line count for text with a lot of
+  // capitals/wide characters (acronyms, abbreviations — exactly what technical decision-log
+  // content tends to be full of), which is what let long field values still overlap the next
+  // field after the first height-estimation pass. Uses the actual 'Inter' web font already
+  // loaded for the app UI, via an offscreen canvas — real glyph metrics, not an approximation.
+  let _pptxMeasureCtx=null;
+  function pptxMeasureWrappedLines(text, boxWidthIn, fontSizePt, bold){
     const s=String(text||'');
     if(!s) return 1;
-    const charW=fontSizePt*0.52/72; // inches per average glyph
-    const charsPerLine=Math.max(4, Math.floor(boxWidthIn/charW));
-    return s.split('\n').reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+    if(!_pptxMeasureCtx) _pptxMeasureCtx=document.createElement('canvas').getContext('2d');
+    const ctx=_pptxMeasureCtx;
+    ctx.font=(bold?'700 ':'400 ')+fontSizePt+'pt Inter, sans-serif';
+    const boxWidthPx=Math.max(1, boxWidthIn*96); // canvas measureText works in CSS px; 96px/in
+    let totalLines=0;
+    s.split('\n').forEach(paragraph=>{
+      const words=paragraph.split(/\s+/).filter(Boolean);
+      if(!words.length){ totalLines+=1; return; }
+      const spaceW=ctx.measureText(' ').width;
+      let lineW=0, lines=1;
+      words.forEach(word=>{
+        const wordW=ctx.measureText(word).width;
+        const add=(lineW===0?0:spaceW)+wordW;
+        if(lineW>0&&lineW+add>boxWidthPx){ lines++; lineW=wordW; }
+        else lineW+=add;
+      });
+      totalLines+=lines;
+    });
+    return Math.max(1,totalLines);
   }
   function pptxLineHeightIn(fontSizePt, lineSpacingMultiple){
     return fontSizePt*(lineSpacingMultiple||1.25)/72;
   }
+  // Breaks one decision-log field down into individually-measured rows — a label row, an
+  // (optional) inline value row, then one row per nested sub-list item (previewRenderDlList
+  // content: Rationale/Alternatives/Impact are just as often answered as a numbered/bulleted
+  // child list as an inline value, and previously that list was dropped from the export
+  // entirely since only the field's own inline text was read). Each row is measured and
+  // positioned independently, rather than lumped into one flat text block, so a field with a
+  // long value AND a 3-item sub-list gets exactly the room the sum of its parts needs.
+  function pptxBuildFieldRows(f, scale, innerW){
+    const rows=[];
+    const labelFS=9*scale, valueFS=12*scale, listFS=11.5*scale;
+    if(f.label) rows.push({kind:'label', text:f.label.toUpperCase(), fontSize:labelFS, lines:1, gapAfter:0.05*scale});
+    if(f.value){
+      const lines=pptxMeasureWrappedLines(f.value, innerW, valueFS, false);
+      rows.push({kind:'value', text:f.value, fontSize:valueFS, lines, gapAfter:0.05*scale});
+    }
+    f.list.forEach(item=>{
+      const indent=Math.min(item.indent,3)*0.22;
+      const marker=item.ordered?(item.num+'.  '):'•  ';
+      const availW=Math.max(0.5, innerW-indent-0.22);
+      const lines=pptxMeasureWrappedLines(item.text, availW, listFS, false);
+      rows.push({kind:'list', text:item.text, marker, indent, fontSize:listFS, lines, gapAfter:0.04*scale});
+    });
+    return rows;
+  }
+  function pptxFieldRowsHeight(rows){
+    return rows.reduce((sum,r)=>sum+r.lines*pptxLineHeightIn(r.fontSize,1.25)+r.gapAfter, 0);
+  }
   // Renders one decision-log card (mirrors .pv-dlog / previewRenderDecisionCard): a card
   // background with a colored left accent bar keyed to the status (green/red/orange/gray, same
   // keyword matching as previewStatusBadgeColor), a header with an optional status pill, then
-  // each field as a small colored label over its value. Each field's row height is sized to
-  // its own estimated wrapped line count — a one-line "Status: Approved" and a five-line
-  // "Context: ..." paragraph get very different amounts of room — rather than a fixed height
-  // per field, which is what let a long value's wrapped text run into the next field's label.
-  // Font/spacing shrinks (down to a floor) if the card's fields wouldn't otherwise fit the
-  // space left on the slide.
+  // each field as a small colored label over its value/sub-list. Each field's row height is
+  // sized to its own measured wrapped line count — a one-line "Status: Approved" and a
+  // five-line "Context: ..." paragraph get very different amounts of room — rather than a fixed
+  // height per field, which is what let a long value's wrapped text run into the next field's
+  // label. Font/spacing shrinks (down to a floor) if the card's fields wouldn't otherwise fit
+  // the space left on the slide.
   function addDecisionLogCard(slide, log, x, y, w, maxH){
     const accentHex=theme['fc'+log.statusColor[0].toUpperCase()+log.statusColor.slice(1)]||theme.fcGray;
     const headerH=0.4;
     const padY=0.12;
     const innerW=w-0.36;
-    const fieldGap=0.12;
+    const fieldGap=0.13;
 
-    const fieldHeightAt=(f,scale)=>{
-      const valueFontSize=12*scale, labelFontSize=9*scale;
-      const valueLines=pptxEstimateLines(f.value, innerW, valueFontSize);
-      const labelH=f.label?pptxLineHeightIn(labelFontSize,1.1)+0.03:0;
-      const valueH=valueLines*pptxLineHeightIn(valueFontSize,1.25);
-      return labelH+valueH+fieldGap;
-    };
-    const neededH=headerH+padY*2+log.fields.reduce((sum,f)=>sum+fieldHeightAt(f,1),0);
+    // Pass 1 (scale=1): how much room would every field need at full size, to decide the scale.
+    const neededH=headerH+padY*2+log.fields.reduce((sum,f)=>sum+pptxFieldRowsHeight(pptxBuildFieldRows(f,1,innerW))+fieldGap, 0);
     const scale=Math.max(0.55, Math.min(1, maxH/Math.max(neededH,0.01)));
-    const fieldHeights=log.fields.map(f=>fieldHeightAt(f,scale));
+    // Pass 2 (chosen scale): re-measure at the actual font size — smaller text wraps differently
+    // than a naive divide would suggest, so this isn't just "pass 1 numbers × scale".
+    const fieldRows=log.fields.map(f=>pptxBuildFieldRows(f,scale,innerW));
+    const fieldHeights=fieldRows.map(rows=>pptxFieldRowsHeight(rows)+fieldGap);
     const cardH=Math.min(maxH, headerH*scale+padY*2*scale+fieldHeights.reduce((a,b)=>a+b,0));
 
     slide.addShape('roundRect', {x, y, w, h:cardH, rectRadius:0.06,
@@ -10931,14 +11011,22 @@ async function buildPptxPresentation(slidesData){
     }
 
     let fy=y+headerH*scale+padY*scale;
-    log.fields.forEach((f,i)=>{
+    log.fields.forEach((f,fi)=>{
       const labelColorKey=PPTX_DL_LABEL_COLOR_KEY[f.label];
       const labelColor=labelColorKey?theme[labelColorKey]:theme.muted;
-      const runs=[];
-      if(f.label) runs.push({text:f.label.toUpperCase()+'\n', options:{bold:true, color:labelColor, fontSize:9*scale, breakLine:true}});
-      runs.push({text:pptxStripIllegalXmlChars(f.value||''), options:{color:theme.fg, fontSize:12*scale}});
-      slide.addText(runs, {x:x+0.18, y:fy, w:innerW, h:fieldHeights[i], fontFace:FONT, valign:'top', lineSpacingMultiple:1.25});
-      fy+=fieldHeights[i];
+      fieldRows[fi].forEach(row=>{
+        const rowH=row.lines*pptxLineHeightIn(row.fontSize,1.25);
+        if(row.kind==='label'){
+          slide.addText(pptxStripIllegalXmlChars(row.text), {x:x+0.18, y:fy, w:innerW, h:rowH, fontFace:FONT, fontSize:row.fontSize, bold:true, color:labelColor, valign:'top'});
+        } else if(row.kind==='value'){
+          slide.addText(pptxStripIllegalXmlChars(row.text), {x:x+0.18, y:fy, w:innerW, h:rowH, fontFace:FONT, fontSize:row.fontSize, color:theme.fg, valign:'top', lineSpacingMultiple:1.25});
+        } else {
+          const runs=[{text:row.marker, options:{color:theme.hint}}, {text:pptxStripIllegalXmlChars(row.text), options:{color:theme.fg}}];
+          slide.addText(runs, {x:x+0.18+row.indent, y:fy, w:innerW-row.indent, h:rowH, fontFace:FONT, fontSize:row.fontSize, valign:'top', lineSpacingMultiple:1.25});
+        }
+        fy+=rowH+row.gapAfter;
+      });
+      fy+=fieldGap;
     });
     return cardH;
   }
@@ -11064,6 +11152,12 @@ async function exportPptx(){
   renderPreviewBody();
   try{
     if(!window.PptxGenJS) throw new Error('pptxgenjs failed to load (offline, or the CDN is blocked)');
+    // Decision-log card sizing measures text with the actual 'Inter' web font via canvas — if
+    // it hasn't finished loading yet, that measurement silently falls back to a generic font
+    // with different (usually narrower) metrics, undercounting wrapped lines the same way the
+    // old fixed-ratio estimate did. document.fonts.ready resolves once every requested face
+    // (including the Inter weights loaded in <head>) is actually available.
+    try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(e){}
     const {slidesData, imageWarnings}=await pptxGatherSlidesData();
     const pres=await buildPptxPresentation(slidesData);
     const meta=getMeta(); const title=(meta.title||'presentation').replace(/[\\/:*?"<>|]+/g,'_');
