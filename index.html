@@ -2354,7 +2354,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-nodewords" checked /> Current node word count</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-saved" checked /> Saved status</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-fsstatus" checked /> Backup connection status</label>
-                  <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-vault" checked /> Secure Storage lock status</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-vault" checked /> Secure Storage lock status (shown only while locked)</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-autorewrite" checked /> Auto-rewrite indicator</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-theme" checked /> Theme chip</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="sbitem-scale" checked /> Text size control</label>
@@ -4866,19 +4866,16 @@ function updateVaultStatusUI(){
 // (see setupVaultPassphrase/unlockVault above), just re-sized to the app's small-icon
 // convention (13x13, stroke-width 2) so it reads consistently at status-bar scale.
 const SB_VAULT_LOCKED_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-const SB_VAULT_UNLOCKED_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
 function updateVaultChip(){
   const chip=el('sb-vault-chip'); const divider=el('sb-vault-divider');
   if(!chip||!divider)return;
-  if(!vaultActive()||statusbarHiddenItems.includes('vault')){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
+  // Only surfaced while locked — that's the one state that needs a nudge (AI Rewrite/Gist
+  // sync won't work until you unlock). Unlocked is the normal working state for the rest of
+  // the session, so there's nothing actionable left to show once you've unlocked.
+  if(!vaultActive()||vaultUnlocked()||statusbarHiddenItems.includes('vault')){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
-  if(vaultUnlocked()){
-    chip.innerHTML=SB_VAULT_UNLOCKED_ICON+'<span>Unlocked</span>';
-    chip.dataset.tip='Secure Storage is unlocked for this session — click to lock now';
-  } else {
-    chip.innerHTML=SB_VAULT_LOCKED_ICON+'<span>Locked</span>';
-    chip.dataset.tip='Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync';
-  }
+  chip.innerHTML=SB_VAULT_LOCKED_ICON+'<span>Locked</span>';
+  chip.dataset.tip='Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync';
   refreshStatusbarDividers();
 }
 el('sb-vault-chip')?.addEventListener('click',()=>{ if(vaultUnlocked())lockVault(); else unlockVault(); });
@@ -6517,7 +6514,7 @@ const FEATURE_FLAGS={
   hovertoolbar:{get:()=>hoverToolbarEnabled,set:v=>{setHoverToolbarEnabled(v); return}},
   todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}}
 };
-const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-section-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus']};
+const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-section-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-section-decision-log']};
 const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
