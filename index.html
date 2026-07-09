@@ -4693,15 +4693,26 @@ const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','tab
 const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','pptx','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai'];
 const INSERT_TB_BUTTONS=['smart-paste','date-time','decision-log','note','codeblock','checkbox','tags'];
 const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-btn','decision-log':'qb-decision-log','note':'qb-note','codeblock':'qb-codeblock','checkbox':'qb-checkbox','tags':'qb-tags'};
-// Declared here (rather than down near where they're actually used, next to their _BTN_ID
-// lookup maps and setter functions) because loadPrefs() references both in a filter() call,
-// and loadPrefs is *called* at startup well before the script reaches wherever they'd
-// otherwise naturally sit — referencing a const before its own declaration line has executed
-// throws (temporal dead zone), and loadPrefs' try/catch was silently swallowing that for
+// Declared here (rather than down near where they're actually used, next to their setter
+// functions) because loadPrefs() references the two *_BUTTONS arrays in a filter() call, and
+// applyAppbarHiddenButtons() (which references APPBAR_HIDEABLE_BTN_ID) is called from the same
+// early startup chain — both run well before the script reaches wherever these would otherwise
+// naturally sit. Referencing a const before its own declaration line has executed throws
+// (temporal dead zone). loadPrefs' try/catch was silently swallowing that for
 // EDITOR_FLOATING_BUTTONS specifically: any returning user who'd ever touched "Floating editor
-// buttons" in Settings had every single preference silently fail to restore, every load.
+// buttons" in Settings had every single preference fail to restore, every load. The
+// APPBAR_HIDEABLE_BTN_ID case wasn't swallowed — it crashed the whole startup script outright,
+// which is how this got caught: fixed by moving all four (both arrays and both id-maps) here
+// together, right alongside the other *_TB_BUTTONS constants that were already declared safely
+// early.
 const EDITOR_FLOATING_BUTTONS=['zen','pad','toolbar','preview'];
+const EDITOR_FLOATING_BTN_ID={zen:'editor-zen-toggle',pad:'editor-pad-toggle',toolbar:'editor-toolbar-toggle',preview:'editor-preview-toggle'};
 const APPBAR_HIDEABLE_BUTTONS=['help','print','import'];
+const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'import-toggle'};
+// Same reasoning, same fix — updateExportStatus() and updateSafetyCopyStatus() are also called
+// from the early startup chain and read these.
+const LAST_EXPORT_KEY='sakura_last_export_v1';
+const LAST_FSBACKUP_KEY='sakura_last_fsbackup_v1';
 const DL_FIELDS=[
   {key:'context', text:'Context: What prompted this decision?'},
   {key:'decision', text:'Decision: What was decided?'},
@@ -14024,8 +14035,6 @@ const TPL_FOLDER_MAP_KEY = 'sakura_tpl_folder_map_v1'; // {templateId: folderId|
 const DOC_ORDER_KEY = 'sakura_doc_order_v1';    // {docId: numericOrder} manual order within a bucket (folder or unfiled)
 const SB_HINT_KEY = 'sakura_sb_hint_dismissed_v1';
 const SB_WIDTH_KEY = 'sakura_sidebar_width_v1';
-const LAST_EXPORT_KEY = 'sakura_last_export_v1';
-const LAST_FSBACKUP_KEY = 'sakura_last_fsbackup_v1';
 const SB_FOLDER_DEFAULT_COLLAPSED_KEY = 'sakura_folder_default_collapsed_v1';
 
 let sidebarOpen = true;
@@ -18742,7 +18751,6 @@ el('editor-preview-toggle')?.addEventListener('click',openPreview);
 // the feature-off-* CSS rules use !important, so disabling the feature always wins over
 // this — this checklist only matters when the feature itself is on but you just don't
 // want its button cluttering the corner.
-const EDITOR_FLOATING_BTN_ID={zen:'editor-zen-toggle',pad:'editor-pad-toggle',toolbar:'editor-toolbar-toggle',preview:'editor-preview-toggle'};
 function applyEditorFloatingButtonVisibility(){
   EDITOR_FLOATING_BUTTONS.forEach(key=>{
     const btn=el(EDITOR_FLOATING_BTN_ID[key]);
@@ -18763,7 +18771,6 @@ el('efbsec-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetC
 // App bar's own less-used buttons — Documents/Templates, Settings, and Export stay put
 // (Settings has to stay reachable, same reasoning as the App bar master switch's own warning
 // above; Documents/Templates and Export are core enough not to bother offering).
-const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'import-toggle'};
 function applyAppbarHiddenButtons(){
   APPBAR_HIDEABLE_BUTTONS.forEach(key=>{
     const btn=el(APPBAR_HIDEABLE_BTN_ID[key]);
