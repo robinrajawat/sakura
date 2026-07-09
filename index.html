@@ -10580,6 +10580,27 @@ function pptxRasterSizeForSvg(svgText){
   const scale=Math.max(1, 1600/Math.max(w,h));
   return {width:Math.round(w*scale), height:Math.round(h*scale)};
 }
+// Diagram-tool SVG exports (draw.io, Lucidchart, Visio-to-SVG, etc.) very commonly embed a
+// remote web-font reference for custom typography — a <style>@import url(https://fonts.…)</style>
+// block, or a <?xml-stylesheet?> processing instruction pointing at an external CSS file.
+// Loading that into an <img> and drawing it to canvas makes the canvas "tainted" by cross-origin
+// content: canvas.toBlob()/toDataURL() then silently fails (or throws) with no useful error,
+// which is exactly the "couldn't be converted" failure this was written in response to. None of
+// that affects how the diagram actually looks once rasterized (the shapes/colors are unaffected,
+// only the exact webfont glyphs would have been, and those already aren't guaranteed to render
+// identically in a canvas rasterization anyway) — so stripping these references before loading
+// is a safe trade: the SVG still rasterizes correctly, just via whatever font the fallback
+// stack resolves to instead of the remote one. Also strips <script> elements (never wanted in
+// something we're about to execute-adjacent via <img>) and any DOCTYPE/external-entity
+// declaration, which some parsers choke on and which offers no rendering benefit here.
+function pptxSanitizeSvgText(svgText){
+  return String(svgText)
+    .replace(/<!DOCTYPE[^>]*>/gi,'')
+    .replace(/<\?xml-stylesheet[^>]*\?>/gi,'')
+    .replace(/<script[\s\S]*?<\/script>/gi,'')
+    .replace(/@import\s+url\([^)]*\)\s*;?/gi,'')
+    .replace(/<link[^>]*rel=["']?stylesheet["']?[^>]*>/gi,'');
+}
 // Sniffs the real format from the file's own magic bytes rather than trusting the declared
 // MIME type on the data URI — screenshot tools and file pickers don't always agree with what
 // they claim (WEBP masquerading as a generic type, etc.), and embedding bytes that don't
@@ -10593,41 +10614,75 @@ function pptxSniffFormat(bytes){
   if(bytes.length>=2&&bytes[0]===0x42&&bytes[1]===0x4D) return 'bmp';
   return null; // unrecognized, including SVG (text-based — no fixed binary signature)
 }
-// Anything that isn't natively PNG/JPEG/GIF gets re-encoded as real PNG bytes via canvas
-// before embedding, so what's declared always matches what's actually there — sidesteps not
-// just the mismatch above but also WEBP/SVG support gaps in older PowerPoint versions.
-// Resolves null (caller skips the image) if the browser can't decode it at all.
-function pptxEnsureCompatibleImage(bytes,declaredMime){
-  const sniffed=pptxSniffFormat(bytes);
-  if(sniffed==='png') return Promise.resolve({bytes,mime:'image/png'});
-  if(sniffed==='jpeg') return Promise.resolve({bytes,mime:'image/jpeg'});
-  if(sniffed==='gif') return Promise.resolve({bytes,mime:'image/gif'});
-  let svgSize=null;
-  if(!sniffed&&(declaredMime||'').includes('svg')){
-    try{ svgSize=pptxRasterSizeForSvg(new TextDecoder().decode(bytes)); }catch(e){}
-  }
+// Tries to load+rasterize an image blob exactly once via a given src, resolving {bytes,mime} on
+// success or a string failure reason on failure (never rejects) — factored out so
+// pptxEnsureCompatibleImage can retry with a sanitized SVG and/or a data: URI instead of a
+// blob: URL without duplicating the load/draw/export logic per attempt.
+function pptxTryRasterize(src, targetSize){
   return new Promise(resolve=>{
-    let blob; try{ blob=new Blob([bytes],{type:declaredMime||'image/png'}); }catch(e){ resolve(null); return; }
-    const url=URL.createObjectURL(blob);
-    const cleanup=()=>{ try{URL.revokeObjectURL(url)}catch(e){} };
     const img=new Image();
     img.onload=()=>{
       try{
+        if((img.naturalWidth+img.naturalHeight)===0){ resolve('image decoded with zero size'); return; }
         const canvas=document.createElement('canvas');
-        canvas.width=(svgSize&&svgSize.width)||img.naturalWidth||800;
-        canvas.height=(svgSize&&svgSize.height)||img.naturalHeight||600;
+        canvas.width=(targetSize&&targetSize.width)||img.naturalWidth||800;
+        canvas.height=(targetSize&&targetSize.height)||img.naturalHeight||600;
         const ctx=canvas.getContext('2d');
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
         canvas.toBlob(pngBlob=>{
-          cleanup();
-          if(!pngBlob){ resolve(null); return; }
-          pngBlob.arrayBuffer().then(buf=>resolve({bytes:new Uint8Array(buf),mime:'image/png'})).catch(()=>resolve(null));
+          if(!pngBlob){ resolve('canvas export blocked (likely an external resource reference in the SVG, e.g. a web-font @import)'); return; }
+          pngBlob.arrayBuffer().then(buf=>resolve({bytes:new Uint8Array(buf),mime:'image/png'})).catch(()=>resolve('canvas export failed after blob creation'));
         },'image/png');
-      }catch(e){ cleanup(); resolve(null); }
+      }catch(e){ resolve('canvas draw/export threw: '+(e&&e.message||e)); }
     };
-    img.onerror=()=>{ cleanup(); resolve(null); };
-    img.src=url;
+    img.onerror=()=>resolve('image failed to decode (onerror) — likely malformed SVG/image data');
+    img.src=src;
   });
+}
+// Anything that isn't natively PNG/JPEG/GIF gets re-encoded as real PNG bytes via canvas
+// before embedding, so what's declared always matches what's actually there — sidesteps not
+// just the mismatch above but also WEBP/SVG support gaps in older PowerPoint versions.
+// Resolves {result:null, reason} (never null itself) so the caller can report *why* an image
+// was skipped instead of just that it was.
+async function pptxEnsureCompatibleImage(bytes,declaredMime){
+  const sniffed=pptxSniffFormat(bytes);
+  if(sniffed==='png') return {result:{bytes,mime:'image/png'}};
+  if(sniffed==='jpeg') return {result:{bytes,mime:'image/jpeg'}};
+  if(sniffed==='gif') return {result:{bytes,mime:'image/gif'}};
+
+  const isSvg=!sniffed&&((declaredMime||'').includes('svg')||new TextDecoder().decode(bytes.slice(0,200)).trimStart().startsWith('<svg'));
+  let workingBytes=bytes, targetSize=null;
+  if(isSvg){
+    try{
+      const sanitized=pptxSanitizeSvgText(new TextDecoder().decode(bytes));
+      workingBytes=new TextEncoder().encode(sanitized);
+      targetSize=pptxRasterSizeForSvg(sanitized);
+    }catch(e){}
+  }
+
+  let blob; try{ blob=new Blob([workingBytes],{type:declaredMime||'image/png'}); }catch(e){ return {result:null, reason:'could not construct a Blob from the image bytes'}; }
+  const blobUrl=URL.createObjectURL(blob);
+  let outcome;
+  try{
+    outcome=await pptxTryRasterize(blobUrl, targetSize);
+  } finally {
+    try{URL.revokeObjectURL(blobUrl)}catch(e){}
+  }
+  if(typeof outcome==='object') return {result:outcome};
+
+  // Retry once via a data: URI instead of a blob: URL — Chromium's canvas-taint checks treat
+  // the two slightly differently in some versions, so a blob: URL failure doesn't always mean a
+  // data: URI of the identical bytes fails too. Cheap to try before giving up.
+  if(isSvg){
+    try{
+      const sanitized=new TextDecoder().decode(workingBytes);
+      const dataUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(sanitized);
+      const retryOutcome=await pptxTryRasterize(dataUrl, targetSize);
+      if(typeof retryOutcome==='object') return {result:retryOutcome};
+      return {result:null, reason:outcome+'; retry via data URI also failed: '+retryOutcome};
+    }catch(e){}
+  }
+  return {result:null, reason:outcome};
 }
 // Lays a row of images out left-to-right, each scaled uniformly so the row's total width
 // fits areaW, capped by areaH — a single big diagram gets the full height; two or three
@@ -10686,6 +10741,25 @@ function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x
 // Preview/Presenter) but resolved to the current theme's actual hex via pptxGatherTheme, same
 // idea as the rest of the export tracking the live theme instead of a fixed palette.
 const PPTX_DL_LABEL_COLOR_KEY={'Context':'fcBlue','Decision':'fcRed','Rationale':'fcPurple','Alternatives':'fcGray','Impact':'fcOrange','Status':'fcGreen'};
+const PPTX_DL_HEADER_RE=/^Decision Log(?:\s·|$)/;
+// Shared by both places a decision log can appear: as a slide-break node's own text (the whole
+// slide IS the log — the natural structure when "one slide per decision" is the intent), or as
+// a child of a bigger slide (see the items loop below). headerIdx's direct children (depth+1)
+// are read as "Label: value" fields, same parsing Presenter itself uses.
+function pptxParseDecisionLogFields(headerIdx){
+  const headerNode=nodes[headerIdx];
+  const {timestamp,author}=previewParseDlHeader(headerNode.text);
+  const fields=[];
+  for(let k=headerIdx+1;k<nodes.length&&nodes[k].depth>headerNode.depth;k++){
+    if(nodes[k].depth!==headerNode.depth+1) continue;
+    const raw=String(nodes[k].text||'').trim();
+    if(!raw) continue;
+    const {label,value}=previewSplitDlLabel(raw);
+    fields.push(label?{label,value:value.trim()}:{label:'',value:raw});
+  }
+  let statusValue=''; fields.forEach(f=>{ if(f.label.toLowerCase()==='status') statusValue=f.value; });
+  return {type:'decisionLog', timestamp, author, statusValue, statusColor:previewStatusBadgeColor(statusValue), fields};
+}
 async function pptxGatherSlidesData(){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
@@ -10716,31 +10790,34 @@ async function pptxGatherSlidesData(){
     if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
 
-    // Direct children become either a plain bullet or, for a "Decision Log[...]" header child,
-    // a decision-log card — mirroring previewDetectDecisionLogs/previewRenderDecisionCard so a
-    // decision log reads as the same distinct, colored card in the export as it does in
-    // Presenter, rather than flattening to one plain bullet line with its fields silently
-    // dropped (fields live one level deeper than the header, past what a flat bullet walk
-    // picks up — that's why they went missing before).
-    const items=[];
-    for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
-      if(nodes[j].depth!==node.depth+1) continue;
-      const childNode=nodes[j];
-      const childText=String(childNode.text||'').trim();
-      if(/^Decision Log(?:\s·|$)/.test(childText)){
-        const {timestamp,author:dlAuthor}=previewParseDlHeader(childNode.text);
-        const fields=[];
-        for(let k=j+1;k<nodes.length&&nodes[k].depth>childNode.depth;k++){
-          if(nodes[k].depth!==childNode.depth+1) continue;
-          const raw=String(nodes[k].text||'').trim();
-          if(!raw) continue;
-          const {label,value}=previewSplitDlLabel(raw);
-          fields.push(label?{label,value:value.trim()}:{label:'',value:raw});
+    // A decision log commonly sits AT the slide-break depth itself — "one slide per decision"
+    // is the natural way to use it — in which case the slide-break node's own text is the
+    // "Decision Log · ..." header and its direct children are the fields, not further bullets.
+    // Handled as its own case (wholeSlideLog) so buildPptxPresentation can give the card the
+    // whole slide instead of squeezing it under a redundant plain-text title that would just
+    // repeat the same "Decision Log · ..." line the card's own header already shows.
+    const nodeText=String(node.text||'').trim();
+    let items, wholeSlideLog=false;
+    if(PPTX_DL_HEADER_RE.test(nodeText)){
+      wholeSlideLog=true;
+      items=[pptxParseDecisionLogFields(idx)];
+    } else {
+      // Direct children become either a plain bullet or, for a "Decision Log[...]" header
+      // child, a nested decision-log card — mirrors previewDetectDecisionLogs/
+      // previewRenderDecisionCard so a decision log reads as the same distinct, colored card
+      // in the export as it does in Presenter, rather than flattening to one plain bullet line
+      // with its fields silently dropped (fields live one level deeper than the header, past
+      // what a flat bullet walk picks up — that's why they went missing before).
+      items=[];
+      for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
+        if(nodes[j].depth!==node.depth+1) continue;
+        const childNode=nodes[j];
+        const childText=String(childNode.text||'').trim();
+        if(PPTX_DL_HEADER_RE.test(childText)){
+          items.push(pptxParseDecisionLogFields(j));
+        } else if(childText){
+          items.push({type:'bullet', text:childText});
         }
-        let statusValue=''; fields.forEach(f=>{ if(f.label.toLowerCase()==='status') statusValue=f.value; });
-        items.push({type:'decisionLog', timestamp, author:dlAuthor, statusValue, statusColor:previewStatusBadgeColor(statusValue), fields});
-      } else if(childText){
-        items.push({type:'bullet', text:childText});
       }
     }
 
@@ -10749,14 +10826,14 @@ async function pptxGatherSlidesData(){
       const split=splitNoteDiagramImages(node.note);
       for(const d of split.diagrams){
         const decoded=await pptxDataUrlToBytes(d.src);
-        if(!decoded){ imageWarnings.push(`"${slide.label}": diagram image (${d.alt||'untitled'}) couldn't be read`); continue; }
-        const safe=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
-        if(!safe){ imageWarnings.push(`"${slide.label}": diagram image (${d.alt||'untitled'}) couldn't be converted`); continue; } // undecodable — skip this one image rather than risk the whole export
+        if(!decoded){ imageWarnings.push(`"${slide.label}" → ${d.alt||'untitled'}: image src couldn't be read (not a data: URI, and fetching it failed)`); continue; }
+        const {result:safe, reason}=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
+        if(!safe){ imageWarnings.push(`"${slide.label}" → ${d.alt||'untitled'}: ${reason||"couldn't be converted"}`); continue; } // undecodable — skip this one image rather than risk the whole export
         const dims=pptxImageDims(safe.bytes,safe.mime);
         images.push({bytes:safe.bytes, mime:safe.mime, width:dims.width, height:dims.height, alt:d.alt});
       }
     }
-    slidesData.push({title:slide.label, items, images});
+    slidesData.push({title:slide.label, items, images, wholeSlideLog});
   }
   if(!slidesData.length) slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')});
   return {slidesData, imageWarnings};
@@ -10861,6 +10938,30 @@ async function buildPptxPresentation(slidesData){
         slide.addText(pptxStripIllegalXmlChars(sd.metaLine), {
           x:MARGIN, y, w:PPTX_SLIDE_W-2*MARGIN, h:0.4,
           fontFace:FONT, fontSize:13, color:theme.hint, valign:'top'
+        });
+      }
+      return;
+    }
+
+    // A decision log that IS the slide (see wholeSlideLog in pptxGatherSlidesData) gets the
+    // full slide body — no separate title textbox, since the card's own header already shows
+    // "DECISION LOG · timestamp · by author" and repeating that as a giant heading above it
+    // would just be redundant. Still gets the small accent kicker bar as a consistent visual
+    // anchor with every other slide.
+    if(sd.wholeSlideLog && sd.items && sd.items[0]){
+      slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+      const hasImages=sd.images.length>0;
+      const bottomLimit=PPTX_SLIDE_H-0.4;
+      const cardTop=0.7;
+      const imagesReserve=hasImages?1.85:0;
+      const cardH=addDecisionLogCard(slide, sd.items[0], MARGIN, cardTop, PPTX_SLIDE_W-2*MARGIN, bottomLimit-imagesReserve-cardTop);
+      if(hasImages){
+        const areaY=cardTop+cardH+0.15;
+        const areaH=Math.max(1, PPTX_SLIDE_H-areaY-0.4);
+        const positions=pptxLayoutImageRow(sd.images, MARGIN, areaY, PPTX_SLIDE_W-2*MARGIN, areaH);
+        sd.images.forEach((img,k)=>{
+          const pos=positions[k];
+          slide.addImage({data:`data:${img.mime};base64,${b64FromBytes(img.bytes)}`, x:pos.x, y:pos.y, w:pos.w, h:pos.h});
         });
       }
       return;
