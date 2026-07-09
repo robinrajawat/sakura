@@ -10868,20 +10868,49 @@ async function buildPptxPresentation(slidesData){
   const MARGIN=0.6; // inches
   const FONT='Inter'; // same face Presenter mode uses; PowerPoint substitutes a default if not installed
 
+  // Rough text-flow estimate: pptxgenjs/PowerPoint don't report back how many lines a string
+  // actually wraps to at a given box width and font size, so this approximates it the same way
+  // any text-layout estimate has to — an average glyph width for a proportional sans-serif
+  // (Inter/Calibri-ish) at a given point size, in inches. Good enough to size a box so text
+  // doesn't overlap the next element; not pixel-exact, which is why cardH computation below
+  // still has a little breathing room built in rather than packing fields edge-to-edge.
+  function pptxEstimateLines(text, boxWidthIn, fontSizePt){
+    const s=String(text||'');
+    if(!s) return 1;
+    const charW=fontSizePt*0.52/72; // inches per average glyph
+    const charsPerLine=Math.max(4, Math.floor(boxWidthIn/charW));
+    return s.split('\n').reduce((sum,line)=>sum+Math.max(1,Math.ceil(line.length/charsPerLine)),0);
+  }
+  function pptxLineHeightIn(fontSizePt, lineSpacingMultiple){
+    return fontSizePt*(lineSpacingMultiple||1.25)/72;
+  }
   // Renders one decision-log card (mirrors .pv-dlog / previewRenderDecisionCard): a card
   // background with a colored left accent bar keyed to the status (green/red/orange/gray, same
   // keyword matching as previewStatusBadgeColor), a header with an optional status pill, then
-  // each field as a small colored label over its value — auto-shrinking font/row height if the
-  // card has enough fields that it wouldn't otherwise fit in the space left on the slide.
+  // each field as a small colored label over its value. Each field's row height is sized to
+  // its own estimated wrapped line count — a one-line "Status: Approved" and a five-line
+  // "Context: ..." paragraph get very different amounts of room — rather than a fixed height
+  // per field, which is what let a long value's wrapped text run into the next field's label.
+  // Font/spacing shrinks (down to a floor) if the card's fields wouldn't otherwise fit the
+  // space left on the slide.
   function addDecisionLogCard(slide, log, x, y, w, maxH){
     const accentHex=theme['fc'+log.statusColor[0].toUpperCase()+log.statusColor.slice(1)]||theme.fcGray;
     const headerH=0.4;
-    const fieldRowBase=0.62;
     const padY=0.12;
-    const neededH=headerH+log.fields.length*fieldRowBase+padY*2;
+    const innerW=w-0.36;
+    const fieldGap=0.12;
+
+    const fieldHeightAt=(f,scale)=>{
+      const valueFontSize=12*scale, labelFontSize=9*scale;
+      const valueLines=pptxEstimateLines(f.value, innerW, valueFontSize);
+      const labelH=f.label?pptxLineHeightIn(labelFontSize,1.1)+0.03:0;
+      const valueH=valueLines*pptxLineHeightIn(valueFontSize,1.25);
+      return labelH+valueH+fieldGap;
+    };
+    const neededH=headerH+padY*2+log.fields.reduce((sum,f)=>sum+fieldHeightAt(f,1),0);
     const scale=Math.max(0.55, Math.min(1, maxH/Math.max(neededH,0.01)));
-    const fieldRowH=fieldRowBase*scale;
-    const cardH=Math.min(maxH, headerH*scale+log.fields.length*fieldRowH+padY*2*scale);
+    const fieldHeights=log.fields.map(f=>fieldHeightAt(f,scale));
+    const cardH=Math.min(maxH, headerH*scale+padY*2*scale+fieldHeights.reduce((a,b)=>a+b,0));
 
     slide.addShape('roundRect', {x, y, w, h:cardH, rectRadius:0.06,
       fill:{color:theme.editBg}, line:{color:theme.border, width:0.75}});
@@ -10902,14 +10931,14 @@ async function buildPptxPresentation(slidesData){
     }
 
     let fy=y+headerH*scale+padY*scale;
-    log.fields.forEach(f=>{
+    log.fields.forEach((f,i)=>{
       const labelColorKey=PPTX_DL_LABEL_COLOR_KEY[f.label];
       const labelColor=labelColorKey?theme[labelColorKey]:theme.muted;
       const runs=[];
       if(f.label) runs.push({text:f.label.toUpperCase()+'\n', options:{bold:true, color:labelColor, fontSize:9*scale, breakLine:true}});
       runs.push({text:pptxStripIllegalXmlChars(f.value||''), options:{color:theme.fg, fontSize:12*scale}});
-      slide.addText(runs, {x:x+0.18, y:fy, w:w-0.36, h:fieldRowH-0.05, fontFace:FONT, valign:'top', lineSpacingMultiple:1.2});
-      fy+=fieldRowH;
+      slide.addText(runs, {x:x+0.18, y:fy, w:innerW, h:fieldHeights[i], fontFace:FONT, valign:'top', lineSpacingMultiple:1.25});
+      fy+=fieldHeights[i];
     });
     return cardH;
   }
