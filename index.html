@@ -2378,11 +2378,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               <div class="settings-collapsible-body" id="appbar-items-body">
-                <span class="settings-row-desc">Hide buttons you don't reach for often, to leave more room for Documents/Templates. Settings, Export, and Documents/Templates always stay — Settings needs to stay reachable, and the other two are core navigation.</span>
+                <span class="settings-row-desc">Hide buttons you don't reach for often, to leave more room for Documents/Templates. Settings and Documents/Templates always stay — Settings needs to stay reachable, and Documents/Templates is core navigation.</span>
                 <div class="settings-grid" id="appbar-items-grid" style="margin-top:6px">
                   <label class="settings-checkbox-row"><input type="checkbox" id="abhsec-help" checked /> Help</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="abhsec-print" checked /> Print</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="abhsec-import" checked /> Import</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="abhsec-export" checked /> Export</label>
                 </div>
               </div>
             </div>
@@ -4707,8 +4708,8 @@ const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-bt
 // early.
 const EDITOR_FLOATING_BUTTONS=['zen','pad','toolbar','preview'];
 const EDITOR_FLOATING_BTN_ID={zen:'editor-zen-toggle',pad:'editor-pad-toggle',toolbar:'editor-toolbar-toggle',preview:'editor-preview-toggle'};
-const APPBAR_HIDEABLE_BUTTONS=['help','print','import'];
-const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'import-toggle'};
+const APPBAR_HIDEABLE_BUTTONS=['help','print','import','export'];
+const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'import-toggle',export:'export-toggle'};
 // Same reasoning, same fix — updateExportStatus() and updateSafetyCopyStatus() are also called
 // from the early startup chain and read these.
 const LAST_EXPORT_KEY='sakura_last_export_v1';
@@ -18768,9 +18769,9 @@ function setEditorFloatingButtonHidden(key,hidden,persist=true){
 EDITOR_FLOATING_BUTTONS.forEach(key=>{ el('efbsec-'+key)?.addEventListener('change', e=>setEditorFloatingButtonHidden(key, !e.target.checked)) });
 el('efbsec-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('efbsec-',EDITOR_FLOATING_BUTTONS,true)});
 el('efbsec-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('efbsec-',EDITOR_FLOATING_BUTTONS,false)});
-// App bar's own less-used buttons — Documents/Templates, Settings, and Export stay put
+// App bar's own less-used buttons — Documents/Templates and Settings stay put
 // (Settings has to stay reachable, same reasoning as the App bar master switch's own warning
-// above; Documents/Templates and Export are core enough not to bother offering).
+// above; Documents/Templates is core enough not to bother offering).
 function applyAppbarHiddenButtons(){
   APPBAR_HIDEABLE_BUTTONS.forEach(key=>{
     const btn=el(APPBAR_HIDEABLE_BTN_ID[key]);
