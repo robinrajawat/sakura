@@ -17539,6 +17539,27 @@ function exportPdfDirect(){
     if(wasPreviewActive)renderPreviewBody();
   });
 }
+// Chromium's print pipeline sometimes snapshots before a <img src="data:image/svg+xml...">
+// has actually decoded — SVG data URIs go through an async parse/layout step that raster
+// formats (already-decoded PNG/JPEG) skip, so a couple of animation frames isn't always
+// enough. This waits for every image in the print target to actually finish (load or
+// decode()) before print() fires, with a per-image timeout so one broken image can't hang
+// the export.
+function _pdfWaitForImages(container, timeoutMs=4000){
+  const imgs=container?[...container.querySelectorAll('img')]:[];
+  if(!imgs.length) return Promise.resolve();
+  return Promise.all(imgs.map(img=>{
+    if(img.complete && img.naturalWidth>0) return Promise.resolve();
+    return new Promise(resolve=>{
+      let done=false;
+      const finish=()=>{ if(done)return; done=true; resolve(); };
+      img.addEventListener('load', finish, {once:true});
+      img.addEventListener('error', finish, {once:true});
+      if(img.decode){ img.decode().then(finish).catch(finish); }
+      setTimeout(finish, timeoutMs);
+    });
+  }));
+}
 function exportPreviewAsPdf(onDone){
   document.body.classList.add('printing-preview');
   const style=document.createElement('style');
@@ -17740,8 +17761,11 @@ function exportPreviewAsPdf(onDone){
   // changes let Chromium's print snapshot lag a frame behind — it would capture
   // whatever was on screen a moment ago (e.g. still just the one active presenter
   // slide) instead of the fully-rebuilt document. Two rAFs guarantee a full layout +
-  // paint has happened first.
-  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+  // paint has happened first. Images (SVGs especially — see _pdfWaitForImages above)
+  // get their own wait first, since they can still be mid-decode after two rAFs.
+  _pdfWaitForImages(el('preview-overlay')).then(()=>{
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+  });
 }
 el('preview-copy-rich-btn')?.addEventListener('click',copyPreviewAsRichText);
 
