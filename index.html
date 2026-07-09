@@ -10497,29 +10497,43 @@ return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels
 function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); const bytes=buildDocxPackage(foldOverride); suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('DOCX exported')}
 
 // === PowerPoint (.pptx) export ===
-// Builds a genuine OOXML .pptx from scratch — same store-only zip approach as the DOCX
-// export above (docxZipStore is fully generic, reused as-is). One slide per Presenter slide
-// (title slide + one per slide-break node): the node's own text as the slide title, its
-// direct children's text as bullets, and any diagram-featured images from its note embedded
-// as pictures, laid out in a row below the bullets and scaled to fit.
-// XML 1.0 forbids raw control characters other than tab/LF/CR anywhere in a document — a single
-// stray one (easy to pick up from pasting content that originated in a PDF, certain rich-text
-// sources, or OCR output) makes that XML part invalid outright, which is exactly the class of
-// "can't open this file" failure real PowerPoint throws on. pptxgenjs escapes entities itself,
-// but doesn't strip these, so every piece of text handed to it (titles, bullets) goes through
-// this first.
-function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,''); }
-function pptxDataUrlToBytes(dataUrl){
-  const comma=dataUrl.indexOf(',');
-  if(comma<0) return null;
-  const meta=dataUrl.slice(5,comma);
-  const mime=(meta.split(';')[0]||'image/png').toLowerCase();
-  try{ return {bytes:bytesFromB64(dataUrl.slice(comma+1)), mime}; }catch(e){ return null; }
+// Builds a genuine .pptx via pptxgenjs (see buildPptxPresentation below) from the same slide
+// breakdown Preview/Presenter uses: title slide + one per slide-break node, direct children as
+// bullets or decision-log cards, and diagram-featured note images embedded as pictures.
+// A note's diagram <img> almost always has a data: URI src (paste/drop always goes through
+// FileReader.readAsDataURL), but not always — e.g. a clipboard paste that also carried
+// text/html goes through the browser's native paste instead of the manual data-URL path, and
+// some source apps' HTML fragment references the image by a blob:/http(s) URL rather than
+// inlining it. Those still point at real image bytes the page can fetch, so falling back to
+// fetch() here (rather than only handling data: URIs) is what keeps such images from silently
+// vanishing from the export. Async now, unlike a plain data-URI decode, hence the caller
+// awaiting it.
+async function pptxDataUrlToBytes(src){
+  if(!src) return null;
+  if(src.startsWith('data:')){
+    const comma=src.indexOf(',');
+    if(comma<0) return null;
+    const meta=src.slice(5,comma);
+    const mime=(meta.split(';')[0]||'image/png').toLowerCase();
+    try{ return {bytes:bytesFromB64(src.slice(comma+1)), mime}; }catch(e){ return null; }
+  }
+  if(src.startsWith('blob:')||src.startsWith('http:')||src.startsWith('https:')){
+    try{
+      const resp=await fetch(src);
+      if(!resp.ok) return null;
+      const mime=(resp.headers.get('content-type')||'image/png').split(';')[0].toLowerCase();
+      const buf=await resp.arrayBuffer();
+      return {bytes:new Uint8Array(buf), mime};
+    }catch(e){ return null; } // most likely a cross-origin fetch the browser refuses, or a blob: URL already revoked
+  }
+  return null;
 }
 // Reads real pixel dimensions straight from the file header so embedded pictures keep their
 // correct aspect ratio — without this every image would need a guessed/default ratio, and
 // wide diagrams would come out stretched or squashed. Falls back to a plausible 4:3 default
-// for formats not worth hand-parsing (webp, svg) rather than failing the whole export.
+// for formats not worth hand-parsing (webp) rather than failing the whole export. SVG isn't
+// handled here — pptxRasterSizeForSvg below picks its target size before rasterizing, and by
+// the time an image reaches this function post-rasterization it's already a real PNG.
 function pptxImageDims(bytes,mime){
   try{
     if(mime==='image/png'&&bytes.length>24){
@@ -10546,6 +10560,26 @@ function pptxImageDims(bytes,mime){
   }catch(e){}
   return {width:800,height:600};
 }
+// An SVG with no explicit width/height on its root element (very common — most hand-authored
+// or tool-exported SVGs specify only a viewBox) has no CSS intrinsic size, so when it's drawn
+// into an <img> for rasterization the browser falls back to the CSS "default object size"
+// algorithm: 300x150 if only an aspect ratio is known. That's a real, silent quality bug — a
+// crisp vector diagram comes out as a blurry 300-ish-px raster in the deck. This reads the
+// SVG's own width/height/viewBox (whichever is present) to pick a raster target that's sharp
+// at real presentation size instead, independent of whatever the browser would have defaulted
+// the <img> to.
+function pptxRasterSizeForSvg(svgText){
+  const wMatch=svgText.match(/<svg[^>]*\swidth=["']?([\d.]+)/i);
+  const hMatch=svgText.match(/<svg[^>]*\sheight=["']?([\d.]+)/i);
+  const vbMatch=svgText.match(/\sviewBox=["']?\s*([\d.\-]+)\s+([\d.\-]+)\s+([\d.]+)\s+([\d.]+)/i);
+  let w=wMatch?parseFloat(wMatch[1]):0, h=hMatch?parseFloat(hMatch[1]):0;
+  if((!w||!h)&&vbMatch){ w=w||parseFloat(vbMatch[3]); h=h||parseFloat(vbMatch[4]); }
+  if(!w||!h||!Number.isFinite(w)||!Number.isFinite(h)) return {width:1200,height:900}; // no usable size info at all
+  // Scale so the larger side lands around 1600px — sharp on a projector without producing an
+  // unreasonably large PNG for a simple diagram.
+  const scale=Math.max(1, 1600/Math.max(w,h));
+  return {width:Math.round(w*scale), height:Math.round(h*scale)};
+}
 // Sniffs the real format from the file's own magic bytes rather than trusting the declared
 // MIME type on the data URI — screenshot tools and file pickers don't always agree with what
 // they claim (WEBP masquerading as a generic type, etc.), and embedding bytes that don't
@@ -10568,6 +10602,10 @@ function pptxEnsureCompatibleImage(bytes,declaredMime){
   if(sniffed==='png') return Promise.resolve({bytes,mime:'image/png'});
   if(sniffed==='jpeg') return Promise.resolve({bytes,mime:'image/jpeg'});
   if(sniffed==='gif') return Promise.resolve({bytes,mime:'image/gif'});
+  let svgSize=null;
+  if(!sniffed&&(declaredMime||'').includes('svg')){
+    try{ svgSize=pptxRasterSizeForSvg(new TextDecoder().decode(bytes)); }catch(e){}
+  }
   return new Promise(resolve=>{
     let blob; try{ blob=new Blob([bytes],{type:declaredMime||'image/png'}); }catch(e){ resolve(null); return; }
     const url=URL.createObjectURL(blob);
@@ -10576,9 +10614,10 @@ function pptxEnsureCompatibleImage(bytes,declaredMime){
     img.onload=()=>{
       try{
         const canvas=document.createElement('canvas');
-        canvas.width=img.naturalWidth||800; canvas.height=img.naturalHeight||600;
+        canvas.width=(svgSize&&svgSize.width)||img.naturalWidth||800;
+        canvas.height=(svgSize&&svgSize.height)||img.naturalHeight||600;
         const ctx=canvas.getContext('2d');
-        ctx.drawImage(img,0,0);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
         canvas.toBlob(pngBlob=>{
           cleanup();
           if(!pngBlob){ resolve(null); return; }
@@ -10610,11 +10649,12 @@ const PPTX_SLIDE_W=13.333, PPTX_SLIDE_H=7.5; // inches — matches pptxgenjs' LA
 // off the live CSS custom properties on <body> (body.theme-light/theme-dark set these, and
 // applyAccentColor() keeps --accent current) — rather than hardcoding a fixed brand palette.
 // This is what makes the export track whatever accent color / light-vs-dark theme the person
-// has chosen, instead of drifting from what Presenter mode actually looks like. All of these
-// are set as plain hex strings (no color-mix()), so the custom-property value read here is
-// already the literal, final color — no resolution step needed. Sepia reading theme and
-// serif-body are Preview-only reading affordances layered on top of this base; not carried
-// into the export, same as Presenter mode's own slides ignore them.
+// has chosen, instead of drifting from what Presenter mode actually looks like. Also pulls the
+// six semantic field colors (--fc-*) and card chrome (--border/--edit-bg) used for decision-log
+// cards below. All of these are set as plain hex strings (no color-mix()), so the
+// custom-property value read here is already the literal, final color — no resolution step
+// needed. Sepia reading theme and serif-body are Preview-only reading affordances layered on
+// top of this base; not carried into the export, same as Presenter mode's own slides ignore them.
 function pptxGatherTheme(){
   const cs=getComputedStyle(document.body);
   const hex=(name,fallback)=>{ const v=cs.getPropertyValue(name).trim(); return /^#[0-9a-fA-F]{6}$/.test(v)?v.slice(1).toUpperCase():fallback; };
@@ -10625,8 +10665,27 @@ function pptxGatherTheme(){
     muted:  hex('--muted','73716B'),
     hint:   hex('--hint','71716B'),
     heading:hex('--pv-heading','2C4A6E'),
+    border: hex('--border','E3E0D8'),
+    editBg: hex('--edit-bg','FFFFFF'),
+    fcRed:    hex('--fc-red','C0392B'),
+    fcOrange: hex('--fc-orange','C2701D'),
+    fcGreen:  hex('--fc-green','27824F'),
+    fcBlue:   hex('--fc-blue','2766C2'),
+    fcPurple: hex('--fc-purple','7D3FB5'),
+    fcGray:   hex('--fc-gray','6F6B63'),
   };
 }
+// XML 1.0 forbids raw control characters other than tab/LF/CR anywhere in a document — a single
+// stray one (easy to pick up from pasting content that originated in a PDF, certain rich-text
+// sources, or OCR output) makes that XML part invalid outright, which is exactly the class of
+// "can't open this file" failure real PowerPoint throws on. pptxgenjs escapes entities itself,
+// but doesn't strip these, so every piece of text handed to it (titles, bullets, card text)
+// goes through this first.
+function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,''); }
+// Field label colors match PV_DL_LABEL_COLORS (the CSS var each field label is colored with in
+// Preview/Presenter) but resolved to the current theme's actual hex via pptxGatherTheme, same
+// idea as the rest of the export tracking the live theme instead of a fixed palette.
+const PPTX_DL_LABEL_COLOR_KEY={'Context':'fcBlue','Decision':'fcRed','Rationale':'fcPurple','Alternatives':'fcGray','Impact':'fcOrange','Status':'fcGreen'};
 async function pptxGatherSlidesData(){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
@@ -10641,6 +10700,11 @@ async function pptxGatherSlidesData(){
   const metaParts=[`${wordCount.toLocaleString()} word${wordCount===1?'':'s'}`,`${readMins} min read`];
   if(groups.length)metaParts.push(`${groups.length} decision${groups.length===1?'':'s'} logged`);
 
+  // Collected rather than thrown/console-only, so exportPptx can surface a single summary
+  // toast — an image silently missing from the deck with no indication why was the original
+  // bug report; this keeps that from being invisible.
+  const imageWarnings=[];
+
   // Gather per-slide content from the same previewSlides list Preview/Presenter renders
   // from — caller is responsible for having just called renderPreviewBody() so this is
   // current. Async because each diagram image may need to go through
@@ -10649,31 +10713,53 @@ async function pptxGatherSlidesData(){
   for(const slide of previewSlides){
     if(slide.nodeId===null){ slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')}); continue; }
     const idx=getIndex(slide.nodeId);
-    if(idx<0){ slidesData.push({title:slide.label, bullets:[], images:[]}); continue; }
+    if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
-    const bullets=[];
+
+    // Direct children become either a plain bullet or, for a "Decision Log[...]" header child,
+    // a decision-log card — mirroring previewDetectDecisionLogs/previewRenderDecisionCard so a
+    // decision log reads as the same distinct, colored card in the export as it does in
+    // Presenter, rather than flattening to one plain bullet line with its fields silently
+    // dropped (fields live one level deeper than the header, past what a flat bullet walk
+    // picks up — that's why they went missing before).
+    const items=[];
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
-      if(nodes[j].depth===node.depth+1){
-        const t=String(nodes[j].text||'').trim();
-        if(t) bullets.push(t);
+      if(nodes[j].depth!==node.depth+1) continue;
+      const childNode=nodes[j];
+      const childText=String(childNode.text||'').trim();
+      if(/^Decision Log(?:\s·|$)/.test(childText)){
+        const {timestamp,author:dlAuthor}=previewParseDlHeader(childNode.text);
+        const fields=[];
+        for(let k=j+1;k<nodes.length&&nodes[k].depth>childNode.depth;k++){
+          if(nodes[k].depth!==childNode.depth+1) continue;
+          const raw=String(nodes[k].text||'').trim();
+          if(!raw) continue;
+          const {label,value}=previewSplitDlLabel(raw);
+          fields.push(label?{label,value:value.trim()}:{label:'',value:raw});
+        }
+        let statusValue=''; fields.forEach(f=>{ if(f.label.toLowerCase()==='status') statusValue=f.value; });
+        items.push({type:'decisionLog', timestamp, author:dlAuthor, statusValue, statusColor:previewStatusBadgeColor(statusValue), fields});
+      } else if(childText){
+        items.push({type:'bullet', text:childText});
       }
     }
+
     const images=[];
     if(node.note){
       const split=splitNoteDiagramImages(node.note);
       for(const d of split.diagrams){
-        const decoded=pptxDataUrlToBytes(d.src);
-        if(!decoded) continue;
+        const decoded=await pptxDataUrlToBytes(d.src);
+        if(!decoded){ imageWarnings.push(`"${slide.label}": diagram image (${d.alt||'untitled'}) couldn't be read`); continue; }
         const safe=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
-        if(!safe) continue; // undecodable — skip this one image rather than risk the whole export
+        if(!safe){ imageWarnings.push(`"${slide.label}": diagram image (${d.alt||'untitled'}) couldn't be converted`); continue; } // undecodable — skip this one image rather than risk the whole export
         const dims=pptxImageDims(safe.bytes,safe.mime);
         images.push({bytes:safe.bytes, mime:safe.mime, width:dims.width, height:dims.height, alt:d.alt});
       }
     }
-    slidesData.push({title:slide.label, bullets, images});
+    slidesData.push({title:slide.label, items, images});
   }
   if(!slidesData.length) slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')});
-  return slidesData;
+  return {slidesData, imageWarnings};
 }
 // Builds the actual PptxGenJS Presentation object from the gathered per-slide data. This
 // replaces the old buildPptxPackage, which hand-assembled the OOXML parts (presentation.xml,
@@ -10685,11 +10771,12 @@ async function pptxGatherSlidesData(){
 // goes on each slide, not how it's serialized.
 //
 // Styling mirrors Presenter mode's own look (see .pv-title-slide*, .pv-heading-1, .pv-bullet,
-// .pv-text, and the #pv-doc-* header rules) rather than a generic deck template: Inter
-// throughout, the same small accent-color kicker bar ahead of titles, bullet text in the app's
-// muted/foreground colors, and the doc's own current theme (light/dark) and accent color for
-// the deck background — so the exported file reads as "this document, as slides" rather than a
-// completely different visual product bearing no relation to the app it came from.
+// .pv-text, .pv-dlog*, and the #pv-doc-* header rules) rather than a generic deck template:
+// Inter throughout, the same small accent-color kicker bar ahead of titles, bullet text in the
+// app's muted/foreground colors, decision logs as colored cards instead of flattened bullets,
+// and the doc's own current theme (light/dark) and accent color for the deck background — so
+// the exported file reads as "this document, as slides" rather than a completely different
+// visual product bearing no relation to the app it came from.
 async function buildPptxPresentation(slidesData){
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
@@ -10703,6 +10790,52 @@ async function buildPptxPresentation(slidesData){
 
   const MARGIN=0.6; // inches
   const FONT='Inter'; // same face Presenter mode uses; PowerPoint substitutes a default if not installed
+
+  // Renders one decision-log card (mirrors .pv-dlog / previewRenderDecisionCard): a card
+  // background with a colored left accent bar keyed to the status (green/red/orange/gray, same
+  // keyword matching as previewStatusBadgeColor), a header with an optional status pill, then
+  // each field as a small colored label over its value — auto-shrinking font/row height if the
+  // card has enough fields that it wouldn't otherwise fit in the space left on the slide.
+  function addDecisionLogCard(slide, log, x, y, w, maxH){
+    const accentHex=theme['fc'+log.statusColor[0].toUpperCase()+log.statusColor.slice(1)]||theme.fcGray;
+    const headerH=0.4;
+    const fieldRowBase=0.62;
+    const padY=0.12;
+    const neededH=headerH+log.fields.length*fieldRowBase+padY*2;
+    const scale=Math.max(0.55, Math.min(1, maxH/Math.max(neededH,0.01)));
+    const fieldRowH=fieldRowBase*scale;
+    const cardH=Math.min(maxH, headerH*scale+log.fields.length*fieldRowH+padY*2*scale);
+
+    slide.addShape('roundRect', {x, y, w, h:cardH, rectRadius:0.06,
+      fill:{color:theme.editBg}, line:{color:theme.border, width:0.75}});
+    slide.addShape('rect', {x, y, w:0.06, h:cardH, fill:{color:accentHex}, line:{type:'none'}});
+
+    const headerRuns=[{text:'DECISION LOG', options:{bold:true, color:accentHex, fontSize:10*scale}}];
+    if(log.timestamp) headerRuns.push({text:'   '+pptxStripIllegalXmlChars(log.timestamp), options:{color:theme.muted, fontSize:9*scale}});
+    if(log.author) headerRuns.push({text:'   by '+pptxStripIllegalXmlChars(log.author), options:{color:theme.muted, fontSize:9*scale}});
+    slide.addText(headerRuns, {x:x+0.18, y:y+padY*scale, w:w-0.36, h:headerH*scale, fontFace:FONT, valign:'middle'});
+    if(log.statusValue){
+      const pillW=Math.min(1.6, 0.25+pptxStripIllegalXmlChars(log.statusValue).length*0.09);
+      slide.addShape('roundRect', {x:x+w-0.18-pillW, y:y+padY*scale+0.03, w:pillW, h:0.26*scale, rectRadius:0.13*scale,
+        fill:{color:accentHex, transparency:82}, line:{type:'none'}});
+      slide.addText(pptxStripIllegalXmlChars(log.statusValue).toUpperCase(), {
+        x:x+w-0.18-pillW, y:y+padY*scale+0.03, w:pillW, h:0.26*scale,
+        fontFace:FONT, fontSize:8*scale, bold:true, color:accentHex, align:'center', valign:'middle'
+      });
+    }
+
+    let fy=y+headerH*scale+padY*scale;
+    log.fields.forEach(f=>{
+      const labelColorKey=PPTX_DL_LABEL_COLOR_KEY[f.label];
+      const labelColor=labelColorKey?theme[labelColorKey]:theme.muted;
+      const runs=[];
+      if(f.label) runs.push({text:f.label.toUpperCase()+'\n', options:{bold:true, color:labelColor, fontSize:9*scale, breakLine:true}});
+      runs.push({text:pptxStripIllegalXmlChars(f.value||''), options:{color:theme.fg, fontSize:12*scale}});
+      slide.addText(runs, {x:x+0.18, y:fy, w:w-0.36, h:fieldRowH-0.05, fontFace:FONT, valign:'top', lineSpacingMultiple:1.2});
+      fy+=fieldRowH;
+    });
+    return cardH;
+  }
 
   slidesData.forEach(sd=>{
     const slide=pres.addSlide();
@@ -10741,24 +10874,45 @@ async function buildPptxPresentation(slidesData){
       x:MARGIN, y:0.58, w:PPTX_SLIDE_W-2*MARGIN, h:1.05,
       fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'
     });
+
+    const bullets=(sd.items||[]).filter(it=>it.type==='bullet');
+    const logs=(sd.items||[]).filter(it=>it.type==='decisionLog');
     const hasImages=sd.images.length>0;
-    const bodyY=1.75, bodyH=hasImages?1.75:5.25;
-    if(sd.bullets.length||!hasImages){
-      // Mirrors .pv-bullet + .pv-text: a plain "•" in the muted/hint color followed by
-      // foreground-colored text, not a PowerPoint-default bullet glyph/indent.
-      const textRuns=sd.bullets.length
-        ? sd.bullets.flatMap(b=>[
-            {text:'•  ', options:{color:theme.hint, breakLine:false}},
-            {text:pptxStripIllegalXmlChars(b), options:{color:theme.fg, breakLine:true}}
-          ])
-        : [{text:'', options:{}}];
+    let cursorY=1.75;
+    const bottomLimit=PPTX_SLIDE_H-0.4;
+
+    if(bullets.length){
+      // Decision-log cards need most of the vertical room when present, so bullets sharing a
+      // slide with them get a compact, capped block instead of the full body height they'd get
+      // on a bullets-only slide.
+      const bulletsH=logs.length ? Math.min(1.5, 0.5+bullets.length*0.35) : (hasImages?1.75:(bottomLimit-cursorY));
+      const textRuns=bullets.flatMap(b=>[
+        {text:'•  ', options:{color:theme.hint, breakLine:false}},
+        {text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}}
+      ]);
       slide.addText(textRuns, {
-        x:MARGIN, y:bodyY, w:PPTX_SLIDE_W-2*MARGIN, h:bodyH,
+        x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:bulletsH,
         fontFace:FONT, fontSize:18, valign:'top', paraSpaceAfter:10, lineSpacingMultiple:1.3
       });
+      cursorY+=bulletsH+0.15;
+    } else if(!logs.length && !hasImages){
+      // Bulletless, log-less, image-less slide (e.g. a heading with no direct children) — leave
+      // a blank body area, same as before, rather than collapsing the layout.
+      cursorY=bottomLimit;
     }
+
+    if(logs.length){
+      const imagesReserve=hasImages?1.85:0;
+      const availableForLogs=Math.max(1, bottomLimit-imagesReserve-cursorY);
+      const perCardMax=availableForLogs/logs.length-0.15;
+      logs.forEach(log=>{
+        const h=addDecisionLogCard(slide, log, MARGIN, cursorY, PPTX_SLIDE_W-2*MARGIN, perCardMax);
+        cursorY+=h+0.15;
+      });
+    }
+
     if(hasImages){
-      const areaY=bodyY+bodyH+0.1;
+      const areaY=cursorY+0.1;
       const areaH=Math.max(1, PPTX_SLIDE_H-areaY-0.4);
       const positions=pptxLayoutImageRow(sd.images, MARGIN, areaY, PPTX_SLIDE_W-2*MARGIN, areaH);
       sd.images.forEach((img,k)=>{
@@ -10780,13 +10934,18 @@ async function exportPptx(){
   renderPreviewBody();
   try{
     if(!window.PptxGenJS) throw new Error('pptxgenjs failed to load (offline, or the CDN is blocked)');
-    const slidesData=await pptxGatherSlidesData();
+    const {slidesData, imageWarnings}=await pptxGatherSlidesData();
     const pres=await buildPptxPresentation(slidesData);
     const meta=getMeta(); const title=(meta.title||'presentation').replace(/[\\/:*?"<>|]+/g,'_');
     suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
     // writeFile handles the Blob + download link + revoke internally.
     await pres.writeFile({fileName:`${title}.pptx`});
-    showToast('PPTX exported');
+    if(imageWarnings.length){
+      console.warn('[sakura] PPTX export: some diagram images were skipped:', imageWarnings);
+      showToast(`PPTX exported — ${imageWarnings.length} diagram image${imageWarnings.length===1?'':'s'} couldn't be embedded (see console)`);
+    } else {
+      showToast('PPTX exported');
+    }
   }catch(e){
     console.error('[sakura] PPTX export failed:',e);
     showToast('PPTX export failed — see console');
