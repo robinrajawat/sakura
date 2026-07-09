@@ -50,8 +50,9 @@ For updates: use the maintained source file
     var statusbarHiddenItems = [];
     var appbarHiddenButtons = [];
     var raw = localStorage.getItem('sakura_v001_prefs') || localStorage.getItem('tree_editor_v163_prefs');
+    var d = null;
     if (raw) {
-      var d = JSON.parse(raw);
+      d = JSON.parse(raw);
       if (d.statusbarVisible !== undefined) statusbarVisible = !!d.statusbarVisible;
       if (d.toolbarVisible !== undefined) toolbarVisible = !!d.toolbarVisible;
       if (d.appbarVisible !== undefined) appbarVisible = !!d.appbarVisible;
@@ -86,6 +87,45 @@ For updates: use the maintained source file
     // moment on every reload, regardless of what's actually turned off.
     appbarHiddenButtons.forEach(function(key){ if (AB_ITEM_EL_ID[key]) cls.push('presetup-abhide-' + key); });
     if (cls.length) document.documentElement.className += ' ' + cls.join(' ');
+
+    // Toolbar per-button/per-group visibility (Settings → Toolbar → "Customize toolbar
+    // buttons", and the section checkboxes above it) has the same flash problem as
+    // everything above, but there are ~35 individually-hideable buttons across 9 groups —
+    // far too many to give each its own presetup-* class/rule pair by hand the way the
+    // smaller sets above do. Building the exact CSS this session actually needs and
+    // injecting it as a one-off <style> tag scales to that without a wall of dead rules
+    // for everyone else's un-hidden buttons.
+    var TB_GROUP_SEL = {history:'#ag-history',structure:'#ag-structure',move:'#ag-move',format:'#ag-format',fold:'#ag-fold',inserts:'#ag-inserts',extras:'#ag-extras',ai:'#ag-ai',delete:'#ag-delete'};
+    var TB_BTN_SEL = {
+      history:{undo:'#undo-btn',redo:'#redo-btn'},
+      structure:{outdent:'#qb-outdent',indent:'#qb-indent',above:'#qb-above',child:'#qb-child',duplicate:'#qb-duplicate'},
+      move:{up:'#qb-up',down:'#qb-down'},
+      fold:{collapse:'#qb-collapse','expand-all':'#qb-expand-all',zoom:'#qb-zoom'},
+      ai:{outline:'#qb-ai-outline',expand:'#qb-ai-expand',summarise:'#qb-ai-summarise',rewrite:'#qb-ai-rewrite',tags:'#qb-ai-tags',icon:'#qb-ai-icon'},
+      "delete":{"delete":'#qb-delete'},
+      insert:{'smart-paste':'#qb-smart-paste','date-time':'#insert-dt-btn','decision-log':'#qb-decision-log',note:'#qb-note',codeblock:'#qb-codeblock',checkbox:'#qb-checkbox',tags:'#qb-tags'},
+      format:{bold:'.fmt-btn[data-style="bold"]',italic:'.fmt-btn[data-style="italic"]',underline:'.fmt-btn[data-style="underline"]',strike:'.fmt-btn[data-style="strike"]',highlight:'#hl-wrap',color:'#fc-wrap',heading:'#heading-wrap'},
+      extras:{'version-history':'#more-version-history-btn','sort-az':'#sort-root-az-btn,#qb-expanded-sort-az','sort-za':'#sort-root-za-btn,#qb-expanded-sort-za','sort-depth':'#sort-root-depth-btn,#qb-expanded-sort-depth',clear:'#clear-btn,#qb-expanded-clear'}
+    };
+    // Matches loadPrefs()'s own fallback defaults, so a saved-prefs blob that simply
+    // predates one of these keys (or never touched that specific group) still pre-hides
+    // the same buttons the main script would hide anyway once it runs, instead of treating
+    // an absent key as "nothing hidden" and flashing the real defaults into view.
+    var TB_HIDDEN_DEFAULTS = {history:[],structure:[],move:[],fold:['zoom'],ai:['expand','summarise','tags','icon'],'delete':[],insert:['smart-paste'],format:[],extras:[]};
+    var hideSelectors = [];
+    var hiddenGroups = (d && Array.isArray(d.toolbarHiddenGroups)) ? d.toolbarHiddenGroups : [];
+    hiddenGroups.forEach(function(g){ if (TB_GROUP_SEL[g]) hideSelectors.push(TB_GROUP_SEL[g]); });
+    Object.keys(TB_BTN_SEL).forEach(function(group){
+      var prefKey = (group==='insert' ? 'insertHiddenButtons' : group + 'HiddenButtons');
+      var arr = (d && Array.isArray(d[prefKey])) ? d[prefKey] : TB_HIDDEN_DEFAULTS[group];
+      var map = TB_BTN_SEL[group];
+      arr.forEach(function(key){ if (map[key]) hideSelectors.push(map[key]); });
+    });
+    if (hideSelectors.length) {
+      var tbStyle = document.createElement('style');
+      tbStyle.textContent = hideSelectors.join(',') + '{display:none}';
+      document.head.appendChild(tbStyle);
+    }
   }catch(e){}
 })();
 </script>
