@@ -1242,6 +1242,7 @@ body.pad-qa-mode #qa-body{display:flex}
 body.pad-qa-mode #pad-panel-footer{display:none}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#ptb-flip),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep){display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
+#qa-progress{display:flex;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:0 6px;white-space:nowrap;user-select:none}
 #ptb-flip{margin-left:auto}
 body.pad-qa-mode #ptb-flip{transform:scaleX(-1)}
 #qa-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
@@ -1249,7 +1250,6 @@ body.pad-qa-mode #ptb-flip{transform:scaleX(-1)}
 .qa-row{position:relative;padding:0 18px 15px 0}
 .qa-row:last-child{border-bottom:none}
 .qa-field-wrap{position:relative;display:flex;align-items:flex-start;gap:3px}
-.qa-mark{flex-shrink:0;color:var(--hint);font:600 11px 'Inter',sans-serif;line-height:1.5;padding-top:2px;user-select:none}
 .qa-field-wrap textarea{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;background:transparent;padding:2px 18px 2px 3px;color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45}
 .qa-field-wrap textarea:focus{outline:none}
 .qa-field-wrap textarea::placeholder{color:var(--hint);font-style:normal}
@@ -3700,7 +3700,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer field, each with its own small Rewrite (AI) button; delete a row with the trash icon. The search-icon button scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them — plus a text box for questions that aren't in the outline at all; confirming adds them as new rows. The + button just adds one blank row. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">N</span> in Presenter mode, then the flip button, to work through questions without leaving fullscreen</li>
+<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The search-icon button scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows. The + button adds one blank row for questions that aren't in the outline at all. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">N</span> in Presenter mode, then the flip button, to work through questions without leaving fullscreen</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4246,6 +4246,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <button class="note-tb-btn" id="ptb-ai-rewrite" data-tip="Rewrite Pad (AI) — rewrites selection or full pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-scan" data-tip="Scan outline for questions"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-add" data-tip="Add a blank Q&amp;A row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <span id="qa-progress" class="qa-only-btn"></span>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button class="note-tb-btn" id="ptb-flip" data-tip="Switch to Q&amp;A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg></button>
     <button id="pad-panel-close-toolbar" data-tip="Close Pad (Ctrl/Cmd+Shift+P)" aria-label="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -18176,25 +18177,30 @@ async function rewriteQaField(id,field){
   }catch(err){ showAiErrorModal(aiProvider, err); }
   finally{ if(btn)btn.classList.remove('ai-busy'); }
 }
+function updateQaProgress(){
+  const progress=el('qa-progress'); if(!progress)return;
+  const answered=qaItems.filter(it=>(it.answer||'').trim()).length;
+  progress.textContent=qaItems.length?`${answered}/${qaItems.length} answered`:'';
+}
 function renderQaList(){
   const list=el('qa-list'), body=el('qa-body'); if(!list||!body)return;
   body.classList.toggle('qa-is-empty',qaItems.length===0);
+  updateQaProgress();
   list.innerHTML='';
   const sparkleSvg='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
   qaItems.forEach(item=>{
     const row=document.createElement('div'); row.className='qa-row';
 
     const qWrap=document.createElement('div'); qWrap.className='qa-field-wrap';
-    const qMark=document.createElement('span'); qMark.className='qa-mark'; qMark.textContent='Q:';
     const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.className='qa-field-q'; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
     qTa.addEventListener('input',()=>{ item.question=qTa.value; autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
     const qRw=document.createElement('button'); qRw.className='qa-inline-sparkle'; qRw.id=`qa-rw-question-${item.id}`; qRw.dataset.tip='Rewrite question (AI)'; qRw.innerHTML=sparkleSvg;
     qRw.addEventListener('click',()=>rewriteQaField(item.id,'question'));
-    qWrap.appendChild(qMark); qWrap.appendChild(qTa); qWrap.appendChild(qRw);
+    qWrap.appendChild(qTa); qWrap.appendChild(qRw);
 
     const aWrap=document.createElement('div'); aWrap.className='qa-field-wrap';
     const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.className='qa-field-a'; aTa.rows=1; aTa.placeholder='Answer'; aTa.value=item.answer||'';
-    aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); });
+    aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); updateQaProgress(); });
     const aRw=document.createElement('button'); aRw.className='qa-inline-sparkle'; aRw.id=`qa-rw-answer-${item.id}`; aRw.dataset.tip='Rewrite answer (AI)'; aRw.innerHTML=sparkleSvg;
     aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
     aWrap.appendChild(aTa); aWrap.appendChild(aRw);
