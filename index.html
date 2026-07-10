@@ -2052,8 +2052,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-search-highlight{background:color-mix(in srgb,var(--accent) 38%,transparent);color:inherit;border-radius:3px;padding:0 1px}
 .todo-at{font-weight:400}.todo-at-person{color:var(--sem-section)}.todo-at-date{color:var(--muted)}.todo-at-status{color:var(--sem-alert)}
 .todo-tag-chip{color:var(--sem-code)}.todo-remark{color:var(--sem-quote);font-style:italic}
-.todo-dd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:170px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px;display:none;flex-direction:column}
+.todo-dd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:170px;max-height:min(360px,60vh);overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px;display:none;flex-direction:column}
 .todo-dd-menu.open{display:flex}
+.todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
+.todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
 .todo-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s}
 .todo-dd-item:hover{background:var(--hover)}
 .todo-dd-item:active{background:var(--sel)}
@@ -2122,6 +2124,18 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-repeat:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 #todos-panel.actions-fixed .todo-repeat{display:inline-flex}
 .todo-check:disabled{cursor:default;opacity:.75}
+.todo-select-check{appearance:none;-webkit-appearance:none;display:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:4px;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-select-check:hover{border-color:var(--accent)}
+.todo-select-check:checked{background:var(--accent);border-color:var(--accent)}
+.todo-select-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg)}
+#todos-panel.select-mode .todo-row:not(.completed) .todo-check{display:none}
+#todos-panel.select-mode .todo-row:not(.completed) .todo-select-check{display:inline-flex}
+#todos-select-toggle.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#todos-bulk-bar{display:none;align-items:center;gap:4px;padding:7px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+#todos-bulk-count{font:500 11.5px 'Inter',sans-serif;color:var(--fg);margin-right:auto;white-space:nowrap}
+.todo-bulk-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:11px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
+.todo-bulk-btn:hover{color:var(--fg);background:var(--hover)}
+.todo-bulk-btn.danger:hover{color:var(--sem-alert);background:color-mix(in srgb,var(--sem-alert) 12%,transparent)}
 .todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:2px}
 .todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
@@ -3117,6 +3131,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-section-title">Export &amp; print</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included. Applies to Markdown, OPML, Text, and the header Print button — not PDF, PowerPoint, or Word, since those render from (or mirror) Preview/Presenter, which already has its own fold state under your direct control there (click any section to expand or collapse it) and is left exactly as you set it.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Folded-content notice in Export menu</span><span class="settings-row-desc">The reminder that appears in the Export ▾ menu whenever anything is folded ("Skips folded sections… Include them" or the reverse) — same info as the setting above, just surfaced right where you're about to export. Turn off once you know the behavior and don't need the reminder each time; the underlying Skip folded sections setting itself is unaffected.</span></div><button id="export-menu-fold-note-enabled-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show folded-content notice in Export menu"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (Sakura mark, document title, author, word/read-time/decision stats) before the contents page when exporting to PDF or Word.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
             </div>
             <div class="settings-field" id="export-menu-buttons-field">
@@ -4160,15 +4175,58 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       </div>
     </div>
     <div class="todo-dd-wrap" id="todos-filter-wrap">
-      <button type="button" class="todo-dd-trigger" id="todos-filter-trigger" data-tip="Filter by priority" aria-label="Filter by priority" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+      <button type="button" class="todo-dd-trigger" id="todos-filter-trigger" data-tip="Filter" aria-label="Filter" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
       <div class="todo-dd-menu" id="todos-filter-menu" role="menu">
-        <button type="button" class="todo-dd-item" data-value="all" role="menuitemradio">All priorities<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="high" role="menuitemradio">High only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="med" role="menuitemradio">Medium only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="low" role="menuitemradio">Low only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="none" role="menuitemradio">No priority<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <span class="todo-dd-label">Priority</span>
+        <button type="button" class="todo-dd-item" data-group="priority" data-value="all" role="menuitemradio">All priorities<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="priority" data-value="high" role="menuitemradio">High only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="priority" data-value="med" role="menuitemradio">Medium only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="priority" data-value="low" role="menuitemradio">Low only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="priority" data-value="none" role="menuitemradio">No priority<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <div class="todo-dd-divider"></div>
+        <span class="todo-dd-label">Status</span>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="all" role="menuitemradio">All statuses<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="waiting" role="menuitemradio">Waiting<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="progress" role="menuitemradio">In progress<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="blocked" role="menuitemradio">Blocked<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="review" role="menuitemradio">In review<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="status" data-value="none" role="menuitemradio">No status<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <div class="todo-dd-divider"></div>
+        <span class="todo-dd-label">Due</span>
+        <button type="button" class="todo-dd-item" data-group="due" data-value="all" role="menuitemradio">Any due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="due" data-value="overdue" role="menuitemradio">Overdue<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="due" data-value="today" role="menuitemradio">Due today<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="due" data-value="upcoming" role="menuitemradio">Due later<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-group="due" data-value="none" role="menuitemradio">No due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
       </div>
     </div>
+    <button type="button" class="todo-dd-trigger" id="todos-select-toggle" data-tip="Select multiple" aria-label="Select multiple tasks" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg></button>
+  </div>
+  <div id="todos-bulk-bar">
+    <span id="todos-bulk-count">0 selected</span>
+    <div class="todo-dd-wrap" id="todos-bulk-priority-wrap">
+      <button type="button" class="todo-bulk-btn" id="todos-bulk-priority-trigger" data-tip="Set priority" aria-label="Set priority" aria-haspopup="true" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h13.4a.5.5 0 0 1 .4.8L15 9l3.8 5.2a.5.5 0 0 1-.4.8H5"/></svg>Priority</button>
+      <div class="todo-dd-menu" id="todos-bulk-priority-menu" role="menu">
+        <button type="button" class="todo-dd-item" data-value="high">High</button>
+        <button type="button" class="todo-dd-item" data-value="med">Medium</button>
+        <button type="button" class="todo-dd-item" data-value="low">Low</button>
+        <button type="button" class="todo-dd-item" data-value="none">No priority</button>
+      </div>
+    </div>
+    <div class="todo-dd-wrap" id="todos-bulk-status-wrap">
+      <button type="button" class="todo-bulk-btn" id="todos-bulk-status-trigger" data-tip="Set status" aria-label="Set status" aria-haspopup="true" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>Status</button>
+      <div class="todo-dd-menu" id="todos-bulk-status-menu" role="menu">
+        <button type="button" class="todo-dd-item" data-value="waiting">Waiting</button>
+        <button type="button" class="todo-dd-item" data-value="progress">In progress</button>
+        <button type="button" class="todo-dd-item" data-value="blocked">Blocked</button>
+        <button type="button" class="todo-dd-item" data-value="review">In review</button>
+        <button type="button" class="todo-dd-item" data-value="none">No status</button>
+      </div>
+    </div>
+    <button type="button" class="todo-bulk-btn" id="todos-bulk-due-btn" data-tip="Set due date" aria-label="Set due date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Due</button>
+    <button type="button" class="todo-bulk-btn" id="todos-bulk-complete-btn" data-tip="Mark complete" aria-label="Mark complete"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Complete</button>
+    <button type="button" class="todo-bulk-btn danger" id="todos-bulk-delete-btn" data-tip="Delete selected" aria-label="Delete selected"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
+    <button type="button" class="todo-bulk-btn" id="todos-bulk-cancel-btn" data-tip="Cancel selection" aria-label="Cancel selection"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="todos-search-row">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -4835,7 +4893,7 @@ const VERSION='v2.0.0'; const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX='sakura_template_v1_'; const CUSTOM_DEFAULT_KEY='sakura_default_template_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='mono'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='mono'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','codeblock','tags','decision-log','ai-rewrite']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let noteCompactDefault=false; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -6620,7 +6678,7 @@ function openTemplatesMenu(){
 }
 function savePrefs(){
   try{
-    const payload={theme:currentTheme,themeMode,scheduleDarkStart,scheduleLightStart,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,collapseDepth,spellcheckEnabled,compactRows,alwaysStartBlank,dateTimeFormat,accentPreset,accentIntensity,accentCustomColor,chromePreset,skipFoldedInExports,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,decisionLogAskAuthor,decisionLogColors,decisionLogLabelBold,lastDecisionAuthor,decisionLogHiddenFields,contextQuickActions,hoverToolbarEnabled,hoverToolbarActions,padEnabled,padHeaderEnabled,padMatchEditorBg,padHiddenButtons,presenterNotesHiddenButtons,exportHiddenButtons,insertHiddenButtons,noteHiddenButtons,noteMatchEditorBg,noteCompactDefault,codeMatchEditorBg,previewDlFields,previewAlwaysExpand,previewTocOpen,previewHeadingDepthFallback,previewTocMaxLevel,previewTocIncludeSections,sectionMarkersDepthZero,previewReadingWidth,previewSepiaTheme,previewSerifBody,previewPdfMargin,previewSlideDepth,previewPresenterZoom,previewAutoLaser,previewUseFullscreen,previewAutoPresenter,previewPresenterBranding,previewPresenterTimerEnabled,previewPresenterOverviewEnabled,previewPresenterNotesEnabled,previewPresenterNotesExpanded,presenterAutoExpandNoteCards,backupReminderDays,defaultAuthorName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureDecisionLogEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,qaHintEnabled,qaSearchResultCap,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,hideTreeLines,rowHighlightStyle,coverPageEnabled,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,contextHiddenActions,zenHideToolbar,zenHidePad,zenHideAppbar,zenUseFullscreen,zenHideSidebar,zenHideStatusbar,zenHideTabbar,nodeFontColorPreset,nodeDepthFadeEnabled,statusbarVisible,tabbarVisible,appbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,sessionBackupPromptMode,autoRewriteChipShowQueued,autoRewriteChipShowCountdown};
+    const payload={theme:currentTheme,themeMode,scheduleDarkStart,scheduleLightStart,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,collapseDepth,spellcheckEnabled,compactRows,alwaysStartBlank,dateTimeFormat,accentPreset,accentIntensity,accentCustomColor,chromePreset,skipFoldedInExports,exportMenuFoldNoteEnabled,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,decisionLogAskAuthor,decisionLogColors,decisionLogLabelBold,lastDecisionAuthor,decisionLogHiddenFields,contextQuickActions,hoverToolbarEnabled,hoverToolbarActions,padEnabled,padHeaderEnabled,padMatchEditorBg,padHiddenButtons,presenterNotesHiddenButtons,exportHiddenButtons,insertHiddenButtons,noteHiddenButtons,noteMatchEditorBg,noteCompactDefault,codeMatchEditorBg,previewDlFields,previewAlwaysExpand,previewTocOpen,previewHeadingDepthFallback,previewTocMaxLevel,previewTocIncludeSections,sectionMarkersDepthZero,previewReadingWidth,previewSepiaTheme,previewSerifBody,previewPdfMargin,previewSlideDepth,previewPresenterZoom,previewAutoLaser,previewUseFullscreen,previewAutoPresenter,previewPresenterBranding,previewPresenterTimerEnabled,previewPresenterOverviewEnabled,previewPresenterNotesEnabled,previewPresenterNotesExpanded,presenterAutoExpandNoteCards,backupReminderDays,defaultAuthorName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureDecisionLogEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,qaHintEnabled,qaSearchResultCap,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,hideTreeLines,rowHighlightStyle,coverPageEnabled,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,contextHiddenActions,zenHideToolbar,zenHidePad,zenHideAppbar,zenUseFullscreen,zenHideSidebar,zenHideStatusbar,zenHideTabbar,nodeFontColorPreset,nodeDepthFadeEnabled,statusbarVisible,tabbarVisible,appbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,sessionBackupPromptMode,autoRewriteChipShowQueued,autoRewriteChipShowCountdown};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -6642,7 +6700,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system','schedule'].includes(d.themeMode)?d.themeMode:'manual'; scheduleDarkStart=Number.isFinite(Number(d.scheduleDarkStart))?Math.min(23,Math.max(0,Math.round(Number(d.scheduleDarkStart)))):19; scheduleLightStart=Number.isFinite(Number(d.scheduleLightStart))?Math.min(23,Math.max(0,Math.round(Number(d.scheduleLightStart)))):7; currentFont='mono'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); if(Number.isFinite(Number(d.collapseDepth)))collapseDepth=Math.min(6,Math.max(0,Math.round(Number(d.collapseDepth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'teal'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?false:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; decisionLogLabelBold=d.decisionLogLabelBold===undefined?true:!!d.decisionLogLabelBold; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padHeaderEnabled=!!d.padHeaderEnabled; padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; noteCompactDefault=!!d.noteCompactDefault; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):0; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=d.previewUseFullscreen===undefined?true:!!d.previewUseFullscreen; previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; previewPresenterNotesExpanded=!!d.previewPresenterNotesExpanded; presenterAutoExpandNoteCards=!!d.presenterAutoExpandNoteCards; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaHintEnabled=d.qaHintEnabled===undefined?true:!!d.qaHintEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','date-time','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchResultCap=[4,8,12,20].includes(Number(d.qaSearchResultCap))?Number(d.qaSearchResultCap):8; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):[]; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='appbar'?'appbar':'statusbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=d.autoRewriteChipShowCountdown===undefined?true:!!d.autoRewriteChipShowCountdown;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e)}}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system','schedule'].includes(d.themeMode)?d.themeMode:'manual'; scheduleDarkStart=Number.isFinite(Number(d.scheduleDarkStart))?Math.min(23,Math.max(0,Math.round(Number(d.scheduleDarkStart)))):19; scheduleLightStart=Number.isFinite(Number(d.scheduleLightStart))?Math.min(23,Math.max(0,Math.round(Number(d.scheduleLightStart)))):7; currentFont='mono'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); if(Number.isFinite(Number(d.collapseDepth)))collapseDepth=Math.min(6,Math.max(0,Math.round(Number(d.collapseDepth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'teal'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; exportMenuFoldNoteEnabled=d.exportMenuFoldNoteEnabled===undefined?true:!!d.exportMenuFoldNoteEnabled; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?false:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; decisionLogLabelBold=d.decisionLogLabelBold===undefined?true:!!d.decisionLogLabelBold; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padHeaderEnabled=!!d.padHeaderEnabled; padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; noteCompactDefault=!!d.noteCompactDefault; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):0; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=d.previewUseFullscreen===undefined?true:!!d.previewUseFullscreen; previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; previewPresenterNotesExpanded=!!d.previewPresenterNotesExpanded; presenterAutoExpandNoteCards=!!d.presenterAutoExpandNoteCards; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaHintEnabled=d.qaHintEnabled===undefined?true:!!d.qaHintEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','date-time','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchResultCap=[4,8,12,20].includes(Number(d.qaSearchResultCap))?Number(d.qaSearchResultCap):8; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):[]; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='appbar'?'appbar':'statusbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=d.autoRewriteChipShowCountdown===undefined?true:!!d.autoRewriteChipShowCountdown;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e)}}
 function updateToolbarSubControls(){[el('toolbar-labels-row'),el('expanded-toolbar-row'),el('toolbar-sections-field')].forEach(row=>{if(row)row.classList.toggle('is-disabled',!toolbarVisible)})}
 function setToolbarVisible(on,persist=true){toolbarVisible=!!on; document.body.classList.toggle('toolbar-hidden',!toolbarVisible); const toggle=el('toolbar-visible-toggle'); if(toggle){toggle.classList.toggle('on',toolbarVisible); toggle.setAttribute('aria-checked',String(toolbarVisible))} const fbtn=el('editor-toolbar-toggle'); if(fbtn){fbtn.classList.toggle('is-active',toolbarVisible); fbtn.setAttribute('aria-pressed',String(toolbarVisible)); fbtn.dataset.tip=(toolbarVisible?'Hide toolbar':'Show toolbar')+' (Ctrl/Cmd+Shift+T)'} updateToolbarSubControls(); if(persist){savePrefs(); scheduleAutoSave()}}
 function setExpandedToolbar(on,persist=true){expandedToolbar=!!on; document.body.classList.toggle('expanded-toolbar',expandedToolbar); const toggle=el('expanded-toolbar-toggle'); if(toggle){toggle.classList.toggle('on',expandedToolbar); toggle.setAttribute('aria-checked',String(expandedToolbar))} if(persist){savePrefs(); scheduleAutoSave()}}
@@ -9934,7 +9992,8 @@ el('qb-smart-paste').addEventListener('click',()=>{smartPasteFromClipboard()});
 function applyFoldFilter(list,foldOverride){const foldSet=foldOverride||(skipFoldedInExports?collapsedIds:null); if(!foldSet||!foldSet.size)return list; const out=[]; let skipDepth=null; list.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(node); const hasKids=idx+1<list.length && list[idx+1].depth>node.depth; if(foldSet.has(node.id)&&hasKids) skipDepth=node.depth }); return out}
 function getScopedNodes(forceFull=false,foldOverride){let base; if(forceFull||selectAllMode||!multiSelectedIds.length){base=nodes.slice()} else {const idSet=new Set(multiSelectedIds); base=nodes.filter(n=>idSet.has(n.id))} return applyFoldFilter(base,foldOverride)}
 function setSkipFoldedInExports(on,persist=true){skipFoldedInExports=!!on; const toggle=el('skip-folded-exports-toggle'); if(toggle){toggle.classList.toggle('on',skipFoldedInExports); toggle.setAttribute('aria-checked',String(skipFoldedInExports))} if(persist){savePrefs(); scheduleAutoSave()} updateExportMenuFoldNote()}
-function updateExportMenuFoldNote(){const wrap=el('export-menu-fold-note'); const txt=el('export-menu-fold-note-text'); const icon=wrap?.querySelector('.efn-icon'); if(!wrap||!txt)return; if(!collapsedIds.size){wrap.classList.remove('show'); return} if(icon)icon.classList.toggle('efn-ok',!skipFoldedInExports); txt.innerHTML=skipFoldedInExports?'Skips folded sections (except PDF/PPT/Word — see Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Include them</button>':'Includes folded sections (PDF/PPT/Word always follow Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Skip them</button>'; wrap.classList.add('show'); const link=el('export-menu-fold-note-link'); if(link)link.addEventListener('click',e=>{e.stopPropagation(); setSkipFoldedInExports(!skipFoldedInExports)})}
+function setExportMenuFoldNoteEnabled(on,persist=true){exportMenuFoldNoteEnabled=!!on; const toggle=el('export-menu-fold-note-enabled-toggle'); if(toggle){toggle.classList.toggle('on',exportMenuFoldNoteEnabled); toggle.setAttribute('aria-checked',String(exportMenuFoldNoteEnabled))} if(persist){savePrefs(); scheduleAutoSave()} updateExportMenuFoldNote()}
+function updateExportMenuFoldNote(){const wrap=el('export-menu-fold-note'); const txt=el('export-menu-fold-note-text'); const icon=wrap?.querySelector('.efn-icon'); if(!wrap||!txt)return; if(!exportMenuFoldNoteEnabled||!collapsedIds.size){wrap.classList.remove('show'); return} if(icon)icon.classList.toggle('efn-ok',!skipFoldedInExports); txt.innerHTML=skipFoldedInExports?'Skips folded sections (except PDF/PPT/Word — see Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Include them</button>':'Includes folded sections (PDF/PPT/Word always follow Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Skip them</button>'; wrap.classList.add('show'); const link=el('export-menu-fold-note-link'); if(link)link.addEventListener('click',e=>{e.stopPropagation(); setSkipFoldedInExports(!skipFoldedInExports)})}
 function setGlobalSearchVisible(on,persist=true){globalSearchVisible=!!on; const wrap=el('global-search-wrap'); if(wrap)wrap.style.display=globalSearchVisible?'':'none'; if(!globalSearchVisible)setQaOpen(false); const toggle=el('global-search-bar-toggle'); if(toggle){toggle.classList.toggle('on',globalSearchVisible); toggle.setAttribute('aria-checked',String(globalSearchVisible))} refreshStatusbarDividers(); if(persist){savePrefs(); scheduleAutoSave()}}
 function setQaIconOnly(on,persist=true){qaIconOnly=!!on; const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-icon-only',qaIconOnly); const toggle=el('qa-icon-only-toggle'); if(toggle){toggle.classList.toggle('on',qaIconOnly); toggle.setAttribute('aria-checked',String(qaIconOnly))} if(persist){savePrefs(); scheduleAutoSave()}}
 // Moves the actual Quick Assist element (never a clone — keeps its listeners, dropdown, and
@@ -11900,6 +11959,7 @@ el('node-timestamp-hover-toggle')?.addEventListener('click',()=>setNodeTimestamp
 el('always-start-blank-toggle').addEventListener('click',()=>setAlwaysStartBlank(!alwaysStartBlank)); el('always-start-blank-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setAlwaysStartBlank(!alwaysStartBlank);}});
 el('restore-tabs-toggle').addEventListener('click',()=>setRestoreTabsOnLaunch(!restoreTabsOnLaunch)); el('restore-tabs-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setRestoreTabsOnLaunch(!restoreTabsOnLaunch);}});
 el('skip-folded-exports-toggle').addEventListener('click',()=>setSkipFoldedInExports(!skipFoldedInExports)); el('skip-folded-exports-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSkipFoldedInExports(!skipFoldedInExports);}});
+el('export-menu-fold-note-enabled-toggle')?.addEventListener('click',()=>setExportMenuFoldNoteEnabled(!exportMenuFoldNoteEnabled));
 el('cover-page-toggle')?.addEventListener('click',()=>setCoverPageEnabled(!coverPageEnabled)); el('cover-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setCoverPageEnabled(!coverPageEnabled);}});
 el('global-search-bar-toggle').addEventListener('click',()=>setGlobalSearchVisible(!globalSearchVisible)); el('global-search-bar-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setGlobalSearchVisible(!globalSearchVisible);}});
 el('qa-icon-only-toggle')?.addEventListener('click',()=>setQaIconOnly(!qaIconOnly));
@@ -14210,7 +14270,7 @@ document.addEventListener('visibilitychange',()=>{
 
 let zenMode=false;
 let _zenAutoHidToolbar=false; let _zenAutoHidPad=false; let _zenAutoHidSidebar=false;
-loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); currentFont='mono'; ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont('mono'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setCollapseDepth(collapseDepth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAccentBranches(accentBranches,false); setHideTreeLines(hideTreeLines,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
+loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); currentFont='mono'; ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont('mono'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setCollapseDepth(collapseDepth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAccentBranches(accentBranches,false); setHideTreeLines(hideTreeLines,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search, templates === */
@@ -21944,6 +22004,7 @@ function _addTagPopoverFromInput(){
   const TODOS_WIDTH_KEY='sakura_todos_width_v1';
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
+  let todosSelectedIds=new Set(); // bulk-select mode, open tasks only — scoped to this module, not persisted
   const STATUSES=['none','waiting','progress','blocked','review'];
   let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, linkLabel, nodeRef, repeat, subtasks, subtasksOpen} — array order IS open-task order
   // nodeRef ({docId,nodeId}|null) and link/linkLabel are mutually exclusive — a task's "attach a
@@ -21955,7 +22016,7 @@ function _addTagPopoverFromInput(){
   let todosWidth=380; // default matches the CSS fallback (min(380px, calc(100vw - 32px)))
   let completedOpen=null; // lazily initialized from settings.completedCollapsedByDefault on first render; then a per-session toggle
   const TODO_ELEMENT_KEYS=['priority','due','repeat','subtask','status','link'];
-  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[] };
+  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[] };
 
   function loadTodos(){
     try{
@@ -22004,6 +22065,8 @@ function _addTagPopoverFromInput(){
         settings.rowActionsMode = d.rowActionsMode==='fixed' ? 'fixed' : 'hover';
         settings.sortMode = ['manual','priority','due'].includes(d.sortMode) ? d.sortMode : 'manual';
         settings.priorityFilter = ['all','high','med','low','none'].includes(d.priorityFilter) ? d.priorityFilter : 'all';
+        settings.statusFilter = ['all','waiting','progress','blocked','review','none'].includes(d.statusFilter) ? d.statusFilter : 'all';
+        settings.dueFilter = ['all','overdue','today','upcoming','none'].includes(d.dueFilter) ? d.dueFilter : 'all';
         settings.showOverdueBadge = d.showOverdueBadge===undefined ? true : !!d.showOverdueBadge;
         settings.subtasksCollapsedByDefault = d.subtasksCollapsedByDefault===undefined ? false : !!d.subtasksCollapsedByDefault;
         settings.completedCollapsedByDefault = d.completedCollapsedByDefault===undefined ? false : !!d.completedCollapsedByDefault;
@@ -22146,6 +22209,84 @@ function _addTagPopoverFromInput(){
       todos.splice(insertAt,0,removed);
       saveTodos();
       renderTodos();
+    });
+  }
+  // ── Bulk actions (select mode) ──────────────────────────────────────────
+  function toggleTodoSelectMode(force){
+    const panel=document.getElementById('todos-panel');
+    if(!panel) return;
+    const next = force!==undefined ? force : !panel.classList.contains('select-mode');
+    panel.classList.toggle('select-mode', next);
+    const toggleBtn=document.getElementById('todos-select-toggle');
+    toggleBtn?.classList.toggle('active', next);
+    toggleBtn?.setAttribute('aria-pressed', String(next));
+    if(!next) todosSelectedIds.clear();
+    renderTodos();
+  }
+  function toggleTodoSelected(id){
+    if(todosSelectedIds.has(id)) todosSelectedIds.delete(id);
+    else todosSelectedIds.add(id);
+    updateBulkBar();
+  }
+  function updateBulkBar(){
+    const bar=document.getElementById('todos-bulk-bar');
+    if(!bar) return;
+    const count=todosSelectedIds.size;
+    bar.style.display=count>0?'flex':'none';
+    const countEl=document.getElementById('todos-bulk-count');
+    if(countEl) countEl.textContent=`${count} selected`;
+  }
+  function bulkSetPriority(priority){
+    const ids=[...todosSelectedIds];
+    if(!ids.length) return;
+    const prev=[];
+    ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t)return; prev.push({id,priority:t.priority||'none'}); t.priority=priority; });
+    saveTodos(); renderTodos();
+    showTodosActionToast(`Priority set on ${prev.length} task${prev.length===1?'':'s'}`,'Undo',()=>{
+      prev.forEach(p=>{ const t=todos.find(x=>x.id===p.id); if(t)t.priority=p.priority; });
+      saveTodos(); renderTodos();
+    });
+  }
+  function bulkSetStatus(status){
+    const ids=[...todosSelectedIds];
+    if(!ids.length) return;
+    const prev=[];
+    ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t)return; prev.push({id,status:t.status||'none'}); t.status=status; });
+    saveTodos(); renderTodos();
+    showTodosActionToast(`Status set on ${prev.length} task${prev.length===1?'':'s'}`,'Undo',()=>{
+      prev.forEach(p=>{ const t=todos.find(x=>x.id===p.id); if(t)t.status=p.status; });
+      saveTodos(); renderTodos();
+    });
+  }
+  function bulkComplete(){
+    const ids=[...todosSelectedIds];
+    if(!ids.length) return;
+    const prev=[];
+    ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t||t.done)return; prev.push(id); t.done=true; t.completedAt=Date.now(); });
+    pruneCompleted();
+    todosSelectedIds.clear();
+    saveTodos(); renderTodos();
+    const count=prev.length;
+    showTodosActionToast(`Completed ${count} task${count===1?'':'s'}`,'Undo',()=>{
+      prev.forEach(id=>{ const t=todos.find(x=>x.id===id); if(t){ t.done=false; t.completedAt=null; } });
+      saveTodos(); renderTodos();
+    });
+  }
+  function bulkDelete(){
+    const ids=new Set(todosSelectedIds);
+    if(!ids.size) return;
+    const removed=[];
+    todos.forEach((t,i)=>{ if(ids.has(t.id)) removed.push({item:t, idx:i}); });
+    todos=todos.filter(t=>!ids.has(t.id));
+    todosSelectedIds.clear();
+    saveTodos(); renderTodos();
+    const count=removed.length;
+    showTodosActionToast(`Deleted ${count} task${count===1?'':'s'}`,'Undo',()=>{
+      removed.sort((a,b)=>a.idx-b.idx).forEach(({item,idx})=>{
+        const insertAt=Math.min(idx, todos.length);
+        todos.splice(insertAt,0,item);
+      });
+      saveTodos(); renderTodos();
     });
   }
   function clearCompleted(){
@@ -22527,10 +22668,24 @@ function _addTagPopoverFromInput(){
   }
 
   const PRIORITY_RANK={high:3,med:2,low:1,none:0};
-  function filterByPriority(list){
-    if(settings.priorityFilter==='all') return list;
-    return list.filter(t=>(t.priority||'none')===settings.priorityFilter);
+  // "today" and "overdue" are computed once per render call, not cached, since a todo panel
+  // left open across midnight should reclassify its own dates on the next natural re-render
+  // rather than needing a reload — renderTodos() already re-runs this on every mutation.
+  function todoDueBucket(t){
+    if(!t.dueDate) return 'none';
+    const todayIso=toISODate(new Date());
+    if(t.dueDate<todayIso) return 'overdue';
+    if(t.dueDate===todayIso) return 'today';
+    return 'upcoming';
   }
+  function applyTodoFilters(list){
+    let out=list;
+    if(settings.priorityFilter!=='all') out=out.filter(t=>(t.priority||'none')===settings.priorityFilter);
+    if(settings.statusFilter!=='all') out=out.filter(t=>(t.status||'none')===settings.statusFilter);
+    if(settings.dueFilter!=='all') out=out.filter(t=>todoDueBucket(t)===settings.dueFilter);
+    return out;
+  }
+  function anyTodoFilterActive(){ return settings.priorityFilter!=='all'||settings.statusFilter!=='all'||settings.dueFilter!=='all' }
   function sortOpenList(list){
     if(settings.sortMode==='priority'){
       return [...list].sort((a,b)=>PRIORITY_RANK[b.priority||'none']-PRIORITY_RANK[a.priority||'none']);
@@ -22546,8 +22701,8 @@ function _addTagPopoverFromInput(){
     return list; // manual: natural array order
   }
   function getVisibleTodos(){
-    const open=sortOpenList(filterByPriority(todos.filter(t=>!t.done)));
-    const done=filterByPriority(todos.filter(t=>t.done)).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+    const open=sortOpenList(applyTodoFilters(todos.filter(t=>!t.done)));
+    const done=applyTodoFilters(todos.filter(t=>t.done)).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
     return {open, done};
   }
 
@@ -22585,6 +22740,14 @@ function _addTagPopoverFromInput(){
     body.querySelectorAll('.todo-check').forEach(cb=>{
       cb.addEventListener('change',()=>toggleTodo(cb.getAttribute('data-id')));
     });
+    body.querySelectorAll('.todo-select-check').forEach(cb=>{
+      cb.addEventListener('change',()=>toggleTodoSelected(cb.getAttribute('data-id')));
+    });
+    {
+      const stillOpen=new Set(todos.filter(t=>!t.done).map(t=>t.id));
+      [...todosSelectedIds].forEach(id=>{ if(!stillOpen.has(id)) todosSelectedIds.delete(id); });
+      updateBulkBar();
+    }
     body.querySelectorAll('.todo-delete').forEach(btn=>{
       btn.addEventListener('click',()=>deleteTodo(btn.getAttribute('data-id')));
     });
@@ -23036,6 +23199,7 @@ function _addTagPopoverFromInput(){
       showRepeat=!hidden.includes('repeat'), showSubtask=!hidden.includes('subtask');
     return `<div class="todo-row${t.done?' completed':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
+      + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
@@ -23073,6 +23237,7 @@ function _addTagPopoverFromInput(){
 
   // ── Due date popover (custom calendar, matches app styling) ─────────────
   let _dueDateId=null;
+  let _dueDateBulkIds=null; // when set (array of ids), the popover is setting a due date on all of them at once instead of on _dueDateId
   let _dueDateViewMonth=null; // Date set to the 1st of the month currently shown
 
   function toISODate(d){
@@ -23093,6 +23258,7 @@ function _addTagPopoverFromInput(){
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-due')||'';
     _dueDateId=id;
+    _dueDateBulkIds=null;
     const currentDate=parseISODate(current);
     const today=new Date(); today.setHours(0,0,0,0);
     _dueDateViewMonth = currentDate
@@ -23121,18 +23287,56 @@ function _addTagPopoverFromInput(){
     const pop=document.getElementById('todo-due-popover');
     if(pop) pop.classList.remove('open');
     _dueDateId=null;
+    _dueDateBulkIds=null;
+  }
+
+  function openBulkDueDateEditor(btn){
+    const ids=[...todosSelectedIds];
+    if(!ids.length) return;
+    _dueDateId=null;
+    _dueDateBulkIds=ids;
+    const today=new Date(); today.setHours(0,0,0,0);
+    _dueDateViewMonth=new Date(today.getFullYear(), today.getMonth(), 1);
+    const pop=document.getElementById('todo-due-popover');
+    if(!pop) return;
+    const rect=btn.getBoundingClientRect();
+    const pw=216;
+    let left=rect.left;
+    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+    if(left<8) left=8;
+    pop.style.left=left+'px';
+    pop.style.top=(rect.bottom+4)+'px';
+    renderDueDatePopover();
+    pop.classList.add('open');
+    const pr=pop.getBoundingClientRect();
+    if(pr.bottom>window.innerHeight-8){
+      pop.style.top=Math.max(8, rect.top-pr.height-4)+'px';
+    }
   }
 
   function commitDueDate(val){
+    if(_dueDateBulkIds){
+      const ids=_dueDateBulkIds;
+      const cleanVal=/^\d{4}-\d{2}-\d{2}$/.test(val||'')?val:null;
+      const prev=[];
+      ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t)return; prev.push({id,dueDate:t.dueDate||null}); t.dueDate=cleanVal; });
+      closeDueDateEditor();
+      saveTodos(); renderTodos();
+      showTodosActionToast(`Due date ${cleanVal?'set':'cleared'} on ${prev.length} task${prev.length===1?'':'s'}`,'Undo',()=>{
+        prev.forEach(p=>{ const t=todos.find(x=>x.id===p.id); if(t)t.dueDate=p.dueDate; });
+        saveTodos(); renderTodos();
+      });
+      return;
+    }
     if(_dueDateId===null) return;
     setDueDate(_dueDateId, val||null);
     closeDueDateEditor();
   }
 
   function renderDueDatePopover(){
-    if(_dueDateId===null || !_dueDateViewMonth) return;
-    const t=todos.find(x=>x.id===_dueDateId);
-    const current=t?t.dueDate:null;
+    if((_dueDateId===null && !_dueDateBulkIds) || !_dueDateViewMonth) return;
+    const t=_dueDateBulkIds?null:todos.find(x=>x.id===_dueDateId);
+    const current=_dueDateBulkIds?null:(t?t.dueDate:null);
     const today=new Date(); today.setHours(0,0,0,0);
     const todayIso=toISODate(today);
 
@@ -23171,7 +23375,7 @@ function _addTagPopoverFromInput(){
     }
 
     const clearBtn=document.getElementById('due-pop-clear-btn');
-    if(clearBtn) clearBtn.disabled=!current;
+    if(clearBtn) clearBtn.disabled=_dueDateBulkIds?false:!current;
   }
 
   (function initDueDatePopover(){
@@ -23193,7 +23397,7 @@ function _addTagPopoverFromInput(){
       if(e.key==='Escape' && pop.classList.contains('open')){ e.stopPropagation(); closeDueDateEditor(); }
     }, true);
     document.addEventListener('mousedown', e=>{
-      if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.todo-due')) closeDueDateEditor();
+      if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.todo-due') && !e.target.closest('#todos-bulk-due-btn')) closeDueDateEditor();
     }, true);
   })();
 
@@ -23444,6 +23648,7 @@ function _addTagPopoverFromInput(){
     document.querySelectorAll('#todos-toggle,#sb-todos-chip').forEach(b=>b.classList.remove('is-active'));
     closeTodosSearch();
     if(typeof closeTodoAtSuggest==='function') closeTodoAtSuggest();
+    if(panel?.classList.contains('select-mode')) toggleTodoSelectMode(false);
   }
   function toggleTodosPanel(){
     if(!settings.featureEnabled) return;
@@ -23685,11 +23890,13 @@ function _addTagPopoverFromInput(){
     document.getElementById('todos-sort-wrap')?.classList.toggle('active', settings.sortMode!=='manual');
     const filterMenu=document.getElementById('todos-filter-menu');
     if(filterMenu) filterMenu.querySelectorAll('.todo-dd-item').forEach(item=>{
-      const isSel=item.getAttribute('data-value')===settings.priorityFilter;
+      const group=item.getAttribute('data-group');
+      const activeVal=group==='priority'?settings.priorityFilter:group==='status'?settings.statusFilter:settings.dueFilter;
+      const isSel=item.getAttribute('data-value')===activeVal;
       item.classList.toggle('selected', isSel);
       item.setAttribute('aria-checked', String(isSel));
     });
-    document.getElementById('todos-filter-wrap')?.classList.toggle('active', settings.priorityFilter!=='all');
+    document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive());
     const locToggle=document.getElementById('todos-location-toggle');
     if(locToggle){
       locToggle.classList.toggle('on', settings.location==='statusbar');
@@ -23866,11 +24073,10 @@ function _addTagPopoverFromInput(){
   });
   document.getElementById('todos-input')?.addEventListener('input', e=>{ autoGrowInput(); handleTodoAtInput(e.target, null); });
   function closeTodoDropdowns(except){
-    ['todos-sort-menu','todos-filter-menu'].forEach(id=>{
-      if(id===except) return;
-      const menu=document.getElementById(id);
-      menu?.classList.remove('open');
-      menu?.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.setAttribute('aria-expanded','false');
+    document.querySelectorAll('.todo-dd-menu.open').forEach(menu=>{
+      if(menu.id===except) return;
+      menu.classList.remove('open');
+      menu.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.setAttribute('aria-expanded','false');
     });
   }
   document.getElementById('todos-sort-trigger')?.addEventListener('click',e=>{
@@ -23908,14 +24114,16 @@ function _addTagPopoverFromInput(){
   document.getElementById('todos-filter-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
     item.addEventListener('click',e=>{
       e.stopPropagation();
+      const group=item.getAttribute('data-group');
       const val=item.getAttribute('data-value');
-      settings.priorityFilter=['all','high','med','low','none'].includes(val)?val:'all';
-      document.getElementById('todos-filter-menu').querySelectorAll('.todo-dd-item').forEach(i=>{
+      if(group==='priority') settings.priorityFilter=['all','high','med','low','none'].includes(val)?val:'all';
+      else if(group==='status') settings.statusFilter=['all','waiting','progress','blocked','review','none'].includes(val)?val:'all';
+      else if(group==='due') settings.dueFilter=['all','overdue','today','upcoming','none'].includes(val)?val:'all';
+      document.getElementById('todos-filter-menu').querySelectorAll(`.todo-dd-item[data-group="${group}"]`).forEach(i=>{
         i.classList.toggle('selected', i===item);
         i.setAttribute('aria-checked', String(i===item));
       });
-      document.getElementById('todos-filter-wrap')?.classList.toggle('active', settings.priorityFilter!=='all');
-      closeTodoDropdowns();
+      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive());
       saveSettings(); renderTodos();
     });
   });
@@ -23931,6 +24139,45 @@ function _addTagPopoverFromInput(){
       else if(e.key==='End'){ e.preventDefault(); items[items.length-1]?.focus(); }
     });
   }
+  document.getElementById('todos-bulk-priority-trigger')?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const menu=document.getElementById('todos-bulk-priority-menu');
+    const isOpen=menu.classList.contains('open');
+    closeTodoDropdowns();
+    menu.classList.toggle('open', !isOpen);
+    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
+    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
+  });
+  document.getElementById('todos-bulk-priority-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
+    item.addEventListener('click',e=>{
+      e.stopPropagation();
+      bulkSetPriority(item.getAttribute('data-value'));
+      closeTodoDropdowns();
+    });
+  });
+  document.getElementById('todos-bulk-status-trigger')?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const menu=document.getElementById('todos-bulk-status-menu');
+    const isOpen=menu.classList.contains('open');
+    closeTodoDropdowns();
+    menu.classList.toggle('open', !isOpen);
+    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
+    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
+  });
+  document.getElementById('todos-bulk-status-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
+    item.addEventListener('click',e=>{
+      e.stopPropagation();
+      bulkSetStatus(item.getAttribute('data-value'));
+      closeTodoDropdowns();
+    });
+  });
+  document.getElementById('todos-bulk-due-btn')?.addEventListener('click',e=>openBulkDueDateEditor(e.currentTarget));
+  document.getElementById('todos-bulk-complete-btn')?.addEventListener('click', bulkComplete);
+  document.getElementById('todos-bulk-delete-btn')?.addEventListener('click', bulkDelete);
+  document.getElementById('todos-bulk-cancel-btn')?.addEventListener('click', ()=>toggleTodoSelectMode(false));
+  document.getElementById('todos-select-toggle')?.addEventListener('click', ()=>toggleTodoSelectMode());
+  wireTodoMenuKeyNav('todos-bulk-priority-menu');
+  wireTodoMenuKeyNav('todos-bulk-status-menu');
   wireTodoMenuKeyNav('todos-sort-menu');
   wireTodoMenuKeyNav('todos-filter-menu');
   document.addEventListener('click',e=>{
@@ -23938,7 +24185,7 @@ function _addTagPopoverFromInput(){
   });
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){
-      const openMenu=document.querySelector('#todos-sort-menu.open, #todos-filter-menu.open');
+      const openMenu=document.querySelector('.todo-dd-menu.open');
       closeTodoDropdowns();
       openMenu?.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.focus();
     }
@@ -24166,6 +24413,8 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-desc">Type <span class="help-kbd">@</span> in task text for inline chips, with autocomplete — <span class="todo-at todo-at-person">@name</span> assignee, <span class="todo-at todo-at-date">@date</span> (e.g. <span class="todo-at todo-at-date">@tomorrow</span>, <span class="todo-at todo-at-date">@fri</span>), <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) — display only</span></li>
           <li><span class="cs-desc"><span class="help-kbd">#</span> for a <span class="todo-tag-chip">#tag</span> (autocompletes from prior tags), <span class="help-kbd">&gt;</span> for a <span class="todo-remark">muted remark</span> to end of line — both display only</span></li>
           <li><span class="cs-desc">Quick-find matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text too — it's a plain substring search over the task text</span></li>
+          <li><span class="cs-desc">Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date) — all three combine, and the filter menu stays open so you can set several before closing it</span></li>
+          <li><span class="cs-desc">Select multiple open tasks (checklist icon) to bulk-set priority, status, or due date, or bulk-complete/delete — each with its own Undo, same as the single-task actions</span></li>
           <li><span class="cs-desc">Settings → To-Dos: app bar or status bar placement, auto-expiry, cap on completed tasks, hover vs. always-visible row actions, sub-tasks collapsed by default</span></li>
           <li><span class="cs-desc">Searchable from Quick Assist — plain text or <code>todo: milk</code></span></li>
         </ul>
