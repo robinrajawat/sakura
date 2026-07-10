@@ -2141,6 +2141,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:2px}
 .todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
+.todo-subtasks-progress-track{width:26px;height:4px;flex:0 0 auto;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
+.todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
 .todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
@@ -3549,6 +3551,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li><strong>Auto-rewrite on commit</strong> (Settings → AI → Auto-rewrite on commit, off by default) — runs Rewrite automatically on a node as soon as you finish editing it, no manual click needed. Only text typed by hand counts: if any part of an edit session came from a paste or drop (checked via the browser's own paste/drop signal on that edit), that node is skipped for auto-rewrite on that commit — paste it, then use the manual Rewrite button if you want AI on it. Committing a node with no actual text change (e.g. clicking in and back out without editing) is also skipped — it doesn't re-queue nodes that haven't changed. It doesn't send one request per node: committed nodes are queued and sent as a single batched request once either an idle pause passes or enough nodes have queued up, whichever comes first — both the pause length (1-300s, default 120s) and the queue size (2-50, default 5) are configurable in Settings, not fixed — built this way specifically to avoid exhausting provider rate limits during continuous note-taking. A small ✦ dot appears next to any node currently queued (or mid-batch, waiting on the response) — click that dot to pull just that node back out of the queue before it's sent — separate from the status bar chip, which shows the overall off / idle / queued-count-with-a-live-countdown / paused / rewriting state and doubles as the control itself: click it to turn auto-rewrite on or off directly (see below for what clicking does instead while it's paused), right-click it for its settings (exclusions, minimum word count, idle pause, queue size). The countdown ticks down to the batch's send time and resets to the full idle-pause value every time another node joins the queue — a fresh edit means a fresh wait, not a shorter one. Both the queued count and the countdown are independently hideable from the chip (Settings → AI → Auto-rewrite on commit, below the queue-size setting) if either feels like more detail than you want at a glance — the chip still distinguishes "something's queued" from idle even with both turned off, just without the numbers; the tooltip on hover always shows the full detail regardless of what the chip itself displays. Exclusions (checkboxes, decision-log field lines, headings, <span class="help-kbd">[[backlinks]]</span>/<span class="help-kbd">`code`</span> syntax) and the minimum word count are each independently configurable checkboxes in Settings, not fixed. Needs an API key configured above to do anything; if none is available right now — none set, or Secure Storage is locked so the saved one can't be read — the chip turns red and shows "paused," queued nodes are held rather than discarded, and the batch sends automatically the moment a key becomes usable again (e.g. right after unlocking) rather than waiting for the next edit to retrigger it. Clicking the chip while paused acts as the fix — unlocks Secure Storage directly if that's the cause, or jumps to the key field in Settings if not. That's separate from the retry-exhaustion case: if it fails three times in a row with a key that is available (e.g. an expired key), it turns itself off and tells you why, rather than silently retrying forever. Switching documents discards anything still queued rather than rewriting into the wrong document. Nodes created by Restructure text, Generate outline, paste-a-tree, and Word/OPML import are never queued for auto-rewrite regardless of this setting — only nodes you type into interactively go through <span class="help-kbd">commitEdit</span> at all</li>
 <li><strong>Built-in providers</strong> — six providers ship with Sakura: Gemini (free), Groq (free, fast), Claude API, OpenRouter (free models), Cerebras (free tier), and GitHub Models (free, needs your GitHub account). All need an API key — selecting a provider shows a direct link to where you get one. GitHub Models requires a GitHub personal access token with <code>models:read</code> scope; model IDs in the dropdown already include the required vendor prefix (e.g. <code>openai/gpt-4o</code>). Built-ins can’t be edited or deleted</li>
 <li><strong>Provider fallback</strong> — Settings → AI → Provider → Fallback order: enable the toggle to let Sakura automatically retry with the next checked provider when the active one fails — quota, rate limit, wrong model ID, or any other error. The active provider is always tried first; the list sets the retry order. Providers without a saved key are skipped automatically, and if none of the checked providers besides the active one have a key, a notice under the list says so directly rather than letting it fail silently the first time it's actually needed. A toast names both the failed provider and the one that succeeded (e.g. “Quota hit on Groq — rewritten with Gemini ✦” or “Error on Groq — rewritten with Gemini ✦”). The only error that does not trigger fallback is a bad API key (401) — that surfaces directly so you know to update it. Default order on a fresh install: Groq → Gemini → Cerebras → OpenRouter, with the first three enabled</li>
+<li><strong>To-Dos AI</strong> — Settings → AI → To-Dos AI, three independent toggles (each on by default): <strong>Extract action items</strong> adds a button in the To-Dos panel header that reads the current document — or your selected nodes, if any are selected — and proposes a batch of tasks from it, added directly with one Undo for the whole batch. <strong>Break into subtasks</strong> adds a small AI button on each open task (next to Rewrite) that proposes 3-6 concrete steps and adds them as real subtasks, also with Undo; it's hidden on tasks that already have subtasks or are set to repeat, since those can't hold subtasks. <strong>Status summary</strong> adds a header button that writes a short plain-language readout of your open tasks — what's overdue or high-priority first, then general progress — shown in a dialog with a Copy button. All three use the same provider/key/model as Rewrite above and need AI Capabilities on (Settings → Features); turning a toggle off here removes just that one button, leaving Rewrite and the other two untouched</li>
 <li><strong>Usage today</strong> — below the API key field, Sakura counts requests made to the currently selected provider today (and shows the count next to each provider in the Fallback order list once any requests are made). This is a local, best-effort counter — it resets on your computer's local calendar day, which can drift slightly from a provider's own reset clock (e.g. Gemini resets at midnight Pacific), and it isn't fetched from the provider itself. Treat it as a rough gauge of how much you've used a provider today, not an authoritative quota reading — check the provider's own dashboard (e.g. Google AI Studio) for the real number if it matters</li>
 <li><strong>Test key</strong> — the Test button next to Save sends a minimal request (asks the model to reply "OK") to confirm the currently typed or saved key actually works, without waiting for your next real Rewrite to find out. A toast reports success or the specific error. This check does not count toward the Usage today total above, since it's a connectivity check rather than real feature use</li>
 <li><strong>Custom providers</strong> — "+ Add provider" connects any OpenAI-compatible, Gemini-style, or Anthropic-style API by name and base URL — no code changes. User-added providers can be edited or deleted; built-ins cannot. Each provider remembers its own last-used model independently</li>
@@ -4255,13 +4258,14 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <div id="todos-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Status Summary">
   <div class="app-modal" style="width:min(480px,94vw)">
     <div class="app-modal-head">
-      <div><h2>Status Summary</h2><div class="cs-sub">AI-generated from your open tasks</div></div>
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="var(--accent)" stroke="none"/></svg>Status Summary</h2><div class="cs-sub">AI-generated from your open tasks</div></div>
       <button class="app-modal-close-btn" id="todos-summary-modal-close-btn" aria-label="Close status summary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div class="app-modal-body">
-      <p id="todos-summary-modal-body" style="font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;white-space:pre-wrap;margin:0"></p>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" id="todos-summary-copy-btn">Copy</button>
+      <p id="todos-summary-modal-body" style="font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.7;white-space:pre-wrap;margin:0"></p>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+        <button type="button" class="btn" id="todos-summary-regenerate-btn">Regenerate</button>
+        <button type="button" class="btn primary" id="todos-summary-copy-btn">Copy</button>
       </div>
     </div>
   </div>
@@ -23108,8 +23112,10 @@ function _addTagPopoverFromInput(){
     const open=t.subtasksOpen!==false;
     let html=`<div class="todo-subtasks-toggle-row">`;
     if(subs.length){
+      const pct=Math.round((doneCount/subs.length)*100);
       html+=`<button type="button" class="todo-subtasks-toggle" data-id="${t.id}" aria-label="Toggle subtasks">`
         +`<svg class="todo-subtasks-chevron${open?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`
+        +`<span class="todo-subtasks-progress-track"><span class="todo-subtasks-progress-fill" style="width:${pct}%"></span></span>`
         +`<span>${doneCount}/${subs.length}</span>`
       +`</button>`;
     }
@@ -23723,7 +23729,7 @@ function _addTagPopoverFromInput(){
     }
   }
 
-  const AI_TODO_SUMMARY_SYSTEM_PROMPT='You write a short status summary of a task list for someone giving a quick update to a colleague or manager. Given a list of open tasks (each with its priority, status, and due date where set) and a count of completed tasks, respond with ONLY a few sentences of plain prose — mention anything overdue or high-priority first, then general progress. No headers, no bullet points, no markdown formatting, no preamble like "Here is a summary".';
+  const AI_TODO_SUMMARY_SYSTEM_PROMPT='You write a short status summary of a task list for someone giving a quick update to a colleague or manager. Given a list of open tasks (each with its priority, status, and due date where set) and a count of completed tasks, respond with ONLY a few complete sentences of plain, flowing prose — mention anything overdue or high-priority first, then general progress. Every task you reference must be woven into a real sentence — never end with, or include, a bare trailing word, code, or task name sitting on its own outside a sentence. No headers, no bullet points, no markdown formatting, no preamble like "Here is a summary", and nothing after the final sentence.';
   async function generateTodosSummary(){
     if(typeof callAiApiWithPrompt!=='function'){ showTodosToast('AI is not available'); return; }
     const openTasks=todos.filter(t=>!t.done);
@@ -23738,17 +23744,36 @@ function _addTagPopoverFromInput(){
     });
     const userMsg=lines.join('\n')+`\n\n(${doneCount} additional task${doneCount===1?'':'s'} already completed)`;
     const btn=document.getElementById('todos-summary-btn');
+    const regenBtn=document.getElementById('todos-summary-regenerate-btn');
     if(btn) btn.classList.add('ai-busy');
+    if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='Regenerating…'; }
     showTodosToast('Generating summary… ✦');
     try{
       const raw=await callAiApiWithPrompt(AI_TODO_SUMMARY_SYSTEM_PROMPT, userMsg, 400);
       if(!raw) throw new Error('Empty response from AI');
-      showTodosSummaryModal(raw.trim());
+      showTodosSummaryModal(cleanTodosSummaryText(raw));
     }catch(e){
       showTodosToast('AI summary failed: '+(e.message||'unknown error'));
     }finally{
       if(btn) btn.classList.remove('ai-busy');
+      if(regenBtn){ regenBtn.disabled=false; regenBtn.textContent='Regenerate'; }
     }
+  }
+  // Drops a trailing line that's clearly a stray fragment rather than a real sentence — e.g.
+  // a bare task name or code the model appended after the actual summary. Only strips the
+  // very last line, and only when it's short and doesn't end in normal sentence punctuation
+  // while the paragraph before it does — a real closing thought is left untouched either way.
+  function cleanTodosSummaryText(raw){
+    const text=String(raw||'').trim();
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length<2) return text;
+    const last=lines[lines.length-1];
+    const prev=lines[lines.length-2];
+    const endsProper=s=>/[.!?"”')]$/.test(s);
+    if(last.length<=40 && !endsProper(last) && endsProper(prev)){
+      return lines.slice(0,-1).join('\n');
+    }
+    return text;
   }
   function showTodosSummaryModal(text){
     const overlay=document.getElementById('todos-summary-modal-overlay');
@@ -24400,6 +24425,7 @@ function _addTagPopoverFromInput(){
   document.getElementById('todos-extract-btn')?.addEventListener('click', extractTodosFromDocument);
   document.getElementById('todos-summary-btn')?.addEventListener('click', generateTodosSummary);
   document.getElementById('todos-summary-modal-close-btn')?.addEventListener('click', closeTodosSummaryModal);
+  document.getElementById('todos-summary-regenerate-btn')?.addEventListener('click', generateTodosSummary);
   document.getElementById('todos-summary-modal-overlay')?.addEventListener('click', e=>{
     if(e.target.id==='todos-summary-modal-overlay') closeTodosSummaryModal();
   });
@@ -24463,6 +24489,8 @@ function _addTagPopoverFromInput(){
   document.addEventListener('keydown',e=>{
     const panel=document.getElementById('todos-panel');
     if(e.key==='Escape'&&panel&&panel.classList.contains('open')){
+      const summaryModal=document.getElementById('todos-summary-modal-overlay');
+      if(summaryModal&&summaryModal.classList.contains('open')) return; // that modal's own Escape handler closes it instead
       const active=document.activeElement;
       if(active&&(active.id==='todos-input'||active.id==='todos-search-input'||active.classList.contains('todo-text'))){ active.blur(); return; }
       closeTodosPanel();
@@ -24474,8 +24502,9 @@ function _addTagPopoverFromInput(){
     const sbBtn=document.getElementById('sb-todos-chip');
     const duePop=document.getElementById('todo-due-popover');
     const linkPop=document.getElementById('todo-link-popover');
+    const summaryModal=document.getElementById('todos-summary-modal-overlay');
     const insideToggle=(appbarBtn&&appbarBtn.contains(e.target))||(sbBtn&&sbBtn.contains(e.target));
-    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target));
+    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target));
     if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle&&!insidePopover){
       closeTodosPanel();
     }
@@ -24638,6 +24667,7 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-desc">Quick-find matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text too — it's a plain substring search over the task text</span></li>
           <li><span class="cs-desc">Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date) — all three combine, and the filter menu stays open so you can set several before closing it</span></li>
           <li><span class="cs-desc">Select multiple open tasks (checklist icon) to bulk-set priority, status, or due date, or bulk-complete/delete — each with its own Undo, same as the single-task actions</span></li>
+          <li><span class="cs-desc">AI (each independently toggleable in Settings → AI → To-Dos AI): header buttons to extract action items from the current document/selection, or generate a status summary of open tasks; a per-task button to break it into 3-6 subtasks — all add directly with Undo, same as Rewrite on each task</span></li>
           <li><span class="cs-desc">Settings → To-Dos: app bar or status bar placement, auto-expiry, cap on completed tasks, hover vs. always-visible row actions, sub-tasks collapsed by default</span></li>
           <li><span class="cs-desc">Searchable from Quick Assist — plain text or <code>todo: milk</code></span></li>
         </ul>
