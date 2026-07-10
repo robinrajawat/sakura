@@ -1246,19 +1246,26 @@ body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body.pad-qa-mode #ptb-flip{transform:scaleX(-1)}
 #qa-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
 #qa-body.qa-is-empty #qa-empty{display:block}
-.qa-row{display:flex;flex-direction:column;gap:3px;padding:8px 0;border-bottom:1px solid var(--border)}
+.qa-row{position:relative;padding:10px 26px 10px 0;border-bottom:1px solid var(--border)}
 .qa-row:last-child{border-bottom:none}
-.qa-row textarea{width:100%;resize:none;overflow:hidden;border:1px solid var(--border);border-radius:7px;padding:5px 8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;line-height:1.4;display:block}
-.qa-row textarea.qa-field-q{font-weight:600}
-.qa-row textarea:focus{outline:none;border-color:var(--accent)}
+.qa-row textarea{display:block;width:100%;resize:none;overflow:hidden;border:1px solid transparent;border-radius:6px;padding:3px 5px;background:transparent;color:var(--fg);font:400 12.5px 'Inter',sans-serif;line-height:1.42}
+.qa-row textarea:hover{background:var(--hover)}
+.qa-row textarea:focus{outline:none;background:var(--edit-bg);border-color:var(--accent)}
 .qa-row textarea::placeholder{color:var(--hint)}
-.qa-row-toolbar{display:flex;align-items:center;gap:2px;justify-content:flex-end}
-.qa-row-btn{flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
+.qa-row textarea.qa-field-q{font:600 13px 'Inter',sans-serif}
+.qa-row textarea.qa-field-q::placeholder{font-weight:600}
+.qa-a-wrap{display:flex;gap:8px;margin-top:1px}
+.qa-a-bar{width:2px;flex-shrink:0;margin:4px 0;background:var(--border);border-radius:2px}
+.qa-a-wrap:focus-within .qa-a-bar{background:var(--accent)}
+.qa-a-wrap textarea{flex:1;min-width:0}
+.qa-row-toolbar{position:absolute;top:9px;right:0;display:flex;align-items:center;gap:1px;opacity:0;transition:opacity .12s}
+.qa-row:hover .qa-row-toolbar,.qa-row-toolbar:focus-within{opacity:1}
+.qa-row-btn{flex-shrink:0;width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
 .qa-row-btn:hover{background:var(--hover);color:var(--fg)}
-.qa-row-btn.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite}
+.qa-row-btn.ai-busy{color:var(--accent);opacity:1 !important;animation:qa-pulse 1s ease-in-out infinite}
 @keyframes qa-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.qa-row-toolbar-sep{width:1px;height:12px;background:var(--border);margin:0 3px}
-.qa-row-delete{flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
+.qa-row-toolbar-sep{width:1px;height:11px;background:var(--border);margin:0 2px}
+.qa-row-delete{flex-shrink:0;width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
 .qa-row-delete:hover{background:color-mix(in srgb,var(--sem-alert) 15%,transparent);color:var(--sem-alert)}
 #pad-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #pad-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
@@ -18184,8 +18191,11 @@ function renderQaList(){
     const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.className='qa-field-q'; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
     qTa.addEventListener('input',()=>{ item.question=qTa.value; autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
 
-    const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.className='qa-field-a'; aTa.rows=2; aTa.placeholder='Answer'; aTa.value=item.answer||'';
+    const aWrap=document.createElement('div'); aWrap.className='qa-a-wrap';
+    const aBar=document.createElement('div'); aBar.className='qa-a-bar';
+    const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.className='qa-field-a'; aTa.rows=1; aTa.placeholder='Answer'; aTa.value=item.answer||'';
     aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); });
+    aWrap.appendChild(aBar); aWrap.appendChild(aTa);
 
     const toolbar=document.createElement('div'); toolbar.className='qa-row-toolbar';
     const qRw=document.createElement('button'); qRw.className='qa-row-btn'; qRw.id=`qa-rw-question-${item.id}`; qRw.dataset.tip='Rewrite question (AI)'; qRw.innerHTML=sparkleSvg+'<span style="font-size:9px;margin-left:2px">Q</span>';
@@ -18197,7 +18207,7 @@ function renderQaList(){
     del.addEventListener('click',()=>deleteQaRow(item.id));
     toolbar.appendChild(qRw); toolbar.appendChild(aRw); toolbar.appendChild(sep); toolbar.appendChild(del);
 
-    row.appendChild(qTa); row.appendChild(aTa); row.appendChild(toolbar);
+    row.appendChild(qTa); row.appendChild(aWrap); row.appendChild(toolbar);
     list.appendChild(row);
     autoGrowTextarea(qTa); autoGrowTextarea(aTa);
   });
