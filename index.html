@@ -614,7 +614,8 @@ body.toolbar-hidden #quick-bar{display:none}
 .settings-mini-link:hover{text-decoration:underline}
 .settings-collapsible-header{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;gap:8px;padding:0;margin:0;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:4px}
 .settings-collapsible-header:hover .settings-collapsible-title{text-decoration:underline}
-.settings-collapsible-summary{margin-left:auto;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto}
+.settings-collapsible-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-collapsible-summary{margin-left:auto;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .settings-collapsible-chevron{flex:0 0 auto;color:var(--hint);transition:transform .15s}
 .settings-collapsible-header.open .settings-collapsible-chevron{transform:rotate(180deg)}
 .settings-collapsible-body{display:none;margin-top:8px}
@@ -3016,7 +3017,19 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backup all data</span><span class="settings-row-desc">Saves every document, folder, and template to a single backup file — also includes AI provider keys and the GitHub Gist token (encrypted if Secure Storage below is on, plain text otherwise). Handle this file like you would a password: don't upload it anywhere you wouldn't put a key.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Restores from a backup file — replaces everything currently in the app</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
               <div class="settings-list-row" style="flex-direction:column;align-items:stretch;gap:8px"><div class="settings-row-text"><span class="settings-switch-text">Auto-backup to file</span><span class="settings-row-desc">Writes a live backup to a file on disk as you work. Chrome/Edge only — Safari and Firefox don't support this yet.</span><span class="settings-row-desc" id="sb-fs-status" style="margin-top:2px;font-weight:600"></span></div><div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-end"><button id="sb-fs-backup-now-btn" class="btn data-io-btn" style="min-width:auto;display:none">Back up now</button><button id="sb-fs-backup-btn" class="btn data-io-btn backup-btn">Connect…</button></div></div>
+              <div class="settings-field" id="fs-backup-history-field" style="margin-top:0;display:none">
+                <button type="button" class="settings-collapsible-header" id="fs-backup-history-header" aria-expanded="false" aria-controls="fs-backup-history-body">
+                  <span class="settings-collapsible-title">Backup history</span>
+                  <span class="settings-collapsible-summary" id="fs-backup-history-summary"></span>
+                  <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="settings-collapsible-body" id="fs-backup-history-body">
+                  <span class="settings-row-desc">Up to 5 earlier snapshots of Auto-backup to file, at least 15 minutes apart — the live file always overwrites itself, so this is your way back to an earlier point if a bad edit gets backed up before you notice.</span>
+                  <div class="settings-list" id="fs-backup-history-list" style="margin-top:6px"></div>
+                </div>
+              </div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Local safety copy</span><span class="settings-row-desc">A second copy is kept automatically in a separate browser storage area, in case the main storage gets cleared. Not a substitute for Export.</span><span class="settings-row-desc" id="sb-safetycopy-status" style="margin-top:2px"></span></div><button id="sb-idb-restore-btn" class="btn data-io-btn backup-btn">Restore…</button></div>
+              <div class="settings-list-row" id="sb-undo-restore-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Undo last restore</span><span class="settings-row-desc">A snapshot of what was here right before your last Restore, in case that restore turns out to have been the wrong file.</span><span class="settings-row-desc" id="sb-undo-restore-status" style="margin-top:2px"></span></div><button id="sb-undo-restore-btn" class="btn data-io-btn backup-btn">Undo…</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Remind me to back up</span><span class="settings-row-desc">Shows a status-bar warning if it's been longer than this since your last manual Export or auto-backup write.</span><span class="settings-row-desc" id="sb-backup-reminder-status" style="margin-top:2px"></span></div><select id="backup-reminder-days-select" class="select" style="width:auto"><option value="1">1 day</option><option value="2">2 days</option><option value="3">3 days</option><option value="5">5 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Warn if this session isn't backed up</span><span class="settings-row-desc">Strict: the browser's own "leave site?" prompt on close attempt, then this dialog if you cancel it — a real last-chance gate, but you'll see the browser's generic popup. Passive: this dialog only, shown next time you switch away from or close the tab — no browser popup, but a direct close with no prior tab-switch gets no warning at all. Off: neither; the status-bar chip above is your only signal.</span></div><select id="session-backup-mode-select" class="select" style="width:auto"><option value="strict">Strict (native prompt)</option><option value="passive">Passive (no native prompt)</option><option value="off">Off</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Why this matters</span><span class="settings-row-desc">Opening a new version of this file starts with empty storage (browsers isolate it per file). Export before switching files, then Import right after to carry your data over. Auto-backup and the safety copy protect against accidental data loss, but only Export gives you a file outside the browser.</span></div></div>
@@ -3050,6 +3063,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                     <label for="cloud-gist-token-input">Access token</label>
                     <div style="display:flex;gap:6px;width:100%">
                       <input id="cloud-gist-token-input" type="password" class="meta-input" placeholder="ghp_…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" />
+                      <button class="btn" id="cloud-gist-token-show-btn" type="button" data-tip="Show token" style="flex-shrink:0;width:30px;padding:0;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                       <button class="btn" id="cloud-gist-token-save-btn" style="flex-shrink:0">Save</button>
                     </div>
                     <span class="muted-help" style="margin-top:0" id="cloud-gist-status">Not connected.</span>
@@ -3079,6 +3093,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                   </div>
                 </div>
                 <div class="settings-grid-actions" style="margin-top:10px"><button id="cloud-drive-connect-btn" class="btn data-io-btn backup-btn">Connect…</button><button id="cloud-drive-save-btn" class="btn data-io-btn" style="display:none">Save to Drive</button><button id="cloud-drive-load-btn" class="btn data-io-btn backup-btn" style="display:none">Load from Drive…</button></div>
+                <div class="settings-list" id="cloud-drive-autosync-row" style="margin-top:10px;display:none"><div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-sync on edit</span><span class="settings-row-desc">Pushes to Drive automatically ~1.2s after edits settle, same timing as Auto-backup to file and Gist auto-sync. Only active while connected this session — Drive's sign-in token isn't kept across reloads, so this turns itself off (with a one-time notice, not a nag) whenever the session connection is gone, and you'll need to reconnect and re-enable it next time.</span></div><button id="cloud-drive-autosync-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Auto-sync to Drive on edit"></button></div></div>
               </div>
             </div>
           </div>
@@ -3150,6 +3165,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <span class="settings-switch-text" style="width:100%">API Key</span>
                 <div style="display:flex;gap:6px;width:100%">
                   <input id="ai-api-key-input" type="password" class="meta-input" placeholder="Paste key here…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" />
+                  <button class="btn" id="ai-api-key-show-btn" type="button" data-tip="Show key" style="flex-shrink:0;width:30px;padding:0;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                   <button class="btn" id="ai-api-key-test-btn" style="flex-shrink:0">Test</button>
                   <button class="btn" id="ai-api-key-save-btn" style="flex-shrink:0">Save</button>
                 </div>
@@ -3162,6 +3178,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <button class="toggle-switch" type="button" role="switch" id="ai-fallback-toggle" aria-checked="false" aria-label="Enable provider fallback"></button>
               </div>
               <div id="ai-fallback-list" style="display:none;padding:4px 12px 8px;flex-direction:column;gap:4px"></div>
+              <span class="settings-row-desc" id="ai-fallback-empty-warning" style="display:none;color:var(--sem-alert);padding:0 12px 8px"></span>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset AI settings</span><span class="settings-row-desc">Restores provider, model, and rewrite prompt to their defaults, and clears any saved API key. Separate from the general settings reset — your documents and other app preferences aren't touched either way.</span></div><button id="ai-settings-reset-btn" class="btn data-io-btn">Reset…</button></div>
             </div>
           </div>
@@ -11988,7 +12005,7 @@ el('fc-swatch-blue')?.addEventListener('click',e=>{e.stopPropagation(); setFontC
 el('fc-swatch-purple')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('purple')});
 el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('gray')});
 el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus()}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('import-menu').classList.toggle('open')});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus()}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('more-menu').classList.toggle('open')}); el('docs-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); const wasOpen=el('docs-menu').classList.contains('open'); if(!wasOpen){renderDocsList()} el('docs-menu').classList.toggle('open')});
 el('templates-toggle').addEventListener('click',e=>{e.stopPropagation(); const wasOpen=el('templates-menu').classList.contains('open'); if(wasOpen){el('templates-menu').classList.remove('open')} else {openTemplatesMenu()}});
 el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); saveCurrentAsTemplate()});
@@ -14052,6 +14069,16 @@ function renderFallbackOrderList(){
     }
     wrap.appendChild(row);
   });
+  const warning=el('ai-fallback-empty-warning');
+  if(warning){
+    const hasEligible=aiFallbackOrder.some(entry=>{
+      if(entry.id===aiProvider||!entry.enabled)return false;
+      const p=all.find(x=>x.id===entry.id); if(!p)return false;
+      return !!getAiKeyForProvider(p.id);
+    });
+    if(aiFallbackEnabled&&!hasEligible){ warning.style.display=''; warning.textContent="⚠ No other provider is both checked and has a key saved — fallback won't have anywhere to fall back to. Check a provider above and make sure it has a key."; }
+    else{ warning.style.display='none'; }
+  }
 }
 function applyFallbackToggle(){
   const wrap=el('ai-fallback-list'); if(!wrap)return;
@@ -14059,6 +14086,7 @@ function applyFallbackToggle(){
   wrap.style.display=aiFallbackEnabled?'flex':'none';
   if(btn){btn.setAttribute('aria-checked',String(aiFallbackEnabled));btn.classList.toggle('on',aiFallbackEnabled);}
   if(aiFallbackEnabled)renderFallbackOrderList();
+  else{const warning=el('ai-fallback-empty-warning'); if(warning)warning.style.display='none';}
 }
 el('ai-provider-add-btn')?.addEventListener('click',()=>openProviderModal(null));
 function setAiMaxTokens(n,persist=true){
@@ -14100,6 +14128,19 @@ async function testAiKey(){
   }
 }
 el('ai-api-key-test-btn')?.addEventListener('click',testAiKey);
+const EYE_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M6.61 6.61A18.5 18.5 0 0 0 1 12s4 8 11 8a9.26 9.26 0 0 0 5.39-1.61"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function setupPasswordShowToggle(inputId,btnId){
+  const input=el(inputId), btn=el(btnId); if(!input||!btn)return;
+  btn.addEventListener('click',()=>{
+    const showing=input.type==='text';
+    input.type=showing?'password':'text';
+    btn.innerHTML=showing?EYE_ICON:EYE_OFF_ICON;
+    btn.dataset.tip=showing?'Show':'Hide';
+  });
+}
+setupPasswordShowToggle('ai-api-key-input','ai-api-key-show-btn');
+setupPasswordShowToggle('cloud-gist-token-input','cloud-gist-token-show-btn');
 el('ai-prompt-save-btn').addEventListener('click',()=>{const ta=el('ai-prompt-input'); const v=(ta?.value||'').trim(); aiRewritePrompt=v||AI_DEFAULT_PROMPT; if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast(v?'Prompt saved':'Prompt reset to default')});
 el('auto-rewrite-toggle')?.addEventListener('click',()=>setAutoRewriteEnabled(!autoRewriteEnabled));
 el('auto-rewrite-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setAutoRewriteEnabled(!autoRewriteEnabled);}});
@@ -14162,7 +14203,7 @@ document.addEventListener('visibilitychange',()=>{
 
 let zenMode=false;
 let _zenAutoHidToolbar=false; let _zenAutoHidPad=false; let _zenAutoHidSidebar=false;
-loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); currentFont='mono'; ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont('mono'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setCollapseDepth(collapseDepth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAccentBranches(accentBranches,false); setHideTreeLines(hideTreeLines,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
+loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); currentFont='mono'; ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont('mono'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setCollapseDepth(collapseDepth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAccentBranches(accentBranches,false); setHideTreeLines(hideTreeLines,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search, templates === */
@@ -15400,8 +15441,63 @@ async function disconnectFsBackup(){
 
 async function writeFsBackupNow(){
   if(!fsBackupHandle||fsBackupStatus!=='connected')return;
-  try{ const writable=await fsBackupHandle.createWritable(); await writable.write(JSON.stringify(buildFullBackupPayload(),null,2)); await writable.close(); try{ localStorage.setItem(LAST_FSBACKUP_KEY,String(Date.now())) }catch(e){} checkBackupReminder() }
+  try{ const writable=await fsBackupHandle.createWritable(); await writable.write(JSON.stringify(buildFullBackupPayload(),null,2)); await writable.close(); try{ localStorage.setItem(LAST_FSBACKUP_KEY,String(Date.now())) }catch(e){} checkBackupReminder(); rotateFsBackupHistory() }
   catch(e){ setFsBackupStatus('permission-needed') }
+}
+
+// Auto-backup to file writes live to one file, always overwritten — good for "always current"
+// but gives no way back to an earlier state if a bad edit gets backed up before you notice.
+// This keeps up to FS_BACKUP_HISTORY_MAX timestamped snapshots in IndexedDB alongside it, spaced
+// at least FS_BACKUP_HISTORY_MIN_GAP_MS apart so a burst of edits doesn't just fill the history
+// with 5 near-identical copies from the same few minutes — each entry is meant to be a genuinely
+// different checkpoint in time. Separate from the single-slot localStorageMirror safety copy and
+// the single-slot preRestoreSnapshot above; this one is specifically a rotating history.
+const FS_BACKUP_HISTORY_MAX=5;
+const FS_BACKUP_HISTORY_MIN_GAP_MS=15*60*1000;
+async function rotateFsBackupHistory(){
+  try{
+    const hist=(await idbGet('fsBackupHistory'))||[];
+    const now=Date.now();
+    if(hist.length&&(now-hist[0].savedAt)<FS_BACKUP_HISTORY_MIN_GAP_MS)return;
+    hist.unshift({savedAt:now,payload:buildFullBackupPayload()});
+    while(hist.length>FS_BACKUP_HISTORY_MAX)hist.pop();
+    await idbSet('fsBackupHistory',hist);
+  }catch(e){}
+  updateFsBackupHistoryStatus();
+}
+async function updateFsBackupHistoryStatus(){
+  const field=el('fs-backup-history-field'); const summary=el('fs-backup-history-summary'); const list=el('fs-backup-history-list');
+  if(!field||!summary||!list)return;
+  let hist=[];
+  try{ hist=(await idbGet('fsBackupHistory'))||[] }catch(e){}
+  field.style.display=hist.length?'':'none';
+  summary.textContent=hist.length?`${hist.length} saved`:'';
+  list.innerHTML='';
+  hist.forEach((entry,idx)=>{
+    const row=document.createElement('div');
+    row.className='settings-list-row';
+    const keyCount=entry.payload&&entry.payload.data?Object.keys(entry.payload.data).length:0;
+    row.innerHTML=`<div class="settings-row-text"><span class="settings-switch-text">${new Date(entry.savedAt).toLocaleString()}</span><span class="settings-row-desc">${formatRelativeTime(entry.savedAt)} · ${keyCount} item${keyCount===1?'':'s'}</span></div>`;
+    const btn=document.createElement('button'); btn.className='btn data-io-btn backup-btn'; btn.textContent='Restore…';
+    btn.addEventListener('click',()=>restoreFsBackupHistoryEntry(idx));
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+async function restoreFsBackupHistoryEntry(idx){
+  let hist=[];
+  try{ hist=(await idbGet('fsBackupHistory'))||[] }catch(e){}
+  const entry=hist[idx];
+  if(!entry||!entry.payload||!entry.payload.data){ showToast('That backup entry is no longer available'); return }
+  const keyCount=Object.keys(entry.payload.data).length; const savedAt=new Date(entry.savedAt).toLocaleString();
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V8Z"/></svg>',title:'Restore Backup History Entry',body:`This will replace everything currently in the app with the backup from ${savedAt} (${keyCount} item${keyCount===1?'':'s'}).\n\nThis cannot be undone, though you'll be able to undo the restore itself right after (Settings → Data → Undo last restore). Continue?`,confirmLabel:'Restore',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup history'}) }catch(e){}
+  try{
+    localStorage.clear();
+    Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
+  }catch(e){ showToast('Restore failed') }
 }
 
 async function mirrorToIndexedDb(){ try{ await idbSet('localStorageMirror',{payload:buildFullBackupPayload(), savedAt:Date.now()}) }catch(e){} updateSafetyCopyStatus() }
@@ -15414,7 +15510,7 @@ async function updateSafetyCopyStatus(){
   }catch(e){ note.textContent='' }
 }
 
-function scheduleBackupWrite(){ clearTimeout(backupWriteTimer); backupWriteTimer=setTimeout(()=>{ mirrorToIndexedDb(); writeFsBackupNow(); scheduleGistAutoPush() },1200) }
+function scheduleBackupWrite(){ clearTimeout(backupWriteTimer); backupWriteTimer=setTimeout(()=>{ mirrorToIndexedDb(); writeFsBackupNow(); scheduleGistAutoPush(); scheduleDriveAutoPush() },1200) }
 
 async function restoreFromIndexedDbMirror(){
   const entry=await idbGet('localStorageMirror');
@@ -15422,11 +15518,33 @@ async function restoreFromIndexedDbMirror(){
   const keyCount=Object.keys(entry.payload.data).length; const savedAt=entry.savedAt?new Date(entry.savedAt).toLocaleString():'unknown time';
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg>',title:'Restore Safety Copy',body:`This will replace everything currently in the app with the local safety copy from ${savedAt} (${keyCount} item${keyCount===1?'':'s'}).\n\nThis cannot be undone. Continue?`,confirmLabel:'Restore',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
+  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from safety copy'}) }catch(e){}
   try{
     localStorage.clear();
     Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
     showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
   }catch(e){ showToast('Restore failed') }
+}
+async function restoreFromPreRestoreSnapshot(){
+  const entry=await idbGet('preRestoreSnapshot');
+  if(!entry||!entry.payload||!entry.payload.data){ showToast('No pre-restore snapshot found'); return }
+  const keyCount=Object.keys(entry.payload.data).length; const savedAt=entry.savedAt?new Date(entry.savedAt).toLocaleString():'unknown time';
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',title:'Undo Last Restore',body:`This will bring back what was in the app just before your last restore (${savedAt}, ${keyCount} item${keyCount===1?'':'s'}), replacing what's here now.\n\nThis cannot be undone. Continue?`,confirmLabel:'Undo Restore',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  try{
+    localStorage.clear();
+    Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    try{ await idbDelete('preRestoreSnapshot') }catch(e){}
+    showToast('Restore undone — reloading…'); setTimeout(()=>location.reload(),700);
+  }catch(e){ showToast('Undo failed') }
+}
+async function updatePreRestoreSnapshotStatus(){
+  const row=el('sb-undo-restore-row'); const note=el('sb-undo-restore-status'); if(!row||!note)return;
+  try{
+    const entry=await idbGet('preRestoreSnapshot');
+    if(entry&&entry.savedAt){ row.style.display=''; note.textContent=`From ${formatRelativeTime(entry.savedAt)}, before a ${entry.reason||'restore'}`; }
+    else{ row.style.display='none'; }
+  }catch(e){ row.style.display='none'; }
 }
 
 el('sb-fs-backup-btn')?.addEventListener('click',()=>{ if(fsBackupStatus==='connected')disconnectFsBackup(); else if(fsBackupStatus==='permission-needed')reconnectFsBackup(); else if(fsBackupStatus==='disconnected'||fsBackupStatus==='handle-lost')connectFsBackup() });
@@ -15446,6 +15564,7 @@ el('sb-fs-status-chip')?.addEventListener('contextmenu',e=>{
 });
 el('sb-fs-backup-now-btn')?.addEventListener('click',async()=>{ commitEdit(); saveToStorage(); clearTimeout(backupWriteTimer); await mirrorToIndexedDb(); await writeFsBackupNow(); showToast(fsBackupStatus==='connected'?'Backed up':'Safety copy updated') });
 el('sb-idb-restore-btn')?.addEventListener('click',()=>restoreFromIndexedDbMirror());
+el('sb-undo-restore-btn')?.addEventListener('click',()=>restoreFromPreRestoreSnapshot());
 el('sb-auto-rewrite-chip')?.addEventListener('click',()=>{
   if(_autoRewritePausedNoKey&&autoRewriteEnabled&&autoRewriteQueue.size>0){
     if(vaultActive()&&!vaultUnlocked()){ unlockVault(); return; }
@@ -15691,6 +15810,11 @@ async function importAllDataFromPayload(payload,opts={}){
   const keyCount=Object.keys(payload.data).length;
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',title:'Import Data',body:`This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents, folders, and templates will be overwritten.\n\nThis cannot be undone. Continue?`,confirmLabel:'Import',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok) return;
+  // Snapshot what's here right now before we overwrite it, so a restore that turns out to be
+  // the wrong file (old backup, wrong version, etc.) is itself undoable via "Undo last restore"
+  // below — separate from the ongoing localStorageMirror safety copy, which will itself get
+  // overwritten by the very next auto-mirror tick after this restore completes.
+  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup file'}) }catch(e){}
   // Secrets (AI provider keys, cloud backup tokens) are deliberately left out of cloud-sourced
   // payloads before upload — see buildCloudSafeBackupPayload. Snapshot this browser's current
   // values for those keys so the clear() below doesn't wipe them out along with everything else.
@@ -15754,6 +15878,7 @@ function loadCloudBackupPrefs(){
 function saveCloudBackupPrefs(patch){ try{ const d=loadCloudBackupPrefsRaw(); Object.assign(d,patch); localStorage.setItem(CLOUD_BACKUP_KEY,JSON.stringify(d)) }catch(e){} }
 let cloudDriveAccessToken=null; // in-memory only — never persisted, re-requested each session
 let cloudDriveTokenClient=null;
+let _driveAutoSyncPausedDisconnected=false; // true once we've shown the one-time "auto-sync paused" toast for this disconnect
 function gistApiFetch(path,token,opts={}){ return fetch('https://api.github.com'+path,{...opts,headers:{'Authorization':'token '+token,'Accept':'application/vnd.github+json',...(opts.headers||{})}}) }
 async function findExistingGistId(token){
   try{
@@ -15922,10 +16047,14 @@ function updateCloudDriveStatus(){
   let text=connected?'Connected for this session.':(d.driveClientId?'Client ID saved — not connected yet.':'Not connected.');
   if(d.driveLastSyncAt)text+=' Last synced '+formatRelativeTime(d.driveLastSyncAt)+'.';
   if(statusEl)statusEl.textContent=text;
-  if(summaryEl)summaryEl.textContent=connected?'Connected':'';
+  if(summaryEl)summaryEl.textContent=connected?(d.driveAutoSync?'Connected · auto-sync on':'Connected'):'';
   el('cloud-drive-save-btn')?.style.setProperty('display',connected?'':'none');
   el('cloud-drive-load-btn')?.style.setProperty('display',connected?'':'none');
   const connectBtn=el('cloud-drive-connect-btn'); if(connectBtn)connectBtn.textContent=connected?'Reconnect…':'Connect…';
+  const autosyncRow=el('cloud-drive-autosync-row'); if(autosyncRow)autosyncRow.style.display=connected?'':'none';
+  const autosyncToggle=el('cloud-drive-autosync-toggle');
+  if(autosyncToggle){const on=connected&&!!d.driveAutoSync; autosyncToggle.classList.toggle('on',on); autosyncToggle.setAttribute('aria-checked',String(on))}
+  if(!connected&&d.driveAutoSync){ saveCloudBackupPrefs({driveAutoSync:false}); _driveAutoSyncPausedDisconnected=false; }
 }
 el('cloud-drive-clientid-save-btn')?.addEventListener('click',()=>{
   const val=String(el('cloud-drive-clientid-input')?.value||'').trim();
@@ -15982,9 +16111,13 @@ async function describeDriveApiError(res){
   if(res.status===403)return 'Google Drive denied access (403)'+(detail?': '+detail:'')+' — check the Drive API is enabled and your account is added as a test user in Google Cloud Console';
   return 'Google Drive returned an error ('+res.status+')'+(detail?': '+detail:'');
 }
-async function saveBackupToDrive(){
-  if(!cloudDriveAccessToken){ showToast('Connect Google Drive first'); return; }
-  const btn=el('cloud-drive-save-btn'); if(btn){btn.disabled=true; btn.textContent='Saving…'}
+let driveSaveInFlight=false;
+async function saveBackupToDrive(opts={}){
+  const {silent=false}=opts;
+  if(!cloudDriveAccessToken){ if(!silent)showToast('Connect Google Drive first'); return; }
+  if(driveSaveInFlight){ if(!silent)showToast('A Drive save is already in progress'); return; }
+  driveSaveInFlight=true;
+  const btn=el('cloud-drive-save-btn'); if(!silent&&btn){btn.disabled=true; btn.textContent='Saving…'}
   try{
     const d=loadCloudBackupPrefs();
     const content=JSON.stringify(buildCloudSafeBackupPayload());
@@ -15998,13 +16131,13 @@ async function saveBackupToDrive(){
       const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
       res=await driveApiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body});
     }
-    if(!res.ok){ showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ if(!silent)showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
     const json=await res.json();
     saveCloudBackupPrefs({driveFileId:json.id||fileId,driveLastSyncAt:Date.now()});
     updateCloudDriveStatus();
-    showToast('Backed up to Google Drive');
-  }catch(e){ showToast('Could not reach Google Drive'); }
-  finally{ if(btn){btn.disabled=false; btn.textContent='Save to Drive'} }
+    if(!silent)showToast('Backed up to Google Drive');
+  }catch(e){ if(!silent)showToast('Could not reach Google Drive'); }
+  finally{ driveSaveInFlight=false; if(!silent&&btn){btn.disabled=false; btn.textContent='Save to Drive'} }
 }
 async function loadBackupFromDrive(){
   if(!cloudDriveAccessToken){ showToast('Connect Google Drive first'); return; }
@@ -16033,6 +16166,26 @@ updateVaultStatusUI();
     showToast('Auto-sync to Gist is paused — unlock Secure Storage to resume');
   }
 }
+function setDriveAutoSync(next){
+  next=!!next;
+  if(!cloudDriveAccessToken){ if(next)showToast('Connect Google Drive first'); return; }
+  saveCloudBackupPrefs({driveAutoSync:next});
+  updateCloudDriveStatus();
+  showToast(next?'Auto-sync to Drive enabled':'Auto-sync to Drive disabled');
+}
+function scheduleDriveAutoPush(){
+  const d=loadCloudBackupPrefs();
+  if(!d.driveAutoSync)return;
+  if(!cloudDriveAccessToken){
+    // Session token is gone (reload, or it expired) — same pattern as Gist's locked-vault
+    // pause: notify once on the transition, not on every debounced edit while disconnected.
+    if(!_driveAutoSyncPausedDisconnected){ _driveAutoSyncPausedDisconnected=true; showToast('Auto-sync to Drive paused — reconnect Google Drive to resume'); }
+    return;
+  }
+  _driveAutoSyncPausedDisconnected=false;
+  saveBackupToDrive({silent:true});
+}
+el('cloud-drive-autosync-toggle')?.addEventListener('click',()=>setDriveAutoSync(!loadCloudBackupPrefs().driveAutoSync));
 el('cloud-drive-connect-btn')?.addEventListener('click',()=>connectGoogleDrive());
 el('cloud-drive-save-btn')?.addEventListener('click',()=>saveBackupToDrive());
 el('cloud-drive-load-btn')?.addEventListener('click',()=>loadBackupFromDrive());
@@ -20732,7 +20885,7 @@ function setupSettingsCollapsible(headerId,bodyId){
     header.setAttribute('aria-expanded',String(open));
   });
 }
-['toolbar-sections','history-buttons','structure-buttons','move-buttons','format-buttons','fold-buttons','insert-buttons','ai-buttons','delete-buttons','extras-buttons','pad-toolbar-buttons','presenter-notes-buttons','note-toolbar-buttons','export-menu-buttons','ctx-quickbar','ctx-hidden','decisionlog-fields','preview-dlfields','preview-headings-contents','preview-reading-appearance','preview-presenter','preview-pdf-export','hover-toolbar-actions','nodeqa-actions','qa-search-categories','editor-floating-buttons','statusbar-items','statusbar-order','appbar-items','cloud-gist','cloud-drive'].forEach(id=>setupSettingsCollapsible(id+'-header',id+'-body'));
+['toolbar-sections','history-buttons','structure-buttons','move-buttons','format-buttons','fold-buttons','insert-buttons','ai-buttons','delete-buttons','extras-buttons','pad-toolbar-buttons','presenter-notes-buttons','note-toolbar-buttons','export-menu-buttons','ctx-quickbar','ctx-hidden','decisionlog-fields','preview-dlfields','preview-headings-contents','preview-reading-appearance','preview-presenter','preview-pdf-export','hover-toolbar-actions','nodeqa-actions','qa-search-categories','editor-floating-buttons','statusbar-items','statusbar-order','appbar-items','cloud-gist','cloud-drive','fs-backup-history'].forEach(id=>setupSettingsCollapsible(id+'-header',id+'-body'));
 function updateToolbarCustomizationSummary(summaryId,gridId){
   const grid=el(gridId), summary=el(summaryId); if(!grid||!summary)return;
   const boxes=[...grid.querySelectorAll('input[type="checkbox"]')];
