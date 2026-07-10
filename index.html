@@ -2670,6 +2670,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <div class="settings-section" data-cat="panels" id="settings-section-todos">
             <div class="settings-section-title">To-Dos</div>
             <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for To-Dos</span><span class="settings-row-desc">Extract action items, Break into subtasks, Status summary, and its highlighting live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="todos-ai-settings-jump-btn">Open in AI settings</button></div>
               <div class="settings-list-row" id="todos-location-row"><div class="settings-row-text"><span class="settings-switch-text">Dock in status bar</span><span class="settings-row-desc" id="todos-location-desc">Move the To-Dos button down into the status bar instead of the app bar.</span></div><button id="todos-location-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Dock To-Dos in the status bar instead of the app bar"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Overdue count badge</span><span class="settings-row-desc">Show a small count badge on the To-Dos button itself when you have overdue tasks, so you can tell at a glance without opening the panel.</span></div><button id="todos-overdue-badge-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show overdue count badge on the To-Dos button"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">"On hover" keeps rows compact and reveals drag/priority/due/rewrite/delete only when you point at a row. "Always visible" keeps them in place permanently — less compact, but nothing moves or hides.</span></div><select id="todos-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
@@ -5130,12 +5131,14 @@ async function unlockVault(){
       if(cloudBlob.gistToken){ try{ decryptedGistTokenCache=await vaultDecrypt(cloudBlob.gistToken); }catch(e){} }
     }catch(e){}
     updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
+    if(aiFallbackEnabled)renderFallbackOrderList();
     showToast('Unlocked');
   }catch(e){ vaultCryptoKey=null; showToast('Incorrect passphrase'); }
 }
 function lockVault(){
   vaultCryptoKey=null; decryptedKeyCache={}; decryptedGistTokenCache='';
   updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
+  if(aiFallbackEnabled)renderFallbackOrderList();
   showToast('Secure Storage locked');
 }
 async function disableVaultEncryption(){
@@ -7044,6 +7047,10 @@ document.querySelectorAll('.settings-rail-btn').forEach(btn=>{btn.addEventListen
     applyHelpCategory(btn.dataset.cat);
   }
 })});
+document.getElementById('todos-ai-settings-jump-btn')?.addEventListener('click',()=>{
+  document.querySelector('.settings-rail-btn[data-cat="ai"]')?.click();
+  requestAnimationFrame(()=>{ document.getElementById('settings-section-ai-todos')?.scrollIntoView({behavior:'smooth',block:'start'}); });
+});
 const CONDITIONAL_SETTINGS_FIELDS={'theme-schedule-hours-field':()=>themeMode==='schedule','qa-search-categories-field':()=>qaSearchResultsEnabled,'qa-search-cap-row':()=>qaSearchResultsEnabled,'editor-reading-width-field':()=>editorReadingWidthEnabled};
 function reapplyConditionalSettingsFieldVisibility(){Object.entries(CONDITIONAL_SETTINGS_FIELDS).forEach(([id,shouldShow])=>{const fieldEl=el(id); if(fieldEl)fieldEl.style.display=shouldShow()?'':'none'})}
 applySettingsCategory('general');
@@ -14230,7 +14237,7 @@ el('ai-fallback-toggle')?.addEventListener('click',()=>{aiFallbackEnabled=!aiFal
 el('ai-provider-select').addEventListener('change',e=>{aiModelByProvider[aiProvider]=aiModel; aiProvider=e.target.value; aiModel=aiModelByProvider[aiProvider]||defaultModelForProvider(aiProvider); saveAiPrefs(); updateAiKeyStatus(); syncAiModelOptions(); updateAiUsageDisplay();});
 el('ai-model-select').addEventListener('change',e=>{const customInput=el('ai-model-custom-input'); if(e.target.value==='__custom__'){ if(customInput){customInput.style.display='block'; customInput.value=customInput.value||''; customInput.focus()} aiModel=customInput?.value.trim()||aiModel; } else { if(customInput)customInput.style.display='none'; aiModel=e.target.value; } saveAiPrefs()});
 el('ai-model-custom-input')?.addEventListener('input',e=>{aiModel=e.target.value.trim(); saveAiPrefs()});
-el('ai-api-key-save-btn').addEventListener('click',()=>{const inp=el('ai-api-key-input'); const v=(inp?.value||'').trim(); if(!v){showToast('Key is empty'); return} saveAiKey(v); inp.value=''; updateAiKeyStatus(); showToast('API key saved')});
+el('ai-api-key-save-btn').addEventListener('click',()=>{const inp=el('ai-api-key-input'); const v=(inp?.value||'').trim(); if(!v){showToast('Key is empty'); return} saveAiKey(v); inp.value=''; updateAiKeyStatus(); if(aiFallbackEnabled)renderFallbackOrderList(); showToast('API key saved')});
 async function testAiKey(){
   const btn=el('ai-api-key-test-btn'); if(!btn)return;
   const inp=el('ai-api-key-input');
@@ -23763,7 +23770,18 @@ function _addTagPopoverFromInput(){
     }
   }
 
-  const AI_TODO_SUMMARY_SYSTEM_PROMPT='You write a short status summary of a task list for someone giving a quick update to a colleague or manager. Given a list of open tasks (each with its priority, status, and due date where set) and a count of completed tasks, respond with ONLY a few complete sentences of plain, flowing prose — mention anything overdue or high-priority first, then general progress. Every task you reference must be woven into a real sentence — never end with, or include, a bare trailing word, code, or task name sitting on its own outside a sentence. No headers, no bullet points, no markdown formatting, no preamble like "Here is a summary", and nothing after the final sentence.';
+  const AI_TODO_SUMMARY_SYSTEM_PROMPT='You write a short status summary of a task list for someone giving a quick update to a colleague or manager. Given a list of open tasks (each with its priority, status, and due date where set) and a count of completed tasks, respond with ONLY a few complete sentences of plain, flowing prose — mention anything overdue or high-priority first, then general progress. Every task you reference must be woven into a real sentence — never end with, or include, a bare trailing word, code, or task name sitting on its own outside a sentence. Write for someone skimming a status update, not a database: keep any due date exactly as given to you (e.g. "7th July"), never reformat it as YYYY-MM-DD or any other numeric/ISO form. Drop the leading "@" from any @name mention in a task and just use the plain name. No headers, no bullet points, no markdown formatting, no preamble like "Here is a summary", and nothing after the final sentence.';
+  // Formats a due date the way it should read in a sentence — "7th July" — rather than the
+  // ISO form (YYYY-MM-DD) stored on the task. Deliberately different from fmtDue() (which
+  // gives the compact "Jul 6" used on the row chip): a chip is scanned, a summary is read
+  // aloud in your head, so it gets the fuller, more natural phrasing.
+  function fmtDueProse(dateStr){
+    if(!dateStr) return '';
+    const d=new Date(dateStr+'T00:00:00');
+    const day=d.getDate();
+    const suffix=(day%10===1&&day!==11)?'st':(day%10===2&&day!==12)?'nd':(day%10===3&&day!==13)?'rd':'th';
+    return day+suffix+' '+d.toLocaleDateString(undefined,{month:'long'});
+  }
   async function generateTodosSummary(){
     if(typeof callAiApiWithPrompt!=='function'){ showTodosToast('AI is not available'); return; }
     const openTasks=todos.filter(t=>!t.done);
@@ -23773,7 +23791,7 @@ function _addTagPopoverFromInput(){
       const bits=[t.text];
       if(t.priority&&t.priority!=='none') bits.push('priority: '+t.priority);
       if(t.status&&t.status!=='none') bits.push('status: '+t.status);
-      if(t.dueDate) bits.push('due: '+t.dueDate);
+      if(t.dueDate) bits.push('due: '+fmtDueProse(t.dueDate));
       return '- '+bits.join(' | ');
     });
     const userMsg=lines.join('\n')+`\n\n(${doneCount} additional task${doneCount===1?'':'s'} already completed)`;
@@ -23804,7 +23822,11 @@ function _addTagPopoverFromInput(){
   // very last line, and only when it's short and doesn't end in normal sentence punctuation
   // while the paragraph before it does — a real closing thought is left untouched either way.
   function cleanTodosSummaryText(raw){
-    const text=String(raw||'').trim();
+    let text=String(raw||'').trim();
+    // Safety net, not the primary fix: the prompt + pre-formatted dates should already stop
+    // these from appearing, but model compliance isn't guaranteed, so catch stragglers too.
+    text=text.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (_,y,mo,da)=>fmtDueProse(`${y}-${mo}-${da}`));
+    text=text.replace(/@(?=[A-Z])/g, '');
     const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
     if(lines.length<2) return text;
     const last=lines[lines.length-1];
@@ -23861,7 +23883,9 @@ function _addTagPopoverFromInput(){
       const key = s==='blocked' ? 'blocked' : s==='waiting' ? 'waiting' : s.includes('review') ? 'review' : 'progress';
       return 'ai-sum-status ai-sum-status-'+key;
     });
-    addAllMatches(/\b(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?\b/i, 'ai-sum-due');
+    const MONTHS='January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec';
+    addAllMatches(new RegExp('\\b(?:'+MONTHS+')\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b','i'), 'ai-sum-due');
+    addAllMatches(new RegExp('\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:'+MONTHS+')\\b','i'), 'ai-sum-due');
 
     kept.sort((a,b)=>a.start-b.start);
     let html='', pos=0;
