@@ -1341,6 +1341,13 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 #ptb-ai-rewrite:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #ptb-ai-rewrite.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 #qtb-bulk-rewrite.ai-busy{opacity:.85;pointer-events:auto;cursor:pointer;color:var(--sem-alert);animation:ai-spin 1.1s linear infinite}
+#qtb-ai-answer-all.ai-busy{opacity:.85;pointer-events:auto;cursor:pointer;color:var(--sem-alert);animation:ai-spin 1.1s linear infinite}
+#qtb-qa-summary.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
+/* Bulk rewrite and bulk answer-drafting both mutate qaItems in a loop — while either is
+   running, disable the other (the active one keeps pointer-events via its .ai-busy rule
+   above so it still doubles as its own cancel control). */
+body.qa-bulk-busy #qtb-bulk-rewrite:not(.ai-busy){pointer-events:none;opacity:.4}
+body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.4}
 /* Pad panel can now stay open in zen mode (toggle via its own button) */
 
 /* === Node Notes === */
@@ -4316,6 +4323,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <span id="qa-progress" class="qa-only-btn"></span>
     <button class="note-tb-btn qa-only-btn" id="qtb-sort" data-tip="Sort: unanswered first"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/><path d="M19 15l.7 2.1L22 18l-2.3.9L19 21l-.7-2.1L16 18l2.3-.9Z" fill="currentColor"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
     <span id="qa-bulk-count" class="qa-only-btn qa-bulk-btn"></span>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-rewrite" data-tip="Rewrite selected rows (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
@@ -4474,6 +4483,23 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     </div>
   </div>
 </div>
+
+<div id="qa-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Q&amp;A Summary">
+  <div class="app-modal" style="width:min(480px,94vw)">
+    <div class="app-modal-head">
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg>Q&amp;A Summary</h2><div class="cs-sub">AI-generated from this Pad's Q&amp;A list</div></div>
+      <button class="app-modal-close-btn" id="qa-summary-modal-close-btn" aria-label="Close Q&amp;A summary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div class="app-modal-body">
+      <p id="qa-summary-modal-body" style="font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.7;white-space:pre-wrap;margin:0"></p>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+        <button type="button" class="btn" id="qa-summary-regenerate-btn">Regenerate</button>
+        <button type="button" class="btn primary" id="qa-summary-copy-btn">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <div id="todo-due-popover" role="dialog" aria-label="Set due date">
   <div class="due-pop-presets">
@@ -14225,6 +14251,8 @@ const AI_TAG_SYSTEM_PROMPT='You suggest tags for an outline node. Given the node
 const AI_SUMMARISE_SYSTEM_PROMPT='You write a concise one-line label that summarises a group of outline nodes. Given a list of node texts, respond with ONLY the summary label — a short noun phrase, no more than 8 words, no punctuation at the end, no quotes. Example: Distribution Model Components';
 const AI_OUTLINE_SYSTEM_PROMPT='You write outlines as plain nested lists. Given a short topic or document type, respond with ONLY a nested outline: one item per line, using "-" for each item, indenting child items by exactly 2 spaces per level beneath their parent. Do not add numbering, headings, commentary, code fences, or any text before or after the list. Keep each label short (a few words), 3-5 levels deep, sized as a working outline rather than a finished document.';
 const AI_RESTRUCTURE_SYSTEM_PROMPT='You convert unstructured or messy pasted text into a hierarchical outline for a tree-based outliner. Prioritize making each node read well as a tree item over preserving the source verbatim: fix broken mid-sentence line wraps (common artifacts of copying from PDFs/Word), trim filler and redundant phrasing, and tighten long sentences into concise node labels. Reformat tabular data into nested parent/child nodes (e.g. a table row becomes a parent node with its columns as child nodes) rather than dumping raw rows as one line. You may infer grouping and hierarchy from headings, numbering, and context even when the source has no indentation at all. The one hard rule: do not invent facts, names, numbers, codes, or claims that are not present in the source text — every node must trace back to something actually in the input. Split the input into logical line items and nest them by topic/sub-topic. Respond with ONLY a nested outline: one item per line, using "-" for each item, indenting child items by exactly 2 spaces per level beneath their parent. Do not add commentary, code fences, or any text before or after the list. If the input already reads as a flat list of short items with no obvious grouping, keep it flat rather than forcing artificial nesting.';
+const AI_QA_ANSWER_SYSTEM_PROMPT='You answer a question using only the outline context provided with it. Write a direct, concise answer in plain prose — do not restate the question, do not add headings, and only use a bullet list if the context itself is a list of items that directly answers it. If the provided context does not contain enough information to answer confidently, say so plainly in one short sentence rather than guessing or inventing facts, names, or numbers not present in the context. Respond with ONLY the answer text, no preamble like "Based on the context" and no commentary after it.';
+const AI_QA_SUMMARY_SYSTEM_PROMPT='You write a short status summary of a Q&A list for someone catching up quickly, given a list of questions each with their answer (or marked unanswered) and an answered/total count. Respond with ONLY a few complete sentences of plain, flowing prose: mention what remains unanswered first if anything does, then the gist of what has been answered, calling out anything that reads as especially important or as a blocker. Do not restate every question individually — synthesize. No headers, no bullet points, no markdown formatting, no preamble like "Here is a summary", and nothing after the final sentence.';
 async function callAiApiWithPrompt(systemPrompt, userMsg, maxTokens=1024){
   const key=requireAiKey();
   const provider=getAiProviderById(aiProvider);
@@ -18372,7 +18400,10 @@ function autoGrowTextarea(t){ t.style.height='auto'; t.style.height=(t.scrollHei
 async function rewriteQaField(id,field){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   const text=(item[field]||'').trim();
-  if(!text){ showToast('Nothing to rewrite yet'); return; }
+  if(!text){
+    if(field==='answer'){ await draftQaAnswer(id); return; }
+    showToast('Nothing to rewrite yet'); return;
+  }
   const original=item[field];
   const btn=el(`qa-rw-${field}-${id}`); if(btn)btn.classList.add('ai-busy');
   try{
@@ -18392,6 +18423,134 @@ async function rewriteQaField(id,field){
   }catch(err){ showAiErrorModal(aiProvider, err); }
   finally{ if(btn)btn.classList.remove('ai-busy'); }
 }
+// Gathers outline context for AI-drafting an answer from scratch: the question node's own
+// subtree (where the actual answer content usually lives, as child bullets under the question)
+// and its parent's text (the surrounding topic), so the model has something to work from beyond
+// the bare question string. Falls back to no extra context if the row isn't linked to a node,
+// or the node no longer exists (e.g. deleted after the row was scanned in).
+function qaGatherAnswerContext(item){
+  const nodeId=item.sourceNodeId;
+  if(nodeId==null)return '';
+  const idx=getIndex(nodeId);
+  if(idx<0)return '';
+  const node=nodes[idx];
+  const parts=[];
+  const parentIdx=getParentIndex(idx);
+  if(parentIdx>=0){
+    const parentText=getNodePlainText(nodes[parentIdx]).trim();
+    if(parentText)parts.push('Parent topic: '+parentText);
+  }
+  const end=getSubtreeEnd(idx);
+  const children=nodes.slice(idx+1,end);
+  if(children.length){
+    const lines=children.map(c=>'  '.repeat(Math.max(0,(c.depth||0)-(node.depth||0)-1))+'- '+getNodePlainText(c).trim()).filter(l=>l.trim()!=='-');
+    if(lines.length)parts.push('Content nested under this question in the outline:\n'+lines.join('\n'));
+  }
+  return parts.join('\n\n');
+}
+async function qaGenerateAnswerText(item){
+  const question=(item.question||'').trim();
+  const context=qaGatherAnswerContext(item);
+  const userMsg='Question: '+question+(context?('\n\nOutline context:\n'+context):'\n\n(No additional outline context is linked to this question — answer from the question text alone, or say there isn\'t enough information.)');
+  const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024,1024);
+  return await callAiApiWithPrompt(AI_QA_ANSWER_SYSTEM_PROMPT, userMsg, maxTok);
+}
+async function draftQaAnswer(id){
+  const item=qaItems.find(it=>it.id===id); if(!item)return;
+  if(!(item.question||'').trim()){ showToast('Add a question first'); return; }
+  const btn=el(`qa-rw-answer-${id}`); if(btn)btn.classList.add('ai-busy');
+  try{
+    const result=await qaGenerateAnswerText(item);
+    if(!result)throw new Error('Empty response from AI');
+    item.answer=result;
+    const ta=el(`qa-a-${id}`); if(ta){ ta.value=result; autoGrowTextarea(ta); }
+    markDirty(); scheduleAutoSave(); updateQaProgress();
+    const rwBtn=el(`qa-rw-answer-${id}`); if(rwBtn)rwBtn.dataset.tip='Rewrite answer (AI)';
+    showActionToast('Answer drafted','Undo',()=>{
+      const it=qaItems.find(x=>x.id===id); if(!it)return;
+      it.answer='';
+      const ta2=el(`qa-a-${id}`); if(ta2){ ta2.value=''; autoGrowTextarea(ta2); }
+      markDirty(); scheduleAutoSave(); updateQaProgress();
+      const rwBtn2=el(`qa-rw-answer-${id}`); if(rwBtn2)rwBtn2.dataset.tip='Draft answer (AI)';
+    });
+  }catch(err){ showAiErrorModal(aiProvider, err); }
+  finally{ if(btn)btn.classList.remove('ai-busy'); }
+}
+let qaBulkDraftInFlight=false, qaBulkDraftCancelled=false;
+async function bulkDraftUnansweredAnswers(){
+  const btn=el('qtb-ai-answer-all');
+  if(qaBulkDraftInFlight){ qaBulkDraftCancelled=true; return; }
+  if(qaBulkRewriteInFlight){ showToast('A bulk rewrite is already running'); return; }
+  const targets=qaItems.filter(it=>(it.question||'').trim() && !(it.answer||'').trim());
+  if(!targets.length){ showToast('Nothing unanswered to draft'); return; }
+  const ids=targets.map(it=>it.id);
+  qaBulkDraftInFlight=true; qaBulkDraftCancelled=false;
+  document.body.classList.add('qa-bulk-busy');
+  if(btn){ btn.classList.add('ai-busy'); btn.dataset.tip='Drafting answers — click to stop'; }
+  let draftedCount=0, stoppedEarly=false;
+  try{
+    for(const id of ids){
+      if(qaBulkDraftCancelled){ stoppedEarly=true; break; }
+      const item=qaItems.find(it=>it.id===id); if(!item)continue;
+      if((item.answer||'').trim())continue; // answered manually mid-batch — leave it alone
+      const fieldBtn=el(`qa-rw-answer-${id}`); if(fieldBtn)fieldBtn.classList.add('ai-busy');
+      try{
+        const result=await qaGenerateAnswerText(item);
+        if(result){ item.answer=result; draftedCount++; }
+      }catch(err){ showAiErrorModal(aiProvider, err); stoppedEarly=true; if(fieldBtn)fieldBtn.classList.remove('ai-busy'); break; }
+      if(fieldBtn)fieldBtn.classList.remove('ai-busy');
+    }
+  }finally{
+    qaBulkDraftInFlight=false;
+    document.body.classList.remove('qa-bulk-busy');
+    if(btn){ btn.classList.remove('ai-busy'); btn.dataset.tip='AI: Draft answers for unanswered rows'; }
+    renderQaList();
+    if(draftedCount>0){
+      markDirty(); scheduleAutoSave();
+      showActionToast(
+        stoppedEarly?`Stopped — ${draftedCount} answer${draftedCount===1?'':'s'} drafted`:`${draftedCount} answer${draftedCount===1?'':'s'} drafted`,
+        'Undo',
+        ()=>{
+          ids.forEach(sid=>{ const it=qaItems.find(x=>x.id===sid); if(it)it.answer=''; });
+          renderQaList(); markDirty(); scheduleAutoSave();
+        }
+      );
+    } else if(stoppedEarly){ showToast('Draft stopped'); }
+  }
+}
+function generateQaSummary(){
+  if(typeof callAiApiWithPrompt!=='function'){ showToast('AI is not available'); return; }
+  const valid=qaItems.filter(it=>(it.question||'').trim());
+  if(!valid.length){ showToast('No Q&A rows to summarize'); return; }
+  const answeredCount=valid.filter(it=>(it.answer||'').trim()).length;
+  const lines=valid.map(it=>{
+    const q=(it.question||'').trim();
+    const a=(it.answer||'').trim();
+    return '- Q: '+q+'\n  A: '+(a||'(unanswered)');
+  });
+  const userMsg=lines.join('\n')+`\n\n(${answeredCount}/${valid.length} answered)`;
+  const btn=el('qtb-qa-summary');
+  const regenBtn=el('qa-summary-regenerate-btn');
+  if(btn)btn.classList.add('ai-busy');
+  if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='Regenerating…'; }
+  const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024,1024);
+  callAiApiWithPrompt(AI_QA_SUMMARY_SYSTEM_PROMPT, userMsg, maxTok).then(raw=>{
+    if(!raw)throw new Error('Empty response from AI');
+    showQaSummaryModal(raw.trim());
+  }).catch(e=>{
+    showAiErrorModal(aiProvider, e);
+  }).finally(()=>{
+    if(btn)btn.classList.remove('ai-busy');
+    if(regenBtn){ regenBtn.disabled=false; regenBtn.textContent='Regenerate'; }
+  });
+}
+function showQaSummaryModal(text){
+  const overlay=el('qa-summary-modal-overlay'), body=el('qa-summary-modal-body');
+  if(!overlay||!body)return;
+  body.textContent=text;
+  overlay.classList.add('open');
+}
+function closeQaSummaryModal(){ el('qa-summary-modal-overlay')?.classList.remove('open'); }
 let qaBulkRewriteInFlight=false, qaBulkRewriteCancelled=false;
 async function bulkRewriteQaSelected(){
   const btn=el('qtb-bulk-rewrite');
@@ -18531,9 +18690,9 @@ function renderQaList(){
 
     const aWrap=document.createElement('div'); aWrap.className='qa-field-wrap';
     const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.className='qa-field-a'; aTa.rows=1; aTa.placeholder='Answer'; aTa.value=item.answer||'';
-    aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); updateQaProgress(); });
     const aIcons=document.createElement('div'); aIcons.className='qa-field-icons';
-    const aRw=document.createElement('button'); aRw.className='qa-inline-sparkle'; aRw.id=`qa-rw-answer-${item.id}`; aRw.dataset.tip='Rewrite answer (AI)'; aRw.innerHTML=sparkleSvg;
+    const aRw=document.createElement('button'); aRw.className='qa-inline-sparkle'; aRw.id=`qa-rw-answer-${item.id}`; aRw.dataset.tip=(item.answer||'').trim()?'Rewrite answer (AI)':'Draft answer (AI)'; aRw.innerHTML=sparkleSvg;
+    aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); updateQaProgress(); aRw.dataset.tip=aTa.value.trim()?'Rewrite answer (AI)':'Draft answer (AI)'; });
     aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
     aIcons.appendChild(aRw);
     aWrap.appendChild(aTa); aWrap.appendChild(aIcons);
@@ -18590,8 +18749,19 @@ el('qa-search-input')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.p
 el('qa-search-clear')?.addEventListener('click',()=>{ const inp=el('qa-search-input'); if(inp)inp.value=''; qaSearchQuery=''; el('qa-search-clear')?.classList.remove('visible'); renderQaList(); el('qa-search-input')?.focus(); });
 el('qtb-sort')?.addEventListener('mousedown', e=>{ e.preventDefault(); setQaSortUnansweredFirst(!qaSortUnansweredFirst); });
 el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exportQaText(); });
+el('qtb-ai-answer-all')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDraftUnansweredAnswers(); });
+el('qtb-qa-summary')?.addEventListener('mousedown', e=>{ e.preventDefault(); generateQaSummary(); });
 el('qtb-bulk-rewrite')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkRewriteQaSelected(); });
 el('qtb-bulk-delete')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDeleteQaSelected(); });
+el('qa-summary-modal-close-btn')?.addEventListener('click', closeQaSummaryModal);
+el('qa-summary-regenerate-btn')?.addEventListener('click', generateQaSummary);
+el('qa-summary-modal-overlay')?.addEventListener('click', e=>{ if(e.target.id==='qa-summary-modal-overlay') closeQaSummaryModal(); });
+el('qa-summary-copy-btn')?.addEventListener('click', async ()=>{
+  const text=el('qa-summary-modal-body')?.textContent||'';
+  if(!text)return;
+  try{ await navigator.clipboard.writeText(text); showToast('Summary copied'); }
+  catch(e){ showToast('Could not copy — select and copy manually'); }
+});
 el('qa-sort-unanswered-toggle')?.addEventListener('click',()=>setQaSortUnansweredFirst(!qaSortUnansweredFirst));
 el('qa-export-toggle')?.addEventListener('click',()=>setQaExportEnabled(!qaExportEnabled));
 el('qa-insert-confirm')?.addEventListener('click',()=>confirmQaInsert());
@@ -18603,6 +18773,7 @@ document.addEventListener('keydown',e=>{
   if(el('why-sakura-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeWhySakura(); } return; }
   if(el('icon-library-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeIconLibrary(); } return; }
   if(el('qa-insert-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaInsert(); } return; }
+  if(el('qa-summary-modal-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaSummaryModal(); } return; }
   if(!el('welcome-overlay')?.classList.contains('open')) return;
   if(e.key==='Escape'){ e.stopPropagation(); closeWelcomeModal(); }
 },{capture:true});
