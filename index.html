@@ -4321,7 +4321,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <div id="pad-resize-handle" class="pad-hidden" data-tip="Drag to resize Pad"></div>
 <div id="pad-panel" class="pad-hidden" role="complementary" aria-label="Pad">
   <div id="pad-panel-header">
-    <span id="pad-panel-title">Pad</span>
+    <span id="pad-panel-title">Notes</span>
     <button id="pad-panel-close-header" data-tip="Close Pad (Ctrl/Cmd+Shift+P)" aria-label="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="pad-toolbar">
@@ -18339,6 +18339,7 @@ function setPadViewMode(mode){
   document.body.classList.toggle('pad-qa-mode',padViewMode==='qa');
   const flip=el('ptb-flip'); if(flip){ flip.dataset.tip=padViewMode==='qa'?'Switch to Notes':'Switch to Q&A'; flip.classList.toggle('is-active',padViewMode==='qa'); flip.setAttribute('aria-pressed',String(padViewMode==='qa')); }
   const title=el('presenter-notes-title'); if(title)title.textContent=padViewMode==='qa'?'Q&A':'Notes';
+  const padTitle=el('pad-panel-title'); if(padTitle)padTitle.textContent=padViewMode==='qa'?'Q&A':'Notes';
   const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':'Clear pad';
   if(padViewMode==='qa')renderQaList();
 }
