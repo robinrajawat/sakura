@@ -625,6 +625,9 @@ body.toolbar-hidden #quick-bar{display:none}
 .settings-list>.settings-collapsible-header{padding:9px 12px;min-height:36px;border-radius:0}
 .settings-list>.settings-list-row+.settings-collapsible-header,.settings-list>.settings-collapsible-body+.settings-list-row{border-top:1px solid var(--border)}
 .settings-list>.settings-collapsible-body{margin-top:0;padding:0 12px 12px}
+.settings-list>.settings-field{padding:9px 12px 12px}
+.settings-list>.settings-field>.settings-collapsible-body{margin-top:0}
+.settings-list>.settings-list-row+.settings-field,.settings-list>.settings-field+.settings-list-row,.settings-list>.settings-field+.settings-field{border-top:1px solid var(--border)}
 .settings-list>.settings-collapsible-body.open{padding-top:2px}
 .settings-collapsible-body.open{display:block}
 .settings-section .settings-grid{gap:12px}.settings-panel .muted-help{white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.45;margin-top:6px;padding-top:2px}
@@ -2489,7 +2492,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               </div>
               <div class="settings-list-row" id="tabbar-visible-row"><div class="settings-row-text"><span class="settings-switch-text">Tab bar</span><span class="settings-row-desc">Show the row of open-document tabs. Also hideable via right-click on empty tab bar space, with an Undo toast — this switch is the reliable way back if that toast is missed, for the same reason as Status bar above</span></div><button id="tabbar-visible-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show tab bar"></button></div>
               <div class="settings-list-row" id="appbar-visible-row"><div class="settings-row-text"><span class="settings-switch-text">App bar</span><span class="settings-row-desc">Show the very top row (Documents/Templates, Settings, Help, Import/Export). Unlike Status bar and Tab bar above, this switch is <strong>not</strong> a reliable way back if you hide it and change your mind — Settings itself lives in this row, so once it's hidden you can't get back in here. Use Ctrl/Cmd+Shift+A, or right-click the editor canvas for "Show app bar," instead</span></div><button id="appbar-visible-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show app bar"></button></div>
-              <div class="settings-field" id="appbar-items-field" style="margin-top:12px">
+              <div class="settings-field" id="appbar-items-field">
               <button type="button" class="settings-collapsible-header" id="appbar-items-header" aria-expanded="false" aria-controls="appbar-items-body">
                 <span class="settings-collapsible-title">App bar items</span>
                 <span class="settings-collapsible-summary" id="appbar-items-summary"></span>
@@ -2525,7 +2528,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row" id="expanded-toolbar-row"><div class="settings-row-text"><span class="settings-switch-text">Expanded</span><span class="settings-row-desc">Show Extras as buttons instead of a menu</span></div><button id="expanded-toolbar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Expanded toolbar"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Customize toolbar buttons</span><span class="settings-row-desc" id="toolbar-buttons-summary-desc">All buttons are shown</span></div><button class="btn" id="toolbar-buttons-open-btn">Open…</button></div>
             </div>
-            <div class="settings-field" id="editor-floating-buttons-field" style="margin-top:12px">
+            <div class="settings-field" id="editor-floating-buttons-field">
               <button type="button" class="settings-collapsible-header" id="editor-floating-buttons-header" aria-expanded="false" aria-controls="editor-floating-buttons-body">
                 <span class="settings-collapsible-title">Floating editor buttons</span>
                 <span class="settings-collapsible-summary" id="editor-floating-buttons-summary"></span>
@@ -2550,7 +2553,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row" id="pad-header-row"><div class="settings-row-text"><span class="settings-switch-text">Header</span><span class="settings-row-desc">Show a title bar with its own close button above the toolbar</span></div><button id="pad-header-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Pad header"></button></div>
               <div class="settings-list-row" id="pad-bg-match-row"><div class="settings-row-text"><span class="settings-switch-text">Match editor background</span><span class="settings-row-desc">On: Pad's writing area matches the outline's canvas. Off: it matches the sidebar/toolbar tone instead, to read as clearly separate from the document</span></div><button id="pad-bg-match-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Match editor background"></button></div>
             </div>
-            <div class="settings-field" id="pad-toolbar-buttons-field" style="margin-top:12px">
+            <div class="settings-field" id="pad-toolbar-buttons-field">
               <button type="button" class="settings-collapsible-header" id="pad-toolbar-buttons-header" aria-expanded="false" aria-controls="pad-toolbar-buttons-body">
                 <span class="settings-collapsible-title">Toolbar buttons</span>
                 <span class="settings-collapsible-summary" id="pad-toolbar-buttons-summary"></span>
@@ -2583,7 +2586,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row" id="note-bg-match-row"><div class="settings-row-text"><span class="settings-switch-text">Match editor background</span><span class="settings-row-desc">On: the note's writing area matches the outline's canvas. Off: it matches the sidebar/toolbar tone instead, to read as clearly separate from the document</span></div><button id="note-bg-match-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Match editor background"></button></div>
               <div class="settings-list-row" id="note-compact-default-row"><div class="settings-row-text"><span class="settings-switch-text">Open notes in compact view</span><span class="settings-row-desc">Notes open as a small popover with just the writing area and Rewrite — no backlinks, timestamps, or other toolbar buttons. Expand any individual note back to the full view with the compact button in its header; that choice doesn't persist past closing it</span></div><button id="note-compact-default-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open notes in compact view by default"></button></div>
             </div>
-            <div class="settings-field" id="note-toolbar-buttons-field" style="margin-top:12px">
+            <div class="settings-field" id="note-toolbar-buttons-field">
               <button type="button" class="settings-collapsible-header" id="note-toolbar-buttons-header" aria-expanded="false" aria-controls="note-toolbar-buttons-body">
                 <span class="settings-collapsible-title">Toolbar buttons</span>
                 <span class="settings-collapsible-summary" id="note-toolbar-buttons-summary"></span>
@@ -2791,7 +2794,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Color field labels</span><span class="settings-row-desc">Color Context, Decision, Rationale, etc. so each field reads at a glance — in the editor and in the Decision Log card in Preview. Status is separate and always shows as a colored badge either way, since that's a status indicator rather than a field label.</span></div><button id="decisionlog-colors-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Color field labels"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Bold field labels</span><span class="settings-row-desc">Bold the field labels above, in addition to coloring them — in the editor and in Preview. Off keeps them the same weight as surrounding text — lighter, less shouty.</span></div><button id="decisionlog-labels-bold-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Bold field labels"></button></div>
             </div>
-            <div class="settings-field" id="decisionlog-fields-field" style="margin-top:12px">
+            <div class="settings-field" id="decisionlog-fields-field">
               <button type="button" class="settings-collapsible-header" id="decisionlog-fields-header" aria-expanded="false" aria-controls="decisionlog-fields-body">
                 <span class="settings-collapsible-title">Fields to include</span>
                 <span class="settings-collapsible-summary" id="decisionlog-fields-summary"></span>
@@ -2820,7 +2823,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Always start fully expanded</span><span class="settings-row-desc">Off starts every Preview fully folded to the top level instead</span></div><button id="preview-always-expand-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Always start fully expanded"></button></div>
             </div>
-            <div class="settings-field" id="preview-dlfields-field" style="margin-top:12px">
+            <div class="settings-field" id="preview-dlfields-field">
               <button type="button" class="settings-collapsible-header" id="preview-dlfields-header" aria-expanded="false" aria-controls="preview-dlfields-body">
                 <span class="settings-collapsible-title">Decision card fields</span>
                 <span class="settings-collapsible-summary" id="preview-dlfields-summary"></span>
@@ -2838,7 +2841,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               </div>
               </div>
             </div>
-            <div class="settings-field" id="preview-headings-contents-field" style="margin-top:12px">
+            <div class="settings-field" id="preview-headings-contents-field">
               <button type="button" class="settings-collapsible-header" id="preview-headings-contents-header" aria-expanded="false" aria-controls="preview-headings-contents-body">
                 <span class="settings-collapsible-title">Headings &amp; Contents</span>
                 <span class="settings-collapsible-summary" id="preview-headings-contents-summary"></span>
@@ -2866,7 +2869,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 </div>
               </div>
             </div>
-            <div class="settings-field" id="preview-reading-appearance-field" style="margin-top:12px">
+            <div class="settings-field" id="preview-reading-appearance-field">
               <button type="button" class="settings-collapsible-header" id="preview-reading-appearance-header" aria-expanded="false" aria-controls="preview-reading-appearance-body">
                 <span class="settings-collapsible-title">Reading appearance</span>
                 <span class="settings-collapsible-summary" id="preview-reading-appearance-summary"></span>
@@ -2881,7 +2884,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 </div>
               </div>
             </div>
-            <div class="settings-field" id="preview-presenter-field" style="margin-top:12px">
+            <div class="settings-field" id="preview-presenter-field">
               <button type="button" class="settings-collapsible-header" id="preview-presenter-header" aria-expanded="false" aria-controls="preview-presenter-body">
                 <span class="settings-collapsible-title">Presenter mode</span>
                 <span class="settings-collapsible-summary" id="preview-presenter-summary"></span>
@@ -2902,7 +2905,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                   <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open notes expanded</span><span class="settings-row-desc">Opens the floating notes panel at a larger default width instead of the compact one — a bigger writing area from the moment you press N. Only affects the built-in default: once you've dragged or resized the panel yourself, your own size takes over and this stops applying until you reset it (double-click the header or corner grip).</span></div><button id="preview-presenter-notes-expanded-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open notes panel expanded by default in presenter mode"></button></div>
                   <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Expand note cards</span><span class="settings-row-desc">Not the floating notes panel above — this is the per-node notes attached to individual nodes in your outline. Normally each shows as a small dot on its slide that you click to reveal; turning this on shows every node's note card already open the moment you enter Presenter mode, so nothing needs a click mid-talk. You can still collapse any individual one by clicking its dot.</span></div><button id="presenter-auto-expand-notes-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatically expand note cards in presenter mode"></button></div>
                 </div>
-                <div class="settings-field" id="presenter-notes-buttons-field" style="margin-top:12px">
+                <div class="settings-field" id="presenter-notes-buttons-field">
                   <button type="button" class="settings-collapsible-header" id="presenter-notes-buttons-header" aria-expanded="false" aria-controls="presenter-notes-buttons-body">
                     <span class="settings-collapsible-title">Toolbar buttons while presenting</span>
                     <span class="settings-collapsible-summary" id="presenter-notes-buttons-summary"></span>
@@ -2928,7 +2931,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 </div>
               </div>
             </div>
-            <div class="settings-field" id="preview-pdf-export-field" style="margin-top:12px">
+            <div class="settings-field" id="preview-pdf-export-field">
               <button type="button" class="settings-collapsible-header" id="preview-pdf-export-header" aria-expanded="false" aria-controls="preview-pdf-export-body">
                 <span class="settings-collapsible-title">PDF export</span>
                 <span class="settings-collapsible-summary" id="preview-pdf-export-summary"></span>
@@ -2989,7 +2992,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Show example phrases</span><span class="settings-row-desc">The "Try things like…" tip shown at the bottom of Quick Assist when the box is empty — click any phrase to run it as a search immediately, same as typing it. Turn off to hide the tip — Quick Assist itself keeps working the same either way.</span></div><button id="qa-hint-enabled-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show example phrases in Quick Assist"></button></div>
               <div class="settings-list-row" id="qa-search-cap-row"><div class="settings-row-text"><span class="settings-switch-text">Search results shown</span><span class="settings-row-desc">Maximum number of search hits, across all categories combined, shown below command matches</span></div><select id="qa-search-cap-select" class="select" style="width:auto"><option value="4">4</option><option value="8" selected>8</option><option value="12">12</option><option value="20">20</option></select></div>
             </div>
-            <div class="settings-field" id="qa-search-categories-field" style="margin-top:12px">
+            <div class="settings-field" id="qa-search-categories-field">
               <button type="button" class="settings-collapsible-header" id="qa-search-categories-header" aria-expanded="false" aria-controls="qa-search-categories-body">
                 <span class="settings-collapsible-title">Categories to search</span>
                 <span class="settings-collapsible-summary" id="qa-search-categories-summary"></span>
@@ -3020,7 +3023,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backup all data</span><span class="settings-row-desc">Saves every document, folder, and template to a single backup file — also includes AI provider keys and the GitHub Gist token (encrypted if Secure Storage below is on, plain text otherwise). Handle this file like you would a password: don't upload it anywhere you wouldn't put a key.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Restores from a backup file — replaces everything currently in the app</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
               <div class="settings-list-row" style="flex-direction:column;align-items:stretch;gap:8px"><div class="settings-row-text"><span class="settings-switch-text">Auto-backup to file</span><span class="settings-row-desc">Writes a live backup to a file on disk as you work. Chrome/Edge only — Safari and Firefox don't support this yet.</span><span class="settings-row-desc" id="sb-fs-status" style="margin-top:2px;font-weight:600"></span></div><div style="display:flex;gap:6px;flex-shrink:0;align-self:flex-end"><button id="sb-fs-backup-now-btn" class="btn data-io-btn" style="min-width:auto;display:none">Back up now</button><button id="sb-fs-backup-btn" class="btn data-io-btn backup-btn">Connect…</button></div></div>
-              <div class="settings-field" id="fs-backup-history-field" style="margin-top:0;display:none">
+              <div class="settings-field" id="fs-backup-history-field" style="display:none">
                 <button type="button" class="settings-collapsible-header" id="fs-backup-history-header" aria-expanded="false" aria-controls="fs-backup-history-body">
                   <span class="settings-collapsible-title">Backup history</span>
                   <span class="settings-collapsible-summary" id="fs-backup-history-summary"></span>
@@ -3053,7 +3056,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">What this does</span><span class="settings-row-desc">Pushes the same full backup as "Backup all data" above to a cloud account of your choice, so you can pull it back down from a different browser or computer. Entirely optional — local Backup/Restore always works without connecting either of these.</span></div></div>
             </div>
-            <div class="settings-field" id="cloud-gist-field" style="margin-top:12px">
+            <div class="settings-field" id="cloud-gist-field">
               <button type="button" class="settings-collapsible-header" id="cloud-gist-header" aria-expanded="false" aria-controls="cloud-gist-body">
                 <span class="settings-collapsible-title">GitHub Gist</span>
                 <span class="settings-collapsible-summary" id="cloud-gist-summary"></span>
@@ -3077,7 +3080,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <span class="muted-help" style="margin-top:6px;display:block" id="cloud-gist-conflict-status"></span>
               </div>
             </div>
-            <div class="settings-field" id="cloud-drive-field" style="margin-top:10px">
+            <div class="settings-field" id="cloud-drive-field">
               <button type="button" class="settings-collapsible-header" id="cloud-drive-header" aria-expanded="false" aria-controls="cloud-drive-body">
                 <span class="settings-collapsible-title">Google Drive</span>
                 <span class="settings-collapsible-summary" id="cloud-drive-summary"></span>
@@ -3116,7 +3119,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included. Applies to Markdown, OPML, Text, and the header Print button — not PDF, PowerPoint, or Word, since those render from (or mirror) Preview/Presenter, which already has its own fold state under your direct control there (click any section to expand or collapse it) and is left exactly as you set it.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (Sakura mark, document title, author, word/read-time/decision stats) before the contents page when exporting to PDF or Word.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
             </div>
-            <div class="settings-field" id="export-menu-buttons-field" style="margin-top:12px">
+            <div class="settings-field" id="export-menu-buttons-field">
               <button type="button" class="settings-collapsible-header" id="export-menu-buttons-header" aria-expanded="false" aria-controls="export-menu-buttons-body">
                 <span class="settings-collapsible-title">Export ▾ menu items</span>
                 <span class="settings-collapsible-summary" id="export-menu-buttons-summary"></span>
