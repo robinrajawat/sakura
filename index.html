@@ -480,22 +480,18 @@ body.no-word-wrap .node-row{min-width:max-content}
 #qa-insert-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
 #qa-insert-overlay.open{opacity:1;pointer-events:all}
 #qa-insert-overlay.closing{opacity:0;pointer-events:none}
-#qa-insert-modal{background:var(--bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:28px 28px 22px;width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#qa-insert-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:20px 20px 16px;width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
 #qa-insert-overlay.open #qa-insert-modal{transform:translateY(0) scale(1)}
 #qa-insert-overlay.closing #qa-insert-modal{transform:translateY(8px) scale(.97)}
-#qa-insert-modal h2{margin:0 0 6px;font-size:19px;color:var(--fg)}
-#qa-insert-sub{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5}
-#qa-insert-list{display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;margin-bottom:16px}
-#qa-insert-empty{color:var(--muted);font-size:13px;font-style:italic;padding:8px 0}
-.qa-insert-row{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--fg);cursor:pointer;line-height:1.4}
+#qa-insert-modal h2{margin:0 0 4px;font-size:16px;color:var(--fg)}
+#qa-insert-sub{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
+#qa-insert-list{display:flex;flex-direction:column;gap:0;max-height:240px;overflow-y:auto;margin-bottom:14px}
+#qa-insert-empty{color:var(--muted);font-size:12px;font-style:italic;padding:4px 0}
+.qa-insert-row{display:flex;align-items:flex-start;gap:7px;padding:4px 6px;border-radius:7px;font-size:12.5px;color:var(--fg);cursor:pointer;line-height:1.35}
 .qa-insert-row:hover{background:var(--hover)}
 .qa-insert-row input{margin-top:3px;flex-shrink:0}
-#qa-insert-manual-wrap{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
-#qa-insert-manual-wrap label{font-size:12px;color:var(--muted)}
-#qa-insert-manual{resize:vertical;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.5}
-#qa-insert-manual:focus{outline:none;border-color:var(--accent)}
 #qa-insert-actions{display:flex;justify-content:flex-end;gap:8px}
-#qa-insert-actions .btn{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 13px 'Inter',sans-serif}
+#qa-insert-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
 #why-sakura-brand{display:flex;align-items:center;gap:7px;margin-bottom:16px}
 #why-sakura-brand-icon{font-size:22px;line-height:1}
 #why-sakura-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
@@ -1233,13 +1229,14 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #pad-panel-close-toolbar{margin-left:auto}
 #pad-panel-close-header:hover,#pad-panel-close-toolbar:hover{color:var(--fg);background:var(--hover)}
 #pad-panel.pad-bg-distinct #pad-editor{background:var(--tb-bg)}
+#pad-panel.pad-bg-distinct #qa-body{background:var(--tb-bg)}
 #pad-toolbar{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--tb-bg)}
 #pad-editor{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
 /* Pad flip-to-Q&A mode — uses a body-level class rather than one scoped to #pad-panel because
    Presenter Notes physically relocates #pad-editor/#pad-toolbar/#qa-body out of #pad-panel into
    #presenter-notes-body; a panel-scoped selector would stop matching the instant that move
    happens, silently breaking the flip while presenting. */
-#qa-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding:10px 14px;background:var(--canvas-bg)}
+#qa-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding:4px 12px;background:var(--canvas-bg)}
 body.pad-qa-mode #pad-editor{display:none}
 body.pad-qa-mode #qa-body{display:flex}
 body.pad-qa-mode #pad-panel-footer{display:none}
@@ -1249,19 +1246,19 @@ body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body.pad-qa-mode #ptb-flip{transform:scaleX(-1)}
 #qa-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
 #qa-body.qa-is-empty #qa-empty{display:block}
-.qa-row{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-bottom:1px solid var(--border)}
+.qa-row{display:flex;flex-direction:column;gap:3px;padding:8px 0;border-bottom:1px solid var(--border)}
 .qa-row:last-child{border-bottom:none}
-.qa-row-field{display:flex;align-items:flex-start;gap:6px}
-.qa-row-field textarea{flex:1;resize:none;overflow:hidden;border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:var(--edit-bg);color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45}
-.qa-row-field.qa-field-q textarea{font-weight:600}
-.qa-row-field textarea:focus{outline:none;border-color:var(--accent)}
-.qa-row-field textarea::placeholder{color:var(--hint)}
-.qa-row-btn{flex-shrink:0;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:6px;margin-top:2px}
+.qa-row textarea{width:100%;resize:none;overflow:hidden;border:1px solid var(--border);border-radius:7px;padding:5px 8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;line-height:1.4;display:block}
+.qa-row textarea.qa-field-q{font-weight:600}
+.qa-row textarea:focus{outline:none;border-color:var(--accent)}
+.qa-row textarea::placeholder{color:var(--hint)}
+.qa-row-toolbar{display:flex;align-items:center;gap:2px;justify-content:flex-end}
+.qa-row-btn{flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
 .qa-row-btn:hover{background:var(--hover);color:var(--fg)}
 .qa-row-btn.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite}
 @keyframes qa-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.qa-row-actions{display:flex;justify-content:flex-end}
-.qa-row-delete{flex-shrink:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:6px}
+.qa-row-toolbar-sep{width:1px;height:12px;background:var(--border);margin:0 3px}
+.qa-row-delete{flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
 .qa-row-delete:hover{background:color-mix(in srgb,var(--sem-alert) 15%,transparent);color:var(--sem-alert)}
 #pad-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #pad-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
@@ -4771,12 +4768,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   <div id="qa-insert-overlay" role="dialog" aria-modal="true" aria-labelledby="qa-insert-heading">
     <div id="qa-insert-modal">
       <h2 id="qa-insert-heading">Scan outline for questions</h2>
-      <p id="qa-insert-sub">Every node ending in "?" is listed below — uncheck any you don't want. If you had question nodes selected in the outline, only those start checked. Each becomes a new Q&amp;A row with an empty answer.</p>
+      <p id="qa-insert-sub">Every node ending in "?" — uncheck any you don't want. Only your outline selection starts checked if you had question nodes selected.</p>
       <div id="qa-insert-list"></div>
-      <div id="qa-insert-manual-wrap">
-        <label for="qa-insert-manual">Add your own (one per line, independent of any node)</label>
-        <textarea id="qa-insert-manual" rows="3" placeholder="Type additional questions here…"></textarea>
-      </div>
       <div id="qa-insert-actions">
         <button id="qa-insert-cancel" class="btn">Cancel</button>
         <button id="qa-insert-confirm" class="btn primary">Add rows</button>
@@ -18103,7 +18096,7 @@ function openQaInsert(){
   const preferSelection=selectedQNodes.length>0;
   list.innerHTML='';
   if(!qNodes.length){
-    list.innerHTML='<div id="qa-insert-empty">No nodes ending in "?" found in this document. Add some below instead.</div>';
+    list.innerHTML='<div id="qa-insert-empty">No nodes ending in "?" found in this document. Close this and use the + button to add a row directly.</div>';
   } else {
     qNodes.forEach(n=>{
       const row=document.createElement('label'); row.className='qa-insert-row';
@@ -18114,9 +18107,8 @@ function openQaInsert(){
       list.appendChild(row);
     });
   }
-  const manual=el('qa-insert-manual'); if(manual)manual.value='';
   ov.classList.add('open');
-  (qNodes.length?list.querySelector('input'):manual)?.focus();
+  list.querySelector('input')?.focus();
 }
 function closeQaInsert(){
   const ov=el('qa-insert-overlay'); if(!ov)return;
@@ -18125,10 +18117,8 @@ function closeQaInsert(){
 }
 function confirmQaInsert(){
   const list=el('qa-insert-list');
-  const checked=[...(list?list.querySelectorAll('input[type="checkbox"]:checked'):[])].map(cb=>cb.nextElementSibling.textContent.trim());
-  const manualLines=(el('qa-insert-manual')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
-  const questions=[...checked,...manualLines];
-  if(!questions.length){ showToast('No questions to insert'); return; }
+  const questions=[...(list?list.querySelectorAll('input[type="checkbox"]:checked'):[])].map(cb=>cb.nextElementSibling.textContent.trim());
+  if(!questions.length){ showToast('No questions selected'); return; }
   questions.forEach(q=>qaItems.push({id:newQaId(),question:q,answer:''}));
   if(!padEnabled){ showToast('Pad is disabled — Settings → Editing → Pad'); closeQaInsert(); return; }
   if(!padOpen)setPadOpen(true,false);
@@ -18187,29 +18177,27 @@ function renderQaList(){
   const list=el('qa-list'), body=el('qa-body'); if(!list||!body)return;
   body.classList.toggle('qa-is-empty',qaItems.length===0);
   list.innerHTML='';
+  const sparkleSvg='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
   qaItems.forEach(item=>{
     const row=document.createElement('div'); row.className='qa-row';
 
-    const qField=document.createElement('div'); qField.className='qa-row-field qa-field-q';
-    const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
+    const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.className='qa-field-q'; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
     qTa.addEventListener('input',()=>{ item.question=qTa.value; autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
-    const qRw=document.createElement('button'); qRw.className='qa-row-btn'; qRw.id=`qa-rw-question-${item.id}`; qRw.dataset.tip='Rewrite question (AI)'; qRw.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
-    qRw.addEventListener('click',()=>rewriteQaField(item.id,'question'));
-    qField.appendChild(qTa); qField.appendChild(qRw);
 
-    const aField=document.createElement('div'); aField.className='qa-row-field qa-field-a';
-    const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.rows=2; aTa.placeholder='Answer'; aTa.value=item.answer||'';
+    const aTa=document.createElement('textarea'); aTa.id=`qa-a-${item.id}`; aTa.className='qa-field-a'; aTa.rows=2; aTa.placeholder='Answer'; aTa.value=item.answer||'';
     aTa.addEventListener('input',()=>{ item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); });
-    const aRw=document.createElement('button'); aRw.className='qa-row-btn'; aRw.id=`qa-rw-answer-${item.id}`; aRw.dataset.tip='Rewrite answer (AI)'; aRw.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
-    aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
-    aField.appendChild(aTa); aField.appendChild(aRw);
 
-    const actions=document.createElement('div'); actions.className='qa-row-actions';
+    const toolbar=document.createElement('div'); toolbar.className='qa-row-toolbar';
+    const qRw=document.createElement('button'); qRw.className='qa-row-btn'; qRw.id=`qa-rw-question-${item.id}`; qRw.dataset.tip='Rewrite question (AI)'; qRw.innerHTML=sparkleSvg+'<span style="font-size:9px;margin-left:2px">Q</span>';
+    qRw.addEventListener('click',()=>rewriteQaField(item.id,'question'));
+    const aRw=document.createElement('button'); aRw.className='qa-row-btn'; aRw.id=`qa-rw-answer-${item.id}`; aRw.dataset.tip='Rewrite answer (AI)'; aRw.innerHTML=sparkleSvg+'<span style="font-size:9px;margin-left:2px">A</span>';
+    aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
+    const sep=document.createElement('span'); sep.className='qa-row-toolbar-sep';
     const del=document.createElement('button'); del.className='qa-row-delete'; del.dataset.tip='Delete row'; del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
     del.addEventListener('click',()=>deleteQaRow(item.id));
-    actions.appendChild(del);
+    toolbar.appendChild(qRw); toolbar.appendChild(aRw); toolbar.appendChild(sep); toolbar.appendChild(del);
 
-    row.appendChild(qField); row.appendChild(aField); row.appendChild(actions);
+    row.appendChild(qTa); row.appendChild(aTa); row.appendChild(toolbar);
     list.appendChild(row);
     autoGrowTextarea(qTa); autoGrowTextarea(aTa);
   });
