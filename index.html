@@ -612,13 +612,16 @@ body.toolbar-hidden #quick-bar{display:none}
 .settings-grid-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
 .settings-mini-link{appearance:none;border:none;background:none;padding:0;font:500 11px 'Inter',sans-serif;color:var(--accent);cursor:pointer}
 .settings-mini-link:hover{text-decoration:underline}
-.settings-collapsible-header{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;gap:8px;padding:0;margin:0;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:4px}
+.settings-collapsible-header{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;gap:10px;padding:0;margin:0;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:4px}
 .settings-collapsible-header:hover .settings-collapsible-title{text-decoration:underline}
 .settings-collapsible-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.settings-collapsible-summary{margin-left:auto;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-collapsible-summary{margin-left:auto;font:500 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:2px 8px;border-radius:999px;flex:0 1 auto;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .settings-collapsible-chevron{flex:0 0 auto;color:var(--hint);transition:transform .15s}
 .settings-collapsible-header.open .settings-collapsible-chevron{transform:rotate(180deg)}
 .settings-collapsible-body{display:none;margin-top:8px}
+.settings-inline-notice{display:none;align-items:flex-start;gap:7px;margin:0 12px 8px;padding:8px 10px;background:color-mix(in srgb,var(--sem-alert) 10%,transparent);border:1px solid color-mix(in srgb,var(--sem-alert) 26%,transparent);border-radius:7px;font:400 11.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45}
+.settings-inline-notice.show{display:flex}
+.settings-inline-notice svg{flex-shrink:0;margin-top:1px;color:var(--sem-alert)}
 .settings-list>.settings-collapsible-header{padding:9px 12px;min-height:36px;border-radius:0}
 .settings-list>.settings-list-row+.settings-collapsible-header,.settings-list>.settings-collapsible-body+.settings-list-row{border-top:1px solid var(--border)}
 .settings-list>.settings-collapsible-body{margin-top:0;padding:0 12px 12px}
@@ -3178,7 +3181,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <button class="toggle-switch" type="button" role="switch" id="ai-fallback-toggle" aria-checked="false" aria-label="Enable provider fallback"></button>
               </div>
               <div id="ai-fallback-list" style="display:none;padding:4px 12px 8px;flex-direction:column;gap:4px"></div>
-              <span class="settings-row-desc" id="ai-fallback-empty-warning" style="display:none;color:var(--sem-alert);padding:0 12px 8px"></span>
+              <div class="settings-inline-notice" id="ai-fallback-empty-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="ai-fallback-empty-warning-text"></span></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset AI settings</span><span class="settings-row-desc">Restores provider, model, and rewrite prompt to their defaults, and clears any saved API key. Separate from the general settings reset — your documents and other app preferences aren't touched either way.</span></div><button id="ai-settings-reset-btn" class="btn data-io-btn">Reset…</button></div>
             </div>
           </div>
@@ -14069,15 +14072,15 @@ function renderFallbackOrderList(){
     }
     wrap.appendChild(row);
   });
-  const warning=el('ai-fallback-empty-warning');
-  if(warning){
+  const warning=el('ai-fallback-empty-warning'); const warningText=el('ai-fallback-empty-warning-text');
+  if(warning&&warningText){
     const hasEligible=aiFallbackOrder.some(entry=>{
       if(entry.id===aiProvider||!entry.enabled)return false;
       const p=all.find(x=>x.id===entry.id); if(!p)return false;
       return !!getAiKeyForProvider(p.id);
     });
-    if(aiFallbackEnabled&&!hasEligible){ warning.style.display=''; warning.textContent="⚠ No other provider is both checked and has a key saved — fallback won't have anywhere to fall back to. Check a provider above and make sure it has a key."; }
-    else{ warning.style.display='none'; }
+    if(aiFallbackEnabled&&!hasEligible){ warning.classList.add('show'); warningText.textContent="No other checked provider has a key saved, so fallback has nowhere to go yet."; }
+    else{ warning.classList.remove('show'); }
   }
 }
 function applyFallbackToggle(){
@@ -14086,7 +14089,7 @@ function applyFallbackToggle(){
   wrap.style.display=aiFallbackEnabled?'flex':'none';
   if(btn){btn.setAttribute('aria-checked',String(aiFallbackEnabled));btn.classList.toggle('on',aiFallbackEnabled);}
   if(aiFallbackEnabled)renderFallbackOrderList();
-  else{const warning=el('ai-fallback-empty-warning'); if(warning)warning.style.display='none';}
+  else{const warning=el('ai-fallback-empty-warning'); if(warning)warning.classList.remove('show');}
 }
 el('ai-provider-add-btn')?.addEventListener('click',()=>openProviderModal(null));
 function setAiMaxTokens(n,persist=true){
