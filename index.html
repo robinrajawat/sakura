@@ -2268,6 +2268,21 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #todos-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
+/* Status summary highlighting: reuses the exact colors from the row chips
+   (.todo-priority[data-priority], .todo-status[data-status], .todo-due.overdue)
+   so the reader doesn't have to learn a second color language for the same data. */
+.ai-sum-task{font-weight:600}
+.ai-sum-overdue{color:var(--sem-alert,#b85450);font-weight:600}
+.ai-sum-due{color:var(--hint);font-weight:500}
+.ai-sum-priority{font-weight:600}
+.ai-sum-priority-low{color:#6c9bd1}
+.ai-sum-priority-med{color:#d1a23a}
+.ai-sum-priority-high{color:#c2553d}
+.ai-sum-status{font-weight:600}
+.ai-sum-status-waiting{color:#8a7fc9}
+.ai-sum-status-progress{color:#5aa970}
+.ai-sum-status-blocked{color:#c2553d}
+.ai-sum-status-review{color:#c98f4a}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
@@ -3285,6 +3300,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Extract action items</span><span class="settings-row-desc">Adds a button in the To-Dos panel header that reads the current document (or your selected nodes, if any are selected) and proposes a batch of tasks from it, added directly with a single Undo. Uses the same provider/key as Rewrite above, and needs AI Capabilities on.</span></div><button id="todos-ai-extract-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Extract action items"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Break into subtasks</span><span class="settings-row-desc">Adds an AI button on each task, next to Rewrite, that proposes 3-6 concrete subtasks and adds them directly, with Undo.</span></div><button id="todos-ai-subtask-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Break into subtasks"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Status summary</span><span class="settings-row-desc">Adds a button in the To-Dos panel header that writes a short plain-language summary of your open tasks — what's overdue or urgent first, then general progress — shown in a dialog with a Copy button.</span></div><button id="todos-ai-summary-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Status summary"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Highlight key details in summary</span><span class="settings-row-desc">Bolds task names and colors overdue mentions, due dates, priority, and status words in the Status summary dialog, using the same colors as the To-Dos row chips — so you can scan it instead of reading every sentence. Off shows plain text.</span></div><button id="todos-ai-summary-highlight-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable highlight key details in summary"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="features" id="settings-section-features">
@@ -4271,7 +4287,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <div id="todos-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Status Summary">
   <div class="app-modal" style="width:min(480px,94vw)">
     <div class="app-modal-head">
-      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="var(--accent)" stroke="none"/></svg>Status Summary</h2><div class="cs-sub">AI-generated from your open tasks</div></div>
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg>Status Summary</h2><div class="cs-sub">AI-generated from your open tasks</div></div>
       <button class="app-modal-close-btn" id="todos-summary-modal-close-btn" aria-label="Close status summary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div class="app-modal-body">
@@ -22063,7 +22079,7 @@ function _addTagPopoverFromInput(){
   let todosWidth=380; // default matches the CSS fallback (min(380px, calc(100vw - 32px)))
   let completedOpen=null; // lazily initialized from settings.completedCollapsedByDefault on first render; then a per-session toggle
   const TODO_ELEMENT_KEYS=['priority','due','repeat','subtask','status','link'];
-  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[], aiExtractEnabled:true, aiSubtaskEnabled:true, aiSummaryEnabled:true };
+  let settings={ location:'appbar', expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[], aiExtractEnabled:true, aiSubtaskEnabled:true, aiSummaryEnabled:true, aiSummaryHighlight:true };
 
   function loadTodos(){
     try{
@@ -22117,6 +22133,7 @@ function _addTagPopoverFromInput(){
         settings.aiExtractEnabled = d.aiExtractEnabled===undefined ? true : !!d.aiExtractEnabled;
         settings.aiSubtaskEnabled = d.aiSubtaskEnabled===undefined ? true : !!d.aiSubtaskEnabled;
         settings.aiSummaryEnabled = d.aiSummaryEnabled===undefined ? true : !!d.aiSummaryEnabled;
+        settings.aiSummaryHighlight = d.aiSummaryHighlight===undefined ? true : !!d.aiSummaryHighlight;
         settings.showOverdueBadge = d.showOverdueBadge===undefined ? true : !!d.showOverdueBadge;
         settings.subtasksCollapsedByDefault = d.subtasksCollapsedByDefault===undefined ? false : !!d.subtasksCollapsedByDefault;
         settings.completedCollapsedByDefault = d.completedCollapsedByDefault===undefined ? false : !!d.completedCollapsedByDefault;
@@ -23774,7 +23791,7 @@ function _addTagPopoverFromInput(){
       const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024, 1024);
       const raw=await callAiApiWithPrompt(AI_TODO_SUMMARY_SYSTEM_PROMPT, userMsg, maxTok);
       if(!raw) throw new Error('Empty response from AI');
-      showTodosSummaryModal(cleanTodosSummaryText(raw));
+      showTodosSummaryModal(cleanTodosSummaryText(raw), openTasks);
     }catch(e){
       showTodosToast('AI summary failed: '+(e.message||'unknown error'));
     }finally{
@@ -23798,11 +23815,73 @@ function _addTagPopoverFromInput(){
     }
     return text;
   }
-  function showTodosSummaryModal(text){
+  // Highlights key details in an AI-generated summary by pattern-matching against the real
+  // task data and generic date/status/priority phrasing — NOT by asking the AI to mark up
+  // its own output. This is deliberate: trusting the model to consistently wrap things in
+  // some custom syntax is fragile (it will drift under regeneration) and any AI-produced
+  // markup would need to be treated as untrusted input anyway. Matching on our own data and
+  // escaping every non-matched fragment keeps this safe regardless of what the model returns.
+  function buildHighlightedSummaryHtml(text, openTasks){
+    const kept=[]; // final non-overlapping ranges, filled in priority order
+    const overlaps=(s,e)=>kept.some(r=>s<r.end && e>r.start);
+    const tryAdd=(s,e,cls)=>{ if(e>s && !overlaps(s,e)) kept.push({start:s,end:e,cls}); };
+    const addAllMatches=(regex,clsOrFn)=>{
+      const re=new RegExp(regex.source, regex.flags.includes('g')?regex.flags:regex.flags+'g');
+      let m;
+      while((m=re.exec(text))){
+        if(m[0].length===0){ re.lastIndex++; continue; }
+        tryAdd(m.index, m.index+m[0].length, typeof clsOrFn==='function'?clsOrFn(m):clsOrFn);
+      }
+    };
+    // Priority 1: real task names. The AI often shortens a long "Title: details…" task down
+    // to just the title in prose, so also try the text up to the first colon or sentence
+    // break as a fallback candidate — tried longest-first, first one actually found wins.
+    (openTasks||[]).slice().sort((a,b)=>(b.text||'').length-(a.text||'').length).forEach(t=>{
+      const full=(t.text||'').trim();
+      if(!full) return;
+      const candidates=[full];
+      const colonIdx=full.indexOf(':');
+      if(colonIdx>7) candidates.push(full.slice(0,colonIdx).trim());
+      const periodIdx=full.indexOf('. ');
+      if(periodIdx>7) candidates.push(full.slice(0,periodIdx).trim());
+      candidates.sort((a,b)=>b.length-a.length);
+      for(const name of candidates){
+        if(name.length<8) continue;
+        const idx=text.indexOf(name);
+        if(idx>=0){ tryAdd(idx, idx+name.length, 'ai-sum-task'); break; }
+      }
+    });
+    addAllMatches(/\boverdue\b/i, 'ai-sum-overdue');
+    addAllMatches(/\b(high|medium|med|low)[\s-]?priority\b/i, m=>{
+      const lvl=m[1].toLowerCase()==='medium' ? 'med' : m[1].toLowerCase();
+      return 'ai-sum-priority ai-sum-priority-'+lvl;
+    });
+    addAllMatches(/\b(in progress|on track|blocked|waiting|in review|under review)\b/i, m=>{
+      const s=m[1].toLowerCase();
+      const key = s==='blocked' ? 'blocked' : s==='waiting' ? 'waiting' : s.includes('review') ? 'review' : 'progress';
+      return 'ai-sum-status ai-sum-status-'+key;
+    });
+    addAllMatches(/\b(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?\b/i, 'ai-sum-due');
+
+    kept.sort((a,b)=>a.start-b.start);
+    let html='', pos=0;
+    kept.forEach(r=>{
+      html+=esc(text.slice(pos,r.start));
+      html+=`<span class="${r.cls}">${esc(text.slice(r.start,r.end))}</span>`;
+      pos=r.end;
+    });
+    html+=esc(text.slice(pos));
+    return html;
+  }
+  function showTodosSummaryModal(text, openTasks){
     const overlay=document.getElementById('todos-summary-modal-overlay');
     const body=document.getElementById('todos-summary-modal-body');
     if(!overlay||!body) return;
-    body.textContent=text;
+    if(settings.aiSummaryHighlight && openTasks && openTasks.length){
+      body.innerHTML=buildHighlightedSummaryHtml(text, openTasks);
+    } else {
+      body.textContent=text;
+    }
     overlay.classList.add('open');
   }
   function closeTodosSummaryModal(){
@@ -24212,6 +24291,17 @@ function _addTagPopoverFromInput(){
         aiSummaryToggle.classList.toggle('on', settings.aiSummaryEnabled);
         aiSummaryToggle.setAttribute('aria-checked', String(settings.aiSummaryEnabled));
         refreshTodosAiButtons();
+      });
+    }
+    const aiSummaryHighlightToggle=document.getElementById('todos-ai-summary-highlight-toggle');
+    if(aiSummaryHighlightToggle){
+      aiSummaryHighlightToggle.classList.toggle('on', settings.aiSummaryHighlight);
+      aiSummaryHighlightToggle.setAttribute('aria-checked', String(settings.aiSummaryHighlight));
+      aiSummaryHighlightToggle.addEventListener('click',()=>{
+        settings.aiSummaryHighlight=!settings.aiSummaryHighlight;
+        saveSettings();
+        aiSummaryHighlightToggle.classList.toggle('on', settings.aiSummaryHighlight);
+        aiSummaryHighlightToggle.setAttribute('aria-checked', String(settings.aiSummaryHighlight));
       });
     }
     TODO_ELEMENT_KEYS.forEach(key=>{
