@@ -23662,7 +23662,8 @@ function _addTagPopoverFromInput(){
     if(btn) btn.classList.add('ai-busy');
     showTodosToast('Extracting action items… ✦');
     try{
-      const raw=await callAiApiWithPrompt(AI_TODO_EXTRACT_SYSTEM_PROMPT, text.slice(0,12000), 1024);
+      const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024, 1024);
+      const raw=await callAiApiWithPrompt(AI_TODO_EXTRACT_SYSTEM_PROMPT, text.slice(0,12000), maxTok);
       if(!raw) throw new Error('Empty response from AI');
       let items;
       try{ items=JSON.parse(raw.replace(/```json|```/gi,'').trim()); }
@@ -23701,7 +23702,8 @@ function _addTagPopoverFromInput(){
     if(btn) btn.classList.add('ai-busy');
     showTodosToast('Breaking into subtasks… ✦');
     try{
-      const raw=await callAiApiWithPrompt(AI_SUBTASK_SYSTEM_PROMPT, t.text, 512);
+      const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024, 1024);
+      const raw=await callAiApiWithPrompt(AI_SUBTASK_SYSTEM_PROMPT, t.text, maxTok);
       if(!raw) throw new Error('Empty response from AI');
       let items;
       try{ items=JSON.parse(raw.replace(/```json|```/gi,'').trim()); }
@@ -23749,7 +23751,13 @@ function _addTagPopoverFromInput(){
     if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='Regenerating…'; }
     showTodosToast('Generating summary… ✦');
     try{
-      const raw=await callAiApiWithPrompt(AI_TODO_SUMMARY_SYSTEM_PROMPT, userMsg, 400);
+      // Deliberately not a small hardcoded number like 400 — some models (newer "thinking"
+      // variants especially) spend part of the budget on internal reasoning tokens before
+      // any visible text, and a too-tight budget can come back with empty text even though
+      // the call itself succeeded. Use whatever the person has already configured for AI
+      // calls generally, same floor as Rewrite, rather than a per-feature guess.
+      const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024, 1024);
+      const raw=await callAiApiWithPrompt(AI_TODO_SUMMARY_SYSTEM_PROMPT, userMsg, maxTok);
       if(!raw) throw new Error('Empty response from AI');
       showTodosSummaryModal(cleanTodosSummaryText(raw));
     }catch(e){
