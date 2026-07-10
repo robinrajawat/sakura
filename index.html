@@ -489,6 +489,8 @@ body.no-word-wrap .node-row{min-width:max-content}
 #qa-insert-empty{color:var(--muted);font-size:12px;font-style:italic;padding:4px 0}
 .qa-insert-row{display:flex;align-items:flex-start;gap:7px;padding:4px 6px;border-radius:7px;font-size:12.5px;color:var(--fg);cursor:pointer;line-height:1.35}
 .qa-insert-row:hover{background:var(--hover)}
+.qa-insert-row-added{opacity:.5;cursor:not-allowed}
+.qa-insert-row-added:hover{background:none}
 .qa-insert-row input{margin-top:3px;flex-shrink:0}
 #qa-insert-actions{display:flex;justify-content:flex-end;gap:8px}
 #qa-insert-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
@@ -18098,21 +18100,24 @@ function openQaInsert(){
   const selectedIds=new Set(getSelectedIds());
   const selectedQNodes=qNodes.filter(n=>selectedIds.has(n.id));
   const preferSelection=selectedQNodes.length>0;
+  const existingQuestions=new Set(qaItems.map(it=>(it.question||'').trim().toLowerCase()));
   list.innerHTML='';
   if(!qNodes.length){
     list.innerHTML='<div id="qa-insert-empty">No nodes ending in "?" found in this document. Close this and use the + button to add a row directly.</div>';
   } else {
     qNodes.forEach(n=>{
-      const row=document.createElement('label'); row.className='qa-insert-row';
-      const checked=preferSelection?selectedIds.has(n.id):true;
-      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.dataset.nodeId=String(n.id);
-      const span=document.createElement('span'); span.textContent=getNodePlainText(n).trim();
+      const text=getNodePlainText(n).trim();
+      const alreadyAdded=existingQuestions.has(text.toLowerCase());
+      const row=document.createElement('label'); row.className='qa-insert-row'+(alreadyAdded?' qa-insert-row-added':'');
+      const checked=alreadyAdded?false:(preferSelection?selectedIds.has(n.id):true);
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.disabled=alreadyAdded; cb.dataset.nodeId=String(n.id);
+      const span=document.createElement('span'); span.textContent=text+(alreadyAdded?' — already added':'');
       row.appendChild(cb); row.appendChild(span);
       list.appendChild(row);
     });
   }
   ov.classList.add('open');
-  list.querySelector('input')?.focus();
+  list.querySelector('input:not(:disabled)')?.focus();
 }
 function closeQaInsert(){
   const ov=el('qa-insert-overlay'); if(!ov)return;
