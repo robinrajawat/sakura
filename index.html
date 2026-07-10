@@ -1220,7 +1220,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #pad-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
 #pad-resize-handle:hover::after,#pad-resize-handle.dragging::after{opacity:1}
 #pad-resize-handle.pad-hidden{display:none}
-#pad-panel{--pad-width:320px;width:var(--pad-width);flex:0 0 var(--pad-width);display:flex;flex-direction:column;background:var(--tb-bg);overflow:hidden;font-family:'Inter',sans-serif;transition:width .18s cubic-bezier(.22,.8,.34,1),flex-basis .18s cubic-bezier(.22,.8,.34,1)}
+#pad-panel{--pad-width:320px;width:var(--pad-width);flex:0 0 var(--pad-width);display:flex;flex-direction:column;background:var(--tb-bg);overflow:hidden;font-family:'Inter',sans-serif;position:relative;transition:width .18s cubic-bezier(.22,.8,.34,1),flex-basis .18s cubic-bezier(.22,.8,.34,1)}
 #pad-panel.resizing{transition:none}
 #pad-panel.pad-hidden{display:none}
 #pad-panel-header{display:none;align-items:center;gap:8px;padding:10px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--tb-bg)}
@@ -1247,8 +1247,10 @@ body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#ptb-flip),body
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 #qa-progress{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:0 6px;white-space:nowrap;user-select:none}
 body.pad-qa-mode #qa-progress{display:flex}
-#ptb-flip{margin-left:auto}
-body.pad-qa-mode #ptb-flip{margin-left:0;transform:scaleX(-1)}
+#ptb-flip{position:absolute;bottom:62px;right:14px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s,bottom .12s}
+#ptb-flip:hover{opacity:1;color:var(--fg);background:var(--hover)}
+#ptb-flip.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
+body.pad-qa-mode #ptb-flip{bottom:14px;transform:scaleX(-1)}
 #qa-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
 /* Q&A row filter — hidden by default, toggled on via qtb-search, styled to match the sidebar
    filter box's search-icon/input/clear-button layout. */
@@ -1929,7 +1931,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #presenter-notes-hint{flex:1;font:400 10.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
 #presenter-notes-close-btn{appearance:none;border:none;background:transparent;color:var(--muted);cursor:pointer;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;flex:0 0 auto}
 #presenter-notes-close-btn:hover{background:var(--hover);color:var(--fg)}
-#presenter-notes-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+#presenter-notes-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;position:relative}
 #presenter-notes-body #pad-editor{flex:1}
 #presenter-notes-body #pad-toolbar{flex:0 0 auto}
 #presenter-notes-body #pad-panel-close-toolbar{display:none}
@@ -4338,7 +4340,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-rewrite" data-tip="Rewrite selected rows (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
-    <button class="note-tb-btn" id="ptb-flip" data-tip="Switch to Q&amp;A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg></button>
+    <button class="note-tb-btn" id="ptb-flip" data-tip="Switch to Q&amp;A" aria-label="Switch between Notes and Q&amp;A" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
     <button id="pad-panel-close-toolbar" data-tip="Close Pad (Ctrl/Cmd+Shift+P)" aria-label="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -18323,7 +18325,7 @@ function setQaExportEnabled(on,persist=true){
 function setPadViewMode(mode){
   padViewMode=mode==='qa'?'qa':'notes';
   document.body.classList.toggle('pad-qa-mode',padViewMode==='qa');
-  const flip=el('ptb-flip'); if(flip)flip.dataset.tip=padViewMode==='qa'?'Switch to Notes':'Switch to Q&A';
+  const flip=el('ptb-flip'); if(flip){ flip.dataset.tip=padViewMode==='qa'?'Switch to Notes':'Switch to Q&A'; flip.classList.toggle('is-active',padViewMode==='qa'); flip.setAttribute('aria-pressed',String(padViewMode==='qa')); }
   if(padViewMode==='qa')renderQaList();
 }
 function togglePadViewMode(){ setPadViewMode(padViewMode==='qa'?'notes':'qa'); }
