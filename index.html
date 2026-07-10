@@ -1249,6 +1249,17 @@ body.pad-qa-mode #qa-progress{display:flex}
 #ptb-flip{margin-left:auto}
 body.pad-qa-mode #ptb-flip{transform:scaleX(-1)}
 #qa-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
+#qa-bulk-bar{display:none;align-items:center;gap:7px;padding:4px 4px 8px;font:500 11.5px 'Inter',sans-serif;color:var(--hint)}
+#qa-body:not(.qa-is-empty) #qa-bulk-bar{display:flex}
+#qa-bulk-bar.qa-has-selection{color:var(--fg)}
+#qa-select-all-cb{margin:0;cursor:pointer}
+#qa-bulk-count{flex:1}
+#qa-bulk-delete{display:none;align-items:center;justify-content:center;width:20px;height:20px;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px}
+#qa-bulk-bar.qa-has-selection #qa-bulk-delete{display:inline-flex}
+#qa-bulk-delete:hover{background:color-mix(in srgb,var(--sem-alert) 15%,transparent);color:var(--sem-alert)}
+.qa-row-select{margin:0;cursor:pointer;flex-shrink:0;opacity:0;transition:opacity .12s;align-self:flex-start;margin-top:3px}
+.qa-row:hover .qa-row-select,#qa-body.qa-has-selection .qa-row-select{opacity:1}
+.qa-row.qa-row-selected{background:color-mix(in srgb,var(--sel) 55%,transparent);border-radius:8px;margin-left:-6px;padding-left:6px;margin-right:-6px}
 #qa-body.qa-is-empty #qa-empty{display:block}
 .qa-row{position:relative;display:flex;align-items:flex-start;gap:4px;padding:0 18px 12px 0;margin-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .qa-row:last-child{border-bottom:none;margin-bottom:0}
@@ -3721,7 +3732,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The search-icon button scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted. Drag the grip on the left to reorder rows by hand, or use the sort icon to show unanswered rows first — the two don't mix: dragging is unavailable while that sort is active, since a hand-reorder inside a sorted view has no single sensible "real" position to save it at. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">N</span> in Presenter mode, then the flip button, to work through questions without leaving fullscreen. Settings → Editing → Pad has "Sort Q&amp;A unanswered first" (sets where that sort starts, same toggle as the icon) and "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The search-icon button scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted. Drag the grip on the left to reorder rows by hand, or use the sort icon to show unanswered rows first — the two don't mix: dragging is unavailable while that sort is active, since a hand-reorder inside a sorted view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">N</span> in Presenter mode, then the flip button, to work through questions without leaving fullscreen. Settings → Editing → Pad has "Sort Q&amp;A unanswered first" (sets where that sort starts, same toggle as the icon) and "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4275,6 +4286,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   </div>
   <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links, attach files."></div>
   <div id="qa-body">
+    <div id="qa-bulk-bar">
+      <input type="checkbox" id="qa-select-all-cb" aria-label="Select all Q&amp;A rows">
+      <span id="qa-bulk-count">Select</span>
+      <button id="qa-bulk-delete" data-tip="Delete selected rows" aria-label="Delete selected rows"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+    </div>
     <div id="qa-list"></div>
     <div id="qa-empty">No Q&amp;A rows yet. Scan the outline for questions ending in "?", or add a blank row.</div>
   </div>
@@ -5097,7 +5113,7 @@ const VERSION='v2.0.0'; const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX='sakura_template_v1_'; const CUSTOM_DEFAULT_KEY='sakura_default_template_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaSortUnansweredFirst=false; let qaExportEnabled=true; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaSortUnansweredFirst=false; let qaExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','codeblock','tags','decision-log','ai-rewrite']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let noteCompactDefault=false; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -18232,10 +18248,61 @@ function addQaRow(){
   markDirty(); scheduleAutoSave();
   el(`qa-q-${item.id}`)?.focus();
 }
+// Snapshot-restore rather than reinserting at a saved index — correct regardless of what else
+// changed qaItems between delete and undo (add, reorder, another delete), and identical logic
+// covers both the single-row and bulk-delete cases below.
 function deleteQaRow(id){
+  if(!qaItems.some(it=>it.id===id))return;
+  const snapshot=qaItems.slice();
   qaItems=qaItems.filter(it=>it.id!==id);
+  qaSelectedIds.delete(id);
   renderQaList();
   markDirty(); scheduleAutoSave();
+  showActionToast('Q&A row deleted','Undo',()=>{
+    qaItems=snapshot;
+    renderQaList();
+    markDirty(); scheduleAutoSave();
+  });
+}
+function qaDisplayOrderIds(){
+  const items=qaSortUnansweredFirst
+    ? [...qaItems].sort((a,b)=>{const ad=(a.answer||'').trim()?1:0; const bd=(b.answer||'').trim()?1:0; return ad-bd;})
+    : qaItems;
+  return items.map(it=>it.id);
+}
+function toggleQaSelect(id,shiftKey){
+  if(shiftKey && qaSelectionAnchorId!=null && qaSelectionAnchorId!==id){
+    const order=qaDisplayOrderIds();
+    const from=order.indexOf(qaSelectionAnchorId), to=order.indexOf(id);
+    if(from>=0&&to>=0){
+      const [s,e]=from<=to?[from,to]:[to,from];
+      order.slice(s,e+1).forEach(rid=>qaSelectedIds.add(rid));
+    }
+  } else {
+    if(qaSelectedIds.has(id))qaSelectedIds.delete(id); else qaSelectedIds.add(id);
+    qaSelectionAnchorId=id;
+  }
+  renderQaList();
+}
+function toggleQaSelectAll(){
+  if(qaSelectedIds.size===qaItems.length){ qaSelectedIds=new Set(); }
+  else { qaSelectedIds=new Set(qaItems.map(it=>it.id)); }
+  qaSelectionAnchorId=null;
+  renderQaList();
+}
+function bulkDeleteQaSelected(){
+  if(!qaSelectedIds.size)return;
+  const snapshot=qaItems.slice();
+  const count=qaSelectedIds.size;
+  qaItems=qaItems.filter(it=>!qaSelectedIds.has(it.id));
+  qaSelectedIds=new Set(); qaSelectionAnchorId=null;
+  renderQaList();
+  markDirty(); scheduleAutoSave();
+  showActionToast(`${count} Q&A row${count===1?'':'s'} deleted`,'Undo',()=>{
+    qaItems=snapshot;
+    renderQaList();
+    markDirty(); scheduleAutoSave();
+  });
 }
 function autoGrowTextarea(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
 async function rewriteQaField(id,field){
@@ -18272,6 +18339,16 @@ function reorderQaRow(draggedId,targetId){
   renderQaList();
   markDirty(); scheduleAutoSave();
 }
+function updateQaBulkBar(){
+  const bar=el('qa-bulk-bar'), cb=el('qa-select-all-cb'), count=el('qa-bulk-count'), body=el('qa-body');
+  if(!bar||!cb||!count)return;
+  const n=qaSelectedIds.size, total=qaItems.length;
+  bar.classList.toggle('qa-has-selection',n>0);
+  if(body)body.classList.toggle('qa-has-selection',n>0);
+  count.textContent=n>0?`${n} selected`:'Select';
+  cb.checked=total>0&&n===total;
+  cb.indeterminate=n>0&&n<total;
+}
 function renderQaList(){
   const list=el('qa-list'), body=el('qa-body'); if(!list||!body)return;
   body.classList.toggle('qa-is-empty',qaItems.length===0);
@@ -18286,7 +18363,10 @@ function renderQaList(){
     ? [...qaItems].sort((a,b)=>{const aDone=(a.answer||'').trim()?1:0; const bDone=(b.answer||'').trim()?1:0; return aDone-bDone;})
     : qaItems;
   displayItems.forEach(item=>{
-    const row=document.createElement('div'); row.className='qa-row'; row.dataset.qaId=String(item.id);
+    const row=document.createElement('div'); row.className='qa-row'+(qaSelectedIds.has(item.id)?' qa-row-selected':''); row.dataset.qaId=String(item.id);
+
+    const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='qa-row-select'; selectCb.checked=qaSelectedIds.has(item.id); selectCb.dataset.tip='Select row (Shift-click for range)';
+    selectCb.addEventListener('click',e=>{ e.stopPropagation(); toggleQaSelect(item.id,e.shiftKey); });
 
     const canDrag=!qaSortUnansweredFirst;
     const handle=document.createElement('button'); handle.className='qa-drag-handle'; handle.type='button'; handle.tabIndex=-1; handle.setAttribute('aria-hidden','true'); handle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
@@ -18328,10 +18408,11 @@ function renderQaList(){
     const del=document.createElement('button'); del.className='qa-row-delete'; del.dataset.tip='Delete row'; del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
     del.addEventListener('click',()=>deleteQaRow(item.id));
 
-    row.appendChild(handle); row.appendChild(content); row.appendChild(del);
+    row.appendChild(selectCb); row.appendChild(handle); row.appendChild(content); row.appendChild(del);
     list.appendChild(row);
     autoGrowTextarea(qTa); autoGrowTextarea(aTa);
   });
+  updateQaBulkBar();
 }
 el('welcome-pick-tour')?.addEventListener('click',()=>{
   closeWelcomeModal(()=>startTour());
@@ -18365,6 +18446,8 @@ el('ptb-flip')?.addEventListener('mousedown', e=>{ e.preventDefault(); togglePad
 el('qtb-scan')?.addEventListener('mousedown', e=>{ e.preventDefault(); openQaInsert(); });
 el('qtb-add')?.addEventListener('mousedown', e=>{ e.preventDefault(); addQaRow(); });
 el('qtb-sort')?.addEventListener('mousedown', e=>{ e.preventDefault(); setQaSortUnansweredFirst(!qaSortUnansweredFirst); });
+el('qa-select-all-cb')?.addEventListener('click',()=>toggleQaSelectAll());
+el('qa-bulk-delete')?.addEventListener('click',()=>bulkDeleteQaSelected());
 el('qa-sort-unanswered-toggle')?.addEventListener('click',()=>setQaSortUnansweredFirst(!qaSortUnansweredFirst));
 el('qa-export-toggle')?.addEventListener('click',()=>setQaExportEnabled(!qaExportEnabled));
 el('qa-insert-confirm')?.addEventListener('click',()=>confirmQaInsert());
@@ -18379,6 +18462,15 @@ document.addEventListener('keydown',e=>{
   if(!el('welcome-overlay')?.classList.contains('open')) return;
   if(e.key==='Escape'){ e.stopPropagation(); closeWelcomeModal(); }
 },{capture:true});
+// Escape/Delete for Q&A row selection — only when the active element isn't itself editable, so
+// this never hijacks Escape-to-blur or Delete/Backspace while actually typing in a field.
+document.addEventListener('keydown',e=>{
+  if(!qaSelectedIds.size)return;
+  const active=document.activeElement;
+  if(active&&(active.tagName==='TEXTAREA'||active.tagName==='INPUT'))return;
+  if(e.key==='Escape'){ qaSelectedIds=new Set(); qaSelectionAnchorId=null; renderQaList(); }
+  else if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); bulkDeleteQaSelected(); }
+});
 
 try{
   const neverSeen=!localStorage.getItem(WELCOME_SEEN_KEY)&&!localStorage.getItem(TOUR_SEEN_KEY);
