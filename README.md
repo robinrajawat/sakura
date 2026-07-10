@@ -120,8 +120,10 @@ Everything is stored locally in the browser, scoped to this exact file. Opening 
 Sakura offers three layers of protection, from lightest to most durable:
 
 1. **Local safety copy** (Settings → Data) — a copy of your data is automatically mirrored into a separate browser storage area (IndexedDB) on every save. If the primary storage is ever cleared, "Restore" can recover from this copy. This is still inside the same browser, not an external backup.
-2. **Auto-backup to file** (Settings → Data) — connects a real file on disk and writes a live backup to it as you work, using the File System Access API. Available in Chrome and Edge only. If the browser's file permission lapses (it can, by design, after a reload or restart), the status bar shows a chip to reconnect in one click. If you disconnect it yourself, that same chip stays visible with a plain "Connect" prompt rather than disappearing.
+2. **Auto-backup to file** (Settings → Data) — connects a real file on disk and writes a live backup to it as you work, using the File System Access API. Available in Chrome and Edge only. If the browser's file permission lapses (it can, by design, after a reload or restart), the status bar shows a chip to reconnect in one click. If you disconnect it yourself, that same chip stays visible with a plain "Connect" prompt rather than disappearing. Since the live file always overwrites itself, a **Backup history** list underneath keeps up to 5 timestamped snapshots (at least 15 minutes apart) as an independent way back to an earlier point.
 3. **Export / Import** (Settings → Data) — saves everything (documents, folders, templates) to a single downloadable JSON file, and restores from one. This is the only option that produces a file outside the browser, and the only reliable way to move data between different files, browsers, or computers.
+
+Every Restore action — from a backup file, the Local safety copy, or a Backup history entry — first snapshots whatever's currently in the app. **Undo last restore** (Settings → Data, appears only once a snapshot exists) reverses that most recent restore if the file you picked turns out to have been the wrong one.
 
 **Recommended workflow when moving to a new copy of this file:** Export from the old copy, open the new copy, then Import immediately.
 
