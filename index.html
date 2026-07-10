@@ -18433,6 +18433,21 @@ async function bulkDeleteQaSelected(){
   });
 }
 function autoGrowTextarea(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
+// Q&A question/answer heights are set once on input (see autoGrowTextarea callers below) and
+// otherwise left alone — but narrowing the Pad re-wraps the same text into more lines without
+// ever re-triggering that measurement, so the now-taller content just gets clipped by
+// overflow:hidden instead of growing. A ResizeObserver on the list catches every width change
+// (drag-resizing the Pad, or the window itself) and re-measures whatever's currently rendered.
+(function(){
+  if(typeof ResizeObserver==='undefined')return;
+  const list=el('qa-list'); if(!list)return;
+  let raf=null;
+  const ro=new ResizeObserver(()=>{
+    if(raf)cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>{ list.querySelectorAll('.qa-field-wrap textarea').forEach(autoGrowTextarea); });
+  });
+  ro.observe(list);
+})();
 async function rewriteQaField(id,field){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   const text=(item[field]||'').trim();
