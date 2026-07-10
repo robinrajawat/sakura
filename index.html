@@ -189,12 +189,17 @@ input[type=number]{-moz-appearance:textfield}
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Fira Code',Consolas,'Courier New',monospace}
-/* Editor font toggle (Settings -> Appearance -> Editor font). Body-level on purpose: every
-   surface that must stay monospace regardless (.node-prefix tree-line glyphs, #code-editor,
-   .sem-code-inline, #pad-editor, #note-editor) already carries its own explicit font-family
-   and is unaffected by this — only elements that were inheriting the body default (mainly
-   .node-label/.node-input, and .todo-text as a side benefit) actually change. */
-body.font-sans{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+/* Editor font toggle (Settings -> Appearance -> Editor font). --content-font is the single
+   source of truth for "what font is the text I actually write in" — every content surface
+   (outline, To-Dos text, Pad, Note) references this variable explicitly rather than relying
+   on inheriting body's font-family, which breaks the moment any of those has its own
+   container-level font-family (To-Dos panel did). Chrome (buttons, chips, labels, dialogs)
+   is deliberately NOT tied to this — it stays Inter everywhere, same as the rest of the app,
+   the same way surrounding UI chrome around the outline already does. Only .node-prefix (tree
+   lines), #code-editor, and .sem-code-inline are exempt on purpose — they're code/structure,
+   not prose, and must stay monospace regardless of this toggle. */
+:root{--content-font:'Fira Code',Consolas,'Courier New',monospace}
+body.font-sans{--content-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body.theme-light{color-scheme:light;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
 body.theme-dark{color-scheme:dark;--bg:#1e1e1c;--tb-bg:#252523;--border:#353430;--fg:#e8e5dc;--node-fg:#e8e5dc;--muted:#a3a099;--hint:#82807b;--accent:#d97757;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#2c2b28;--sel:#333129;--sel-fg:#f0eee5;--edit-bg:#23231f;--canvas-bg:#23231f;--scroll:#3e3c38;--vert:#666666;--conn:#666666;--chip:#2c2b28;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
 body{background:var(--bg);color:var(--fg)}
@@ -334,7 +339,7 @@ body.feature-off-quickassist #global-search-wrap{display:none!important}
 .empty-state-actions{display:flex;gap:8px;justify-content:center;margin-top:10px}
 .node-row{display:flex;align-items:center;gap:0;min-height:calc(25px * var(--editor-scale) * var(--row-density));padding:calc(1px * var(--editor-scale) * var(--row-density)) calc(8px * var(--editor-scale));border-radius:6px;cursor:default;user-select:none;transition:background .12s ease,box-shadow .12s ease} body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 30%,transparent)} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 50%,transparent)} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)} .node-row.flash-new{animation:none !important}
 
-.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit}.node-conn{color:inherit}body.accent-branches .node-prefix{color:color-mix(in srgb,var(--accent) 28%,var(--vert) 72%)} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;line-height:calc(1.38 * var(--editor-scale) * var(--row-density))} .node-input{border:none;background:transparent;color:var(--node-fg);padding:2px 0;font:inherit;border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
+.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit}.node-conn{color:inherit}body.accent-branches .node-prefix{color:color-mix(in srgb,var(--accent) 28%,var(--vert) 72%)} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);line-height:calc(1.38 * var(--editor-scale))} .node-input{border:none;background:transparent;color:var(--node-fg);padding:2px 0;font:inherit;font-family:var(--content-font);border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
 body.no-word-wrap .node-label,body.no-word-wrap .node-input{white-space:pre;word-break:normal}
 body.no-word-wrap .node-row{min-width:max-content}
 .node-label.style-heading-1{font-size:calc(19px * var(--editor-scale));font-weight:400;letter-spacing:-.005em}
@@ -1195,7 +1200,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #pad-panel-close-header:hover,#pad-panel-close-toolbar:hover{color:var(--fg);background:var(--hover)}
 #pad-panel.pad-bg-distinct #pad-editor{background:var(--tb-bg)}
 #pad-toolbar{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--tb-bg)}
-#pad-editor{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
+#pad-editor{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
 #pad-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #pad-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
 .pad-attachment{display:inline-flex;align-items:center;gap:4px;vertical-align:middle;background:var(--hover);border:1px solid var(--border);border-radius:7px;padding:3px 4px 3px 8px;margin:0 2px;font-family:'Inter',sans-serif;max-width:100%}
@@ -1239,7 +1244,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .note-tb-btn:hover{background:var(--hover);color:var(--fg);border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .note-tb-btn.active{color:var(--accent)}
 .note-tb-sep{width:1px;height:16px;background:var(--border);margin:0 3px;flex-shrink:0}
-#note-editor{flex:1;min-height:80px;max-height:400px;overflow-y:auto;overflow-x:auto;margin:0 10px 10px;border-radius:8px;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
+#note-editor{flex:1;min-height:80px;max-height:400px;overflow-y:auto;overflow-x:auto;margin:0 10px 10px;border-radius:8px;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
 #note-panel.note-bg-distinct #note-editor{background:var(--tb-bg)}
 #note-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #note-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
@@ -2039,7 +2044,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #todos-extract-btn,#todos-summary-btn{color:var(--accent)}
 #todos-extract-btn.ai-busy,#todos-summary-btn.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 #todos-input-row{display:flex;gap:6px;padding:10px 14px;flex-shrink:0;border-bottom:1px solid var(--border);align-items:flex-end}
-#todos-input{flex:1;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:30px;max-height:120px;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:400 12.5px 'Inter',sans-serif;line-height:1.4;padding:6px 10px;border-radius:7px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
+#todos-input{flex:1;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:30px;max-height:120px;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:400 12.5px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:6px 10px;border-radius:7px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
 #todos-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
 #todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:30px;height:30px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s}
 #todos-add-btn:hover{opacity:.88}
@@ -2119,7 +2124,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    Clears the float so .todo-meta-row below isn't pulled up alongside it. */
 .todo-textwrap{display:block}
 .todo-textwrap::after{content:"";display:table;clear:both}
-.todo-text{font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
+.todo-text{font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-due.set{display:inline-flex}
@@ -2170,13 +2175,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-subtask-check:hover{border-color:var(--accent)}
 .todo-subtask-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
 .todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--accent);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
-.todo-subtask-text{flex:1;font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere}
+.todo-subtask-text{flex:1;font-family:var(--content-font);font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere}
 .todo-subtask-text.completed{color:var(--muted);text-decoration:line-through}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-row:hover .todo-subtask-delete{opacity:1}
 .todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .todo-subtask-input-row{margin-top:3px;display:flex;align-items:center;gap:6px}
-.todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
+.todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;font-family:var(--content-font);padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
 .todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
 .todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 .todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
@@ -2455,12 +2460,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-grid one-col">
               <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="true">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button></div></div>
               <div class="settings-field">
-                <label>Editor font</label>
-                <div class="theme-segmented" id="editor-font-segmented" role="tablist" aria-label="Editor font">
+                <label>Content font</label>
+                <div class="theme-segmented" id="editor-font-segmented" role="tablist" aria-label="Content font">
                   <button type="button" class="font-seg" data-font="sans" role="tab" aria-selected="true">Sans-serif</button>
                   <button type="button" class="font-seg" data-font="mono" role="tab" aria-selected="false">Monospace</button>
                 </div>
-                <span class="settings-row-desc">Sans-serif (Inter) reads more naturally for prose-heavy notes; Monospace (Fira Code) is the original look, closer to a code editor. Tree-line connectors (│├└─) always stay monospace either way, so branch alignment is never affected by this — it's purely about the text you write.</span>
+                <span class="settings-row-desc">Sans-serif (Inter) reads more naturally for prose; Monospace (Fira Code) is the original look, closer to a code editor. Applies everywhere you actually write — the outline, To-Dos, Pad, and Note — so it's consistent across the app rather than just the main editor. Tree-line connectors (│├└─) and code blocks always stay monospace regardless, since those are structure/code, not prose.</span>
               </div>
               <div class="settings-field">
                 <label>Auto theme</label>
