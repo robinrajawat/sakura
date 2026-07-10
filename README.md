@@ -201,3 +201,7 @@ Sakura works in any modern browser. Two features are the exception:
 - The local safety copy and auto-backup both protect against accidental data loss within normal use, but neither replaces taking an occasional Export as a true external backup.
 - There is no real-time multi-device sync; this is a single-browser, local-first tool. The To-Dos list, like everything else, is local to one browser/file and isn't shared across devices.
 - AI features send node/selection text to whichever third-party provider you configure, using an API key you supply and manage yourself — review that provider's own data-handling terms if that matters for your use case. The in-app "Usage today" counter is a local approximation, not an authoritative quota reading.
+
+## Contributing
+
+After cloning, run `sh scripts/setup-git-identity.sh` once — it sets the correct commit author and enables a pre-commit guard (`.githooks/pre-commit`) that blocks any commit made under a different email. This exists because a placeholder email used in an earlier session turned out to belong to someone else's real GitHub account and got silently listed as a contributor; the guard catches that before it happens again.

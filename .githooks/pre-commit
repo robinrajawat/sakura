@@ -1,0 +1,20 @@
+#!/bin/sh
+# Guards against the exact issue that happened on 2026-07-10: a session/tool
+# using a guessed placeholder email (e.g. robin@users.noreply.github.com,
+# ajay@users.noreply.github.com) that turned out to belong to someone else's
+# real GitHub account, silently listing them as a contributor.
+#
+# Enable once per clone with:  git config core.hooksPath .githooks
+
+ALLOWED_EMAIL="67589492+robinrajawat@users.noreply.github.com"
+
+author_email=$(git var GIT_AUTHOR_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+
+if [ "$author_email" != "$ALLOWED_EMAIL" ]; then
+  echo "✖ Commit blocked: author email is '$author_email', expected '$ALLOWED_EMAIL'."
+  echo "  Fix with:"
+  echo "    git config user.name \"Robin\""
+  echo "    git config user.email \"$ALLOWED_EMAIL\""
+  exit 1
+fi
+exit 0
