@@ -18238,6 +18238,7 @@ function confirmQaInsert(){
   const list=el('qa-insert-list');
   const checked=[...(list?list.querySelectorAll('input[type="checkbox"]:checked'):[])];
   if(!checked.length){ showToast('No questions selected'); return; }
+  const snapshot=qaItems.slice();
   checked.forEach(cb=>{
     const question=cb.nextElementSibling.textContent.trim();
     const sourceNodeId=cb.dataset.nodeId?Number(cb.dataset.nodeId):null;
@@ -18248,7 +18249,11 @@ function confirmQaInsert(){
   setPadViewMode('qa');
   renderQaList();
   markDirty(); scheduleAutoSave();
-  showToast(`Added ${checked.length} question${checked.length===1?'':'s'}`);
+  showActionToast(`Added ${checked.length} question${checked.length===1?'':'s'}`,'Undo',()=>{
+    qaItems=snapshot;
+    renderQaList();
+    markDirty(); scheduleAutoSave();
+  });
   closeQaInsert();
 }
 
