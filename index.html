@@ -2074,13 +2074,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todos-clear-completed-btn{appearance:none;border:none;background:none;color:var(--hint);font:600 9.5px 'Inter',sans-serif;letter-spacing:.02em;text-transform:none;padding:2px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
 .todos-clear-completed-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .todos-empty{font-size:12px;color:var(--hint);padding:6px 12px 10px}
-/* Row: minimal padding at rest so text uses full width; hover reveals room for the
-   drag handle / rewrite / delete overlay controls via a smooth padding transition
-   instead of permanently reserving that space. */
+/* Row: minimal padding at rest so text uses full width. The drag handle needs
+   a little left padding on hover, but the action icons no longer reserve
+   row-wide padding — they're a float inside .todo-textwrap (see below) that
+   only narrows the first line. */
 .todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:7px 8px;border-radius:8px;transition:background .12s,padding .16s ease}
 .todo-row:hover{background:var(--hover)}
-.todo-row:not(.completed):hover{padding-left:20px;padding-right:74px}
-.todo-row.completed:hover{padding-right:50px}
+.todo-row:not(.completed):hover{padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--accent)}
 .todo-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
@@ -2105,10 +2105,15 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .todo-status svg{fill:currentColor}
 .todo-meta-row{display:flex;align-items:center;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-/* Header row: pairs the text with the action icons so icon space is only
-   subtracted from the first line's width, not from every wrapped line. */
-.todo-header{display:flex;align-items:flex-start;gap:4px}
-.todo-text{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
+/* Text+actions wrapper: a plain block (not flex) so .todo-actions can be a
+   CSS float. A float only narrows the lines it vertically overlaps, so the
+   icons take space from the first line only — wrapped lines below reclaim
+   the row's full width. (A flex row here would stretch the icon column
+   across the whole wrapped-text height instead of just the first line.)
+   Clears the float so .todo-meta-row below isn't pulled up alongside it. */
+.todo-textwrap{display:block}
+.todo-textwrap::after{content:"";display:table;clear:both}
+.todo-text{font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-due.set{display:inline-flex}
@@ -2219,16 +2224,21 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .link-pop-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:7px;border-top:1px solid var(--border)}
 #link-pop-save-btn{appearance:none;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 82%,var(--tb-bg) 18%);color:#fff;font:500 11px 'Inter',sans-serif;padding:4px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 #link-pop-save-btn:hover{background:color-mix(in srgb,var(--accent) 92%,var(--tb-bg) 8%)}
-/* Drag handle + rewrite + delete: absolutely positioned so they overlay on hover
-   rather than reserving flex space at rest. */
+/* Drag handle: absolutely positioned so it overlays on hover rather than
+   reserving flex space at rest (single-line element, left side). */
 .todo-drag-handle{position:absolute;left:2px;top:9px;width:14px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;transition:opacity .12s,color .12s}
 .todo-row:hover .todo-drag-handle{opacity:.7}
 .todo-drag-handle:hover{opacity:1!important;color:var(--fg)}
 .todo-row.dragging{opacity:.4}
 .todo-row.drag-over-top{box-shadow:inset 0 2px 0 0 var(--accent)}
 .todo-row.drag-over-bottom{box-shadow:inset 0 -2px 0 0 var(--accent)}
-.todo-actions{position:absolute;right:4px;top:5px;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
-.todo-row:hover .todo-actions{opacity:1;pointer-events:auto}
+/* Actions: a float (see .todo-textwrap above) so they only take space from the
+   first line of text, not every wrapped line. At rest, width:0+overflow:hidden
+   keeps their footprint at zero (matching the "no reserved space until
+   revealed" behavior); hover/fixed mode animates the float to its full width. */
+.todo-actions{float:right;margin-left:0;width:0;overflow:hidden;display:flex;gap:2px;opacity:0;pointer-events:none;transition:width .16s ease,margin-left .16s ease,opacity .12s}
+.todo-row:not(.completed):hover .todo-actions{width:74px;margin-left:4px;opacity:1;pointer-events:auto}
+.todo-row.completed:hover .todo-actions{width:50px;margin-left:4px;opacity:1;pointer-events:auto}
 .todo-rewrite,.todo-delete,.todo-subtask-ai{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-ai{color:var(--accent)}
 .todo-subtask-ai:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -2245,10 +2255,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #todos-panel.actions-fixed .todo-row{transition:background .12s}
 #todos-panel.actions-fixed .todo-row:not(.completed){padding-left:20px}
 #todos-panel.actions-fixed .todo-drag-handle{opacity:.7}
-/* Fixed mode: actions sit as a real flex item in the header row (next to the
-   first line of text) instead of an absolute overlay reserving padding across
-   the whole row, so multi-line wrapped text isn't narrowed on every line. */
-#todos-panel.actions-fixed .todo-actions{position:static;flex:0 0 auto;opacity:1;pointer-events:auto}
+#todos-panel.actions-fixed .todo-row:not(.completed) .todo-actions{width:74px;margin-left:4px;opacity:1;pointer-events:auto}
+#todos-panel.actions-fixed .todo-row.completed .todo-actions{width:50px;margin-left:4px;opacity:1;pointer-events:auto}
 #todos-panel.actions-fixed .todo-priority{display:inline-flex}
 #todos-panel.actions-fixed .todo-status{display:inline-flex}
 #todos-panel.actions-fixed .todo-due{display:inline-flex}
@@ -23249,12 +23257,12 @@ function _addTagPopoverFromInput(){
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
-      +`<div class="todo-header">`
-      +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
+      +`<div class="todo-textwrap">`
       + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
           ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
           : `<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
         ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
+      +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
       +`<div class="todo-meta-row">`
       + (showPriority ? `<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
