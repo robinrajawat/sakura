@@ -1250,6 +1250,11 @@ body:not(.pad-qa-mode) .qa-only-btn{display:none}
 #qa-progress.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #qa-progress:disabled{cursor:default;opacity:.75}
 body.pad-qa-mode #qa-progress{display:flex}
+#qa-unlinked{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--fc-orange);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+#qa-unlinked:hover:not(:disabled){background:color-mix(in srgb,var(--fc-orange) 14%,transparent)}
+#qa-unlinked.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#qa-unlinked:disabled{cursor:default;opacity:.75}
+body.pad-qa-mode #qa-unlinked{display:flex}
 #ptb-flip{position:absolute;bottom:14px;right:14px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #ptb-flip:hover{opacity:1;color:var(--fg);background:var(--hover)}
 #ptb-flip.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
@@ -1937,11 +1942,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #presenter-notes-body #pad-editor{flex:1}
 #presenter-notes-body #pad-toolbar{flex:0 0 auto}
 #presenter-notes-body #pad-panel-close-toolbar{display:none}
-/* Presenter mode keeps the Q&A toolbar down to the essentials — Add row, the answered
-   count, and Sort — since anything more is clutter while actually presenting. Scoped by ID
+/* Presenter mode keeps the Q&A toolbar down to the essentials — Add row and the answered
+   count — since anything more is clutter while actually presenting. Scoped by ID
    so it wins regardless of the .qa-only-btn / .qa-bulk-btn rules' own specificity or order. */
 #presenter-notes-body #qtb-scan,
 #presenter-notes-body #qtb-search,
+#presenter-notes-body #qa-unlinked,
 #presenter-notes-body #qtb-sep-ai,
 #presenter-notes-body #qtb-ai-answer-all,
 #presenter-notes-body #qtb-qa-summary,
@@ -3800,7 +3806,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4349,6 +4355,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <span class="note-tb-sep qa-only-btn"></span>
     <button class="note-tb-btn qa-only-btn" id="qtb-search" data-tip="Filter Q&amp;A rows" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <button type="button" id="qa-progress" class="qa-only-btn" data-tip="Show unanswered only" aria-pressed="false"></button>
+    <button type="button" id="qa-unlinked" class="qa-only-btn" data-tip="Show unlinked rows only" aria-pressed="false" style="display:none"></button>
     <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai"></span>
     <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
@@ -5204,7 +5211,7 @@ const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padOpen=false; let padWidth=320; let padHeaderEnabled=false; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','codeblock','tags','decision-log','ai-rewrite']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let noteCompactDefault=false; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -18329,6 +18336,11 @@ function setQaUnansweredOnly(on){
   const chip=el('qa-progress'); if(chip){ chip.classList.toggle('active',qaUnansweredOnly); chip.dataset.tip=qaUnansweredOnly?'Show all rows':'Show unanswered only'; chip.setAttribute('aria-pressed',String(qaUnansweredOnly)); }
   renderQaList();
 }
+function setQaUnlinkedOnly(on){
+  qaUnlinkedOnly=!!on;
+  const chip=el('qa-unlinked'); if(chip){ chip.classList.toggle('active',qaUnlinkedOnly); chip.dataset.tip=qaUnlinkedOnly?'Show all rows':'Show unlinked rows only'; chip.setAttribute('aria-pressed',String(qaUnlinkedOnly)); }
+  renderQaList();
+}
 function setQaExportEnabled(on,persist=true){
   qaExportEnabled=!!on;
   const toggle=el('qa-export-toggle'); if(toggle){toggle.classList.toggle('on',qaExportEnabled); toggle.setAttribute('aria-checked',String(qaExportEnabled))}
@@ -18373,11 +18385,15 @@ function qaMatchesSearch(item,q){
   return ((item.question||'')+' '+(item.answer||'')).toLowerCase().includes(q);
 }
 function qaIsUnanswered(item){ return !(item.answer||'').trim(); }
+// Only counts *broken* links — a row that had a source node and that node was since deleted.
+// Rows added manually (never linked in the first place) don't count: they were never meant
+// to point anywhere, so flagging them as "unlinked" would just be noise, not a real problem.
+function qaIsUnlinked(item){ return item.sourceNodeId!=null && !nodes.some(n=>n.id===item.sourceNodeId); }
 // Shared by rendering, shift-click range selection, and plain-text export so all three agree
-// on which rows are in play — underlying manual order, filtered by search text and the
-// unanswered-only toggle.
+// on which rows are in play — underlying manual order, filtered by search text and whichever
+// of the two view filters (unanswered-only, unlinked-only) are active. Both can be on at once.
 function qaVisibleItems(){
-  return qaUnansweredOnly ? qaItems.filter(qaIsUnanswered) : qaItems;
+  return qaItems.filter(it=>(!qaUnansweredOnly||qaIsUnanswered(it))&&(!qaUnlinkedOnly||qaIsUnlinked(it)));
 }
 function qaDisplayOrderIds(){
   const q=qaSearchQuery.trim().toLowerCase();
@@ -18665,13 +18681,21 @@ function resetQaTransientState(){
   qaSelectedIds=new Set(); qaSelectionAnchorId=null;
   if(qaSearchOpen){ toggleQaSearch(false); } else { qaSearchQuery=''; }
   if(qaUnansweredOnly){ qaUnansweredOnly=false; const chip=el('qa-progress'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show unanswered only'; chip.setAttribute('aria-pressed','false'); } }
+  if(qaUnlinkedOnly){ qaUnlinkedOnly=false; const chip=el('qa-unlinked'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show unlinked rows only'; chip.setAttribute('aria-pressed','false'); } }
 }
 function updateQaProgress(){
-  const progress=el('qa-progress'); if(!progress)return;
-  const answered=qaItems.filter(it=>(it.answer||'').trim()).length;
-  progress.textContent=qaItems.length?`${answered}/${qaItems.length} answered`:'';
-  const unanswered=qaItems.length-answered;
-  progress.disabled=!qaUnansweredOnly&&(qaItems.length===0||unanswered===0);
+  const progress=el('qa-progress'); if(progress){
+    const answered=qaItems.filter(it=>(it.answer||'').trim()).length;
+    progress.textContent=qaItems.length?`${answered}/${qaItems.length} answered`:'';
+    const unanswered=qaItems.length-answered;
+    progress.disabled=!qaUnansweredOnly&&(qaItems.length===0||unanswered===0);
+  }
+  const linkChip=el('qa-unlinked'); if(linkChip){
+    const unlinkedCount=qaItems.filter(qaIsUnlinked).length;
+    linkChip.textContent=(unlinkedCount||qaUnlinkedOnly)?`${unlinkedCount} unlinked`:'';
+    linkChip.style.display=(unlinkedCount||qaUnlinkedOnly)?'':'none';
+    linkChip.disabled=!qaUnlinkedOnly&&unlinkedCount===0;
+  }
 }
 function jumpToQaSourceNode(nodeId){
   if(!nodes.some(n=>n.id===nodeId)){ showToast('That node no longer exists in this document'); return; }
@@ -18712,7 +18736,11 @@ function renderQaList(){
   if(emptyEl){
     emptyEl.textContent=(qaItems.length===0)
       ? 'No Q&A rows yet. Scan the outline for questions ending in "?", or add a blank row.'
-      : (q ? 'No Q&A rows match your search.' : 'All questions are answered.');
+      : q ? 'No Q&A rows match your search.'
+      : (qaUnansweredOnly&&qaUnlinkedOnly) ? 'No unanswered, unlinked rows.'
+      : qaUnansweredOnly ? 'All questions are answered.'
+      : qaUnlinkedOnly ? 'No unlinked rows — nothing to clean up.'
+      : 'No Q&A rows yet. Scan the outline for questions ending in "?", or add a blank row.';
   }
   body.classList.toggle('qa-is-empty', displayItems.length===0);
   displayItems.forEach(item=>{
@@ -18721,7 +18749,7 @@ function renderQaList(){
     const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='qa-row-select'; selectCb.checked=qaSelectedIds.has(item.id); selectCb.dataset.tip='Select row (Shift-click for range)';
     selectCb.addEventListener('click',e=>{ e.stopPropagation(); toggleQaSelect(item.id,e.shiftKey); });
 
-    const canDrag=!qaUnansweredOnly;
+    const canDrag=!qaUnansweredOnly&&!qaUnlinkedOnly;
     const handle=document.createElement('button'); handle.className='qa-drag-handle'; handle.type='button'; handle.tabIndex=-1; handle.setAttribute('aria-hidden','true'); handle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
     handle.style.visibility=canDrag?'visible':'hidden';
     row.draggable=canDrag;
@@ -18809,6 +18837,7 @@ el('qa-search-input')?.addEventListener('input',e=>{
 el('qa-search-input')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); toggleQaSearch(false); } });
 el('qa-search-clear')?.addEventListener('click',()=>{ const inp=el('qa-search-input'); if(inp)inp.value=''; qaSearchQuery=''; el('qa-search-clear')?.classList.remove('visible'); renderQaList(); el('qa-search-input')?.focus(); });
 el('qa-progress')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-progress')?.disabled)return; setQaUnansweredOnly(!qaUnansweredOnly); });
+el('qa-unlinked')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-unlinked')?.disabled)return; setQaUnlinkedOnly(!qaUnlinkedOnly); });
 el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exportQaText(); });
 el('qtb-ai-answer-all')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDraftUnansweredAnswers(); });
 el('qtb-qa-summary')?.addEventListener('mousedown', e=>{ e.preventDefault(); generateQaSummary(); });
