@@ -2906,7 +2906,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                   <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
                 <div class="settings-collapsible-body" id="decisionlog-fields-body">
-                  <span class="settings-row-desc">Pick which prompts get inserted under the header each time — turn off the ones you never fill in (Status defaults to "Proposed" and is the most commonly skipped). The header itself (timestamp + author) is always added</span>
+                  <span class="settings-row-desc">Pick which fields show in the Pad's decision card — turn off the ones you never fill in. Status is always shown separately as the cycling pill at the top, and the author/timestamp footer is always shown too</span>
                   <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="dlfsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="dlfsec-none-btn">Hide all</button></div>
                   <div class="settings-grid" id="decisionlog-fields-grid" style="margin-top:6px">
                   <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-context" checked /> Context</label>
@@ -2914,7 +2914,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                   <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-rationale" checked /> Rationale</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-alternatives" checked /> Alternatives</label>
                   <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-impact" checked /> Impact</label>
-                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-status" checked /> Status</label>
                 </div>
                 </div>
               </div>
@@ -4028,13 +4027,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
           <div class="help-section" data-cat="panels" id="help-section-decision-log">
 <h4>Decision Log</h4>
 <ul>
-<li>Inserts a structured record under the selected node: a header line (timestamp + optional author) with child prompts for Context, Decision, Rationale, Alternatives, Impact, and Status</li>
-<li>Insert via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), or right-click a node → <span class="help-kbd">More</span> → Decision log</li>
-<li>Settings → Decision Log → "Ask who decided" prompts for a name each time (on by default); the timestamp is always added regardless. "Color field labels" colors the Context/Decision/Rationale/etc. labels — both in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them, on by default. Status is separate and always shows as a colored badge in the Preview card header either way, since that's a status indicator rather than a field label</li>
-<li>Settings → Decision Log → "Fields to include" lets you turn off any of the six prompts you don't use — e.g. skip Alternatives, Impact, and Status if you only ever fill in Context, Decision, and Rationale. The header itself always gets added; this only controls which child prompts come with it. Changes apply to logs you insert afterward, not ones already in a document</li>
-<li>Decision Log entries live in the Pad now, attached directly to whichever node is selected as structured data, rather than as a header-plus-field-prompts child nodes in the outline: a real card (proper fields with light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — a status pill you click to cycle Proposed → Approved → Rejected, an auto-updating "last touched" timestamp shown as "— Author · date", a small AI-rewrite icon inside each field that appears on hover) reachable from its own tab in the Pad's header, right alongside Notes and Q&amp;A. A small accent-colored checkmark icon appears next to a node that has one, same spot as the note/code dots — click it to jump straight to that node's card, and the same dot echoes next to the Decision Log tab itself when the currently selected node has one. The toolbar/right-click "Decision Log" action opens this same card. "Ask who decided" and the timestamp behave the same as before; "Fields to include" and "Color field labels"/"Bold field labels" still apply to how any decision logs already in your outline from before this change are colored and exported, since those keep working exactly as they always did — this is only about where new ones go</li>
+<li>A structured decision record attached to the selected node — Context, Decision, Rationale, Alternatives, and Impact fields, a Status pill (Proposed/Approved/Rejected) you click to cycle through, and an author/timestamp footer. Lives in its own tab in the Pad, right alongside Notepad and Q&amp;A — not inserted as outline nodes</li>
+<li>Add one via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), right-click a node → <span class="help-kbd">More</span> → Decision log, or open the Decision Log tab while that node is selected and click Add. A small accent-colored dot appears next to a node that has one — click it to jump straight to its card; the same dot echoes on the Decision Log tab when the selected node has one</li>
+<li>Each field supports light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — plus a small AI-rewrite icon that appears on hover</li>
+<li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the Pad's card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
+<li>Turning Decision Log off (Settings → Features → Pad Panel) hides its tab, toolbar button, right-click action, node dots, and Excel export — existing decision logs already in the document aren't deleted, just inaccessible until it's turned back on. Clicking a node's decision-log dot while the feature is off shows a reminder of where to re-enable it instead of silently doing nothing</li>
 <li>A small checkmark icon appears next to the "+N hidden" badge on a folded node when something inside its collapsed subtree contains a decision log, so you know there's one there before expanding</li>
-<li>Export menu → Decision Log → Excel (.xlsx) pulls every decision log across the current document into one spreadsheet (timestamp, author, parent node, and whichever fields were filled in) — fields you've turned off, or left blank, just export as empty cells</li>
+<li>Export menu → Decision Log → Excel (.xlsx) pulls every decision log across the current document into one spreadsheet (timestamp, author, node text, and whichever fields were filled in) — fields left blank export as empty cells</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-pad">
@@ -5370,7 +5369,6 @@ const DL_FIELDS=[
   {key:'rationale', text:'Rationale: Why was this option chosen?'},
   {key:'alternatives', text:'Alternatives: What other options were considered?'},
   {key:'impact', text:'Impact: What systems or people are affected?'},
-  {key:'status', text:'Status: Proposed'},
 ];
 const PAD_TB_BTN_ID={bold:'ptb-bold',italic:'ptb-italic',underline:'ptb-underline',strike:'ptb-strike',ul:'ptb-ul',ol:'ptb-ol',link:'ptb-link',table:'ptb-table',image:'ptb-image',attach:'ptb-attach',timestamp:'ptb-timestamp','ai-rewrite':'ptb-ai-rewrite'};
 const NOTE_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','timestamp','ai-rewrite','ai-summarise'];
@@ -18501,6 +18499,7 @@ function renderDecisionPad(){
   const label=el('decision-node-label'); if(label)label.textContent=getNodePlainText(node).trim().slice(0,80)||'(untitled node)';
   ['context','decision','rationale','alternatives','impact'].forEach(key=>{
     const field=el('decision-'+key); if(field)field.innerHTML=sakuraSanitizeRichHtml(dl[key]||'');
+    const row=el('decision-field-'+key); if(row)row.style.display=decisionLogHiddenFields.includes(key)?'none':'';
   });
   el('decision-author').value=dl.author||'';
   const sep=el('decision-meta-sep'); if(sep)sep.style.display=dl.author?'':'none';
@@ -18526,7 +18525,8 @@ async function addDecisionLogToNode(){
   scheduleAutoSave();
   render();
   renderDecisionPad();
-  el('decision-context')?.focus();
+  const firstVisibleKey=DL_FIELDS.map(f=>f.key).find(k=>!decisionLogHiddenFields.includes(k));
+  el(firstVisibleKey?'decision-'+firstVisibleKey:'decision-context')?.focus();
 }
 async function deleteDecisionLogFromNode(){
   const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
@@ -21472,8 +21472,8 @@ function setQaAiSummaryEnabled(on, persist=true){
 el('qa-ai-summary-toggle')?.addEventListener('click',()=>setQaAiSummaryEnabled(!qaAiSummaryEnabled));
 el('qa-ai-summary-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaAiSummaryEnabled(!qaAiSummaryEnabled);}});
 
-// Which Decision Log fields get inserted under the header each time — mirrors the Pad/Note
-// toolbar button customization above, but controls insertDecisionLog's output, not button display.
+// Which Decision Log fields are shown/editable in the Pad — mirrors the Pad/Note toolbar
+// button customization above, but controls field visibility in the decision card itself.
 function applyDecisionLogFieldSettings(){
   DL_FIELDS.forEach(f=>{ const cb=el('dlfsec-'+f.key); if(cb) cb.checked=!decisionLogHiddenFields.includes(f.key); });
 }
@@ -21481,6 +21481,7 @@ function setDecisionLogFieldHidden(key, hidden, persist=true){
   const set=new Set(decisionLogHiddenFields);
   if(hidden) set.add(key); else set.delete(key);
   decisionLogHiddenFields=DL_FIELDS.map(f=>f.key).filter(k=>set.has(k));
+  if(padViewMode==='decision')renderDecisionPad();
   if(persist){ savePrefs(); scheduleAutoSave(); }
 }
 DL_FIELDS.forEach(f=>{ el('dlfsec-'+f.key)?.addEventListener('change', e=>setDecisionLogFieldHidden(f.key, !e.target.checked)) });
