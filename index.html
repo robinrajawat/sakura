@@ -7259,12 +7259,50 @@ function applyFeatureVisibility(){
   // category/search filters afterward makes them the final authority again.
   filterSettingsPanel(el('settings-search')?.value||'');
   filterHelpPanel(el('help-search')?.value||'');
+  // filterSettingsPanel resets row display for any section it doesn't treat as fully
+  // feature-hidden (dataset.featureHidden!=='1') — which includes the four self-toggle
+  // sections above, since their section itself must stay visible. Re-assert the sub-option
+  // collapse as the true final word, but only when there's no active search — a search query
+  // should still be able to surface a matching sub-option inside a currently-off section.
+  if(!(el('settings-search')?.value||'').trim()){
+    Object.keys(FEATURE_SELF_TOGGLE_IDS).forEach(key=>{
+      const flag=FEATURE_FLAGS[key]; const on=flag?flag.get():true;
+      FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{const sec=el(id); if(sec)hideSectionExceptToggle(sec,el(FEATURE_SELF_TOGGLE_IDS[key]),on);});
+    });
+  }
   try{const _np=el('note-panel'); if(backlinksEnabled&&_np&&_np.classList.contains('open')&&notePanelNodeId!==null){renderBacklinkPanel(notePanelNodeId)}}catch(e){}
+}
+// Decision Log, Focus, Hover Toolbar, and Node Quick Assist each put their own enable switch
+// inside the very settings section that gets hidden when the feature is off — unlike Note/
+// Code/AI/Pad/Quick Assist/To-Dos, whose switches live on the separate Features overview page.
+// Hiding the whole section for these four would hide the only way back to turning it on again.
+const FEATURE_SELF_TOGGLE_IDS={decisionlog:'feat-decisionlog-toggle',focus:'feat-focus-toggle',hovertoolbar:'feat-hovertoolbar-toggle',nodeqa:'feat-nodeqa-toggle'};
+function hideSectionExceptToggle(sec,toggleBtn,on){
+  const toggleRow=toggleBtn?toggleBtn.closest('.settings-list-row'):null;
+  if(!toggleRow){ sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1'; return; }
+  const toggleParent=toggleRow.parentElement;
+  Array.from(sec.children).forEach(child=>{
+    if(child.classList.contains('settings-section-title'))return;
+    if(child===toggleRow)return;
+    if(child===toggleParent||child.contains(toggleRow)){
+      Array.from(child.children).forEach(sib=>{
+        if(sib!==toggleRow&&!sib.contains(toggleRow))sib.style.display=on?'':'none';
+      });
+      return;
+    }
+    child.style.display=on?'':'none';
+  });
+  sec.style.display=''; sec.dataset.featureHidden='';
 }
 function filterSettingsByFeatures(){
   Object.keys(FEATURE_SETTINGS_SECTIONS).forEach(key=>{
     const flag=FEATURE_FLAGS[key]; const on=flag?flag.get():true;
-    FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{const sec=el(id); if(sec){sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1';}});
+    const selfToggleId=FEATURE_SELF_TOGGLE_IDS[key];
+    FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{
+      const sec=el(id); if(!sec)return;
+      if(selfToggleId){ hideSectionExceptToggle(sec,el(selfToggleId),on); }
+      else { sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1'; }
+    });
   });
 }
 function filterHelpByFeatures(){
