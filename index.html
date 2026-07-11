@@ -257,7 +257,6 @@ body{padding-top:env(titlebar-area-height,40px)}
 .select-wrap .select{padding-right:24px}
 .select-wrap .select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}.settings-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--border);border-radius:999px;margin:0;cursor:pointer;--fill-percent:0%}.settings-slider::-webkit-slider-runnable-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;margin-top:-6px;cursor:pointer}.settings-slider::-moz-range-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}.settings-slider-value{font:600 11px 'Inter',sans-serif;color:var(--muted);min-width:36px;text-align:right;flex:0 0 auto}.settings-switch-text{font:500 12px 'Inter',sans-serif;color:var(--fg)}
 .settings-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--bg) 88%,transparent)}
-.settings-row-disabled{opacity:.45;pointer-events:none}
 .settings-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;min-height:36px}
 .pvhf-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;min-height:32px}
 .pvhf-row + .pvhf-row{border-top:1px solid var(--border)}
@@ -2128,10 +2127,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-doc .pv-dlog-field-value li::marker{color:var(--muted);font-size:12px}
 #preview-doc .pv-dlog-field-value p,#preview-doc .pv-dlog-field-value div{margin:0 0 6px}
 #preview-doc .pv-dlog-field-value p:last-child,#preview-doc .pv-dlog-field-value div:last-child{margin-bottom:0}
-#preview-doc .pv-dlog-sublist{margin:6px 0 0;padding-left:19px;display:flex;flex-direction:column;gap:5px}
-#preview-doc .pv-dlog-sublist li{font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;word-break:break-word}
-#preview-doc .pv-dlog-sublist li::marker{color:var(--muted);font-size:12px}
-#preview-doc .pv-dlog-sublist .pv-dlog-sublist{margin-top:5px}
 #preview-doc .pv-dlog-meta{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:12px;padding-top:9px;border-top:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .pv-hidden-chip{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:6px;opacity:.6;cursor:pointer;transition:opacity .12s,background .12s;vertical-align:middle}
 .pv-hidden-chip:hover{opacity:1;background:var(--hover)}
@@ -7387,7 +7382,7 @@ function initFeatureActivationPanel(){
 }
 function setDecisionLogAskAuthor(on,persist=true){decisionLogAskAuthor=!!on; const toggle=el('decisionlog-ask-author-toggle'); if(toggle){toggle.classList.toggle('on',decisionLogAskAuthor); toggle.setAttribute('aria-checked',String(decisionLogAskAuthor))} if(persist){savePrefs(); scheduleAutoSave()}}
 function setDecisionLogColors(on,persist=true){decisionLogColors=!!on; const toggle=el('decisionlog-colors-toggle'); if(toggle){toggle.classList.toggle('on',decisionLogColors); toggle.setAttribute('aria-checked',String(decisionLogColors))} if(persist){savePrefs(); scheduleAutoSave(); render(); if(previewActive)renderPreviewBody();}}
-function setDecisionLogSplitToSlide(on,persist=true){decisionLogSplitToSlide=!!on; const toggle=el('decisionlog-split-toggle'); if(toggle){toggle.classList.toggle('on',decisionLogSplitToSlide); toggle.setAttribute('aria-checked',String(decisionLogSplitToSlide))} const row=el('decisionlog-split-threshold-row'); if(row)row.classList.toggle('settings-row-disabled',!decisionLogSplitToSlide); if(persist){savePrefs(); scheduleAutoSave(); if(previewActive)renderPreviewBody();}}
+function setDecisionLogSplitToSlide(on,persist=true){decisionLogSplitToSlide=!!on; const toggle=el('decisionlog-split-toggle'); if(toggle){toggle.classList.toggle('on',decisionLogSplitToSlide); toggle.setAttribute('aria-checked',String(decisionLogSplitToSlide))} reapplyConditionalSettingsFieldVisibility(); if(persist){savePrefs(); scheduleAutoSave(); if(previewActive)renderPreviewBody();}}
 function setDecisionLogSplitThreshold(val,persist=true){decisionLogSplitThreshold=Math.max(50,Math.min(2000,Math.round(Number(val)||200))); const input=el('decisionlog-split-threshold-input'); if(input)input.value=String(decisionLogSplitThreshold); if(persist){savePrefs(); scheduleAutoSave(); if(previewActive)renderPreviewBody();}}
 function setDecisionLogLabelBold(on,persist=true){decisionLogLabelBold=!!on; const toggle=el('decisionlog-labels-bold-toggle'); if(toggle){toggle.classList.toggle('on',decisionLogLabelBold); toggle.setAttribute('aria-checked',String(decisionLogLabelBold))} if(persist){savePrefs(); scheduleAutoSave(); render(); if(previewActive)renderPreviewBody();}}
 function setDecisionLogInPad(on,persist=true){
@@ -7493,7 +7488,7 @@ document.getElementById('qa-ai-settings-jump-btn')?.addEventListener('click',()=
   document.querySelector('.settings-rail-btn[data-cat="ai"]')?.click();
   requestAnimationFrame(()=>{ document.getElementById('settings-section-ai-qa')?.scrollIntoView({behavior:'smooth',block:'start'}); });
 });
-const CONDITIONAL_SETTINGS_FIELDS={'theme-schedule-hours-field':()=>themeMode==='schedule','qa-search-categories-field':()=>qaSearchResultsEnabled,'qa-search-cap-row':()=>qaSearchResultsEnabled,'editor-reading-width-field':()=>editorReadingWidthEnabled};
+const CONDITIONAL_SETTINGS_FIELDS={'theme-schedule-hours-field':()=>themeMode==='schedule','qa-search-categories-field':()=>qaSearchResultsEnabled,'qa-search-cap-row':()=>qaSearchResultsEnabled,'editor-reading-width-field':()=>editorReadingWidthEnabled,'decisionlog-split-threshold-row':()=>decisionLogSplitToSlide};
 function reapplyConditionalSettingsFieldVisibility(){Object.entries(CONDITIONAL_SETTINGS_FIELDS).forEach(([id,shouldShow])=>{const fieldEl=el(id); if(fieldEl)fieldEl.style.display=shouldShow()?'':'none'})}
 applySettingsCategory('general');
 applyHelpCategory('overview');
@@ -11403,13 +11398,6 @@ function docxCodeBlockPara(code,leftTwips){
   const runs=docxRun('CODE',{bold:true,size:14,color:'938F84'})+'<w:r><w:br/></w:r>'+docxLinesToRuns(lines,{code:true});
   return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/><w:ind w:left="${leftTwips+120}"/></w:pPr>${runs}</w:p>`;
 }
-// Local re-implementation of getSubtreeEnd that works on an arbitrary {depth} array rather than
-// the global `nodes` — buildDocxPackage operates on a scoped/filtered copy, not the live tree.
-function docxSubtreeEnd(list,idx){ const depth=list[idx].depth; let end=idx+1; while(end<list.length&&list[end].depth>depth)end++; return end; }
-function docxSplitDlLabel(text){
-  const m=String(text||'').match(/^(Context|Decision|Rationale|Alternatives|Impact|Status):\s*([\s\S]*)$/);
-  return m?{label:m[1],value:m[2]}:{label:'',value:text};
-}
 // Renders a Decision Log node group as a bordered/shaded block (a left accent bar plus top/bottom
 // rule across the whole run of paragraphs, colored by Status) — the closest static-document
 // equivalent of the "card" treatment Preview and the editor both use, so the export doesn't just
@@ -11791,33 +11779,10 @@ function pptxGatherTheme(){
 // but doesn't strip these, so every piece of text handed to it (titles, bullets, card text)
 // goes through this first.
 function pptxStripIllegalXmlChars(s){ return String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,''); }
-// Field label colors match PV_DL_LABEL_COLORS (the CSS var each field label is colored with in
+// Field label colors match PV_DL_FIELD_META (the CSS var each field label is colored with in
 // Preview/Presenter) but resolved to the current theme's actual hex via pptxGatherTheme, same
 // idea as the rest of the export tracking the live theme instead of a fixed palette.
 const PPTX_DL_LABEL_COLOR_KEY={'Context':'fcBlue','Decision':'fcRed','Rationale':'fcPurple','Alternatives':'fcGray','Impact':'fcOrange','Status':'fcGreen'};
-const PPTX_DL_HEADER_RE=/^Decision Log(?:\s·|$)/;
-// A field's real content sometimes isn't its own inline "Label: value" text at all — Rationale/
-// Alternatives/Impact in particular are just as often answered as a numbered or bulleted list of
-// child nodes under the field (see previewRenderDlList), with the field's own text left as the
-// unanswered placeholder question. Flattens that nested tree (built via the app's own
-// previewBuildNodeTree, so ordered/unordered detection and multi-level nesting match Presenter
-// exactly) into {text, indent} rows for layout, stripping the leading "1. "/"2. " Presenter
-// itself strips before display for ordered lists.
-function pptxBuildDlList(startIdx, endIdx){
-  const out=[];
-  function walk(items, depth){
-    if(!items||!items.length) return;
-    const isOrdered=/^\d+[.)]\s+/.test(String(items[0].node.text||'').trim());
-    items.forEach((item,i)=>{
-      let text=String(item.node.text||'').trim();
-      if(isOrdered) text=text.replace(/^\d+[.)]\s+/,'');
-      out.push({text, indent:depth, ordered:isOrdered, num:i+1});
-      walk(item.children, depth+1);
-    });
-  }
-  walk(previewBuildNodeTree(startIdx,endIdx), 0);
-  return out;
-}
 // Shared by both places a decision log can appear: as a slide-break node's own text (the whole
 // slide IS the log — the natural structure when "one slide per decision" is the intent), or as
 // a child of a bigger slide (see the items loop below). Mirrors previewRenderDecisionCard
@@ -12017,12 +11982,13 @@ async function buildPptxPresentation(slidesData){
     return fontSizePt*(lineSpacingMultiple||1.25)/72;
   }
   // Breaks one decision-log field down into individually-measured rows — a label row, an
-  // (optional) inline value row, then one row per nested sub-list item (previewRenderDlList
-  // content: Rationale/Alternatives/Impact are just as often answered as a numbered/bulleted
-  // child list as an inline value, and previously that list was dropped from the export
-  // entirely since only the field's own inline text was read). Each row is measured and
-  // positioned independently, rather than lumped into one flat text block, so a field with a
-  // long value AND a 3-item sub-list gets exactly the room the sum of its parts needs.
+  // (optional) inline value row, then one row per list item found by pptxParseRichField's
+  // walk of the field's actual <ol>/<li> markup: Rationale/Alternatives/Impact are just as
+  // often answered as a numbered/bulleted list as an inline value, and previously that list
+  // was dropped from the export entirely since only the field's own inline text was read).
+  // Each row is measured and positioned independently, rather than lumped into one flat text
+  // block, so a field with a long value AND a 3-item sub-list gets exactly the room the sum
+  // of its parts needs.
   function pptxBuildFieldRows(f, scale, innerW){
     const rows=[];
     const labelFS=9*scale, valueFS=12*scale, listFS=11.5*scale;
@@ -19771,23 +19737,6 @@ function previewNodeInnerHtml(node){
   const inner=previewParseStyledText(node.text||'')||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
 }
-const PV_DL_LABEL_COLORS={'Context':'--fc-blue','Decision':'--fc-red','Rationale':'--fc-purple','Alternatives':'--fc-gray','Impact':'--fc-orange','Status':'--fc-green'};
-function previewParseDlHeader(text){
-  const m=String(text||'').trim().match(/^Decision Log(?:\s·\s([^·]+?))?(?:\s·\sby\s(.+))?$/);
-  return m?{timestamp:(m[1]||'').trim(),author:(m[2]||'').trim()}:{timestamp:'',author:''};
-}
-function previewIsToday(timestamp){
-  if(!timestamp)return false;
-  const now=new Date(); const pad=n=>String(n).padStart(2,'0');
-  const longFmt=now.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});
-  const isoFmt=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const euFmt=`${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
-  return timestamp.includes(longFmt)||timestamp.includes(isoFmt)||timestamp.includes(euFmt);
-}
-function previewSplitDlLabel(text){
-  const m=String(text||'').match(/^(Context|Decision|Rationale|Alternatives|Impact|Status):\s*([\s\S]*)$/);
-  return m?{label:m[1],value:m[2],colorVar:decisionLogColors?PV_DL_LABEL_COLORS[m[1]]:null}:{label:'',value:text,colorVar:null};
-}
 function previewStatusBadgeColor(value){
   const v=String(value||'').toLowerCase();
   if(/approved|accepted|implemented|resolved|done|confirmed/.test(v))return 'green';
@@ -19806,25 +19755,6 @@ function previewBuildNodeTree(startIdx,endIdx){
     stack.push({depth:n.depth,children:item.children});
   }
   return root;
-}
-function previewRenderDlList(items){
-  if(!items||!items.length)return null;
-  const isOrdered=/^\d+[.)]\s+/.test(String(items[0].node.text||'').trim());
-  const list=document.createElement(isOrdered?'ol':'ul'); list.className='pv-dlog-sublist';
-  items.forEach(item=>{
-    const li=document.createElement('li');
-    let text=String(item.node.text||'');
-    if(isOrdered)text=text.replace(/^\d+[.)]\s+/,'');
-    const span=document.createElement('span'); span.className=previewStyleClasses(item.node);
-    if(item.node.styles.color)span.style.color='var(--fc-'+item.node.styles.color+')';
-    const inner=previewParseStyledText(text)||'';
-    span.innerHTML=item.node.styles.highlight?`<span class="hl-mark hl-mark-${esc(item.node.styles.highlight)}">${inner}</span>`:inner;
-    li.appendChild(span);
-    const sub=previewRenderDlList(item.children);
-    if(sub)li.appendChild(sub);
-    list.appendChild(li);
-  });
-  return list;
 }
 const PV_DL_FIELD_META=[
   {key:'context',label:'Context',colorVar:'--fc-blue'},
