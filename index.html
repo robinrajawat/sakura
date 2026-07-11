@@ -1276,6 +1276,7 @@ body.pad-qa-mode #qa-followup-count{display:flex}
 .qa-answered-by{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;outline:none;transition:color .12s,border-color .12s}
 .qa-answered-by::placeholder{color:var(--hint);opacity:.7}
 .qa-answered-by:hover,.qa-answered-by:focus{color:var(--fg);border-bottom-color:var(--border)}
+.qa-answered-by-measure{position:fixed;top:-9999px;left:-9999px;white-space:pre;width:auto;display:inline-block;visibility:hidden;pointer-events:none}
 .qa-answered-at{font:400 10.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;user-select:none}
 #ptb-flip{position:absolute;bottom:14px;right:14px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #ptb-flip:hover{opacity:1;color:var(--fg);background:var(--hover)}
@@ -18441,20 +18442,25 @@ function renderQaAnswerersDatalist(){
 }
 // Refreshes a row's answered-by/answered-at display in place — used after AI drafts or
 // rewrites an answer, where there's no full renderQaList() to pick the new values up from.
-let _qaMeasureCtx=null;
-function qaMeasureTextWidth(text,font){
-  if(!_qaMeasureCtx)_qaMeasureCtx=document.createElement('canvas').getContext('2d');
-  _qaMeasureCtx.font=font;
-  return _qaMeasureCtx.measureText(text).width;
+// A permanently-attached (from first use) hidden span, styled with the same class as the
+// real input, so width is measured through the identical DOM text-rendering pipeline the
+// input itself uses — canvas measureText() was tried first but proved unreliable (likely
+// kerning/shaping differences between canvas text and real DOM input text), undersizing the
+// field and clipping content.
+let _qaMeasureSpan=null;
+function qaMeasureTextWidth(text){
+  if(!_qaMeasureSpan){
+    _qaMeasureSpan=document.createElement('span');
+    _qaMeasureSpan.className='qa-answered-by qa-answered-by-measure';
+    document.body.appendChild(_qaMeasureSpan);
+  }
+  _qaMeasureSpan.textContent=text;
+  return _qaMeasureSpan.getBoundingClientRect().width;
 }
-// Matches .qa-answered-by's CSS font declaration exactly — hardcoded rather than read via
-// getComputedStyle(), since that call is made right after the input is created but before
-// it's attached to the document, and detached elements don't reliably resolve computed style.
-const QA_ANSWERED_BY_FONT="400 10.5px 'Inter',sans-serif";
 function qaSizeAnsweredInput(input){
   const text=input.value||input.placeholder||'';
-  const w=qaMeasureTextWidth(text,QA_ANSWERED_BY_FONT);
-  input.style.width=Math.ceil(w)+4+'px';
+  const w=qaMeasureTextWidth(text);
+  input.style.width=Math.ceil(w)+8+'px';
 }
 function updateQaAnsweredMeta(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
