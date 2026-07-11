@@ -184,7 +184,7 @@ input[type=number]{-moz-appearance:textfield}
 .settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,#doc-tab-strip,.cs-rail,#shortcuts-rail,
 #sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
 .qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
-.code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#demo-chapters-menu,
+.code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
 #demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
@@ -1645,6 +1645,10 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .at-suggest-item:hover,.at-suggest-item.at-active{background:var(--hover);color:var(--accent)}
 .at-suggest-item mark{background:none;color:var(--accent);font-weight:600}
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
+#answerer-suggest{position:fixed;z-index:700;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:150px;max-width:260px;max-height:200px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
+#answerer-suggest.open{display:block}
+.answerer-suggest-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.answerer-suggest-item:hover,.answerer-suggest-item.as-active{background:var(--hover);color:var(--accent)}
 #node-qa-suggest{position:fixed;z-index:700;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.08);padding:4px;min-width:190px;max-width:260px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 #node-qa-suggest.open{display:block}
 .nqa-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
@@ -4569,7 +4573,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <div class="pv-dlog-field" id="decision-field-impact"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-orange)">Impact</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-impact" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-impact" contenteditable="true" data-placeholder="What systems or people are affected?"></div></div>
       <div class="pv-dlog-meta">
         <span class="decision-meta-dash">—</span>
-        <input id="decision-author" type="text" placeholder="Decided by…" autocomplete="off" list="qa-answerers-list" />
+        <input id="decision-author" type="text" placeholder="Decided by…" autocomplete="off" />
         <span class="decision-meta-sep" id="decision-meta-sep">·</span>
         <span id="decision-timestamp"></span>
       </div>
@@ -4850,6 +4854,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <div id="note-ctx-menu" class="note-ctx-menu" role="menu" aria-label="Note editor actions"></div>
 <div id="at-suggest"></div>
 <div id="node-qa-suggest"></div>
+<div id="answerer-suggest"></div>
 
 </div><!-- /main content column -->
   </div><!-- /app-layout -->
@@ -18663,6 +18668,7 @@ el('decision-author')?.addEventListener('change',()=>{
   const sep=el('decision-meta-sep'); if(sep)sep.style.display=val?'':'none';
   markDirty(); scheduleAutoSave();
 });
+attachAnswererAutocomplete(el('decision-author'));
 // Typing "1. " or "- "/"* " at the very start of a line converts it into a real list —
 // no toolbar, just the same typing convention people already know from markdown. Checked by
 // looking at the text node containing the cursor: if everything before the cursor in that
@@ -18828,6 +18834,60 @@ function qaRecordAnswerer(name){
 function renderQaAnswerersDatalist(){
   const dl=el('qa-answerers-list'); if(!dl)return;
   dl.innerHTML=qaRecentAnswerers.map(n=>`<option value="${esc(n)}"></option>`).join('');
+}
+// Custom themed replacement for the native <datalist> dropdown on "Answered by…" (Q&A) and
+// "Decided by…" (Decision Log) — both share the same qaRecentAnswerers history. A native
+// datalist popup is drawn by the OS/browser chrome outside CSS's reach entirely: it ignores
+// dark mode, and inside a floating/scrollable panel like Pad it can visually overlap the
+// panel's own edges rather than respecting its bounds. This is a single shared singleton
+// popup (mirrors #at-suggest's pattern) positioned under whichever input is currently active.
+let _answererState=null; // {inputEl}
+function closeAnswererSuggest(){
+  _answererState=null;
+  const pop=el('answerer-suggest'); if(pop)pop.classList.remove('open');
+}
+function getAnswererCandidates(query){
+  const q=String(query||'').trim().toLowerCase();
+  return qaRecentAnswerers.filter(n=>!q||n.toLowerCase().includes(q));
+}
+function renderAnswererSuggest(){
+  const pop=el('answerer-suggest'); if(!pop||!_answererState)return;
+  const {inputEl}=_answererState;
+  const candidates=getAnswererCandidates(inputEl.value);
+  if(!candidates.length){ closeAnswererSuggest(); return; }
+  pop.innerHTML='';
+  candidates.forEach(name=>{
+    const item=document.createElement('div');
+    item.className='answerer-suggest-item';
+    item.textContent=name;
+    item.addEventListener('mousedown',e=>{ e.preventDefault(); commitAnswererSuggest(name); });
+    pop.appendChild(item);
+  });
+  const r=inputEl.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-270)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+}
+function openAnswererSuggest(inputEl){
+  if(!qaRecentAnswerers.length)return;
+  _answererState={inputEl};
+  renderAnswererSuggest();
+}
+function commitAnswererSuggest(name){
+  if(!_answererState)return;
+  const {inputEl}=_answererState;
+  inputEl.value=name;
+  closeAnswererSuggest();
+  inputEl.dispatchEvent(new Event('change'));
+  inputEl.focus();
+}
+function attachAnswererAutocomplete(inputEl){
+  if(!inputEl||inputEl._answererBound)return;
+  inputEl._answererBound=true;
+  inputEl.addEventListener('focus',()=>openAnswererSuggest(inputEl));
+  inputEl.addEventListener('input',()=>{ if(_answererState&&_answererState.inputEl===inputEl)renderAnswererSuggest(); });
+  inputEl.addEventListener('blur',()=>{ if(_answererState&&_answererState.inputEl===inputEl)closeAnswererSuggest(); });
+  inputEl.addEventListener('keydown',e=>{ if(e.key==='Escape'&&_answererState&&_answererState.inputEl===inputEl){ closeAnswererSuggest(); } });
 }
 // Refreshes a row's answered-by/answered-at display in place — used after AI drafts or
 // rewrites an answer, where there's no full renderQaList() to pick the new values up from.
@@ -19295,9 +19355,10 @@ function renderQaList(){
     metaRow.appendChild(followUpBtn);
 
     const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'; answeredWrap.id=`qa-answered-wrap-${item.id}`; answeredWrap.style.display=(item.answer||'').trim()?'inline-flex':'none';
-    const answeredByInput=document.createElement('input'); answeredByInput.type='text'; answeredByInput.className='qa-answered-by'; answeredByInput.id=`qa-answeredby-${item.id}`; answeredByInput.placeholder='Answered by…'; answeredByInput.autocomplete='off'; answeredByInput.setAttribute('list','qa-answerers-list'); answeredByInput.value=item.answeredBy||'';
+    const answeredByInput=document.createElement('input'); answeredByInput.type='text'; answeredByInput.className='qa-answered-by'; answeredByInput.id=`qa-answeredby-${item.id}`; answeredByInput.placeholder='Answered by…'; answeredByInput.autocomplete='off'; answeredByInput.value=item.answeredBy||'';
     answeredByInput.addEventListener('click',e=>e.stopPropagation());
     answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); });
+    attachAnswererAutocomplete(answeredByInput);
     const answeredAtSpan=document.createElement('span'); answeredAtSpan.className='qa-answered-at'; answeredAtSpan.id=`qa-answeredat-${item.id}`; answeredAtSpan.textContent=item.answeredAt?qaFormatShortDate(item.answeredAt):''; answeredAtSpan.dataset.tip=item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:'';
     answeredWrap.appendChild(answeredByInput); answeredWrap.appendChild(answeredAtSpan);
     metaRow.appendChild(answeredWrap);
