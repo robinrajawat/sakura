@@ -6411,7 +6411,7 @@ async function renameDoc(id){
   if(name===null)return;
   const trimmed=name.trim()||'Untitled';
   if(id===currentDocId){ if(el('header-title'))el('header-title').value=trimmed; titleAutoSyncEnabled=false; saveToStorage() }
-  else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
+  else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
   renderDocsList();
 }
 async function duplicateDoc(id){
@@ -6529,7 +6529,7 @@ async function restoreDocRevision(docId,ts){
       if(raw){ const prev=JSON.parse(raw); recordDocRevision(docId,prev,'Before restoring an older version'); }
     }catch(e){}
     const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:''};
-    try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){}
+    try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
     // otherwise switching to it later would show what was there before this restore.
