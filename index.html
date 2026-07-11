@@ -1273,7 +1273,7 @@ body.pad-qa-mode #qa-followup-count{display:flex}
 .qa-followup svg{fill:currentColor;flex-shrink:0}
 .qa-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:18px}
 .qa-answered-wrap{display:inline-flex;align-items:center;gap:6px}
-.qa-answered-by{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;width:104px;outline:none;transition:color .12s,border-color .12s}
+.qa-answered-by{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;outline:none;transition:color .12s,border-color .12s}
 .qa-answered-by::placeholder{color:var(--hint);opacity:.7}
 .qa-answered-by:hover,.qa-answered-by:focus{color:var(--fg);border-bottom-color:var(--border)}
 .qa-answered-at{font:400 10.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;user-select:none}
@@ -18421,7 +18421,13 @@ function qaIsUnanswered(item){ return !(item.answer||'').trim(); }
 function qaIsUnlinked(item){ return item.sourceNodeId!=null && !nodes.some(n=>n.id===item.sourceNodeId); }
 function qaFormatShortDate(ts){
   if(!Number.isFinite(ts))return '';
-  return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const d=new Date(ts); const dayOnly=new Date(d); dayOnly.setHours(0,0,0,0);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diffDays=Math.round((dayOnly-today)/86400000);
+  if(diffDays===0)return 'Today';
+  if(diffDays===1)return 'Tomorrow';
+  if(diffDays===-1)return 'Yesterday';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
 }
 function qaRecordAnswerer(name){
   name=String(name||'').trim(); if(!name)return;
@@ -18435,12 +18441,16 @@ function renderQaAnswerersDatalist(){
 }
 // Refreshes a row's answered-by/answered-at display in place — used after AI drafts or
 // rewrites an answer, where there's no full renderQaList() to pick the new values up from.
+function qaSizeAnsweredInput(input){
+  const len=(input.value||input.placeholder||'').length;
+  input.size=Math.max(6,Math.min(len,20));
+}
 function updateQaAnsweredMeta(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   const hasAnswer=!!(item.answer||'').trim();
   const wrap=el(`qa-answered-wrap-${id}`); if(wrap)wrap.style.display=hasAnswer?'inline-flex':'none';
-  const atSpan=el(`qa-answeredat-${id}`); if(atSpan)atSpan.textContent=hasAnswer?qaFormatShortDate(item.answeredAt):'';
-  const byInput=el(`qa-answeredby-${id}`); if(byInput)byInput.value=hasAnswer?(item.answeredBy||''):'';
+  const atSpan=el(`qa-answeredat-${id}`); if(atSpan){ atSpan.textContent=hasAnswer?qaFormatShortDate(item.answeredAt):''; atSpan.dataset.tip=hasAnswer&&item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:''; }
+  const byInput=el(`qa-answeredby-${id}`); if(byInput){ byInput.value=hasAnswer?(item.answeredBy||''):''; qaSizeAnsweredInput(byInput); }
 }
 function qaIsFollowUp(item){ return !!item.followUp; }
 function qaFollowUpLabel(v){ return v==='ai-draft'?'AI draft':'Follow-up'; }
@@ -18882,9 +18892,7 @@ function renderQaList(){
       const draftNow=qaAiAnswerEnabled&&!aTa.value.trim(); aRw.dataset.tip=draftNow?'Draft answer (AI)':'Rewrite answer (AI)'; aRw.innerHTML=draftNow?wandSvg:sparkleSvg;
       const hasAnswer=!!aTa.value.trim();
       if(hasAnswer){ item.answeredAt=Date.now(); } else { item.answeredAt=null; item.answeredBy=''; }
-      const wrap=el(`qa-answered-wrap-${item.id}`); if(wrap)wrap.style.display=hasAnswer?'inline-flex':'none';
-      const atSpan=el(`qa-answeredat-${item.id}`); if(atSpan)atSpan.textContent=hasAnswer?qaFormatShortDate(item.answeredAt):'';
-      if(!hasAnswer){ const byInput=el(`qa-answeredby-${item.id}`); if(byInput)byInput.value=''; }
+      updateQaAnsweredMeta(item.id);
     });
     aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
     aIcons.appendChild(aRw);
@@ -18902,9 +18910,11 @@ function renderQaList(){
 
     const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'; answeredWrap.id=`qa-answered-wrap-${item.id}`; answeredWrap.style.display=(item.answer||'').trim()?'inline-flex':'none';
     const answeredByInput=document.createElement('input'); answeredByInput.type='text'; answeredByInput.className='qa-answered-by'; answeredByInput.id=`qa-answeredby-${item.id}`; answeredByInput.placeholder='Answered by…'; answeredByInput.autocomplete='off'; answeredByInput.setAttribute('list','qa-answerers-list'); answeredByInput.value=item.answeredBy||'';
+    qaSizeAnsweredInput(answeredByInput);
     answeredByInput.addEventListener('click',e=>e.stopPropagation());
-    answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); });
-    const answeredAtSpan=document.createElement('span'); answeredAtSpan.className='qa-answered-at'; answeredAtSpan.id=`qa-answeredat-${item.id}`; answeredAtSpan.textContent=item.answeredAt?qaFormatShortDate(item.answeredAt):'';
+    answeredByInput.addEventListener('input',()=>qaSizeAnsweredInput(answeredByInput));
+    answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); qaSizeAnsweredInput(answeredByInput); markDirty(); scheduleAutoSave(); });
+    const answeredAtSpan=document.createElement('span'); answeredAtSpan.className='qa-answered-at'; answeredAtSpan.id=`qa-answeredat-${item.id}`; answeredAtSpan.textContent=item.answeredAt?qaFormatShortDate(item.answeredAt):''; answeredAtSpan.dataset.tip=item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:'';
     answeredWrap.appendChild(answeredByInput); answeredWrap.appendChild(answeredAtSpan);
     metaRow.appendChild(answeredWrap);
 
