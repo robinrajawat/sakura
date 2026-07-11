@@ -1294,8 +1294,6 @@ body.pad-decision-mode #decision-body{display:flex}
 #decision-author::placeholder{color:var(--hint);opacity:.7}
 #decision-author:hover,#decision-author:focus{color:var(--fg);border-bottom-color:var(--border)}
 #decision-timestamp{white-space:nowrap}
-#decision-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;margin-left:auto;border-radius:5px;display:inline-flex;transition:color .12s,background .12s}
-#decision-delete-btn:hover{color:var(--sem-alert);background:var(--hover)}
 #decision-count-chip{appearance:none;border:1px solid transparent;background:transparent;align-items:center;gap:5px;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:2px 8px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #decision-count-chip:hover{background:var(--hover);color:var(--fg)}
 body.pad-decision-mode #decision-count-chip{display:inline-flex}
@@ -1332,7 +1330,7 @@ body.pad-decision-mode #decision-count-chip{display:inline-flex}
 .decision-quicknav-chip{appearance:none;border:1px solid var(--border);background:var(--edit-bg);font:500 10.5px 'Inter',sans-serif;padding:2px 9px;border-radius:999px;cursor:pointer;color:var(--muted);transition:background .12s,border-color .12s,color .12s}
 .decision-quicknav-chip:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
-body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(.decision-only-btn),body.pad-decision-mode #pad-toolbar>.note-tb-sep:not(.decision-only-btn){display:none}
+body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(.decision-only-btn):not(#pad-clear-btn),body.pad-decision-mode #pad-toolbar>.note-tb-sep:not(.decision-only-btn){display:none}
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 #qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
@@ -4101,7 +4099,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <h4>Decision Log</h4>
 <ul>
 <li>A structured decision record attached to the selected node — Context, Decision, Rationale, Alternatives, and Impact fields, a Status pill (Proposed/Approved/Rejected) you click to cycle through, and an author/timestamp footer. Lives in its own tab in the Pad, right alongside Notepad and Q&amp;A — not inserted as outline nodes</li>
-<li>Add one via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), right-click a node → <span class="help-kbd">More</span> → Decision log, or open the Decision Log tab while that node is selected and click Add. A small accent-colored dot appears next to a node that has one — click it to jump straight to its card; the same dot echoes on the Decision Log tab when the selected node has one</li>
+<li>Add one via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), right-click a node → <span class="help-kbd">More</span> → Decision log, or open the Decision Log tab while that node is selected and click Add. A small accent-colored dot appears next to a node that has one — click it to jump straight to its card; the same dot echoes on the Decision Log tab when the selected node has one. Remove one from the Pad's own toolbar (same trash-can button Notepad uses for "Clear pad" and Q&amp;A uses for "Clear all Q&amp;A rows" — it adapts to whichever tab is open), with Undo</li>
 <li>Each field supports light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — plus a small AI-rewrite icon that appears on hover</li>
 <li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the Pad's card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
 <li>Turning Decision Log off (Settings → Features → Pad Panel) hides its tab, toolbar button, right-click action, node dots, and Excel export — existing decision logs already in the document aren't deleted, just inaccessible until it's turned back on. Clicking a node's decision-log dot while the feature is off shows a reminder of where to re-enable it instead of silently doing nothing</li>
@@ -4569,7 +4567,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         <input id="decision-author" type="text" placeholder="Decided by…" autocomplete="off" list="qa-answerers-list" />
         <span class="decision-meta-sep" id="decision-meta-sep">·</span>
         <span id="decision-timestamp"></span>
-        <button type="button" id="decision-delete-btn" data-tip="Remove decision log from this node"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
       </div>
     </div>
     <div id="decision-list-wrap">
@@ -18474,7 +18471,7 @@ function setPadViewMode(mode){
     tab.setAttribute('aria-selected',String(active));
   });
   const title=el('presenter-notes-title'); if(title)title.textContent=padViewMode==='qa'?'Q&A':padViewMode==='decision'?'Decision Log':'Notepad';
-  const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':'Clear pad';
+  const clearBtn=el('pad-clear-btn'); if(clearBtn){clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':padViewMode==='decision'?'Remove decision log from this node':'Clear pad'; clearBtn.style.display='';}
   if(padViewMode==='qa')renderQaList();
   if(padViewMode==='decision')renderDecisionPad();
 }
@@ -18573,11 +18570,15 @@ function renderDecisionPad(){
   if(countChip)countChip.setAttribute('aria-pressed',String(decisionListMode));
   if(countChip)countChip.dataset.tip=decisionListMode?'Back to this decision':'Browse all decisions';
   body.classList.toggle('list-mode',decisionListMode);
-  if(decisionListMode){ renderDecisionList(allLogs); return; }
+  if(decisionListMode){
+    if(padViewMode==='decision'){ const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.style.display='none'; }
+    renderDecisionList(allLogs); return;
+  }
   if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; }
   const hasLog=nodeHasDecisionLog(node);
   const decisionTab=el('pad-tab-decision'); if(decisionTab)decisionTab.classList.toggle('has-log',hasLog);
   body.classList.toggle('no-log',!hasLog);
+  if(padViewMode==='decision'){ const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.style.display=hasLog?'':'none'; }
   const emptyMsg=body.querySelector('#decision-empty p');
   const addBtn=el('decision-add-btn');
   const navWrap=el('decision-quicknav');
@@ -18633,7 +18634,6 @@ document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
   tab.addEventListener('click',()=>setPadViewMode(tab.dataset.mode));
 });
 el('decision-add-btn')?.addEventListener('click',addDecisionLogToNode);
-el('decision-delete-btn')?.addEventListener('click',deleteDecisionLogFromNode);
 el('decision-count-chip')?.addEventListener('click',()=>toggleDecisionListMode());
 el('decision-open-chip')?.addEventListener('click',()=>{ decisionListOpenOnly=!decisionListOpenOnly; renderDecisionList(); });
 el('decision-author-filter')?.addEventListener('change',e=>{ decisionListAuthorFilter=e.target.value; renderDecisionList(); });
@@ -23193,6 +23193,10 @@ document.addEventListener('mousedown', e => {
 el('pad-clear-btn')?.addEventListener('click', async (e) => {
   e.stopPropagation();
   const trashIcon='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+  if(padViewMode==='decision'){
+    await deleteDecisionLogFromNode();
+    return;
+  }
   if(padViewMode==='qa'){
     const valid=qaItems.filter(it=>(it.question||'').trim()||(it.answer||'').trim());
     if(!valid.length){ showToast('No Q&A rows to clear'); return; }
