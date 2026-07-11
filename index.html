@@ -1245,7 +1245,10 @@ body.pad-qa-mode #pad-editor{display:none}
 body.pad-qa-mode #qa-body{display:flex}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#ptb-flip):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
-#qa-progress{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:0 6px;white-space:nowrap;user-select:none}
+#qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+#qa-progress:hover:not(:disabled){background:var(--hover);color:var(--fg)}
+#qa-progress.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#qa-progress:disabled{cursor:default;opacity:.75}
 body.pad-qa-mode #qa-progress{display:flex}
 #ptb-flip{position:absolute;bottom:14px;right:14px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #ptb-flip:hover{opacity:1;color:var(--fg);background:var(--hover)}
@@ -3797,7 +3800,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted. Drag the grip on the left to reorder rows by hand, or use the funnel icon to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4345,8 +4348,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <button class="note-tb-btn qa-only-btn" id="qtb-scan" data-tip="Scan outline for questions"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6H3"/><path d="M15 12H3"/><path d="M11 18H3"/><circle cx="18" cy="16" r="3"/><path d="m20.5 18.5 2 2"/></svg></button>
     <span class="note-tb-sep qa-only-btn"></span>
     <button class="note-tb-btn qa-only-btn" id="qtb-search" data-tip="Filter Q&amp;A rows" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-unanswered-only" data-tip="Show unanswered only" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20a1 1 0 0 0 .55.9l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .5-1.3L20.3 6.2A1 1 0 0 0 20 4H4a1 1 0 0 0-.3 2.2L9.5 12.7a2 2 0 0 1 .5 1.3z"/></svg></button>
-    <span id="qa-progress" class="qa-only-btn"></span>
+    <button type="button" id="qa-progress" class="qa-only-btn" data-tip="Show unanswered only" aria-pressed="false"></button>
     <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai"></span>
     <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
@@ -18324,7 +18326,7 @@ function confirmQaInsert(){
 function newQaId(){ return 'qa'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 function setQaUnansweredOnly(on){
   qaUnansweredOnly=!!on;
-  const btn=el('qtb-unanswered-only'); if(btn){ btn.classList.toggle('active',qaUnansweredOnly); btn.dataset.tip=qaUnansweredOnly?'Show all rows':'Show unanswered only'; btn.setAttribute('aria-pressed',String(qaUnansweredOnly)); }
+  const chip=el('qa-progress'); if(chip){ chip.classList.toggle('active',qaUnansweredOnly); chip.dataset.tip=qaUnansweredOnly?'Show all rows':'Show unanswered only'; chip.setAttribute('aria-pressed',String(qaUnansweredOnly)); }
   renderQaList();
 }
 function setQaExportEnabled(on,persist=true){
@@ -18357,6 +18359,7 @@ function deleteQaRow(id){
   const snapshot=qaItems.slice();
   qaItems=qaItems.filter(it=>it.id!==id);
   qaSelectedIds.delete(id);
+  hideNodeTooltip();
   renderQaList();
   markDirty(); scheduleAutoSave();
   showActionToast('Q&A row deleted','Undo',()=>{
@@ -18661,15 +18664,18 @@ function toggleQaSearch(forceOpen){
 function resetQaTransientState(){
   qaSelectedIds=new Set(); qaSelectionAnchorId=null;
   if(qaSearchOpen){ toggleQaSearch(false); } else { qaSearchQuery=''; }
-  if(qaUnansweredOnly){ qaUnansweredOnly=false; const btn=el('qtb-unanswered-only'); if(btn){ btn.classList.remove('active'); btn.dataset.tip='Show unanswered only'; btn.setAttribute('aria-pressed','false'); } }
+  if(qaUnansweredOnly){ qaUnansweredOnly=false; const chip=el('qa-progress'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show unanswered only'; chip.setAttribute('aria-pressed','false'); } }
 }
 function updateQaProgress(){
   const progress=el('qa-progress'); if(!progress)return;
   const answered=qaItems.filter(it=>(it.answer||'').trim()).length;
   progress.textContent=qaItems.length?`${answered}/${qaItems.length} answered`:'';
+  const unanswered=qaItems.length-answered;
+  progress.disabled=!qaUnansweredOnly&&(qaItems.length===0||unanswered===0);
 }
 function jumpToQaSourceNode(nodeId){
   if(!nodes.some(n=>n.id===nodeId)){ showToast('That node no longer exists in this document'); return; }
+  hideNodeTooltip();
   revealNodeInDoc(currentDocId,nodeId);
 }
 function reorderQaRow(draggedId,targetId){
@@ -18691,6 +18697,7 @@ function updateQaBulkBar(){
 }
 function renderQaList(){
   const list=el('qa-list'), body=el('qa-body'); if(!list||!body)return;
+  hideNodeTooltip();
   updateQaProgress();
   list.innerHTML='';
   const sparkleSvg=QA_SPARKLE_SVG;
@@ -18801,7 +18808,7 @@ el('qa-search-input')?.addEventListener('input',e=>{
 });
 el('qa-search-input')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); toggleQaSearch(false); } });
 el('qa-search-clear')?.addEventListener('click',()=>{ const inp=el('qa-search-input'); if(inp)inp.value=''; qaSearchQuery=''; el('qa-search-clear')?.classList.remove('visible'); renderQaList(); el('qa-search-input')?.focus(); });
-el('qtb-unanswered-only')?.addEventListener('mousedown', e=>{ e.preventDefault(); setQaUnansweredOnly(!qaUnansweredOnly); });
+el('qa-progress')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-progress')?.disabled)return; setQaUnansweredOnly(!qaUnansweredOnly); });
 el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exportQaText(); });
 el('qtb-ai-answer-all')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDraftUnansweredAnswers(); });
 el('qtb-qa-summary')?.addEventListener('mousedown', e=>{ e.preventDefault(); generateQaSummary(); });
@@ -23864,6 +23871,12 @@ function _addTagPopoverFromInput(){
   function renderTodos(){
     const body=document.getElementById('todos-body');
     if(!body) return;
+    // Many todo actions (delete, rewrite, cycle priority/status, break into subtasks) call
+    // this right after their own triggering button is clicked, tearing that button out from
+    // under the pointer. Browsers don't fire mouseout when an element is removed out from
+    // under the pointer, so without this the themed tooltip is left stuck on screen —
+    // same fix as removeFromAutoRewriteQueue / deleteQaRow elsewhere in the app.
+    if(typeof hideNodeTooltip==='function')hideNodeTooltip();
     const {open:openAll, done:doneAll}=getVisibleTodos();
     const q=searchQuery.trim();
     const open = q ? openAll.filter(t=>taskMatchesSearch(t,searchQuery)) : openAll;
