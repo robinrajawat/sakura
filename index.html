@@ -1685,7 +1685,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-panel.maximized #note-editor{max-height:none;flex:1}
 
 /* Note panel compact mode: minimal popover with just the editor + Rewrite/Clear
-   in the header row. Actual panel width is set from JS (positionNotePanel) so
+   in the header row. Actual panel width is set from JS (positionNodePanel) so
    anchoring stays correct; this only trims chrome and lets the editor shrink to
    its content. Rewrite/Clear are physically relocated into the header by
    setNoteCompact (see JS) rather than duplicated here, so there's one set of
@@ -17117,7 +17117,7 @@ el('note-panel-maximize')?.addEventListener('click', () => {
 // and relocates Rewrite + Clear from the toolbar row into the header itself so
 // compact reads as one tight row (icon, then Rewrite/Clear/Compact/Maximize/Close)
 // instead of a header plus a near-empty toolbar row underneath. Reuses the panel's
-// normal anchoring (positionNotePanel), which reads _noteCompact to size the room
+// normal anchoring (positionNodePanel), which reads _noteCompact to size the room
 // calculations correctly — without that, the panel would still anchor as if it
 // were 480px wide.
 const _noteHeaderEl = el('note-panel-header');
@@ -17145,31 +17145,13 @@ function _updateCompactIcon() {
     btn.querySelector('svg').innerHTML = '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>';
   }
 }
-// Compact-mode title text: literal "Note", not the node's text. At the compact
-// panel's ~300px width, after the icon and five header buttons (icon+Rewrite+
-// Clear+Compact+Maximize+Close ≈ 180px including gaps), only ~100px is left —
-// enough for a static word, not for a truncated node label that would still
-// need ~15+ chars to mean anything, so it'd either overflow or get cut down to
-// something unreadable either way. A blank header without a label read as
-// visually odd rather than saving anything meaningful, hence putting the plain
-// word back rather than trying to cram the node's text in.
-function _updateCompactTitle() {
-  const titleEl = el('note-panel-title');
-  if (!titleEl) return;
-  if (_noteCompact) {
-    titleEl.textContent = 'Note';
-  } else {
-    const idx = getIndex(notePanelNodeId);
-    const t = idx >= 0 ? String(nodes[idx].text || '').trim() : '';
-    titleEl.textContent = 'Note' + (t ? ' — ' + t.slice(0, 40) : '');
-  }
-}
 // Resize the panel in place, keeping its current on-screen position, instead of
-// recomputing an anchor from the node row. Compact/expand toggles change the
-// panel's width (and therefore its height, since content changes), but they are
-// not a fresh "open" — calling positionNotePanel here would silently discard
-// wherever the panel actually is (the original anchor, a right-click point, or
-// a manual drag) and snap it back to the row, which is the bug being fixed.
+// recomputing an anchor from the node row. Compact/expand toggles and Note/Code
+// tab switches all change the panel's width (and therefore its height, since
+// content changes), but none of them are a fresh "open" — calling
+// positionNodePanel here would silently discard wherever the panel actually is
+// (the original anchor, a right-click point, or a manual drag) and snap it back
+// to the row, which is the bug being fixed.
 function _noteResizeInPlace() {
   const panel = el('note-panel');
   if (!panel || !panel.classList.contains('open') || panel.classList.contains('maximized')) return;
@@ -17201,7 +17183,6 @@ function setNoteCompact(on, skipReposition) {
   _noteCompact = !!on;
   panel.classList.toggle('compact', _noteCompact);
   _updateCompactIcon();
-  _updateCompactTitle();
   if (_noteCompact) {
     if (_noteRewriteBtnEl && _noteHeaderEl && _noteCompactBtnEl) _noteHeaderEl.insertBefore(_noteRewriteBtnEl, _noteCompactBtnEl);
     if (_noteClearBtnEl && _noteHeaderEl && _noteCompactBtnEl) _noteHeaderEl.insertBefore(_noteClearBtnEl, _noteCompactBtnEl);
@@ -17221,7 +17202,7 @@ function setNoteCompact(on, skipReposition) {
 el('note-panel-compact')?.addEventListener('click', () => setNoteCompact(!_noteCompact));
 
 // ── Note panel: drag to reposition ───────────────────────────────────────────
-// The panel still opens anchored next to the node you clicked (positionNotePanel),
+// The panel still opens anchored next to the node you clicked (positionNodePanel),
 // but it no longer has to stay pinned there — drag the header to float it
 // anywhere on screen. Doesn't apply while maximized (there's nowhere to move to).
 (function setupNotePanelDrag() {
