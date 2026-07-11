@@ -1473,16 +1473,16 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 /* === Node Notes === */
 #note-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,540px);font-family:'Inter',sans-serif;overflow:hidden}
 #note-panel.open{display:flex}
-#note-panel-header{display:flex;align-items:center;gap:8px;padding:10px 10px 4px 14px;flex-shrink:0;cursor:move}
+#note-panel-header{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:move}
 #note-panel-header.dragging{cursor:grabbing}
 #note-panel.dragging{user-select:none}
 .panel-title-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--hint);flex-shrink:0}
-#note-panel-tabs{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
-.note-panel-tab{appearance:none;border:none;background:transparent;color:var(--muted);font:500 12.5px 'Inter',sans-serif;padding:5px 10px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
-.note-panel-tab:hover{background:var(--hover);color:var(--fg)}
-.note-panel-tab[aria-selected="true"]{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+#note-panel-tabs{display:flex;align-items:center;gap:18px;flex:1;min-width:0}
+.note-panel-tab{appearance:none;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 1px 6px;margin-bottom:-8px;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
+.note-panel-tab:hover{color:var(--fg)}
+.note-panel-tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .note-panel-tab.has-content:not([aria-selected="true"])::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
-#note-panel-subtitle{padding:0 14px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+#note-panel-subtitle{padding:6px 14px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
 #note-panel-subtitle:empty{display:none}
 #note-panel.mode-code #note-panel-subtitle{padding-bottom:4px}
 #note-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
@@ -1697,7 +1697,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-panel-compact.is-active{color:var(--accent);background:var(--hover)}
 #note-panel.compact #bl-panel,#note-panel.compact #node-ts-panel,#note-panel.compact #note-panel-footer,#note-panel.compact #note-toolbar{display:none}
 #note-panel.compact #note-editor{min-height:44px;max-height:160px}
-#note-panel.compact #note-panel-header{padding:8px 8px 4px}
+#note-panel.compact #note-panel-header{padding:8px 8px 8px}
 
 /* Main editor maximize (zen mode) — floats in the corner of the editor itself
    instead of living in the header, so it doesn't crowd the app bar.
