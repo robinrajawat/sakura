@@ -2108,6 +2108,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
+.pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
+.pv-cb:hover{border-color:var(--accent)}
+.pv-cb.pv-cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
+.pv-cb.pv-cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
+.pv-row.pv-cb-done .pv-text{opacity:.45}
 .pv-text{flex:1;min-width:0;font-size:14.5px;line-height:1.55;padding:1px 0;word-break:break-word}.pv-text.pv-d2{color:color-mix(in srgb,var(--fg) 72%,var(--muted))}.pv-text.pv-d3{color:color-mix(in srgb,var(--fg) 50%,var(--muted))}
 .pv-text.pv-deep{color:var(--muted)}
 .pv-tag-chip-static{cursor:default}
@@ -11814,7 +11819,8 @@ async function pptxGatherSlidesData(){
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
       if(nodes[j].depth!==node.depth+1) continue;
       const childNode=nodes[j];
-      const childText=String(childNode.text||'').trim();
+      let childText=String(childNode.text||'').trim();
+      if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText});
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&childNode.decisionLog&&!decisionLogIsLarge(childNode.decisionLog)) items.push(pptxParseDecisionLogFields(childNode));
     }
@@ -20094,11 +20100,18 @@ function renderPreviewBody(){
       tocEntries.push({id:node.id,text:stripSemanticMarkers(node.text||'').trim()||'Untitled',level:headingLevel,kind:'heading'});
     } else {
       lastHeadingLevel=null;
-      const row=document.createElement('div'); row.className='pv-row'; row.dataset.pvNode=String(node.id);
+      const isCb=isCheckboxNode(node);
+      const row=document.createElement('div'); row.className='pv-row'+(isCb&&node.checked?' pv-cb-done':''); row.dataset.pvNode=String(node.id);
       row.style.paddingLeft=((Math.min(depth,7)-1)*18)+'px';
       row.appendChild(foldEl);
-      const bullet=document.createElement('span'); bullet.className='pv-bullet'; bullet.textContent='•';
-      row.appendChild(bullet);
+      if(isCb){
+        const cb=document.createElement('span'); cb.className='pv-cb'+(node.checked?' pv-cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete';
+        cb.addEventListener('click',e=>{ e.stopPropagation(); toggleCheckbox(node.id); renderPreviewBody(); });
+        row.appendChild(cb);
+      } else {
+        const bullet=document.createElement('span'); bullet.className='pv-bullet'; bullet.textContent='•';
+        row.appendChild(bullet);
+      }
       const txt=document.createElement('div'); txt.className='pv-text'+(depth>=4?' pv-deep':depth===3?' pv-d3':depth===2?' pv-d2':'')+' '+previewStyleClasses(node);
       if(node.styles.color)txt.style.color='var(--fc-'+node.styles.color+')';
       txt.innerHTML=previewNodeInnerHtml(node);
