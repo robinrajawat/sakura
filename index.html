@@ -1854,7 +1854,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    Notes and decision logs get card treatment with their real rich content
    (images, lists, etc.) rendered properly, not as raw text. Folding here
    is local to the preview and never touches the real document's state. === */
-#preview-overlay{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);flex-direction:column}
+#preview-overlay{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);flex-direction:column;outline:none}
 #preview-overlay.open{display:flex}
 #preview-head{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--border);flex:0 0 auto}
 #preview-head-title{font:700 14px 'Inter',sans-serif;color:var(--fg)}
@@ -4812,7 +4812,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     </div>
     <div id="demo-cursor"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L11 19z" fill="currentColor" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
   </div>
-  <div id="preview-overlay" role="dialog" aria-modal="true" aria-label="Document preview">
+  <div id="preview-overlay" role="dialog" aria-modal="true" aria-label="Document preview" tabindex="-1">
     <div id="preview-head">
       <div id="preview-head-title"></div>
       <div id="preview-head-actions">
@@ -9065,6 +9065,8 @@ const SECTION_EMOJI_ICONS={
 function matchSectionEmojiIcon(text){for(const key in SECTION_EMOJI_ICONS){if(text.startsWith(key+' '))return {inner:SECTION_EMOJI_ICONS[key],rest:text.slice(key.length+1)}}return null}
 function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase();const result=[];let i=0;while(i<html.length){if(html[i]==='<'){const end=html.indexOf('>',i);if(end<0){result.push(html.slice(i));break}result.push(html.slice(i,end+1));i=end+1;continue}if(html[i]==='&'){const end=html.indexOf(';',i);if(end<0){result.push(html[i]);i++;continue}result.push(html.slice(i,end+1));i=end+1;continue}let j=i;let plain='';while(j<html.length&&html[j]!=='<'&&html[j]!=='&'){plain+=html[j];j++;}const lplain=plain.toLowerCase();let pi=0;let out='';while(pi<plain.length){const fi=lplain.indexOf(lq,pi);if(fi<0){out+=plain.slice(pi);break}out+=plain.slice(pi,fi)+`<mark class="search-highlight">${plain.slice(fi,fi+lq.length)}</mark>`;pi=fi+lq.length;}result.push(out);i=j;}return result.join('');}
 const DL_LABEL_COLORS={'Context':'--fc-blue','Decision':'--fc-red','Rationale':'--fc-purple','Alternatives':'--fc-gray','Impact':'--fc-orange','Status':'--fc-green','Decision Log':'--fc-gray'};
+const DL_FIELD_TEXT_RE=/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/;
+function isDecisionLogFieldNode(n){ return DL_FIELD_TEXT_RE.test(getNodePlainText(n).trim()); }
 function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="color:var(${colorVar});${decisionLogLabelBold?'font-weight:600;':''}">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}else if(boldKeyLabels){const keyMatch=src.match(/^[A-Za-z][A-Za-z0-9 /&'-]{0,50}:(?=\s)/);if(keyMatch){out+=`<span class="sem-key">${esc(keyMatch[0])}</span>`;i=keyMatch[0].length}}while(i<src.length){const ch=src[i];if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){let qEnd=src.length;out+=`<span class="sem-quote">${esc(src.slice(i+1,qEnd).trimStart())}</span>`;i=qEnd;continue}if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){out+=`<span class="sem-code-inline">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\[([^\]]+)\]/g,'$1').replace(/\(([^)]+)\)/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/(?:^|\s)!(\S+)/g,' $1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${esc(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){out+=`<span class="sem-chip">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){out+=`<span class="sem-meta">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1;while(end<src.length&&!/\s/.test(src[end]))end++;if(end>i+1){out+=`<span class="sem-alert-inline">${esc(src.slice(i+1,end))}</span>`;i=end;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||''; const iconMatch=isSectionRow?matchSectionEmojiIcon(raw):null; const bodyText=iconMatch?iconMatch.rest:raw; const iconHtml=iconMatch?`<span class="node-emoji-icon"><svg viewBox="0 0 24 24">${iconMatch.inner}</svg></span>`:''; const inner=parseStyledText(bodyText,searchQ)||(iconMatch?'':'&nbsp;'); const html=iconHtml+(node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner); return {cls,html}}
 function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(id)]).filter(Boolean); const hasSelection=selectedNodes.length>0; document.querySelectorAll('.fmt-btn').forEach(btn=>{const styleName=btn.dataset.style; const active=hasSelection&&selectedNodes.every(n=>!!n.styles[styleName]); btn.classList.toggle('toggle-on',active); btn.disabled=!hasSelection; btn.style.opacity=hasSelection?'1':'.55'});
@@ -18289,7 +18291,7 @@ function closeIconLibrary(){
 // as a question. Used both to populate the Q&A insert checklist and to pre-check items that
 // match the outline's current multi-selection.
 function getQuestionNodes(){
-  return nodes.filter(n=>{ const t=getNodePlainText(n).trim(); return t.length>1 && t.endsWith('?') });
+  return nodes.filter(n=>{ const t=getNodePlainText(n).trim(); return t.length>1 && t.endsWith('?') && !isDecisionLogFieldNode(n) });
 }
 let _qaInsertCloseTimer=null;
 function openQaInsert(){
@@ -20332,7 +20334,14 @@ el('preview-present-btn')?.addEventListener('click',()=>{ if(previewPresenting)e
 el('presenter-next-btn')?.addEventListener('click',presenterNext);
 el('presenter-prev-btn')?.addEventListener('click',presenterPrev);
 el('presenter-exit-btn')?.addEventListener('click',()=>{ if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} });
-document.addEventListener('fullscreenchange',()=>{ if(previewPresenting&&!document.fullscreenElement){ if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} } });
+document.addEventListener('fullscreenchange',()=>{
+  if(previewPresenting&&!document.fullscreenElement){ if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return; }
+  if(document.fullscreenElement&&previewPresenting){
+    const focusOverlay=()=>el('preview-overlay')?.focus({preventScroll:true});
+    focusOverlay();
+    setTimeout(focusOverlay,150);
+  }
+});
 el('editor-preview-toggle')?.addEventListener('click',openPreview);
 // Individual show/hide for the floating button cluster (Zen/Pad/Toolbar/Preview/Quick
 // Assist), independent of whether the underlying feature is on. For Pad and Quick Assist,
