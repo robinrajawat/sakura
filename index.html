@@ -1569,14 +1569,18 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-panel.view-highlighted #code-view{display:block}
 #code-panel-footer{display:flex;align-items:center;justify-content:flex-end;padding:4px 14px 10px;flex-shrink:0}
 .code-footer-hint{font:400 11px 'Inter',sans-serif;color:var(--hint)}
-.code-clear-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--muted);font:400 12px 'Inter',sans-serif;padding:4px 10px;border-radius:7px;cursor:pointer;transition:color .1s,border-color .1s}
-.code-clear-btn:hover{color:var(--sem-alert);border-color:var(--sem-alert)}
+
 /* Mode visibility: Note and Code tabs share one panel shell (header, drag, maximize,
    compact, positioning) — only the body swaps. Compact view is Note-only (Code has no
    equivalent minimal state), so its toggle hides in Code mode too. */
 #note-panel.mode-code #note-toolbar,#note-panel.mode-code #note-editor,#note-panel.mode-code #bl-panel,#note-panel.mode-code #node-ts-panel,#note-panel.mode-code #note-panel-footer{display:none}
 #note-panel.mode-note #code-toolbar,#note-panel.mode-note #code-editor-wrap,#note-panel.mode-note #code-panel-footer{display:none}
 #note-panel.mode-code #note-panel-compact{display:none}
+/* ntb-ai-rewrite is hidden by id, not just via #note-toolbar's mode-code rule above —
+   compact view physically relocates it into the header (see setNoteCompact), so once
+   that's happened, hiding #note-toolbar alone no longer reaches it. Same reasoning is
+   why Clear lives permanently in the header now instead of being relocated per-mode. */
+#note-panel.mode-code #ntb-ai-rewrite{display:none}
 /* Single per-node indicator dot: note-bubble icon by default, with a small accent-colored
    </> badge overlaid when the node also has a non-empty code block — so one dot signals
    both "has a note" and "has code", instead of two separate dots side by side. */
@@ -4750,6 +4754,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <button type="button" class="note-panel-tab" id="npanel-tab-note" data-mode="note" role="tab" aria-selected="true">Note</button>
       <button type="button" class="note-panel-tab" id="npanel-tab-code" data-mode="code" role="tab" aria-selected="false">Code</button>
     </div>
+    <button id="note-panel-clear" class="panel-icon-btn" data-tip="Clear note" aria-label="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
     <button id="note-panel-compact" data-tip="Compact view" aria-label="Toggle compact note" aria-pressed="false"><svg id="note-compact-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
     <button id="note-panel-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="note-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="note-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -4771,8 +4776,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <span class="note-tb-sep"></span>
     <button class="note-tb-btn" id="ntb-ai-rewrite" data-tip="Rewrite note (AI) — rewrites selection or full note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn" id="ntb-ai-summarise" data-tip="Summarise subtree into note (AI)" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></button>
-    <span class="note-tb-sep" style="margin-left:auto"></span>
-    <button class="panel-icon-btn" id="note-clear-btn" data-tip="Clear note" aria-label="Clear note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
   </div>
   <div id="note-editor" contenteditable="true" spellcheck="true" data-placeholder="Add a note… Paste images, format text, add links."></div>
   <div id="bl-panel"></div>
@@ -4804,8 +4807,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       <span id="code-copy-btn-label">Copy</span>
     </button>
-    <span class="code-tb-sep" style="margin-left:auto"></span>
-    <button class="panel-icon-btn" id="code-clear-btn" data-tip="Clear code" aria-label="Clear code"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
   </div>
   <div id="code-editor-wrap">
     <textarea id="code-editor" spellcheck="false" placeholder="Paste or type code…"></textarea>
@@ -10036,32 +10037,6 @@ el('code-copy-btn')?.addEventListener('click',async()=>{
     if(label)label.textContent='Copied';
     setTimeout(()=>{btn.classList.remove('copied'); if(label)label.textContent=prevLabel||'Copy'},1200);
   }
-});
-
-el('code-clear-btn')?.addEventListener('click',async(e)=>{
-  e.stopPropagation();
-  const targetId=codePanelNodeId;
-  _notePanelSuppressClickOutside=true;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Clear code block',body:'Remove the code block from this node?',confirmLabel:'Clear',confirmCls:'danger',cancelLabel:'Cancel'});
-  _notePanelSuppressClickOutside=false;
-  if(!ok)return;
-  if(targetId!==null){
-    const tidx=getIndex(targetId);
-    if(tidx>=0&&nodes[tidx].codeBlock){
-      pushUndo();
-      nodes[tidx].codeBlock=null;
-      markDirty();
-    }
-  }
-  const editor=el('code-editor'); if(editor)editor.value='';
-  _codeHighlighted=false;
-  el('note-panel')?.classList.remove('view-highlighted');
-  _updateCodeViewToggleUi();
-  notePanelOpen=false; notePanelNodeId=null;
-  codePanelOpen=false; codePanelNodeId=null;
-  el('note-panel')?.classList.remove('open');
-  render();
-  showToast('Code block cleared');
 });
 
 el('code-editor')?.addEventListener('keydown',e=>{
@@ -17062,6 +17037,8 @@ function setNodePanelMode(mode, id, anchorRectOverride) {
     tab.setAttribute('aria-selected', String(tab.dataset.mode===notePanelMode));
   });
   updateNodePanelTabDots();
+  const clearBtn = el('note-panel-clear');
+  if (clearBtn) { clearBtn.dataset.tip = notePanelMode==='code' ? 'Clear code' : 'Clear note'; clearBtn.setAttribute('aria-label', notePanelMode==='code' ? 'Clear code' : 'Clear note'); }
   if (panel.classList.contains('maximized')) return;
   if (id !== undefined) {
     // Fresh open (from openNodePanel) — anchor next to the node the same way it
@@ -17123,7 +17100,6 @@ el('note-panel-maximize')?.addEventListener('click', () => {
 const _noteHeaderEl = el('note-panel-header');
 const _noteToolbarEl = el('note-toolbar');
 const _noteRewriteBtnEl = el('ntb-ai-rewrite');
-const _noteClearBtnEl = el('note-clear-btn');
 const _noteCompactBtnEl = el('note-panel-compact');
 // Captured once, before anything ever moves, so restoring on exit puts Rewrite
 // back exactly where it started relative to its toolbar siblings (Summarise).
@@ -17185,10 +17161,8 @@ function setNoteCompact(on, skipReposition) {
   _updateCompactIcon();
   if (_noteCompact) {
     if (_noteRewriteBtnEl && _noteHeaderEl && _noteCompactBtnEl) _noteHeaderEl.insertBefore(_noteRewriteBtnEl, _noteCompactBtnEl);
-    if (_noteClearBtnEl && _noteHeaderEl && _noteCompactBtnEl) _noteHeaderEl.insertBefore(_noteClearBtnEl, _noteCompactBtnEl);
   } else {
     if (_noteRewriteBtnEl && _noteToolbarEl) _noteToolbarEl.insertBefore(_noteRewriteBtnEl, _noteRewriteRestoreAnchor);
-    if (_noteClearBtnEl && _noteToolbarEl) _noteToolbarEl.appendChild(_noteClearBtnEl);
   }
   if (_noteCompact && _noteMaximized) {
     // Mirror image of the maximize handler's guard above: compacting a maximized
@@ -17829,8 +17803,33 @@ el('note-editor')?.addEventListener('beforeinput', () => {
 
 el('note-panel-close')?.addEventListener('click', () => closeNodePanel(true));
 
-el('note-clear-btn')?.addEventListener('click', async (e) => {
+el('note-panel-clear')?.addEventListener('click', async (e) => {
   e.stopPropagation();
+  if (notePanelMode === 'code') {
+    const targetId = codePanelNodeId;
+    _notePanelSuppressClickOutside = true;
+    const ok = await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', title:'Clear code block', body:'Remove the code block from this node?', confirmLabel:'Clear', confirmCls:'danger', cancelLabel:'Cancel'});
+    _notePanelSuppressClickOutside = false;
+    if (!ok) return;
+    if (targetId !== null) {
+      const tidx = getIndex(targetId);
+      if (tidx >= 0 && nodes[tidx].codeBlock) {
+        pushUndo();
+        nodes[tidx].codeBlock = null;
+        markDirty();
+      }
+    }
+    const editor = el('code-editor'); if (editor) editor.value = '';
+    _codeHighlighted = false;
+    el('note-panel')?.classList.remove('view-highlighted');
+    _updateCodeViewToggleUi();
+    notePanelOpen = false; notePanelNodeId = null;
+    codePanelOpen = false; codePanelNodeId = null;
+    el('note-panel')?.classList.remove('open');
+    render();
+    showToast('Code block cleared');
+    return;
+  }
   const targetId = notePanelNodeId;
   _notePanelSuppressClickOutside = true;
   const ok = await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', title:'Clear note', body:'Remove the note from this node?', confirmLabel:'Clear', confirmCls:'danger', cancelLabel:'Cancel'});
