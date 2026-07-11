@@ -20318,6 +20318,7 @@ function closePreviewPopover(){
   if(previewPopoverEl){previewPopoverEl.remove(); previewPopoverEl=null;}
   document.removeEventListener('click',previewPopoverOutsideHandler,true);
   window.removeEventListener('keydown',previewPopoverEscHandler);
+  el('preview-body')?.removeEventListener('scroll',closePreviewPopover);
 }
 function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target))closePreviewPopover(); }
 function previewPopoverEscHandler(e){ if(e.key==='Escape')closePreviewPopover(); }
