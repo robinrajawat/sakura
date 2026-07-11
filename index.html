@@ -23883,11 +23883,23 @@ function _addTagPopoverFromInput(){
   function deleteSubtask(parentId, subId){
     const t=todos.find(x=>x.id===parentId);
     if(!t || !t.subtasks) return;
-    t.subtasks=t.subtasks.filter(s=>s.id!==subId);
+    const idx=t.subtasks.findIndex(s=>s.id===subId);
+    if(idx<0) return;
+    const removed=t.subtasks[idx];
+    t.subtasks.splice(idx,1);
     recomputeParentDone(t);
     pruneCompleted();
     saveTodos();
     renderTodos();
+    showTodosActionToast('Subtask deleted','Undo',()=>{
+      const parent=todos.find(x=>x.id===parentId);
+      if(!parent) return;
+      if(!parent.subtasks) parent.subtasks=[];
+      parent.subtasks.splice(Math.min(idx,parent.subtasks.length),0,removed);
+      recomputeParentDone(parent);
+      saveTodos();
+      renderTodos();
+    });
   }
   function toggleSubtasksOpen(parentId){
     const t=todos.find(x=>x.id===parentId);
