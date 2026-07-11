@@ -1296,10 +1296,9 @@ body.pad-decision-mode #decision-body{display:flex}
 #decision-timestamp{white-space:nowrap}
 #decision-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;margin-left:auto;border-radius:5px;display:inline-flex;transition:color .12s,background .12s}
 #decision-delete-btn:hover{color:var(--sem-alert);background:var(--hover)}
-#dtb-list-toggle[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#decision-count-chip{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+#decision-count-chip{appearance:none;border:1px solid transparent;background:transparent;display:inline-flex;align-items:center;gap:5px;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:2px 8px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #decision-count-chip:hover{background:var(--hover);color:var(--fg)}
-body.decision-list-mode #decision-count-chip{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#decision-count-chip[aria-pressed="true"],body.decision-list-mode #decision-count-chip{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #decision-open-chip{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--fc-orange);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #decision-open-chip:hover:not(:disabled){background:color-mix(in srgb,var(--fc-orange) 14%,transparent)}
 #decision-open-chip[aria-pressed="true"]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -1327,6 +1326,10 @@ body.decision-list-mode #decision-count-chip{color:var(--accent);border-color:co
 .decision-row-node{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-meta{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:4px}
+#decision-quicknav{display:none;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+#decision-quicknav.visible{display:flex}
+.decision-quicknav-chip{appearance:none;border:1px solid var(--border);background:var(--edit-bg);font:500 10.5px 'Inter',sans-serif;padding:2px 9px;border-radius:999px;cursor:pointer;color:var(--muted);transition:background .12s,border-color .12s,color .12s}
+.decision-quicknav-chip:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
 body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(.decision-only-btn),body.pad-decision-mode #pad-toolbar>.note-tb-sep:not(.decision-only-btn){display:none}
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
@@ -4493,8 +4496,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <button class="note-tb-btn decision-only-btn" id="dtb-list-toggle" data-tip="Browse all decisions" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
-    <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions"></button>
+    <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="decision-count-chip-label"></span></button>
   </div>
   <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links, attach files."></div>
   <div id="qa-body">
@@ -4518,6 +4520,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         <button type="button" id="decision-status" class="pv-dlog-status" data-tip="Cycle status"></button>
       </div>
       <div id="decision-node-label"></div>
+      <div id="decision-quicknav"></div>
       <div class="pv-dlog-field" id="decision-field-context"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-blue)">Context</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-context" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-context" contenteditable="true" data-placeholder="What prompted this decision?"></div></div>
       <div class="pv-dlog-field" id="decision-field-decision"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-red)">Decision</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-decision" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-decision" contenteditable="true" data-placeholder="What was decided?"></div></div>
       <div class="pv-dlog-field" id="decision-field-rationale"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-purple)">Rationale</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-rationale" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-rationale" contenteditable="true" data-placeholder="Why was this option chosen?"></div></div>
@@ -18586,13 +18589,29 @@ function renderDecisionList(allLogs){
     list.appendChild(row);
   });
 }
+function renderDecisionQuicknav(dl){
+  const navWrap=el('decision-quicknav'); if(!navWrap)return;
+  navWrap.innerHTML='';
+  const populated=DL_FIELDS.filter(f=>!decisionLogHiddenFields.includes(f.key)&&stripHtmlToText(dl[f.key]||'').trim());
+  if(populated.length>1){
+    populated.forEach(f=>{
+      const chip=document.createElement('button'); chip.type='button'; chip.className='decision-quicknav-chip';
+      chip.textContent=f.key.charAt(0).toUpperCase()+f.key.slice(1);
+      chip.addEventListener('click',()=>{ el('decision-field-'+f.key)?.scrollIntoView({block:'start',behavior:'smooth'}); });
+      navWrap.appendChild(chip);
+    });
+    navWrap.classList.add('visible');
+  }else{ navWrap.classList.remove('visible'); }
+}
 function renderDecisionPad(){
   const body=el('decision-body'); if(!body)return;
   const node=nodes.find(n=>n.id===selectedId);
   decisionPadNodeId=node?node.id:null;
   const allLogs=decisionAllLogNodes();
-  const countChip=el('decision-count-chip'); if(countChip)countChip.textContent=allLogs.length?`${allLogs.length} decision${allLogs.length===1?'':'s'}`:'';
-  const toggleBtn=el('dtb-list-toggle'); if(toggleBtn)toggleBtn.setAttribute('aria-pressed',String(decisionListMode));
+  const countChip=el('decision-count-chip'), countLabel=el('decision-count-chip-label');
+  if(countLabel)countLabel.textContent=allLogs.length?`${allLogs.length} decision${allLogs.length===1?'':'s'}`:'No decisions yet';
+  if(countChip)countChip.setAttribute('aria-pressed',String(decisionListMode));
+  if(countChip)countChip.dataset.tip=decisionListMode?'Back to this decision':'Browse all decisions';
   body.classList.toggle('list-mode',decisionListMode);
   if(decisionListMode){ renderDecisionList(allLogs); return; }
   if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; }
@@ -18601,14 +18620,16 @@ function renderDecisionPad(){
   body.classList.toggle('no-log',!hasLog);
   const emptyMsg=body.querySelector('#decision-empty p');
   const addBtn=el('decision-add-btn');
-  if(!node){ if(emptyMsg)emptyMsg.textContent='Select a node to add a decision log.'; if(addBtn)addBtn.style.display='none'; return; }
-  if(!hasLog){ if(emptyMsg)emptyMsg.textContent="This node doesn't have a decision log yet."; if(addBtn)addBtn.style.display=''; return; }
+  const navWrap=el('decision-quicknav');
+  if(!node){ if(emptyMsg)emptyMsg.textContent='Select a node to add a decision log.'; if(addBtn)addBtn.style.display='none'; if(navWrap)navWrap.classList.remove('visible'); return; }
+  if(!hasLog){ if(emptyMsg)emptyMsg.textContent="This node doesn't have a decision log yet."; if(addBtn)addBtn.style.display=''; if(navWrap)navWrap.classList.remove('visible'); return; }
   const dl=node.decisionLog;
   const label=el('decision-node-label'); if(label)label.textContent=getNodePlainText(node).trim().slice(0,80)||'(untitled node)';
   ['context','decision','rationale','alternatives','impact'].forEach(key=>{
     const field=el('decision-'+key); if(field)field.innerHTML=sakuraSanitizeRichHtml(dl[key]||'');
     const row=el('decision-field-'+key); if(row)row.style.display=decisionLogHiddenFields.includes(key)?'none':'';
   });
+  if(navWrap)renderDecisionQuicknav(dl);
   el('decision-author').value=dl.author||'';
   const sep=el('decision-meta-sep'); if(sep)sep.style.display=dl.author?'':'none';
   const status=DECISION_STATUSES.includes((dl.status||'').toLowerCase())?dl.status.toLowerCase():'proposed';
@@ -18653,8 +18674,7 @@ document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
 });
 el('decision-add-btn')?.addEventListener('click',addDecisionLogToNode);
 el('decision-delete-btn')?.addEventListener('click',deleteDecisionLogFromNode);
-el('dtb-list-toggle')?.addEventListener('click',()=>toggleDecisionListMode());
-el('decision-count-chip')?.addEventListener('click',()=>toggleDecisionListMode(true));
+el('decision-count-chip')?.addEventListener('click',()=>toggleDecisionListMode());
 el('decision-open-chip')?.addEventListener('click',()=>{ decisionListOpenOnly=!decisionListOpenOnly; renderDecisionList(); });
 el('decision-author-filter')?.addEventListener('change',e=>{ decisionListAuthorFilter=e.target.value; renderDecisionList(); });
 el('decision-status')?.addEventListener('click',()=>{
@@ -18728,6 +18748,7 @@ function decisionFieldSyncModel(key,field){
   node.decisionLog[key]=sakuraSanitizeRichHtml(field.innerHTML);
   node.decisionLog.timestamp=Date.now();
   const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
+  renderDecisionQuicknav(node.decisionLog);
   markDirty(); scheduleAutoSave();
 }
 function decisionFieldSessionUndoRun(key){
@@ -18769,15 +18790,18 @@ async function rewriteDecisionField(key){
   try{
     const result=await callAiApi(text);
     if(!result)throw new Error('Empty response from AI');
+    pushDecisionFieldSessionUndo(key); _decisionFieldCheckpointPending[key]=true;
     if(field)field.textContent=result;
     node.decisionLog[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
     node.decisionLog.timestamp=Date.now();
     const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
+    renderDecisionQuicknav(node.decisionLog);
     markDirty(); scheduleAutoSave();
     showActionToast(key.charAt(0).toUpperCase()+key.slice(1)+' rewritten','Undo',()=>{
       const it=nodes.find(n=>n.id===decisionPadNodeId); if(!it||!it.decisionLog)return;
       it.decisionLog[key]=originalHtml;
       const field2=el('decision-'+key); if(field2)field2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
+      renderDecisionQuicknav(it.decisionLog);
       markDirty(); scheduleAutoSave();
     });
   }catch(e){ showToast('Rewrite failed — '+(e.message||'try again')); }
