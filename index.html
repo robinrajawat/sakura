@@ -1265,9 +1265,11 @@ body.pad-qa-mode #qa-followup-count{display:flex}
    once flagged via the .set class, colored to match. */
 .qa-followup{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;margin-top:3px;transition:color .12s,background .12s,border-color .12s}
 .qa-followup.set{display:inline-flex;color:#c98f4a}
+.qa-followup.set.ai{color:var(--accent)}
 .qa-row:hover .qa-followup{display:inline-flex}
 .qa-followup:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 .qa-followup.set:hover{color:#c98f4a}
+.qa-followup.set.ai:hover{color:var(--accent)}
 .qa-followup svg{fill:currentColor;flex-shrink:0}
 #ptb-flip{position:absolute;bottom:14px;right:14px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #ptb-flip:hover{opacity:1;color:var(--fg);background:var(--hover)}
@@ -3821,7 +3823,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small "Follow-up" chip (hover to reveal, stays visible once set) for flagging an answer as not yet confirmed — AI-drafted answers get it automatically, since they're a starting point rather than a verified answer; clear it once you've checked the answer over. A matching "<em>n</em> follow-up" chip in the toolbar filters to just those rows, same as the other two, and all three filters can combine. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has a second side: the flip button (⇄) at the right end of its toolbar switches between your free-write Notes and a structured <strong>Q&amp;A</strong> list — same panel, same open/close/position, just a different view. Each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notes) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -18411,16 +18413,27 @@ function qaIsUnanswered(item){ return !(item.answer||'').trim(); }
 // to point anywhere, so flagging them as "unlinked" would just be noise, not a real problem.
 function qaIsUnlinked(item){ return item.sourceNodeId!=null && !nodes.some(n=>n.id===item.sourceNodeId); }
 function qaIsFollowUp(item){ return !!item.followUp; }
-function setQaRowFollowUp(id,on){
+function qaFollowUpLabel(v){ return v==='ai-draft'?'AI draft':'Follow-up'; }
+function qaFollowUpTip(v){ return v==='ai-draft'?'AI-drafted — not yet reviewed (click to clear)':v==='follow-up'?'Needs follow-up (click to clear)':'Flag for follow-up'; }
+function setQaRowFollowUp(id,value){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
-  item.followUp=!!on;
+  item.followUp=value||'';
   const btn=el(`qa-followup-${id}`);
-  if(btn){ btn.classList.toggle('set',item.followUp); btn.dataset.tip=item.followUp?'Needs follow-up (click to clear)':'Flag for follow-up'; btn.querySelector('circle')?.setAttribute('fill',item.followUp?'currentColor':'none'); }
+  if(btn){
+    btn.classList.toggle('set',!!item.followUp);
+    btn.classList.toggle('ai',item.followUp==='ai-draft');
+    btn.dataset.tip=qaFollowUpTip(item.followUp);
+    const label=btn.querySelector('span'); if(label)label.textContent=item.followUp?qaFollowUpLabel(item.followUp):'Follow-up';
+    btn.querySelector('circle')?.setAttribute('fill',item.followUp?'currentColor':'none');
+  }
   updateQaProgress();
 }
 function toggleQaFollowUp(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
-  setQaRowFollowUp(id,!item.followUp);
+  // Either flag value clears on click — an AI-draft chip you've clicked on has been noticed,
+  // and a manual follow-up chip you've clicked on is done. Clicking an unflagged row always
+  // sets the manual 'follow-up' value; only drafting sets 'ai-draft'.
+  setQaRowFollowUp(id, item.followUp ? '' : 'follow-up');
   markDirty(); scheduleAutoSave();
 }
 // Shared by rendering, shift-click range selection, and plain-text export so all three agree
@@ -18560,17 +18573,17 @@ async function qaGenerateAnswerText(item){
 async function draftQaAnswer(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   if(!(item.question||'').trim()){ showToast('Add a question first'); return; }
-  const priorFollowUp=!!item.followUp;
+  const priorFollowUp=item.followUp||'';
   const btn=el(`qa-rw-answer-${id}`); if(btn)btn.classList.add('ai-busy');
   try{
     const result=await qaGenerateAnswerText(item);
     if(!result)throw new Error('Empty response from AI');
     item.answer=result;
     const ta=el(`qa-a-${id}`); if(ta){ ta.value=result; autoGrowTextarea(ta); }
-    setQaRowFollowUp(id,true);
+    setQaRowFollowUp(id,'ai-draft');
     markDirty(); scheduleAutoSave(); updateQaProgress();
     const rwBtn=el(`qa-rw-answer-${id}`); if(rwBtn){ rwBtn.dataset.tip='Rewrite answer (AI)'; rwBtn.innerHTML=QA_SPARKLE_SVG; }
-    showActionToast('Answer drafted — flagged for follow-up','Undo',()=>{
+    showActionToast('Answer drafted — marked as AI draft','Undo',()=>{
       const it=qaItems.find(x=>x.id===id); if(!it)return;
       it.answer='';
       const ta2=el(`qa-a-${id}`); if(ta2){ ta2.value=''; autoGrowTextarea(ta2); }
@@ -18602,7 +18615,7 @@ async function bulkDraftUnansweredAnswers(){
       const fieldBtn=el(`qa-rw-answer-${id}`); if(fieldBtn)fieldBtn.classList.add('ai-busy');
       try{
         const result=await qaGenerateAnswerText(item);
-        if(result){ item.answer=result; item.followUp=true; draftedCount++; }
+        if(result){ item.answer=result; item.followUp='ai-draft'; draftedCount++; }
       }catch(err){ showAiErrorModal(aiProvider, err); stoppedEarly=true; if(fieldBtn)fieldBtn.classList.remove('ai-busy'); break; }
       if(fieldBtn)fieldBtn.classList.remove('ai-busy');
     }
@@ -18617,7 +18630,7 @@ async function bulkDraftUnansweredAnswers(){
         stoppedEarly?`Stopped — ${draftedCount} answer${draftedCount===1?'':'s'} drafted`:`${draftedCount} answer${draftedCount===1?'':'s'} drafted`,
         'Undo',
         ()=>{
-          ids.forEach(sid=>{ const it=qaItems.find(x=>x.id===sid); if(it){ it.answer=''; it.followUp=false; } });
+          ids.forEach(sid=>{ const it=qaItems.find(x=>x.id===sid); if(it){ it.answer=''; it.followUp=''; } });
           renderQaList(); markDirty(); scheduleAutoSave();
         }
       );
@@ -18833,9 +18846,9 @@ function renderQaList(){
 
     content.appendChild(qWrap); content.appendChild(aWrap);
 
-    const followUpBtn=document.createElement('button'); followUpBtn.type='button'; followUpBtn.id=`qa-followup-${item.id}`; followUpBtn.className='qa-followup'+(item.followUp?' set':'');
-    followUpBtn.dataset.tip=item.followUp?'Needs follow-up (click to clear)':'Flag for follow-up';
-    followUpBtn.innerHTML=`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${item.followUp?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg><span>Follow-up</span>`;
+    const followUpBtn=document.createElement('button'); followUpBtn.type='button'; followUpBtn.id=`qa-followup-${item.id}`; followUpBtn.className='qa-followup'+(item.followUp?' set':'')+(item.followUp==='ai-draft'?' ai':'');
+    followUpBtn.dataset.tip=qaFollowUpTip(item.followUp);
+    followUpBtn.innerHTML=`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${item.followUp?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg><span>${item.followUp?qaFollowUpLabel(item.followUp):'Follow-up'}</span>`;
     followUpBtn.addEventListener('click',e=>{ e.stopPropagation(); toggleQaFollowUp(item.id); });
     content.appendChild(followUpBtn);
 
