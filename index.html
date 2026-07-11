@@ -1245,15 +1245,28 @@ body.pad-qa-mode #qtb-export-txt{margin-left:auto}
 body.pad-qa-mode #pad-editor{display:none}
 body.pad-qa-mode #qa-body{display:flex}
 #decision-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding:14px 16px;background:var(--canvas-bg)}
+#decision-body-head{display:flex;align-items:center;justify-content:space-between;margin:-14px -16px 14px;padding:9px 12px 9px 14px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
+#decision-body-head span{font:600 12px 'Inter',sans-serif;color:var(--fg)}
+#decision-close-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:5px;display:inline-flex;transition:color .12s,background .12s}
+#decision-close-btn:hover{color:var(--fg);background:var(--hover)}
 body.pad-decision-mode #pad-editor{display:none}
 body.pad-decision-mode #decision-body{display:flex}
 #decision-empty{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:10px;text-align:center;color:var(--muted);font:400 13px 'Inter',sans-serif}
 #decision-body.no-log #decision-empty{display:flex}
 #decision-body.no-log #decision-card{display:none}
+#decision-card{background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-gray);border-radius:10px;padding:16px 18px}
+#decision-card.pv-dlog-accent-green{border-left-color:var(--fc-green)}
+#decision-card.pv-dlog-accent-red{border-left-color:var(--fc-red)}
+#decision-card.pv-dlog-accent-orange{border-left-color:var(--fc-orange)}
+#decision-card.pv-dlog-accent-gray{border-left-color:var(--fc-gray)}
 #decision-add-btn{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;padding:6px 14px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
 #decision-add-btn:hover{background:var(--hover);border-color:var(--accent)}
 #decision-node-label{font:400 11px 'Inter',sans-serif;color:var(--muted);margin:-4px 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #decision-card .pv-dlog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
+#decision-card .pv-dlog-accent-text-green{color:var(--fc-green)}
+#decision-card .pv-dlog-accent-text-red{color:var(--fc-red)}
+#decision-card .pv-dlog-accent-text-orange{color:var(--fc-orange)}
+#decision-card .pv-dlog-accent-text-gray{color:var(--fc-gray)}
 #decision-card .pv-dlog-head-title{display:flex;align-items:center;gap:6px;font:700 10.5px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
 #decision-status{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 #decision-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
@@ -1269,7 +1282,7 @@ body.pad-decision-mode #decision-body{display:flex}
 .pv-dlog-field:hover .decision-field-rewrite,.decision-field-rewrite:focus{opacity:.6}
 .decision-field-rewrite:hover{opacity:1;color:var(--accent);background:var(--hover)}
 .decision-field-rewrite.ai-busy{opacity:1;color:var(--accent);animation:qa-pulse 1s ease-in-out infinite}
-#decision-card textarea{width:100%;resize:none;border:none;background:transparent;outline:none;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5;padding:0;font-family:var(--content-font)}
+#decision-card textarea{appearance:none;width:100%;resize:none;border:none;background:transparent;outline:none;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.6;padding:0;font-family:var(--content-font);display:block}
 #decision-card textarea::placeholder{color:var(--hint)}
 .pv-dlog-meta{display:flex;align-items:center;gap:8px;font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--border)}
 #decision-author{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 11.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;outline:none;transition:color .12s,border-color .12s;field-sizing:content;min-width:70px;max-width:220px}
@@ -1279,7 +1292,8 @@ body.pad-decision-mode #decision-body{display:flex}
 #decision-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;margin-left:auto;border-radius:5px;display:inline-flex;transition:color .12s,background .12s}
 #decision-delete-btn:hover{color:var(--sem-alert);background:var(--hover)}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#ptb-flip):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
-body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(#ptb-flip):not(#ptb-decision):not(#pad-clear-btn),body.pad-decision-mode #pad-toolbar>.note-tb-sep,body.pad-decision-mode #pad-toolbar>.qa-only-btn{display:none}
+body.pad-decision-mode #pad-toolbar{padding:0;border-bottom:none;background:transparent;min-height:0}
+body.pad-decision-mode #pad-toolbar>*:not(#ptb-flip):not(#ptb-decision){display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 #qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #qa-progress:hover:not(:disabled){background:var(--hover);color:var(--fg)}
@@ -4449,6 +4463,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <div id="qa-empty">No Q&amp;A rows yet. Scan the outline for questions ending in "?", or add a blank row.</div>
   </div>
   <div id="decision-body">
+    <div id="decision-body-head">
+      <span>Decision Log</span>
+      <button type="button" id="decision-close-btn" data-tip="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
     <div id="decision-empty">
       <p>The selected node doesn't have a decision log yet.</p>
       <button type="button" id="decision-add-btn">Add decision log</button>
@@ -18449,14 +18467,15 @@ function renderDecisionPad(){
   if(!hasLog){ if(emptyMsg)emptyMsg.textContent="This node doesn't have a decision log yet."; if(addBtn)addBtn.style.display=''; return; }
   const dl=node.decisionLog;
   const label=el('decision-node-label'); if(label)label.textContent=getNodePlainText(node).trim().slice(0,80)||'(untitled node)';
-  el('decision-context').value=dl.context||'';
-  el('decision-decision').value=dl.decision||'';
-  el('decision-rationale').value=dl.rationale||'';
-  el('decision-alternatives').value=dl.alternatives||'';
-  el('decision-impact').value=dl.impact||'';
+  ['context','decision','rationale','alternatives','impact'].forEach(key=>{
+    const ta=el('decision-'+key); if(ta){ ta.value=dl[key]||''; autoGrowTextarea(ta); }
+  });
   el('decision-author').value=dl.author||'';
   const status=DECISION_STATUSES.includes((dl.status||'').toLowerCase())?dl.status.toLowerCase():'proposed';
-  const statusBtn=el('decision-status'); if(statusBtn){ statusBtn.dataset.color=previewStatusBadgeColor(status); statusBtn.textContent=decisionStatusLabel(status); }
+  const color=previewStatusBadgeColor(status);
+  const statusBtn=el('decision-status'); if(statusBtn){ statusBtn.dataset.color=color; statusBtn.textContent=decisionStatusLabel(status); }
+  const headTitle=el('decision-head-title'); if(headTitle)headTitle.className='pv-dlog-head-title pv-dlog-accent-text-'+color;
+  const card=el('decision-card'); if(card)card.className='pv-dlog-accent-'+color;
   const ts=el('decision-timestamp'); if(ts){ ts.textContent=dl.timestamp?qaFormatShortDate(dl.timestamp):''; ts.dataset.tip=dl.timestamp?`Last updated ${formatTimestamp(dl.timestamp)}`:''; }
 }
 async function addDecisionLogToNode(){
@@ -18490,13 +18509,17 @@ async function deleteDecisionLogFromNode(){
 }
 el('ptb-decision')?.addEventListener('click',toggleDecisionPadMode);
 el('decision-add-btn')?.addEventListener('click',addDecisionLogToNode);
+el('decision-close-btn')?.addEventListener('click',()=>setPadOpen(false));
 el('decision-delete-btn')?.addEventListener('click',deleteDecisionLogFromNode);
 el('decision-status')?.addEventListener('click',()=>{
   const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
   const cur=DECISION_STATUSES.indexOf((node.decisionLog.status||'proposed').toLowerCase());
   const next=DECISION_STATUSES[(cur+1)%DECISION_STATUSES.length];
   node.decisionLog.status=next; node.decisionLog.timestamp=Date.now();
-  const btn=el('decision-status'); if(btn){ btn.dataset.color=previewStatusBadgeColor(next); btn.textContent=decisionStatusLabel(next); }
+  const color=previewStatusBadgeColor(next);
+  const btn=el('decision-status'); if(btn){ btn.dataset.color=color; btn.textContent=decisionStatusLabel(next); }
+  const headTitle=el('decision-head-title'); if(headTitle)headTitle.className='pv-dlog-head-title pv-dlog-accent-text-'+color;
+  const card=el('decision-card'); if(card)card.className='pv-dlog-accent-'+color;
   const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
   markDirty(); scheduleAutoSave();
 });
@@ -18510,7 +18533,9 @@ el('decision-author')?.addEventListener('change',()=>{
 ['context','decision','rationale','alternatives','impact'].forEach(key=>{
   el('decision-'+key)?.addEventListener('input',()=>{
     const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
-    node.decisionLog[key]=el('decision-'+key).value;
+    const ta=el('decision-'+key);
+    node.decisionLog[key]=ta.value;
+    autoGrowTextarea(ta);
     node.decisionLog.timestamp=Date.now();
     const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
     markDirty(); scheduleAutoSave();
@@ -18527,13 +18552,13 @@ async function rewriteDecisionField(key){
     if(!result)throw new Error('Empty response from AI');
     node.decisionLog[key]=result;
     node.decisionLog.timestamp=Date.now();
-    const ta=el('decision-'+key); if(ta)ta.value=result;
+    const ta=el('decision-'+key); if(ta){ ta.value=result; autoGrowTextarea(ta); }
     const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
     markDirty(); scheduleAutoSave();
     showActionToast(key.charAt(0).toUpperCase()+key.slice(1)+' rewritten','Undo',()=>{
       const it=nodes.find(n=>n.id===decisionPadNodeId); if(!it||!it.decisionLog)return;
       it.decisionLog[key]=original;
-      const ta2=el('decision-'+key); if(ta2)ta2.value=original;
+      const ta2=el('decision-'+key); if(ta2){ ta2.value=original; autoGrowTextarea(ta2); }
       markDirty(); scheduleAutoSave();
     });
   }catch(e){ showToast('Rewrite failed — '+(e.message||'try again')); }
