@@ -18441,9 +18441,20 @@ function renderQaAnswerersDatalist(){
 }
 // Refreshes a row's answered-by/answered-at display in place — used after AI drafts or
 // rewrites an answer, where there's no full renderQaList() to pick the new values up from.
+let _qaMeasureCtx=null;
+function qaMeasureTextWidth(text,font){
+  if(!_qaMeasureCtx)_qaMeasureCtx=document.createElement('canvas').getContext('2d');
+  _qaMeasureCtx.font=font;
+  return _qaMeasureCtx.measureText(text).width;
+}
+// Matches .qa-answered-by's CSS font declaration exactly — hardcoded rather than read via
+// getComputedStyle(), since that call is made right after the input is created but before
+// it's attached to the document, and detached elements don't reliably resolve computed style.
+const QA_ANSWERED_BY_FONT="400 10.5px 'Inter',sans-serif";
 function qaSizeAnsweredInput(input){
-  const len=(input.value||input.placeholder||'').length;
-  input.size=Math.max(6,Math.min(len,20));
+  const text=input.value||input.placeholder||'';
+  const w=qaMeasureTextWidth(text,QA_ANSWERED_BY_FONT);
+  input.style.width=Math.ceil(w)+4+'px';
 }
 function updateQaAnsweredMeta(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
