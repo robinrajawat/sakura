@@ -1325,8 +1325,9 @@ body.pad-decision-mode #decision-count-chip{display:inline-flex}
 .decision-row-node{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-meta{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:4px}
-#decision-quicknav{display:none;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-#decision-quicknav.visible{display:flex}
+#decision-quicknav{display:none;flex-wrap:wrap;gap:6px;margin:0 -18px 12px;padding:0 18px}
+#decision-quicknav.visible{display:flex;position:sticky;top:0;z-index:2;background:var(--edit-bg);padding-top:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid transparent;transition:border-color .12s}
+#decision-body:not(.at-top) #decision-quicknav.visible{border-bottom-color:var(--border)}
 .decision-quicknav-chip{appearance:none;border:1px solid var(--border);background:var(--edit-bg);font:500 10.5px 'Inter',sans-serif;padding:2px 9px;border-radius:999px;cursor:pointer;color:var(--muted);transition:background .12s,border-color .12s,color .12s}
 .decision-quicknav-chip:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
@@ -4101,6 +4102,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <li>A structured decision record attached to the selected node — Context, Decision, Rationale, Alternatives, and Impact fields, a Status pill (Proposed/Approved/Rejected) you click to cycle through, and an author/timestamp footer. Lives in its own tab in the Pad, right alongside Notepad and Q&amp;A — not inserted as outline nodes</li>
 <li>Add one via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), right-click a node → <span class="help-kbd">More</span> → Decision log, or open the Decision Log tab while that node is selected and click Add. A small accent-colored dot appears next to a node that has one — click it to jump straight to its card; the same dot echoes on the Decision Log tab when the selected node has one. Remove one from the Pad's own toolbar (same trash-can button Notepad uses for "Clear pad" and Q&amp;A uses for "Clear all Q&amp;A rows" — it adapts to whichever tab is open), with Undo</li>
 <li>Each field supports light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — plus a small AI-rewrite icon that appears on hover</li>
+<li>When two or more fields are filled in, a row of small jump chips (Context, Decision, etc.) appears under the node label — click one to scroll straight to that field. The row stays pinned to the top of the Pad while you scroll through a long card, so it's still there to click the next one without scrolling back up first</li>
 <li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the Pad's card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
 <li>Turning Decision Log off (Settings → Features → Pad Panel) hides its tab, toolbar button, right-click action, node dots, and Excel export — existing decision logs already in the document aren't deleted, just inaccessible until it's turned back on. Clicking a node's decision-log dot while the feature is off shows a reminder of where to re-enable it instead of silently doing nothing</li>
 <li>A small checkmark icon appears next to the "+N hidden" badge on a folded node when something inside its collapsed subtree contains a decision log, so you know there's one there before expanding</li>
@@ -18574,7 +18576,7 @@ function renderDecisionPad(){
     if(padViewMode==='decision'){ const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.style.display='none'; }
     renderDecisionList(allLogs); return;
   }
-  if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; }
+  if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; body.scrollTop=0; body.classList.add('at-top'); }
   const hasLog=nodeHasDecisionLog(node);
   const decisionTab=el('pad-tab-decision'); if(decisionTab)decisionTab.classList.toggle('has-log',hasLog);
   body.classList.toggle('no-log',!hasLog);
@@ -18634,6 +18636,10 @@ document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
   tab.addEventListener('click',()=>setPadViewMode(tab.dataset.mode));
 });
 el('decision-add-btn')?.addEventListener('click',addDecisionLogToNode);
+// Toggles the quicknav's separator border on only once you've actually scrolled past the
+// card header — at rest, the border would just be a redundant line sitting right under
+// content that's already fully visible.
+el('decision-body')?.addEventListener('scroll',e=>{ e.target.classList.toggle('at-top',e.target.scrollTop<=2); },{passive:true});
 el('decision-count-chip')?.addEventListener('click',()=>toggleDecisionListMode());
 el('decision-open-chip')?.addEventListener('click',()=>{ decisionListOpenOnly=!decisionListOpenOnly; renderDecisionList(); });
 el('decision-author-filter')?.addEventListener('change',e=>{ decisionListAuthorFilter=e.target.value; renderDecisionList(); });
