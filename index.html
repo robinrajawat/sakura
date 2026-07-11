@@ -1471,7 +1471,8 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 /* Pad panel can now stay open in zen mode (toggle via its own button) */
 
 /* === Node Notes === */
-#note-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,540px);font-family:'Inter',sans-serif;overflow:hidden}
+#note-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,540px);font-family:'Inter',sans-serif;overflow:hidden;transition:width .16s cubic-bezier(.22,.8,.34,1),left .16s cubic-bezier(.22,.8,.34,1),top .16s cubic-bezier(.22,.8,.34,1)}
+#note-panel.dragging{transition:none}
 #note-panel.open{display:flex}
 #note-panel-header{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:move}
 #note-panel-header.dragging{cursor:grabbing}
@@ -1551,20 +1552,15 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .code-tb-btn:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
 .code-tb-btn.active{color:var(--accent)}
 .code-tb-btn.copied{color:var(--fc-green);border-color:var(--fc-green)}
-#code-editor-wrap{position:relative;flex:0 0 auto;height:280px;min-height:120px;max-height:70vh;margin:0 10px 10px;border-radius:8px;resize:vertical;overflow:auto}
-
-
-#note-panel.code-bg-distinct #code-editor,#note-panel.code-bg-distinct #code-view{background:var(--tb-bg)}
-#code-editor{width:100%;height:100%;box-sizing:border-box;border:none;outline:none;background:var(--canvas-bg);color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;padding:12px 14px;white-space:pre;overflow:auto;tab-size:2;resize:none}
-
-
-#code-editor::placeholder{color:var(--hint)}
-#code-view{display:none;width:100%;height:100%;box-sizing:border-box;margin:0;padding:12px 14px;background:var(--canvas-bg);color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;white-space:pre;overflow:auto}
-
-
+#code-editor-wrap{position:relative;flex:1;min-height:80px;max-height:400px;margin:0 10px 10px;border-radius:8px;resize:vertical;overflow:hidden;background:var(--canvas-bg)}
+#note-panel.code-bg-distinct #code-editor-wrap{background:var(--tb-bg)}
+#code-gutter{position:absolute;top:0;left:0;bottom:0;width:40px;padding:12px 0;box-sizing:border-box;overflow:hidden;text-align:right;font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;color:var(--hint);opacity:.5;user-select:none}
+#code-gutter span{display:block;padding-right:9px}
+#code-view{position:absolute;top:0;left:0;right:0;bottom:0;margin:0;box-sizing:border-box;padding:12px 14px 12px 50px;background:transparent;color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;white-space:pre;overflow:hidden;pointer-events:none}
 #code-view code{font:inherit;white-space:pre}
-#note-panel.view-highlighted #code-editor{display:none}
-#note-panel.view-highlighted #code-view{display:block}
+#code-editor{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;box-sizing:border-box;border:none;outline:none;background:transparent;color:transparent;caret-color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;padding:12px 14px 12px 50px;white-space:pre;overflow:auto;tab-size:2;resize:none}
+#code-editor::selection{background:color-mix(in srgb, var(--accent) 35%, transparent)}
+#code-editor::placeholder{color:var(--hint)}
 #code-panel-footer{display:flex;align-items:center;justify-content:flex-end;padding:4px 14px 10px;flex-shrink:0}
 .code-footer-hint{font:400 11px 'Inter',sans-serif;color:var(--hint)}
 
@@ -4085,9 +4081,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <h4>Code (in the Note panel)</h4>
 <ul>
 <li>Every node can also hold one code block, on its own <strong>Code</strong> tab inside the same panel as its Note — there's no separate popup, toolbar button, or right-click entry for it. Switch tabs with the header switch, or jump straight there with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">K</span>. A node with code but no note text opens directly to the Code tab when you click its dot</li>
-<li>A real <span class="help-kbd">&lt;textarea&gt;</span> for editing — no rich-text formatting, just plain code. Drag the bottom edge to resize it vertically. Dragging the panel, maximizing it, and closing it all work the same as described above for the Note tab, since it's the same window</li>
+<li>A real <span class="help-kbd">&lt;textarea&gt;</span> for editing, syntax-highlighted live as you type — no rich-text formatting, just plain code with color. Line numbers down the left edge. Drag the bottom edge to resize it vertically. Dragging the panel, maximizing it, and closing it all work the same as described above for the Note tab, since it's the same window</li>
 <li>Language picker: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown</li>
-<li><strong>Highlight</strong> toggles between raw edit mode and a read-only syntax-highlighted view — the raw text in the textarea is always what's saved, the highlighted view is just for reading</li>
 <li><strong>Copy</strong> copies the raw code text (not HTML) to your clipboard</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo edits made in this code block while it's open — its own undo history, separate from the Note tab's, reset each time you open a code block and cleared when you close it. The whole session still counts as one step on the outline's own undo when you close the panel. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> or <span class="help-kbd">Esc</span> → close and save; "Clear code" removes it entirely (undoable) and closes the panel</li>
 <li>A small <span class="help-kbd">&lt;/&gt;</span> badge on the node's note dot signals it has a code block, whichever tab you last had open</li>
@@ -4821,21 +4816,18 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <div class="code-lang-menu" id="code-lang-menu" role="listbox" aria-label="Code language" hidden></div>
     </div>
     <span class="code-tb-sep"></span>
-    <button class="code-tb-btn" id="code-view-toggle" data-tip="Toggle raw edit / highlighted view" aria-label="Toggle highlighted view">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-      <span id="code-view-toggle-label">Highlight</span>
-    </button>
     <button class="code-tb-btn" id="code-copy-btn" data-tip="Copy code" aria-label="Copy code">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       <span id="code-copy-btn-label">Copy</span>
     </button>
   </div>
   <div id="code-editor-wrap">
-    <textarea id="code-editor" spellcheck="false" placeholder="Paste or type code…"></textarea>
+    <div id="code-gutter"></div>
     <pre id="code-view"><code id="code-view-code"></code></pre>
+    <textarea id="code-editor" spellcheck="false" placeholder="Paste or type code…"></textarea>
   </div>
   <div id="code-panel-footer">
-    <span class="code-footer-hint">Toggle to view syntax highlighting · raw text is always what's saved</span>
+    <span class="code-footer-hint" id="code-footer-hint"></span>
   </div>
 </div>
 
@@ -5953,8 +5945,8 @@ function pushNoteSessionUndo(){const editor=el('note-editor'); if(!editor)return
 function noteSessionUndo(){const editor=el('note-editor'); if(!editor||!noteSessionUndoStack.length)return; noteSessionRedoStack.push(editor.innerHTML); editor.innerHTML=noteSessionUndoStack.pop(); markDirty(); _reinitNoteEditorTables(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
 function noteSessionRedo(){const editor=el('note-editor'); if(!editor||!noteSessionRedoStack.length)return; noteSessionUndoStack.push(editor.innerHTML); editor.innerHTML=noteSessionRedoStack.pop(); markDirty(); _reinitNoteEditorTables(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
 function pushCodeSessionUndo(){const editor=el('code-editor'); if(!editor)return; codeSessionUndoStack.push(editor.value); if(codeSessionUndoStack.length>100)codeSessionUndoStack.shift(); codeSessionRedoStack=[]}
-function codeSessionUndo(){const editor=el('code-editor'); if(!editor||!codeSessionUndoStack.length)return; codeSessionRedoStack.push(editor.value); editor.value=codeSessionUndoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true}
-function codeSessionRedo(){const editor=el('code-editor'); if(!editor||!codeSessionRedoStack.length)return; codeSessionUndoStack.push(editor.value); editor.value=codeSessionRedoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true}
+function codeSessionUndo(){const editor=el('code-editor'); if(!editor||!codeSessionUndoStack.length)return; codeSessionRedoStack.push(editor.value); editor.value=codeSessionUndoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
+function codeSessionRedo(){const editor=el('code-editor'); if(!editor||!codeSessionRedoStack.length)return; codeSessionUndoStack.push(editor.value); editor.value=codeSessionRedoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
 // Contextual dispatcher: routes to whichever stack matches what's currently focused.
 // The keydown interceptions inside each editor are already naturally scoped this way
 // (only pad-editor's keydown can call padUndo(), etc.) — this dispatcher exists so the
@@ -9835,7 +9827,6 @@ function setupContextQuickbarSettings(){
 const CODE_LANGS=['plain','abap','sql','javascript','python','json','markup','markdown'];
 let codePanelNodeId=null;
 let codePanelOpen=false;
-let _codeHighlighted=false; // false = raw edit mode, true = highlighted read-only view
 
 // Lightweight dependency-free tokenizer. Each language is an ordered list of
 // [tokenType, regex] pairs scanned left-to-right with sticky ('y') regexes.
@@ -9929,17 +9920,18 @@ function highlightCode(code,lang){
 function _loadCodePanelContent(id){
   const idx=getIndex(id); if(idx<0)return;
   const cb=nodes[idx].codeBlock||{lang:'plain',code:''};
-  const hasContent=!!(cb.code&&cb.code.trim());
-  _codeHighlighted=hasContent; // existing code opens read-only/highlighted; empty blocks open ready to type
   const editor=el('code-editor');
   if(editor)editor.value=cb.code||'';
   const sel=el('code-lang-select');
   if(sel)sel.value=CODE_LANGS.includes(cb.lang)?cb.lang:'plain';
   syncCodeLangTriggerUi();
-  const panel=el('note-panel');
-  if(panel)panel.classList.toggle('view-highlighted',_codeHighlighted);
-  if(_codeHighlighted)_renderCodeHighlightView();
-  _updateCodeViewToggleUi();
+  _renderCodeHighlightView();
+  renderCodeGutter();
+  updateCodeFooterInfo();
+  // Fresh load — always start scrolled to the top rather than wherever the previous
+  // node's code happened to leave the scroll position.
+  if(editor){editor.scrollTop=0; editor.scrollLeft=0;}
+  syncCodeScroll();
 }
 
 function commitCodeEdit(){
@@ -9959,16 +9951,13 @@ function commitCodeEdit(){
   }
 }
 
-function _updateCodeViewToggleUi(){
-  const btn=el('code-view-toggle'); const label=el('code-view-toggle-label');
-  if(!btn)return;
-  btn.classList.toggle('active',_codeHighlighted);
-  if(label)label.textContent=_codeHighlighted?'Edit':'Highlight';
-  btn.dataset.tip=_codeHighlighted?'Switch back to raw edit mode':'Toggle raw edit / highlighted view';
-}
-
+// Renders the always-on syntax-highlighted layer that sits behind the (visually
+// transparent) textarea — see #code-editor's CSS: real typing/caret/selection happens
+// in the textarea, while what's actually visible is this highlighted <pre> showing
+// through underneath it. Called on every keystroke, so highlightCode's per-character
+// fallback (never throws, never stalls) matters more here than it did in the old
+// toggle-to-preview model.
 function _renderCodeHighlightView(){
-  const idx=getIndex(codePanelNodeId);
   const editor=el('code-editor'); const view=el('code-view-code');
   if(!editor||!view)return;
   const sel=el('code-lang-select');
@@ -9976,24 +9965,51 @@ function _renderCodeHighlightView(){
   view.innerHTML=highlightCode(editor.value,lang)||'&nbsp;';
 }
 
-el('code-view-toggle')?.addEventListener('click',()=>{
-  _codeHighlighted=!_codeHighlighted;
-  const panel=el('note-panel');
-  if(_codeHighlighted){
-    commitCodeEdit();
-    _renderCodeHighlightView();
-    panel?.classList.add('view-highlighted');
-  } else {
-    panel?.classList.remove('view-highlighted');
-    setTimeout(()=>{try{el('code-editor')?.focus()}catch(e){}},20);
-  }
-  _updateCodeViewToggleUi();
+// Line-number gutter, regenerated on every keystroke alongside the highlight layer.
+// Rebuilt wholesale rather than diffed — code blocks in a note-taking app are short
+// enough (a handful to a few hundred lines) that this is cheap, and it keeps the
+// logic simple rather than tracking incremental line insert/remove.
+function renderCodeGutter(){
+  const editor=el('code-editor'); const gutter=el('code-gutter');
+  if(!editor||!gutter)return;
+  const lineCount=editor.value.split('\n').length;
+  let html='';
+  for(let n=1;n<=lineCount;n++)html+=`<span>${n}</span>`;
+  gutter.innerHTML=html;
+}
+
+// The textarea (transparent text, visible caret) is the only actually-scrollable
+// surface — the highlighted <pre> and the gutter both sit underneath with
+// overflow:hidden and have their scrollTop/scrollLeft driven from here so the
+// highlighted text and line numbers track the real content precisely.
+function syncCodeScroll(){
+  const editor=el('code-editor'); const view=el('code-view'); const gutter=el('code-gutter');
+  if(!editor)return;
+  if(view){view.scrollTop=editor.scrollTop; view.scrollLeft=editor.scrollLeft;}
+  if(gutter)gutter.scrollTop=editor.scrollTop;
+}
+
+function updateCodeFooterInfo(){
+  const editor=el('code-editor'); const hint=el('code-footer-hint');
+  if(!editor||!hint)return;
+  const code=editor.value;
+  const lines=code?code.split('\n').length:0;
+  hint.textContent=lines?`${lines} line${lines===1?'':'s'}`:'';
+}
+
+el('code-editor')?.addEventListener('input',()=>{
+  _renderCodeHighlightView();
+  renderCodeGutter();
+  updateCodeFooterInfo();
+  syncCodeScroll();
 });
+el('code-editor')?.addEventListener('scroll',syncCodeScroll);
 
 el('code-lang-select')?.addEventListener('change',()=>{
   commitCodeEdit();
-  if(_codeHighlighted)_renderCodeHighlightView();
+  _renderCodeHighlightView();
 });
+
 
 function syncCodeLangTriggerUi(){
   const sel=el('code-lang-select'); const label=el('code-lang-trigger-label'); const menu=el('code-lang-menu');
@@ -10083,6 +10099,9 @@ el('code-editor')?.addEventListener('keydown',e=>{
     const start=ta.selectionStart, end=ta.selectionEnd;
     ta.value=ta.value.slice(0,start)+'  '+ta.value.slice(end);
     ta.selectionStart=ta.selectionEnd=start+2;
+    // Direct .value mutation doesn't fire a native 'input' event, so the highlight
+    // layer and gutter would otherwise go stale until the next real keystroke.
+    _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo();
   }
 });
 // Idle-debounce undo checkpointing for Code — same pattern as Pad/Note.
@@ -12917,7 +12936,7 @@ const SHORTCUTS = {
   moveUp:         {combo:'alt+arrowup',   label:'Move node up',             category:'Toolbar',          guarded:true,  action:()=>moveSelected(-1)},
   moveDown:       {combo:'alt+arrowdown', label:'Move node down',           category:'Toolbar',          guarded:true,  action:()=>moveSelected(1)},
   toggleNote:     {combo:'mod+shift+n',   label:'Open/close note',          category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='note'){closeNodePanel(true);}else{setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'note');}},
-  toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{if(!_codeHighlighted)el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
+  toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
 };
@@ -17033,7 +17052,7 @@ function openNodePanel(id, anchorRectOverride, forcedMode) {
   setNodePanelMode(mode, id, anchorRectOverride);
   updateNoteAiButtonStates();
   setTimeout(() => { try {
-    if (notePanelMode==='code') { if (!_codeHighlighted) el('code-editor')?.focus(); }
+    if (notePanelMode==='code') { el('code-editor')?.focus(); }
     else { el('note-editor')?.focus(); _reinitNoteEditorTables(); }
   } catch(e) {} }, 60);
 }
@@ -17050,7 +17069,7 @@ function closeNodePanel(save = true) {
     // buttons would stay stranded inside the header permanently, and the next
     // note opened in full view would be missing them from its toolbar.
     if (_noteCompact) setNoteCompact(false, true);
-    panel.classList.remove('open', 'maximized', 'view-highlighted');
+    panel.classList.remove('open', 'maximized');
     _noteMaximized = false;
     _updateMaximizeIcon();
   }
@@ -17103,7 +17122,7 @@ function setNodePanelMode(mode, id, anchorRectOverride) {
   }
 }
 el('npanel-tab-note')?.addEventListener('click', () => { if(notePanelMode!=='note') setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30); });
-el('npanel-tab-code')?.addEventListener('click', () => { if(notePanelMode!=='code') setNodePanelMode('code'); setTimeout(()=>{ if(!_codeHighlighted) el('code-editor')?.focus(); },30); });
+el('npanel-tab-code')?.addEventListener('click', () => { if(notePanelMode!=='code') setNodePanelMode('code'); setTimeout(()=>{ el('code-editor')?.focus(); },30); });
 
 // ── Note panel maximize ──────────────────────────────────────────────────────
 let _noteMaximized = false;
@@ -17135,7 +17154,7 @@ el('note-panel-maximize')?.addEventListener('click', () => {
   } else {
     if (notePanelNodeId !== null) positionNodePanel(notePanelNodeId);
   }
-  setTimeout(() => { if(notePanelMode==='code'){ if(!_codeHighlighted) el('code-editor')?.focus(); } else { el('note-editor')?.focus(); } }, 40);
+  setTimeout(() => { if(notePanelMode==='code'){ el('code-editor')?.focus(); } else { el('note-editor')?.focus(); } }, 40);
 });
 
 // ── Note panel: compact mode ─────────────────────────────────────────────────
@@ -17869,8 +17888,6 @@ el('note-panel-clear')?.addEventListener('click', async (e) => {
       }
     }
     const editor = el('code-editor'); if (editor) editor.value = '';
-    _codeHighlighted = false;
-    _updateCodeViewToggleUi();
     closeNodePanel(true);
     showToast('Code block cleared');
     return;
@@ -26514,10 +26531,9 @@ function _addTagPopoverFromInput(){
       <div class="cs-card" data-feature-requires="codeblock" data-cs-anchor="codeblock">
         <h3>Code (Note panel)</h3>
         <ul>
-          <li><span class="cs-desc">A tab in the Note panel, not a separate popup — one per node, raw <strong>&lt;textarea&gt;</strong> editing, no rich text</span> · <span class="cs-combo" data-cs-shortcut="toggleCodeBlock"></span></li>
+          <li><span class="cs-desc">A tab in the Note panel, not a separate popup — one per node, live syntax-highlighted <strong>&lt;textarea&gt;</strong> editing with line numbers, no rich text</span> · <span class="cs-combo" data-cs-shortcut="toggleCodeBlock"></span></li>
           <li><span class="cs-desc">8 languages: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown</span></li>
           <li><span class="cs-desc">Shares the Note panel's window — same drag, maximize, and node dot (with a small <strong>&lt;/&gt;</strong> badge)</span></li>
-          <li><span class="cs-desc"><strong>Highlight</strong> toggle: raw edit ↔ read-only syntax-highlighted view; raw text is always what's saved</span></li>
           <li><span class="cs-desc"><strong>Copy</strong> button copies raw code text, not HTML</span></li>
         </ul>
       </div>
