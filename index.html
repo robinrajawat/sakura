@@ -1261,7 +1261,7 @@ body.pad-decision-mode #decision-body{display:flex}
 #decision-add-btn{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;padding:6px 14px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
 #decision-add-btn:hover{background:var(--hover);border-color:var(--accent)}
 #decision-node-label{font:400 11px 'Inter',sans-serif;color:var(--muted);margin:6px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#decision-card-header{position:sticky;top:0;z-index:2;background:var(--edit-bg);margin:-16px -18px 12px;padding:16px 18px 12px;border-radius:10px 10px 0 0;border-bottom:1px solid transparent;transition:border-color .12s}
+#decision-card-header{position:sticky;top:0;z-index:2;background:var(--edit-bg);padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid transparent;transition:border-color .12s}
 #decision-body:not(.at-top) #decision-card-header{border-bottom-color:var(--border)}
 #decision-card .pv-dlog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
 #decision-card .pv-dlog-accent-text-green{color:var(--fc-green)}
@@ -18567,10 +18567,14 @@ function renderDecisionQuicknav(dl){
         // the scrollport, tucking its label directly behind the sticky header (#decision-card-
         // header) which occupies real space up there now. Measure the header's actual current
         // height (varies with whether quicknav itself is showing) and offset by that, so the
-        // field's label always lands just below it, never hidden underneath.
+        // field's label always lands just below it, never hidden underneath. Also account for
+        // decision-body's own top padding — a scroll container's start-edge padding stays
+        // visible above stuck content rather than scrolling away with it, so the header's stuck
+        // position is offset by that amount too, not flush against the scrollport's edge.
         const headerH=el('decision-card-header')?.offsetHeight||0;
+        const containerPadTop=parseFloat(getComputedStyle(container).paddingTop)||0;
         const targetTop=target.getBoundingClientRect().top-container.getBoundingClientRect().top+container.scrollTop;
-        container.scrollTo({top:Math.max(0,targetTop-headerH-8),behavior:'smooth'});
+        container.scrollTo({top:Math.max(0,targetTop-headerH-containerPadTop-8),behavior:'smooth'});
       });
       navWrap.appendChild(chip);
     });
