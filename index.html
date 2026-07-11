@@ -165,6 +165,12 @@ For updates: use the maintained source file
 <style>
 *{box-sizing:border-box;margin:0;padding:0} :root{--editor-scale:1;--row-density:1;--accent-text-blend:45%;--accent-border-blend:30%;--accent-hint-blend:25%} html,body{height:100%;overflow:hidden}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
+/* Same category as the scrollbar-button reset above and the number-input spinner fix below:
+   native browser chrome that ignores theme variables and renders its own light/white default
+   regardless of dark mode. The scrollbar corner (where vertical and horizontal scrollbars would
+   meet) is easy to miss since it only shows up inside a scrollable, rounded-corner container —
+   but unstyled, it's a stray white square peeking through the rounding in dark mode. */
+::-webkit-scrollbar-corner{background:transparent}
 /* Native number-input spin buttons are OS-chrome, same category as native scrollbars — no
    theme variable reaches them, so on a dark theme they render as a mismatched light-grey
    box (see arw-minwords/arw-pause/arw-batchcap/theme-schedule inputs). Suppressing them
@@ -1540,7 +1546,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #ntb-ai-rewrite.ai-busy,#ntb-ai-summarise.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 
 /* === Node Code Block === */
-#note-panel.maximized #code-editor-wrap{max-height:none;height:auto!important;flex:1;resize:none}
 #code-toolbar{display:flex;align-items:center;gap:6px;padding:2px 10px 8px;flex-shrink:0;flex-wrap:wrap}
 .code-lang-trigger{max-width:150px}
 .code-lang-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
