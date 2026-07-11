@@ -8875,7 +8875,7 @@ el('qa-category-icon-btn')?.addEventListener('click',e=>{
 });
 function getVisibleNodeIndexes(){const out=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(idx); const folded=collapsedIds.has(node.id); if(folded&&nodeHasChildren(idx))skipDepth=node.depth }); return out}
 function countDescendants(idx){return getSubtreeEnd(idx)-idx-1}
-function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(String(nodes[i].text||'').trim().startsWith('Decision Log'))return true} return false}
+function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(nodes[i].decisionLog)return true} return false}
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
@@ -11342,7 +11342,8 @@ function docxSplitDlLabel(text){
 // rule across the whole run of paragraphs, colored by Status) — the closest static-document
 // equivalent of the "card" treatment Preview and the editor both use, so the export doesn't just
 // dump decision logs as indistinguishable plain lines.
-function docxBuildDecisionCard(list,headerIdx,fieldIdxs,leftTwips){
+function docxBuildDecisionCard(node,leftTwips){
+  const dl=node.decisionLog||{};
   const paras=[];
   const shade='FAF8F3';
   const mkP=(runsXml,opts={})=>{
@@ -11350,37 +11351,24 @@ function docxBuildDecisionCard(list,headerIdx,fieldIdxs,leftTwips){
     const pPr=[pBdr,`<w:shd w:val="clear" w:color="auto" w:fill="${shade}"/>`,`<w:ind w:left="${leftTwips+200}" w:right="200"/>`,`<w:spacing w:before="${opts.before??40}" w:after="${opts.after??40}"/>`];
     return `<w:p><w:pPr>${pPr.join('')}</w:pPr>${runsXml}</w:p>`;
   };
-  let statusValue='';
-  fieldIdxs.forEach(fi=>{ const {label,value}=docxSplitDlLabel(list[fi].text); if(label.toLowerCase()==='status')statusValue=value.trim(); });
-  const accentColor=docxStatusColor(statusValue);
-  let headerRuns=docxRun('DECISION LOG',{bold:true,size:16,color:accentColor});
-  if(statusValue)headerRuns+=docxRun('   '+statusValue.toUpperCase(),{bold:true,size:16,color:accentColor});
+  const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
+  const accentColor=docxStatusColor(status);
+  const headerRuns=docxRun('DECISION LOG   ',{bold:true,size:16,color:accentColor})+docxRun(decisionStatusLabel(status).toUpperCase(),{bold:true,size:16,color:accentColor});
   paras.push(mkP(headerRuns,{top:true,accentColor,before:120}));
-  fieldIdxs.forEach(fi=>{
-    const raw=String(list[fi].text||'').trim();
-    const end=docxSubtreeEnd(list,fi);
-    const hasChildren=end>fi+1;
-    const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
-    if(isPlaceholder&&!hasChildren)return;
-    const {label,value}=docxSplitDlLabel(raw);
-    if(!label||label.toLowerCase()==='status')return;
-    if(!previewDlFields.includes(label.toLowerCase()))return;
+  const DOCX_DL_FIELDS=[{key:'context',label:'Context'},{key:'decision',label:'Decision'},{key:'rationale',label:'Rationale'},{key:'alternatives',label:'Alternatives'},{key:'impact',label:'Impact'}];
+  DOCX_DL_FIELDS.forEach(({key,label})=>{
+    if(!previewDlFields.includes(key))return;
+    const raw=String(dl[key]||'').trim();
+    if(!raw)return;
     const labelColor=decisionLogColors?(DOCX_DL_LABEL_COLORS[label]||'6F6B63'):'6F6B63';
-    let runs=docxRun(label.toUpperCase()+'  ',{bold:decisionLogLabelBold,color:labelColor,size:16});
-    const displayValue=isPlaceholder?'':value.trim();
-    if(displayValue)runs+=docxRun(displayValue,{size:20});
-    paras.push(mkP(runs,{accentColor}));
-    if(hasChildren){
-      for(let j=fi+1;j<end;j++){
-        const childText=String(list[j].text||'').trim(); if(!childText)continue;
-        const relDepth=Math.max(0,list[j].depth-list[fi].depth-1);
-        const isNum=/^\d+[.)]\s+/.test(childText);
-        paras.push(mkP(docxRun('    '.repeat(relDepth)+(isNum?'':'•  ')+childText,{size:19,color:'4A4638'}),{accentColor,before:20,after:20}));
-      }
-    }
+    const labelRuns=docxRun(label.toUpperCase(),{bold:decisionLogLabelBold,color:labelColor,size:16});
+    paras.push(mkP(labelRuns,{accentColor,after:20}));
+    const blocks=docxNoteBlocks(raw);
+    blocks.forEach((b,i)=>{
+      paras.push(mkP(b.runs,{accentColor,before:0,after:i===blocks.length-1?40:20}));
+    });
   });
-  const {timestamp,author}=(typeof previewParseDlHeader==='function')?previewParseDlHeader(list[headerIdx].text):{timestamp:'',author:''};
-  let metaText=''; if(author)metaText='— '+author; if(timestamp)metaText+=(metaText?' · ':'— ')+timestamp;
+  let metaText=''; if(dl.author)metaText='— '+dl.author; if(dl.timestamp)metaText+=(metaText?' · ':'— ')+qaFormatShortDate(dl.timestamp);
   paras.push(mkP(metaText?docxRun(metaText,{italic:true,size:16,color:'938F84'}):'<w:r><w:t xml:space="preserve"> </w:t></w:r>',{accentColor,bottom:true,after:160}));
   return paras.join('');
 }
@@ -11433,12 +11421,7 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
   const bodyParas=[];
   for(let idx=0;idx<scopeForDocx.length;idx++){
     const n=scopeForDocx[idx];
-    if(dlConsumed.has(idx)&&!dlByHeader.has(idx))continue; // absorbed into a decision card below
     const left=Math.max(0, Number(n.depth||0))*420;
-    if(dlByHeader.has(idx)){
-      bodyParas.push(docxBuildDecisionCard(scopeForDocx,idx,dlByHeader.get(idx).fieldIdxs,left));
-      continue;
-    }
     const headingLevel=Number(n.styles?.heading||0);
     const isCheckbox=!!n.isCheckbox;
     let displayText=stripSemanticMarkers(n.text||'');
@@ -11465,6 +11448,9 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
       }
     }
     if(n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()){ const cb=docxCodeBlockPara(n.codeBlock.code,left); if(cb)bodyParas.push(cb); }
+    if(dlByHeader.has(idx)){
+      bodyParas.push(docxBuildDecisionCard(n,left));
+    }
   }
   const qaSection=qaExportEnabled?docxBuildQaSection(qaItems):{headingEntry:null,paras:[]};
   if(qaSection.headingEntry) headingEntries.push(qaSection.headingEntry);
@@ -11766,32 +11752,17 @@ function pptxBuildDlList(startIdx, endIdx){
 // skipped entirely, same as Presenter hides it; a field disabled via Settings → Preview →
 // decision log fields (previewDlFields) is skipped too, so the export doesn't show fields the
 // person has chosen not to display.
-function pptxParseDecisionLogFields(headerIdx){
-  const headerNode=nodes[headerIdx];
-  const {timestamp,author}=previewParseDlHeader(headerNode.text);
-  const fieldIdxs=[];
-  for(let j=headerIdx+1;j<nodes.length&&nodes[j].depth>headerNode.depth;j++){
-    if(nodes[j].depth===headerNode.depth+1) fieldIdxs.push(j);
-  }
-  let statusValue='';
-  fieldIdxs.forEach(fi=>{
-    const raw=String(nodes[fi].text||'').trim();
-    const {label,value}=previewSplitDlLabel(raw);
-    if(label.toLowerCase()==='status') statusValue=value.trim();
-  });
+function pptxParseDecisionLogFields(node){
+  const dl=node.decisionLog||{};
+  const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
   const fields=[];
-  fieldIdxs.forEach(fi=>{
-    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-    const end=getSubtreeEnd(fi);
-    const hasChildren=end>fi+1;
-    const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
-    if(isPlaceholder&&!hasChildren) return; // fully unanswered — Presenter shows nothing for this field either
-    const {label,value}=previewSplitDlLabel(raw);
-    if(!label||label.toLowerCase()==='status') return;
-    if(!previewDlFields.includes(label.toLowerCase())) return;
-    fields.push({label, value:isPlaceholder?'':value.trim(), list:hasChildren?pptxBuildDlList(fi+1,end):[]});
+  PV_DL_FIELD_META.forEach(({key,label})=>{
+    if(!previewDlFields.includes(key))return;
+    const raw=stripHtmlToText(dl[key]||'');
+    if(!raw)return; // unanswered — Presenter shows nothing for this field either
+    fields.push({label, value:raw, list:[]});
   });
-  return {type:'decisionLog', timestamp, author, statusValue, statusColor:previewStatusBadgeColor(statusValue), fields};
+  return {type:'decisionLog', timestamp:dl.timestamp?qaFormatShortDate(dl.timestamp):'', author:dl.author||'', statusValue:decisionStatusLabel(status), statusColor:previewStatusBadgeColor(status), fields};
 }
 async function pptxGatherSlidesData(){
   const meta=getMeta();
@@ -11823,35 +11794,18 @@ async function pptxGatherSlidesData(){
     if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
 
-    // A decision log commonly sits AT the slide-break depth itself — "one slide per decision"
-    // is the natural way to use it — in which case the slide-break node's own text is the
-    // "Decision Log · ..." header and its direct children are the fields, not further bullets.
-    // Handled as its own case (wholeSlideLog) so buildPptxPresentation can give the card the
-    // whole slide instead of squeezing it under a redundant plain-text title that would just
-    // repeat the same "Decision Log · ..." line the card's own header already shows.
-    const nodeText=String(node.text||'').trim();
-    let items, wholeSlideLog=false;
-    if(PPTX_DL_HEADER_RE.test(nodeText)){
-      wholeSlideLog=true;
-      items=[pptxParseDecisionLogFields(idx)];
-    } else {
-      // Direct children become either a plain bullet or, for a "Decision Log[...]" header
-      // child, a nested decision-log card — mirrors previewDetectDecisionLogs/
-      // previewRenderDecisionCard so a decision log reads as the same distinct, colored card
-      // in the export as it does in Presenter, rather than flattening to one plain bullet line
-      // with its fields silently dropped (fields live one level deeper than the header, past
-      // what a flat bullet walk picks up — that's why they went missing before).
-      items=[];
-      for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
-        if(nodes[j].depth!==node.depth+1) continue;
-        const childNode=nodes[j];
-        const childText=String(childNode.text||'').trim();
-        if(PPTX_DL_HEADER_RE.test(childText)){
-          items.push(pptxParseDecisionLogFields(j));
-        } else if(childText){
-          items.push({type:'bullet', text:childText});
-        }
-      }
+    // A decision log is now attached to a node as structured data (see the Pad's Decision Log
+    // tab), not a "Decision Log · ..." header node — so it no longer takes over the whole slide;
+    // it appears as one more item alongside that node's own title/bullets, same as Preview now
+    // renders the card directly below the node's own row rather than in place of it.
+    let items=[];
+    if(node.decisionLog) items.push(pptxParseDecisionLogFields(node));
+    for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
+      if(nodes[j].depth!==node.depth+1) continue;
+      const childNode=nodes[j];
+      const childText=String(childNode.text||'').trim();
+      if(childText) items.push({type:'bullet', text:childText});
+      if(childNode.decisionLog) items.push(pptxParseDecisionLogFields(childNode));
     }
 
     const images=[];
@@ -11866,7 +11820,7 @@ async function pptxGatherSlidesData(){
         images.push({bytes:safe.bytes, mime:safe.mime, width:dims.width, height:dims.height, alt:d.alt});
       }
     }
-    slidesData.push({title:slide.label, items, images, wholeSlideLog});
+    slidesData.push({title:slide.label, items, images});
   }
   if(!slidesData.length) slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')});
   return {slidesData, imageWarnings};
@@ -16942,55 +16896,24 @@ async function insertDecisionLog(id) {
 function exportDecisionLogXlsx() {
   if (typeof XLSX === 'undefined') { showToast('SheetJS not loaded — check your connection'); return; }
 
-  // Find all decision log header nodes and parse their children
-  const FIELD_PREFIXES = ['Context:', 'Decision:', 'Rationale:', 'Alternatives:', 'Impact:', 'Status:'];
-  const FIELD_LABELS   = ['Context', 'Decision', 'Rationale', 'Alternatives', 'Impact', 'Status'];
-
+  // Find all nodes carrying a decision log (structured data attached via the Pad's Decision Log tab)
   const rows = [];
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    if (!n.text.includes('Decision Log')) continue;
-
-    // Parse header: "Decision Log · timestamp · by author"
-    const parts = n.text.split(' \u00b7 ').map(s => s.trim());
-    const timestamp = parts[1] || '';
-    const author = (parts[2] || '').replace(/^by\s+/i, '');
-    const parentLabel = n.parentId !== null ? (nodes.find(x => x.id === n.parentId)?.text || '') : '';
-
-    // Gather child field nodes
-    const fields = {};
-    const headerDepth = n.depth;
-    for (let j = i + 1; j < nodes.length; j++) {
-      if (nodes[j].depth <= headerDepth) break;
-      const text = nodes[j].text || '';
-      for (let f = 0; f < FIELD_PREFIXES.length; f++) {
-        if (text.startsWith(FIELD_PREFIXES[f])) {
-          // Value is the remainder after the prefix pattern, or gather subtree text
-          const prefix = FIELD_PREFIXES[f];
-          const inline = text.slice(prefix.length).replace(/^[:\s]+/, '').trim();
-          // Also collect any children of this field node as continuation lines
-          const childDepth = nodes[j].depth;
-          const childLines = [inline].filter(Boolean);
-          for (let k = j + 1; k < nodes.length; k++) {
-            if (nodes[k].depth <= childDepth) break;
-            if (nodes[k].text.trim()) childLines.push(nodes[k].text.trim());
-          }
-          fields[FIELD_LABELS[f]] = childLines.join('\n');
-          break;
-        }
-      }
-    }
+    if (!n.decisionLog) continue;
+    const dl = n.decisionLog;
+    const status = DECISION_STATUSES.includes(String(dl.status||'').toLowerCase()) ? String(dl.status).toLowerCase() : 'proposed';
 
     rows.push({
-      'Timestamp': timestamp,
-      'Author': author,
-      'Parent node': parentLabel,
-      'Context': fields['Context'] || '',
-      'Decision': fields['Decision'] || '',
-      'Rationale': fields['Rationale'] || '',
-      'Alternatives': fields['Alternatives'] || '',
-      'Impact': fields['Impact'] || '',
-      'Status': fields['Status'] || '',
+      'Timestamp': dl.timestamp ? formatTimestamp(dl.timestamp) : '',
+      'Author': dl.author || '',
+      'Node': getNodePlainText(n).trim(),
+      'Context': stripHtmlToText(dl.context),
+      'Decision': stripHtmlToText(dl.decision),
+      'Rationale': stripHtmlToText(dl.rationale),
+      'Alternatives': stripHtmlToText(dl.alternatives),
+      'Impact': stripHtmlToText(dl.impact),
+      'Status': decisionStatusLabel(status),
     });
   }
 
@@ -19696,16 +19619,9 @@ function previewToggleCode(id){
 function previewDetectDecisionLogs(scopedNodes){
   const consumed=new Set(); const groups=[];
   scopedNodes.forEach((n,idx)=>{
-    if(consumed.has(idx))return;
-    if(!/^Decision Log(?:\s·|$)/.test(String(n.text||'').trim()))return;
-    const fields=[];
-    for(let j=idx+1;j<scopedNodes.length;j++){
-      if(scopedNodes[j].depth<=n.depth)break;
-      if(scopedNodes[j].depth===n.depth+1)fields.push(j);
-      consumed.add(j);
-    }
+    if(!n.decisionLog)return;
     consumed.add(idx);
-    groups.push({headerIdx:idx,fieldIdxs:fields});
+    groups.push({headerIdx:idx,fieldIdxs:[]});
   });
   return {consumed,groups};
 }
@@ -19772,59 +19688,45 @@ function previewRenderDlList(items){
   });
   return list;
 }
-function previewRenderDecisionCard(headerNode,fieldIdxs){
-  const {timestamp,author}=previewParseDlHeader(headerNode.text);
-  let statusValue='';
-  fieldIdxs.forEach(fi=>{
-    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-    const {label,value}=previewSplitDlLabel(raw);
-    if(label.toLowerCase()==='status')statusValue=value.trim();
-  });
-  const statusColor=previewStatusBadgeColor(statusValue); // also the right call when no status field exists: defaults to 'gray', a neutral accent rather than an implied "approved" green
+const PV_DL_FIELD_META=[
+  {key:'context',label:'Context',colorVar:'--fc-blue'},
+  {key:'decision',label:'Decision',colorVar:'--fc-red'},
+  {key:'rationale',label:'Rationale',colorVar:'--fc-purple'},
+  {key:'alternatives',label:'Alternatives',colorVar:'--fc-gray'},
+  {key:'impact',label:'Impact',colorVar:'--fc-orange'},
+];
+function previewRenderDecisionCard(headerNode){
+  const dl=headerNode.decisionLog||{};
+  const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
+  const statusColor=previewStatusBadgeColor(status); // also the right call for 'proposed': defaults to 'gray', a neutral accent rather than an implied "approved" green
   const card=document.createElement('div'); card.className='pv-dlog pv-dlog-accent-'+statusColor;
   const head=document.createElement('div'); head.className='pv-dlog-head';
   const headTitle=document.createElement('span'); headTitle.className='pv-dlog-head-title pv-dlog-accent-text-'+statusColor;
   headTitle.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Decision Log</span>';
   head.appendChild(headTitle);
-  if(statusValue){
-    const badge=document.createElement('span');
-    badge.className='pv-dlog-status pv-dlog-status-'+statusColor;
-    badge.textContent=statusValue;
-    head.appendChild(badge);
-  }
+  const badge=document.createElement('span');
+  badge.className='pv-dlog-status pv-dlog-status-'+statusColor;
+  badge.textContent=decisionStatusLabel(status);
+  head.appendChild(badge);
   card.appendChild(head);
-  fieldIdxs.forEach(fi=>{
-    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-    const end=getSubtreeEnd(fi);
-    const hasChildren=end>fi+1;
-    const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
-    if(isPlaceholder&&!hasChildren)return; // fully unanswered — nothing to show
-    const {label,value,colorVar}=previewSplitDlLabel(raw);
-    if(!label||label.toLowerCase()==='status')return;
-    if(!previewDlFields.includes(label.toLowerCase()))return;
+  PV_DL_FIELD_META.forEach(({key,label,colorVar})=>{
+    if(!previewDlFields.includes(key))return;
+    const raw=String(dl[key]||'').trim();
+    if(!raw)return; // unanswered — nothing to show in a read-only render
     const field=document.createElement('div'); field.className='pv-dlog-field';
     const lbl=document.createElement('div'); lbl.className='pv-dlog-field-label';
-    if(colorVar)lbl.style.color='var('+colorVar+')';
+    if(decisionLogColors)lbl.style.color='var('+colorVar+')';
     if(!decisionLogLabelBold)lbl.style.fontWeight='500';
     lbl.textContent=label;
     field.appendChild(lbl);
-    const displayValue=isPlaceholder?'':value.trim();
-    if(displayValue){
-      const valEl=document.createElement('div'); valEl.className='pv-dlog-field-value'+(' '+previewStyleClasses(fn));
-      if(fn.styles.color)valEl.style.color='var(--fc-'+fn.styles.color+')';
-      const inner=previewParseStyledText(displayValue)||'';
-      valEl.innerHTML=fn.styles.highlight?`<span class="hl-mark hl-mark-${esc(fn.styles.highlight)}">${inner}</span>`:inner;
-      field.appendChild(valEl);
-    }
-    if(hasChildren){
-      const list=previewRenderDlList(previewBuildNodeTree(fi+1,end));
-      if(list)field.appendChild(list);
-    }
+    const valEl=document.createElement('div'); valEl.className='pv-dlog-field-value';
+    valEl.innerHTML=sakuraSanitizeRichHtml(raw); // already-sanitized rich HTML from the Pad's decision-log editor
+    field.appendChild(valEl);
     card.appendChild(field);
   });
   let metaText='';
-  if(author)metaText='— '+author;
-  if(timestamp)metaText+=(metaText?' · ':'— ')+(previewIsToday(timestamp)?'today':timestamp);
+  if(dl.author)metaText='— '+dl.author;
+  if(dl.timestamp)metaText+=(metaText?' · ':'— ')+qaFormatShortDate(dl.timestamp);
   if(metaText){ const metaEl=document.createElement('div'); metaEl.className='pv-dlog-meta'; metaEl.textContent=metaText; card.appendChild(metaEl); }
   return card;
 }
@@ -19915,7 +19817,7 @@ function renderPreviewBody(){
       currentSlideWrap.className='pv-slide';
       currentSlideWrap.dataset.slideIndex=String(previewSlideList.length);
       doc.appendChild(currentSlideWrap);
-      const rawLabel=groupByHeader.has(idx)?'Decision Log':stripSemanticMarkers(String(node.text||'').trim().replace(/^\[|\]$/g,'')).trim();
+      const rawLabel=stripSemanticMarkers(String(node.text||'').trim().replace(/^\[|\]$/g,'')).trim();
       previewSlideList.push({nodeId:node.id,label:rawLabel||'Untitled'});
     }
     const slideTarget=currentSlideWrap||doc;
@@ -19923,15 +19825,6 @@ function renderPreviewBody(){
     const hasChildren=nodeHasChildren(idx);
     const {el:foldEl,folded}=previewFold(node,idx,hasChildren);
     if(folded&&hasChildren)skipDepth=node.depth;
-
-    if(groupByHeader.has(idx)){
-      const dlCard=previewRenderDecisionCard(node,groupByHeader.get(idx).fieldIdxs);
-      dlCard.id='pv-anchor-'+node.id;
-      dlCard.style.marginLeft=((Math.min(node.depth||0,7)-1)*18)+'px';
-      slideTarget.appendChild(dlCard);
-      lastHeadingLevel=null;
-      return;
-    }
 
     const depth=node.depth||0;
     const isSection=nodeIsSection(node);
@@ -20039,6 +19932,12 @@ function renderPreviewBody(){
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
+      if(node.decisionLog){
+        const dlCard=previewRenderDecisionCard(node);
+        dlCard.id='pv-anchor-dl-'+node.id;
+        dlCard.style.marginLeft=inlinePad;
+        slideTarget.appendChild(dlCard);
+      }
       if(noteSplit&&noteSplit.diagrams.length){
         const multi=noteSplit.diagrams.length>1;
         const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
@@ -20096,17 +19995,10 @@ function renderPreviewBody(){
   });
   const decisionEntries=groups.map(g=>{
     const headerNode=nodes[g.headerIdx];
-    let statusValue='',summary='';
-    g.fieldIdxs.forEach(fi=>{
-      const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-      const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
-      const {label,value}=previewSplitDlLabel(raw);
-      const v=value.trim();
-      const lower=label.toLowerCase();
-      if(lower==='status')statusValue=v;
-      else if(!summary&&!isPlaceholder&&v&&(lower==='decision'||lower==='context'))summary=v;
-    });
-    return {id:headerNode.id,text:stripSemanticMarkers(summary||'Decision Log').trim()||'Decision Log',status:statusValue};
+    const dl=headerNode.decisionLog||{};
+    const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
+    const summary=stripHtmlToText(dl.decision||dl.context||'');
+    return {id:headerNode.id,text:summary||stripSemanticMarkers(getNodePlainText(headerNode)).trim()||'Decision Log',status:decisionStatusLabel(status)};
   });
   renderPreviewToc(filteredTocEntries,decisionEntries);
   updatePreviewProgress();
@@ -20951,15 +20843,10 @@ function previewClipboardDlPlainList(items,indent){
   return lines;
 }
 const PV_CLIP_STATUS_COLOR_KEY={green:'fcGreen',red:'fcRed',orange:'fcOrange',gray:'fcGray'};
-function previewClipboardDecisionCard(headerNode,fieldIdxs,colors,plainLines){
-  const {timestamp,author}=previewParseDlHeader(headerNode.text);
-  let statusValue='';
-  fieldIdxs.forEach(fi=>{
-    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-    const {label,value}=previewSplitDlLabel(raw);
-    if(label.toLowerCase()==='status')statusValue=value.trim();
-  });
-  const statusColorKey=PV_CLIP_STATUS_COLOR_KEY[previewStatusBadgeColor(statusValue)];
+function previewClipboardDecisionCard(headerNode,colors,plainLines){
+  const dl=headerNode.decisionLog||{};
+  const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
+  const statusColorKey=PV_CLIP_STATUS_COLOR_KEY[previewStatusBadgeColor(status)];
   const card=document.createElement('div');
   card.style.cssText=`margin:4px 0 12px;padding:12px 16px;border-radius:8px;background:${soften(colors.fg,'#ffffff',0.04)};border:1px solid ${soften(colors.muted,'#ffffff',0.3)};border-left:3px solid ${colors[statusColorKey]};`;
   const head=document.createElement('div');
@@ -20968,24 +20855,18 @@ function previewClipboardDecisionCard(headerNode,fieldIdxs,colors,plainLines){
   headTitle.style.cssText=`display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:${colors[statusColorKey]};text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;`;
   headTitle.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Decision Log</span>';
   head.appendChild(headTitle);
-  if(statusValue){
-    const badge=document.createElement('span');
-    badge.style.cssText=`font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;color:${colors[statusColorKey]};background:${soften(colors[statusColorKey],'#ffffff',0.16)};`;
-    badge.textContent=statusValue;
-    head.appendChild(badge);
-    if(plainLines)plainLines.push('  Status: '+statusValue);
-  }
+  const statusLabel=decisionStatusLabel(status);
+  const badge=document.createElement('span');
+  badge.style.cssText=`font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;color:${colors[statusColorKey]};background:${soften(colors[statusColorKey],'#ffffff',0.16)};`;
+  badge.textContent=statusLabel;
+  head.appendChild(badge);
+  if(plainLines)plainLines.push('  Status: '+statusLabel);
   card.appendChild(head);
   let firstField=true;
-  fieldIdxs.forEach(fi=>{
-    const fn=nodes[fi]; const raw=String(fn.text||'').trim();
-    const end=getSubtreeEnd(fi);
-    const hasChildren=end>fi+1;
-    const isPlaceholder=DL_FIELDS.some(f=>f.text===raw);
-    if(isPlaceholder&&!hasChildren)return; // fully unanswered — nothing to show
-    const {label,value}=previewSplitDlLabel(raw);
-    if(!label||label.toLowerCase()==='status')return;
-    if(!previewDlFields.includes(label.toLowerCase()))return;
+  PV_DL_FIELD_META.forEach(({key,label,colorVar})=>{
+    if(!previewDlFields.includes(key))return;
+    const raw=String(dl[key]||'').trim();
+    if(!raw)return; // unanswered — nothing to show
     const labelColorKey=PV_CLIP_DL_LABEL_COLOR_KEY[label];
     const field=document.createElement('div');
     field.style.cssText=firstField?'margin-top:2px;':`margin-top:12px;padding-top:12px;border-top:1px solid ${soften(colors.muted,'#ffffff',0.3)};`;
@@ -20994,27 +20875,16 @@ function previewClipboardDecisionCard(headerNode,fieldIdxs,colors,plainLines){
     lbl.style.cssText=`font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;color:${colors[labelColorKey]||colors.muted};`;
     lbl.textContent=label;
     field.appendChild(lbl);
-    const displayValue=isPlaceholder?'':value.trim();
-    const plainParts=[label+':'];
-    if(displayValue){
-      const valEl=document.createElement('div');
-      valEl.style.cssText=`font-size:14.5px;line-height:1.55;${previewClipboardSpanStyle(fn,colors)}`;
-      valEl.innerHTML=previewClipboardRichInner({...fn,text:displayValue},colors);
-      field.appendChild(valEl);
-      plainParts.push(' '+displayValue);
-    }
-    if(plainLines)plainLines.push('  '+plainParts.join(''));
-    if(hasChildren){
-      const tree=previewBuildNodeTree(fi+1,end);
-      const list=previewClipboardDlList(tree,colors);
-      if(list)field.appendChild(list);
-      if(plainLines)plainLines.push(...previewClipboardDlPlainList(tree,'    '));
-    }
+    const valEl=document.createElement('div');
+    valEl.style.cssText=`font-size:14.5px;line-height:1.55;color:${colors.fg};`;
+    valEl.innerHTML=sakuraSanitizeRichHtml(raw);
+    field.appendChild(valEl);
+    if(plainLines)plainLines.push('  '+label+': '+stripHtmlToText(raw));
     card.appendChild(field);
   });
   let metaText='';
-  if(author)metaText='— '+author;
-  if(timestamp)metaText+=(metaText?' · ':'— ')+(previewIsToday(timestamp)?'today':timestamp);
+  if(dl.author)metaText='— '+dl.author;
+  if(dl.timestamp)metaText+=(metaText?' · ':'— ')+qaFormatShortDate(dl.timestamp);
   if(metaText){
     const metaEl=document.createElement('div');
     metaEl.style.cssText=`font-size:11.5px;color:${colors.muted};margin-top:12px;padding-top:8px;border-top:1px solid ${soften(colors.muted,'#ffffff',0.3)};`;
@@ -21061,13 +20931,6 @@ async function copyPreviewAsRichText(){
     const folded=previewCollapsedIds.has(node.id);
     if(folded&&hasChildren)skipDepth=node.depth;
 
-    if(groupByHeader.has(idx)){
-      stack=[];
-      plainLines.push('Decision Log');
-      root.appendChild(previewClipboardDecisionCard(node,groupByHeader.get(idx).fieldIdxs,colors,plainLines));
-      return;
-    }
-
     const depth=node.depth||0;
     const isSection=nodeIsSection(node);
     let ownerEl;
@@ -21110,6 +20973,10 @@ async function copyPreviewAsRichText(){
       noteCard.appendChild(body);
       ownerEl.appendChild(noteCard);
       plainLines.push('  Note: '+htmlToPlain(node.note));
+    }
+    if(node.decisionLog&&!(folded&&hasChildren)){
+      plainLines.push('  Decision Log');
+      ownerEl.appendChild(previewClipboardDecisionCard(node,colors,plainLines));
     }
   });
 
