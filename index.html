@@ -1483,6 +1483,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .note-panel-tab{appearance:none;border:none;background:transparent;color:var(--muted);font:500 12.5px 'Inter',sans-serif;padding:5px 10px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
 .note-panel-tab:hover{background:var(--hover);color:var(--fg)}
 .note-panel-tab[aria-selected="true"]{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+.note-panel-tab.has-content:not([aria-selected="true"])::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
 #note-panel-subtitle{padding:0 14px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
 #note-panel-subtitle:empty{display:none}
 #note-panel.mode-code #note-panel-subtitle{padding-bottom:4px}
@@ -4743,7 +4744,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   </div>
 </div>
 
-<div id="note-panel" class="mode-note" role="dialog" aria-label="Node note">
+<div id="note-panel" class="mode-note" role="dialog" aria-label="Node note and code">
   <div id="note-panel-header">
     <div id="note-panel-tabs" role="tablist" aria-label="Node panel">
       <button type="button" class="note-panel-tab" id="npanel-tab-note" data-mode="note" role="tab" aria-selected="true">Note</button>
@@ -12896,6 +12897,14 @@ const SHORTCUTS = {
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
 };
+// Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
+// browser tab, Ctrl+W is reserved by the browser itself and preventDefault can't stop it
+// from closing the actual browser tab, so binding it there would be actively misleading
+// (looks bound in Settings, does nothing or fights the browser). mod+alt+w keeps working
+// everywhere as the reliable combo regardless of display mode.
+if((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true){
+  SHORTCUTS.closeTab.altCombos = ['mod+w'];
+}
 
 function getShortcutCombos(id){
   const def = SHORTCUTS[id];
@@ -17028,6 +17037,21 @@ function closeNodePanel(save = true) {
 // clicks call this directly; openNodePanel calls it once up front with the node's default
 // tab. Repositions (mode-aware width) unless the panel is maximized, in which case the
 // fullscreen layout doesn't care which tab is active.
+function updateNodePanelTabDots(){
+  if(notePanelNodeId===null)return;
+  const idx=getIndex(notePanelNodeId); if(idx<0)return;
+  const node=nodes[idx];
+  const noteEditor=el('note-editor');
+  const hasNoteText = notePanelMode==='note'
+    ? !!(noteEditor && stripHtmlToText(noteEditor.innerHTML).trim())
+    : !!(node.note && stripHtmlToText(node.note).trim());
+  const codeEditor=el('code-editor');
+  const hasCode = featureCodeEnabled && (notePanelMode==='code'
+    ? !!(codeEditor && codeEditor.value.trim())
+    : !!(node.codeBlock && node.codeBlock.code && node.codeBlock.code.trim()));
+  el('npanel-tab-note')?.classList.toggle('has-content', hasNoteText);
+  el('npanel-tab-code')?.classList.toggle('has-content', hasCode);
+}
 function setNodePanelMode(mode, id, anchorRectOverride) {
   notePanelMode = mode==='code' ? 'code' : 'note';
   const panel = el('note-panel');
@@ -17037,6 +17061,7 @@ function setNodePanelMode(mode, id, anchorRectOverride) {
   document.querySelectorAll('.note-panel-tab').forEach(tab => {
     tab.setAttribute('aria-selected', String(tab.dataset.mode===notePanelMode));
   });
+  updateNodePanelTabDots();
   const targetId = id!==undefined ? id : notePanelNodeId;
   if (!panel.classList.contains('maximized') && targetId!==null && targetId!==undefined) {
     positionNodePanel(targetId, anchorRectOverride);
