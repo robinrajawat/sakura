@@ -17062,9 +17062,18 @@ function setNodePanelMode(mode, id, anchorRectOverride) {
     tab.setAttribute('aria-selected', String(tab.dataset.mode===notePanelMode));
   });
   updateNodePanelTabDots();
-  const targetId = id!==undefined ? id : notePanelNodeId;
-  if (!panel.classList.contains('maximized') && targetId!==null && targetId!==undefined) {
-    positionNodePanel(targetId, anchorRectOverride);
+  if (panel.classList.contains('maximized')) return;
+  if (id !== undefined) {
+    // Fresh open (from openNodePanel) — anchor next to the node the same way it
+    // always has.
+    positionNodePanel(id, anchorRectOverride);
+  } else if (panel.classList.contains('open')) {
+    // A tab click on an already-open panel — Code is wider than Note, but jumping
+    // to a freshly re-anchored spot on every tab switch reads as two different
+    // popups swapping places rather than one panel changing content. Resize the
+    // existing corner in place instead, same technique already used for the
+    // compact-view toggle.
+    _noteResizeInPlace();
   }
 }
 el('npanel-tab-note')?.addEventListener('click', () => { if(notePanelMode!=='note') setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30); });
@@ -17164,7 +17173,7 @@ function _updateCompactTitle() {
 function _noteResizeInPlace() {
   const panel = el('note-panel');
   if (!panel || !panel.classList.contains('open') || panel.classList.contains('maximized')) return;
-  const panelW = _noteCompact ? Math.min(300, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32);
+  const panelW = notePanelMode==='code' ? Math.min(560, window.innerWidth - 32) : (_noteCompact ? Math.min(300, window.innerWidth - 32) : Math.min(480, window.innerWidth - 32));
   panel.style.width = panelW + 'px';
   // If the panel is in its initial "no anchor found" centered state (left/top:50%
   // with a translate), leave that alone — it stays centered through the resize
