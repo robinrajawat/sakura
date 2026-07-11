@@ -10416,7 +10416,7 @@ function renderBacklinkPanel(nodeId){
     const raw=String(nodes[bidx].text||'');
     txt.innerHTML=esc(raw.slice(0,80)).replace(/\[\[([\s\S]*?)\]\](?!\])/g,'<em>[[$1]]</em>');
     item.appendChild(arrow); item.appendChild(txt);
-    item.addEventListener('click',()=>{closeNodePanel(false); setSingleSelection(bid); render(); scrollToNode(bid);});
+    item.addEventListener('click',()=>{closeNodePanel(true); setSingleSelection(bid); render(); scrollToNode(bid);});
     panel.appendChild(item);
   });
 }
@@ -17169,6 +17169,13 @@ function openNodePanel(id, anchorRectOverride, forcedMode) {
   const idx = getIndex(id);
   if (idx < 0) return;
   const node = nodes[idx];
+  // If a panel is already open for a DIFFERENT node, commit whatever's still sitting
+  // uncommitted in its editors first — otherwise the lines right below (which reassign
+  // notePanelNodeId/codePanelNodeId and overwrite the editors' content with the new
+  // node's data) silently discard it. This is reachable from normal use: clicking a
+  // different node's note dot while one note/code panel is already open, without
+  // closing it first, used to just drop whatever hadn't been committed yet.
+  if (notePanelOpen && notePanelNodeId !== null && notePanelNodeId !== id) { commitNoteEdit(); commitCodeEdit(); }
   notePanelNodeId = id; codePanelNodeId = id;
   notePanelOpen = true; codePanelOpen = true;
   noteSessionUndoStack = []; noteSessionRedoStack = [];
