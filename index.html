@@ -1310,7 +1310,7 @@ body.pad-decision-mode #decision-count-chip{display:inline-flex}
 #decision-body.list-mode #decision-empty{display:none}
 #decision-body.list-mode #decision-card{display:none}
 #decision-body.list-mode #decision-list-wrap{display:flex}
-#decision-list-filters{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+#decision-list-filters{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;position:sticky;top:0;background:var(--canvas-bg);padding-bottom:8px;z-index:1}
 #decision-list-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
 #decision-list-wrap.is-empty #decision-list-empty{display:block}
 #decision-list-wrap.is-empty #decision-list{display:none}
@@ -18533,9 +18533,13 @@ function decisionStatusLabel(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):'
 function decisionStatusOf(dl){ return DECISION_STATUSES.includes(String((dl&&dl.status)||'').toLowerCase())?String(dl.status).toLowerCase():'proposed'; }
 function decisionAllLogNodes(){ const out=[]; for(let i=0;i<nodes.length;i++){ if(nodes[i].decisionLog)out.push(nodes[i]); } return out; }
 function toggleDecisionListMode(force){
+  const wasListMode=decisionListMode;
   decisionListMode=typeof force==='boolean'?force:!decisionListMode;
   document.body.classList.toggle('decision-list-mode',decisionListMode);
   renderDecisionPad();
+  if(decisionListMode&&!wasListMode){
+    document.querySelector('.decision-row.current')?.scrollIntoView({block:'nearest'});
+  }
 }
 function decisionRowSnippet(dl){
   const context=stripHtmlToText(dl.context||'').trim(); if(context)return context;
