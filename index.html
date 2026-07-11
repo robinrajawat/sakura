@@ -2109,6 +2109,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-doc .pv-note-body table{border-collapse:collapse;margin:6px 0;font-size:12px}
 #preview-doc .pv-note-body table td,#preview-doc .pv-note-body table th{border:1px solid var(--border);padding:4px 7px}
 #preview-doc .pv-dlog{margin:4px 0 12px;padding:13px 16px;border-radius:10px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--muted)}
+#preview-doc .pv-slide>.pv-dlog:only-child{margin:48px auto;max-width:640px;padding:22px 26px}
 #preview-doc .pv-dlog-accent-green{border-left-color:var(--fc-green)}
 #preview-doc .pv-dlog-accent-red{border-left-color:var(--fc-red)}
 #preview-doc .pv-dlog-accent-orange{border-left-color:var(--fc-orange)}
@@ -11906,19 +11907,25 @@ async function pptxGatherSlidesData(){
     const idx=getIndex(slide.nodeId);
     if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
+    if(slide.dlOnly){
+      slidesData.push({title:'', items:node.decisionLog?[pptxParseDecisionLogFields(node)]:[], images:[], wholeSlideLog:true});
+      continue;
+    }
 
     // A decision log is now attached to a node as structured data (see the Pad's Decision Log
     // tab), not a "Decision Log · ..." header node — so it no longer takes over the whole slide;
     // it appears as one more item alongside that node's own title/bullets, same as Preview now
-    // renders the card directly below the node's own row rather than in place of it.
+    // renders the card directly below the node's own row rather than in place of it. (A
+    // sufficiently large decision log gets pulled into its own dlOnly slide above instead —
+    // see decisionLogIsLarge.)
     let items=[];
-    if(node.decisionLog) items.push(pptxParseDecisionLogFields(node));
+    if(node.decisionLog&&!decisionLogIsLarge(node.decisionLog)) items.push(pptxParseDecisionLogFields(node));
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
       if(nodes[j].depth!==node.depth+1) continue;
       const childNode=nodes[j];
       const childText=String(childNode.text||'').trim();
       if(childText) items.push({type:'bullet', text:childText});
-      if(childNode.decisionLog) items.push(pptxParseDecisionLogFields(childNode));
+      if(childNode.decisionLog&&!decisionLogIsLarge(childNode.decisionLog)) items.push(pptxParseDecisionLogFields(childNode));
     }
 
     const images=[];
@@ -19816,6 +19823,17 @@ const PV_DL_FIELD_META=[
   {key:'alternatives',label:'Alternatives',colorVar:'--fc-gray'},
   {key:'impact',label:'Impact',colorVar:'--fc-orange'},
 ];
+// A decision log with a lot of filled-in content reads poorly squeezed under a slide's own
+// bullets — text gets compressed and the audience loses the "point, then reasoning" flow. Past
+// this rough character count across the fields actually configured to show (previewDlFields),
+// Presenter/Preview and PPTX both give it a dedicated slide of its own instead of appending it
+// inline under the node. Below the threshold, inline (right after the node's own content) reads
+// better since the reasoning is short enough to stay connected to the point it explains.
+function decisionLogIsLarge(dl){
+  if(!dl)return false;
+  const total=PV_DL_FIELD_META.reduce((sum,{key})=>previewDlFields.includes(key)?sum+stripHtmlToText(dl[key]||'').length:sum,0);
+  return total>200;
+}
 function previewRenderDecisionCard(headerNode){
   const dl=headerNode.decisionLog||{};
   const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
@@ -20054,10 +20072,21 @@ function renderPreviewBody(){
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
       if(node.decisionLog){
-        const dlCard=previewRenderDecisionCard(node);
-        dlCard.id='pv-anchor-dl-'+node.id;
-        dlCard.style.marginLeft=inlinePad;
-        slideTarget.appendChild(dlCard);
+        if(decisionLogIsLarge(node.decisionLog)){
+          const dlSlideWrap=document.createElement('div'); dlSlideWrap.className='pv-slide';
+          dlSlideWrap.dataset.slideIndex=String(previewSlideList.length);
+          doc.appendChild(dlSlideWrap);
+          const shortLabel=stripSemanticMarkers(getNodePlainText(node)).trim().slice(0,60)||'Untitled';
+          previewSlideList.push({nodeId:node.id,label:'Decision: '+shortLabel,dlOnly:true});
+          const dlCard=previewRenderDecisionCard(node);
+          dlCard.id='pv-anchor-dl-'+node.id; dlCard.dataset.pvNode=String(node.id);
+          dlSlideWrap.appendChild(dlCard);
+        } else {
+          const dlCard=previewRenderDecisionCard(node);
+          dlCard.id='pv-anchor-dl-'+node.id; dlCard.dataset.pvNode=String(node.id);
+          dlCard.style.marginLeft=inlinePad;
+          slideTarget.appendChild(dlCard);
+        }
       }
       if(noteSplit&&noteSplit.diagrams.length){
         const multi=noteSplit.diagrams.length>1;
@@ -20156,11 +20185,11 @@ function renderPreviewToc(entries,decisionEntries=[]){
     toc.appendChild(label);
     decisionEntries.forEach(entry=>{
       const a=document.createElement('a'); a.className='pv-toc-dlog-item';
-      a.href='#pv-anchor-'+entry.id; a.dataset.tip=entry.text; a.dataset.target='pv-anchor-'+entry.id;
+      a.href='#pv-anchor-dl-'+entry.id; a.dataset.tip=entry.text; a.dataset.target='pv-anchor-dl-'+entry.id;
       if(entry.status){ const dot=document.createElement('span'); dot.className='pv-toc-dlog-status pv-toc-dlog-status-'+previewStatusBadgeColor(entry.status); a.appendChild(dot); }
       const txt=document.createElement('span'); txt.className='pv-toc-dlog-text'; txt.textContent=entry.text;
       a.appendChild(txt);
-      a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToAnchor(entry.id); });
+      a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToNode('dl-'+entry.id); });
       toc.appendChild(a);
     });
   }
