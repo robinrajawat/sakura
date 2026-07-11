@@ -2117,6 +2117,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-doc .pv-dlog-field:first-of-type{margin-top:2px;padding-top:0;border-top:none}
 #preview-doc .pv-dlog-field-label{font:700 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
 #preview-doc .pv-dlog-field-value{font:400 14.5px 'Inter',sans-serif;color:var(--fg);line-height:1.55;word-break:break-word}
+#preview-doc .pv-dlog-field-value ol,#preview-doc .pv-dlog-field-value ul{margin:4px 0 0;padding-left:19px}
+#preview-doc .pv-dlog-field-value li{font-size:13.5px;line-height:1.5;word-break:break-word;margin:0 0 4px}
+#preview-doc .pv-dlog-field-value li:last-child{margin-bottom:0}
+#preview-doc .pv-dlog-field-value li::marker{color:var(--muted);font-size:12px}
+#preview-doc .pv-dlog-field-value p,#preview-doc .pv-dlog-field-value div{margin:0 0 6px}
+#preview-doc .pv-dlog-field-value p:last-child,#preview-doc .pv-dlog-field-value div:last-child{margin-bottom:0}
 #preview-doc .pv-dlog-sublist{margin:6px 0 0;padding-left:19px;display:flex;flex-direction:column;gap:5px}
 #preview-doc .pv-dlog-sublist li{font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;word-break:break-word}
 #preview-doc .pv-dlog-sublist li::marker{color:var(--muted);font-size:12px}
@@ -11752,15 +11758,55 @@ function pptxBuildDlList(startIdx, endIdx){
 // skipped entirely, same as Presenter hides it; a field disabled via Settings → Preview →
 // decision log fields (previewDlFields) is skipped too, so the export doesn't show fields the
 // person has chosen not to display.
+// Splits a decision-log field's rich HTML into leading paragraph text plus any real <ol>/<ul>
+// list rows, each as {text, indent, ordered, num} — the shape pptxBuildFieldRows/
+// addDecisionLogCard already expect. Nested lists get an incrementing indent level. Kept
+// separate from stripHtmlToText because that collapses everything (including list markers,
+// which are CSS-generated and never in textContent) into one run-on line, silently dropping
+// numbering/bullets a field was actually written with.
+function pptxParseRichField(html){
+  const tmp=document.createElement('div'); tmp.innerHTML=sakuraSanitizeRichHtml(html||'');
+  const textParts=[]; const list=[];
+  function walkList(ul,depth){
+    const ordered=ul.tagName.toLowerCase()==='ol';
+    let n=0;
+    Array.from(ul.children).forEach(li=>{
+      if(li.tagName.toLowerCase()!=='li')return;
+      n++;
+      const clone=li.cloneNode(true);
+      Array.from(clone.querySelectorAll('ol,ul')).forEach(nested=>nested.remove());
+      const text=(clone.textContent||'').replace(/\s+/g,' ').trim();
+      if(text)list.push({text,indent:depth,ordered,num:n});
+      Array.from(li.children).forEach(child=>{
+        const t=child.tagName.toLowerCase();
+        if(t==='ol'||t==='ul')walkList(child,depth+1);
+      });
+    });
+  }
+  if(tmp.children.length){
+    Array.from(tmp.children).forEach(child=>{
+      const tag=child.tagName.toLowerCase();
+      if(tag==='ol'||tag==='ul'){ walkList(child,0); return; }
+      const t=(child.textContent||'').replace(/\s+/g,' ').trim();
+      if(t)textParts.push(t);
+    });
+  } else {
+    const t=(tmp.textContent||'').replace(/\s+/g,' ').trim();
+    if(t)textParts.push(t);
+  }
+  return {text:textParts.join(' '), list};
+}
 function pptxParseDecisionLogFields(node){
   const dl=node.decisionLog||{};
   const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
   const fields=[];
   PV_DL_FIELD_META.forEach(({key,label})=>{
     if(!previewDlFields.includes(key))return;
-    const raw=stripHtmlToText(dl[key]||'');
+    const raw=String(dl[key]||'').trim();
     if(!raw)return; // unanswered — Presenter shows nothing for this field either
-    fields.push({label, value:raw, list:[]});
+    const parsed=pptxParseRichField(raw);
+    if(!parsed.text&&!parsed.list.length)return;
+    fields.push({label, value:parsed.text, list:parsed.list});
   });
   return {type:'decisionLog', timestamp:dl.timestamp?qaFormatShortDate(dl.timestamp):'', author:dl.author||'', statusValue:decisionStatusLabel(status), statusColor:previewStatusBadgeColor(status), fields};
 }
