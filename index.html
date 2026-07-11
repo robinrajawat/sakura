@@ -5484,6 +5484,16 @@ let zenHideToolbar=false; let zenHidePad=false; let zenHideAppbar=true; let zenU
 // Set true only during resetSettingsToDefault()'s own reload, so the unconditional
 // savePrefs() in the beforeunload handler doesn't re-write the prefs we just cleared.
 let suppressPrefsSaveOnUnload=false;
+// Same bug class as suppressPrefsSaveOnUnload above, but for documents: any restore (Backup
+// History, Local safety copy, Undo last restore) or full-data import writes the correct old
+// data straight into localStorage, then reloads — but the in-memory `nodes`/`openTabs` for
+// whatever was open a moment ago are untouched by that write, still sitting in memory exactly
+// as they were. The beforeunload handler's unconditional saveToStorage()/persistOpenTabs()
+// would otherwise re-serialize that stale (possibly the very thing being restored away from)
+// state straight back over the freshly-restored data before the reload ever completes —
+// silently undoing the restore for whichever document/tab happened to be open. Set true right
+// before any such reload; every restore/import path below does this.
+let suppressSaveToStorageOnUnload=false;
 const AI_PREFS_KEY='sakura_ai_prefs_v1';
 
 // ===== Secure Storage vault =====
@@ -14940,7 +14950,9 @@ async function resetAiSettingsToDefault(){
 }
 el('ai-settings-reset-btn')?.addEventListener('click',()=>resetAiSettingsToDefault());
 window.addEventListener('beforeunload',e=>{
-  saveToStorage(); if(!suppressPrefsSaveOnUnload)savePrefs(); persistOpenTabs(); captureActiveTabSnapshot();
+  if(!suppressSaveToStorageOnUnload){ saveToStorage(); persistOpenTabs(); }
+  if(!suppressPrefsSaveOnUnload)savePrefs();
+  captureActiveTabSnapshot();
   if(suppressBeforeUnloadOnce)return;
   const needsStrictBackupWarning=sessionBackupPromptMode==='strict'&&!sessionBackupPromptDismissed&&sessionHasUnbackedChanges();
   // autoRewriteQueue is in-memory only — nothing persists it, so a refresh or close silently
@@ -14964,7 +14976,8 @@ window.addEventListener('beforeunload',e=>{
 })
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
-    saveToStorage(); if(!suppressPrefsSaveOnUnload)savePrefs();
+    if(!suppressSaveToStorageOnUnload)saveToStorage();
+    if(!suppressPrefsSaveOnUnload)savePrefs();
     // Passive mode only — deliberately not wired into beforeunload, since that would
     // trigger the browser's native "leave site?" dialog. Fires once per session, the
     // first time the tab is hidden, and is a no-op if there's nothing new to protect.
@@ -16272,6 +16285,7 @@ async function restoreFsBackupHistoryEntry(idx){
   try{
     localStorage.clear();
     Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    suppressSaveToStorageOnUnload=true;
     showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
   }catch(e){ showToast('Restore failed') }
 }
@@ -16298,6 +16312,7 @@ async function restoreFromIndexedDbMirror(){
   try{
     localStorage.clear();
     Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    suppressSaveToStorageOnUnload=true;
     showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
   }catch(e){ showToast('Restore failed') }
 }
@@ -16311,6 +16326,7 @@ async function restoreFromPreRestoreSnapshot(){
     localStorage.clear();
     Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
     try{ await idbDelete('preRestoreSnapshot') }catch(e){}
+    suppressSaveToStorageOnUnload=true;
     showToast('Restore undone — reloading…'); setTimeout(()=>location.reload(),700);
   }catch(e){ showToast('Undo failed') }
 }
@@ -16615,6 +16631,7 @@ async function importAllDataFromPayload(payload,opts={}){
     try{ localStorage.removeItem(IMPORT_STAGE_KEY); }catch(e){}
     Object.entries(preserved).forEach(([k,v])=>{ if(!(k in payload.data)){ try{ localStorage.setItem(k,v); }catch(e){} } });
   }catch(e){ showToast('Import failed'); return; }
+  suppressSaveToStorageOnUnload=true;
   showToast('Data imported — reloading…');
   setTimeout(()=>location.reload(), 700);
 }
