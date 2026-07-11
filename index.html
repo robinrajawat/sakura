@@ -6949,7 +6949,7 @@ function performBuiltinTemplateSeed(){
     const folderMap=loadTplFolderMap();
     defs.forEach(def=>{
       const id=builtinTemplateId(def.key);
-      localStorage.setItem(templateKey(id),JSON.stringify({nodes:def.nodes}));
+      try{ localStorage.setItem(templateKey(id),JSON.stringify({nodes:def.nodes})); }catch(e){ return; } // skip just this one template rather than aborting the whole pack
       const existing=list.find(t=>t.id===id);
       if(!existing) list.push({id,title:def.title,updatedAt:Date.now()});
       else { existing.title=def.title; delete existing.trashedAt; }
