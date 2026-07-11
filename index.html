@@ -2852,34 +2852,71 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
             <div class="settings-list">
               <div class="settings-list-row" id="pad-enabled-row"><div class="settings-row-text"><span class="settings-switch-text">Pad Panel</span><span class="settings-row-desc">Docked panel for whole-document notes, Q&amp;A, and Decision Log — separate from per-node notes. Toggle with the toolbar icon or Ctrl/Cmd+Shift+P. Which of its three tabs are available is set in Settings → Features → Pad Panel</span></div><button id="pad-enabled-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show Pad"></button></div>
               <div class="settings-list-row" id="pad-bg-match-row"><div class="settings-row-text"><span class="settings-switch-text">Match editor background</span><span class="settings-row-desc">On: Pad's writing area matches the outline's canvas. Off: it matches the sidebar/toolbar tone instead, to read as clearly separate from the document</span></div><button id="pad-bg-match-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Match editor background"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for Q&amp;A</span><span class="settings-row-desc">Draft answer, Bulk-draft unanswered, and Q&amp;A summary live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="qa-ai-settings-jump-btn">Open in AI settings</button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open in Q&amp;A by default</span><span class="settings-row-desc">Every time you open the Pad, start on its Q&amp;A tab instead of Notepad. You can still switch between them with the tabs in the Pad's header while it's open — this only sets which one greets you when it opens.</span></div><button id="pad-default-qa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open Pad in Q&amp;A by default"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Compact Q&amp;A rows</span><span class="settings-row-desc">Tighter spacing between separate Q&amp;A rows, similar to the To-Dos panel's compact row spacing. Doesn't affect line spacing within a single question or answer — that stays comfortable to read either way.</span></div><button id="qa-compact-rows-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Compact Q&amp;A rows"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">Same idea as the To-Dos panel's Row actions setting. "On hover" keeps rows compact — the select checkbox, drag handle, rewrite sparkles, link, and delete button collapse to zero width at rest so the row uses the full width, and expand only when you point at it. "Always visible" reserves that space permanently instead — less compact, but nothing moves or hides.</span></div><select id="qa-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
             </div>
-            <div class="settings-field" id="pad-toolbar-buttons-field">
-              <button type="button" class="settings-collapsible-header" id="pad-toolbar-buttons-header" aria-expanded="false" aria-controls="pad-toolbar-buttons-body">
-                <span class="settings-collapsible-title">Toolbar buttons</span>
-                <span class="settings-collapsible-summary" id="pad-toolbar-buttons-summary"></span>
-                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="settings-collapsible-body" id="pad-toolbar-buttons-body">
-                <span class="settings-row-desc">Hide buttons you don't use in the Pad's toolbar</span>
-                <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="ptbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="ptbsec-none-btn">Hide all</button></div>
-                <div class="settings-grid" id="pad-toolbar-buttons-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-bold" checked /> Bold</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-italic" checked /> Italic</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-underline" checked /> Underline</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-strike" checked /> Strikethrough</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ul" checked /> Bullet list</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ol" checked /> Numbered list</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-link" checked /> Link</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-table" checked /> Table</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-image" checked /> Image</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-attach" checked /> Attach file</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-timestamp" checked /> Timestamp</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ai-rewrite" checked /> AI Rewrite</label>
+            <div class="settings-subsection" id="settings-subsection-notepad">
+              <div class="settings-subsection-title">Notepad</div>
+              <div class="settings-field" id="pad-toolbar-buttons-field">
+                <button type="button" class="settings-collapsible-header" id="pad-toolbar-buttons-header" aria-expanded="false" aria-controls="pad-toolbar-buttons-body">
+                  <span class="settings-collapsible-title">Toolbar buttons</span>
+                  <span class="settings-collapsible-summary" id="pad-toolbar-buttons-summary"></span>
+                  <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="settings-collapsible-body" id="pad-toolbar-buttons-body">
+                  <span class="settings-row-desc">Hide buttons you don't use in the Pad's toolbar</span>
+                  <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="ptbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="ptbsec-none-btn">Hide all</button></div>
+                  <div class="settings-grid" id="pad-toolbar-buttons-grid" style="margin-top:6px">
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-bold" checked /> Bold</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-italic" checked /> Italic</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-underline" checked /> Underline</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-strike" checked /> Strikethrough</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ul" checked /> Bullet list</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ol" checked /> Numbered list</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-link" checked /> Link</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-table" checked /> Table</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-image" checked /> Image</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-attach" checked /> Attach file</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-timestamp" checked /> Timestamp</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="ptbsec-ai-rewrite" checked /> AI Rewrite</label>
+                </div>
+                </div>
               </div>
+            </div>
+            <div class="settings-subsection" id="settings-subsection-qa">
+              <div class="settings-subsection-title">Q&amp;A</div>
+              <div class="settings-list">
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for Q&amp;A</span><span class="settings-row-desc">Draft answer, Bulk-draft unanswered, and Q&amp;A summary live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="qa-ai-settings-jump-btn">Open in AI settings</button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open in Q&amp;A by default</span><span class="settings-row-desc">Every time you open the Pad, start on its Q&amp;A tab instead of Notepad. You can still switch between them with the tabs in the Pad's header while it's open — this only sets which one greets you when it opens.</span></div><button id="pad-default-qa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open Pad in Q&amp;A by default"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Compact Q&amp;A rows</span><span class="settings-row-desc">Tighter spacing between separate Q&amp;A rows, similar to the To-Dos panel's compact row spacing. Doesn't affect line spacing within a single question or answer — that stays comfortable to read either way.</span></div><button id="qa-compact-rows-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Compact Q&amp;A rows"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">Same idea as the To-Dos panel's Row actions setting. "On hover" keeps rows compact — the select checkbox, drag handle, rewrite sparkles, link, and delete button collapse to zero width at rest so the row uses the full width, and expand only when you point at it. "Always visible" reserves that space permanently instead — less compact, but nothing moves or hides.</span></div><select id="qa-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
+              </div>
+            </div>
+            <div class="settings-subsection" id="settings-subsection-decisionlog">
+              <div class="settings-subsection-title">Decision Log</div>
+              <div class="settings-list">
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Ask who decided</span><span class="settings-row-desc">Prompt for a name each time you insert a decision log — the prompt defaults to Default author if one is set. Off: skips the prompt and uses Default author automatically instead of leaving it blank. Timestamp is always added automatically either way</span></div><button id="decisionlog-ask-author-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Ask who decided"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Color field labels</span><span class="settings-row-desc">Color Context, Decision, Rationale, etc. so each field reads at a glance — in the editor and in the Decision Log card in Preview. Status is separate and always shows as a colored badge either way, since that's a status indicator rather than a field label.</span></div><button id="decisionlog-colors-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Color field labels"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Bold field labels</span><span class="settings-row-desc">Bold the field labels above, in addition to coloring them — in the editor and in Preview. Off keeps them the same weight as surrounding text — lighter, less shouty.</span></div><button id="decisionlog-labels-bold-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Bold field labels"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Split large ones onto their own slide</span><span class="settings-row-desc">In Presenter and PPTX, a decision log with a lot of filled-in content gets a dedicated slide instead of being squeezed under the node's own bullets. Off: always inline, right after the node, however long it is.</span></div><button id="decisionlog-split-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Split large decision logs onto their own slide"></button></div>
+                <div class="settings-list-row" id="decisionlog-split-threshold-row"><div class="settings-row-text"><span class="settings-switch-text">Split threshold</span><span class="settings-row-desc">Combined characters across the fields shown (see Decision card fields in Settings → Preview) before a decision log gets its own slide instead of staying inline</span></div><input id="decisionlog-split-threshold-input" type="number" min="50" max="2000" step="10" value="200" class="meta-input" style="width:72px;text-align:center" /></div>
+              </div>
+              <div class="settings-field" id="decisionlog-fields-field">
+                <button type="button" class="settings-collapsible-header" id="decisionlog-fields-header" aria-expanded="false" aria-controls="decisionlog-fields-body">
+                  <span class="settings-collapsible-title">Fields to include</span>
+                  <span class="settings-collapsible-summary" id="decisionlog-fields-summary"></span>
+                  <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="settings-collapsible-body" id="decisionlog-fields-body">
+                  <span class="settings-row-desc">Pick which prompts get inserted under the header each time — turn off the ones you never fill in (Status defaults to "Proposed" and is the most commonly skipped). The header itself (timestamp + author) is always added</span>
+                  <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="dlfsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="dlfsec-none-btn">Hide all</button></div>
+                  <div class="settings-grid" id="decisionlog-fields-grid" style="margin-top:6px">
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-context" checked /> Context</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-decision" checked /> Decision</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-rationale" checked /> Rationale</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-alternatives" checked /> Alternatives</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-impact" checked /> Impact</label>
+                  <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-status" checked /> Status</label>
+                </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3087,36 +3124,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-decision-log" /> Insert decision log</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-tags" /> Tags…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-delete" /> Delete</label>
-              </div>
-              </div>
-            </div>
-          </div>
-          <div class="settings-section" data-cat="editing" id="settings-section-decision-log">
-            <div class="settings-section-title">Decision Log</div>
-            <div class="muted-help">Turn Decision Log on or off in Settings → Features → Pad Panel. Everything below configures how it looks and behaves once it's on.</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Ask who decided</span><span class="settings-row-desc">Prompt for a name each time you insert a decision log — the prompt defaults to Default author if one is set. Off: skips the prompt and uses Default author automatically instead of leaving it blank. Timestamp is always added automatically either way</span></div><button id="decisionlog-ask-author-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Ask who decided"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Color field labels</span><span class="settings-row-desc">Color Context, Decision, Rationale, etc. so each field reads at a glance — in the editor and in the Decision Log card in Preview. Status is separate and always shows as a colored badge either way, since that's a status indicator rather than a field label.</span></div><button id="decisionlog-colors-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Color field labels"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Bold field labels</span><span class="settings-row-desc">Bold the field labels above, in addition to coloring them — in the editor and in Preview. Off keeps them the same weight as surrounding text — lighter, less shouty.</span></div><button id="decisionlog-labels-bold-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Bold field labels"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Split large ones onto their own slide</span><span class="settings-row-desc">In Presenter and PPTX, a decision log with a lot of filled-in content gets a dedicated slide instead of being squeezed under the node's own bullets. Off: always inline, right after the node, however long it is.</span></div><button id="decisionlog-split-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Split large decision logs onto their own slide"></button></div>
-              <div class="settings-list-row" id="decisionlog-split-threshold-row"><div class="settings-row-text"><span class="settings-switch-text">Split threshold</span><span class="settings-row-desc">Combined characters across the fields shown (see Decision card fields in Settings → Preview) before a decision log gets its own slide instead of staying inline</span></div><input id="decisionlog-split-threshold-input" type="number" min="50" max="2000" step="10" value="200" class="meta-input" style="width:72px;text-align:center" /></div>
-            </div>
-            <div class="settings-field" id="decisionlog-fields-field">
-              <button type="button" class="settings-collapsible-header" id="decisionlog-fields-header" aria-expanded="false" aria-controls="decisionlog-fields-body">
-                <span class="settings-collapsible-title">Fields to include</span>
-                <span class="settings-collapsible-summary" id="decisionlog-fields-summary"></span>
-                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="settings-collapsible-body" id="decisionlog-fields-body">
-                <span class="settings-row-desc">Pick which prompts get inserted under the header each time — turn off the ones you never fill in (Status defaults to "Proposed" and is the most commonly skipped). The header itself (timestamp + author) is always added</span>
-                <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="dlfsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="dlfsec-none-btn">Hide all</button></div>
-                <div class="settings-grid" id="decisionlog-fields-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-context" checked /> Context</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-decision" checked /> Decision</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-rationale" checked /> Rationale</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-alternatives" checked /> Alternatives</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-impact" checked /> Impact</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="dlfsec-status" checked /> Status</label>
               </div>
               </div>
             </div>
@@ -7215,7 +7222,7 @@ const FEATURE_FLAGS={
   padqa:{get:()=>padQaTabEnabled,set:v=>{if(!v&&!padNotepadTabEnabled&&!featureDecisionLogEnabled){showToast('Keep at least one Pad tab enabled'); return;} padQaTabEnabled=v; padEnsureValidViewMode();}},
   todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}}
 };
-const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-section-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-section-decision-log']};
+const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-section-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog']};
 const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
