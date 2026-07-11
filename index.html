@@ -11314,10 +11314,21 @@ function docxNoteInlineRuns(node,fmt){
   }
   return Array.from(node.childNodes).map(c=>docxNoteInlineRuns(c,childFmt)).join('');
 }
-function docxNoteBlocks(html){
+function docxNoteBlocks(html,fmtOverride){
   const tmp=document.createElement('div'); tmp.innerHTML=String(html||'');
-  const baseFmt={italic:true,size:20,color:'3D3929'};
+  const baseFmt=fmtOverride||{italic:true,size:20,color:'3D3929'};
   const out=[]; let sawBlock=false;
+  function emitList(listEl){
+    const tag=listEl.tagName.toLowerCase();
+    let n=0;
+    Array.from(listEl.children).filter(li=>li.tagName.toLowerCase()==='li').forEach(li=>{
+      n++; sawBlock=true;
+      const clone=li.cloneNode(true);
+      Array.from(clone.querySelectorAll('ol,ul')).forEach(nested=>nested.remove());
+      const runs=Array.from(clone.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
+      if(runs)out.push({runs,prefix:tag==='ol'?(n+'.  '):'•  '});
+    });
+  }
   Array.from(tmp.childNodes).forEach(child=>{
     if(child.nodeType===Node.TEXT_NODE){
       if(child.nodeValue.trim()){ sawBlock=true; out.push({runs:docxNoteInlineRuns(child,baseFmt),prefix:''}); }
@@ -11325,15 +11336,7 @@ function docxNoteBlocks(html){
     }
     if(child.nodeType!==Node.ELEMENT_NODE)return;
     const tag=child.tagName.toLowerCase();
-    if(tag==='ul'||tag==='ol'){
-      let n=0;
-      Array.from(child.children).filter(li=>li.tagName.toLowerCase()==='li').forEach(li=>{
-        n++; sawBlock=true;
-        const runs=Array.from(li.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
-        if(runs)out.push({runs,prefix:tag==='ol'?(n+'.  '):'•  '});
-      });
-      return;
-    }
+    if(tag==='ul'||tag==='ol'){ emitList(child); return; }
     if(tag==='table'){
       sawBlock=true;
       Array.from(child.querySelectorAll('tr')).forEach(tr=>{
@@ -11343,6 +11346,15 @@ function docxNoteBlocks(html){
       return;
     }
     if(['p','div','h1','h2','h3','h4','blockquote'].includes(tag)){
+      const nestedList=child.querySelector(':scope > ol, :scope > ul');
+      if(nestedList){
+        const clone=child.cloneNode(true);
+        Array.from(clone.querySelectorAll('ol,ul')).forEach(l=>l.remove());
+        const runs=Array.from(clone.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
+        if(runs){ sawBlock=true; out.push({runs,prefix:''}); }
+        emitList(nestedList);
+        return;
+      }
       const runs=Array.from(child.childNodes).map(c=>docxNoteInlineRuns(c,baseFmt)).join('');
       if(runs){ sawBlock=true; out.push({runs,prefix:''}); }
       return;
@@ -11407,9 +11419,10 @@ function docxBuildDecisionCard(node,leftTwips){
     const labelColor=decisionLogColors?(DOCX_DL_LABEL_COLORS[label]||'6F6B63'):'6F6B63';
     const labelRuns=docxRun(label.toUpperCase(),{bold:decisionLogLabelBold,color:labelColor,size:16});
     paras.push(mkP(labelRuns,{accentColor,after:20}));
-    const blocks=docxNoteBlocks(raw);
+    const blocks=docxNoteBlocks(raw,{size:20});
     blocks.forEach((b,i)=>{
-      paras.push(mkP(b.runs,{accentColor,before:0,after:i===blocks.length-1?40:20}));
+      const prefixRun=b.prefix?docxRun(b.prefix,{size:20,color:labelColor}):'';
+      paras.push(mkP(prefixRun+b.runs,{accentColor,before:0,after:i===blocks.length-1?40:20}));
     });
   });
   let metaText=''; if(dl.author)metaText='— '+dl.author; if(dl.timestamp)metaText+=(metaText?' · ':'— ')+qaFormatShortDate(dl.timestamp);
@@ -11821,17 +11834,25 @@ function pptxParseRichField(html){
       });
     });
   }
-  if(tmp.children.length){
-    Array.from(tmp.children).forEach(child=>{
+  function walkBlock(container){
+    Array.from(container.children).forEach(child=>{
       const tag=child.tagName.toLowerCase();
       if(tag==='ol'||tag==='ul'){ walkList(child,0); return; }
+      const nestedList=child.querySelector(':scope > ol, :scope > ul');
+      if(nestedList){
+        const clone=child.cloneNode(true);
+        Array.from(clone.querySelectorAll('ol,ul')).forEach(l=>l.remove());
+        const t=(clone.textContent||'').replace(/\s+/g,' ').trim();
+        if(t)textParts.push(t);
+        walkList(nestedList,0);
+        return;
+      }
       const t=(child.textContent||'').replace(/\s+/g,' ').trim();
       if(t)textParts.push(t);
     });
-  } else {
-    const t=(tmp.textContent||'').replace(/\s+/g,' ').trim();
-    if(t)textParts.push(t);
   }
+  if(tmp.children.length){ walkBlock(tmp); }
+  else { const t=(tmp.textContent||'').replace(/\s+/g,' ').trim(); if(t)textParts.push(t); }
   return {text:textParts.join(' '), list};
 }
 function pptxParseDecisionLogFields(node){
