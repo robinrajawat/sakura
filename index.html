@@ -18488,6 +18488,7 @@ function renderDecisionPad(){
   const body=el('decision-body'); if(!body)return;
   const node=nodes.find(n=>n.id===selectedId);
   decisionPadNodeId=node?node.id:null;
+  if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; }
   const hasLog=nodeHasDecisionLog(node);
   const decisionTab=el('pad-tab-decision'); if(decisionTab)decisionTab.classList.toggle('has-log',hasLog);
   body.classList.toggle('no-log',!hasLog);
@@ -18585,20 +18586,66 @@ function decisionFieldAutoList(e){
   sel.removeAllRanges(); sel.addRange(r);
   document.execCommand(numbered?'insertOrderedList':'insertUnorderedList');
 }
-function decisionFieldKeydown(e){
-  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='b'){ e.preventDefault(); document.execCommand('bold'); }
-  else if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='i'){ e.preventDefault(); document.execCommand('italic'); }
+function decisionFieldKeydown(e,key){
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='b'){ e.preventDefault(); document.execCommand('bold'); return; }
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='i'){ e.preventDefault(); document.execCommand('italic'); return; }
+  if(matchesShortcut(e,'undo')){ e.preventDefault(); e.stopPropagation(); decisionFieldSessionUndoRun(key); return; }
+  if(matchesShortcut(e,'redo')){ e.preventDefault(); e.stopPropagation(); decisionFieldSessionRedoRun(key); return; }
+}
+// Per-field session undo/redo, one independent stack per field key — mirrors Note's own
+// beforeinput-based checkpoint pattern (see _noteIdleTimer above): one step per burst of
+// typing captured before the mutating edit, not one step per keystroke, using beforeinput
+// rather than input since the DOM has already changed by the time input fires. Without this,
+// Ctrl+Z while typing in a decision field either did nothing (browser-native contenteditable
+// undo doesn't reliably track edits made elsewhere via renderDecisionPad's own innerHTML
+// writes) or fell through to the main outline's undo stack and reverted an unrelated change —
+// stopPropagation in decisionFieldKeydown above is what prevents that leak.
+let decisionFieldSessionUndo={};
+let _decisionFieldIdleTimer=null;
+let _decisionFieldCheckpointPending={};
+let _decisionPadUndoNodeId=null;
+function pushDecisionFieldSessionUndo(key){
+  const field=el('decision-'+key); if(!field)return;
+  if(!decisionFieldSessionUndo[key])decisionFieldSessionUndo[key]={undo:[],redo:[]};
+  const st=decisionFieldSessionUndo[key];
+  st.undo.push(field.innerHTML);
+  if(st.undo.length>100)st.undo.shift();
+  st.redo=[];
+}
+function decisionFieldSyncModel(key,field){
+  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
+  node.decisionLog[key]=sakuraSanitizeRichHtml(field.innerHTML);
+  node.decisionLog.timestamp=Date.now();
+  const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
+  markDirty(); scheduleAutoSave();
+}
+function decisionFieldSessionUndoRun(key){
+  const field=el('decision-'+key); if(!field)return;
+  const st=decisionFieldSessionUndo[key]; if(!st||!st.undo.length)return;
+  st.redo.push(field.innerHTML);
+  field.innerHTML=st.undo.pop();
+  decisionFieldSyncModel(key,field);
+  clearTimeout(_decisionFieldIdleTimer); _decisionFieldCheckpointPending[key]=true;
+}
+function decisionFieldSessionRedoRun(key){
+  const field=el('decision-'+key); if(!field)return;
+  const st=decisionFieldSessionUndo[key]; if(!st||!st.redo.length)return;
+  st.undo.push(field.innerHTML);
+  field.innerHTML=st.redo.pop();
+  decisionFieldSyncModel(key,field);
+  clearTimeout(_decisionFieldIdleTimer); _decisionFieldCheckpointPending[key]=true;
 }
 ['context','decision','rationale','alternatives','impact'].forEach(key=>{
   const field=el('decision-'+key); if(!field)return;
-  field.addEventListener('keydown',decisionFieldKeydown);
+  field.addEventListener('keydown',e=>decisionFieldKeydown(e,key));
+  field.addEventListener('beforeinput',()=>{
+    if(_decisionFieldCheckpointPending[key]!==false){ pushDecisionFieldSessionUndo(key); _decisionFieldCheckpointPending[key]=false; }
+    clearTimeout(_decisionFieldIdleTimer);
+    _decisionFieldIdleTimer=setTimeout(()=>{ _decisionFieldCheckpointPending[key]=true; },800);
+  });
   field.addEventListener('input',e=>{
     decisionFieldAutoList(e);
-    const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
-    node.decisionLog[key]=sakuraSanitizeRichHtml(field.innerHTML);
-    node.decisionLog.timestamp=Date.now();
-    const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
-    markDirty(); scheduleAutoSave();
+    decisionFieldSyncModel(key,field);
   });
 });
 async function rewriteDecisionField(key){
