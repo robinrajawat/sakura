@@ -103,7 +103,7 @@ For updates: use the maintained source file
       fold:{collapse:'#qb-collapse','expand-all':'#qb-expand-all',zoom:'#qb-zoom'},
       ai:{outline:'#qb-ai-outline',expand:'#qb-ai-expand',summarise:'#qb-ai-summarise',rewrite:'#qb-ai-rewrite',tags:'#qb-ai-tags',icon:'#qb-ai-icon'},
       "delete":{"delete":'#qb-delete'},
-      insert:{'smart-paste':'#qb-smart-paste','date-time':'#insert-dt-btn','decision-log':'#qb-decision-log',note:'#qb-note',checkbox:'#qb-checkbox',tags:'#qb-tags'},
+      insert:{'smart-paste':'#qb-smart-paste','date-time':'#insert-dt-btn',note:'#qb-note',checkbox:'#qb-checkbox',tags:'#qb-tags'},
       format:{bold:'.fmt-btn[data-style="bold"]',italic:'.fmt-btn[data-style="italic"]',underline:'.fmt-btn[data-style="underline"]',strike:'.fmt-btn[data-style="strike"]',highlight:'#hl-wrap',color:'#fc-wrap',heading:'#heading-wrap'},
       extras:{'version-history':'#more-version-history-btn','sort-az':'#sort-root-az-btn,#qb-expanded-sort-az','sort-za':'#sort-root-za-btn,#qb-expanded-sort-za','sort-depth':'#sort-root-depth-btn,#qb-expanded-sort-depth',clear:'#clear-btn,#qb-expanded-clear'}
     };
@@ -192,7 +192,7 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
 .code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
 #demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#diagrams-tab-body
+#diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Fira Code',Consolas,'Courier New',monospace}
@@ -278,7 +278,7 @@ body.hide-tb-history #ag-history,body.hide-tb-structure #ag-structure,body.hide-
 body.feature-off-note #qb-note,body.feature-off-note #itbsec-note,body.feature-off-note .node-note-dot,body.feature-off-note #note-panel,body.feature-off-note #feat-codeblock-row{display:none!important}
 body.feature-off-codeblock #npanel-tab-code,body.feature-off-codeblock .node-code-badge{display:none!important}
 body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai [data-save="diagram-prompt"],body.feature-off-ai [data-save="drawio-from-ai"],body.feature-off-ai #etbsec-diagram-prompt,body.feature-off-ai #etbsec-drawio-from-ai,body.feature-off-ai label:has(#etbsec-diagram-prompt),body.feature-off-ai label:has(#etbsec-drawio-from-ai),body.feature-off-ai #export-divider-ai,body.feature-off-ai #export-label-ai,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-summarise),body.feature-off-ai #ntb-ai-rewrite,body.feature-off-ai #ntb-ai-summarise,body.feature-off-ai #ptb-ai-rewrite{display:none!important}
-body.feature-off-decisionlog #qb-decision-log,body.feature-off-decisionlog #itbsec-decision-log,body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog .node-dlog-dot,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#ctxq-decision-log),body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
+body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog .node-dlog-dot,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
 body.feature-off-padnotepad #pad-tab-notes{display:none!important}
 body.feature-off-padqa #pad-tab-qa{display:none!important}
 body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
@@ -1260,17 +1260,14 @@ body.pad-qa-mode #qa-body{display:flex}
 body.pad-decision-mode #pad-editor{display:none}
 body.pad-decision-mode #decision-body{display:flex}
 body.pad-diagrams-mode #pad-editor{display:none}
-#decision-empty{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:10px;text-align:center;color:var(--muted);font:400 13px 'Inter',sans-serif}
-#decision-body.no-log #decision-empty{display:flex}
-#decision-body.no-log #decision-card{display:none}
-#decision-card{background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-gray);border-radius:10px;padding:16px 18px}
+#decision-card{background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-gray);border-radius:10px;padding:16px 18px;display:none;margin-top:2px}
 #decision-card.pv-dlog-accent-green{border-left-color:var(--fc-green)}
 #decision-card.pv-dlog-accent-red{border-left-color:var(--fc-red)}
 #decision-card.pv-dlog-accent-orange{border-left-color:var(--fc-orange)}
 #decision-card.pv-dlog-accent-gray{border-left-color:var(--fc-gray)}
-#decision-add-btn{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;padding:6px 14px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
-#decision-add-btn:hover{background:var(--hover);border-color:var(--accent)}
-#decision-node-label{font:400 11px 'Inter',sans-serif;color:var(--muted);margin:6px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.decision-card-anchor-btn{appearance:none;border:none;background:none;font:400 11px 'Inter',sans-serif;color:var(--muted);margin:6px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;text-align:left;padding:0;max-width:100%;display:block}
+.decision-card-anchor-btn:hover{color:var(--accent);text-decoration:underline}
+.decision-card-anchor-btn.decision-card-anchor-warn{color:var(--fc-orange)}
 #decision-card .pv-dlog-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
 #decision-card .pv-dlog-accent-text-green{color:var(--fc-green)}
 #decision-card .pv-dlog-accent-text-red{color:var(--fc-red)}
@@ -1304,28 +1301,21 @@ body.pad-diagrams-mode #pad-editor{display:none}
 #decision-author::placeholder{color:var(--hint);opacity:.7}
 #decision-author:hover,#decision-author:focus{color:var(--fg);border-bottom-color:var(--border)}
 #decision-timestamp{white-space:nowrap}
-#decision-count-chip{appearance:none;border:1px solid transparent;background:transparent;align-items:center;gap:5px;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:2px 8px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
-#decision-count-chip:hover{background:var(--hover);color:var(--fg)}
-body.pad-decision-mode #decision-count-chip{display:inline-flex}
-#decision-count-chip[aria-pressed="true"],body.decision-list-mode #decision-count-chip{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #decision-open-chip{appearance:none;border:1px solid color-mix(in srgb,var(--fc-orange) 35%,transparent);background:color-mix(in srgb,var(--fc-orange) 10%,transparent);align-items:center;font:500 11px 'Inter',sans-serif;color:var(--fc-orange);padding:2px 9px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #decision-open-chip:hover:not(:disabled){background:color-mix(in srgb,var(--fc-orange) 18%,transparent)}
 #decision-open-chip[aria-pressed="true"]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #decision-open-chip:disabled{cursor:default;opacity:.75}
 #decision-author-filter{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 8px;border-radius:7px;outline:none;cursor:pointer;max-width:150px}
 #decision-author-filter:hover,#decision-author-filter:focus{border-color:var(--accent)}
-#decision-list-wrap{display:none;flex-direction:column;flex:1;min-height:0}
-#decision-body.list-mode #decision-empty{display:none}
-#decision-body.list-mode #decision-card{display:none}
-#decision-body.list-mode #decision-list-wrap{display:flex}
 #decision-list-filters{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;position:sticky;top:0;background:var(--canvas-bg);padding-bottom:4px;z-index:1}
-#decision-list-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px}
-#decision-list-wrap.is-empty #decision-list-empty{display:block}
-#decision-list-wrap.is-empty #decision-list{display:none}
-.decision-row{display:flex;align-items:flex-start;gap:8px;padding:8px;margin:0 -8px 8px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);cursor:pointer;border-radius:8px;transition:background .12s}
-.decision-row:last-child{border-bottom:none;margin-bottom:0}
-.decision-row:hover{background:var(--hover)}
-.decision-row.current{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+#decision-list-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px;line-height:1.5}
+#decision-body.is-empty #decision-list-empty{display:block}
+#decision-body.is-empty #decision-list{display:none}
+.decision-row{display:flex;flex-direction:column;margin:0 -8px 4px;border-radius:8px}
+.decision-row:last-child{margin-bottom:0}
+.decision-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px;cursor:pointer;border-radius:8px;transition:background .12s}
+.decision-row-summary:hover{background:var(--hover)}
+.decision-row.expanded .decision-row-summary{background:var(--hover)}
 .decision-row-status{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;flex-shrink:0;margin-top:1px}
 .decision-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .decision-row-status[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
@@ -1333,8 +1323,13 @@ body.pad-decision-mode #decision-count-chip{display:inline-flex}
 .decision-row-status[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .decision-row-content{flex:1;min-width:0}
 .decision-row-node{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.decision-row-node.decision-row-node-warn{color:var(--fc-orange)}
 .decision-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-meta{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:4px}
+.decision-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.decision-row-summary:hover .decision-row-delete{opacity:1}
+.decision-row-delete:hover{color:var(--fc-red);background:var(--hover)}
+.decision-row-expand-slot{padding:0 8px 10px}
 #decision-quicknav{display:none;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 #decision-quicknav.visible{display:flex}
 .decision-quicknav-chip{appearance:none;border:1px solid var(--border);background:var(--edit-bg);font:500 10.5px 'Inter',sans-serif;padding:2px 9px;border-radius:999px;cursor:pointer;color:var(--muted);transition:background .12s,border-color .12s,color .12s}
@@ -2334,7 +2329,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
-#diagram-anchor-suggest::-webkit-scrollbar
+#diagram-anchor-suggest::-webkit-scrollbar,#decision-anchor-suggest::-webkit-scrollbar
 {width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,
@@ -2342,7 +2337,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
-#diagram-anchor-suggest::-webkit-scrollbar-thumb
+#diagram-anchor-suggest::-webkit-scrollbar-thumb,#decision-anchor-suggest::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
@@ -2452,11 +2447,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
-#diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:280px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
-#diagram-anchor-suggest.open{display:block}
+#diagram-anchor-suggest,#decision-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:280px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
+#diagram-anchor-suggest.open,#decision-anchor-suggest.open{display:block}
 .diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
 .diagram-anchor-item-none{color:var(--hint);font-style:italic}
+.diagram-anchor-item-disabled{color:var(--hint);cursor:not-allowed;font-style:italic}
+.diagram-anchor-item-disabled:hover{background:none;color:var(--hint)}
 
 #todos-panel.open{display:flex}
 #todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
@@ -3263,7 +3260,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
           <div class="settings-section" data-cat="editing" id="settings-section-nodeqa">
             <div class="settings-section-title">Node Quick Assist</div>
-            <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Node Quick Assist</span><span class="settings-row-desc">While editing a node, Ctrl/Cmd+Space opens a small menu of fast node actions — insert em dash, date/time, note, code block, tags, decision log, rewrite — instead of the full Quick Assist. The same shortcut also opens a matching mini menu in the Pad, Note panel, Code block, and To-Dos task text — just the character-insert actions there (em dash, en dash, arrow, check mark, cross mark, middle dot, date/time), since note/code block/tags/decision log/rewrite only make sense pointed at a specific node. Off: Ctrl/Cmd+Space always opens the full Quick Assist everywhere, even mid-edit</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Node Quick Assist"></button></div>
+            <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Node Quick Assist</span><span class="settings-row-desc">While editing a node, Ctrl/Cmd+Space opens a small menu of fast node actions — insert em dash, date/time, note, code block, tags, rewrite — instead of the full Quick Assist. The same shortcut also opens a matching mini menu in the Pad, Note panel, Code block, and To-Dos task text — just the character-insert actions there (em dash, en dash, arrow, check mark, cross mark, middle dot, date/time), since note/code block/tags/rewrite only make sense pointed at a specific node. Off: Ctrl/Cmd+Space always opens the full Quick Assist everywhere, even mid-edit</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Node Quick Assist"></button></div>
             <div class="muted-help">Everything below configures what's in the mini menu once it's on. No typeahead — arrow keys + Enter, or click.</div>
             <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Icon-only row</span><span class="settings-row-desc">Show the mini menu as a compact wrapping row of icons instead of a vertical list of icon+label rows. Hover an icon (or use arrow keys, same as before) to see its name. Same actions, same order — just a more compact layout.</span></div><button id="nqa-icon-row-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Node Quick Assist as an icon-only row"></button></div>
             <div class="settings-field" style="margin-top:8px">
@@ -3285,7 +3282,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-note" checked /> Note…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-codeblock" checked /> Code block…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-tags" checked /> Tags…</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-decision-log" checked /> Insert decision log</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-ai-rewrite" checked /> Rewrite node</label>
               </div>
               </div>
@@ -3316,7 +3312,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-note" /> Note…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-codeblock" /> Code block…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-date-time" /> Insert date/time</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-decision-log" /> Insert decision log</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-tags" /> Tags…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-delete" /> Delete</label>
               </div>
@@ -3943,9 +3938,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Toggles and search are rule-based, not AI — a fixed set of recognized phrases (show/get/enable/turn on… vs. hide/remove/get rid of/turn off…) matched against a fixed list of settings. Nothing is sent anywhere for these, no API key needed, and it never improvises — if it doesn't recognize a phrase, it says so rather than guessing. The AI Run actions below are the one exception: those do call your configured AI provider, the same as clicking their toolbar/right-click equivalent would</li>
 <li>Covers the everyday visibility toggles: toolbar (and its group labels), sidebar (and its filter box), Pad, zen mode, dark/light mode, auto-rewrite on commit, tree lines, timestamps on hover, spellcheck, backlinks, compact rows, word wrap, outline numbering, the Quick Assist search box itself and its icon-only mode, icon-only Import/Export in the app bar, the hover toolbar, delete confirmation, decision log colors, accent-colored branches, expanded toolbar, and the startup tab/blank-session preferences — plus every on/off switch for a whole capability, whether it lives in Settings → Features (Note Panel, Code Block, Tagging, AI Capabilities, Pad Panel, To-Dos, Quick Assist) or inside that panel's own section (Decision Log, Focus, Backlinks, Hover Toolbar, Node Quick Assist). It does not cover destructive actions (reset, delete, empty trash) or multi-value settings (themes, sliders) — those still live in Settings, on purpose</li>
 <li>Note Panel, Code Block, Tagging, and Decision Log are reachable with slightly longer phrases than you might expect — "note panel feature," "code block feature," "tags feature," "decision log feature" — rather than their bare names. That's deliberate: those bare words are also what Quick Assist searches for as content (or, for Decision Log, what every inserted entry starts with), so a short keyword there would rank a toggle above the search hit you were actually looking for. Pad Panel is qualified too ("pad feature") for a different reason — bare "pad" is already claimed by the command that opens or closes the Pad panel for this session, which is a separate thing from turning the whole feature on or off</li>
-<li>Below command matches, a separate row type labeled <strong>Run</strong> covers one-off actions instead of toggles: "new document," "duplicate node," "duplicate," "insert decision log" (or "add decision log"), "editor's choice preset" (or "apply editor's choice"), and "documentation mode preset" (or "apply documentation mode") — or type the bare word "run" with nothing else to list all of them at once, the same way a bare "show" or "hide" lists every matching toggle. These don't have an on/off state to show or an existing value to report — they just do the thing once, the same as clicking the equivalent toolbar or Settings button would. Only safe, additive, undoable operations are ever reachable this way; nothing destructive is offered as a Run action, same rule as the toggles above. "Duplicate node" and "Insert decision log" need a node selected first — if nothing's selected, they still show up (so you know they exist) but greyed out with "select a node first" instead of a working button, rather than either hiding them or letting a click do nothing unexplained. Undo means different things per action: for "new document," "duplicate node," and "insert decision log" it's the regular document Undo; "editor's choice preset" instead restores every setting it touched (toolbar, sidebar, Pad, hover toolbar, accent, text color, right-click menu) back to what they were immediately before, since none of those live on the document undo stack</li>
+<li>Below command matches, a separate row type labeled <strong>Run</strong> covers one-off actions instead of toggles: "new document," "duplicate node," "duplicate," "editor's choice preset" (or "apply editor's choice"), and "documentation mode preset" (or "apply documentation mode") — or type the bare word "run" with nothing else to list all of them at once, the same way a bare "show" or "hide" lists every matching toggle. These don't have an on/off state to show or an existing value to report — they just do the thing once, the same as clicking the equivalent toolbar or Settings button would. Only safe, additive, undoable operations are ever reachable this way; nothing destructive is offered as a Run action, same rule as the toggles above. "Duplicate node" needs a node selected first — if nothing's selected, it still shows up (so you know it exists) but greyed out with "select a node first" instead of a working button, rather than either hiding it or letting a click do nothing unexplained. Undo means different things per action: for "new document" and "duplicate node" it's the regular document Undo; "editor's choice preset" instead restores every setting it touched (toolbar, sidebar, Pad, hover toolbar, accent, text color, right-click menu) back to what they were immediately before, since none of those live on the document undo stack</li>
 <li><strong>AI Run actions</strong> — also listed under "run," these are the exception to "rule-based, not AI" above: "rewrite document" (the whole open document, same as right-click → Rewrite document), "rewrite this node" / "rewrite selected" (current selection, single or multiple nodes), "expand node" / "expand into subtree" (needs exactly one node selected), "summarise selection" (needs 2 or more nodes selected), "suggest tags" (needs exactly one node selected), "generate outline" (opens the same topic-prompt dialog as its toolbar button), and "restructure text" (opens the same paste-text dialog). Each needs an API key configured in Settings → AI → Provider and disappears entirely if AI Capabilities (Settings → Features) is off — same requirement as the toolbar buttons they reuse. Unlike the rule-based actions above, these take a moment to run and can fail (expired key, provider rate limit) exactly like clicking their toolbar equivalent would — a missing key or a failed call surfaces the same error dialog either way, not a silent no-op. Undo works the regular way once a result lands, since each reuses the exact same function — and therefore the exact same <span class="help-kbd">pushUndo()</span> call — as its toolbar/right-click counterpart</li>
-<li>Below any command and action matches, the same box also surfaces matching documents, node text, notes, tags, the pad, and settings/help topics — covering settings, help, document and template names, node text across every document (open or not), per-node Notes, per-node Code blocks, tags, and each document's Pad. Decision Log entries are just regular node text under the hood, so they're already covered under "In documents" — no separate category needed for them. These rows are labeled <strong>Go to</strong> instead of Show/Hide, since picking one navigates you there rather than changing anything, and each shows a short snippet of where the match sits so you're not guessing what you're about to open</li>
+<li>Below any command and action matches, the same box also surfaces matching documents, node text, notes, tags, the pad, and settings/help topics — covering settings, help, document and template names, node text across every document (open or not), per-node Notes, per-node Code blocks, tags, and each document's Pad. These rows are labeled <strong>Go to</strong> instead of Show/Hide, since picking one navigates you there rather than changing anything, and each shows a short snippet of where the match sits so you're not guessing what you're about to open</li>
 <li>Clicking a "Go to" result does the right thing for its type: a node-text match jumps to that node and highlights the match; a Notes match opens that node's Note panel; a Tags match jumps to the tagged node; a Pad match opens that document's Pad</li>
 <li>Skips Trash by default. Settings → Trash → "Include Trash in search" surfaces matches there too, across every content type above, clearly marked "In Trash"; clicking one reveals it in the Trash section rather than opening it directly, since restoring is a deliberate choice</li>
 <li>Rich-text fields (Notes, Pad) are stripped to plain text before matching, so a search never hits raw HTML markup and snippets always show readable text</li>
@@ -3960,7 +3955,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Node Quick Assist</h4>
 <ul>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing a node opens a small menu of node-specific actions instead of the full Quick Assist — same shortcut, different box, depending on whether you're mid-edit. Everywhere else, it opens the full Quick Assist as usual</li>
-<li>Default actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time, Note…, Tags…, Insert decision log, Rewrite node, Version history…. Which of these appear (and their fixed order) is configured in Settings → Editing → Node Quick Assist → Menu items</li>
+<li>Default actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time, Note…, Tags…, Rewrite node, Version history…. Which of these appear (and their fixed order) is configured in Settings → Editing → Node Quick Assist → Menu items</li>
 <li><strong>Version history…</strong> shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags, decision log) is touched</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the node's own text, which this avoids touching</li>
 <li>Settings → Editing → Node Quick Assist → <strong>Icon-only row</strong> switches the menu from a vertical icon+label list to a compact wrapping row of icons — same actions, same order, same keyboard navigation, just a smaller footprint. Hover an icon for its name</li>
@@ -3994,7 +3989,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="help-section" data-cat="editing">  
 <h4>Structure</h4>  
 <ul>  
-<li>Right-click a node → a row of icon buttons for the most common actions; defaults are <strong>Zoom in, Note, Tags, Rewrite, Decision Log, Delete</strong>. Click <span class="help-kbd">More</span> for move, sort, rewrite document, and everything else. Customise which buttons appear via Settings → Right-click menu — you can also reset to defaults there. Zoom in is also in the toolbar Fold group and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
+<li>Right-click a node → a row of icon buttons for the most common actions; defaults are <strong>Zoom in, Note, Tags, Rewrite, Delete</strong>. Click <span class="help-kbd">More</span> for move, sort, rewrite document, and everything else. Customise which buttons appear via Settings → Right-click menu — you can also reset to defaults there. Zoom in is also in the toolbar Fold group and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
 <li>Right-clicking empty space — editor canvas, sidebar, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme, hide/show toolbar, sidebar, Pad, status bar, or tab bar, hide/show tree lines, "Show app bar" (only appears while zen mode has it hidden), Collapse to depth, Expand all, and Settings. Sidebar: switch theme, hide sidebar, toggle compact rows, Settings. Status bar: switch theme, hide status bar, Settings. Tab bar: switch theme, new document, close current tab, hide tab bar, Settings. App bar: switch theme, hide/show sidebar or toolbar, and "Declutter app bar" — which hides the title field, sidebar toggle, and the Documents/Templates buttons, but deliberately never hides Settings — hiding it would remove your only way back in. (Quick Assist used to share this exemption when it lived in the app bar too; it's since moved to the status bar, so it isn't part of this menu's options at all anymore.) Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. If you hide Status bar or Tab bar from their own right-click menu, that specific spot disappears with it — but the editor canvas's own right-click menu keeps the same Status bar/Tab bar toggles, so it works as a fallback, in addition to the plain switches under Settings → Bars &amp; Menus. Declutter app bar has no separate switch by design, since Settings (reachable via the button it deliberately never hides) already reverses it in one click</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Open the Note panel on any node to see which nodes link to it. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon (toolbar Insert group) or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -4254,13 +4249,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="help-section" data-cat="panels" id="help-section-decision-log">
 <h4>Decision Log</h4>
 <ul>
-<li>A structured decision record attached to the selected node — Context, Decision, Rationale, Alternatives, and Impact fields, a Status pill (Proposed/Approved/Rejected) you click to cycle through, and an author/timestamp footer. Lives in its own tab in the Pad, right alongside Notepad and Q&amp;A — not inserted as outline nodes</li>
-<li>Add one via the toolbar's <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log button (in the Insert group), right-click a node → <span class="help-kbd">More</span> → Decision log, or open the Decision Log tab while that node is selected and click Add. A small accent-colored dot appears next to a node that has one — click it to jump straight to its card; the same dot echoes on the Decision Log tab when the selected node has one. Remove one from the Pad's own toolbar (same trash-can button Notepad uses for "Clear pad" and Q&amp;A uses for "Clear all Q&amp;A rows" — it adapts to whichever tab is open), with Undo</li>
+<li>A structured decision record — Context, Decision, Rationale, Alternatives, and Impact fields, a Status pill (Proposed/Approved/Rejected) you click to cycle through, and an author/timestamp footer. Lives in its own tab in the Pad, right alongside Notepad, Q&amp;A, and Diagrams — not inserted as an outline node, and each one is a separate record you link to a node rather than something attached directly to it</li>
+<li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> in the Decision Log tab's toolbar to create one — this is the only way to start a new one, so the tab is always the answer to "where do I add a decision log". If the currently-selected outline node doesn't already have one, it's linked there automatically; otherwise it's created unlinked and the node picker opens right away so you can choose a free node</li>
+<li>The tab shows every decision log in the document as a folded row (status pill, linked node, a one-line snippet of Context or Decision, author/date) — click a row to expand it in place and edit the full card; click it again, or another row, to collapse it. Only one is expanded at a time</li>
+<li><strong>One decision log per node</strong> — the node picker (click the linked-node line inside an expanded card) greys out and explains any node that already has one. Pick "Not linked to a node" to clear the link, freeing that node up</li>
+<li>A small accent-colored dot appears next to a node with a linked decision log — click it to jump straight to the Decision Log tab with that entry expanded. The same icon appears next to a folded node's "+N hidden" badge when a decision log is linked somewhere inside its collapsed subtree</li>
+<li>Delete a decision log from its row (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes, Q&amp;A rows, and diagrams), then removes it. Undo with the toast's own Undo button. Deleting doesn't touch the linked node itself</li>
 <li>Each field supports light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — plus a small AI-rewrite icon that appears on hover</li>
-<li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the Pad's card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
-<li>Turning Decision Log off (Settings → Features → Pad Panel) hides its tab, toolbar button, right-click action, node dots, and Excel export — existing decision logs already in the document aren't deleted, just inaccessible until it's turned back on. Clicking a node's decision-log dot while the feature is off shows a reminder of where to re-enable it instead of silently doing nothing</li>
-<li>A small checkmark icon appears next to the "+N hidden" badge on a folded node when something inside its collapsed subtree contains a decision log, so you know there's one there before expanding</li>
-<li>Export menu → Decision Log → Excel (.xlsx) pulls every decision log across the current document into one spreadsheet (timestamp, author, node text, and whichever fields were filled in) — fields left blank export as empty cells</li>
+<li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time a new one's created (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
+<li>Turning Decision Log off (Settings → Features → Pad Panel) hides its tab, node dots, and Excel export — existing decision logs already in the document aren't deleted, just inaccessible until it's turned back on. Clicking a node's decision-log dot while the feature is off shows a reminder of where to re-enable it instead of silently doing nothing</li>
+<li>Export menu → Decision Log → Excel (.xlsx) pulls every decision log across the current document into one spreadsheet (timestamp, author, linked node's text, and whichever fields were filled in) — fields left blank export as empty cells; an unlinked decision log's node text exports as blank</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-diagrams">
@@ -4588,7 +4586,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div class="ag-buttons">
         <button class="btn icon-btn quick-btn" id="qb-smart-paste" data-tip="Intelligent paste — parses indentation/bullets into nodes (for mouse/touch; keyboard users: Ctrl/Cmd+V)" aria-label="Intelligent paste"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="13" y2="13"/><line x1="8" y1="17" x2="11" y2="17"/><path d="M15 15l1.5 1.5L19.5 13.5" stroke-width="2.2"/></svg></button>
         <button class="btn icon-btn quick-btn" id="insert-dt-btn" data-tip="Insert Date/Time" aria-label="Insert Date/Time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
-        <button class="btn icon-btn quick-btn" id="qb-decision-log" data-tip="Insert decision log on selected node" aria-label="Insert decision log"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
         <button class="btn icon-btn quick-btn" id="qb-note" data-tip="Note / comment on selected node (Ctrl+Shift+N)" aria-label="Note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
         <button class="btn icon-btn quick-btn" id="qb-checkbox" data-tip="Toggle checkbox on selected node" aria-label="Toggle checkbox"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg></button>
         <button class="btn icon-btn quick-btn" id="qb-tags" data-tip="Tags on selected node" aria-label="Tags"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>
@@ -4709,7 +4706,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-rewrite" data-tip="Rewrite selected rows (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
-    <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="decision-count-chip-label"></span></button>
+    <button type="button" id="dltb-add" class="note-tb-btn decision-only-btn" data-tip="New decision log"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-search" data-tip="Filter diagrams" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <div class="todo-dd-wrap diagrams-only-btn" id="diagram-sort-wrap">
@@ -4737,16 +4734,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="qa-empty">No Q&amp;A rows yet. Scan the outline for questions ending in "?", or add a blank row.</div>
   </div>
   <div id="decision-body">
-    <div id="decision-empty">
-      <p>The selected node doesn't have a decision log yet.</p>
-      <button type="button" id="decision-add-btn">Add decision log</button>
+    <div id="decision-list-filters">
+      <button type="button" id="decision-open-chip" data-tip="Show open (proposed) decisions only" aria-pressed="false"></button>
+      <select id="decision-author-filter" aria-label="Filter by author"><option value="">All authors</option></select>
     </div>
+    <div id="decision-list"></div>
+    <div id="decision-list-empty">No decision logs yet.<br>Click + to create one — link it to a node afterward so it shows up there in Preview and exports.</div>
     <div id="decision-card">
       <div class="pv-dlog-head">
         <span class="pv-dlog-head-title" id="decision-head-title"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Decision Log</span></span>
         <button type="button" id="decision-status" class="pv-dlog-status" data-tip="Cycle status"></button>
       </div>
-      <div id="decision-node-label"></div>
+      <button type="button" id="decision-node-label" class="decision-card-anchor-btn" data-tip="Click to change which node this decision log appears under"></button>
       <div id="decision-quicknav"></div>
       <div class="pv-dlog-field" id="decision-field-context"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-blue)">Context</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-context" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-context" contenteditable="true" data-placeholder="What prompted this decision?"></div></div>
       <div class="pv-dlog-field" id="decision-field-decision"><div class="pv-dlog-field-label-row"><span class="pv-dlog-field-label" style="color:var(--fc-red)">Decision</span><button type="button" class="decision-field-rewrite" id="decision-rewrite-decision" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div><div class="decision-field-body" id="decision-decision" contenteditable="true" data-placeholder="What was decided?"></div></div>
@@ -4760,15 +4759,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <span id="decision-timestamp"></span>
       </div>
     </div>
-    <div id="decision-list-wrap">
-      <div id="decision-list-filters">
-        <button type="button" id="decision-open-chip" data-tip="Show open (proposed) decisions only" aria-pressed="false"></button>
-        <select id="decision-author-filter" aria-label="Filter by author"><option value="">All authors</option></select>
-      </div>
-      <div id="decision-list"></div>
-      <div id="decision-list-empty">No decision logs in this document yet.</div>
-    </div>
   </div>
+  <div id="decision-anchor-suggest"></div>
   <div id="diagrams-tab-body">
     <div id="diagram-search-wrap" style="display:none">
       <span id="diagram-search-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
@@ -5495,12 +5487,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="settings-collapsible-body" id="insert-buttons-body">
-          <span class="settings-row-desc">Hiding the whole Insert section above also hides everything below — use this instead to keep some Insert buttons and drop others, e.g. keep Note &amp; Checkbox but hide Decision Log &amp; Tags</span>
+          <span class="settings-row-desc">Hiding the whole Insert section above also hides everything below — use this instead to keep some Insert buttons and drop others, e.g. keep Note &amp; Checkbox but hide Date/Time &amp; Tags</span>
           <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="itbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="itbsec-none-btn">Hide all</button></div>
           <div class="settings-grid" id="insert-buttons-grid" style="margin-top:6px">
           <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-smart-paste" checked /> Intelligent paste</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-date-time" checked /> Insert Date/Time</label>
-          <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-decision-log" checked /> Decision Log</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-note" checked /> Note</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-checkbox" checked /> Checkbox</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="itbsec-tags" checked /> Tags</label>
@@ -5590,7 +5581,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-ai-icon" /> Suggest icon</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-note" checked /> Note…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-date-time" /> Insert date/time</label>
-          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-decision-log" checked /> Insert decision log</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-delete" checked /> Delete</label>
         </div>
@@ -5620,7 +5610,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-note" checked /> Note…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-codeblock" checked /> Code block…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-date-time" checked /> Insert date/time</label>
-          <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-decision-log" checked /> Insert decision log</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-tags" checked /> Tags…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-delete" checked /> Delete</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-sort-children" checked /> Sort children (group)</label>
@@ -5637,8 +5626,8 @@ const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
-const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -5647,8 +5636,8 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true; let previewPresenterNotesExpanded=false; let presenterAutoExpandNoteCards=false;
 const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
 const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','pptx','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai'];
-const INSERT_TB_BUTTONS=['smart-paste','date-time','decision-log','note','checkbox','tags'];
-const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-btn','decision-log':'qb-decision-log','note':'qb-note','checkbox':'qb-checkbox','tags':'qb-tags'};
+const INSERT_TB_BUTTONS=['smart-paste','date-time','note','checkbox','tags'];
+const INSERT_TB_BTN_ID={'smart-paste':'qb-smart-paste','date-time':'insert-dt-btn','note':'qb-note','checkbox':'qb-checkbox','tags':'qb-tags'};
 // Declared here (rather than down near where they're actually used, next to their setter
 // functions) because loadPrefs() references the two *_BUTTONS arrays in a filter() call, and
 // applyAppbarHiddenButtons() (which references APPBAR_HIDEABLE_BTN_ID) is called from the same
@@ -6229,6 +6218,36 @@ function normalizeDecisionLog(dl){
     timestamp:Number.isFinite(dl.timestamp)?dl.timestamp:null
   };
 }
+function newDecisionLogId(){ return 'dl'+Date.now()+'-'+Math.floor(Math.random()*100000); }
+// One-time, idempotent upgrade path: decision logs used to live embedded directly on
+// node.decisionLog (one per node, set at that node's position in the outline). They're now
+// separate records in the top-level decisionLogs array, anchored to a node by id — the same
+// shape diagrams already use, so a decision log survives a node being moved/renamed and can be
+// browsed as its own list instead of only being visible while that exact node is selected.
+// This runs right after nodes/decisionLogs are loaded (see the 3 call sites, mirroring
+// diagrams' own load-time wiring): any node still carrying the legacy embedded field gets a
+// decisionLogs entry created from it (skipped if one already exists for that node — i.e. this
+// document was already migrated and saved back), then the legacy field is deleted off the node
+// so nothing downstream ever needs to look in both places.
+function migrateNodeDecisionLogsToArray(){
+  if(!Array.isArray(nodes)||!nodes.length)return;
+  for(const node of nodes){
+    if(!node.decisionLog)continue;
+    const alreadyMigrated=decisionLogs.some(dl=>dl.anchorNodeId===node.id);
+    if(!alreadyMigrated){
+      const dl=node.decisionLog;
+      const ts=Number.isFinite(dl.timestamp)?dl.timestamp:Date.now();
+      decisionLogs.push({
+        id:newDecisionLogId(), anchorNodeId:node.id,
+        context:dl.context||'', decision:dl.decision||'', rationale:dl.rationale||'',
+        alternatives:dl.alternatives||'', impact:dl.impact||'',
+        status:dl.status||'proposed', author:dl.author||'', timestamp:ts,
+        createdAt:ts, modifiedAt:ts
+      });
+    }
+    delete node.decisionLog;
+  }
+}
 function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',codeBlock:null,tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now}}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,currentFont,focusedId})}
@@ -6410,7 +6429,7 @@ function saveToStorage(){
   try{
     if(!currentDocId)return;
     maybeAutoSnapshotBeforeSave(currentDocId);
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -6456,6 +6475,7 @@ function loadDocFromStorage(id){
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
+    decisionLogs=Array.isArray(d.decisionLogs)?d.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null;
     return true;
   }catch(e){} return false;
 }
@@ -6473,7 +6493,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice();
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -6500,6 +6520,7 @@ function applyTabSnapshot(tab){
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
   diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
+  decisionLogs=Array.isArray(tab.decisionLogs)?tab.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null; if(typeof renderDecisionLogsList==='function'&&padOpen&&padViewMode==='decision')renderDecisionLogsList();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -6931,7 +6952,7 @@ async function restoreDocRevision(docId,ts){
   const freshNodes=rev.nodes.map(normalizeNode);
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
+    recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision)
@@ -6942,6 +6963,14 @@ async function restoreDocRevision(docId,ts){
       resetDiagramTransientState();
       if(padViewMode==='diagrams')renderDiagramsList();
     }
+    // rev.decisionLogs may be absent entirely on revisions recorded before decision logs
+    // became their own array (they'd only have nodes[i].decisionLog embedded back then) —
+    // migrateNodeDecisionLogsToArray() below picks those up from the just-restored `nodes`
+    // regardless of which case this is, so both old and new revisions restore correctly.
+    decisionLogs=Array.isArray(rev.decisionLogs)?rev.decisionLogs.map(d=>({...d})):[];
+    migrateNodeDecisionLogsToArray();
+    decisionExpandedId=null;
+    if(padViewMode==='decision')renderDecisionLogsList();
     if(Array.isArray(rev.qa)){
       qaItems=rev.qa.map(q=>({...q}));
       resetQaTransientState();
@@ -7011,7 +7040,7 @@ function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
+    recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
@@ -8461,7 +8490,7 @@ function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlin
 // menu items, Settings sub-sections, Help sub-sections) via the
 // feature-off-* body classes below, plus a defensive guard inside the
 // underlying functions themselves (openNotePanel, enterFocus,
-// insertDecisionLog, openTagManager, generateOutlineWithAi) so a
+// openTagManager, generateOutlineWithAi) so a
 // keyboard shortcut can't slip past a hidden button.
 const FEATURE_FLAGS={
   note:{get:()=>featureNoteEnabled,set:v=>{featureNoteEnabled=v; if(!v){try{closeNodePanel(true)}catch(e){}}}},
@@ -8589,7 +8618,6 @@ function ctxActionAllowed(actionId){
   if(contextHiddenActions.includes(actionId))return false;
   if(actionId==='note')return featureNoteEnabled;
   if(actionId==='codeblock')return featureCodeEnabled;
-  if(actionId==='decision-log')return featureDecisionLogEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
@@ -8602,7 +8630,6 @@ function ctxActionAllowed(actionId){
 function hoverActionAllowed(actionId){
   if(actionId==='note')return featureNoteEnabled;
   if(actionId==='codeblock')return featureCodeEnabled;
-  if(actionId==='decision-log')return featureDecisionLogEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
@@ -9385,7 +9412,7 @@ function qaSuggestActionsForBareVerb(q){
   const phrase=qaBestPhrase(q,QA_RUN_PHRASES);
   if(!phrase)return {matched:false,actions:[]};
   const remainder=(' '+q+' ').replace(' '+phrase+' ',' ').trim();
-  const pool=QA_ACTIONS.filter(a=>(a.id!=='insert-decision-log'||FEATURE_FLAGS.decisionlog.get())&&(!AI_QA_ACTION_IDS.includes(a.id)||FEATURE_FLAGS.ai.get()));
+  const pool=QA_ACTIONS.filter(a=>!AI_QA_ACTION_IDS.includes(a.id)||FEATURE_FLAGS.ai.get());
   const filtered=remainder?pool.filter(a=>a.label.toLowerCase().includes(remainder)||a.keywords.some(k=>k.includes(remainder))):pool;
   return {matched:true, actions:filtered.slice(0,8)};
 }
@@ -9487,8 +9514,6 @@ const QA_ACTIONS=[
    run:()=>{ createDoc(); return true; }},
   {id:'duplicate-node',label:'Duplicate node',keywords:['duplicate node','duplicate'],requiresSelection:true,
    run:()=>{ const before=undoStack.length; duplicateSelected(); return undoStack.length>before; }},
-  {id:'insert-decision-log',label:'Insert decision log',keywords:['insert decision log','add decision log'],requiresSelection:true,
-   run:async()=>{ const before=undoStack.length; await insertDecisionLog(selectedId); return undoStack.length>before; }},
   {id:'editors-choice-preset',label:"Editor's choice preset",keywords:['editors choice','editor\'s choice','apply editors choice','apply editor\'s choice','apply editors choice preset'],requiresSelection:false,
    run:()=>{
      applyEditorsChoicePresetWithUndo(true); // silent: qaExecuteAction shows its own "Done: …" toast with Undo right after run() returns
@@ -9522,7 +9547,6 @@ const AI_QA_ACTION_IDS=['ai-rewrite-document','ai-rewrite-node','ai-expand-node'
 function qaParseActionsList(q){
   if(!q)return [];
   const scored=QA_ACTIONS.map(action=>{
-    if(action.id==='insert-decision-log'&&!FEATURE_FLAGS.decisionlog.get())return null;
     if(AI_QA_ACTION_IDS.includes(action.id)&&!FEATURE_FLAGS.ai.get())return null;
     const best=qaBestPhrase(q,action.keywords);
     return best?{action,score:best.length}:null;
@@ -9535,8 +9559,8 @@ async function qaExecuteAction(action){
   // run() historically returns a plain boolean (success = whether it changed anything,
   // Undo always meaning "pop the content undo stack"). Actions whose effect isn't on
   // that stack — like a settings preset — return {success, undo} instead, with their
-  // own reversal logic. Both shapes are handled here so the three original actions
-  // (new-document, duplicate-node, insert-decision-log) don't need to change.
+  // own reversal logic. Both shapes are handled here so the original actions
+  // (new-document, duplicate-node) don't need to change.
   const success=(result&&typeof result==='object')?result.success:result;
   const undoFn=(result&&typeof result==='object'&&typeof result.undo==='function')?result.undo:undo;
   if(success){
@@ -10195,7 +10219,7 @@ el('qa-category-icon-btn')?.addEventListener('click',e=>{
 });
 function getVisibleNodeIndexes(){const out=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(idx); const folded=collapsedIds.has(node.id); if(folded&&nodeHasChildren(idx))skipDepth=node.depth }); return out}
 function countDescendants(idx){return getSubtreeEnd(idx)-idx-1}
-function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(nodes[i].decisionLog)return true} return false}
+function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(decisionLogForNode(nodes[i].id))return true} return false}
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
@@ -10528,7 +10552,6 @@ function updateQuickBarStates(){
   set('qb-up',roots.length===1&&!atTreeTop);
   set('qb-down',roots.length===1&&!atTreeBottom);
   set('qb-delete',hasSelection||selectAllMode);
-  set('qb-decision-log',selectedId!==null&&!selectAllMode);
   set('qb-checkbox',selectedId!==null&&!selectAllMode); set('qb-tags',selectedId!==null&&!selectAllMode); set('qb-zoom',selectedId!==null&&!selectAllMode||focusedId!==null);
   set('qb-collapse',nodes.some(n=>n.depth===collapseDepth));
   set('qb-expand-all',collapsedIds.size>0);
@@ -10968,18 +10991,17 @@ const CTX_ACTION_META={
   'ai-icon-all':{label:'Suggest icons for all nodes',svg:'<circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
-  'decision-log':{label:'Insert decision log',svg:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','date-time','decision-log','tags','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','date-time','tags','delete'];
 // Node Quick Assist — the mini, node-scoped menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
 // otherwise have nowhere to live except the node's own text, which we don't want to type
 // into. Reuses CTX_ACTION_META icons where a matching right-click action already exists,
 // so the same action looks the same everywhere it appears.
-const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history'];
+const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','ai-rewrite','version-history'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
   endash:{label:'Insert en dash',glyph:'–'},
@@ -10990,7 +11012,6 @@ const NODE_QA_ACTION_META={
   'date-time':{label:'Insert date/time',svg:CTX_ACTION_META['date-time'].svg},
   note:{label:'Note…',svg:CTX_ACTION_META.note.svg},
   tags:{label:'Tags…',svg:CTX_ACTION_META.tags.svg},
-  'decision-log':{label:'Insert decision log',svg:CTX_ACTION_META['decision-log'].svg},
   'ai-rewrite':{label:'Rewrite node',svg:CTX_ACTION_META['ai-rewrite'].svg},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>'}
 };
@@ -11771,12 +11792,12 @@ function handleAtInput(inputEl, nodeId) {
 
 function render(){ensureSelection(); pruneCollapsedIds(); pruneFocus(); autoSyncTitleFromFirstNode(); if(typeof hideHoverRailNow==='function')hideHoverRailNow();
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?(nodes[focusIdx].depth+1):0; const focusEnd=focusActive?getSubtreeEnd(focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Tab</kbd> after adding a sibling, or just start typing below this node, to add one.</div>'; pane.appendChild(empty);} else if(!nodes.length){const empty=document.createElement('div'); empty.className='empty-state'; const hasTemplates=loadTemplatesIndex().length>0||hasCustomDefaultTemplate(); const hint=hasTemplates?'Load a <a href="#" style="color:var(--accent);text-decoration:none" id="es-load-tpl">template</a>, paste a tree, or just start typing.':'Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — paste a tree, or load a template.'; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">Nothing here yet</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${hint}</div><div class="empty-state-actions"><button class="btn primary" id="es-new-doc-btn">New document</button>${hasTemplates?'<button class="btn" id="es-browse-tpl-btn">Browse templates</button>':''}<button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const tplLink=document.getElementById('es-load-tpl'); if(tplLink)tplLink.addEventListener('click',e=>{e.preventDefault(); loadTemplateById('__default__')}); const newDocBtn=document.getElementById('es-new-doc-btn'); if(newDocBtn)newDocBtn.addEventListener('click',()=>createDoc()); const browseTplBtn=document.getElementById('es-browse-tpl-btn'); if(browseTplBtn)browseTplBtn.addEventListener('click',()=>revealTemplatesInSidebar());
-const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if((node.note&&node.note.trim())||(featureCodeEnabled&&node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim())){const hasNoteText=!!(node.note&&node.note.trim()); const hasCodeText=featureCodeEnabled&&!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim()); const dot=document.createElement('span'); dot.className='node-note-dot'; dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+(hasCodeText?'<span class="node-code-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg></span>':''); dot.dataset.tip=hasNoteText&&hasCodeText?'This node has a note and code — click to open':hasCodeText?'This node has code — click to open':'This node has a note — click to open'; dot.addEventListener('click',e=>{e.stopPropagation(); const _dotRect=dot.getBoundingClientRect(); setSingleSelection(node.id); render(); openNodePanel(node.id,_dotRect)}); row.appendChild(dot)} if(decisionLogInPad&&node.decisionLog){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionPadPriorMode=padViewMode==='decision'?decisionPadPriorMode:padViewMode; decisionListMode=false; document.body.classList.remove('decision-list-mode'); setPadViewMode('decision')}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}} }
+const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if((node.note&&node.note.trim())||(featureCodeEnabled&&node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim())){const hasNoteText=!!(node.note&&node.note.trim()); const hasCodeText=featureCodeEnabled&&!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim()); const dot=document.createElement('span'); dot.className='node-note-dot'; dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+(hasCodeText?'<span class="node-code-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg></span>':''); dot.dataset.tip=hasNoteText&&hasCodeText?'This node has a note and code — click to open':hasCodeText?'This node has code — click to open':'This node has a note — click to open'; dot.addEventListener('click',e=>{e.stopPropagation(); const _dotRect=dot.getBoundingClientRect(); setSingleSelection(node.id); render(); openNodePanel(node.id,_dotRect)}); row.appendChild(dot)} if(decisionLogInPad&&decisionLogForNode(node.id)){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} const dl=decisionLogForNode(node.id); if(!dl)return; setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList()}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}} }
   row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} setSingleSelection(node.id); render()}); row.draggable=editingId===null; row.addEventListener('dragstart',e=>{if(editingId!==null||e.target.closest('.fold-toggle')||e.target.closest('.node-input')){e.preventDefault(); return} dragState={draggedId:node.id,targetId:null,mode:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(node.id))}catch(err){} row.classList.add('dragging'); hideContextMenu()}); row.addEventListener('dragover',e=>{if(editingId!==null)return; const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId||draggedId===node.id)return; const fromIdx=getIndex(draggedId); const targetIdx=getIndex(node.id); if(fromIdx<0||targetIdx<0||isDescendantIndex(targetIdx,fromIdx))return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); dragState.targetId=node.id; dragState.mode=mode; clearDragIndicators(); row.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'))}); row.addEventListener('dragleave',e=>{if(!row.contains(e.relatedTarget)){row.classList.remove('drag-over-above','drag-over-below','drag-over-child')}}); row.addEventListener('drop',e=>{const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); clearDragIndicators(); handleDrop(draggedId,node.id,mode)}); row.addEventListener('dragend',()=>{dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators()}); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row)}); pane.appendChild(frag); applyTagFilterToPane(pane)} if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??-1); inputCaret=null}} const idx=getIndex(selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; const maxDepth=nodes.length?Math.max(...nodes.map(n=>n.depth)):0; if(el('sb-nodecount')) el('sb-nodecount').textContent=`Nodes ${nodes.length}`; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-maxdepth')) el('sb-maxdepth').textContent=`Max depth ${maxDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} if(el('sb-nodewords')){const nt=idx>=0?String(nodes[idx].text||'').trim():''; el('sb-nodewords').textContent=idx>=0?`Node words ${nt?nt.split(/\s+/).length:0}`:'Node words —'} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates(); const hasSelection=getSelectedIds().length>0; const multiCount=multiSelectedIds.length>1||selectAllMode;
   if(el('qb-ai-expand'))el('qb-ai-expand').disabled=!hasSelection||multiCount; if(el('qb-ai-tags'))el('qb-ai-tags').disabled=selectedId===null; if(el('qb-ai-summarise'))el('qb-ai-summarise').disabled=!multiCount;
   updateDirtyIndicator(); updateStatusAppearance(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
-  if(padViewMode==='decision'&&decisionPadNodeId!==selectedId)renderDecisionPad();
+  if(padViewMode==='decision')renderDecisionLogsList();
 }
 function toggleNodeStyle(styleName){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const makeActive=!selectedNodes.every(n=>!!n.styles[styleName]); let value; if(styleName==='highlight')value=makeActive?lastHighlightColor:false; else if(styleName==='color')value=makeActive?lastFontColor:false; else value=makeActive; selectedNodes.forEach(n=>n.styles[styleName]=value); markDirty(); render()}
 function setHighlightColor(color){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastHighlightColor(color); selectedNodes.forEach(n=>n.styles.highlight=color); markDirty(); render(); hideHighlightPalette(); updateFormatIconColors()}
@@ -12738,7 +12759,7 @@ function docxCodeBlockPara(code,leftTwips){
 // equivalent of the "card" treatment Preview and the editor both use, so the export doesn't just
 // dump decision logs as indistinguishable plain lines.
 function docxBuildDecisionCard(node,leftTwips){
-  const dl=node.decisionLog||{};
+  const dl=decisionLogForNode(node.id)||{};
   const paras=[];
   const shade='FAF8F3';
   const mkP=(runsXml,opts={})=>{
@@ -13191,7 +13212,7 @@ function pptxParseRichField(html){
   return {text:textParts.join(' '), list};
 }
 function pptxParseDecisionLogFields(node){
-  const dl=node.decisionLog||{};
+  const dl=decisionLogForNode(node.id)||{};
   const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
   const fields=[];
   PV_DL_FIELD_META.forEach(({key,label})=>{
@@ -13234,7 +13255,7 @@ async function pptxGatherSlidesData(){
     if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
     if(slide.dlOnly){
-      slidesData.push({title:'', items:node.decisionLog?[pptxParseDecisionLogFields(node)]:[], images:[], wholeSlideLog:true});
+      slidesData.push({title:'', items:decisionLogForNode(node.id)?[pptxParseDecisionLogFields(node)]:[], images:[], wholeSlideLog:true});
       continue;
     }
 
@@ -13245,14 +13266,14 @@ async function pptxGatherSlidesData(){
     // sufficiently large decision log gets pulled into its own dlOnly slide above instead —
     // see decisionLogIsLarge.)
     let items=[];
-    if(featureDecisionLogEnabled&&decisionLogExportEnabled&&node.decisionLog&&!decisionLogIsLarge(node.decisionLog)) items.push(pptxParseDecisionLogFields(node));
+    if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
       if(nodes[j].depth!==node.depth+1) continue;
       const childNode=nodes[j];
       let childText=String(childNode.text||'').trim();
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText});
-      if(featureDecisionLogEnabled&&decisionLogExportEnabled&&childNode.decisionLog&&!decisionLogIsLarge(childNode.decisionLog)) items.push(pptxParseDecisionLogFields(childNode));
+      if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
 
     const images=[];
@@ -13627,7 +13648,6 @@ function getNodeQuickAssistCandidates(){
     if(id==='note'&&!featureNoteEnabled)return false;
     if(id==='codeblock'&&!featureCodeEnabled)return false;
     if(id==='tags'&&!featureTaggingEnabled)return false;
-    if(id==='decision-log'&&!featureDecisionLogEnabled)return false;
     if(id==='ai-rewrite'&&!featureAiEnabled)return false;
     return true;
   });
@@ -13837,7 +13857,7 @@ async function runNodeQuickAssistAction(actionId,nodeId){
     else openNodePanel(nodeId,caretRect);
     return;
   }
-  if(actionId==='decision-log'||actionId==='ai-rewrite'){
+  if(actionId==='ai-rewrite'){
     await runQuickAction(actionId,nodeId); return;
   }
   if(actionId==='version-history'){
@@ -14017,7 +14037,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='ai-icon-all'){suggestIconsForAllNodes(); return}
   if(action==='note'){if(selectedId!==null)openNodePanel(selectedId,anchorRect); return}
   if(action==='date-time'){if(selectedId!==null)insertDateTime(); return}
-  if(action==='decision-log'){if(selectedId!==null)await insertDecisionLog(selectedId); return}
   if(action==='tags'){if(_ctxNodeId!==null)openTagManager(_ctxNodeId,anchorRect); return}
   if(action==='toggle-checkbox'){const _ri=getIndex(_ctxNodeId); if(_ri>=0){if(nodes[_ri].isCheckbox)removeCheckbox(_ctxNodeId); else convertToCheckbox(_ctxNodeId);} return}
   if(action==='toggle-checked'){if(multiSelectedIds.length>1)toggleCheckboxMulti(); else{const _ri2=getIndex(_ctxNodeId); if(_ri2>=0&&isCheckboxNode(nodes[_ri2]))toggleCheckbox(_ctxNodeId);} return}
@@ -14788,7 +14807,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&el('diagram-lightbox')?.classList.contains('open')){e.preventDefault(); closeDiagramLightbox(); return;} if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); openPresenterNotesInMode('notes'); return} if(e.key==='q'||e.key==='Q'){e.preventDefault(); openPresenterNotesInMode('qa'); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&decisionListMode){e.preventDefault(); toggleDecisionListMode(false); return} if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'expandAll')) { e.preventDefault(); fireShortcut('expandAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&el('diagram-lightbox')?.classList.contains('open')){e.preventDefault(); closeDiagramLightbox(); return;} if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); openPresenterNotesInMode('notes'); return} if(e.key==='q'||e.key==='Q'){e.preventDefault(); openPresenterNotesInMode('qa'); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'expandAll')) { e.preventDefault(); fireShortcut('expandAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
 // --- AI Rewrite ---
 function loadAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); const validIds=getAllAiProviders().map(p=>p.id); if(d.provider&&validIds.includes(d.provider))aiProvider=d.provider; if(d.modelByProvider&&typeof d.modelByProvider==='object')aiModelByProvider={...d.modelByProvider}; if(d.model&&typeof d.model==='string')aiModel=d.model; if(aiModelByProvider[aiProvider])aiModel=aiModelByProvider[aiProvider]; if(d.prompt&&typeof d.prompt==='string')aiRewritePrompt=d.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions()}catch(e){}}
 function saveAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); d.provider=aiProvider; d.model=aiModel; aiModelByProvider[aiProvider]=aiModel; d.modelByProvider=aiModelByProvider; d.prompt=aiRewritePrompt; localStorage.setItem(AI_PREFS_KEY,JSON.stringify(d))}catch(e){}}
@@ -18379,17 +18398,6 @@ seedBuiltinTemplates();
 renderSidebar();
 
 // === Decision Log ===
-async function insertDecisionLog(id) {
-  if (!featureDecisionLogEnabled) return;
-  setSingleSelection(id); render();
-  if (!padOpen) setPadOpen(true);
-  decisionPadPriorMode = padViewMode === 'decision' ? decisionPadPriorMode : padViewMode;
-  decisionListMode = false; document.body.classList.remove('decision-list-mode');
-  setPadViewMode('decision');
-  const node = nodes.find(n => n.id === id);
-  if (!nodeHasDecisionLog(node)) await addDecisionLogToNode();
-}
-
 function exportDecisionLogXlsx() {
   if (typeof XLSX === 'undefined') { showToast('SheetJS not loaded — check your connection'); return; }
 
@@ -18397,8 +18405,8 @@ function exportDecisionLogXlsx() {
   const rows = [];
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    if (!n.decisionLog) continue;
-    const dl = n.decisionLog;
+    const dl = decisionLogForNode(n.id);
+    if (!dl) continue;
     const status = DECISION_STATUSES.includes(String(dl.status||'').toLowerCase()) ? String(dl.status).toLowerCase() : 'proposed';
 
     rows.push({
@@ -19419,10 +19427,6 @@ el('qb-tags')?.addEventListener('click', () => {
   if (selectedId !== null) openTagManager(selectedId);
 });
 
-el('qb-decision-log')?.addEventListener('click', async () => {
-  if (selectedId !== null) await insertDecisionLog(selectedId);
-});
-
 // Close note panel when clicking outside it
 document.addEventListener('click', e => {
   if (!notePanelOpen) return;
@@ -19973,34 +19977,150 @@ function setPadViewMode(mode){
     tab.setAttribute('aria-selected',String(active));
   });
   const title=el('presenter-notes-title'); if(title)title.textContent=padViewMode==='qa'?'Q&A':padViewMode==='decision'?'Decision Log':padViewMode==='diagrams'?'Diagrams':'Notepad';
-  const clearBtn=el('pad-clear-btn'); if(clearBtn){clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':padViewMode==='decision'?'Remove decision log from this node':'Clear pad'; clearBtn.style.display=padViewMode==='diagrams'?'none':'';}
+  const clearBtn=el('pad-clear-btn'); if(clearBtn){clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':'Clear pad'; clearBtn.style.display=(padViewMode==='diagrams'||padViewMode==='decision')?'none':'';}
   if(padViewMode==='qa')renderQaList();
-  if(padViewMode==='decision')renderDecisionPad();
+  if(padViewMode==='decision')renderDecisionLogsList();
   if(padViewMode==='diagrams')renderDiagramsList();
 }
 const DECISION_STATUSES=['proposed','approved','rejected'];
-function nodeHasDecisionLog(n){ return !!(n&&n.decisionLog); }
+function findDecisionLog(id){ return decisionLogs.find(dl=>dl.id===id); }
+// The one-per-node rule lives here, in one place, so every path that assigns an anchor
+// (the picker, and createDecisionLog's "reuse the selected node if it's free" shortcut) goes
+// through the same check rather than each re-implementing it slightly differently.
+function decisionLogForNode(nodeId,excludeId){ return nodeId==null?null:decisionLogs.find(dl=>dl.anchorNodeId===nodeId&&dl.id!==excludeId); }
 function decisionStatusLabel(s){ return s?s.charAt(0).toUpperCase()+s.slice(1):'Proposed'; }
 function decisionStatusOf(dl){ return DECISION_STATUSES.includes(String((dl&&dl.status)||'').toLowerCase())?String(dl.status).toLowerCase():'proposed'; }
-function decisionAllLogNodes(){ const out=[]; for(let i=0;i<nodes.length;i++){ if(nodes[i].decisionLog)out.push(nodes[i]); } return out; }
-function toggleDecisionListMode(force){
-  const wasListMode=decisionListMode;
-  decisionListMode=typeof force==='boolean'?force:!decisionListMode;
-  document.body.classList.toggle('decision-list-mode',decisionListMode);
-  renderDecisionPad();
-  if(decisionListMode&&!wasListMode){
-    document.querySelector('.decision-row.current')?.scrollIntoView({block:'nearest'});
-  }
+function decisionLogAnchorLabel(dl){
+  if(dl.anchorNodeId==null)return 'Not linked to a node';
+  const node=nodes.find(n=>n.id===dl.anchorNodeId);
+  if(!node)return 'Linked node no longer exists';
+  const text=stripSemanticMarkers(node.text||'').trim();
+  return 'Under: '+(text?text.slice(0,60):'(untitled node)');
 }
 function decisionRowSnippet(dl){
   const context=stripHtmlToText(dl.context||'').trim(); if(context)return context;
   return stripHtmlToText(dl.decision||'').trim();
 }
-function renderDecisionList(allLogs){
-  const wrap=el('decision-list-wrap'), list=el('decision-list'); if(!wrap||!list)return;
-  const all=allLogs||decisionAllLogNodes();
+// ── Anchor picker — same popover pattern as the Diagrams tab's, kept as its own parallel
+// implementation (rather than generalizing the diagrams one) because this one additionally
+// has to grey out and explain any node that already has a decision log, which diagrams'
+// many-per-node model never needs to check.
+let _decisionAnchorOpen=false;
+let _decisionAnchorTarget=null;
+function getDecisionAnchorCandidates(query,excludeId){
+  const q=String(query||'').trim().toLowerCase();
+  const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',taken:!!decisionLogForNode(n.id,excludeId)}));
+  if(!q)return list.slice(0,50);
+  return list.filter(n=>n.text.toLowerCase().includes(q)).slice(0,50);
+}
+function renderDecisionAnchorSuggest(query,dl,btn){
+  const pop=el('decision-anchor-suggest'); if(!pop||!btn||!dl)return;
+  _decisionAnchorTarget=dl;
+  const candidates=getDecisionAnchorCandidates(query,dl.id);
+  pop.innerHTML='';
+  const noneItem=document.createElement('div');
+  noneItem.className='diagram-anchor-item diagram-anchor-item-none';
+  noneItem.textContent='Not linked to a node';
+  noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setDecisionAnchor(dl,null); });
+  pop.appendChild(noneItem);
+  candidates.forEach(n=>{
+    const item=document.createElement('div');
+    item.className='diagram-anchor-item'+(n.taken?' diagram-anchor-item-disabled':'');
+    item.textContent=n.taken?n.text+' — already has one':n.text;
+    if(n.taken){ item.dataset.tip='This node already has a decision log — open it from the list, or clear its link first'; }
+    else{ item.addEventListener('mousedown',e=>{ e.preventDefault(); setDecisionAnchor(dl,n.id); }); }
+    pop.appendChild(item);
+  });
+  const r=btn.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _decisionAnchorOpen=true;
+}
+function closeDecisionAnchorSuggest(){
+  const pop=el('decision-anchor-suggest'); if(pop)pop.classList.remove('open');
+  _decisionAnchorOpen=false;
+  _decisionAnchorTarget=null;
+}
+function setDecisionAnchor(dl,nodeId){
+  if(nodeId!=null&&decisionLogForNode(nodeId,dl.id)){ showToast('That node already has a decision log'); return; }
+  dl.anchorNodeId=nodeId;
+  dl.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  closeDecisionAnchorSuggest();
+  render();
+  renderDecisionLogsList();
+}
+document.addEventListener('mousedown',e=>{
+  if(_decisionAnchorOpen&&!e.target.closest('#decision-anchor-suggest')&&!e.target.closest('.decision-card-anchor-btn'))closeDecisionAnchorSuggest();
+},true);
+// ── List — the tab's only view now (no more per-node single-card mode). Rows are folded by
+// default; clicking one moves the single shared #decision-card template into that row's slot
+// and populates it, so there's only ever one live set of rich-text fields/undo stacks to
+// manage regardless of how many decision logs the document has. #decision-card always lives
+// somewhere connected to the document (either parked under #decision-body, hidden, or inside
+// the expanded row's slot) — never orphaned by list.innerHTML='' — so el('decision-card')
+// and friends can't come back null mid-render.
+function decisionDisplayList(){
+  let list=decisionLogs.slice();
+  if(decisionListOpenOnly)list=list.filter(dl=>decisionStatusOf(dl)==='proposed');
+  if(decisionListAuthorFilter)list=list.filter(dl=>(dl.author||'').trim()===decisionListAuthorFilter);
+  return list;
+}
+function toggleDecisionExpanded(id){
+  decisionExpandedId=(decisionExpandedId===id)?null:id;
+  renderDecisionLogsList();
+  if(decisionExpandedId===id){
+    document.querySelector(`.decision-row[data-decision-id="${id}"]`)?.scrollIntoView({block:'nearest'});
+  }
+}
+function patchDecisionRowSummary(dl){
+  const row=document.querySelector(`.decision-row[data-decision-id="${dl.id}"]`); if(!row)return;
+  const content=row.querySelector('.decision-row-content');
+  const snippetText=decisionRowSnippet(dl);
+  let snippetEl=row.querySelector('.decision-row-snippet');
+  if(snippetText){
+    if(!snippetEl&&content){ snippetEl=document.createElement('div'); snippetEl.className='decision-row-snippet'; content.appendChild(snippetEl); }
+    if(snippetEl)snippetEl.textContent=snippetText;
+  } else if(snippetEl){ snippetEl.remove(); }
+  const metaBits=[]; if(dl.author)metaBits.push(dl.author); if(dl.timestamp)metaBits.push(qaFormatShortDate(dl.timestamp));
+  let metaEl=row.querySelector('.decision-row-meta');
+  if(metaBits.length){
+    if(!metaEl&&content){ metaEl=document.createElement('div'); metaEl.className='decision-row-meta'; content.appendChild(metaEl); }
+    if(metaEl)metaEl.textContent=metaBits.join(' · ');
+  } else if(metaEl){ metaEl.remove(); }
+  const statusEl=row.querySelector('.decision-row-status');
+  if(statusEl){ const s=decisionStatusOf(dl); statusEl.dataset.color=previewStatusBadgeColor(s); statusEl.textContent=decisionStatusLabel(s); }
+}
+// Same "catch mid-edit before rebuild" fix used elsewhere (Q&A's Answered-by, diagrams' note
+// field): renderDecisionLogsList() rebuilds #decision-list from scratch, and if that rebuild is
+// itself what triggers a field's blur/change (rather than the person actually clicking away),
+// the commit would otherwise land after the row's already been torn down.
+function commitDecisionCardIfFocused(){
+  const active=document.activeElement;
+  if(!active||decisionExpandedId==null)return;
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
+  if(active.id==='decision-author'){
+    const val=active.value.trim();
+    if(val!==(dl.author||'')){ dl.author=val; qaRecordAnswerer(val); dl.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
+  } else if(active.classList&&active.classList.contains('decision-field-body')){
+    const key=active.id.replace('decision-','');
+    if(['context','decision','rationale','alternatives','impact'].includes(key)){
+      const html=sakuraSanitizeRichHtml(active.innerHTML);
+      if(html!==(dl[key]||'')){ dl[key]=html; dl.timestamp=Date.now(); dl.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
+    }
+  }
+}
+function renderDecisionLogsList(){
+  const list=el('decision-list'); if(!list)return;
+  commitDecisionCardIfFocused();
+  const card=el('decision-card'), body=el('decision-body');
+  if(card&&body&&card.parentElement!==body){ body.appendChild(card); }
+  if(card)card.style.display='none';
+  const all=decisionLogs;
+  el('pad-tab-decision')?.classList.toggle('has-log',all.length>0);
   const openChip=el('decision-open-chip');
-  const openCount=all.filter(n=>decisionStatusOf(n.decisionLog)==='proposed').length;
+  const openCount=all.filter(dl=>decisionStatusOf(dl)==='proposed').length;
   if(openChip){
     openChip.textContent=(openCount||decisionListOpenOnly)?`${openCount} open`:'';
     openChip.style.display=(openCount||decisionListOpenOnly)?'':'none';
@@ -20009,45 +20129,48 @@ function renderDecisionList(allLogs){
   }
   const authorSel=el('decision-author-filter');
   if(authorSel){
-    const authors=[...new Set(all.map(n=>(n.decisionLog.author||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const authors=[...new Set(all.map(dl=>(dl.author||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     if(!authors.includes(decisionListAuthorFilter))decisionListAuthorFilter='';
     authorSel.innerHTML='<option value="">All authors</option>'+authors.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
     authorSel.value=decisionListAuthorFilter;
     authorSel.style.display=authors.length>1?'':'none';
   }
-  let filtered=all;
-  if(decisionListOpenOnly)filtered=filtered.filter(n=>decisionStatusOf(n.decisionLog)==='proposed');
-  if(decisionListAuthorFilter)filtered=filtered.filter(n=>(n.decisionLog.author||'').trim()===decisionListAuthorFilter);
-  wrap.classList.toggle('is-empty',filtered.length===0);
-  const countLabel=el('decision-count-chip-label');
-  if(countLabel&&all.length){
-    countLabel.textContent=filtered.length===all.length?`${all.length} decision${all.length===1?'':'s'}`:`${filtered.length} of ${all.length}`;
-  }
+  const filtered=decisionDisplayList();
+  if(decisionExpandedId!=null&&!filtered.some(dl=>dl.id===decisionExpandedId))decisionExpandedId=null;
+  if(body)body.classList.toggle('is-empty',filtered.length===0);
   const emptyEl=el('decision-list-empty');
-  if(emptyEl)emptyEl.textContent=all.length===0?'No decision logs in this document yet.':'No decisions match this filter.';
+  if(emptyEl)emptyEl.textContent=all.length===0?'No decision logs yet. Click + to create one — link it to a node afterward so it shows up there in Preview and exports.':'No decisions match this filter.';
   list.innerHTML='';
-  filtered.forEach(node=>{
-    const dl=node.decisionLog;
+  filtered.forEach(dl=>{
     const status=decisionStatusOf(dl);
     const color=previewStatusBadgeColor(status);
-    const row=document.createElement('div'); row.className='decision-row'+(node.id===selectedId?' current':''); row.dataset.nodeId=String(node.id);
+    const row=document.createElement('div'); row.className='decision-row'+(dl.id===decisionExpandedId?' expanded':''); row.dataset.decisionId=String(dl.id);
+    const summary=document.createElement('div'); summary.className='decision-row-summary';
     const statusEl=document.createElement('span'); statusEl.className='decision-row-status'; statusEl.dataset.color=color; statusEl.textContent=decisionStatusLabel(status);
     const content=document.createElement('div'); content.className='decision-row-content';
-    const nodeEl=document.createElement('div'); nodeEl.className='decision-row-node'; nodeEl.textContent=getNodePlainText(node).trim()||'(untitled node)';
+    const anchorLabel=decisionLogAnchorLabel(dl);
+    const nodeEl=document.createElement('div'); nodeEl.className='decision-row-node'; nodeEl.textContent=anchorLabel; nodeEl.title=anchorLabel;
+    if(dl.anchorNodeId==null||!nodes.some(n=>n.id===dl.anchorNodeId))nodeEl.classList.add('decision-row-node-warn');
+    content.appendChild(nodeEl);
     const snippetText=decisionRowSnippet(dl);
-    if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='decision-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(nodeEl); content.appendChild(snippetEl); }
-    else{ content.appendChild(nodeEl); }
+    if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='decision-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
     const metaBits=[]; if(dl.author)metaBits.push(dl.author); if(dl.timestamp)metaBits.push(qaFormatShortDate(dl.timestamp));
     if(metaBits.length){ const metaEl=document.createElement('div'); metaEl.className='decision-row-meta'; metaEl.textContent=metaBits.join(' · '); content.appendChild(metaEl); }
-    row.appendChild(statusEl); row.appendChild(content);
-    row.addEventListener('click',()=>{
-      if(!nodes.some(n=>n.id===node.id)){ showToast('That node no longer exists in this document'); return; }
-      toggleDecisionListMode(false);
-      revealNodeInDoc(currentDocId,node.id);
-      renderDecisionPad();
-    });
+    summary.appendChild(statusEl); summary.appendChild(content);
+    const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='decision-row-delete'; delBtn.dataset.tip='Delete decision log';
+    delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDecisionLog(dl.id); });
+    summary.appendChild(delBtn);
+    summary.addEventListener('click',()=>toggleDecisionExpanded(dl.id));
+    row.appendChild(summary);
+    if(dl.id===decisionExpandedId){ const slot=document.createElement('div'); slot.className='decision-row-expand-slot'; row.appendChild(slot); }
     list.appendChild(row);
   });
+  if(decisionExpandedId!=null){
+    const slot=list.querySelector('.decision-row-expand-slot');
+    const dl=findDecisionLog(decisionExpandedId);
+    if(slot&&card&&dl){ slot.appendChild(card); card.style.display=''; populateDecisionCard(dl); }
+  }
 }
 function renderDecisionQuicknav(dl){
   const navWrap=el('decision-quicknav'); if(!navWrap)return;
@@ -20063,67 +20186,31 @@ function renderDecisionQuicknav(dl){
     navWrap.classList.add('visible');
   }else{ navWrap.classList.remove('visible'); }
 }
-function renderDecisionPad(){
-  const body=el('decision-body'); if(!body)return;
-  // renderDecisionPad() is called for reasons that have nothing to do with the field
-  // currently focused — e.g. toggling which fields are visible in Settings, elsewhere in this
-  // same file — and it overwrites #decision-author's value from node.decisionLog.author a few
-  // lines down (and decisionPadNodeId gets reassigned to selectedId's node right below this).
-  // "Decided by" commits on 'change' (effectively on blur), not live — so if this rebuild is
-  // what ends up triggering that blur, the commit reads decisionPadNodeId AFTER it's already
-  // been reassigned to a possibly-different node. Commit explicitly against the node this
-  // field actually belongs to, before any of that happens — same fix as Q&A's Answered-by.
-  const authorField=el('decision-author');
-  if(authorField&&document.activeElement===authorField&&decisionPadNodeId!==null){
-    const prevNode=nodes.find(n=>n.id===decisionPadNodeId);
-    if(prevNode&&prevNode.decisionLog){
-      const val=authorField.value.trim();
-      prevNode.decisionLog.author=val;
-      qaRecordAnswerer(val);
-      markDirty(); scheduleAutoSave();
-      sakuraLog('commit','renderDecisionPad caught mid-edit Decided-by before rebuild',{nodeId:decisionPadNodeId});
-    }
+let _decisionCardUndoId=null;
+function populateDecisionCard(dl){
+  if(!dl)return;
+  if(_decisionCardUndoId!==dl.id){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionCardUndoId=dl.id; }
+  const anchorBtn=el('decision-node-label');
+  if(anchorBtn){
+    const label=decisionLogAnchorLabel(dl);
+    anchorBtn.textContent=label; anchorBtn.title=label;
+    anchorBtn.classList.toggle('decision-card-anchor-warn',dl.anchorNodeId==null||!nodes.some(n=>n.id===dl.anchorNodeId));
   }
-  const node=nodes.find(n=>n.id===selectedId);
-  decisionPadNodeId=node?node.id:null;
-  const allLogs=decisionAllLogNodes();
-  const countChip=el('decision-count-chip'), countLabel=el('decision-count-chip-label');
-  if(countLabel)countLabel.textContent=allLogs.length?`${allLogs.length} decision${allLogs.length===1?'':'s'}`:'No decisions yet';
-  if(countChip)countChip.setAttribute('aria-pressed',String(decisionListMode));
-  if(countChip)countChip.dataset.tip=decisionListMode?'Back to this decision':'Browse all decisions';
-  body.classList.toggle('list-mode',decisionListMode);
-  if(decisionListMode){
-    if(padViewMode==='decision'){ const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.style.display='none'; }
-    renderDecisionList(allLogs); return;
-  }
-  if(_decisionPadUndoNodeId!==decisionPadNodeId){ decisionFieldSessionUndo={}; _decisionFieldCheckpointPending={}; _decisionPadUndoNodeId=decisionPadNodeId; }
-  const hasLog=nodeHasDecisionLog(node);
-  const decisionTab=el('pad-tab-decision'); if(decisionTab)decisionTab.classList.toggle('has-log',hasLog);
-  body.classList.toggle('no-log',!hasLog);
-  if(padViewMode==='decision'){ const clearBtn=el('pad-clear-btn'); if(clearBtn)clearBtn.style.display=hasLog?'':'none'; }
-  const emptyMsg=body.querySelector('#decision-empty p');
-  const addBtn=el('decision-add-btn');
-  const navWrap=el('decision-quicknav');
-  if(!node){ if(emptyMsg)emptyMsg.textContent='Select a node to add a decision log.'; if(addBtn)addBtn.style.display='none'; if(navWrap)navWrap.classList.remove('visible'); return; }
-  if(!hasLog){ if(emptyMsg)emptyMsg.textContent="This node doesn't have a decision log yet."; if(addBtn)addBtn.style.display=''; if(navWrap)navWrap.classList.remove('visible'); return; }
-  const dl=node.decisionLog;
-  const label=el('decision-node-label'); if(label)label.textContent=getNodePlainText(node).trim().slice(0,80)||'(untitled node)';
   ['context','decision','rationale','alternatives','impact'].forEach(key=>{
     const field=el('decision-'+key); if(field)field.innerHTML=sakuraSanitizeRichHtml(dl[key]||'');
     const row=el('decision-field-'+key); if(row)row.style.display=decisionLogHiddenFields.includes(key)?'none':'';
   });
-  if(navWrap)renderDecisionQuicknav(dl);
-  el('decision-author').value=dl.author||'';
+  renderDecisionQuicknav(dl);
+  const authorField=el('decision-author'); if(authorField)authorField.value=dl.author||'';
   const sep=el('decision-meta-sep'); if(sep)sep.style.display=dl.author?'':'none';
-  const status=DECISION_STATUSES.includes((dl.status||'').toLowerCase())?dl.status.toLowerCase():'proposed';
+  const status=decisionStatusOf(dl);
   const color=previewStatusBadgeColor(status);
   const statusBtn=el('decision-status'); if(statusBtn){ statusBtn.dataset.color=color; statusBtn.textContent=decisionStatusLabel(status); }
   const headTitle=el('decision-head-title'); if(headTitle)headTitle.className='pv-dlog-head-title pv-dlog-accent-text-'+color;
   const card=el('decision-card'); if(card)card.className='pv-dlog-accent-'+color;
   const ts=el('decision-timestamp'); if(ts){ ts.textContent=dl.timestamp?qaFormatShortDate(dl.timestamp):''; ts.dataset.tip=dl.timestamp?`Last updated ${formatTimestamp(dl.timestamp)}`:''; }
 }
-async function addDecisionLogToNode(){
-  const node=nodes.find(n=>n.id===selectedId); if(!node)return;
+async function createDecisionLog(){
   let author=defaultAuthorName||'';
   if(decisionLogAskAuthor){
     const defaultName=lastDecisionAuthor||defaultAuthorName||'';
@@ -20132,52 +20219,70 @@ async function addDecisionLogToNode(){
     author=entered.trim();
     if(author){ lastDecisionAuthor=author; savePrefs(); }
   }
-  pushUndo(); markDirty();
-  node.decisionLog={context:'',decision:'',rationale:'',alternatives:'',impact:'',status:'proposed',author,timestamp:Date.now()};
-  scheduleAutoSave();
+  // If the currently-selected outline node is free, link straight to it (the common case —
+  // matches the old "add to this node" flow); otherwise leave it unlinked and open the anchor
+  // picker below so the person picks a free node instead of silently failing.
+  const preferredNodeId=(selectedId!=null&&!decisionLogForNode(selectedId))?selectedId:null;
+  const ts=Date.now();
+  const dl={id:newDecisionLogId(),anchorNodeId:preferredNodeId,context:'',decision:'',rationale:'',alternatives:'',impact:'',status:'proposed',author,timestamp:ts,createdAt:ts,modifiedAt:ts};
+  decisionLogs.push(dl);
+  markDirty(); scheduleAutoSave();
   render();
-  renderDecisionPad();
+  decisionExpandedId=dl.id;
+  renderDecisionLogsList();
   const firstVisibleKey=DL_FIELDS.map(f=>f.key).find(k=>!decisionLogHiddenFields.includes(k));
   el(firstVisibleKey?'decision-'+firstVisibleKey:'decision-context')?.focus();
+  if(preferredNodeId==null){
+    requestAnimationFrame(()=>renderDecisionAnchorSuggest('',dl,el('decision-node-label')));
+  }
 }
-async function deleteDecisionLogFromNode(){
-  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>', title:'Remove Decision Log', body:'Remove the decision log from this node?', confirmLabel:'Remove', confirmCls:'danger', cancelLabel:'Cancel'});
+async function deleteDecisionLog(id){
+  const idx=decisionLogs.findIndex(dl=>dl.id===id); if(idx<0)return;
+  const removed=decisionLogs[idx];
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>', title:'Delete Decision Log', body:'Delete this decision log?', confirmLabel:'Delete', confirmCls:'danger', cancelLabel:'Cancel'});
   if(!ok)return;
-  const snapshot=node.decisionLog;
-  node.decisionLog=null;
-  markDirty(); scheduleAutoSave(); render(); renderDecisionPad();
-  showActionToast('Decision log removed','Undo',()=>{
-    node.decisionLog=snapshot;
-    markDirty(); scheduleAutoSave(); render(); renderDecisionPad();
+  const idx2=decisionLogs.findIndex(dl=>dl.id===id); if(idx2<0)return;
+  decisionLogs.splice(idx2,1);
+  if(decisionExpandedId===id)decisionExpandedId=null;
+  markDirty(); scheduleAutoSave(); render(); renderDecisionLogsList();
+  showActionToast('Decision log deleted','Undo',()=>{
+    decisionLogs.splice(Math.min(idx2,decisionLogs.length),0,removed);
+    markDirty(); scheduleAutoSave(); render(); renderDecisionLogsList();
   });
 }
 document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
   tab.addEventListener('click',()=>setPadViewMode(tab.dataset.mode));
 });
-el('decision-add-btn')?.addEventListener('click',addDecisionLogToNode);
-el('decision-count-chip')?.addEventListener('click',()=>toggleDecisionListMode());
-el('decision-open-chip')?.addEventListener('click',()=>{ decisionListOpenOnly=!decisionListOpenOnly; renderDecisionList(); });
-el('decision-author-filter')?.addEventListener('change',e=>{ decisionListAuthorFilter=e.target.value; renderDecisionList(); });
+el('dltb-add')?.addEventListener('click',createDecisionLog);
+el('decision-node-label')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
+  if(_decisionAnchorOpen&&_decisionAnchorTarget===dl){ closeDecisionAnchorSuggest(); return; }
+  renderDecisionAnchorSuggest('',dl,el('decision-node-label'));
+});
+el('decision-open-chip')?.addEventListener('click',()=>{ decisionListOpenOnly=!decisionListOpenOnly; renderDecisionLogsList(); });
+el('decision-author-filter')?.addEventListener('change',e=>{ decisionListAuthorFilter=e.target.value; renderDecisionLogsList(); });
 el('decision-status')?.addEventListener('click',()=>{
-  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
-  const cur=DECISION_STATUSES.indexOf((node.decisionLog.status||'proposed').toLowerCase());
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
+  const cur=DECISION_STATUSES.indexOf(decisionStatusOf(dl));
   const next=DECISION_STATUSES[(cur+1)%DECISION_STATUSES.length];
-  node.decisionLog.status=next; node.decisionLog.timestamp=Date.now();
+  dl.status=next; dl.timestamp=Date.now(); dl.modifiedAt=Date.now();
   const color=previewStatusBadgeColor(next);
   const btn=el('decision-status'); if(btn){ btn.dataset.color=color; btn.textContent=decisionStatusLabel(next); }
   const headTitle=el('decision-head-title'); if(headTitle)headTitle.className='pv-dlog-head-title pv-dlog-accent-text-'+color;
   const card=el('decision-card'); if(card)card.className='pv-dlog-accent-'+color;
-  const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
+  const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(dl.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(dl.timestamp)}`; }
   markDirty(); scheduleAutoSave();
+  patchDecisionRowSummary(dl);
 });
 el('decision-author')?.addEventListener('change',()=>{
-  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
   const val=el('decision-author').value.trim();
-  node.decisionLog.author=val;
+  dl.author=val; dl.modifiedAt=Date.now();
   qaRecordAnswerer(val);
   const sep=el('decision-meta-sep'); if(sep)sep.style.display=val?'':'none';
   markDirty(); scheduleAutoSave();
+  patchDecisionRowSummary(dl);
 });
 attachAnswererAutocomplete(el('decision-author'));
 // Typing "1. " or "- "/"* " at the very start of a line converts it into a real list —
@@ -20211,13 +20316,12 @@ function decisionFieldKeydown(e,key){
 // typing captured before the mutating edit, not one step per keystroke, using beforeinput
 // rather than input since the DOM has already changed by the time input fires. Without this,
 // Ctrl+Z while typing in a decision field either did nothing (browser-native contenteditable
-// undo doesn't reliably track edits made elsewhere via renderDecisionPad's own innerHTML
+// undo doesn't reliably track edits made elsewhere via populateDecisionCard's own innerHTML
 // writes) or fell through to the main outline's undo stack and reverted an unrelated change —
 // stopPropagation in decisionFieldKeydown above is what prevents that leak.
 let decisionFieldSessionUndo={};
 let _decisionFieldIdleTimer=null;
 let _decisionFieldCheckpointPending={};
-let _decisionPadUndoNodeId=null;
 function pushDecisionFieldSessionUndo(key){
   const field=el('decision-'+key); if(!field)return;
   if(!decisionFieldSessionUndo[key])decisionFieldSessionUndo[key]={undo:[],redo:[]};
@@ -20227,12 +20331,13 @@ function pushDecisionFieldSessionUndo(key){
   st.redo=[];
 }
 function decisionFieldSyncModel(key,field){
-  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
-  node.decisionLog[key]=sakuraSanitizeRichHtml(field.innerHTML);
-  node.decisionLog.timestamp=Date.now();
-  const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
-  renderDecisionQuicknav(node.decisionLog);
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
+  dl[key]=sakuraSanitizeRichHtml(field.innerHTML);
+  dl.timestamp=Date.now(); dl.modifiedAt=Date.now();
+  const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(dl.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(dl.timestamp)}`; }
+  renderDecisionQuicknav(dl);
   markDirty(); scheduleAutoSave();
+  patchDecisionRowSummary(dl);
 }
 function decisionFieldSessionUndoRun(key){
   const field=el('decision-'+key); if(!field)return;
@@ -20268,28 +20373,30 @@ function decisionFieldSessionRedoRun(key){
   field.addEventListener('blur',()=>{ if(linkifySapNotesInElement(field))decisionFieldSyncModel(key,field); });
 });
 async function rewriteDecisionField(key){
-  const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
+  const dl=findDecisionLog(decisionExpandedId); if(!dl)return;
   const field=el('decision-'+key);
   const text=(field?.textContent||'').trim();
   if(!text){ showToast('Nothing to rewrite yet'); return; }
-  const originalHtml=node.decisionLog[key]||'';
+  const originalHtml=dl[key]||'';
   const btn=el('decision-rewrite-'+key); if(btn)btn.classList.add('ai-busy');
   try{
     const result=await callAiApi(text);
     if(!result)throw new Error('Empty response from AI');
     pushDecisionFieldSessionUndo(key); _decisionFieldCheckpointPending[key]=true;
     if(field)field.textContent=result;
-    node.decisionLog[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
-    node.decisionLog.timestamp=Date.now();
-    const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(node.decisionLog.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(node.decisionLog.timestamp)}`; }
-    renderDecisionQuicknav(node.decisionLog);
+    dl[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
+    dl.timestamp=Date.now(); dl.modifiedAt=Date.now();
+    const ts=el('decision-timestamp'); if(ts){ ts.textContent=qaFormatShortDate(dl.timestamp); ts.dataset.tip=`Last updated ${formatTimestamp(dl.timestamp)}`; }
+    renderDecisionQuicknav(dl);
     markDirty(); scheduleAutoSave();
+    patchDecisionRowSummary(dl);
     showActionToast(key.charAt(0).toUpperCase()+key.slice(1)+' rewritten','Undo',()=>{
-      const it=nodes.find(n=>n.id===decisionPadNodeId); if(!it||!it.decisionLog)return;
-      it.decisionLog[key]=originalHtml;
-      const field2=el('decision-'+key); if(field2)field2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
-      renderDecisionQuicknav(it.decisionLog);
+      const it=findDecisionLog(dl.id); if(!it)return;
+      it[key]=originalHtml;
+      const field2=el('decision-'+key); if(field2&&decisionExpandedId===it.id)field2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
+      renderDecisionQuicknav(it);
       markDirty(); scheduleAutoSave();
+      patchDecisionRowSummary(it);
     });
   }catch(e){ showToast('Rewrite failed — '+(e.message||'try again')); }
   finally{ if(btn)btn.classList.remove('ai-busy'); }
@@ -21493,7 +21600,7 @@ function previewDetectDecisionLogs(scopedNodes){
   const consumed=new Set(); const groups=[];
   if(!featureDecisionLogEnabled)return{consumed,groups};
   scopedNodes.forEach((n,idx)=>{
-    if(!n.decisionLog)return;
+    if(!decisionLogForNode(n.id))return;
     consumed.add(idx);
     groups.push({headerIdx:idx,fieldIdxs:[]});
   });
@@ -21545,7 +21652,7 @@ function decisionLogIsLarge(dl){
   return total>decisionLogSplitThreshold;
 }
 function previewRenderDecisionCard(headerNode){
-  const dl=headerNode.decisionLog||{};
+  const dl=decisionLogForNode(headerNode.id)||{};
   const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
   const statusColor=previewStatusBadgeColor(status); // also the right call for 'proposed': defaults to 'gray', a neutral accent rather than an implied "approved" green
   const card=document.createElement('div'); card.className='pv-dlog pv-dlog-accent-'+statusColor;
@@ -21788,8 +21895,8 @@ function renderPreviewBody(){
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
-      if(featureDecisionLogEnabled&&decisionLogExportEnabled&&node.decisionLog){
-        if(decisionLogIsLarge(node.decisionLog)){
+      if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)){
+        if(decisionLogIsLarge(decisionLogForNode(node.id))){
           const dlSlideWrap=document.createElement('div'); dlSlideWrap.className='pv-slide';
           dlSlideWrap.dataset.slideIndex=String(previewSlideList.length);
           doc.appendChild(dlSlideWrap);
@@ -21891,7 +21998,7 @@ function renderPreviewBody(){
   });
   const decisionEntries=groups.map(g=>{
     const headerNode=nodes[g.headerIdx];
-    const dl=headerNode.decisionLog||{};
+    const dl=decisionLogForNode(headerNode.id)||{};
     const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
     const summary=stripHtmlToText(dl.decision||dl.context||'');
     return {id:headerNode.id,text:summary||stripSemanticMarkers(getNodePlainText(headerNode)).trim()||'Decision Log',status:decisionStatusLabel(status)};
@@ -22766,7 +22873,7 @@ function previewClipboardDlPlainList(items,indent){
 }
 const PV_CLIP_STATUS_COLOR_KEY={green:'fcGreen',red:'fcRed',orange:'fcOrange',gray:'fcGray'};
 function previewClipboardDecisionCard(headerNode,colors,plainLines){
-  const dl=headerNode.decisionLog||{};
+  const dl=decisionLogForNode(headerNode.id)||{};
   const status=DECISION_STATUSES.includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
   const statusColorKey=PV_CLIP_STATUS_COLOR_KEY[previewStatusBadgeColor(status)];
   const card=document.createElement('div');
@@ -22896,7 +23003,7 @@ async function copyPreviewAsRichText(){
       ownerEl.appendChild(noteCard);
       plainLines.push('  Note: '+htmlToPlain(node.note));
     }
-    if(node.decisionLog&&!(folded&&hasChildren)){
+    if(decisionLogForNode(node.id)&&!(folded&&hasChildren)){
       plainLines.push('  Decision Log');
       ownerEl.appendChild(previewClipboardDecisionCard(node,colors,plainLines));
     }
@@ -23306,13 +23413,13 @@ function setDecisionLogFieldHidden(key, hidden, persist=true){
   const set=new Set(decisionLogHiddenFields);
   if(hidden) set.add(key); else set.delete(key);
   decisionLogHiddenFields=DL_FIELDS.map(f=>f.key).filter(k=>set.has(k));
-  if(padViewMode==='decision')renderDecisionPad();
+  if(padViewMode==='decision')renderDecisionLogsList();
   if(persist){ savePrefs(); scheduleAutoSave(); }
 }
 DL_FIELDS.forEach(f=>{ el('dlfsec-'+f.key)?.addEventListener('change', e=>setDecisionLogFieldHidden(f.key, !e.target.checked)) });
 
 // Which Decision Log fields surface in Preview's one-line summary card — separate from
-// which fields insertDecisionLog actually creates (above). Kept deliberately small by default.
+// which fields the decision card itself creates (above). Kept deliberately small by default.
 function applyPreviewDlFieldSettings(){
   DL_FIELDS.forEach(f=>{ const cb=el('pvdlf-'+f.key); if(cb) cb.checked=previewDlFields.includes(f.key); });
 }
@@ -23877,13 +23984,13 @@ function applyEditorsChoicePreset(silent){
   setPadBgMatch(false,false);
 
   // Right-click menu: quick row gets Focus, Rewrite, Note, Tags, Delete;
-  // everything else from the curated toolbar set (Date/time, Decision log) lands in
+  // everything else from the curated toolbar set (Date/time) lands in
   // "More" by simply not being in the quick row or the hidden list; anything not in
   // the curated set at all (child/above/below/duplicate/up/down/ai-rewrite-all/
   // ai-icon/ai-icon-all/sort-children) is hidden entirely. Focus is included here now
   // that the hover toolbar (its previous always-on home) is off in this preset.
-  const editorsChoiceQuick=['focus','ai-rewrite','note','date-time','decision-log','tags','delete'];
-  const editorsChoiceKeep=['focus','ai-rewrite','note','date-time','decision-log','tags','delete'];
+  const editorsChoiceQuick=['focus','ai-rewrite','note','date-time','tags','delete'];
+  const editorsChoiceKeep=['focus','ai-rewrite','note','date-time','tags','delete'];
   contextQuickActions=CTX_ACTION_ORDER.filter(a=>editorsChoiceQuick.includes(a));
   contextHiddenActions=CTX_HIDE_KEYS.filter(k=>!editorsChoiceKeep.includes(k));
   applyContextHiddenActions();
@@ -23891,13 +23998,13 @@ function applyEditorsChoicePreset(silent){
   if(el('context-menu')?.classList.contains('open')){renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState()}
 
   // Node Quick Assist (the Ctrl/Cmd+Space mid-edit menu): icon-only row, trimmed to the
-  // four actions worth a dedicated slot while writing — Note (which now covers Code too,
-  // via its own tab), Tags, Decision log, Rewrite. The punctuation/symbol inserts (em dash,
+  // three actions worth a dedicated slot while writing — Note (which now covers Code too,
+  // via its own tab), Tags, Rewrite. The punctuation/symbol inserts (em dash,
   // en dash, arrow, check mark, cross mark, middle dot, date/time) drop out of this menu
   // specifically; they're still reachable everywhere else they always were, this only
   // trims the mid-edit shortcut list.
   setNqaIconOnly(true,false);
-  nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>['note','tags','decision-log','ai-rewrite'].includes(a));
+  nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>['note','tags','ai-rewrite'].includes(a));
   NODE_QA_ACTION_ORDER.forEach(a=>{ const cb=el('nqaq-'+a); if(cb)cb.checked=nodeQuickAssistActions.includes(a); });
 
   // Presenter mode, tuned for actually presenting rather than the defaults (which favor a
@@ -24315,7 +24422,7 @@ el('etbsec-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCh
 el('etbsec-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('etbsec-',EXPORT_TB_BUTTONS,false)});
 el('ctxq-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('ctxq-',CTX_ACTION_ORDER,true)});
 el('ctxq-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('ctxq-',CTX_ACTION_ORDER,false)});
-el('ctxq-reset-btn')?.addEventListener('click',e=>{e.preventDefault(); const defaults=['note','tags','ai-rewrite','date-time','decision-log','delete']; bulkSetCheckboxGrid('ctxq-',CTX_ACTION_ORDER,false); bulkSetCheckboxGrid('ctxq-',defaults,true);});
+el('ctxq-reset-btn')?.addEventListener('click',e=>{e.preventDefault(); const defaults=['note','tags','ai-rewrite','date-time','delete']; bulkSetCheckboxGrid('ctxq-',CTX_ACTION_ORDER,false); bulkSetCheckboxGrid('ctxq-',defaults,true);});
 el('ctxh-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('ctxh-',CTX_HIDE_KEYS,true)});
 el('ctxh-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('ctxh-',CTX_HIDE_KEYS,false)});
 el('dlfsec-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('dlfsec-',DL_FIELDS.map(f=>f.key),true)});
@@ -24823,10 +24930,6 @@ document.addEventListener('mousedown', e => {
 el('pad-clear-btn')?.addEventListener('click', async (e) => {
   e.stopPropagation();
   const trashIcon='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
-  if(padViewMode==='decision'){
-    await deleteDecisionLogFromNode();
-    return;
-  }
   if(padViewMode==='qa'){
     const valid=qaItems.filter(it=>(it.question||'').trim()||(it.answer||'').trim());
     if(!valid.length){ showToast('No Q&A rows to clear'); return; }
@@ -28128,7 +28231,7 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-combo" data-cs-shortcut="moveUp"></span>/<span class="cs-combo" data-cs-shortcut="moveDown"></span> <span class="cs-desc">move node</span></li>
           <li><span class="help-kbd">←</span>/<span class="help-kbd">→</span> <span class="cs-desc">collapse / expand</span></li>
           <li><span class="help-kbd">Click</span> <span class="cs-desc">select</span> · <span class="help-kbd">Shift</span>+click <span class="cs-desc">range</span> · <span class="help-kbd">Ctrl/Cmd</span>+click <span class="cs-desc">multi</span></li>
-          <li>Right-click → icon row (Zoom in, Note, Tags, Rewrite, Decision Log, Delete by default) + <span class="help-kbd">More</span> for move, sort, and everything else; customisable in Settings → Right-click menu</li>
+          <li>Right-click → icon row (Zoom in, Note, Tags, Rewrite, Delete by default) + <span class="help-kbd">More</span> for move, sort, and everything else; customisable in Settings → Right-click menu</li>
         </ul>
       </div>
 
@@ -28175,7 +28278,6 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="13" y2="13"/><line x1="8" y1="17" x2="11" y2="17"/><path d="M15 15l1.5 1.5L19.5 13.5" stroke-width="2.2"/></svg></span> Intelligent paste</span> — parses indents/bullets into nodes</li>
           <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Insert Date/Time</span> — <span class="cs-combo" data-cs-shortcut="insertDateTime"></span></li>
           <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Note</span> — <span class="cs-combo" data-cs-shortcut="toggleNote"></span></li>
-          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span> Decision Log</span> — Insert group</li>
         </ul>
       </div>
 
@@ -28183,7 +28285,7 @@ function _addTagPopoverFromInput(){
         <h3>Search &amp; Quick Assist</h3>
         <ul>
           <li><span class="cs-combo" data-cs-shortcut="quickAssist"></span> <span class="cs-desc">Quick Assist — plain-English commands, or search anything</span></li>
-          <li><span class="cs-desc">While editing a node, the same shortcut opens a smaller node-specific menu instead (em dash, date/time, note, code block, tags, decision log, rewrite) — see Node Quick Assist below</span></li>
+          <li><span class="cs-desc">While editing a node, the same shortcut opens a smaller node-specific menu instead (em dash, date/time, note, code block, tags, rewrite) — see Node Quick Assist below</span></li>
           <li><span class="cs-desc">Covers settings, help, doc &amp; template names, node text, notes, code blocks, tags, and the pad — across all documents</span></li>
           <li><span class="cs-desc">Results group by type ("In documents", "Notes", "Code", "Tags", "Pad") with a snippet — click to jump straight there</span></li>
           <li><span class="cs-combo" data-cs-shortcut="findInTree"></span> <span class="cs-desc">search this tree</span></li>
