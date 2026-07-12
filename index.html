@@ -2351,7 +2351,8 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagram-row-thumb img{width:100%;height:100%;object-fit:contain}
 .diagram-row-info{flex:1;min-width:0}
 .diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.diagram-row-anchor{font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.diagram-row-anchor{appearance:none;border:none;background:none;font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;cursor:pointer;text-align:left;padding:0;border-radius:3px;max-width:100%;display:block}
+.diagram-row-anchor:hover{color:var(--accent);text-decoration:underline}
 .diagram-row-pages{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--hint);background:var(--hover);border-radius:4px;padding:1px 6px;cursor:help}
 .diagram-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .diagram-row-dup{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
@@ -2378,30 +2379,25 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .diagram-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
-#diagram-editor-note-btn{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;transition:border-color .12s,color .12s}
-#diagram-editor-note-btn:hover{color:var(--fg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-#diagram-editor-note-btn.has-note{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-note-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:8px;outline:none;width:150px;transition:width .15s,border-color .12s}
+#diagram-editor-note-input:focus{width:260px;border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-note-input::placeholder{color:var(--hint)}
 .diagram-row-status{display:inline-flex;align-items:center;font:700 9px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:1px 7px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .diagram-row-status[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
 .diagram-row-status[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .diagram-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
 .diagram-row-warn-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:4px;padding:1px 6px;cursor:help}
-.diagram-row-note-preview{font:400 11px 'Inter',sans-serif;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.diagram-row-note-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.diagram-row-note-btn.has-note{opacity:1;color:var(--accent)}
-.diagram-row:hover .diagram-row-note-btn{opacity:1}
-.diagram-row-note-btn:hover{color:var(--accent);background:var(--hover)}
+.diagram-row-note-input{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:400 11px 'Inter',sans-serif;font-style:italic;padding:2px 4px;border-radius:4px;outline:none;margin-top:2px;width:100%;box-sizing:border-box;transition:background .12s,border-color .12s,color .12s}
+.diagram-row-note-input:hover{background:var(--hover)}
+.diagram-row-note-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));color:var(--fg);font-style:normal}
+.diagram-row-note-input::placeholder{color:var(--hint);font-style:normal;opacity:.7}
 #diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 #diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:280px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 #diagram-anchor-suggest.open{display:block}
-#diagram-note-popover{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:280px;display:none;font-family:'Inter',sans-serif}
-#diagram-note-popover.open{display:block}
-#diagram-note-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid transparent;background:var(--hover);color:var(--fg);font:400 12.5px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;outline:none;transition:border-color .12s}
-#diagram-note-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));background:var(--bg)}
 .diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
 .diagram-anchor-item-none{color:var(--hint);font-style:italic}
@@ -4218,14 +4214,14 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> in the Diagrams tab's toolbar to create one — it opens full-screen in draw.io immediately. Click any existing diagram's row in the tab's list to reopen it the same way; the row shows a live thumbnail once it's been saved at least once</li>
 <li><strong>Only changes saved inside draw.io itself are kept</strong> — its own Save button, or <span class="help-kbd">Ctrl/Cmd+S</span>, while the editor is open. Closing the full-screen editor (the × button, or <span class="help-kbd">Esc</span>) always asks you to confirm you've saved, since there's no way to force a save from outside draw.io's own UI</li>
 <li><strong>Multiple pages/tabs within one diagram:</strong> draw.io's own page tabs (bottom-left of the editor) work as usual, and every page's content is kept in full when you save and reopen. But the thumbnail, and the figure shown in Preview/PDF/Word/PowerPoint, can only ever show one page — whichever was active in the editor at the moment you last saved. (An earlier version of this tried exporting every page individually behind the scenes; that turned out to actively corrupt the live diagram — deleting a page from it — so it was reverted. Nothing unsafe is attempted here anymore.) A "N pages" badge appears on a diagram's row in this list as a reminder when this applies. If you want more than one page to actually appear in the document, create them as separate diagrams (the + button) and link each to its own node instead of using pages within one diagram</li>
-<li>Give it a title in the field at the top, and link it to a node with the anchor button next to it (searches node text as you type; "Not linked to a node" clears the link). Linking is optional but is what makes a diagram show up anywhere outside this tab — an unlinked diagram only lives in the Diagrams list itself</li>
+<li>Give it a title in the field at the top, and link it to a node with the anchor button next to it ("Not linked to a node" clears the link). Linking is optional but is what makes a diagram show up anywhere outside this tab — an unlinked diagram only lives in the Diagrams list itself. The node link can also be changed right from a diagram's row in the list — click the "Under: …" (or "Not linked to a node") line, same picker either way — without needing to open the full-screen editor first</li>
 <li>A linked diagram appears as a large figure directly under its node in Preview, PDF, Word, and PowerPoint exports — same treatment as a note image marked "Feature as diagram" elsewhere in Sakura, so there's no visible difference between the two workflows in the output. Settings → Export &amp; print → "Include Diagrams in exports" controls the Word/PowerPoint case specifically (Preview and PDF always show it); click the figure in Preview to enlarge it</li>
 <li>A small accent-colored square-cluster dot appears next to a node with a linked diagram — click it to jump straight to the Diagrams tab and open that diagram (or the list, if the node has more than one). The same icon appears next to a folded node's "+N hidden" badge when a diagram is linked somewhere inside its collapsed subtree</li>
 <li>Delete a diagram from its row in the list (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes and Q&amp;A rows), then removes it and its node link entirely. Undo with <span class="help-kbd">Ctrl/Cmd+Z</span> or the toast's own Undo button, either works, for 15 seconds — longer than most toasts elsewhere in Sakura, since a diagram takes real effort to recreate. Deleting doesn't touch the node itself</li>
 <li>The copy icon next to delete duplicates a diagram — same drawing, same status, same node link, titled "(original title) (copy)". Useful for variations on the same base drawing without starting over. A pure data copy, not a draw.io operation, so it's instant</li>
 <li>Each diagram has a <strong>status</strong> — Draft, In Progress, Review, or Final — shown as a small colored pill on its row and in the full-screen editor's header. Click either one to cycle to the next status. Purely organizational — nothing else in Sakura reads it (it's not exported or shown in Preview), it's just a way to track where each diagram stands at a glance across a document with several</li>
 <li>Two more chips can appear on a row: <strong>Unlinked</strong>, when a diagram has no node link yet (a reminder it's invisible in Preview and exports until you link it), and <strong>Modified since export</strong>, when it's changed since the last time anything was exported from Sakura. The latter is approximate — Sakura tracks one "last export" timestamp app-wide, not per document, so it can't tell whether it was specifically this diagram (or even this document) that got exported</li>
-<li>The note icon on a row (and the matching one in the full-screen editor's header) opens a small popover right there for a private, one-line <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." <span class="help-kbd">Enter</span> or clicking away saves it, <span class="help-kbd">Esc</span> discards the edit. Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel; a short preview of it appears under the row once set</li>
+<li>Each diagram has a private, one-line <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." Type directly into the small field under a row (or the matching one in the full-screen editor's header) — no popup, no separate edit step. <span class="help-kbd">Enter</span> or clicking away saves it, <span class="help-kbd">Esc</span> discards whatever was typed since it was last saved. Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel</li>
 <li>Diagrams, Q&amp;A, and Pad content are all included in Sakura's Version History now (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores all three alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected, only the cached preview image. Pad content restores as text only — any file attachments or pasted images that were in the Pad at that point in time are gone for good, replaced with a small note of what was there, since keeping every version of a 5&nbsp;MB attachment would make History unusably large. Restoring a version with older revisions recorded before this existed leaves diagrams/Q&amp;A/Pad exactly as they currently are, rather than guessing or wiping them</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
@@ -4837,14 +4833,13 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
     <button type="button" id="diagram-editor-status-chip" class="diagram-status-chip" data-tip="Cycle status"></button>
-    <button type="button" id="diagram-editor-note-btn" data-tip="Add a note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+    <input type="text" id="diagram-editor-note-input" placeholder="+ Note to yourself" maxlength="200" autocomplete="off" spellcheck="false" data-tip="Private reminder — never shown in Preview or exports" />
     <span id="diagram-editor-status"></span>
     <button type="button" id="diagram-editor-close" data-tip="Close (saves automatically)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="diagram-editor-iframe-wrap"></div>
 </div>
 <div id="diagram-anchor-suggest"></div>
-<div id="diagram-note-popover"><input type="text" id="diagram-note-input" placeholder="Quick note to yourself…" maxlength="200" autocomplete="off" /></div>
 
 <div id="todos-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Status Summary">
   <div class="app-modal" style="width:min(480px,94vw)">
@@ -6991,51 +6986,11 @@ function diagramModifiedSinceExport(d){
   return ts>0&&d.modifiedAt>ts;
 }
 // A private reminder attached to a diagram — never shown in Preview, exports, or anywhere
-// outside this panel and the row list. Small anchored popover (matching the anchor picker's own
-// popover just above) rather than a full modal — this is meant to be a quick one-liner, not a
-// document.
-let _diagramNoteOpenFor=null; // the diagram object currently being edited via the popover
-function closeDiagramNotePopover(commit){
-  const pop=el('diagram-note-popover'); if(!pop||!pop.classList.contains('open'))return;
-  const d=_diagramNoteOpenFor;
-  if(commit&&d){
-    const input=el('diagram-note-input');
-    const val=(input?input.value:'').trim();
-    if(val!==(d.note||'')){
-      d.note=val;
-      d.modifiedAt=Date.now();
-      markDirty(); scheduleAutoSave();
-      renderDiagramsList();
-      if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorNoteBtn(d);
-    }
-  }
-  pop.classList.remove('open');
-  _diagramNoteOpenFor=null;
-}
-function openDiagramNotePopover(d,anchorEl){
-  const pop=el('diagram-note-popover'); const input=el('diagram-note-input'); if(!pop||!input||!anchorEl)return;
-  if(_diagramNoteOpenFor&&_diagramNoteOpenFor.id!==d.id)closeDiagramNotePopover(true);
-  _diagramNoteOpenFor=d;
-  input.value=d.note||'';
-  const r=anchorEl.getBoundingClientRect();
-  pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-296))+'px';
-  pop.style.top=(r.bottom+6)+'px';
-  pop.classList.add('open');
-  input.focus(); input.select();
-}
-el('diagram-note-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ e.preventDefault(); closeDiagramNotePopover(true); }
-  else if(e.key==='Escape'){ e.preventDefault(); closeDiagramNotePopover(false); }
-});
-el('diagram-note-input')?.addEventListener('blur',()=>closeDiagramNotePopover(true));
-document.addEventListener('mousedown',e=>{
-  if(_diagramNoteOpenFor&&!e.target.closest('#diagram-note-popover')&&!e.target.closest('.diagram-row-note-btn')&&!e.target.closest('#diagram-editor-note-btn'))closeDiagramNotePopover(true);
-});
-function updateDiagramEditorNoteBtn(d){
-  const btn=el('diagram-editor-note-btn'); if(!btn)return;
-  const has=!!(d.note&&d.note.trim());
-  btn.classList.toggle('has-note',has);
-  btn.dataset.tip=has?'Edit note: '+d.note.trim().slice(0,80):'Add a note';
+// outside this panel and the row list. Edited directly in place (the row's own input, or the
+// editor header's) — no popover, no modal, just a normal text field.
+function updateDiagramEditorNoteInput(d){
+  const input=el('diagram-editor-note-input'); if(!input)return;
+  if(document.activeElement!==input)input.value=d.note||'';
 }
 // Splits a saved draw.io mxfile into its individual pages, purely by parsing the saved XML
 // string — no interaction with the live editor, so this is safe to run anytime. <diagram>
@@ -7136,25 +7091,38 @@ function renderDiagramsList(){
       metaRow.appendChild(staleChip);
     }
     info.appendChild(metaRow);
-    const anchor=document.createElement('div'); anchor.className='diagram-row-anchor'; anchor.textContent=diagramAnchorLabel(d);
-    info.appendChild(anchor);
-    if(d.note&&d.note.trim()){
-      const notePreview=document.createElement('div'); notePreview.className='diagram-row-note-preview';
-      notePreview.textContent=d.note.trim();
-      notePreview.dataset.tip='Click the note icon to edit';
-      info.appendChild(notePreview);
-    }
-    const noteBtn=document.createElement('button'); noteBtn.className='diagram-row-note-btn'+(d.note&&d.note.trim()?' has-note':'');
-    noteBtn.dataset.tip=d.note&&d.note.trim()?'Edit note':'Add a note';
-    noteBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-    noteBtn.addEventListener('click',e=>{ e.stopPropagation(); openDiagramNotePopover(d,noteBtn); });
+    const anchorBtn=document.createElement('button'); anchorBtn.className='diagram-row-anchor diagram-row-anchor-btn'; anchorBtn.type='button';
+    anchorBtn.textContent=diagramAnchorLabel(d);
+    anchorBtn.dataset.tip='Click to change which node this diagram appears under';
+    anchorBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(_diagramAnchorOpen&&_diagramAnchorTarget===d){ closeDiagramAnchorSuggest(); return; }
+      renderDiagramAnchorSuggest('',d,anchorBtn);
+    });
+    info.appendChild(anchorBtn);
+    const noteInput=document.createElement('input'); noteInput.type='text'; noteInput.className='diagram-row-note-input';
+    noteInput.value=d.note||''; noteInput.placeholder='+ Note to yourself'; noteInput.maxLength=200; noteInput.spellcheck=false;
+    noteInput.addEventListener('mousedown',e=>e.stopPropagation());
+    noteInput.addEventListener('click',e=>e.stopPropagation());
+    noteInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); noteInput.blur(); }
+      else if(e.key==='Escape'){ e.preventDefault(); noteInput.value=d.note||''; noteInput.blur(); }
+    });
+    noteInput.addEventListener('blur',()=>{
+      const val=noteInput.value.trim();
+      if(val===(d.note||''))return;
+      d.note=val; d.modifiedAt=Date.now();
+      markDirty(); scheduleAutoSave();
+      if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorNoteInput(d);
+    });
+    info.appendChild(noteInput);
     const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
     dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(thumb); row.appendChild(info); row.appendChild(noteBtn); row.appendChild(dupBtn); row.appendChild(delBtn);
+    row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
@@ -7228,7 +7196,7 @@ function openDiagramEditor(diagramId){
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
   updateDiagramEditorStatusChip(d);
-  updateDiagramEditorNoteBtn(d);
+  updateDiagramEditorNoteInput(d);
   const status=el('diagram-editor-status'); if(status)status.textContent='Loading draw.io…';
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
@@ -7307,15 +7275,27 @@ el('diagram-editor-status-chip')?.addEventListener('click',()=>{
   cycleDiagramStatus(d);
   updateDiagramEditorStatusChip(d);
 });
-el('diagram-editor-note-btn')?.addEventListener('click',()=>{
+el('diagram-editor-note-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){
+    e.preventDefault(); e.stopPropagation();
+    if(_diagramEditorState){ const d=findDiagram(_diagramEditorState.diagramId); if(d)e.target.value=d.note||''; }
+    e.target.blur();
+  }
+});
+el('diagram-editor-note-input')?.addEventListener('blur',()=>{
   if(!_diagramEditorState)return;
   const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
-  openDiagramNotePopover(d,el('diagram-editor-note-btn'));
+  const input=el('diagram-editor-note-input'); const val=(input?input.value:'').trim();
+  if(val===(d.note||''))return;
+  d.note=val; d.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  renderDiagramsList();
 });
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){
-    if(el('diagram-note-popover')?.classList.contains('open')){ e.stopPropagation(); closeDiagramNotePopover(false); return; }
+    if(document.activeElement===el('diagram-editor-note-input'))return; // let the input's own Escape handler (above) deal with it — it stops propagation itself when it does
     e.stopPropagation(); closeDiagramEditor();
   }
 },true);
@@ -7323,17 +7303,19 @@ document.addEventListener('keydown',e=>{
 // ── Anchor picker ───────────────────────────────────────────────────────
 // Same lightweight singleton-dropdown pattern as #answerer-suggest — search is scoped to the
 // current document only (diagrams anchor within their own document, not across documents the
-// way note-editor's "Insert Link" node search can).
+// way note-editor's "Insert Link" node search can). Usable from either the row list or the
+// full-screen editor's header — both just pass in which diagram and which button triggered it.
 let _diagramAnchorOpen=false;
+let _diagramAnchorTarget=null; // the diagram object currently being (re)anchored
 function getDiagramAnchorCandidates(query){
   const q=String(query||'').trim().toLowerCase();
   const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)'}));
   if(!q)return list.slice(0,50);
   return list.filter(n=>n.text.toLowerCase().includes(q)).slice(0,50);
 }
-function renderDiagramAnchorSuggest(query){
-  const pop=el('diagram-anchor-suggest'); const btn=el('diagram-editor-anchor-btn'); if(!pop||!btn)return;
-  const d=_diagramEditorState?findDiagram(_diagramEditorState.diagramId):null; if(!d)return;
+function renderDiagramAnchorSuggest(query,d,btn){
+  const pop=el('diagram-anchor-suggest'); if(!pop||!btn||!d)return;
+  _diagramAnchorTarget=d;
   const candidates=getDiagramAnchorCandidates(query);
   pop.innerHTML='';
   const noneItem=document.createElement('div');
@@ -7357,21 +7339,25 @@ function renderDiagramAnchorSuggest(query){
 function closeDiagramAnchorSuggest(){
   const pop=el('diagram-anchor-suggest'); if(pop)pop.classList.remove('open');
   _diagramAnchorOpen=false;
+  _diagramAnchorTarget=null;
 }
 function setDiagramAnchor(d,nodeId){
   d.anchorNodeId=nodeId;
   d.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
-  updateDiagramEditorAnchorLabel(d);
+  if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorAnchorLabel(d);
   closeDiagramAnchorSuggest();
+  renderDiagramsList();
 }
 el('diagram-editor-anchor-btn')?.addEventListener('click',e=>{
   e.stopPropagation();
-  if(_diagramAnchorOpen){ closeDiagramAnchorSuggest(); return; }
-  renderDiagramAnchorSuggest('');
+  if(!_diagramEditorState)return;
+  const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
+  if(_diagramAnchorOpen&&_diagramAnchorTarget===d){ closeDiagramAnchorSuggest(); return; }
+  renderDiagramAnchorSuggest('',d,el('diagram-editor-anchor-btn'));
 });
 document.addEventListener('mousedown',e=>{
-  if(_diagramAnchorOpen&&!e.target.closest('#diagram-anchor-suggest')&&!e.target.closest('#diagram-editor-anchor-btn'))closeDiagramAnchorSuggest();
+  if(_diagramAnchorOpen&&!e.target.closest('#diagram-anchor-suggest')&&!e.target.closest('.diagram-row-anchor-btn'))closeDiagramAnchorSuggest();
 },true);
 
 el('dtb-add')?.addEventListener('click',createDiagram);
