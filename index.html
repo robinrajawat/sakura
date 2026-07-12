@@ -18729,6 +18729,24 @@ function renderDecisionQuicknav(dl){
 }
 function renderDecisionPad(){
   const body=el('decision-body'); if(!body)return;
+  // renderDecisionPad() is called for reasons that have nothing to do with the field
+  // currently focused — e.g. toggling which fields are visible in Settings, elsewhere in this
+  // same file — and it overwrites #decision-author's value from node.decisionLog.author a few
+  // lines down (and decisionPadNodeId gets reassigned to selectedId's node right below this).
+  // "Decided by" commits on 'change' (effectively on blur), not live — so if this rebuild is
+  // what ends up triggering that blur, the commit reads decisionPadNodeId AFTER it's already
+  // been reassigned to a possibly-different node. Commit explicitly against the node this
+  // field actually belongs to, before any of that happens — same fix as Q&A's Answered-by.
+  const authorField=el('decision-author');
+  if(authorField&&document.activeElement===authorField&&decisionPadNodeId!==null){
+    const prevNode=nodes.find(n=>n.id===decisionPadNodeId);
+    if(prevNode&&prevNode.decisionLog){
+      const val=authorField.value.trim();
+      prevNode.decisionLog.author=val;
+      qaRecordAnswerer(val);
+      markDirty(); scheduleAutoSave();
+    }
+  }
   const node=nodes.find(n=>n.id===selectedId);
   decisionPadNodeId=node?node.id:null;
   const allLogs=decisionAllLogNodes();
@@ -19424,6 +19442,19 @@ function updateQaBulkBar(){
 }
 function renderQaList(){
   const list=el('qa-list'), body=el('qa-body'); if(!list||!body)return;
+  // renderQaList() rebuilds the whole list via list.innerHTML below and is called from ~30
+  // places — many for actions on an entirely different row (delete, add, drag-reorder, bulk
+  // select, follow-up toggle). "Answered by" commits on 'change' (effectively on blur), not
+  // live like Question/Answer's own 'input' handlers, so if it's this rebuild that ends up
+  // triggering that blur — rather than the person actually clicking away — it happens AFTER
+  // list.innerHTML is already reassigned below, i.e. too late to matter. Commit explicitly
+  // first, same fix and same reasoning as .todo-text in renderTodos().
+  const activeAnswerer=document.activeElement;
+  if(activeAnswerer&&activeAnswerer.classList&&activeAnswerer.classList.contains('qa-answered-by')&&list.contains(activeAnswerer)){
+    const qaId=activeAnswerer.id.replace('qa-answeredby-','');
+    const item=qaItems.find(it=>it.id===qaId);
+    if(item){ item.answeredBy=activeAnswerer.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); }
+  }
   hideNodeTooltip();
   updateQaProgress();
   list.innerHTML='';
