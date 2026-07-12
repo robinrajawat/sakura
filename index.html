@@ -4192,7 +4192,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>A real draw.io editor, embedded directly — not a static image. Lives in its own tab in the Pad, right alongside Notepad, Q&amp;A, and Decision Log. Each document can hold any number of diagrams</li>
 <li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> in the Diagrams tab's toolbar to create one — it opens full-screen in draw.io immediately. Click any existing diagram's row in the tab's list to reopen it the same way; the row shows a live thumbnail once it's been saved at least once</li>
 <li><strong>Only changes saved inside draw.io itself are kept</strong> — its own Save button, or <span class="help-kbd">Ctrl/Cmd+S</span>, while the editor is open. Closing the full-screen editor (the × button, or <span class="help-kbd">Esc</span>) always asks you to confirm you've saved, since there's no way to force a save from outside draw.io's own UI</li>
-<li><strong>Multiple pages/tabs within one diagram:</strong> draw.io's own page tabs (bottom-left of the editor) work as usual. Every page is exported and shown — each appears as its own figure, in page order, wherever the diagram is shown (Preview, PDF, Word, PowerPoint), captioned with the diagram's title and that page's name if there's more than one page. Saving a multi-page diagram takes slightly longer than a single-page one — draw.io's embed protocol only ever renders one page per request, so each page needs its own round-trip after Save, shown briefly in the editor's status text. A "N pages" badge on the diagram's row in this list is a reminder that it'll produce more than one figure</li>
+<li><strong>Multiple pages/tabs within one diagram:</strong> draw.io's own page tabs (bottom-left of the editor) work as usual, and every page's content is kept in full when you save and reopen. But the thumbnail, and the figure shown in Preview/PDF/Word/PowerPoint, can only ever show one page — whichever was active in the editor at the moment you last saved. (An earlier version of this tried exporting every page individually behind the scenes; that turned out to actively corrupt the live diagram — deleting a page from it — so it was reverted. Nothing unsafe is attempted here anymore.) A "N pages" badge appears on a diagram's row in this list as a reminder when this applies. If you want more than one page to actually appear in the document, create them as separate diagrams (the + button) and link each to its own node instead of using pages within one diagram</li>
 <li>Give it a title in the field at the top, and link it to a node with the anchor button next to it (searches node text as you type; "Not linked to a node" clears the link). Linking is optional but is what makes a diagram show up anywhere outside this tab — an unlinked diagram only lives in the Diagrams list itself</li>
 <li>A linked diagram appears as a large figure directly under its node in Preview, PDF, Word, and PowerPoint exports — same treatment as a note image marked "Feature as diagram" elsewhere in Sakura, so there's no visible difference between the two workflows in the output. Settings → Export &amp; print → "Include Diagrams in exports" controls the Word/PowerPoint case specifically (Preview and PDF always show it); click the figure in Preview to enlarge it</li>
 <li>A small accent-colored square-cluster dot appears next to a node with a linked diagram — click it to jump straight to the Diagrams tab and open that diagram (or the list, if the node has more than one). The same icon appears next to a folded node's "+N hidden" badge when a diagram is linked somewhere inside its collapsed subtree</li>
@@ -6841,14 +6841,14 @@ el('history-modal-close-x')?.addEventListener('click',()=>closeVersionHistory())
 // moved; the full-screen editor below is unchanged either way.
 function newDiagramId(){ return 'dg'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 function findDiagram(id){ return diagrams.find(d=>d.id===id); }
-// Splits a saved draw.io mxfile into its individual pages. <diagram> elements are always
-// siblings under <mxfile> (draw.io pages never nest), so a non-greedy regex is enough to find
-// each one's boundaries without needing a real XML parser. Each page's own markup — whether its
-// inner content is raw XML or draw.io's compressed/base64 page format, this doesn't care which —
-// gets re-wrapped in a fresh single-page <mxfile>, which is the same page representation draw.io
-// already reads natively, so no decoding of the page content itself is needed here. A diagram
-// with no <mxfile>/<diagram> wrapper at all (draw.io's bare single-page shorthand) is treated as
-// one page verbatim.
+// Splits a saved draw.io mxfile into its individual pages, purely by parsing the saved XML
+// string — no interaction with the live editor, so this is safe to run anytime. <diagram>
+// elements are always siblings under <mxfile> (draw.io pages never nest), so a non-greedy regex
+// is enough to find each one's boundaries without needing a real XML parser. Used only for the
+// page count (the "N pages" badge and status text) and each page's name, NOT for exporting —
+// see the 'save' handler's comment in openDiagramEditor for why per-page export isn't done.
+// A diagram with no <mxfile>/<diagram> wrapper at all (draw.io's bare single-page shorthand) is
+// treated as one page verbatim.
 function splitMxfilePages(xml){
   if(!xml||typeof xml!=='string')return [{name:'',xml:xml||''}];
   const pages=[]; const re=/<diagram\b([^>]*)>[\s\S]*?<\/diagram>/g; let m;
@@ -6858,17 +6858,10 @@ function splitMxfilePages(xml){
   }
   return pages.length?pages:[{name:'',xml}];
 }
-// Requests an export of the next page in the current editor session's queue (see the 'save'
-// handler in openDiagramEditor). Uses the export action's optional xml override so each request
-// renders that specific page's standalone markup, independent of whatever page tab happens to
-// be active in the live editor.
-function requestNextDiagramPageExport(iframe){
-  const st=_diagramEditorState; if(!st||!Array.isArray(st.exportQueue)||!st.exportQueue.length)return;
-  iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg',xml:st.exportQueue[0].xml}),'*');
-}
 // Expands one diagram record into its individual display pages — {svg, caption} per page, in
-// page order. Falls back to the single previewSvg for diagrams saved before per-page export
-// existed (pageSvgs absent). Shared by Preview, DOCX, and PPTX so the three stay in sync.
+// page order. Currently always yields at most one entry (see the 'save' handler in
+// openDiagramEditor for why per-page export isn't safe) — kept as a seam so Preview/DOCX/PPTX
+// don't need to change again if a safe multi-page export path is found later.
 function diagramDisplayPages(d){
   const pages=(Array.isArray(d.pageSvgs)&&d.pageSvgs.length)?d.pageSvgs:(d.previewSvg?[{name:'',svg:d.previewSvg}]:[]);
   const multi=pages.length>1;
@@ -6914,7 +6907,7 @@ function renderDiagramsList(){
     if(d.pageCount>1){
       const pageBadge=document.createElement('span'); pageBadge.className='diagram-row-pages';
       pageBadge.textContent=d.pageCount+' pages';
-      pageBadge.dataset.tip='Every page appears as its own figure in Preview and exports, in page order.';
+      pageBadge.dataset.tip='Only the page that was active when last saved appears in the thumbnail, Preview, and exports — draw.io\'s embed editor can\'t safely export every page at once. Reopen and save with the page you want visible active, or split pages into separate diagrams via + instead.';
       info.appendChild(pageBadge);
     }
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
@@ -6975,42 +6968,33 @@ function openDiagramEditor(diagramId){
     } else if(msg.event==='save'){
       d.xml=msg.xml||d.xml;
       d.modifiedAt=Date.now();
-      const pages=splitMxfilePages(d.xml);
-      d.pageCount=pages.length;
+      d.pageCount=splitMxfilePages(d.xml).length;
       markDirty(); scheduleAutoSave();
+      // Piggyback an SVG export request on every save — this is what feeds the panel's
+      // thumbnail and Preview/PDF/PPTX/Word.
+      //
+      // IMPORTANT: this must NEVER pass a custom `xml` override to the export action while this
+      // is the live, already-loaded editor session. That was tried (to export every page of a
+      // multi-page diagram individually) and turned out to be destructive: draw.io's embed
+      // protocol appears to load/replace the live document with the override content rather
+      // than rendering it in isolation, which silently deleted a page from the actual diagram.
+      // Exporting the current diagram with no xml override, as below, only ever reads what's
+      // already on screen and doesn't mutate the live document — confirmed safe, unlike the
+      // override path. This means only the currently active page is captured for the thumbnail
+      // and for Preview/PDF/Word/PPTX; see the "N pages" badge and Help section for the
+      // reminder this is a known limitation, not a bug.
+      iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      if(status)status.textContent=pages.length>1?(savedAt+' · exporting '+pages.length+' pages…'):savedAt;
-      // draw.io's embed export action only ever renders whichever page tab is active in the
-      // live editor — but it also accepts an optional xml override to export arbitrary diagram
-      // XML instead of "whatever's on screen" (see splitMxfilePages). So each page gets
-      // requested as its own standalone one-page mxfile, one at a time — export responses
-      // aren't tagged with a request id, so two in flight at once would be indistinguishable.
-      // A multi-page diagram therefore costs one extra round-trip per page after Save; that's
-      // the trade-off for actually capturing every page instead of silently only ever showing
-      // whichever one happened to be open.
-      _diagramEditorState.exportQueue=pages.slice();
-      _diagramEditorState.exportResults=[];
-      _diagramEditorState.exportDiagramId=diagramId;
+      if(status)status.textContent=savedAt;
       _diagramEditorState.exitAfterExport=!!msg.exit;
-      requestNextDiagramPageExport(iframe);
     } else if(msg.event==='export'){
-      const st=_diagramEditorState;
-      if(!st||!Array.isArray(st.exportQueue)||!st.exportQueue.length)return;
-      const page=st.exportQueue.shift();
-      if(msg.data)st.exportResults.push({name:page.name,svg:msg.data});
-      if(st.exportQueue.length){
-        requestNextDiagramPageExport(iframe);
-        return;
-      }
-      const d2=findDiagram(st.exportDiagramId);
-      if(d2&&st.exportResults.length){
-        d2.pageSvgs=st.exportResults;
-        d2.previewSvg=st.exportResults[0].svg;
+      if(msg.data){
+        d.previewSvg=msg.data;
+        d.pageSvgs=[{name:'',svg:msg.data}];
         markDirty(); scheduleAutoSave();
+        renderDiagramsList();
       }
-      if(st.exitAfterExport){ closeDiagramEditorInternal(); return; }
-      if(status)status.textContent='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      renderDiagramsList();
+      if(_diagramEditorState&&_diagramEditorState.exitAfterExport){ closeDiagramEditorInternal(); }
     } else if(msg.event==='exit'){
       closeDiagramEditorInternal();
     }
