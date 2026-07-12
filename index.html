@@ -3773,7 +3773,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         </div>
       </div>
       <button class="btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)">To-Dos</button>
-      <button class="btn" id="diagrams-toggle" data-tip="Diagrams (Ctrl/Cmd+Shift+I)">Diagrams</button>
+      <button class="btn" id="diagrams-toggle" data-tip="Diagrams (Ctrl/Cmd+Shift+G)">Diagrams</button>
       <div class="help-wrap">
         <button class="btn" id="help-toggle">Help</button>
         <div class="help-panel" id="help-panel">
@@ -13597,7 +13597,7 @@ const SHORTCUTS = {
   toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
-  toggleDiagrams: {combo:'mod+shift+i',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
+  toggleDiagrams: {combo:'mod+shift+g',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
 // browser tab, Ctrl+W is reserved by the browser itself and preventDefault can't stop it
