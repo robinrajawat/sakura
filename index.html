@@ -1345,6 +1345,9 @@ body.pad-diagrams-mode #pad-toolbar>.note-tb-btn:not(.diagrams-only-btn),body.pa
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
+#diagram-summary-chip{display:inline-flex;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default}
+#diagram-summary-chip.chip-empty{display:none}
+#diagram-summary-chip.has-warn{color:var(--fc-orange)}
 #qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #qa-progress:hover:not(:disabled){background:var(--hover);color:var(--fg)}
 #qa-progress.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -2352,6 +2355,16 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagrams-empty{padding:28px 14px;text-align:center;font:400 12.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5}
 .diagram-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;cursor:pointer;transition:background .12s}
 .diagram-row:hover{background:var(--hover)}
+.diagram-row.diagram-row-dragging{opacity:.4}
+.diagram-row.diagram-row-drag-over{border-top:2px solid var(--accent)}
+.diagram-row-drag-handle{flex-shrink:0;width:0;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
+.diagram-row:hover .diagram-row-drag-handle{width:14px;opacity:.6;pointer-events:auto}
+.diagram-row-drag-handle:hover{opacity:1 !important}
+.diagram-row-drag-handle:active{cursor:grabbing}
+.diagram-row-title-input{appearance:none;border:1px solid transparent;background:none;color:var(--fg);font:500 12.5px 'Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 4px;margin:-1px -4px;border-radius:4px;outline:none;width:100%;box-sizing:border-box;transition:background .12s,border-color .12s}
+.diagram-row-title-input:hover{background:var(--hover)}
+.diagram-row-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));text-overflow:clip}
+.diagram-row-title-input::placeholder{color:var(--hint);font-weight:400}
 .diagram-row-thumb{flex:0 0 auto;width:52px;height:40px;border-radius:6px;border:1px solid var(--border);background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--hint)}
 .diagram-row-thumb img{width:100%;height:100%;object-fit:contain}
 .diagram-row-info{flex:1;min-width:0}
@@ -4659,6 +4672,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="decision-count-chip-label"></span></button>
+    <span id="diagram-summary-chip" class="diagrams-only-btn chip-empty"></span>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
@@ -7044,15 +7058,59 @@ function diagramAnchorLabel(d){
   const text=stripSemanticMarkers(node.text||'').trim();
   return 'Under: '+(text?text.slice(0,60):'(untitled node)');
 }
+// Manual drag-to-reorder — same splice-and-rerender approach as reorderQaRow. Diagram order
+// here is purely cosmetic (list display order), it doesn't affect anchoring, Preview, or export
+// order, which all follow the outline/node order instead.
+function reorderDiagramRow(draggedId,targetId){
+  if(String(draggedId)===String(targetId))return;
+  const fromIdx=diagrams.findIndex(dg=>String(dg.id)===String(draggedId));
+  const toIdx=diagrams.findIndex(dg=>String(dg.id)===String(targetId));
+  if(fromIdx<0||toIdx<0)return;
+  const [moved]=diagrams.splice(fromIdx,1);
+  diagrams.splice(toIdx,0,moved);
+  renderDiagramsList();
+  markDirty(); scheduleAutoSave();
+}
+// Toolbar-level "quick summary" chip — a glanceable count of the document's diagrams plus
+// anything that might need attention (unlinked, or edited since the last export), so that's
+// visible without having to scan every row. Purely informational, not a filter toggle.
+function updateDiagramSummaryChip(){
+  const chip=el('diagram-summary-chip'); if(!chip)return;
+  const total=diagrams.length;
+  if(!total){ chip.classList.add('chip-empty'); chip.classList.remove('has-warn'); chip.textContent=''; chip.removeAttribute('data-tip'); return; }
+  const unlinked=diagrams.filter(d=>d.anchorNodeId==null).length;
+  const stale=diagrams.filter(diagramModifiedSinceExport).length;
+  chip.classList.remove('chip-empty');
+  chip.classList.toggle('has-warn',unlinked>0||stale>0);
+  chip.textContent=total+(total===1?' diagram':' diagrams');
+  const parts=[];
+  if(unlinked)parts.push(unlinked+' unlinked');
+  if(stale)parts.push(stale+' modified since export');
+  chip.dataset.tip=parts.length?parts.join(' · '):'All diagrams linked and up to date';
+}
 function renderDiagramsList(){
   const body=el('diagrams-body'); if(!body)return;
   body.innerHTML='';
+  updateDiagramSummaryChip();
   if(!diagrams.length){
     body.innerHTML='<div class="diagrams-empty">No diagrams yet.<br>Click + to create one in draw.io — link it to a node afterward so it shows up there in Preview and exports.</div>';
     return;
   }
   diagrams.forEach(d=>{
-    const row=document.createElement('div'); row.className='diagram-row';
+    const row=document.createElement('div'); row.className='diagram-row'; row.dataset.diagramId=String(d.id);
+    const dragHandle=document.createElement('button'); dragHandle.className='diagram-row-drag-handle'; dragHandle.type='button'; dragHandle.tabIndex=-1; dragHandle.setAttribute('aria-hidden','true'); dragHandle.dataset.tip='Drag to reorder';
+    dragHandle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
+    dragHandle.addEventListener('mousedown',e=>e.stopPropagation());
+    dragHandle.addEventListener('click',e=>e.stopPropagation());
+    row.draggable=true;
+    row.addEventListener('dragstart',e=>{
+      if(e.target.closest('.diagram-row-note-input')||e.target.closest('.diagram-row-title-input')||e.target.closest('.diagram-row-status')||e.target.closest('.diagram-row-anchor-btn')||e.target.closest('.diagram-row-dup')||e.target.closest('.diagram-row-delete')){e.preventDefault(); return;}
+      e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(d.id)); row.classList.add('diagram-row-dragging');
+    });
+    row.addEventListener('dragend',()=>row.classList.remove('diagram-row-dragging'));
+    row.addEventListener('dragover',e=>{ e.preventDefault(); row.classList.add('diagram-row-drag-over'); });
+    row.addEventListener('dragleave',()=>row.classList.remove('diagram-row-drag-over'));
+    row.addEventListener('drop',e=>{ e.preventDefault(); row.classList.remove('diagram-row-drag-over'); const draggedId=e.dataTransfer.getData('text/plain'); reorderDiagramRow(draggedId,d.id); });
     const thumb=document.createElement('div'); thumb.className='diagram-row-thumb';
     if(d.previewSvg){
       const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
@@ -7068,8 +7126,24 @@ function renderDiagramsList(){
     }
     else { thumb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; }
     const info=document.createElement('div'); info.className='diagram-row-info';
-    const title=document.createElement('div'); title.className='diagram-row-title'; title.textContent=d.title||'Untitled diagram';
-    info.appendChild(title);
+    const titleInput=document.createElement('input'); titleInput.type='text'; titleInput.className='diagram-row-title-input';
+    titleInput.value=d.title||''; titleInput.placeholder='Untitled diagram'; titleInput.maxLength=200; titleInput.spellcheck=false;
+    titleInput.dataset.tip='Click to rename';
+    titleInput.addEventListener('mousedown',e=>e.stopPropagation());
+    titleInput.addEventListener('click',e=>e.stopPropagation());
+    titleInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); titleInput.blur(); }
+      else if(e.key==='Escape'){ e.preventDefault(); titleInput.value=d.title||''; titleInput.blur(); }
+    });
+    titleInput.addEventListener('blur',()=>{
+      const val=titleInput.value.trim();
+      if(val===(d.title||''))return;
+      d.title=val; d.modifiedAt=Date.now();
+      markDirty(); scheduleAutoSave();
+      updateDiagramSummaryChip();
+      if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
+    });
+    info.appendChild(titleInput);
     const metaRow=document.createElement('div'); metaRow.className='diagram-row-meta';
     const statusChip=document.createElement('span'); statusChip.className='diagram-row-status';
     const curStatus=diagramStatusOf(d);
@@ -7127,7 +7201,7 @@ function renderDiagramsList(){
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
+    row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
