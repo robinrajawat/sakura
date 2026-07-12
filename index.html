@@ -24633,6 +24633,34 @@ function _addTagPopoverFromInput(){
   function renderTodos(){
     const body=document.getElementById('todos-body');
     if(!body) return;
+    // renderTodos() is called from ~50 places for all kinds of unrelated mutations —
+    // checking off a different task, changing a priority, deleting something, etc. — and
+    // rebuilds the whole list via body.innerHTML below. If some OTHER task's .todo-text is
+    // mid-edit (focused, uncommitted) when that happens, the rebuild tears it out of the DOM
+    // before those keystrokes were ever saved. Removing a focused element usually fires blur
+    // synchronously first, which would normally save it via the blur handler below — but this
+    // codebase already found blur timing unreliable for this exact element (see that handler's
+    // own comment), and relying on it here would mean editTodoText() runs (if it runs at all)
+    // AFTER the `html` string a few lines down was already built from the pre-edit text,
+    // so even a successful commit wouldn't be reflected in what actually gets painted. Commit
+    // explicitly, before any of that, so this can't depend on exactly when/whether blur fires.
+    const activeText=document.activeElement;
+    if(activeText&&activeText.classList&&activeText.classList.contains('todo-text')&&body.contains(activeText)){
+      activeText.dataset.committed='1';
+      editTodoText(activeText.getAttribute('data-id'), activeText.textContent);
+    }
+    // Same reasoning, different element: a not-yet-submitted "add a subtask" draft only
+    // commits on Enter (see .todo-subtask-input's keydown handler below), not on blur — so
+    // it's just as exposed to being silently torn out by an unrelated rebuild while typing.
+    // addSubtask() below calls renderTodos() itself, unconditionally and with no natural
+    // stopping point the way editTodoText's delete-on-empty branch has — so the value has
+    // to be cleared BEFORE that call, or its own nested renderTodos() would see this same
+    // non-empty input still focused and call addSubtask() again, and again, without end.
+    if(activeText&&activeText.classList&&activeText.classList.contains('todo-subtask-input')&&body.contains(activeText)&&activeText.value.trim()){
+      const draftParentId=activeText.getAttribute('data-id'), draftText=activeText.value;
+      activeText.value='';
+      addSubtask(draftParentId, draftText);
+    }
     // Many todo actions (delete, rewrite, cycle priority/status, break into subtasks) call
     // this right after their own triggering button is clicked, tearing that button out from
     // under the pointer. Browsers don't fire mouseout when an element is removed out from
