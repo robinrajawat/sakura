@@ -4196,7 +4196,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Give it a title in the field at the top, and link it to a node with the anchor button next to it (searches node text as you type; "Not linked to a node" clears the link). Linking is optional but is what makes a diagram show up anywhere outside this tab — an unlinked diagram only lives in the Diagrams list itself</li>
 <li>A linked diagram appears as a large figure directly under its node in Preview, PDF, Word, and PowerPoint exports — same treatment as a note image marked "Feature as diagram" elsewhere in Sakura, so there's no visible difference between the two workflows in the output. Settings → Export &amp; print → "Include Diagrams in exports" controls the Word/PowerPoint case specifically (Preview and PDF always show it); click the figure in Preview to enlarge it</li>
 <li>A small accent-colored square-cluster dot appears next to a node with a linked diagram — click it to jump straight to the Diagrams tab and open that diagram (or the list, if the node has more than one). The same icon appears next to a folded node's "+N hidden" badge when a diagram is linked somewhere inside its collapsed subtree</li>
-<li>Delete a diagram from its row in the list (trash icon on hover) — this removes it and its node link entirely, with an Undo toast. It doesn't touch the node itself</li>
+<li>Delete a diagram from its row in the list (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes and Q&amp;A rows), then removes it and its node link entirely. Undo with <span class="help-kbd">Ctrl/Cmd+Z</span> or the toast's own Undo button, either works — it doesn't touch the node itself</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
 <li>Not the same thing as Export ▾ → AI → "Diagram ✦" / "Save AI Diagram" — those turn the outline itself into a draw.io flowchart via an AI prompt round-trip and save the result as a standalone <span class="help-kbd">.drawio</span> file, rather than a diagram you draw and link to a node here. Either can produce a diagram you then create and paste in through this tab if you'd like it kept alongside the document and shown in Preview</li>
@@ -6927,14 +6927,22 @@ function createDiagram(){
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
   openDiagramEditor(d.id);
 }
-function deleteDiagram(id){
+async function deleteDiagram(id){
   const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
   const removed=diagrams[idx];
-  diagrams.splice(idx,1);
+  if(confirmBeforeDelete){
+    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Delete Diagram',body:`Delete "${removed.title||'Untitled diagram'}"?\nYou can use Undo (Ctrl/Cmd+Z, or the toast) to restore it.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+    if(!ok)return;
+  }
+  // findIndex again rather than reusing idx: the confirm dialog awaits a user click, during
+  // which the list could have changed (another diagram added/removed) — idx may no longer
+  // point at the same row.
+  const idx2=diagrams.findIndex(d=>d.id===id); if(idx2<0)return;
+  diagrams.splice(idx2,1);
   markDirty(); scheduleAutoSave();
   renderDiagramsList();
   showActionToast('Diagram deleted','Undo',()=>{
-    diagrams.splice(Math.min(idx,diagrams.length),0,removed);
+    diagrams.splice(Math.min(idx2,diagrams.length),0,removed);
     markDirty(); scheduleAutoSave(); renderDiagramsList();
   });
 }
@@ -10155,6 +10163,9 @@ function showAiErrorModal(provider, err){
   overlay.classList.add('open');
   setTimeout(()=>closeBtn.focus(), 80);
 }
+// Tracks the undo callback for whichever action-toast (see showActionToast) is currently
+// visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
+let _actionToastUndo=null;
 function showActionToast(msg, actionLabel, onAction, duration=5000, fromQa=false){
   const t=el('toast'); if(!t) return;
   clearTimeout(showToast._tm);
@@ -10162,11 +10173,29 @@ function showActionToast(msg, actionLabel, onAction, duration=5000, fromQa=false
   if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Quick Assist'; t.appendChild(icon)}
   const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
   const btn=document.createElement('button'); btn.className='toast-action-btn'; btn.textContent=actionLabel;
-  btn.addEventListener('click',()=>{ t.classList.remove('show','with-action'); onAction(); });
+  btn.addEventListener('click',()=>{ t.classList.remove('show','with-action'); _actionToastUndo=null; onAction(); });
   t.appendChild(btn);
   t.classList.add('show');
-  showToast._tm=setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>{ if(!t.classList.contains('show')) t.classList.remove('with-action'); },200); },duration);
+  _actionToastUndo=onAction;
+  showToast._tm=setTimeout(()=>{ t.classList.remove('show'); _actionToastUndo=null; setTimeout(()=>{ if(!t.classList.contains('show')) t.classList.remove('with-action'); },200); },duration);
 }
+// Every "X deleted, Undo" toast in the app (diagrams, Q&A rows, decision logs, folders,
+// documents moved to Trash, etc.) previously only offered its Undo via clicking the toast
+// itself — Ctrl/Cmd+Z did nothing for these, or worse, silently undid something unrelated on
+// the outline's own undo stack, since none of these are recorded there. Capture-phase so this
+// runs before any of the other, more narrowly-scoped Ctrl+Z listeners (outline, Pad, Note, Code,
+// decision fields, To-Dos) get a chance — while a toast with an undo action is visible, it's
+// almost always what the very next Ctrl/Cmd+Z is meant for, regardless of where focus happens
+// to be. Self-clears once used, clicked, or the toast's own timeout elapses.
+document.addEventListener('keydown',e=>{
+  if(!_actionToastUndo)return;
+  if(!matchesShortcut(e,'undo'))return;
+  const t=el('toast'); if(!t||!t.classList.contains('show'))return;
+  e.preventDefault(); e.stopPropagation();
+  const fn=_actionToastUndo; _actionToastUndo=null;
+  t.classList.remove('show','with-action');
+  fn();
+},true);
 function openSearch(){searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
 function closeSearch(){searchOpen=false; const bar=el('search-bar'); if(bar)bar.hidden=true; const rbar=el('replace-bar'); if(rbar){rbar.hidden=true; rbar.classList.remove('open')} const rbtn=el('search-toggle-replace'); if(rbtn)rbtn.setAttribute('aria-expanded','false'); searchMatches=[]; searchIndex=-1; render(); focusPane()}
 // Whole-word matching needs word-boundary detection, which only RegExp can do — but the
