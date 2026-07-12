@@ -2398,6 +2398,10 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 #diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:280px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 #diagram-anchor-suggest.open{display:block}
+#diagram-note-popover{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:280px;display:none;font-family:'Inter',sans-serif}
+#diagram-note-popover.open{display:block}
+#diagram-note-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid transparent;background:var(--hover);color:var(--fg);font:400 12.5px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;outline:none;transition:border-color .12s}
+#diagram-note-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));background:var(--bg)}
 .diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
 .diagram-anchor-item-none{color:var(--hint);font-style:italic}
@@ -2413,8 +2417,8 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 #todos-panel-header.dragging{cursor:grabbing}
 #todos-panel.dragging{user-select:none}
 #todos-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
-#todos-panel-maximize,#todos-panel-close,#todos-export-btn,#todos-extract-btn,#todos-summary-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#todos-panel-maximize:hover,#todos-panel-close:hover,#todos-export-btn:hover,#todos-extract-btn:hover,#todos-summary-btn:hover{color:var(--fg);background:var(--hover)}
+#todos-panel-maximize,#todos-panel-close,#todos-export-btn,#todos-history-btn,#todos-extract-btn,#todos-summary-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#todos-panel-maximize:hover,#todos-panel-close:hover,#todos-export-btn:hover,#todos-history-btn:hover,#todos-extract-btn:hover,#todos-summary-btn:hover{color:var(--fg);background:var(--hover)}
 #todos-extract-btn,#todos-summary-btn{color:var(--accent)}
 #todos-extract-btn.ai-busy,#todos-summary-btn.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 #todos-input-row{display:flex;gap:6px;padding:10px 14px;flex-shrink:0;border-bottom:1px solid var(--border);align-items:flex-end}
@@ -4221,7 +4225,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>The copy icon next to delete duplicates a diagram — same drawing, same status, same node link, titled "(original title) (copy)". Useful for variations on the same base drawing without starting over. A pure data copy, not a draw.io operation, so it's instant</li>
 <li>Each diagram has a <strong>status</strong> — Draft, In Progress, Review, or Final — shown as a small colored pill on its row and in the full-screen editor's header. Click either one to cycle to the next status. Purely organizational — nothing else in Sakura reads it (it's not exported or shown in Preview), it's just a way to track where each diagram stands at a glance across a document with several</li>
 <li>Two more chips can appear on a row: <strong>Unlinked</strong>, when a diagram has no node link yet (a reminder it's invisible in Preview and exports until you link it), and <strong>Modified since export</strong>, when it's changed since the last time anything was exported from Sakura. The latter is approximate — Sakura tracks one "last export" timestamp app-wide, not per document, so it can't tell whether it was specifically this diagram (or even this document) that got exported</li>
-<li>The note icon on a row (and the matching one in the full-screen editor's header) attaches a private, free-text <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel; a short preview of it appears under the row once set</li>
+<li>The note icon on a row (and the matching one in the full-screen editor's header) opens a small popover right there for a private, one-line <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." <span class="help-kbd">Enter</span> or clicking away saves it, <span class="help-kbd">Esc</span> discards the edit. Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel; a short preview of it appears under the row once set</li>
 <li>Diagrams, Q&amp;A, and Pad content are all included in Sakura's Version History now (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores all three alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected, only the cached preview image. Pad content restores as text only — any file attachments or pasted images that were in the Pad at that point in time are gone for good, replaced with a small note of what was there, since keeping every version of a 5&nbsp;MB attachment would make History unusably large. Restoring a version with older revisions recorded before this existed leaves diagrams/Q&amp;A/Pad exactly as they currently are, rather than guessing or wiping them</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
@@ -4250,12 +4254,13 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Open it from the app bar (or the status bar, if you've moved it there) with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">U</span>; the same shortcut closes it again</li>
 <li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen); the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> button next to it exports the whole list as plain text</li>
 <li>Type a task and press Enter (or use the + button) to add it — the box grows as you type so long tasks stay readable. Shift+Enter inserts a line break instead of adding the task, both here and while editing an existing task's text</li>
+<li>The clock icon next to Export opens <strong>Version History</strong> for the whole list — same idea as a document's Version History, kept separately since To-Dos isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first, so restoring is never itself destructive) — keeps the last 20 versions, app-wide</li>
 <li>Checking a task off moves it straight to <strong>Completed</strong>, most-recently-finished first; unchecking sends it back to <strong>Open</strong></li>
 <li>The <strong>Open</strong> row shows how many open tasks match the current filter, with a magnifying-glass quick-find icon, sort <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></span> and filter <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></span> icons at its right edge. Sort covers Manual order, Priority, and Due date; filter narrows the list to one priority level (or tasks with none). Any icon turns accent-colored whenever it's off its default (or quick-find is open) so you can tell at a glance that something's active</li>
 <li>Click the magnifying-glass icon to open <strong>quick-find</strong> and type to search task text, across both Open and Completed. Matches are highlighted and non-matching tasks are hidden entirely (not just dimmed), so the list actually shortens as you narrow it down — this composes with the priority filter, so a priority filter plus a search term shows only tasks matching both. Esc clears the search text first, then a second Esc (or clicking the icon again) closes it; the search always resets when you close the panel. Dragging to reorder still works correctly while filtered — a task dropped next to a visible neighbor lands there in the full list too, even if other hidden tasks sit between them. This searches task text only, live, within the panel — for a version that also opens the panel and jumps to the match from anywhere in the app, Quick Assist's <code>todo:</code> scope still does that</li>
 <li>Drag the handle that appears on hover to reorder open tasks. Completed tasks aren't draggable — they're always ordered by completion time</li>
 <li>Editing a task's text supports <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> to undo/redo that text edit — its own history, shared across all tasks (app-level, like the list itself) rather than per-task. This covers text edits only: adding, deleting, reordering, and completing tasks keep their existing in-panel Undo toasts instead</li>
-<li>Hover a task for a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button — both sit as an overlay rather than reserving space, so task text keeps the full row width when you're not hovering. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick</li>
+<li>Hover a task for a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button — both sit as an overlay rather than reserving space, so task text keeps the full row width when you're not hovering. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick — past that window, Version History (the clock icon) can still bring back a deleted task as part of restoring an earlier snapshot of the whole list</li>
 <li>The <strong>Completed</strong> section header shows a <strong>Clear completed</strong> button whenever it has tasks (respecting the current priority filter) to remove them all in one action, with its own in-panel Undo toast — a batch counterpart to deleting one at a time. All To-Dos toasts (Undo prompts, export confirmation, AI rewrite errors) show inside the panel while it's open rather than the app's global toast, so acting on one never closes the panel</li>
 <li>An overdue count badge can appear on the To-Dos button itself (app bar or status bar) whenever you have open, overdue tasks — visible without opening the panel. Toggle it off at Settings → To-Dos → "Overdue count badge" if you'd rather not see it</li>
 <li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over your active documents — the same lookup Quick Assist and Global Search use — with results grouped into Documents, for linking the whole document, and Nodes, for one specific spot in it; pick either to attach it), plus a Remove link option that clears whichever kind is set. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a document-link chip shows the document's title with a plain document icon, and a node-link chip shows that node's own text with a small hierarchy icon, in place of the link-chain icon, so either reads as "jumps within Sakura" rather than "opens a website" — and both stay live, tracking the current title/text rather than a snapshot. Once any kind of link is attached, an open/jump button appears in the row's hover actions, next to Rewrite and Delete: for a web link it opens a new tab; for a document or node link it switches to that document if needed (scrolling to and briefly flashing the node, the same way backlinks do, when it's a node link specifically). If the node or document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" (or "That document no longer exists") toast instead of failing silently</li>
@@ -4740,6 +4745,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
     <button id="todos-extract-btn" data-tip="Extract action items from document (AI)" aria-label="Extract action items from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/><path d="M9 20h6"/><path d="M10 20v-3"/><path d="M14 20v-3"/></svg></button>
     <button id="todos-summary-btn" data-tip="Status summary (AI)" aria-label="Generate status summary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
     <button id="todos-export-btn" data-tip="Export list as text" aria-label="Export list as text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -4838,6 +4844,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
   <div id="diagram-editor-iframe-wrap"></div>
 </div>
 <div id="diagram-anchor-suggest"></div>
+<div id="diagram-note-popover"><input type="text" id="diagram-note-input" placeholder="Quick note to yourself…" maxlength="200" autocomplete="off" /></div>
 
 <div id="todos-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Status Summary">
   <div class="app-modal" style="width:min(480px,94vw)">
@@ -5270,6 +5277,19 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 20 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
+      </div>
+    </div>
+  </div>
+  <div id="todos-history-overlay" class="history-modal-overlay">
+    <div class="history-modal">
+      <div class="history-modal-header">
+        <span class="history-modal-title">To-Dos Version History</span>
+        <button id="todos-history-close-x" class="history-modal-close-x" data-tip="Close">×</button>
+      </div>
+      <div id="todos-history-body" class="history-modal-body"></div>
+      <div class="history-modal-footer">
+        <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
+        <button id="todos-history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
   </div>
@@ -6971,17 +6991,46 @@ function diagramModifiedSinceExport(d){
   return ts>0&&d.modifiedAt>ts;
 }
 // A private reminder attached to a diagram — never shown in Preview, exports, or anywhere
-// outside this panel and the row list. Reuses the existing multi-line prompt dialog rather than
-// building a bespoke inline editor.
-async function editDiagramNote(d){
-  const val=await sakuraTextareaPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',title:'Diagram Note',body:'A private reminder for yourself — never shown in Preview, exports, or anywhere outside this panel.',defaultValue:d.note||'',textareaLabel:'Note',textareaPlaceholder:'e.g. Needs the payments team to confirm step 3 before this is final',confirmLabel:'Save',cancelLabel:'Cancel'});
-  if(val===null)return;
-  d.note=val.trim();
-  d.modifiedAt=Date.now();
-  markDirty(); scheduleAutoSave();
-  renderDiagramsList();
-  if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorNoteBtn(d);
+// outside this panel and the row list. Small anchored popover (matching the anchor picker's own
+// popover just above) rather than a full modal — this is meant to be a quick one-liner, not a
+// document.
+let _diagramNoteOpenFor=null; // the diagram object currently being edited via the popover
+function closeDiagramNotePopover(commit){
+  const pop=el('diagram-note-popover'); if(!pop||!pop.classList.contains('open'))return;
+  const d=_diagramNoteOpenFor;
+  if(commit&&d){
+    const input=el('diagram-note-input');
+    const val=(input?input.value:'').trim();
+    if(val!==(d.note||'')){
+      d.note=val;
+      d.modifiedAt=Date.now();
+      markDirty(); scheduleAutoSave();
+      renderDiagramsList();
+      if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorNoteBtn(d);
+    }
+  }
+  pop.classList.remove('open');
+  _diagramNoteOpenFor=null;
 }
+function openDiagramNotePopover(d,anchorEl){
+  const pop=el('diagram-note-popover'); const input=el('diagram-note-input'); if(!pop||!input||!anchorEl)return;
+  if(_diagramNoteOpenFor&&_diagramNoteOpenFor.id!==d.id)closeDiagramNotePopover(true);
+  _diagramNoteOpenFor=d;
+  input.value=d.note||'';
+  const r=anchorEl.getBoundingClientRect();
+  pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-296))+'px';
+  pop.style.top=(r.bottom+6)+'px';
+  pop.classList.add('open');
+  input.focus(); input.select();
+}
+el('diagram-note-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); closeDiagramNotePopover(true); }
+  else if(e.key==='Escape'){ e.preventDefault(); closeDiagramNotePopover(false); }
+});
+el('diagram-note-input')?.addEventListener('blur',()=>closeDiagramNotePopover(true));
+document.addEventListener('mousedown',e=>{
+  if(_diagramNoteOpenFor&&!e.target.closest('#diagram-note-popover')&&!e.target.closest('.diagram-row-note-btn')&&!e.target.closest('#diagram-editor-note-btn'))closeDiagramNotePopover(true);
+});
 function updateDiagramEditorNoteBtn(d){
   const btn=el('diagram-editor-note-btn'); if(!btn)return;
   const has=!!(d.note&&d.note.trim());
@@ -7098,7 +7147,7 @@ function renderDiagramsList(){
     const noteBtn=document.createElement('button'); noteBtn.className='diagram-row-note-btn'+(d.note&&d.note.trim()?' has-note':'');
     noteBtn.dataset.tip=d.note&&d.note.trim()?'Edit note':'Add a note';
     noteBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-    noteBtn.addEventListener('click',e=>{ e.stopPropagation(); editDiagramNote(d); });
+    noteBtn.addEventListener('click',e=>{ e.stopPropagation(); openDiagramNotePopover(d,noteBtn); });
     const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
     dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
@@ -7261,11 +7310,14 @@ el('diagram-editor-status-chip')?.addEventListener('click',()=>{
 el('diagram-editor-note-btn')?.addEventListener('click',()=>{
   if(!_diagramEditorState)return;
   const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
-  editDiagramNote(d);
+  openDiagramNotePopover(d,el('diagram-editor-note-btn'));
 });
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){ e.stopPropagation(); closeDiagramEditor(); }
+  if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){
+    if(el('diagram-note-popover')?.classList.contains('open')){ e.stopPropagation(); closeDiagramNotePopover(false); return; }
+    e.stopPropagation(); closeDiagramEditor();
+  }
 },true);
 
 // ── Anchor picker ───────────────────────────────────────────────────────
@@ -24925,6 +24977,7 @@ function _addTagPopoverFromInput(){
     }catch(e){ todos=[]; }
   }
   function saveTodos(){
+    maybeAutoSnapshotTodos();
     try{
       localStorage.setItem(TODOS_KEY, JSON.stringify(todos));
     }catch(e){
@@ -24936,6 +24989,37 @@ function _addTagPopoverFromInput(){
       showTodosToast('Could not save — your device storage may be full');
     }
     updateOverdueBadge();
+  }
+  // === Todos version history ===========================================
+  // Todos previously had no recovery path beyond the in-session text-edit undo stack and each
+  // delete's 5-second toast — once either lapsed (or the page reloaded), a change was gone for
+  // good, unlike documents which have Version History. Same pattern here, self-contained: its
+  // own storage key, its own periodic auto-snapshot (mirroring maybeAutoSnapshotBeforeSave/
+  // recordDocRevision), its own small restore panel — deliberately not sharing the document
+  // history modal, since that's tightly coupled to per-document/per-node concepts Todos doesn't
+  // have.
+  const TODOS_REVISION_KEY='sakura_todos_revisions_v1';
+  const TODOS_REVISION_MAX=20;
+  const TODOS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as document revisions
+  function loadTodosRevisions(){ try{ const raw=localStorage.getItem(TODOS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
+  function saveTodosRevisions(list){ try{ localStorage.setItem(TODOS_REVISION_KEY,JSON.stringify(list)) }catch(e){} }
+  function recordTodosRevision(snapshotTodos,reason){
+    if(!Array.isArray(snapshotTodos))return;
+    const list=loadTodosRevisions();
+    list.push({ts:Date.now(),reason:reason||'Auto',todos:JSON.parse(JSON.stringify(snapshotTodos))});
+    while(list.length>TODOS_REVISION_MAX)list.shift();
+    saveTodosRevisions(list);
+  }
+  function maybeAutoSnapshotTodos(){
+    try{
+      const raw=localStorage.getItem(TODOS_KEY); if(!raw)return;
+      const prev=JSON.parse(raw); if(!Array.isArray(prev)||!prev.length)return;
+      const revisions=loadTodosRevisions();
+      const last=revisions[revisions.length-1];
+      if(last&&JSON.stringify(last.todos)===JSON.stringify(prev))return; // no real change since the last snapshot
+      if(last&&(Date.now()-last.ts)<TODOS_REVISION_MIN_GAP_MS)return;
+      recordTodosRevision(prev,'Auto');
+    }catch(e){}
   }
   function uid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
@@ -26843,6 +26927,66 @@ function _addTagPopoverFromInput(){
     if(!panel) return;
     if(panel.classList.contains('open')) closeTodosPanel(); else openTodosPanel();
   }
+  function openTodosHistory(){
+    const overlay=document.getElementById('todos-history-overlay'); if(!overlay)return;
+    renderTodosHistoryList();
+    overlay.classList.add('open');
+  }
+  function closeTodosHistory(){
+    document.getElementById('todos-history-overlay')?.classList.remove('open');
+  }
+  function todosHistorySummary(list){
+    if(!Array.isArray(list)||!list.length)return '(empty)';
+    const open=list.filter(t=>!t.done).length; const done=list.length-open;
+    return open+' open, '+done+' completed';
+  }
+  function renderTodosHistoryList(){
+    const body=document.getElementById('todos-history-body'); if(!body)return;
+    body.innerHTML='';
+    const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
+    const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
+    const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
+    const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=todosHistorySummary(todos);
+    nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
+    nowRow.appendChild(nowInfo);
+    body.appendChild(nowRow);
+    const revisions=loadTodosRevisions().slice().reverse(); // newest first
+    if(!revisions.length){
+      const empty=document.createElement('div'); empty.className='history-empty';
+      empty.textContent='No earlier versions yet — one is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" below.';
+      body.appendChild(empty);
+      return;
+    }
+    revisions.forEach(rev=>{
+      const row=document.createElement('div'); row.className='history-row';
+      const info=document.createElement('div'); info.className='history-row-info';
+      const time=document.createElement('div'); time.className='history-row-time';
+      time.textContent=new Date(rev.ts).toLocaleString()+(rev.reason&&rev.reason!=='Auto'?' · '+rev.reason:'');
+      const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=todosHistorySummary(rev.todos);
+      info.appendChild(time); info.appendChild(meta);
+      const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
+      restoreBtn.addEventListener('click',()=>restoreTodosRevision(rev.ts));
+      row.appendChild(info); row.appendChild(restoreBtn);
+      body.appendChild(row);
+    });
+  }
+  async function restoreTodosRevision(ts){
+    const revisions=loadTodosRevisions();
+    const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
+    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current To-Dos list with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+    if(!ok)return;
+    recordTodosRevision(todos,'Before restoring an older version');
+    todos=JSON.parse(JSON.stringify(rev.todos));
+    saveTodos();
+    renderTodos();
+    renderTodosHistoryList();
+    showTodosToast('Version restored');
+  }
+  function saveTodosVersionNow(){
+    recordTodosRevision(todos,'Manual checkpoint');
+    renderTodosHistoryList();
+    showTodosToast('Version saved');
+  }
 
   // ── Quick find (dims non-matches, highlights matches — never hides rows) ──
   function openTodosSearch(){
@@ -27436,6 +27580,13 @@ function _addTagPopoverFromInput(){
     }
   });
   document.getElementById('todos-export-btn')?.addEventListener('click', exportTodosAsText);
+  document.getElementById('todos-history-btn')?.addEventListener('click', openTodosHistory);
+  document.getElementById('todos-history-close-x')?.addEventListener('click', closeTodosHistory);
+  document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
+  document.getElementById('todos-history-overlay')?.addEventListener('click', e=>{ if(e.target===document.getElementById('todos-history-overlay'))closeTodosHistory(); });
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'&&document.getElementById('todos-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeTodosHistory(); }
+  },true);
   document.getElementById('todos-extract-btn')?.addEventListener('click', extractTodosFromDocument);
   document.getElementById('todos-summary-btn')?.addEventListener('click', generateTodosSummary);
   document.getElementById('todos-summary-modal-close-btn')?.addEventListener('click', closeTodosSummaryModal);
