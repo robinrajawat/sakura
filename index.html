@@ -9784,35 +9784,16 @@ function autosizeNodeInput(input){if(!input)return; input.style.height='auto'; i
 // scroll away from the cursor simply isn't one of the trigger events below, so the view just
 // stays where the person left it until they type or navigate again.
 let typewriterModeEnabled=false;
-// Caret-precise Y offset within a textarea, accounting for word-wrap — the row's own
-// bounding rect alone isn't enough once a node's text has wrapped onto several lines (node
-// inputs auto-grow, see autosizeNodeInput above, so this is a real case, not an edge case),
-// since the caret could be on any of those lines. Standard "mirror div" technique: an
-// offscreen clone styled identically to the textarea, containing only the text up to the
-// caret, then measured. A few px of inaccuracy from box-model edge cases is fine — this only
-// feeds a "roughly centered" scroll target, not a pixel-perfect caret overlay.
-function _typewriterCaretOffset(textareaEl){
-  try{
-    const cs=getComputedStyle(textareaEl);
-    const mirror=document.createElement('div');
-    ['fontFamily','fontSize','fontWeight','fontStyle','letterSpacing','lineHeight','textTransform','wordSpacing','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','boxSizing','whiteSpace','wordBreak','tabSize'].forEach(p=>{ mirror.style[p]=cs[p]; });
-    mirror.style.position='absolute'; mirror.style.visibility='hidden'; mirror.style.left='-9999px'; mirror.style.top='0';
-    mirror.style.width=textareaEl.clientWidth+'px'; mirror.style.height='auto';
-    mirror.textContent=textareaEl.value.slice(0,textareaEl.selectionStart||0);
-    const marker=document.createElement('span'); marker.textContent='.'; mirror.appendChild(marker);
-    document.body.appendChild(mirror);
-    const offset=marker.offsetTop;
-    document.body.removeChild(mirror);
-    return offset;
-  }catch(e){ return 0; }
-}
 function typewriterRecenter(){
   if(!typewriterModeEnabled)return;
   const pane=el('editor-pane'); if(!pane)return;
   const input=getEditingInput();
   let targetTop;
   if(input){
-    targetTop=input.getBoundingClientRect().top+_typewriterCaretOffset(input);
+    // getCaretClientRect (defined above, near Node Quick Assist) is caret-precise —
+    // needed since node inputs auto-grow and wrap onto several lines (see
+    // autosizeNodeInput), so the row's own bounding rect alone isn't enough.
+    targetTop=getCaretClientRect(input).top;
   } else if(selectedId!==null){
     const rowEl=document.querySelector(`.node-row[data-id="${selectedId}"]`);
     if(!rowEl)return;
