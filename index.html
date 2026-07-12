@@ -5549,7 +5549,14 @@ el('debug-log-toggle')?.addEventListener('click',()=>setDebugLoggingEnabled(!deb
 el('debug-log-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setDebugLoggingEnabled(!debugLoggingEnabled);}});
 el('debug-log-copy-btn')?.addEventListener('click',async()=>{
   const text=_debugLogBuffer.length?_debugLogBuffer.map(_debugLogFormatEntry).join('\n'):'(empty)';
-  try{ await navigator.clipboard.writeText(text); showToast('Log copied'); }catch(e){ showToast('Copy failed'); }
+  try{
+    if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    catch(e2){ showToast('Copy failed'); return; }
+  }
+  showToast('Log copied');
 });
 el('debug-log-clear-btn')?.addEventListener('click',()=>{ _debugLogBuffer=[]; renderDebugLogView(); showToast('Log cleared'); });
 
