@@ -4222,7 +4222,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Each diagram has a <strong>status</strong> — Draft, In Progress, Review, or Final — shown as a small colored pill on its row and in the full-screen editor's header. Click either one to cycle to the next status. Purely organizational — nothing else in Sakura reads it (it's not exported or shown in Preview), it's just a way to track where each diagram stands at a glance across a document with several</li>
 <li>Two more chips can appear on a row: <strong>Unlinked</strong>, when a diagram has no node link yet (a reminder it's invisible in Preview and exports until you link it), and <strong>Modified since export</strong>, when it's changed since the last time anything was exported from Sakura. The latter is approximate — Sakura tracks one "last export" timestamp app-wide, not per document, so it can't tell whether it was specifically this diagram (or even this document) that got exported</li>
 <li>The note icon on a row (and the matching one in the full-screen editor's header) attaches a private, free-text <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel; a short preview of it appears under the row once set</li>
-<li>Diagrams are included in Sakura's Version History (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores that version's diagrams too, alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected by that, only the cached preview image. Q&amp;A and Pad content aren't part of Version History yet — restoring a version never deletes either, but it also can't bring back an older version of them the way it can for diagrams</li>
+<li>Diagrams, Q&amp;A, and Pad content are all included in Sakura's Version History now (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores all three alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected, only the cached preview image. Pad content restores as text only — any file attachments or pasted images that were in the Pad at that point in time are gone for good, replaced with a small note of what was there, since keeping every version of a 5&nbsp;MB attachment would make History unusably large. Restoring a version with older revisions recorded before this existed leaves diagrams/Q&amp;A/Pad exactly as they currently are, rather than guessing or wiping them</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
 <li>Not the same thing as Export ▾ → AI → "Diagram ✦" / "Save AI Diagram" — those turn the outline itself into a draw.io flowchart via an AI prompt round-trip and save the result as a standalone <span class="help-kbd">.drawio</span> file, rather than a diagram you draw and link to a node here. Either can produce a diagram you then create and paste in through this tab if you'd like it kept alongside the document and shown in Preview</li>
@@ -4240,7 +4240,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Toolbar mirrors the Note panel: <strong>B I U S</strong>, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered lists, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> link (with its own display-text field, separate from the URL), <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table insert with resizable columns, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> image paste/insert (click to select, drag the corner handle to resize, double-click to reset), and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite (rewrites the selection, or the whole Pad if nothing's selected). No subtree-summarise here — there's no subtree at the document level</li>
 <li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Pad, or paste one you've copied from your file manager — any of the three inserts a small chip (with a file-type icon — PDF, image, spreadsheet, doc, slides, archive, audio, video, or code, based on extension) showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
 <li>Running <strong>AI Rewrite</strong> with nothing selected replaces the Pad's entire content with plain rewritten text — which would silently remove any attachments, images, or tables it contains. A confirmation prompt now catches this case and tells you what would be lost before it happens; select just the text you want rewritten instead if you'd rather keep everything else untouched</li>
-<li>Pad has its own undo history, separate from the outline's — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo typing, AI Rewrite, and "Clear pad" for the current document's Pad. It never appears on the outline's own Ctrl/Cmd+Z stack, since Pad content isn't part of that snapshot — the two undo histories are independent, and Pad's is per-document, cleared on reload the same way the outline's is</li>
+<li>Pad has its own undo history, separate from the outline's — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo typing, AI Rewrite, and "Clear pad" for the current document's Pad. It never appears on the outline's own Ctrl/Cmd+Z stack, since Pad content isn't part of that snapshot — the two undo histories are independent, and Pad's is per-document, cleared on reload the same way the outline's is. For anything further back than that session's undo history, Version History (More menu → Version History) also keeps periodic snapshots of Pad text — restoring one brings back Pad's text (not file attachments or pasted images, which aren't kept in History)</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-todos">
@@ -6266,10 +6266,33 @@ function trimDiagramsForRevision(arr){
   if(!Array.isArray(arr))return [];
   return arr.map(d=>({id:d.id,title:d.title||'',xml:d.xml||'',status:d.status||'draft',note:d.note||'',anchorNodeId:d.anchorNodeId??null,pageCount:d.pageCount||1,createdAt:d.createdAt||Date.now(),modifiedAt:d.modifiedAt||Date.now()}));
 }
+// Pad content can carry file attachments and pasted images up to 5MB each, stored inline as
+// base64 (see the Pad help section's "File attachments" entry) — keeping those in every
+// revision would multiply Pad's already-largest content type by up to REVISION_MAX_PER_DOC=20
+// copies. Revisions keep the text/structure only, with each stripped attachment or image
+// replaced by a plain-text placeholder naming what was there — the file itself was never
+// recoverable from History anyway (there's nowhere else it's cached), so nothing new is lost by
+// not keeping it here either; only the fact that "Restore" now touches Pad at all is new.
+function trimPadHtmlForRevision(html){
+  if(!html)return '';
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    div.querySelectorAll('.pad-attachment').forEach(a=>{
+      const name=a.querySelector('.pad-attachment-name')?.textContent||'attachment';
+      a.replaceWith(document.createTextNode('['+name+' — attachment not kept in version history]'));
+    });
+    div.querySelectorAll('img').forEach(img=>{
+      const alt=img.getAttribute('alt')||'image';
+      img.replaceWith(document.createTextNode('['+alt+' — image not kept in version history]'));
+    });
+    return div.innerHTML;
+  }catch(e){ return ''; }
+}
 function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
   const list=loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams)});
+  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
   saveDocRevisions(id,list);
 }
@@ -6280,9 +6303,11 @@ function maybeAutoSnapshotBeforeSave(id){
     if(!Array.isArray(prev.nodes)||!prev.nodes.length)return; // nothing meaningful to preserve
     const revisions=loadDocRevisions(id);
     const last=revisions[revisions.length-1];
-    const prevKey=JSON.stringify({n:prev.nodes,d:trimDiagramsForRevision(prev.diagrams)});
-    const lastKey=last?JSON.stringify({n:last.nodes,d:trimDiagramsForRevision(last.diagrams)}):null;
-    if(last&&lastKey===prevKey)return; // no real change (in nodes OR diagrams) since the last snapshot
+    // last.pad is already trimmed (that's how it was stored) — only prev.pad, the live
+    // untrimmed HTML, needs trimming here so the two sides compare like for like.
+    const prevKey=JSON.stringify({n:prev.nodes,d:trimDiagramsForRevision(prev.diagrams),q:prev.qa||[],p:trimPadHtmlForRevision(prev.pad||'')});
+    const lastKey=last?JSON.stringify({n:last.nodes,d:trimDiagramsForRevision(last.diagrams),q:last.qa||[],p:last.pad||''}):null;
+    if(last&&lastKey===prevKey)return; // no real change (nodes, diagrams, Q&A, or Pad text) since the last snapshot
     if(last&&(Date.now()-last.ts)<REVISION_MIN_GAP_MS)return;
     recordDocRevision(id,prev,'Auto');
   }catch(e){}
@@ -6805,12 +6830,14 @@ async function restoreDocRevision(docId,ts){
   const revisions=loadDocRevisions(docId);
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
   const diagramNote=Array.isArray(rev.diagrams)&&rev.diagrams.length?'\n\nDiagrams restore too — a diagram\'s thumbnail regenerates the next time it\'s reopened and saved.':'';
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current content with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.'+diagramNote,confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  const qaNote=Array.isArray(rev.qa)&&rev.qa.length?'\n\nQ&A restores too.':'';
+  const padNote=rev.pad?'\n\nPad content restores too — any attachments or images from that version won\'t come back, just the text (they\'re never kept in version history, to avoid it growing huge).':'';
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current content with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.'+diagramNote+qaNote+padNote,confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
   if(!ok)return;
   const freshNodes=rev.nodes.map(normalizeNode);
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
+    recordDocRevision(docId,{nodes,diagrams,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision)
@@ -6819,6 +6846,17 @@ async function restoreDocRevision(docId,ts){
       // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
       diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]}));
       if(padViewMode==='diagrams')renderDiagramsList();
+    }
+    if(Array.isArray(rev.qa)){
+      qaItems=rev.qa.map(q=>({...q}));
+      resetQaTransientState();
+      if(padViewMode==='qa')renderQaList();
+    }
+    // rev.pad!==undefined (not just truthy) distinguishes "this revision recorded a genuinely
+    // empty Pad" from "this revision predates Pad coverage entirely" — the former should still
+    // clear the live Pad to match that point in time, the latter must leave it alone.
+    if(rev.pad!==undefined&&el('pad-editor')){
+      el('pad-editor').innerHTML=sakuraSanitizeRichHtml(rev.pad||'');
     }
     if(el('header-title'))el('header-title').value=rev.title||'';
     titleAutoSyncEnabled=!String(rev.title||'').trim(); lastAutoTitle=String(rev.title||'').trim();
@@ -6835,15 +6873,15 @@ async function restoreDocRevision(docId,ts){
         prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
       }
     }catch(e){}
-    // Q&A and Pad content isn't captured by revisions at all (see recordDocRevision) — restoring
-    // a version must not silently delete either just because the revision predates or doesn't
-    // track them, so both carry over unchanged from whatever the document currently has, same
-    // as before this diagrams fix. Diagrams DO restore to what the revision recorded when
-    // available; otherwise, same fallback as Q&A/Pad — leave what's currently there alone
-    // rather than wipe it. (Previously this branch silently dropped all three on every restore,
-    // regardless of revision content — that's the bug this fixes.)
+    // Same fallback logic as the active-doc branch above: restore from the revision when it has
+    // the field, otherwise carry over whatever the document currently has rather than delete it.
+    // (Previously this branch unconditionally dropped diagrams, Q&A, and Pad on every restore,
+    // regardless of revision content — that's the bug the diagrams half of this fixed; Q&A/Pad
+    // now get the same treatment instead of just "always preserved, never restorable".)
     const restoredDiagrams=Array.isArray(rev.diagrams)?rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]})):prevDiagramsCurrent;
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:prevPad,qa:prevQa,diagrams:restoredDiagrams};
+    const restoredQa=Array.isArray(rev.qa)?rev.qa.map(q=>({...q})):prevQa;
+    const restoredPad=rev.pad!==undefined?(rev.pad||''):prevPad;
+    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagrams};
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
@@ -6878,7 +6916,7 @@ function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
+    recordDocRevision(docId,{nodes,diagrams,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
