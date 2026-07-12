@@ -2307,7 +2307,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar
-{width:8px}
+{width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
@@ -17794,12 +17794,48 @@ document.addEventListener('mousedown', e => {
   if (m && m.classList.contains('open') && !m.contains(e.target)) _closeNoteCtx();
 });
 
+// Safely turns "SAP Note ######" / "OSS Note ######" into a real link within existing rich-text
+// HTML (Note panel, Pad, Decision Log fields) — used at natural "settle" points (blur/commit),
+// never on every keystroke, since live-typing DOM surgery on a focused contenteditable risks
+// jumping the cursor mid-word. Walks actual text nodes via TreeWalker rather than regexing the
+// raw HTML string, so it can insert an <a> around just the matched substring without disturbing
+// whatever bold/italic/list markup already wraps that text — a naive string-replace on innerHTML
+// would silently corrupt any such formatting the moment a match happened to sit inside it.
+// Skips text already inside a link (idempotent — safe to call again on unchanged content).
+function linkifySapNotesInElement(root){
+  if(!root)return false;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+    acceptNode(node){ return (node.parentElement&&node.parentElement.closest('a'))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT; }
+  });
+  const targets=[]; let n;
+  while((n=walker.nextNode())){ if(/(SAP|OSS)\s+Note\s+\d{5,10}\b/i.test(n.nodeValue))targets.push(n); }
+  if(!targets.length)return false;
+  const re=/(SAP|OSS)\s+Note\s+(\d{5,10})\b/gi;
+  targets.forEach(node=>{
+    const text=node.nodeValue;
+    const frag=document.createDocumentFragment();
+    let lastIndex=0, m; re.lastIndex=0;
+    while((m=re.exec(text))){
+      if(m.index>lastIndex)frag.appendChild(document.createTextNode(text.slice(lastIndex,m.index)));
+      const a=document.createElement('a');
+      a.className='sem-sap-note'; a.href='https://me.sap.com/notes/'+m[2];
+      a.target='_blank'; a.rel='noopener noreferrer'; a.title='Open SAP Note '+m[2]+' on me.sap.com';
+      a.textContent=m[0];
+      frag.appendChild(a);
+      lastIndex=re.lastIndex;
+    }
+    if(lastIndex<text.length)frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+    node.parentNode.replaceChild(frag,node);
+  });
+  return true;
+}
 function commitNoteEdit() {
   if (notePanelNodeId === null) return;
   const idx = getIndex(notePanelNodeId);
   if (idx < 0) return;
   const editor = el('note-editor');
   if (!editor) return;
+  linkifySapNotesInElement(editor);
   const html = editor.innerHTML || '';
   // Only push undo + dirty if changed
   if (nodes[idx].note !== html) {
@@ -19145,6 +19181,10 @@ function decisionFieldSessionRedoRun(key){
     decisionFieldAutoList(e);
     decisionFieldSyncModel(key,field);
   });
+  // Same reasoning as commitNoteEdit/Pad's blur listener — linkify at a settle point, not on
+  // every keystroke (this field syncs live on 'input', unlike Note/Pad, so it especially
+  // matters here not to run DOM-mutating linkification while a keystroke is still in flight).
+  field.addEventListener('blur',()=>{ if(linkifySapNotesInElement(field))decisionFieldSyncModel(key,field); });
 });
 async function rewriteDecisionField(key){
   const node=nodes.find(n=>n.id===decisionPadNodeId); if(!node||!node.decisionLog)return;
@@ -23546,6 +23586,10 @@ el('pad-editor')?.addEventListener('keydown', e => {
 el('pad-editor')?.addEventListener('keyup', updatePadTbState);
 el('pad-editor')?.addEventListener('mouseup', updatePadTbState);
 el('pad-editor')?.addEventListener('input', () => markDirty());
+// Pad has no separate commit-on-blur step — its content is read live from the DOM whenever it's
+// saved — so this blur listener exists purely to trigger SAP Note linkification at a natural
+// settle point, same reasoning as commitNoteEdit's call to the same function.
+el('pad-editor')?.addEventListener('blur', () => { if(linkifySapNotesInElement(el('pad-editor')))markDirty(); });
 // Idle-debounce undo checkpointing for Pad. beforeinput fires before the DOM mutates,
 // so padCheckpointPending (true) captures the pre-edit state as this burst's undo point;
 // it then stays false — no further pushes — until 800ms of inactivity flips it back to
@@ -24731,6 +24775,10 @@ function _addTagPopoverFromInput(){
       if(ch==='@'){
         const m=/^@([a-zA-Z][a-zA-Z0-9_-]*|\d{4}-\d{2}-\d{2})/.exec(src.slice(i));
         if(m){ const kind=classifyAtToken(m[1]); out+=`<span class="todo-at todo-at-${kind}">@${esc(m[1])}</span>&#8203;`; i+=m[0].length; continue; }
+      }
+      if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){
+        const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);
+        if(noteMatch){ const num=noteMatch[2]; out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`; i+=noteMatch[0].length; continue; }
       }
       out+=esc(ch); i++;
     }
@@ -26573,6 +26621,16 @@ function _addTagPopoverFromInput(){
   document.getElementById('sb-todos-chip')?.addEventListener('click',toggleTodosPanel);
   document.getElementById('todos-panel-close')?.addEventListener('click',closeTodosPanel);
   document.getElementById('todos-panel-maximize')?.addEventListener('click',toggleTodosMaximize);
+  // Links rendered inside .todo-text (see renderTodoTextHtml's SAP Note handling) sit inside a
+  // contenteditable region, where browsers generally intercept clicks for cursor placement
+  // rather than following the link — mousedown+preventDefault, before that focus/placement
+  // behavior gets a chance to run, is what makes it actually navigate reliably.
+  document.getElementById('todos-body')?.addEventListener('mousedown',e=>{
+    const link=e.target.closest('.sem-sap-note');
+    if(!link)return;
+    e.preventDefault(); e.stopPropagation();
+    window.open(link.href,'_blank','noopener,noreferrer');
+  });
   document.getElementById('todos-add-btn')?.addEventListener('click',()=>{
     const input=document.getElementById('todos-input');
     if(!input) return;
