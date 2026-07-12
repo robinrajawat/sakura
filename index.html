@@ -1345,9 +1345,28 @@ body.pad-diagrams-mode #pad-toolbar>.note-tb-btn:not(.diagrams-only-btn),body.pa
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
-#diagram-summary-chip{display:inline-flex;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default}
+#dtb-search.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+#diagram-summary-chip{display:inline-flex;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default;border:1px solid transparent;background:transparent;appearance:none;transition:background .12s,color .12s,border-color .12s}
 #diagram-summary-chip.chip-empty{display:none}
 #diagram-summary-chip.has-warn{color:var(--fc-orange)}
+#diagram-summary-chip.chip-clickable{cursor:pointer}
+#diagram-summary-chip.chip-clickable:hover{background:var(--hover)}
+#diagram-summary-chip.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#diagram-summary-chip:disabled{cursor:default}
+button.diagram-bulk-btn,span.diagram-bulk-btn{display:none}
+body.diagram-has-selection button.diagram-bulk-btn{display:inline-flex}
+body.diagram-has-selection span.diagram-bulk-btn{display:flex}
+#diagram-bulk-count{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--fg);padding:0 4px;white-space:nowrap;user-select:none}
+#dtb-bulk-delete:hover{color:var(--sem-alert)}
+/* Diagram row filter — same search-icon/input/clear layout as the Q&A row filter. */
+#diagram-search-wrap{padding:0 0 8px;flex-shrink:0;position:relative}
+#diagram-search-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 26px 5px 28px;border-radius:7px;outline:none;transition:border-color .12s,box-shadow .12s}
+#diagram-search-input::placeholder{color:var(--hint)}
+#diagram-search-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 24%,transparent)}
+#diagram-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--hint);pointer-events:none;display:flex}
+#diagram-search-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:0;line-height:1;display:none;align-items:center;justify-content:center}
+#diagram-search-clear.visible{display:flex}
+#diagram-search-clear:hover{color:var(--fg)}
 #qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #qa-progress:hover:not(:disabled){background:var(--hover);color:var(--fg)}
 #qa-progress.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -2355,18 +2374,27 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagrams-empty{padding:28px 14px;text-align:center;font:400 12.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5}
 .diagram-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;cursor:pointer;transition:background .12s}
 .diagram-row:hover{background:var(--hover)}
+.diagram-row.diagram-row-selected{background:color-mix(in srgb,var(--sel) 55%,transparent)}
 .diagram-row.diagram-row-dragging{opacity:.4}
 .diagram-row.diagram-row-drag-over{border-top:2px solid var(--accent)}
+.diagram-row-select{margin:0;cursor:pointer;flex-shrink:0;width:0;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s}
+.diagram-row:hover .diagram-row-select,body.diagram-has-selection .diagram-row-select{width:13px;opacity:1;pointer-events:auto}
 .diagram-row-drag-handle{flex-shrink:0;width:0;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
 .diagram-row:hover .diagram-row-drag-handle{width:14px;opacity:.6;pointer-events:auto}
 .diagram-row-drag-handle:hover{opacity:1 !important}
 .diagram-row-drag-handle:active{cursor:grabbing}
+body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-row-title-input{appearance:none;border:1px solid transparent;background:none;color:var(--fg);font:500 12.5px 'Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 4px;margin:-1px -4px;border-radius:4px;outline:none;width:100%;box-sizing:border-box;transition:background .12s,border-color .12s}
 .diagram-row-title-input:hover{background:var(--hover)}
 .diagram-row-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));text-overflow:clip}
 .diagram-row-title-input::placeholder{color:var(--hint);font-weight:400}
-.diagram-row-thumb{flex:0 0 auto;width:52px;height:40px;border-radius:6px;border:1px solid var(--border);background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--hint)}
+.diagram-row-thumb{position:relative;flex:0 0 auto;width:52px;height:40px;border-radius:6px;border:1px solid var(--border);background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--hint)}
 .diagram-row-thumb img{width:100%;height:100%;object-fit:contain}
+.diagram-row-thumb-refresh{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 72%,transparent);color:var(--fg);border:none;opacity:0;cursor:pointer;transition:opacity .12s}
+.diagram-row-thumb:hover .diagram-row-thumb-refresh{opacity:1}
+.diagram-row-thumb-refresh:hover{color:var(--accent)}
+.diagram-row-thumb-refresh.spinning svg{animation:diagram-thumb-spin .8s linear infinite}
+@keyframes diagram-thumb-spin{to{transform:rotate(360deg)}}
 .diagram-row-info{flex:1;min-width:0}
 .diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-row-anchor{appearance:none;border:none;background:none;font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;cursor:pointer;text-align:left;padding:0;border-radius:3px;max-width:100%;display:block}
@@ -2389,9 +2417,17 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 #diagram-editor-title-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 #diagram-editor-anchor-btn{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:260px;transition:border-color .12s,color .12s}
 #diagram-editor-anchor-btn:hover{color:var(--fg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-anchor-btn.diagram-editor-anchor-unlinked{color:var(--fc-orange);border-color:color-mix(in srgb,var(--fc-orange) 40%,var(--border));background:color-mix(in srgb,var(--fc-orange) 8%,transparent)}
+#diagram-editor-anchor-btn.diagram-editor-anchor-unlinked:hover{border-color:color-mix(in srgb,var(--fc-orange) 65%,var(--border))}
 #diagram-editor-anchor-btn svg{flex-shrink:0}
 #diagram-editor-anchor-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#diagram-editor-status{flex:1;font:400 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right}
+#diagram-editor-pages-badge{cursor:help}
+.diagram-editor-header-sep{width:1px;align-self:stretch;background:var(--border);flex-shrink:0}
+#diagram-editor-status{flex:1;font:500 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right;white-space:nowrap;transition:color .15s}
+#diagram-editor-status.diagram-editor-status-saved{color:var(--fc-green)}
+#diagram-editor-dup,#diagram-editor-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
+#diagram-editor-dup:hover{color:var(--accent);background:var(--hover)}
+#diagram-editor-delete:hover{color:var(--fc-red);background:var(--hover)}
 .diagram-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .diagram-status-chip[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
 .diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
@@ -2406,6 +2442,8 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagram-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
 .diagram-row-warn-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:4px;padding:1px 6px;cursor:help}
+.diagram-row-warn-chip.diagram-row-fix-chip{cursor:pointer}
+.diagram-row-warn-chip.diagram-row-fix-chip:hover{background:color-mix(in srgb,var(--fc-orange) 26%,transparent);text-decoration:underline}
 .diagram-row-note-input{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:400 11px 'Inter',sans-serif;font-style:italic;padding:2px 4px;border-radius:4px;outline:none;margin-top:2px;width:100%;box-sizing:border-box;transition:background .12s,border-color .12s,color .12s}
 .diagram-row-note-input:hover{background:var(--hover)}
 .diagram-row-note-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));color:var(--fg);font-style:normal}
@@ -4672,8 +4710,19 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="decision-count-chip-label"></span></button>
-    <span id="diagram-summary-chip" class="diagrams-only-btn chip-empty"></span>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button class="note-tb-btn diagrams-only-btn" id="dtb-search" data-tip="Filter diagrams" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <div class="todo-dd-wrap diagrams-only-btn" id="diagram-sort-wrap">
+      <button type="button" class="todo-dd-trigger" id="diagram-sort-trigger" data-tip="Sort by" aria-label="Sort diagrams by" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></button>
+      <div class="todo-dd-menu" id="diagram-sort-menu" role="menu">
+        <button type="button" class="todo-dd-item selected" data-value="manual" role="menuitemradio" aria-checked="true">Manual order<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-value="status" role="menuitemradio" aria-checked="false">Status<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+        <button type="button" class="todo-dd-item" data-value="modified" role="menuitemradio" aria-checked="false">Last modified<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+      </div>
+    </div>
+    <button type="button" id="diagram-summary-chip" class="diagrams-only-btn chip-empty" data-tip="" aria-pressed="false"></button>
+    <span id="diagram-bulk-count" class="diagrams-only-btn diagram-bulk-btn"></span>
+    <button class="note-tb-btn diagrams-only-btn diagram-bulk-btn" id="dtb-bulk-delete" data-tip="Delete selected diagrams"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
   </div>
@@ -4721,6 +4770,11 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
     </div>
   </div>
   <div id="diagrams-tab-body">
+    <div id="diagram-search-wrap" style="display:none">
+      <span id="diagram-search-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+      <input id="diagram-search-input" type="text" placeholder="Filter diagrams by title or status…" autocomplete="off" spellcheck="false" />
+      <button id="diagram-search-clear" data-tip="Clear filter"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
     <div id="diagrams-body"></div>
   </div>
 </div>
@@ -4847,13 +4901,19 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
   <div id="diagram-editor-header">
     <input id="diagram-editor-title-input" type="text" placeholder="Untitled diagram" maxlength="120" autocomplete="off" />
+    <span class="diagram-editor-header-sep"></span>
     <button type="button" id="diagram-editor-anchor-btn" data-tip="Choose which node this diagram appears under">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V12M12 12l-6 4M12 12l6 4"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
+    <span id="diagram-editor-pages-badge" class="diagram-row-pages" style="display:none"></span>
     <button type="button" id="diagram-editor-status-chip" class="diagram-status-chip" data-tip="Cycle status"></button>
+    <span class="diagram-editor-header-sep"></span>
     <input type="text" id="diagram-editor-note-input" placeholder="+ Note to yourself" maxlength="200" autocomplete="off" spellcheck="false" data-tip="Private reminder — never shown in Preview or exports" />
     <span id="diagram-editor-status"></span>
+    <span class="diagram-editor-header-sep"></span>
+    <button type="button" id="diagram-editor-dup" data-tip="Duplicate diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+    <button type="button" id="diagram-editor-delete" data-tip="Delete diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
     <button type="button" id="diagram-editor-close" data-tip="Close (saves automatically)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="diagram-editor-iframe-wrap"></div>
@@ -5577,7 +5637,7 @@ const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -6395,7 +6455,7 @@ function loadDocFromStorage(id){
     if(el('doc-author'))el('doc-author').value=d.author||'';
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
-    diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
+    diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
     return true;
   }catch(e){} return false;
 }
@@ -6439,7 +6499,7 @@ function applyTabSnapshot(tab){
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
-  diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
+  diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -6879,6 +6939,7 @@ async function restoreDocRevision(docId,ts){
       // which regenerates it automatically. Older revisions recorded before this existed have
       // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
       diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]}));
+      resetDiagramTransientState();
       if(padViewMode==='diagrams')renderDiagramsList();
     }
     if(Array.isArray(rev.qa)){
@@ -7071,46 +7132,191 @@ function reorderDiagramRow(draggedId,targetId){
   renderDiagramsList();
   markDirty(); scheduleAutoSave();
 }
+// A diagram counts as "orphaned" when it's still anchored to a node id that no longer exists
+// in the outline (the node was deleted after linking) — distinct from "unlinked", which is a
+// diagram that was never anchored at all. Both mean it won't show up in Preview/exports, so
+// the summary chip and the click-to-filter below treat them as the same "needs attention" set.
+function diagramIsOrphaned(d){
+  return d.anchorNodeId!=null && !nodes.some(n=>n.id===d.anchorNodeId);
+}
+function diagramNeedsAttention(d){
+  return d.anchorNodeId==null || diagramIsOrphaned(d);
+}
 // Toolbar-level "quick summary" chip — a glanceable count of the document's diagrams plus
-// anything that might need attention (unlinked, or edited since the last export), so that's
-// visible without having to scan every row. Purely informational, not a filter toggle.
+// anything that might need attention (unlinked/orphaned, or edited since the last export).
+// Doubles as a filter toggle: click it (when there's something to show) to filter the list
+// down to just the unlinked/orphaned rows, same click-to-filter pattern as Q&A's chips.
 function updateDiagramSummaryChip(){
   const chip=el('diagram-summary-chip'); if(!chip)return;
   const total=diagrams.length;
-  if(!total){ chip.classList.add('chip-empty'); chip.classList.remove('has-warn'); chip.textContent=''; chip.removeAttribute('data-tip'); return; }
-  const unlinked=diagrams.filter(d=>d.anchorNodeId==null).length;
+  if(!total){ chip.classList.add('chip-empty'); chip.classList.remove('has-warn','chip-clickable','active'); chip.textContent=''; chip.removeAttribute('data-tip'); chip.disabled=true; chip.setAttribute('aria-pressed','false'); return; }
+  const needsAttention=diagrams.filter(diagramNeedsAttention).length;
   const stale=diagrams.filter(diagramModifiedSinceExport).length;
   chip.classList.remove('chip-empty');
-  chip.classList.toggle('has-warn',unlinked>0||stale>0);
+  chip.classList.toggle('has-warn',needsAttention>0||stale>0);
+  chip.classList.toggle('chip-clickable',needsAttention>0);
+  chip.disabled=needsAttention===0;
+  if(diagramUnlinkedOnly&&needsAttention===0){ diagramUnlinkedOnly=false; } // nothing left to filter to — fall back automatically
+  chip.classList.toggle('active',diagramUnlinkedOnly&&needsAttention>0);
+  chip.setAttribute('aria-pressed',String(diagramUnlinkedOnly&&needsAttention>0));
   chip.textContent=total+(total===1?' diagram':' diagrams');
   const parts=[];
-  if(unlinked)parts.push(unlinked+' unlinked');
+  if(needsAttention)parts.push(needsAttention+' unlinked/orphaned');
   if(stale)parts.push(stale+' modified since export');
-  chip.dataset.tip=parts.length?parts.join(' · '):'All diagrams linked and up to date';
+  chip.dataset.tip=needsAttention?(parts.join(' · ')+' — click to filter'):(parts.length?parts.join(' · '):'All diagrams linked and up to date');
+}
+// Filter (search query + unlinked/orphaned-only) and sort (manual/status/last modified) without
+// touching the underlying `diagrams` array — manual drag order is only meaningful, and only
+// editable, while no filter/sort is active, same restriction Q&A applies to its own drag handle.
+function getDiagramDisplayList(){
+  const q=diagramSearchQuery.trim().toLowerCase();
+  let list=diagrams.slice();
+  if(q){
+    list=list.filter(d=>(d.title||'').toLowerCase().includes(q)||diagramStatusLabel(diagramStatusOf(d)).toLowerCase().includes(q));
+  }
+  if(diagramUnlinkedOnly){
+    list=list.filter(diagramNeedsAttention);
+  }
+  if(diagramSortMode==='status'){
+    const order=DIAGRAM_STATUSES;
+    list.sort((a,b)=>order.indexOf(diagramStatusOf(a))-order.indexOf(diagramStatusOf(b)));
+  } else if(diagramSortMode==='modified'){
+    list.sort((a,b)=>(b.modifiedAt||0)-(a.modifiedAt||0));
+  }
+  return list;
+}
+function diagramCanReorder(){
+  return diagramSortMode==='manual' && !diagramSearchQuery.trim() && !diagramUnlinkedOnly;
+}
+function diagramDisplayOrderIds(){
+  return getDiagramDisplayList().map(d=>d.id);
+}
+function updateDiagramBulkBar(){
+  const count=el('diagram-bulk-count');
+  const n=diagramSelectedIds.size;
+  document.body.classList.toggle('diagram-has-selection',n>0);
+  if(count)count.textContent=n>0?`${n} selected`:'';
+}
+function toggleDiagramSelect(id,shiftKey){
+  if(shiftKey&&diagramSelectionAnchorId!=null&&diagramSelectionAnchorId!==id){
+    const order=diagramDisplayOrderIds();
+    const from=order.indexOf(diagramSelectionAnchorId), to=order.indexOf(id);
+    if(from>=0&&to>=0){
+      const [s,e]=from<=to?[from,to]:[to,from];
+      order.slice(s,e+1).forEach(rid=>diagramSelectedIds.add(rid));
+    }
+  } else {
+    if(diagramSelectedIds.has(id))diagramSelectedIds.delete(id); else diagramSelectedIds.add(id);
+    diagramSelectionAnchorId=id;
+  }
+  renderDiagramsList();
+}
+async function bulkDeleteDiagramsSelected(){
+  if(!diagramSelectedIds.size)return;
+  const count=diagramSelectedIds.size;
+  if(confirmBeforeDelete){
+    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:count===1?'Delete Diagram':'Delete Diagrams',body:`Delete ${count===1?'this diagram':`${count} diagrams`}?\nYou can use Undo to restore ${count===1?'it':'them'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+    if(!ok)return;
+  }
+  const snapshot=diagrams.slice();
+  diagrams=diagrams.filter(d=>!diagramSelectedIds.has(d.id));
+  diagramSelectedIds=new Set(); diagramSelectionAnchorId=null;
+  renderDiagramsList();
+  markDirty(); scheduleAutoSave();
+  showActionToast(`${count} diagram${count===1?'':'s'} deleted`,'Undo',()=>{
+    diagrams=snapshot;
+    renderDiagramsList();
+    markDirty(); scheduleAutoSave();
+  });
+}
+function toggleDiagramSearch(forceOpen){
+  diagramSearchOpen=forceOpen!==undefined?!!forceOpen:!diagramSearchOpen;
+  const wrap=el('diagram-search-wrap'); if(wrap)wrap.style.display=diagramSearchOpen?'block':'none';
+  const btn=el('dtb-search'); if(btn){ btn.classList.toggle('active',diagramSearchOpen); btn.setAttribute('aria-pressed',String(diagramSearchOpen)); }
+  if(diagramSearchOpen){
+    setTimeout(()=>el('diagram-search-input')?.focus(),0);
+  } else {
+    diagramSearchQuery='';
+    const input=el('diagram-search-input'); if(input)input.value='';
+    el('diagram-search-clear')?.classList.remove('visible');
+    renderDiagramsList();
+  }
+}
+function setDiagramSortMode(mode){
+  diagramSortMode=['manual','status','modified'].includes(mode)?mode:'manual';
+  document.body.classList.toggle('diagram-sort-locked',diagramSortMode!=='manual');
+  el('diagram-sort-wrap')?.classList.toggle('active',diagramSortMode!=='manual');
+  document.querySelectorAll('#diagram-sort-menu .todo-dd-item').forEach(item=>{
+    const sel=item.getAttribute('data-value')===diagramSortMode;
+    item.classList.toggle('selected',sel); item.setAttribute('aria-checked',String(sel));
+  });
+  renderDiagramsList();
+}
+// On-demand thumbnail regeneration — loads the diagram's already-saved XML into a hidden,
+// offscreen draw.io embed frame and asks it to export xmlsvg, the same request the visible
+// editor piggybacks on every save. Never touches the live/visible editor or posts an `xml`
+// override into an already-open session, so it can't hit the corruption path documented on the
+// 'save' handler above — this is a fresh, throwaway frame that's torn down right after.
+function regenerateDiagramThumbnail(id){
+  const d=findDiagram(id); if(!d)return;
+  if(!d.xml){ showToast('Nothing to regenerate yet — this diagram has no content'); return; }
+  const btn=document.querySelector(`.diagram-row[data-diagram-id="${id}"] .diagram-row-thumb-refresh`);
+  if(btn)btn.classList.add('spinning');
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:800px;height:600px;border:0;visibility:hidden';
+  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1';
+  document.body.appendChild(iframe);
+  let done=false;
+  const cleanup=()=>{ if(done)return; done=true; window.removeEventListener('message',handler); iframe.remove(); if(btn)btn.classList.remove('spinning'); };
+  const handler=e=>{
+    if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
+    let msg; try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
+    if(!msg||!msg.event)return;
+    if(msg.event==='init'){
+      iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
+      setTimeout(()=>{ if(!done&&iframe.contentWindow)iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*'); },400);
+    } else if(msg.event==='export'){
+      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); renderDiagramsList(); showToast('Thumbnail updated'); }
+      cleanup();
+    }
+  };
+  window.addEventListener('message',handler);
+  setTimeout(cleanup,8000); // safety timeout so a stuck/unresponsive frame doesn't leak forever
 }
 function renderDiagramsList(){
   const body=el('diagrams-body'); if(!body)return;
   body.innerHTML='';
   updateDiagramSummaryChip();
+  updateDiagramBulkBar();
   if(!diagrams.length){
     body.innerHTML='<div class="diagrams-empty">No diagrams yet.<br>Click + to create one in draw.io — link it to a node afterward so it shows up there in Preview and exports.</div>';
     return;
   }
-  diagrams.forEach(d=>{
-    const row=document.createElement('div'); row.className='diagram-row'; row.dataset.diagramId=String(d.id);
+  const displayList=getDiagramDisplayList();
+  if(!displayList.length){
+    body.innerHTML='<div class="diagrams-empty">No diagrams match the current filter.</div>';
+    return;
+  }
+  const canDrag=diagramCanReorder();
+  displayList.forEach(d=>{
+    const row=document.createElement('div'); row.className='diagram-row'+(diagramSelectedIds.has(d.id)?' diagram-row-selected':''); row.dataset.diagramId=String(d.id);
+    const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='diagram-row-select'; selectCb.checked=diagramSelectedIds.has(d.id); selectCb.dataset.tip='Select (Shift-click for range)';
+    selectCb.addEventListener('mousedown',e=>e.stopPropagation());
+    selectCb.addEventListener('click',e=>{ e.stopPropagation(); toggleDiagramSelect(d.id,e.shiftKey); });
     const dragHandle=document.createElement('button'); dragHandle.className='diagram-row-drag-handle'; dragHandle.type='button'; dragHandle.tabIndex=-1; dragHandle.setAttribute('aria-hidden','true'); dragHandle.dataset.tip='Drag to reorder';
     dragHandle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
     dragHandle.addEventListener('mousedown',e=>e.stopPropagation());
     dragHandle.addEventListener('click',e=>e.stopPropagation());
-    row.draggable=true;
+    dragHandle.style.visibility=canDrag?'visible':'hidden';
+    row.draggable=canDrag;
     row.addEventListener('dragstart',e=>{
-      if(e.target.closest('.diagram-row-note-input')||e.target.closest('.diagram-row-title-input')||e.target.closest('.diagram-row-status')||e.target.closest('.diagram-row-anchor-btn')||e.target.closest('.diagram-row-dup')||e.target.closest('.diagram-row-delete')){e.preventDefault(); return;}
+      if(!canDrag||e.target.closest('.diagram-row-note-input')||e.target.closest('.diagram-row-title-input')||e.target.closest('.diagram-row-status')||e.target.closest('.diagram-row-anchor-btn')||e.target.closest('.diagram-row-dup')||e.target.closest('.diagram-row-delete')||e.target.closest('.diagram-row-select')){e.preventDefault(); return;}
       e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(d.id)); row.classList.add('diagram-row-dragging');
     });
     row.addEventListener('dragend',()=>row.classList.remove('diagram-row-dragging'));
-    row.addEventListener('dragover',e=>{ e.preventDefault(); row.classList.add('diagram-row-drag-over'); });
+    row.addEventListener('dragover',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.add('diagram-row-drag-over'); });
     row.addEventListener('dragleave',()=>row.classList.remove('diagram-row-drag-over'));
-    row.addEventListener('drop',e=>{ e.preventDefault(); row.classList.remove('diagram-row-drag-over'); const draggedId=e.dataTransfer.getData('text/plain'); reorderDiagramRow(draggedId,d.id); });
+    row.addEventListener('drop',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.remove('diagram-row-drag-over'); const draggedId=e.dataTransfer.getData('text/plain'); reorderDiagramRow(draggedId,d.id); });
     const thumb=document.createElement('div'); thumb.className='diagram-row-thumb';
     if(d.previewSvg){
       const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
@@ -7119,12 +7325,20 @@ function renderDiagramsList(){
       // a broken thumbnail is just an empty box with no indication anything's wrong. Falls back
       // to the same placeholder icon used when there's no thumbnail yet at all.
       img.addEventListener('error',()=>{
-        thumb.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>';
-        thumb.dataset.tip='Thumbnail failed to load — reopen and save this diagram to regenerate it';
+        thumb.querySelector('svg:not(.diagram-row-thumb-refresh svg)')?.remove();
+        const ph=document.createElement('span'); ph.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>';
+        thumb.insertBefore(ph.firstChild,thumb.firstChild);
+        thumb.dataset.tip='Thumbnail failed to load — click the refresh icon, or reopen and save this diagram, to regenerate it';
       },{once:true});
       thumb.appendChild(img);
     }
     else { thumb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; }
+    if(d.xml){
+      const refreshBtn=document.createElement('button'); refreshBtn.type='button'; refreshBtn.className='diagram-row-thumb-refresh'; refreshBtn.dataset.tip='Regenerate thumbnail';
+      refreshBtn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+      refreshBtn.addEventListener('click',e=>{ e.stopPropagation(); regenerateDiagramThumbnail(d.id); });
+      thumb.appendChild(refreshBtn);
+    }
     const info=document.createElement('div'); info.className='diagram-row-info';
     const titleInput=document.createElement('input'); titleInput.type='text'; titleInput.className='diagram-row-title-input';
     titleInput.value=d.title||''; titleInput.placeholder='Untitled diagram'; titleInput.maxLength=200; titleInput.spellcheck=false;
@@ -7156,6 +7370,16 @@ function renderDiagramsList(){
       unlinkedChip.textContent='Unlinked';
       unlinkedChip.dataset.tip="Not linked to a node — won't appear in Preview, PDF, Word, or PowerPoint until you link it (the anchor button in the full-screen editor).";
       metaRow.appendChild(unlinkedChip);
+    } else if(diagramIsOrphaned(d)){
+      const orphanChip=document.createElement('span'); orphanChip.className='diagram-row-warn-chip diagram-row-fix-chip';
+      orphanChip.textContent='Orphaned link — fix';
+      orphanChip.dataset.tip='The node this was linked to was deleted — click to pick a new one (or clear the link)';
+      orphanChip.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(_diagramAnchorOpen&&_diagramAnchorTarget===d){ closeDiagramAnchorSuggest(); return; }
+        renderDiagramAnchorSuggest('',d,anchorBtn);
+      });
+      metaRow.appendChild(orphanChip);
     }
     if(d.pageCount>1){
       const pageBadge=document.createElement('span'); pageBadge.className='diagram-row-pages';
@@ -7171,7 +7395,9 @@ function renderDiagramsList(){
     }
     info.appendChild(metaRow);
     const anchorBtn=document.createElement('button'); anchorBtn.className='diagram-row-anchor diagram-row-anchor-btn'; anchorBtn.type='button';
-    anchorBtn.textContent=diagramAnchorLabel(d);
+    const anchorLabel=diagramAnchorLabel(d);
+    anchorBtn.textContent=anchorLabel;
+    anchorBtn.title=anchorLabel;
     anchorBtn.dataset.tip='Click to change which node this diagram appears under';
     anchorBtn.addEventListener('click',e=>{
       e.stopPropagation();
@@ -7201,12 +7427,13 @@ function renderDiagramsList(){
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
+    row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
 }
 function createDiagram(){
+
   if(!padDiagramsTabEnabled)return;
   ensureDocumentForEditing();
   const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
@@ -7214,13 +7441,12 @@ function createDiagram(){
   markDirty(); scheduleAutoSave();
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
   openDiagramEditor(d.id);
+  setTimeout(()=>{ const ti=el('diagram-editor-title-input'); if(ti){ ti.focus(); ti.select(); } },60);
 }
 // Pure data clone — copies the already-exported XML/SVG strings, never talks to the live
 // draw.io editor, so unlike the reverted multi-page export attempt this can't corrupt anything.
-function duplicateDiagram(id){
-  const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
-  const src=diagrams[idx];
-  const copy={
+function cloneDiagramRecord(src){
+  return {
     id:newDiagramId(),
     title:src.title?src.title+' (copy)':'',
     xml:src.xml||'',
@@ -7233,10 +7459,20 @@ function duplicateDiagram(id){
     createdAt:Date.now(),
     modifiedAt:Date.now()
   };
+}
+function duplicateDiagram(id){
+  const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
+  const src=diagrams[idx];
+  const copy=cloneDiagramRecord(src);
   diagrams.splice(idx+1,0,copy);
   markDirty(); scheduleAutoSave();
   renderDiagramsList();
-  showToast('Diagram duplicated');
+  showToast('Diagram duplicated — pick a node to link it under');
+  // Wait a frame for the new row to actually be in the DOM before targeting its anchor button.
+  requestAnimationFrame(()=>{
+    const btn=document.querySelector(`.diagram-row[data-diagram-id="${copy.id}"] .diagram-row-anchor-btn`);
+    if(btn)renderDiagramAnchorSuggest('',copy,btn);
+  });
 }
 async function deleteDiagram(id){
   const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
@@ -7261,7 +7497,20 @@ async function deleteDiagram(id){
 // ── Full-screen editor (real draw.io via embed mode) ──────────────────────
 let _diagramEditorState=null; // {diagramId, iframe, handler}
 function updateDiagramEditorAnchorLabel(d){
-  const label=el('diagram-editor-anchor-label'); if(label)label.textContent=diagramAnchorLabel(d);
+  const label=el('diagram-editor-anchor-label'); const btn=el('diagram-editor-anchor-btn');
+  const text=diagramAnchorLabel(d);
+  if(label)label.textContent=text;
+  if(btn){ btn.title=text; btn.classList.toggle('diagram-editor-anchor-unlinked',d.anchorNodeId==null||diagramIsOrphaned(d)); }
+}
+function updateDiagramEditorPagesBadge(d){
+  const badge=el('diagram-editor-pages-badge'); if(!badge)return;
+  if(d.pageCount>1){
+    badge.style.display='inline-flex';
+    badge.textContent=d.pageCount+' pages';
+    badge.dataset.tip='Only the page that was active when last saved appears in the thumbnail, Preview, and exports. Reopen and save with the page you want visible active, or split pages into separate diagrams instead.';
+  } else {
+    badge.style.display='none';
+  }
 }
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
@@ -7280,9 +7529,10 @@ function openDiagramEditor(diagramId){
   wrap.appendChild(iframe);
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
+  updateDiagramEditorPagesBadge(d);
   updateDiagramEditorStatusChip(d);
   updateDiagramEditorNoteInput(d);
-  const status=el('diagram-editor-status'); if(status)status.textContent='Loading draw.io…';
+  const status=el('diagram-editor-status'); if(status){ status.textContent='Loading draw.io…'; status.classList.remove('diagram-editor-status-saved'); }
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
     let msg;
@@ -7312,7 +7562,8 @@ function openDiagramEditor(diagramId){
       // reminder this is a known limitation, not a bug.
       iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      if(status)status.textContent=savedAt;
+      if(status){ status.textContent=savedAt; status.classList.add('diagram-editor-status-saved'); }
+      updateDiagramEditorPagesBadge(d);
       _diagramEditorState.exitAfterExport=!!msg.exit;
     } else if(msg.event==='export'){
       if(msg.data){
@@ -7378,6 +7629,24 @@ el('diagram-editor-note-input')?.addEventListener('blur',()=>{
   renderDiagramsList();
 });
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
+function duplicateDiagramFromEditor(){
+  if(!_diagramEditorState)return;
+  const idx=diagrams.findIndex(d=>d.id===_diagramEditorState.diagramId); if(idx<0)return;
+  const copy=cloneDiagramRecord(diagrams[idx]);
+  diagrams.splice(idx+1,0,copy);
+  markDirty(); scheduleAutoSave();
+  renderDiagramsList();
+  showToast('Diagram duplicated');
+  openDiagramEditor(copy.id);
+}
+async function deleteDiagramFromEditor(){
+  if(!_diagramEditorState)return;
+  const id=_diagramEditorState.diagramId;
+  await deleteDiagram(id);
+  if(!findDiagram(id))closeDiagramEditorInternal(); // deletion confirmed and went through — no unsaved-changes prompt needed, it's gone either way
+}
+el('diagram-editor-dup')?.addEventListener('click',duplicateDiagramFromEditor);
+el('diagram-editor-delete')?.addEventListener('click',deleteDiagramFromEditor);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){
     if(document.activeElement===el('diagram-editor-note-input'))return; // let the input's own Escape handler (above) deal with it — it stops propagation itself when it does
@@ -7446,6 +7715,38 @@ document.addEventListener('mousedown',e=>{
 },true);
 
 el('dtb-add')?.addEventListener('click',createDiagram);
+el('dtb-search')?.addEventListener('mousedown',e=>{ e.preventDefault(); toggleDiagramSearch(); });
+el('diagram-search-input')?.addEventListener('input',e=>{
+  diagramSearchQuery=e.target.value;
+  el('diagram-search-clear')?.classList.toggle('visible',!!diagramSearchQuery);
+  renderDiagramsList();
+});
+el('diagram-search-input')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); toggleDiagramSearch(false); } });
+el('diagram-search-clear')?.addEventListener('click',()=>{ const inp=el('diagram-search-input'); if(inp)inp.value=''; diagramSearchQuery=''; el('diagram-search-clear')?.classList.remove('visible'); renderDiagramsList(); el('diagram-search-input')?.focus(); });
+el('diagram-sort-trigger')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const menu=el('diagram-sort-menu'); if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
+  menu.classList.toggle('open',!isOpen);
+  e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
+});
+document.querySelectorAll('#diagram-sort-menu .todo-dd-item').forEach(item=>{
+  item.addEventListener('click',e=>{
+    e.stopPropagation();
+    setDiagramSortMode(item.getAttribute('data-value'));
+    el('diagram-sort-menu')?.classList.remove('open');
+  });
+});
+document.addEventListener('mousedown',e=>{
+  if(!e.target.closest('#diagram-sort-wrap'))el('diagram-sort-menu')?.classList.remove('open');
+});
+el('dtb-bulk-delete')?.addEventListener('mousedown',e=>{ e.preventDefault(); bulkDeleteDiagramsSelected(); });
+el('diagram-summary-chip')?.addEventListener('click',()=>{
+  const chip=el('diagram-summary-chip'); if(!chip||!chip.classList.contains('chip-clickable'))return;
+  diagramUnlinkedOnly=!diagramUnlinkedOnly;
+  renderDiagramsList();
+});
 
 el('history-modal-overlay')?.addEventListener('click',e=>{ if(e.target===el('history-modal-overlay'))closeVersionHistory(); });
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
@@ -20437,6 +20738,23 @@ function resetQaTransientState(){
   if(qaUnansweredOnly){ qaUnansweredOnly=false; const chip=el('qa-progress'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show unanswered only'; chip.setAttribute('aria-pressed','false'); } }
   if(qaUnlinkedOnly){ qaUnlinkedOnly=false; const chip=el('qa-unlinked'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show unlinked rows only'; chip.setAttribute('aria-pressed','false'); } }
   if(qaFollowUpOnly){ qaFollowUpOnly=false; const chip=el('qa-followup-count'); if(chip){ chip.classList.remove('active'); chip.dataset.tip='Show follow-up rows only'; chip.setAttribute('aria-pressed','false'); } }
+}
+// Diagram search/filter/sort/selection are session-scoped UI state, not document content — same
+// as Q&A's own transient state above, this must be cleared on every document switch or a
+// selection made in one document (or an active filter) would silently carry over and apply to
+// whichever diagrams happen to share those ids/positions in the next document opened.
+function resetDiagramTransientState(){
+  diagramSelectedIds=new Set(); diagramSelectionAnchorId=null;
+  document.body.classList.remove('diagram-has-selection');
+  if(diagramSearchOpen){ toggleDiagramSearch(false); } else { diagramSearchQuery=''; }
+  diagramUnlinkedOnly=false;
+  diagramSortMode='manual';
+  document.body.classList.remove('diagram-sort-locked');
+  el('diagram-sort-wrap')?.classList.remove('active');
+  document.querySelectorAll('#diagram-sort-menu .todo-dd-item').forEach(item=>{
+    const sel=item.getAttribute('data-value')==='manual';
+    item.classList.toggle('selected',sel); item.setAttribute('aria-checked',String(sel));
+  });
 }
 function updateQaProgress(){
   const progress=el('qa-progress'); if(progress){
