@@ -6615,7 +6615,7 @@ function renderVersionHistoryList(){
     const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
     const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
     const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
-    const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=currentText||'(empty)';
+    const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=currentText?(currentText.length>180?currentText.slice(0,180)+'…':currentText):'(empty)';
     nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
     nowRow.appendChild(nowInfo);
     body.appendChild(nowRow);
@@ -6630,7 +6630,7 @@ function renderVersionHistoryList(){
       const row=document.createElement('div'); row.className='history-row';
       const info=document.createElement('div'); info.className='history-row-info';
       const time=document.createElement('div'); time.className='history-row-time'; time.textContent=new Date(rev.ts).toLocaleString();
-      const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=text||'(empty)';
+      const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=text?(text.length>180?text.slice(0,180)+'…':text):'(empty)';
       info.appendChild(time); info.appendChild(meta);
       row.appendChild(info);
       const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore text';
