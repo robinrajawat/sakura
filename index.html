@@ -1257,6 +1257,7 @@ body.pad-qa-mode #qa-body{display:flex}
 #decision-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding:14px 16px;background:var(--canvas-bg)}
 body.pad-decision-mode #pad-editor{display:none}
 body.pad-decision-mode #decision-body{display:flex}
+body.pad-diagrams-mode #pad-editor{display:none}
 #decision-empty{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:10px;text-align:center;color:var(--muted);font:400 13px 'Inter',sans-serif}
 #decision-body.no-log #decision-empty{display:flex}
 #decision-body.no-log #decision-card{display:none}
@@ -1338,8 +1339,10 @@ body.pad-decision-mode #decision-count-chip{display:inline-flex}
 .decision-quicknav-chip:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
 body.pad-qa-mode #pad-toolbar>.note-tb-btn:not(.qa-only-btn):not(#pad-clear-btn),body.pad-qa-mode #pad-toolbar>.note-tb-sep:not(#qtb-sep):not(.qa-only-btn){display:none}
 body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(.decision-only-btn):not(#pad-clear-btn),body.pad-decision-mode #pad-toolbar>.note-tb-sep:not(.decision-only-btn){display:none}
+body.pad-diagrams-mode #pad-toolbar>.note-tb-btn:not(.diagrams-only-btn),body.pad-diagrams-mode #pad-toolbar>.note-tb-sep{display:none}
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
+body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
 #qa-progress{appearance:none;border:1px solid transparent;background:transparent;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
 #qa-progress:hover:not(:disabled){background:var(--hover);color:var(--fg)}
 #qa-progress.active{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -2332,17 +2335,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 /* === Todos panel === */
 #todos-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(380px,calc(100vw - 32px));max-height:min(74vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
 
-/* Diagrams panel — a plain list (title, thumbnail, anchor), deliberately no sort/filter/bulk
-   machinery the way Todos has: diagrams are typically a handful per document, not dozens, and
-   each row's real workspace is the full-screen editor it opens, not this list. */
-#diagrams-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(340px,calc(100vw - 32px));max-height:min(74vh,560px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
-#diagrams-panel.open{display:flex}
-#diagrams-panel-header{display:flex;align-items:center;gap:6px;padding:10px 8px 10px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-#diagrams-panel .panel-title-icon{color:var(--accent);display:flex;flex-shrink:0}
-#diagrams-panel-title{flex:1;font:600 13px 'Inter',sans-serif;color:var(--fg)}
-#diagrams-add-btn,#diagrams-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#diagrams-add-btn:hover,#diagrams-panel-close:hover{color:var(--fg);background:var(--hover)}
-#diagrams-body{overflow-y:auto;flex:1;padding:8px}
+/* Diagrams — now a Pad tab (alongside Notepad/Q&A/Decision Log) rather than its own floating
+   panel: it's document-level content, same category as those three, so it belongs in the same
+   place. A plain list (title, thumbnail, anchor), deliberately no sort/filter/bulk machinery
+   the way Todos has: diagrams are typically a handful per document, not dozens, and each row's
+   real workspace is the full-screen editor it opens, not this list. */
+#diagrams-tab-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;padding:8px 10px;background:var(--canvas-bg)}
+body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 #diagrams-body:empty::after,.diagrams-empty{content:'';}
 .diagrams-empty{padding:28px 14px;text-align:center;font:400 12.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5}
 .diagram-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;cursor:pointer;transition:background .12s}
@@ -3773,7 +3772,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         </div>
       </div>
       <button class="btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)">To-Dos</button>
-      <button class="btn" id="diagrams-toggle" data-tip="Diagrams (Ctrl/Cmd+Shift+G)">Diagrams</button>
       <div class="help-wrap">
         <button class="btn" id="help-toggle">Help</button>
         <div class="help-panel" id="help-panel">
@@ -4573,6 +4571,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <button type="button" class="pad-mode-tab" id="pad-tab-notes" data-mode="notes" role="tab" aria-selected="true">Notepad</button>
       <button type="button" class="pad-mode-tab" id="pad-tab-qa" data-mode="qa" role="tab" aria-selected="false">Q&amp;A</button>
       <button type="button" class="pad-mode-tab" id="pad-tab-decision" data-mode="decision" role="tab" aria-selected="false">Decision Log</button>
+      <button type="button" class="pad-mode-tab" id="pad-tab-diagrams" data-mode="diagrams" role="tab" aria-selected="false">Diagrams</button>
     </div>
     <button id="pad-panel-close-header" data-tip="Close Pad (Ctrl/Cmd+Shift+P)" aria-label="Close Pad"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -4608,6 +4607,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="decision-count-chip" class="decision-only-btn" data-tip="Browse all decisions" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span id="decision-count-chip-label"></span></button>
+    <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as plain text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
   </div>
@@ -4653,6 +4653,9 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       <div id="decision-list"></div>
       <div id="decision-list-empty">No decision logs in this document yet.</div>
     </div>
+  </div>
+  <div id="diagrams-tab-body">
+    <div id="diagrams-body"></div>
   </div>
 </div>
 <div id="pad-ctx-menu" class="note-ctx-menu" role="menu" aria-label="Pad editor actions"></div>
@@ -4772,16 +4775,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   </div>
   <div id="todos-body"></div>
   <div id="todos-toast" role="status" aria-live="polite"></div>
-</div>
-
-<div id="diagrams-panel" role="dialog" aria-label="Diagrams">
-  <div id="diagrams-panel-header">
-    <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v2a2 2 0 0 0 2 2h1"/><path d="M17.5 10v2a2 2 0 0 0-2 2h-1"/></svg></span>
-    <span id="diagrams-panel-title">Diagrams</span>
-    <button id="diagrams-add-btn" data-tip="New diagram" aria-label="New diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    <button id="diagrams-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-  </div>
-  <div id="diagrams-body"></div>
 </div>
 
 <div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
@@ -6325,7 +6318,7 @@ function applyTabSnapshot(tab){
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
-  diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; if(typeof renderDiagramsList==='function'&&el('diagrams-panel')?.classList.contains('open'))renderDiagramsList();
+  diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -6822,20 +6815,24 @@ el('history-modal-close-x')?.addEventListener('click',()=>closeVersionHistory())
 // *inside* draw.io's own UI — there's no documented way to force a save from the host side, so
 // unlike everywhere else in this session's data-loss work, this one genuinely can't be made
 // silently safe. The close button below is honest about that rather than pretending otherwise.
+// The browsable list (this section's renderDiagramsList) lives in Pad as a fourth tab
+// alongside Notepad/Q&A/Decision Log — moved there from an earlier standalone floating panel,
+// since diagrams are document-level content, the same category as those three. Only the list
+// moved; the full-screen editor below is unchanged either way.
 function newDiagramId(){ return 'dg'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 function findDiagram(id){ return diagrams.find(d=>d.id===id); }
 
 function openDiagramsPanel(){
-  const panel=el('diagrams-panel'); if(!panel)return;
-  panel.classList.add('open');
-  renderDiagramsList();
-}
-function closeDiagramsPanel(){
-  const panel=el('diagrams-panel'); if(panel)panel.classList.remove('open');
+  if(!padEnabled)return;
+  if(!padOpen)setPadOpen(true);
+  setPadViewMode('diagrams');
 }
 function toggleDiagramsPanel(){
-  const panel=el('diagrams-panel'); if(!panel)return;
-  if(panel.classList.contains('open'))closeDiagramsPanel(); else openDiagramsPanel();
+  if(!padEnabled)return;
+  // Same "press again to close" precedent as Presenter Notes' N/Q keys — pressing the
+  // shortcut for whichever tab is already showing closes Pad; otherwise it opens/switches.
+  if(padOpen&&padViewMode==='diagrams'){ setPadOpen(false); return; }
+  openDiagramsPanel();
 }
 function diagramAnchorLabel(d){
   if(d.anchorNodeId==null)return 'Not linked to a node';
@@ -6895,7 +6892,6 @@ function updateDiagramEditorAnchorLabel(d){
 }
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
-  closeDiagramsPanel();
   const overlay=el('diagram-editor-overlay'); if(!overlay)return;
   const wrap=el('diagram-editor-iframe-wrap'); if(!wrap)return;
   wrap.innerHTML='';
@@ -7018,9 +7014,7 @@ document.addEventListener('mousedown',e=>{
   if(_diagramAnchorOpen&&!e.target.closest('#diagram-anchor-suggest')&&!e.target.closest('#diagram-editor-anchor-btn'))closeDiagramAnchorSuggest();
 },true);
 
-el('diagrams-toggle')?.addEventListener('click',toggleDiagramsPanel);
-el('diagrams-add-btn')?.addEventListener('click',createDiagram);
-el('diagrams-panel-close')?.addEventListener('click',closeDiagramsPanel);
+el('dtb-add')?.addEventListener('click',createDiagram);
 
 el('history-modal-overlay')?.addEventListener('click',e=>{ if(e.target===el('history-modal-overlay'))closeVersionHistory(); });
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
@@ -19172,19 +19166,21 @@ function padEnsureValidViewMode(){
   setPadViewMode(fallback);
 }
 function setPadViewMode(mode){
-  const requested=mode==='qa'?'qa':mode==='decision'?'decision':'notes';
-  const isEnabled=m=>m==='qa'?padQaTabEnabled:m==='decision'?featureDecisionLogEnabled:padNotepadTabEnabled;
-  padViewMode=isEnabled(requested)?requested:(padNotepadTabEnabled?'notes':padQaTabEnabled?'qa':'decision');
+  const requested=mode==='qa'?'qa':mode==='decision'?'decision':mode==='diagrams'?'diagrams':'notes';
+  const isEnabled=m=>m==='qa'?padQaTabEnabled:m==='decision'?featureDecisionLogEnabled:m==='diagrams'?true:padNotepadTabEnabled;
+  padViewMode=isEnabled(requested)?requested:(padNotepadTabEnabled?'notes':padQaTabEnabled?'qa':featureDecisionLogEnabled?'decision':'diagrams');
   document.body.classList.toggle('pad-qa-mode',padViewMode==='qa');
   document.body.classList.toggle('pad-decision-mode',padViewMode==='decision');
+  document.body.classList.toggle('pad-diagrams-mode',padViewMode==='diagrams');
   document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
     const active=tab.dataset.mode===padViewMode;
     tab.setAttribute('aria-selected',String(active));
   });
-  const title=el('presenter-notes-title'); if(title)title.textContent=padViewMode==='qa'?'Q&A':padViewMode==='decision'?'Decision Log':'Notepad';
-  const clearBtn=el('pad-clear-btn'); if(clearBtn){clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':padViewMode==='decision'?'Remove decision log from this node':'Clear pad'; clearBtn.style.display='';}
+  const title=el('presenter-notes-title'); if(title)title.textContent=padViewMode==='qa'?'Q&A':padViewMode==='decision'?'Decision Log':padViewMode==='diagrams'?'Diagrams':'Notepad';
+  const clearBtn=el('pad-clear-btn'); if(clearBtn){clearBtn.dataset.tip=padViewMode==='qa'?'Clear all Q&A rows':padViewMode==='decision'?'Remove decision log from this node':'Clear pad'; clearBtn.style.display=padViewMode==='diagrams'?'none':'';}
   if(padViewMode==='qa')renderQaList();
   if(padViewMode==='decision')renderDecisionPad();
+  if(padViewMode==='diagrams')renderDiagramsList();
 }
 const DECISION_STATUSES=['proposed','approved','rejected'];
 function nodeHasDecisionLog(n){ return !!(n&&n.decisionLog); }
@@ -21008,7 +21004,7 @@ function renderPreviewBody(){
         });
         slideTarget.appendChild(row);
       }
-      // Document-level diagrams (see the Diagrams panel) anchored to this node — the newer,
+      // Document-level diagrams (see the Diagrams tab in Pad) anchored to this node — the newer,
       // preferred workflow: a real draw.io editor rather than a static image pasted into the
       // note. Same visual row/figure/lightbox treatment as the note-embedded path above, since
       // to a reader there's no meaningful difference in how either should look.
