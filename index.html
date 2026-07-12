@@ -1090,6 +1090,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-modal-body{overflow-y:auto;flex:1;margin:0 -6px;padding:0 6px;min-height:60px}
 
 .history-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:8px}
+.history-row-now{opacity:.7;border-bottom:1px solid var(--border);border-radius:0;margin-bottom:4px;padding-bottom:12px}
 .history-row:hover{background:var(--hover)}
 .history-row-info{flex:1;min-width:0}
 .history-row-time{font:500 12.5px 'Inter',sans-serif;color:var(--fg)}
@@ -3830,7 +3831,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <h4>Node Quick Assist</h4>
 <ul>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing a node opens a small menu of node-specific actions instead of the full Quick Assist — same shortcut, different box, depending on whether you're mid-edit. Everywhere else, it opens the full Quick Assist as usual</li>
-<li>Default actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time, Note…, Code block…, Tags…, Insert decision log, Rewrite node. Which of these appear (and their fixed order) is configured in Settings → Editing → Node Quick Assist → Menu items</li>
+<li>Default actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time, Note…, Tags…, Insert decision log, Rewrite node, Version history…. Which of these appear (and their fixed order) is configured in Settings → Editing → Node Quick Assist → Menu items</li>
+<li><strong>Version history…</strong> shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags, decision log) is touched</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the node's own text, which this avoids touching</li>
 <li>Settings → Editing → Node Quick Assist → <strong>Icon-only row</strong> switches the menu from a vertical icon+label list to a compact wrapping row of icons — same actions, same order, same keyboard navigation, just a smaller footprint. Hover an icon for its name</li>
 <li>Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, and Insert date/time all splice directly at the cursor and keep you in edit mode, so you don't lose your place — the fastest actions in the menu, and the reason it exists. Note, Code block, Tags, and Insert decision log commit the edit first and open their normal panel, exactly as right-click → the same item would. Rewrite node runs the same AI rewrite as the toolbar/right-click version, including its own "Rewritten ✦" confirmation toast</li>
@@ -5151,7 +5153,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
       </div>
       <div id="history-modal-body" class="history-modal-body"></div>
       <div class="history-modal-footer">
-        <span class="history-modal-footer-hint">Keeps the last 20 versions per document</span>
+        <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 20 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
@@ -5427,7 +5429,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
 let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
-const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
+const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -6571,17 +6573,81 @@ function openVersionHistory(docId){
   if(!docId)return;
   const overlay=el('history-modal-overlay'); if(!overlay)return;
   historyModalDocId=docId;
+  historyModalNodeId=null;
+  renderVersionHistoryList();
+  overlay.classList.add('open');
+}
+// Node-scoped view of the SAME document revision history the whole-document modal above
+// already uses — no separate storage, no separate capture cadence, just a different lens on
+// data that's already being kept. Deliberately reuses the modal shell (renderVersionHistoryList
+// branches on historyModalNodeId) rather than building a second modal, so this doesn't drift
+// out of sync with whatever changes happen to the whole-document view over time.
+function openNodeVersionHistory(nodeId){
+  if(nodeId===null||nodeId===undefined||!currentDocId)return;
+  const overlay=el('history-modal-overlay'); if(!overlay)return;
+  historyModalDocId=currentDocId;
+  historyModalNodeId=nodeId;
   renderVersionHistoryList();
   overlay.classList.add('open');
 }
 function closeVersionHistory(){
   const overlay=el('history-modal-overlay'); if(overlay)overlay.classList.remove('open');
   historyModalDocId=null;
+  historyModalNodeId=null;
 }
 function renderVersionHistoryList(){
   const body=el('history-modal-body'); if(!body)return;
   const docId=historyModalDocId; if(!docId)return;
   const nameEl=el('history-modal-docname');
+  const footerHint=el('history-modal-footer-hint');
+  const saveNowBtn=el('history-save-now-btn');
+  if(historyModalNodeId!==null){
+    const idx=getIndex(historyModalNodeId);
+    if(nameEl)nameEl.textContent='this node';
+    if(footerHint)footerHint.textContent='Drawn from the document\'s regular version history — only showing where this node\'s text actually changed';
+    if(saveNowBtn)saveNowBtn.style.display='none';
+    body.innerHTML='';
+    if(idx<0){
+      body.innerHTML='<div class="history-empty">This node no longer exists in the current document.</div>';
+      return;
+    }
+    const currentText=(nodes[idx].text||'').trim();
+    const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
+    const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
+    const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
+    const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=currentText||'(empty)';
+    nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
+    nowRow.appendChild(nowInfo);
+    body.appendChild(nowRow);
+    const revisions=loadDocRevisions(docId).slice().reverse(); // newest first
+    let lastText=currentText, shown=0;
+    for(const rev of revisions){
+      const n=rev.nodes.find(x=>x.id===historyModalNodeId);
+      if(!n)continue;
+      const text=(n.text||'').trim();
+      if(text===lastText)continue; // only show where it actually changed vs. the version right after it
+      lastText=text;
+      const row=document.createElement('div'); row.className='history-row';
+      const info=document.createElement('div'); info.className='history-row-info';
+      const time=document.createElement('div'); time.className='history-row-time'; time.textContent=new Date(rev.ts).toLocaleString();
+      const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=text||'(empty)';
+      info.appendChild(time); info.appendChild(meta);
+      row.appendChild(info);
+      const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore text';
+      restoreBtn.addEventListener('click',()=>restoreNodeTextFromRevision(historyModalNodeId,text));
+      row.appendChild(restoreBtn);
+      body.appendChild(row);
+      shown++;
+    }
+    if(!shown){
+      const empty=document.createElement('div'); empty.className='history-empty';
+      empty.textContent='No earlier versions of this node yet — captured automatically alongside the document\'s regular version history (roughly every 10 minutes of active changes).';
+      body.appendChild(empty);
+    }
+    return;
+  }
+  if(footerHint)footerHint.textContent='Keeps the last 20 versions per document';
+  if(saveNowBtn)saveNowBtn.style.display='';
   const entry=loadDocsIndex().find(d=>d.id===docId);
   if(nameEl)nameEl.textContent=(docId===currentDocId?el('header-title')?.value:entry?.title)||entry?.title||'Untitled';
   const revisions=loadDocRevisions(docId).slice().reverse(); // newest first
@@ -6633,6 +6699,25 @@ async function restoreDocRevision(docId,ts){
   renderVersionHistoryList();
   renderSidebar(); renderTabStrip();
   showToast('Version restored');
+}
+// Surgical restore for the node-scoped history view — only touches this one node's text,
+// through the normal undo stack, rather than replacing the whole document like restoreDocRevision
+// above. Deliberately doesn't touch note/codeBlock/decisionLog/tags — this view only ever shows
+// text, so it should only ever restore text; anything else risks restoring stale sub-content the
+// person never asked to see or compare in the first place.
+async function restoreNodeTextFromRevision(nodeId,text){
+  const idx=getIndex(nodeId);
+  if(idx<0){ showToast('That node no longer exists'); return; }
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',title:'Restore This Text',body:'Replace this node\'s current text with the version shown?\n\nThis becomes undoable with Ctrl+Z, same as any other edit — nothing else about the node (note, code, tags, decision log) is touched.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  if(!ok)return;
+  if(editingId===nodeId)commitEdit();
+  pushUndo();
+  nodes[idx].text=text;
+  nodes[idx].modifiedAt=Date.now();
+  markDirty(); render(); scheduleAutoSave();
+  sakuraLog('commit','restoreNodeTextFromRevision',{nodeId});
+  showToast('Text restored — Ctrl+Z to undo');
+  renderVersionHistoryList();
 }
 function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
@@ -9857,7 +9942,7 @@ const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down',
 // otherwise have nowhere to live except the node's own text, which we don't want to type
 // into. Reuses CTX_ACTION_META icons where a matching right-click action already exists,
 // so the same action looks the same everywhere it appears.
-const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite'];
+const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
   endash:{label:'Insert en dash',glyph:'–'},
@@ -9869,7 +9954,8 @@ const NODE_QA_ACTION_META={
   note:{label:'Note…',svg:CTX_ACTION_META.note.svg},
   tags:{label:'Tags…',svg:CTX_ACTION_META.tags.svg},
   'decision-log':{label:'Insert decision log',svg:CTX_ACTION_META['decision-log'].svg},
-  'ai-rewrite':{label:'Rewrite node',svg:CTX_ACTION_META['ai-rewrite'].svg}
+  'ai-rewrite':{label:'Rewrite node',svg:CTX_ACTION_META['ai-rewrite'].svg},
+  'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>'}
 };
 // Full-removal list for the right-click menu's "Menu items" settings grid — every
 // quick-row-eligible action plus the sort-children group, which has no quick-row slot.
@@ -12680,6 +12766,11 @@ async function runNodeQuickAssistAction(actionId,nodeId){
   }
   if(actionId==='decision-log'||actionId==='ai-rewrite'){
     await runQuickAction(actionId,nodeId); return;
+  }
+  if(actionId==='version-history'){
+    commitEdit();
+    openNodeVersionHistory(nodeId);
+    return;
   }
 }
 async function commitNodeQuickAssist(actionId){
