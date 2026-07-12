@@ -2378,11 +2378,20 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .diagram-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+#diagram-editor-note-btn{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;transition:border-color .12s,color .12s}
+#diagram-editor-note-btn:hover{color:var(--fg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-note-btn.has-note{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 .diagram-row-status{display:inline-flex;align-items:center;font:700 9px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:1px 7px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .diagram-row-status[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
 .diagram-row-status[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .diagram-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
-.diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.diagram-row-warn-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:4px;padding:1px 6px;cursor:help}
+.diagram-row-note-preview{font:400 11px 'Inter',sans-serif;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.diagram-row-note-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.diagram-row-note-btn.has-note{opacity:1;color:var(--accent)}
+.diagram-row:hover .diagram-row-note-btn{opacity:1}
+.diagram-row-note-btn:hover{color:var(--accent);background:var(--hover)}
 #diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
@@ -4211,6 +4220,9 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Delete a diagram from its row in the list (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes and Q&amp;A rows), then removes it and its node link entirely. Undo with <span class="help-kbd">Ctrl/Cmd+Z</span> or the toast's own Undo button, either works, for 15 seconds — longer than most toasts elsewhere in Sakura, since a diagram takes real effort to recreate. Deleting doesn't touch the node itself</li>
 <li>The copy icon next to delete duplicates a diagram — same drawing, same status, same node link, titled "(original title) (copy)". Useful for variations on the same base drawing without starting over. A pure data copy, not a draw.io operation, so it's instant</li>
 <li>Each diagram has a <strong>status</strong> — Draft, In Progress, Review, or Final — shown as a small colored pill on its row and in the full-screen editor's header. Click either one to cycle to the next status. Purely organizational — nothing else in Sakura reads it (it's not exported or shown in Preview), it's just a way to track where each diagram stands at a glance across a document with several</li>
+<li>Two more chips can appear on a row: <strong>Unlinked</strong>, when a diagram has no node link yet (a reminder it's invisible in Preview and exports until you link it), and <strong>Modified since export</strong>, when it's changed since the last time anything was exported from Sakura. The latter is approximate — Sakura tracks one "last export" timestamp app-wide, not per document, so it can't tell whether it was specifically this diagram (or even this document) that got exported</li>
+<li>The note icon on a row (and the matching one in the full-screen editor's header) attaches a private, free-text <strong>note</strong> — a reminder to yourself, e.g. "needs sign-off before this is final." Never shown in Preview, PDF, Word, PowerPoint, or anywhere outside this panel; a short preview of it appears under the row once set</li>
+<li>Diagrams are included in Sakura's Version History (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores that version's diagrams too, alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected by that, only the cached preview image. Q&amp;A and Pad content aren't part of Version History yet — restoring a version never deletes either, but it also can't bring back an older version of them the way it can for diagrams</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
 <li>Not the same thing as Export ▾ → AI → "Diagram ✦" / "Save AI Diagram" — those turn the outline itself into a draw.io flowchart via an AI prompt round-trip and save the result as a standalone <span class="help-kbd">.drawio</span> file, rather than a diagram you draw and link to a node here. Either can produce a diagram you then create and paste in through this tab if you'd like it kept alongside the document and shown in Preview</li>
@@ -4819,6 +4831,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
     <button type="button" id="diagram-editor-status-chip" class="diagram-status-chip" data-tip="Cycle status"></button>
+    <button type="button" id="diagram-editor-note-btn" data-tip="Add a note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
     <span id="diagram-editor-status"></span>
     <button type="button" id="diagram-editor-close" data-tip="Close (saves automatically)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -6241,10 +6254,22 @@ function saveDocRevisions(id,list){ try{ localStorage.setItem(revisionKey(id),JS
 function deleteDocRevisions(id){ try{ localStorage.removeItem(revisionKey(id)) }catch(e){} }
 // `reason` shows in the History panel — 'Auto', 'Manual checkpoint', or 'Before restoring
 // an older version' (recorded automatically so restoring itself is never destructive).
+//
+// Diagrams are stored without their exported preview images (previewSvg/pageSvgs) — those
+// regenerate automatically the next time a restored diagram is reopened and saved once in
+// draw.io, and keeping them out of every revision avoids multiplying storage use by however
+// large those images are, times up to REVISION_MAX_PER_DOC copies. The XML — the actual
+// recoverable content — is kept in full. Q&A and Pad content still aren't captured here at
+// all (a smaller, separate gap); restoring a version leaves both untouched rather than wiping
+// them, same as it always has.
+function trimDiagramsForRevision(arr){
+  if(!Array.isArray(arr))return [];
+  return arr.map(d=>({id:d.id,title:d.title||'',xml:d.xml||'',status:d.status||'draft',note:d.note||'',anchorNodeId:d.anchorNodeId??null,pageCount:d.pageCount||1,createdAt:d.createdAt||Date.now(),modifiedAt:d.modifiedAt||Date.now()}));
+}
 function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
   const list=loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||''});
+  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams)});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
   saveDocRevisions(id,list);
 }
@@ -6255,7 +6280,9 @@ function maybeAutoSnapshotBeforeSave(id){
     if(!Array.isArray(prev.nodes)||!prev.nodes.length)return; // nothing meaningful to preserve
     const revisions=loadDocRevisions(id);
     const last=revisions[revisions.length-1];
-    if(last&&JSON.stringify(last.nodes)===JSON.stringify(prev.nodes))return; // no real change since the last snapshot
+    const prevKey=JSON.stringify({n:prev.nodes,d:trimDiagramsForRevision(prev.diagrams)});
+    const lastKey=last?JSON.stringify({n:last.nodes,d:trimDiagramsForRevision(last.diagrams)}):null;
+    if(last&&lastKey===prevKey)return; // no real change (in nodes OR diagrams) since the last snapshot
     if(last&&(Date.now()-last.ts)<REVISION_MIN_GAP_MS)return;
     recordDocRevision(id,prev,'Auto');
   }catch(e){}
@@ -6777,22 +6804,46 @@ function safeNextId(nds){ return nds.reduce((m,n)=>Math.max(m,(Number(n.id)||0)+
 async function restoreDocRevision(docId,ts){
   const revisions=loadDocRevisions(docId);
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current content with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  const diagramNote=Array.isArray(rev.diagrams)&&rev.diagrams.length?'\n\nDiagrams restore too — a diagram\'s thumbnail regenerates the next time it\'s reopened and saved.':'';
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current content with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.'+diagramNote,confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
   if(!ok)return;
   const freshNodes=rev.nodes.map(normalizeNode);
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
+    recordDocRevision(docId,{nodes,diagrams,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
+    if(Array.isArray(rev.diagrams)){
+      // Revision diagrams never include their exported preview image (see recordDocRevision)
+      // — restored ones show the placeholder icon until reopened and saved once in draw.io,
+      // which regenerates it automatically. Older revisions recorded before this existed have
+      // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
+      diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]}));
+      if(padViewMode==='diagrams')renderDiagramsList();
+    }
     if(el('header-title'))el('header-title').value=rev.title||'';
     titleAutoSyncEnabled=!String(rev.title||'').trim(); lastAutoTitle=String(rev.title||'').trim();
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
   } else {
+    let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[];
     try{
       const raw=localStorage.getItem(docKey(docId));
-      if(raw){ const prev=JSON.parse(raw); recordDocRevision(docId,prev,'Before restoring an older version'); }
+      if(raw){
+        const prev=JSON.parse(raw);
+        recordDocRevision(docId,prev,'Before restoring an older version');
+        prevQa=Array.isArray(prev.qa)?prev.qa:[];
+        prevPad=prev.pad||'';
+        prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
+      }
     }catch(e){}
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:''};
+    // Q&A and Pad content isn't captured by revisions at all (see recordDocRevision) — restoring
+    // a version must not silently delete either just because the revision predates or doesn't
+    // track them, so both carry over unchanged from whatever the document currently has, same
+    // as before this diagrams fix. Diagrams DO restore to what the revision recorded when
+    // available; otherwise, same fallback as Q&A/Pad — leave what's currently there alone
+    // rather than wipe it. (Previously this branch silently dropped all three on every restore,
+    // regardless of revision content — that's the bug this fixes.)
+    const restoredDiagrams=Array.isArray(rev.diagrams)?rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]})):prevDiagramsCurrent;
+    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:prevPad,qa:prevQa,diagrams:restoredDiagrams};
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
@@ -6827,7 +6878,7 @@ function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
+    recordDocRevision(docId,{nodes,diagrams,title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
@@ -6870,6 +6921,34 @@ function updateDiagramEditorStatusChip(d){
   const btn=el('diagram-editor-status-chip'); if(!btn)return;
   const s=diagramStatusOf(d);
   btn.dataset.color=diagramStatusColor(s); btn.textContent=diagramStatusLabel(s);
+}
+// LAST_EXPORT_KEY is a single app-wide "anything exported, ever" timestamp — Sakura doesn't
+// track exports per document or per format, so this is necessarily approximate: it flags a
+// diagram edited after the last export of *any* document, not specifically this one. Still
+// directionally useful as a "you probably want to re-export" nudge, and the row chip's tooltip
+// says so explicitly rather than implying more precision than this actually has.
+function diagramModifiedSinceExport(d){
+  if(!d.modifiedAt)return false;
+  let ts=0; try{ ts=Number(localStorage.getItem(LAST_EXPORT_KEY))||0 }catch(e){}
+  return ts>0&&d.modifiedAt>ts;
+}
+// A private reminder attached to a diagram — never shown in Preview, exports, or anywhere
+// outside this panel and the row list. Reuses the existing multi-line prompt dialog rather than
+// building a bespoke inline editor.
+async function editDiagramNote(d){
+  const val=await sakuraTextareaPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',title:'Diagram Note',body:'A private reminder for yourself — never shown in Preview, exports, or anywhere outside this panel.',defaultValue:d.note||'',textareaLabel:'Note',textareaPlaceholder:'e.g. Needs the payments team to confirm step 3 before this is final',confirmLabel:'Save',cancelLabel:'Cancel'});
+  if(val===null)return;
+  d.note=val.trim();
+  d.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  renderDiagramsList();
+  if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorNoteBtn(d);
+}
+function updateDiagramEditorNoteBtn(d){
+  const btn=el('diagram-editor-note-btn'); if(!btn)return;
+  const has=!!(d.note&&d.note.trim());
+  btn.classList.toggle('has-note',has);
+  btn.dataset.tip=has?'Edit note: '+d.note.trim().slice(0,80):'Add a note';
 }
 // Splits a saved draw.io mxfile into its individual pages, purely by parsing the saved XML
 // string — no interaction with the live editor, so this is safe to run anytime. <diagram>
@@ -6951,22 +7030,44 @@ function renderDiagramsList(){
     statusChip.dataset.tip='Click to change status';
     statusChip.addEventListener('click',e=>{ e.stopPropagation(); cycleDiagramStatus(d); renderDiagramsList(); });
     metaRow.appendChild(statusChip);
+    if(d.anchorNodeId==null){
+      const unlinkedChip=document.createElement('span'); unlinkedChip.className='diagram-row-warn-chip';
+      unlinkedChip.textContent='Unlinked';
+      unlinkedChip.dataset.tip="Not linked to a node — won't appear in Preview, PDF, Word, or PowerPoint until you link it (the anchor button in the full-screen editor).";
+      metaRow.appendChild(unlinkedChip);
+    }
     if(d.pageCount>1){
       const pageBadge=document.createElement('span'); pageBadge.className='diagram-row-pages';
       pageBadge.textContent=d.pageCount+' pages';
       pageBadge.dataset.tip='Only the page that was active when last saved appears in the thumbnail, Preview, and exports — draw.io\'s embed editor can\'t safely export every page at once. Reopen and save with the page you want visible active, or split pages into separate diagrams via + instead.';
       metaRow.appendChild(pageBadge);
     }
+    if(diagramModifiedSinceExport(d)){
+      const staleChip=document.createElement('span'); staleChip.className='diagram-row-warn-chip';
+      staleChip.textContent='Modified since export';
+      staleChip.dataset.tip='Changed after the last time anything was exported from Sakura. Approximate — this compares against the last export of any document, not specifically this one, since Sakura doesn\'t track exports per document.';
+      metaRow.appendChild(staleChip);
+    }
     info.appendChild(metaRow);
     const anchor=document.createElement('div'); anchor.className='diagram-row-anchor'; anchor.textContent=diagramAnchorLabel(d);
     info.appendChild(anchor);
+    if(d.note&&d.note.trim()){
+      const notePreview=document.createElement('div'); notePreview.className='diagram-row-note-preview';
+      notePreview.textContent=d.note.trim();
+      notePreview.dataset.tip='Click the note icon to edit';
+      info.appendChild(notePreview);
+    }
+    const noteBtn=document.createElement('button'); noteBtn.className='diagram-row-note-btn'+(d.note&&d.note.trim()?' has-note':'');
+    noteBtn.dataset.tip=d.note&&d.note.trim()?'Edit note':'Add a note';
+    noteBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    noteBtn.addEventListener('click',e=>{ e.stopPropagation(); editDiagramNote(d); });
     const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
     dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
+    row.appendChild(thumb); row.appendChild(info); row.appendChild(noteBtn); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
@@ -6974,7 +7075,7 @@ function renderDiagramsList(){
 function createDiagram(){
   if(!padDiagramsTabEnabled)return;
   ensureDocumentForEditing();
-  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
+  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
@@ -6993,6 +7094,7 @@ function duplicateDiagram(id){
     pageSvgs:Array.isArray(src.pageSvgs)?src.pageSvgs.map(p=>({...p})):[],
     pageCount:src.pageCount||1,
     status:diagramStatusOf(src),
+    note:src.note||'',
     anchorNodeId:src.anchorNodeId??null,
     createdAt:Date.now(),
     modifiedAt:Date.now()
@@ -7039,6 +7141,7 @@ function openDiagramEditor(diagramId){
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
   updateDiagramEditorStatusChip(d);
+  updateDiagramEditorNoteBtn(d);
   const status=el('diagram-editor-status'); if(status)status.textContent='Loading draw.io…';
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
@@ -7116,6 +7219,11 @@ el('diagram-editor-status-chip')?.addEventListener('click',()=>{
   const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
   cycleDiagramStatus(d);
   updateDiagramEditorStatusChip(d);
+});
+el('diagram-editor-note-btn')?.addEventListener('click',()=>{
+  if(!_diagramEditorState)return;
+  const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
+  editDiagramNote(d);
 });
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
 document.addEventListener('keydown',e=>{
