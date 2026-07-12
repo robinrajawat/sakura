@@ -2352,10 +2352,12 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 .diagram-row-info{flex:1;min-width:0}
 .diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-row-anchor{font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.diagram-row-pages{display:inline-flex;align-items:center;margin-top:3px;font:500 10px 'Inter',sans-serif;color:var(--hint);background:var(--hover);border-radius:4px;padding:1px 6px;cursor:help}
+.diagram-row-pages{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--hint);background:var(--hover);border-radius:4px;padding:1px 6px;cursor:help}
 .diagram-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.diagram-row:hover .diagram-row-delete{opacity:1}
+.diagram-row-dup{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.diagram-row:hover .diagram-row-delete,.diagram-row:hover .diagram-row-dup{opacity:1}
 .diagram-row-delete:hover{color:var(--fc-red);background:var(--hover)}
+.diagram-row-dup:hover{color:var(--accent);background:var(--hover)}
 
 /* Full-screen diagram editor — deliberately never a small/normal state (see the Note/Code
    panel discussion this was split off from): draw.io's own UI needs real room to be usable at
@@ -2371,6 +2373,16 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 #diagram-editor-anchor-btn svg{flex-shrink:0}
 #diagram-editor-anchor-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #diagram-editor-status{flex:1;font:400 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right}
+.diagram-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.diagram-status-chip[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
+.diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.diagram-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
+.diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.diagram-row-status{display:inline-flex;align-items:center;font:700 9px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:1px 7px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.diagram-row-status[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
+.diagram-row-status[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.diagram-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
+.diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
 #diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
@@ -4196,7 +4208,9 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
 <li>Give it a title in the field at the top, and link it to a node with the anchor button next to it (searches node text as you type; "Not linked to a node" clears the link). Linking is optional but is what makes a diagram show up anywhere outside this tab — an unlinked diagram only lives in the Diagrams list itself</li>
 <li>A linked diagram appears as a large figure directly under its node in Preview, PDF, Word, and PowerPoint exports — same treatment as a note image marked "Feature as diagram" elsewhere in Sakura, so there's no visible difference between the two workflows in the output. Settings → Export &amp; print → "Include Diagrams in exports" controls the Word/PowerPoint case specifically (Preview and PDF always show it); click the figure in Preview to enlarge it</li>
 <li>A small accent-colored square-cluster dot appears next to a node with a linked diagram — click it to jump straight to the Diagrams tab and open that diagram (or the list, if the node has more than one). The same icon appears next to a folded node's "+N hidden" badge when a diagram is linked somewhere inside its collapsed subtree</li>
-<li>Delete a diagram from its row in the list (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes and Q&amp;A rows), then removes it and its node link entirely. Undo with <span class="help-kbd">Ctrl/Cmd+Z</span> or the toast's own Undo button, either works — it doesn't touch the node itself</li>
+<li>Delete a diagram from its row in the list (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes and Q&amp;A rows), then removes it and its node link entirely. Undo with <span class="help-kbd">Ctrl/Cmd+Z</span> or the toast's own Undo button, either works, for 15 seconds — longer than most toasts elsewhere in Sakura, since a diagram takes real effort to recreate. Deleting doesn't touch the node itself</li>
+<li>The copy icon next to delete duplicates a diagram — same drawing, same status, same node link, titled "(original title) (copy)". Useful for variations on the same base drawing without starting over. A pure data copy, not a draw.io operation, so it's instant</li>
+<li>Each diagram has a <strong>status</strong> — Draft, In Progress, Review, or Final — shown as a small colored pill on its row and in the full-screen editor's header. Click either one to cycle to the next status. Purely organizational — nothing else in Sakura reads it (it's not exported or shown in Preview), it's just a way to track where each diagram stands at a glance across a document with several</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
 <li>Not the same thing as Export ▾ → AI → "Diagram ✦" / "Save AI Diagram" — those turn the outline itself into a draw.io flowchart via an AI prompt round-trip and save the result as a standalone <span class="help-kbd">.drawio</span> file, rather than a diagram you draw and link to a node here. Either can produce a diagram you then create and paste in through this tab if you'd like it kept alongside the document and shown in Preview</li>
@@ -4804,6 +4818,7 @@ body.pad-diagrams-mode #diagrams-tab-body{display:flex}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V12M12 12l-6 4M12 12l6 4"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
+    <button type="button" id="diagram-editor-status-chip" class="diagram-status-chip" data-tip="Cycle status"></button>
     <span id="diagram-editor-status"></span>
     <button type="button" id="diagram-editor-close" data-tip="Close (saves automatically)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -6841,6 +6856,21 @@ el('history-modal-close-x')?.addEventListener('click',()=>closeVersionHistory())
 // moved; the full-screen editor below is unchanged either way.
 function newDiagramId(){ return 'dg'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 function findDiagram(id){ return diagrams.find(d=>d.id===id); }
+const DIAGRAM_STATUSES=['draft','in-progress','review','final'];
+function diagramStatusOf(d){ return DIAGRAM_STATUSES.includes(String((d&&d.status)||'').toLowerCase())?String(d.status).toLowerCase():'draft'; }
+function diagramStatusLabel(s){ return ({draft:'Draft','in-progress':'In Progress',review:'Review',final:'Final'})[s]||'Draft'; }
+function diagramStatusColor(s){ return ({draft:'gray','in-progress':'blue',review:'orange',final:'green'})[s]||'gray'; }
+function cycleDiagramStatus(d){
+  const cur=DIAGRAM_STATUSES.indexOf(diagramStatusOf(d));
+  d.status=DIAGRAM_STATUSES[(cur+1)%DIAGRAM_STATUSES.length];
+  d.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+}
+function updateDiagramEditorStatusChip(d){
+  const btn=el('diagram-editor-status-chip'); if(!btn)return;
+  const s=diagramStatusOf(d);
+  btn.dataset.color=diagramStatusColor(s); btn.textContent=diagramStatusLabel(s);
+}
 // Splits a saved draw.io mxfile into its individual pages, purely by parsing the saved XML
 // string — no interaction with the live editor, so this is safe to run anytime. <diagram>
 // elements are always siblings under <mxfile> (draw.io pages never nest), so a non-greedy regex
@@ -6898,22 +6928,45 @@ function renderDiagramsList(){
   diagrams.forEach(d=>{
     const row=document.createElement('div'); row.className='diagram-row';
     const thumb=document.createElement('div'); thumb.className='diagram-row-thumb';
-    if(d.previewSvg){ const img=document.createElement('img'); img.src=d.previewSvg; img.alt=''; thumb.appendChild(img); }
+    if(d.previewSvg){
+      const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
+      // draw.io's export occasionally returns a data URI that fails to decode (truncated
+      // response, an SVG referencing something the img tag can't resolve, etc.) — without this,
+      // a broken thumbnail is just an empty box with no indication anything's wrong. Falls back
+      // to the same placeholder icon used when there's no thumbnail yet at all.
+      img.addEventListener('error',()=>{
+        thumb.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>';
+        thumb.dataset.tip='Thumbnail failed to load — reopen and save this diagram to regenerate it';
+      },{once:true});
+      thumb.appendChild(img);
+    }
     else { thumb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; }
     const info=document.createElement('div'); info.className='diagram-row-info';
     const title=document.createElement('div'); title.className='diagram-row-title'; title.textContent=d.title||'Untitled diagram';
-    const anchor=document.createElement('div'); anchor.className='diagram-row-anchor'; anchor.textContent=diagramAnchorLabel(d);
-    info.appendChild(title); info.appendChild(anchor);
+    info.appendChild(title);
+    const metaRow=document.createElement('div'); metaRow.className='diagram-row-meta';
+    const statusChip=document.createElement('span'); statusChip.className='diagram-row-status';
+    const curStatus=diagramStatusOf(d);
+    statusChip.dataset.color=diagramStatusColor(curStatus); statusChip.textContent=diagramStatusLabel(curStatus);
+    statusChip.dataset.tip='Click to change status';
+    statusChip.addEventListener('click',e=>{ e.stopPropagation(); cycleDiagramStatus(d); renderDiagramsList(); });
+    metaRow.appendChild(statusChip);
     if(d.pageCount>1){
       const pageBadge=document.createElement('span'); pageBadge.className='diagram-row-pages';
       pageBadge.textContent=d.pageCount+' pages';
       pageBadge.dataset.tip='Only the page that was active when last saved appears in the thumbnail, Preview, and exports — draw.io\'s embed editor can\'t safely export every page at once. Reopen and save with the page you want visible active, or split pages into separate diagrams via + instead.';
-      info.appendChild(pageBadge);
+      metaRow.appendChild(pageBadge);
     }
+    info.appendChild(metaRow);
+    const anchor=document.createElement('div'); anchor.className='diagram-row-anchor'; anchor.textContent=diagramAnchorLabel(d);
+    info.appendChild(anchor);
+    const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
+    dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(thumb); row.appendChild(info); row.appendChild(delBtn);
+    row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
@@ -6921,11 +6974,33 @@ function renderDiagramsList(){
 function createDiagram(){
   if(!padDiagramsTabEnabled)return;
   ensureDocumentForEditing();
-  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
+  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
   openDiagramEditor(d.id);
+}
+// Pure data clone — copies the already-exported XML/SVG strings, never talks to the live
+// draw.io editor, so unlike the reverted multi-page export attempt this can't corrupt anything.
+function duplicateDiagram(id){
+  const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
+  const src=diagrams[idx];
+  const copy={
+    id:newDiagramId(),
+    title:src.title?src.title+' (copy)':'',
+    xml:src.xml||'',
+    previewSvg:src.previewSvg||'',
+    pageSvgs:Array.isArray(src.pageSvgs)?src.pageSvgs.map(p=>({...p})):[],
+    pageCount:src.pageCount||1,
+    status:diagramStatusOf(src),
+    anchorNodeId:src.anchorNodeId??null,
+    createdAt:Date.now(),
+    modifiedAt:Date.now()
+  };
+  diagrams.splice(idx+1,0,copy);
+  markDirty(); scheduleAutoSave();
+  renderDiagramsList();
+  showToast('Diagram duplicated');
 }
 async function deleteDiagram(id){
   const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
@@ -6944,7 +7019,7 @@ async function deleteDiagram(id){
   showActionToast('Diagram deleted','Undo',()=>{
     diagrams.splice(Math.min(idx2,diagrams.length),0,removed);
     markDirty(); scheduleAutoSave(); renderDiagramsList();
-  });
+  },15000);
 }
 
 // ── Full-screen editor (real draw.io via embed mode) ──────────────────────
@@ -6963,6 +7038,7 @@ function openDiagramEditor(diagramId){
   wrap.appendChild(iframe);
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
+  updateDiagramEditorStatusChip(d);
   const status=el('diagram-editor-status'); if(status)status.textContent='Loading draw.io…';
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
@@ -7034,6 +7110,12 @@ el('diagram-editor-title-input')?.addEventListener('input',()=>{
   const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
   d.title=el('diagram-editor-title-input').value;
   markDirty(); scheduleAutoSave();
+});
+el('diagram-editor-status-chip')?.addEventListener('click',()=>{
+  if(!_diagramEditorState)return;
+  const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
+  cycleDiagramStatus(d);
+  updateDiagramEditorStatusChip(d);
 });
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
 document.addEventListener('keydown',e=>{
