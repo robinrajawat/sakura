@@ -2331,6 +2331,55 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 <style>
 /* === Todos panel === */
 #todos-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(380px,calc(100vw - 32px));max-height:min(74vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+
+/* Diagrams panel — a plain list (title, thumbnail, anchor), deliberately no sort/filter/bulk
+   machinery the way Todos has: diagrams are typically a handful per document, not dozens, and
+   each row's real workspace is the full-screen editor it opens, not this list. */
+#diagrams-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(340px,calc(100vw - 32px));max-height:min(74vh,560px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#diagrams-panel.open{display:flex}
+#diagrams-panel-header{display:flex;align-items:center;gap:6px;padding:10px 8px 10px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+#diagrams-panel .panel-title-icon{color:var(--accent);display:flex;flex-shrink:0}
+#diagrams-panel-title{flex:1;font:600 13px 'Inter',sans-serif;color:var(--fg)}
+#diagrams-add-btn,#diagrams-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#diagrams-add-btn:hover,#diagrams-panel-close:hover{color:var(--fg);background:var(--hover)}
+#diagrams-body{overflow-y:auto;flex:1;padding:8px}
+#diagrams-body:empty::after,.diagrams-empty{content:'';}
+.diagrams-empty{padding:28px 14px;text-align:center;font:400 12.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5}
+.diagram-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;cursor:pointer;transition:background .12s}
+.diagram-row:hover{background:var(--hover)}
+.diagram-row-thumb{flex:0 0 auto;width:52px;height:40px;border-radius:6px;border:1px solid var(--border);background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--hint)}
+.diagram-row-thumb img{width:100%;height:100%;object-fit:contain}
+.diagram-row-info{flex:1;min-width:0}
+.diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diagram-row-anchor{font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.diagram-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.diagram-row:hover .diagram-row-delete{opacity:1}
+.diagram-row-delete:hover{color:var(--fc-red);background:var(--hover)}
+
+/* Full-screen diagram editor — deliberately never a small/normal state (see the Note/Code
+   panel discussion this was split off from): draw.io's own UI needs real room to be usable at
+   all, and diagram editing is never a quick aside the way a short note is. */
+#diagram-editor-overlay{display:none;position:fixed;inset:0;z-index:900;background:var(--bg);flex-direction:column}
+#diagram-editor-overlay.open{display:flex}
+#diagram-editor-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--tb-bg)}
+#diagram-editor-title-input{flex:0 1 320px;min-width:120px;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
+#diagram-editor-title-input:hover{background:var(--hover)}
+#diagram-editor-title-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-anchor-btn{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:260px;transition:border-color .12s,color .12s}
+#diagram-editor-anchor-btn:hover{color:var(--fg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-anchor-btn svg{flex-shrink:0}
+#diagram-editor-anchor-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#diagram-editor-status{flex:1;font:400 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right}
+#diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
+#diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
+#diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+#diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:280px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
+#diagram-anchor-suggest.open{display:block}
+.diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
+.diagram-anchor-item-none{color:var(--hint);font-style:italic}
+
 #todos-panel.open{display:flex}
 #todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
 #todos-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
@@ -3724,6 +3773,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
         </div>
       </div>
       <button class="btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)">To-Dos</button>
+      <button class="btn" id="diagrams-toggle" data-tip="Diagrams (Ctrl/Cmd+Shift+I)">Diagrams</button>
       <div class="help-wrap">
         <button class="btn" id="help-toggle">Help</button>
         <div class="help-panel" id="help-panel">
@@ -4724,6 +4774,30 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
   <div id="todos-toast" role="status" aria-live="polite"></div>
 </div>
 
+<div id="diagrams-panel" role="dialog" aria-label="Diagrams">
+  <div id="diagrams-panel-header">
+    <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v2a2 2 0 0 0 2 2h1"/><path d="M17.5 10v2a2 2 0 0 0-2 2h-1"/></svg></span>
+    <span id="diagrams-panel-title">Diagrams</span>
+    <button id="diagrams-add-btn" data-tip="New diagram" aria-label="New diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button id="diagrams-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="diagrams-body"></div>
+</div>
+
+<div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
+  <div id="diagram-editor-header">
+    <input id="diagram-editor-title-input" type="text" placeholder="Untitled diagram" maxlength="120" autocomplete="off" />
+    <button type="button" id="diagram-editor-anchor-btn" data-tip="Choose which node this diagram appears under">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V12M12 12l-6 4M12 12l6 4"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
+      <span id="diagram-editor-anchor-label">Not linked to a node</span>
+    </button>
+    <span id="diagram-editor-status"></span>
+    <button type="button" id="diagram-editor-close" data-tip="Close (saves automatically)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="diagram-editor-iframe-wrap"></div>
+</div>
+<div id="diagram-anchor-suggest"></div>
+
 <div id="todos-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Status Summary">
   <div class="app-modal" style="width:min(480px,94vw)">
     <div class="app-modal-head">
@@ -5428,7 +5502,7 @@ const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionPadNodeId=null; let decisionPadPriorMode='notes'; let decisionListMode=false; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','decision-log','delete']; let hoverToolbarEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultQa=false; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx','diagram-prompt','drawio-from-ai']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','decision-log','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -6162,7 +6236,7 @@ function saveToStorage(){
   try{
     if(!currentDocId)return;
     maybeAutoSnapshotBeforeSave(currentDocId);
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -6207,6 +6281,7 @@ function loadDocFromStorage(id){
     if(el('doc-author'))el('doc-author').value=d.author||'';
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
+    diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
     return true;
   }catch(e){} return false;
 }
@@ -6224,7 +6299,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice();
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice();
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -6250,6 +6325,7 @@ function applyTabSnapshot(tab){
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
+  diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; if(typeof renderDiagramsList==='function'&&el('diagrams-panel')?.classList.contains('open'))renderDiagramsList();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -6264,7 +6340,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ return null }
 }
 
@@ -6734,6 +6810,218 @@ function saveManualDocVersion(){
   showToast('Version saved');
 }
 el('history-modal-close-x')?.addEventListener('click',()=>closeVersionHistory());
+
+// ===== Diagrams =====
+// Document-level objects (independent of any node's Note/Code), each optionally "anchored" to
+// a node — purely positional (Preview/Presenter/exports render it right after that node), not
+// stored inside the node's own note the way the old "Feature as diagram" image workflow worked.
+// The real draw.io editor runs in an iframe via its official embed mode
+// (https://www.drawio.com/doc/faq/embed-mode) — genuinely the same editor as diagrams.net, not
+// a simplified viewer, remote-controlled over postMessage. The only confirmed, reliable signal
+// from that protocol is the 'save' event, fired when the person clicks Save (or Ctrl/Cmd+S)
+// *inside* draw.io's own UI — there's no documented way to force a save from the host side, so
+// unlike everywhere else in this session's data-loss work, this one genuinely can't be made
+// silently safe. The close button below is honest about that rather than pretending otherwise.
+function newDiagramId(){ return 'dg'+Date.now()+'-'+Math.floor(Math.random()*100000); }
+function findDiagram(id){ return diagrams.find(d=>d.id===id); }
+
+function openDiagramsPanel(){
+  const panel=el('diagrams-panel'); if(!panel)return;
+  panel.classList.add('open');
+  renderDiagramsList();
+}
+function closeDiagramsPanel(){
+  const panel=el('diagrams-panel'); if(panel)panel.classList.remove('open');
+}
+function toggleDiagramsPanel(){
+  const panel=el('diagrams-panel'); if(!panel)return;
+  if(panel.classList.contains('open'))closeDiagramsPanel(); else openDiagramsPanel();
+}
+function diagramAnchorLabel(d){
+  if(d.anchorNodeId==null)return 'Not linked to a node';
+  const node=nodes.find(n=>n.id===d.anchorNodeId);
+  if(!node)return 'Linked node no longer exists';
+  const text=stripSemanticMarkers(node.text||'').trim();
+  return 'Under: '+(text?text.slice(0,60):'(untitled node)');
+}
+function renderDiagramsList(){
+  const body=el('diagrams-body'); if(!body)return;
+  body.innerHTML='';
+  if(!diagrams.length){
+    body.innerHTML='<div class="diagrams-empty">No diagrams yet.<br>Click + to create one in draw.io — link it to a node afterward so it shows up there in Preview and exports.</div>';
+    return;
+  }
+  diagrams.forEach(d=>{
+    const row=document.createElement('div'); row.className='diagram-row';
+    const thumb=document.createElement('div'); thumb.className='diagram-row-thumb';
+    if(d.previewSvg){ const img=document.createElement('img'); img.src=d.previewSvg; img.alt=''; thumb.appendChild(img); }
+    else { thumb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; }
+    const info=document.createElement('div'); info.className='diagram-row-info';
+    const title=document.createElement('div'); title.className='diagram-row-title'; title.textContent=d.title||'Untitled diagram';
+    const anchor=document.createElement('div'); anchor.className='diagram-row-anchor'; anchor.textContent=diagramAnchorLabel(d);
+    info.appendChild(title); info.appendChild(anchor);
+    const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
+    delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
+    row.appendChild(thumb); row.appendChild(info); row.appendChild(delBtn);
+    row.addEventListener('click',()=>openDiagramEditor(d.id));
+    body.appendChild(row);
+  });
+}
+function createDiagram(){
+  ensureDocumentForEditing();
+  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
+  diagrams.push(d);
+  markDirty(); scheduleAutoSave();
+  sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
+  openDiagramEditor(d.id);
+}
+function deleteDiagram(id){
+  const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
+  const removed=diagrams[idx];
+  diagrams.splice(idx,1);
+  markDirty(); scheduleAutoSave();
+  renderDiagramsList();
+  showActionToast('Diagram deleted','Undo',()=>{
+    diagrams.splice(Math.min(idx,diagrams.length),0,removed);
+    markDirty(); scheduleAutoSave(); renderDiagramsList();
+  });
+}
+
+// ── Full-screen editor (real draw.io via embed mode) ──────────────────────
+let _diagramEditorState=null; // {diagramId, iframe, handler}
+function updateDiagramEditorAnchorLabel(d){
+  const label=el('diagram-editor-anchor-label'); if(label)label.textContent=diagramAnchorLabel(d);
+}
+function openDiagramEditor(diagramId){
+  const d=findDiagram(diagramId); if(!d)return;
+  closeDiagramsPanel();
+  const overlay=el('diagram-editor-overlay'); if(!overlay)return;
+  const wrap=el('diagram-editor-iframe-wrap'); if(!wrap)return;
+  wrap.innerHTML='';
+  const iframe=document.createElement('iframe');
+  iframe.title='draw.io diagram editor';
+  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1&modified=unsavedChanges';
+  wrap.appendChild(iframe);
+  const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
+  updateDiagramEditorAnchorLabel(d);
+  const status=el('diagram-editor-status'); if(status)status.textContent='Loading draw.io…';
+  const handler=e=>{
+    if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
+    let msg;
+    try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
+    if(!msg||!msg.event)return;
+    sakuraLog('diagram','embed event',{event:msg.event,diagramId});
+    if(msg.event==='init'){
+      iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
+      if(status)status.textContent='';
+    } else if(msg.event==='save'){
+      d.xml=msg.xml||d.xml;
+      d.modifiedAt=Date.now();
+      markDirty(); scheduleAutoSave();
+      // Piggyback an SVG export request on every save — this is what feeds the panel's
+      // thumbnail and (once export wiring lands) Preview/PDF/PPTX/Word, so it needs to stay
+      // in lockstep with the XML rather than being a separate, easy-to-forget step.
+      iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
+      if(status)status.textContent='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      if(msg.exit)closeDiagramEditorInternal();
+    } else if(msg.event==='export'){
+      if(msg.data){ d.previewSvg=msg.data; markDirty(); scheduleAutoSave(); }
+    } else if(msg.event==='exit'){
+      closeDiagramEditorInternal();
+    }
+  };
+  window.addEventListener('message',handler);
+  _diagramEditorState={diagramId,iframe,handler};
+  overlay.classList.add('open');
+}
+function closeDiagramEditorInternal(){
+  if(!_diagramEditorState)return;
+  window.removeEventListener('message',_diagramEditorState.handler);
+  const overlay=el('diagram-editor-overlay'); if(overlay)overlay.classList.remove('open');
+  const wrap=el('diagram-editor-iframe-wrap'); if(wrap)wrap.innerHTML='';
+  _diagramEditorState=null;
+  renderDiagramsList();
+}
+async function closeDiagramEditor(){
+  if(!_diagramEditorState)return;
+  // The embed protocol only confirms one save signal — the 'save' event, fired when Save (or
+  // Ctrl/Cmd+S) is used *inside* draw.io's own UI. There's no documented way to trigger a save
+  // from the host side, so this can't quietly guarantee nothing is lost the way the rest of
+  // this session's fixes could — it can only ask honestly.
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',title:'Close Diagram Editor',body:'Only changes saved inside draw.io (Ctrl/Cmd+S, or its own Save button) are kept — if you made changes since the last save, closing now loses them.\n\nSaved this diagram already?',confirmLabel:'Close',confirmCls:'primary',cancelLabel:'Keep editing'});
+  if(!ok)return;
+  closeDiagramEditorInternal();
+}
+el('diagram-editor-title-input')?.addEventListener('input',()=>{
+  if(!_diagramEditorState)return;
+  const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
+  d.title=el('diagram-editor-title-input').value;
+  markDirty(); scheduleAutoSave();
+});
+el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){ e.stopPropagation(); closeDiagramEditor(); }
+},true);
+
+// ── Anchor picker ───────────────────────────────────────────────────────
+// Same lightweight singleton-dropdown pattern as #answerer-suggest — search is scoped to the
+// current document only (diagrams anchor within their own document, not across documents the
+// way note-editor's "Insert Link" node search can).
+let _diagramAnchorOpen=false;
+function getDiagramAnchorCandidates(query){
+  const q=String(query||'').trim().toLowerCase();
+  const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)'}));
+  if(!q)return list.slice(0,50);
+  return list.filter(n=>n.text.toLowerCase().includes(q)).slice(0,50);
+}
+function renderDiagramAnchorSuggest(query){
+  const pop=el('diagram-anchor-suggest'); const btn=el('diagram-editor-anchor-btn'); if(!pop||!btn)return;
+  const d=_diagramEditorState?findDiagram(_diagramEditorState.diagramId):null; if(!d)return;
+  const candidates=getDiagramAnchorCandidates(query);
+  pop.innerHTML='';
+  const noneItem=document.createElement('div');
+  noneItem.className='diagram-anchor-item diagram-anchor-item-none';
+  noneItem.textContent='Not linked to a node';
+  noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setDiagramAnchor(d,null); });
+  pop.appendChild(noneItem);
+  candidates.forEach(n=>{
+    const item=document.createElement('div');
+    item.className='diagram-anchor-item';
+    item.textContent=n.text;
+    item.addEventListener('mousedown',e=>{ e.preventDefault(); setDiagramAnchor(d,n.id); });
+    pop.appendChild(item);
+  });
+  const r=btn.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _diagramAnchorOpen=true;
+}
+function closeDiagramAnchorSuggest(){
+  const pop=el('diagram-anchor-suggest'); if(pop)pop.classList.remove('open');
+  _diagramAnchorOpen=false;
+}
+function setDiagramAnchor(d,nodeId){
+  d.anchorNodeId=nodeId;
+  d.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  updateDiagramEditorAnchorLabel(d);
+  closeDiagramAnchorSuggest();
+}
+el('diagram-editor-anchor-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(_diagramAnchorOpen){ closeDiagramAnchorSuggest(); return; }
+  renderDiagramAnchorSuggest('');
+});
+document.addEventListener('mousedown',e=>{
+  if(_diagramAnchorOpen&&!e.target.closest('#diagram-anchor-suggest')&&!e.target.closest('#diagram-editor-anchor-btn'))closeDiagramAnchorSuggest();
+},true);
+
+el('diagrams-toggle')?.addEventListener('click',toggleDiagramsPanel);
+el('diagrams-add-btn')?.addEventListener('click',createDiagram);
+el('diagrams-panel-close')?.addEventListener('click',closeDiagramsPanel);
+
 el('history-modal-overlay')?.addEventListener('click',e=>{ if(e.target===el('history-modal-overlay'))closeVersionHistory(); });
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
 el('more-version-history-btn')?.addEventListener('click',()=>{ el('more-menu')?.classList.remove('open'); if(currentDocId)openVersionHistory(currentDocId); });
@@ -13309,6 +13597,7 @@ const SHORTCUTS = {
   toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
+  toggleDiagrams: {combo:'mod+shift+i',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
 // browser tab, Ctrl+W is reserved by the browser itself and preventDefault can't stop it
@@ -20715,6 +21004,24 @@ function renderPreviewBody(){
           img.addEventListener('click',()=>openDiagramLightbox(d.src,d.alt));
           fig.appendChild(img);
           if(d.alt){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.alt; fig.appendChild(cap); }
+          row.appendChild(fig);
+        });
+        slideTarget.appendChild(row);
+      }
+      // Document-level diagrams (see the Diagrams panel) anchored to this node — the newer,
+      // preferred workflow: a real draw.io editor rather than a static image pasted into the
+      // note. Same visual row/figure/lightbox treatment as the note-embedded path above, since
+      // to a reader there's no meaningful difference in how either should look.
+      const anchoredDiagrams=diagrams.filter(d=>d.anchorNodeId===node.id&&d.previewSvg);
+      if(anchoredDiagrams.length){
+        const multi=anchoredDiagrams.length>1;
+        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
+        anchoredDiagrams.forEach(d=>{
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.previewSvg; img.alt=d.title||'Diagram'; img.dataset.tip='Click to enlarge';
+          img.addEventListener('click',()=>openDiagramLightbox(d.previewSvg,d.title));
+          fig.appendChild(img);
+          if(d.title){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.title; fig.appendChild(cap); }
           row.appendChild(fig);
         });
         slideTarget.appendChild(row);
