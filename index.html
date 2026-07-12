@@ -191,7 +191,8 @@ input[type=number]{-moz-appearance:textfield}
 #sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
 .qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
 .code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
-#demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu
+#demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu,
+#diagram-anchor-suggest,#diagrams-tab-body
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Fira Code',Consolas,'Courier New',monospace}
@@ -2310,20 +2311,24 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
 .history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
-#preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar
+#preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
+#diagram-anchor-suggest::-webkit-scrollbar
 {width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
 .history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
-#preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb
+#preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
+#diagram-anchor-suggest::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
 #doc-tab-strip::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 #sidebar-scroll::-webkit-scrollbar{width:8px}
 #sidebar-scroll::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
+#diagrams-tab-body::-webkit-scrollbar{width:8px}
+#diagrams-tab-body::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 /* --edit-bg surfaces */
 #pad-editor::-webkit-scrollbar,#note-editor::-webkit-scrollbar,#code-editor-wrap::-webkit-scrollbar,#qa-body::-webkit-scrollbar,#decision-body::-webkit-scrollbar,
 #code-editor::-webkit-scrollbar,#code-view::-webkit-scrollbar,.pv-inline-code-body::-webkit-scrollbar
@@ -7191,7 +7196,13 @@ function openDiagramEditor(diagramId){
   wrap.innerHTML='';
   const iframe=document.createElement('iframe');
   iframe.title='draw.io diagram editor';
-  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1&modified=unsavedChanges';
+  // Matches Sakura's theme to draw.io's own documented ui=dark URL parameter
+  // (drawio.com/docs/reference/supported-url-parameters) — applied once, at open time. If you
+  // switch Sakura's theme while a diagram is already open, this editor instance keeps whatever
+  // it started with; reopening it (or the next diagram you open) picks up the change. Forcing a
+  // live reload on theme change was deliberately not done — there'd be no way to tell whether
+  // the live draw.io session has unsaved changes, so a reload could silently discard them.
+  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1&modified=unsavedChanges'+(currentTheme==='dark'?'&ui=dark':'');
   wrap.appendChild(iframe);
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
