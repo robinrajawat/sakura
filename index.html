@@ -7541,7 +7541,11 @@ async function restoreDocRevision(docId,ts){
       // — restored ones show the placeholder icon until reopened and saved once in draw.io,
       // which regenerates it automatically. Older revisions recorded before this existed have
       // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
-      diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]}));
+      // _hydrated:true is essential here, not cosmetic — these objects carry real xml straight
+      // from the revision, but without the flag saveToStorage's hydration gate (see there) would
+      // treat them as not-yet-loaded and silently never write their blob to the overflow store,
+      // losing the restored diagram's content the next time the page refreshes.
+      diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[],_hydrated:true}));
       resetDiagramTransientState();
       if(padViewMode==='diagrams')renderDiagramsList();
     }
@@ -7616,7 +7620,19 @@ async function restoreDocRevision(docId,ts){
         delete node.decisionLog;
       }
     }
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagrams,decisionLogs:restoredDecisionLogs};
+    // Split restoredDiagrams into lightweight metadata (localStorage) + blobs (IndexedDB
+    // overflow store), same split saveToStorage does for the active document — this write
+    // bypasses saveToStorage entirely (it's a background/inactive document being restored),
+    // so without doing the split here too, the restored diagram's full xml would sit in
+    // localStorage until that document is next opened and saved, reintroducing the exact
+    // bloat this whole overflow-store split exists to avoid.
+    const restoredDiagramsMeta=[];
+    for(const dg of restoredDiagrams){
+      const {xml,previewSvg,pageSvgs,_hydrated,...meta}=dg;
+      try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]}); }catch(e){}
+      restoredDiagramsMeta.push(meta);
+    }
+    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagramsMeta,decisionLogs:restoredDecisionLogs};
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredDecisionLogs);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
@@ -12597,7 +12613,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
       if(Array.isArray(ex.dgs)&&ex.dgs.length){
         ex.dgs.forEach(dg=>{
           const ts=Date.now();
-          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts});
+          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts,_hydrated:true});
           dgAdded++;
         });
       }
@@ -13539,8 +13555,23 @@ function addDiagramFromSakuraPayload(payload){
 // Copies one diagram — title, XML, status, note, thumbnail — as a self-contained payload to the
 // system clipboard, so it can travel to another document (or another browser tab/window
 // entirely) via the Import dialog's "Paste XML text instead" box, which auto-detects this marker.
+function _waitDiagramHydrated(d,timeoutMs=4000){
+  if(d._hydrated)return Promise.resolve();
+  return new Promise(resolve=>{
+    const start=Date.now();
+    (function poll(){
+      if(d._hydrated||Date.now()-start>timeoutMs){ resolve(); return; }
+      setTimeout(poll,40);
+    })();
+  });
+}
 async function copyDiagramToClipboard(id){
   const d=diagrams.find(dg=>dg.id===id); if(!d)return;
+  // If this diagram hasn't finished hydrating from the overflow store yet (see
+  // hydrateDiagramBlobsForDoc — reachable here since the row list renders immediately with
+  // metadata-only diagrams, before hydration completes), d.xml could still be a blank
+  // placeholder. Wait briefly rather than silently copy nothing.
+  await _waitDiagramHydrated(d);
   const payload={v:1,kind:'sakura-diagram',title:d.title||'',xml:d.xml||'',previewSvg:d.previewSvg||'',pageSvgs:Array.isArray(d.pageSvgs)?d.pageSvgs.map(p=>({...p})):[],pageCount:d.pageCount||1,status:d.status||'draft',note:d.note||''};
   const text='SAKURA-DIAGRAM:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   try{
