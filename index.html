@@ -1342,7 +1342,8 @@ body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
 #dtb-ai-generate.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
 #dtb-search.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#diagram-summary-chip{display:inline-flex;align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default;border:1px solid transparent;background:transparent;appearance:none;transition:background .12s,color .12s,border-color .12s}
+#diagram-summary-chip{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default;border:1px solid transparent;background:transparent;appearance:none;transition:background .12s,color .12s,border-color .12s}
+body.pad-diagrams-mode #diagram-summary-chip{display:inline-flex}
 #diagram-summary-chip.chip-empty{display:none}
 #diagram-summary-chip.has-warn{color:var(--fc-orange)}
 #diagram-summary-chip.chip-clickable{cursor:pointer}
@@ -6402,7 +6403,7 @@ function trimPadHtmlForRevision(html){
 function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
   const list=loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
+  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams),decisionLogs:Array.isArray(contentObj.decisionLogs)?contentObj.decisionLogs:[],qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
   saveDocRevisions(id,list);
 }
@@ -6532,7 +6533,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ return null }
 }
 
@@ -6983,7 +6984,7 @@ async function restoreDocRevision(docId,ts){
     titleAutoSyncEnabled=!String(rev.title||'').trim(); lastAutoTitle=String(rev.title||'').trim();
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
   } else {
-    let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[];
+    let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[]; let prevDecisionLogsCurrent=[];
     try{
       const raw=localStorage.getItem(docKey(docId));
       if(raw){
@@ -6992,17 +6993,35 @@ async function restoreDocRevision(docId,ts){
         prevQa=Array.isArray(prev.qa)?prev.qa:[];
         prevPad=prev.pad||'';
         prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
+        prevDecisionLogsCurrent=Array.isArray(prev.decisionLogs)?prev.decisionLogs:[];
       }
     }catch(e){}
     // Same fallback logic as the active-doc branch above: restore from the revision when it has
     // the field, otherwise carry over whatever the document currently has rather than delete it.
     // (Previously this branch unconditionally dropped diagrams, Q&A, and Pad on every restore,
     // regardless of revision content — that's the bug the diagrams half of this fixed; Q&A/Pad
-    // now get the same treatment instead of just "always preserved, never restorable".)
+    // now get the same treatment instead of just "always preserved, never restorable". Decision
+    // logs need one more step diagrams don't: a revision recorded before they became their own
+    // array has no rev.decisionLogs field at all, only whatever was embedded on each node's own
+    // .decisionLog back then — and since this branch operates on a document that isn't the
+    // active one, it can't call the live migrateNodeDecisionLogsToArray() (that only touches the
+    // global nodes/decisionLogs for whichever document actually has focus). So that same
+    // migration logic is inlined below, against freshNodes specifically, before it's written out.)
     const restoredDiagrams=Array.isArray(rev.diagrams)?rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[]})):prevDiagramsCurrent;
     const restoredQa=Array.isArray(rev.qa)?rev.qa.map(q=>({...q})):prevQa;
     const restoredPad=rev.pad!==undefined?(rev.pad||''):prevPad;
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagrams};
+    let restoredDecisionLogs=Array.isArray(rev.decisionLogs)?rev.decisionLogs.map(d=>({...d})):prevDecisionLogsCurrent;
+    if(!Array.isArray(rev.decisionLogs)){
+      for(const node of freshNodes){
+        if(!node.decisionLog)continue;
+        if(!restoredDecisionLogs.some(dl=>dl.anchorNodeId===node.id)){
+          const dl=node.decisionLog; const ts=Number.isFinite(dl.timestamp)?dl.timestamp:Date.now();
+          restoredDecisionLogs.push({id:'dl'+Date.now()+'-'+Math.floor(Math.random()*100000),anchorNodeId:node.id,context:dl.context||'',decision:dl.decision||'',rationale:dl.rationale||'',alternatives:dl.alternatives||'',impact:dl.impact||'',status:dl.status||'proposed',author:dl.author||'',timestamp:ts,createdAt:ts,modifiedAt:ts});
+        }
+        delete node.decisionLog;
+      }
+    }
+    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagrams,decisionLogs:restoredDecisionLogs};
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
