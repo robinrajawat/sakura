@@ -10543,17 +10543,21 @@ function countDescendants(idx){return getSubtreeEnd(idx)-idx-1}
 function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(decisionLogForNode(nodes[i].id))return true} return false}
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
 // ── "Referenced by Meetings/To-Dos" lookups ──────────────────────────────
-// meetingNotes lives at top-level scope (reachable directly); todos lives inside the To-Dos
-// module's own IIFE closure, so that side is reached through a couple of small window.sakura*
-// exports (see setupSakuraTodoRefExports below, in the To-Dos module) — same cross-module
-// pattern as window.sakuraOpenMeetingFromRef / addTodoFromMeeting elsewhere in the app.
+// Both meetingNotes and todos live inside their own modules further down the page — each in
+// its own <script> tag (meetingNotes) or its own IIFE closure (todos) — so neither is a plain
+// top-level binding reachable from here. Both sides are reached through small window.sakura*
+// exports instead (see window.sakuraMeetingRefsForNode/etc. in the Meetings module, and
+// window.sakuraTodoRefsForNode/etc. in the To-Dos module) — same cross-module bridging pattern
+// as window.sakuraOpenMeetingFromRef / addTodoFromMeeting elsewhere in the app. A direct
+// reference to meetingNotes here throws "meetingNotes is not defined" at startup, since script
+// tags don't share `let`/`const` scope the way functions within one tag do.
 function meetingRefsForNode(nodeId){
-  if(nodeId==null||!currentDocId)return [];
-  return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===currentDocId&&l.nodeId===nodeId));
+  if(nodeId==null||!currentDocId||typeof window.sakuraMeetingRefsForNode!=='function')return [];
+  return window.sakuraMeetingRefsForNode(currentDocId,nodeId);
 }
 function meetingRefsForWholeDoc(docId){
-  if(!docId)return [];
-  return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===docId&&l.nodeId==null));
+  if(!docId||typeof window.sakuraMeetingRefsForWholeDoc!=='function')return [];
+  return window.sakuraMeetingRefsForWholeDoc(docId);
 }
 function todoRefsForNode(nodeId){
   if(nodeId==null||!currentDocId||typeof window.sakuraTodoRefsForNode!=='function')return [];
@@ -30512,6 +30516,16 @@ window.sakuraMeetingsSetFeatureEnabled=setMeetingsFeatureEnabled;
 window.sakuraGetMeetingRefInfo=function(meetingId){
   const m=findMeeting(meetingId);
   return m?{title:m.title||'Untitled meeting',missing:false}:{missing:true};
+};
+// Same reasoning as above — consumed by render()'s node/doc-tab "referenced by" dots, which
+// live in the earlier script block and can't see this module's `let meetingNotes` directly.
+window.sakuraMeetingRefsForNode=function(docId,nodeId){
+  if(nodeId==null||!docId)return [];
+  return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===docId&&l.nodeId===nodeId));
+};
+window.sakuraMeetingRefsForWholeDoc=function(docId){
+  if(!docId)return [];
+  return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===docId&&l.nodeId==null));
 };
 window.sakuraOpenMeetingFromRef=function(meetingId){
   const m=findMeeting(meetingId); if(!m)return false;
