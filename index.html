@@ -7922,14 +7922,17 @@ function renderDiagramsList(){
     const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
     dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
-    const copyBtn=document.createElement('button'); copyBtn.className='diagram-row-dup'; copyBtn.dataset.tip='Copy diagram to clipboard \u2014 paste into another document';
-    copyBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
-    copyBtn.addEventListener('click',e=>{ e.stopPropagation(); copyDiagramToClipboard(d.id); });
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(copyBtn); row.appendChild(delBtn);
+    row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
+    row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
+      {label:'Copy diagram', onClick: async()=>{ await copyDiagramToClipboard(d.id); }},
+      {label:'Duplicate diagram', onClick: async()=>{ duplicateDiagram(d.id); }},
+      {divider:true},
+      {label:'Delete diagram', danger:true, onClick: async()=>{ await deleteDiagram(d.id); }}
+    ]); });
     body.appendChild(row);
   });
 }
@@ -13171,6 +13174,34 @@ function extractDrawioXml(raw){
   }
   return {ok:true,xml:text};
 }
+// Attempts to paste a diagram straight from the system clipboard — a copied Sakura diagram
+// (see copyDiagramToClipboard) or raw draw.io XML either one. Falls back to the Import dialog
+// when the clipboard can't be read (permission denied, empty, or unrecognized content) so
+// there's always a way in, same as the row Copy button's own fallback.
+async function pasteDiagramFromClipboard(){
+  if(!padDiagramsTabEnabled)return;
+  let text='';
+  try{ if(navigator.clipboard&&navigator.clipboard.readText) text=await navigator.clipboard.readText(); }catch(e){}
+  const trimmed=text.trim();
+  if(!trimmed){ openImportDiagramModal(); return; }
+  if(trimmed.startsWith('SAKURA-DIAGRAM:')){
+    try{
+      const payload=JSON.parse(decodeURIComponent(escape(atob(trimmed.slice('SAKURA-DIAGRAM:'.length)))));
+      if(payload&&payload.kind==='sakura-diagram'){ addDiagramFromSakuraPayload(payload); return; }
+    }catch(e){}
+    showToast('That looked like a copied Sakura diagram but could not be read \u2014 try copying it again');
+    return;
+  }
+  const result=extractDrawioXml(trimmed);
+  if(result.ok){ addDiagramFromXml(result.xml); return; }
+  openImportDiagramModal();
+}
+function diagramsEmptyAreaContextItems(){
+  return [
+    {label:'Paste diagram', onClick: async()=>{ await pasteDiagramFromClipboard(); }},
+    {label:'Import diagram\u2026', onClick: async()=>{ openImportDiagramModal(); }}
+  ];
+}
 function openImportDiagramModal(){
   const overlay=el('sakura-modal-overlay'); if(!overlay)return;
   el('sakura-modal-icon').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -15219,6 +15250,8 @@ el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbCont
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,statusbarContextItems())});
 el('doc-tab-strip')?.addEventListener('contextmenu',e=>{if(e.target.closest('.doc-tab'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,tabbarContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,appbarContextItems())});
+el('diagrams-body')?.addEventListener('contextmenu',e=>{if(e.target.closest('.diagram-row'))return; if(!padDiagramsTabEnabled)return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,diagramsEmptyAreaContextItems())});
+el('decision-body')?.addEventListener('contextmenu',e=>{if(e.target.closest('.decision-row')||e.target.isContentEditable)return; if(!featureDecisionLogEnabled)return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,decisionEmptyAreaContextItems())});
 
 // === Floating per-node hover toolbar (Dynalist-style) ===
 // The rail is always exactly two buttons — Menu and Zoom in — shown horizontally
@@ -21282,6 +21315,11 @@ function renderDecisionLogsList(){
     summary.appendChild(delBtn);
     summary.addEventListener('click',()=>toggleDecisionExpanded(dl.id));
     row.appendChild(summary);
+    row.addEventListener('contextmenu',e=>{ if(e.target.isContentEditable)return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
+      {label:'Copy decision log', onClick: async()=>{ await copyDecisionLogToClipboard(dl.id); }},
+      {divider:true},
+      {label:'Delete decision log', danger:true, onClick: async()=>{ await deleteDecisionLog(dl.id); }}
+    ]); });
     if(dl.id===decisionExpandedId){ const slot=document.createElement('div'); slot.className='decision-row-expand-slot'; row.appendChild(slot); }
     list.appendChild(row);
   });
@@ -21368,6 +21406,52 @@ async function deleteDecisionLog(id){
     decisionLogs.splice(Math.min(idx2,decisionLogs.length),0,removed);
     markDirty(); scheduleAutoSave(); render(); renderDecisionLogsList();
   });
+}
+// Copy/paste a single decision log via the system clipboard, independent of copying its node —
+// same marker-payload approach as copyDiagramToClipboard, so it works within a document, across
+// document tabs, or between two entirely separate browser windows/instances.
+async function copyDecisionLogToClipboard(id){
+  const dl=decisionLogs.find(x=>x.id===id); if(!dl)return;
+  const payload={v:1,kind:'sakura-decisionlog',context:dl.context||'',decision:dl.decision||'',rationale:dl.rationale||'',alternatives:dl.alternatives||'',impact:dl.impact||'',status:dl.status||'proposed',author:dl.author||'',timestamp:dl.timestamp||Date.now()};
+  const text='SAKURA-DLOG:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text) }
+    else throw new Error('Clipboard API unavailable');
+  }catch(e){
+    const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  showToast('Decision log copied \u2014 right-click empty space in Decision Log to paste it into another document');
+}
+function addDecisionLogFromSakuraPayload(payload){
+  ensureDocumentForEditing();
+  const preferredNodeId=(selectedId!=null&&!decisionLogForNode(selectedId))?selectedId:null;
+  const ts=Date.now();
+  const dl={id:newDecisionLogId(),anchorNodeId:preferredNodeId,context:payload.context||'',decision:payload.decision||'',rationale:payload.rationale||'',alternatives:payload.alternatives||'',impact:payload.impact||'',status:payload.status||'proposed',author:payload.author||'',timestamp:payload.timestamp||ts,createdAt:ts,modifiedAt:ts};
+  decisionLogs.push(dl);
+  markDirty(); scheduleAutoSave(); render();
+  if(!padOpen)setPadOpen(true);
+  setPadViewMode('decision');
+  decisionExpandedId=dl.id;
+  renderDecisionLogsList();
+  showToast('Decision log pasted'+(preferredNodeId==null?' \u2014 pick a node to link it under':''));
+}
+async function pasteDecisionLogFromClipboard(){
+  let text='';
+  try{ if(navigator.clipboard&&navigator.clipboard.readText) text=await navigator.clipboard.readText(); }catch(e){}
+  const trimmed=text.trim();
+  if(trimmed.startsWith('SAKURA-DLOG:')){
+    try{
+      const payload=JSON.parse(decodeURIComponent(escape(atob(trimmed.slice('SAKURA-DLOG:'.length)))));
+      if(payload&&payload.kind==='sakura-decisionlog'){ addDecisionLogFromSakuraPayload(payload); return; }
+    }catch(e){}
+  }
+  showToast('Clipboard doesn\u2019t contain a copied decision log \u2014 copy one first');
+}
+function decisionEmptyAreaContextItems(){
+  return [
+    {label:'New decision log', onClick: async()=>{ await createDecisionLog(); }},
+    {label:'Paste decision log', onClick: async()=>{ await pasteDecisionLogFromClipboard(); }}
+  ];
 }
 document.querySelectorAll('.pad-mode-tab').forEach(tab=>{
   tab.addEventListener('click',()=>setPadViewMode(tab.dataset.mode));
