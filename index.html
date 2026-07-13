@@ -2828,9 +2828,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-action-item-check{margin-top:3px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)}
 .meeting-action-item-text{flex:1;min-width:0;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;word-break:break-word;outline:none}
 .meeting-action-item.done .meeting-action-item-text{color:var(--muted);text-decoration:line-through}
-.meeting-action-item-promote{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:500 10px 'Inter',sans-serif;padding:2px 7px;border-radius:999px;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:color .12s,border-color .12s,background .12s}
-.meeting-action-item-promote:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
-.meeting-action-item-promote.promoted{color:var(--fc-green);border-color:color-mix(in srgb,var(--fc-green) 40%,var(--border));cursor:default}
+.meeting-action-item-promote{appearance:none;border:none;background:none;color:var(--hint);padding:3px;border-radius:5px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;opacity:.55;transition:opacity .12s,color .12s,background .12s}
+.meeting-action-item:hover .meeting-action-item-promote{opacity:.85}
+.meeting-action-item-promote:hover{opacity:1;color:var(--accent);background:var(--hover)}
+.meeting-action-item-promote.promoted{opacity:1;color:var(--fc-green);cursor:default}
+.meeting-action-item-promote.promoted:hover{background:none}
 .meeting-action-item-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px;border-radius:5px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .meeting-action-item:hover .meeting-action-item-delete{opacity:1}
 .meeting-action-item-delete:hover{color:var(--fc-red);background:var(--hover)}
@@ -2886,7 +2888,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-panel.maximized #meetings-resize-handle{display:none}
 #meetings-panel.dragging{user-select:none}
 #meetings-toggle.is-active,#todos-toggle.is-active{color:var(--accent);border-color:var(--accent)}
-#status-util-group{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-left:10px;margin-left:2px;border-left:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border))}
+#status-util-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
 #status-util-group .dock-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));background:transparent;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
 #status-util-group .dock-btn:hover{color:var(--accent);border-color:var(--accent)}
 #status-util-group .dock-btn.is-active{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -4522,7 +4524,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Open it from the app bar (or the status bar, if you've moved it there) with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>; the same shortcut closes it again</li>
 <li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> to add a blank meeting note, or the layout icon next to it for <strong>New from template</strong> — Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, or Retrospective, each pre-filling the title/Agenda/Notes fields (and a starter action item, for the templates that call for one) so you're not starting from nothing. Either way it opens expanded and ready to type into immediately. Notes are listed newest first, click any row to expand it in place and edit it, click again (or click another row) to fold it back up</li>
 <li>Each note has a title, date, attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
-<li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> button next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the button shows "In To-Dos" and can't be promoted again, so re-clicking never creates a duplicate</li>
+<li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
 <li>The clock icon in the panel header opens <strong>Version history</strong> for the whole list — same idea as To-Dos' own, kept separately since Meeting Notes isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
@@ -4976,7 +4978,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -15777,6 +15779,13 @@ function applyStatusbarRightOrder(){
     if(d)container.appendChild(d);
     if(it)container.appendChild(it);
   });
+  // Meetings/To-Dos aren't part of the configurable order above (they're a fixed group, not
+  // independently repositionable) — appendChild them last, unconditionally, so they land at the
+  // true end of the bar. Left out of that loop, every OTHER item's own appendChild would
+  // progressively relocate itself past this group, stranding it back at the front instead.
+  const utilDivider=el('sb-util-divider'); const utilGroup=el('status-util-group');
+  if(utilDivider)container.appendChild(utilDivider);
+  if(utilGroup)container.appendChild(utilGroup);
   refreshStatusbarDividers();
 }
 function setStatusbarRightOrder(order,persist=true){
@@ -28265,6 +28274,7 @@ function _addTagPopoverFromInput(){
     const hideAll = !settings.featureEnabled;
     if(dockBtn) dockBtn.style.display = hideAll ? 'none' : '';
     if(hideAll) closeTodosPanel();
+    if(typeof updateStatusUtilGroupVisibility==='function') updateStatusUtilGroupVisibility();
   }
   function setTodosFeatureEnabled(on){
     settings.featureEnabled=!!on;
@@ -29673,7 +29683,10 @@ function renderMeetingActionItems(m){
     rewriteBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
     rewriteBtn.addEventListener('click',()=>rewriteMeetingActionItem(m,item,rewriteBtn,text));
     const promoteBtn=document.createElement('button'); promoteBtn.type='button'; promoteBtn.className='meeting-action-item-promote'+(item.promotedTodoId?' promoted':'');
-    promoteBtn.textContent=item.promotedTodoId?'In To-Dos':'Promote';
+    promoteBtn.innerHTML=item.promotedTodoId
+      ?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="13" y2="12"/><line x1="3" y1="18" x2="10" y2="18"/><polyline points="15 17 18 20 22 14"/></svg>'
+      :'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="13" y2="12"/><line x1="3" y1="18" x2="10" y2="18"/><line x1="18" y1="14" x2="18" y2="22"/><line x1="14" y1="18" x2="22" y2="18"/></svg>';
+    promoteBtn.setAttribute('aria-label',item.promotedTodoId?'Already added to To-Dos':'Add this as a real To-Do');
     promoteBtn.dataset.tip=item.promotedTodoId?'Already added to To-Dos':'Add this as a real To-Do';
     promoteBtn.addEventListener('click',()=>{
       if(item.promotedTodoId)return;
@@ -29683,7 +29696,8 @@ function renderMeetingActionItems(m){
       const newId=window.addTodoFromMeeting(todoText,{meetingId:m.id,title:m.title||'Untitled meeting',date:m.date||null});
       if(!newId)return;
       item.promotedTodoId=newId; m.modifiedAt=Date.now(); saveMeetingNotes();
-      promoteBtn.textContent='In To-Dos'; promoteBtn.classList.add('promoted'); promoteBtn.dataset.tip='Already added to To-Dos';
+      promoteBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="13" y2="12"/><line x1="3" y1="18" x2="10" y2="18"/><polyline points="15 17 18 20 22 14"/></svg>';
+      promoteBtn.classList.add('promoted'); promoteBtn.dataset.tip='Already added to To-Dos'; promoteBtn.setAttribute('aria-label','Already added to To-Dos');
       showMeetingsToast('Added to To-Dos');
     });
     const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='meeting-action-item-delete'; delBtn.dataset.tip='Delete';
@@ -30162,11 +30176,25 @@ function loadMeetingsSettings(){
 function saveMeetingsSettings(){
   try{ localStorage.setItem(MEETINGS_SETTINGS_KEY, JSON.stringify({featureEnabled:meetingsFeatureEnabled,expiryDays:meetingsExpiryDays,capMax:meetingsCapMax,pastCollapsedByDefault:meetingsPastCollapsedByDefault})); }catch(e){}
 }
+// Shared between this module and To-Dos' own applyTodosLocation — the two dock buttons share
+// one divider/group wrapper in the status bar now (rather than each having its own), so it
+// takes both features' visibility into account: hidden only when neither button is showing,
+// otherwise a lone "·" would be left dangling with nothing next to it.
+function updateStatusUtilGroupVisibility(){
+  const meetingsBtn=document.getElementById('meetings-toggle');
+  const todosBtn=document.getElementById('todos-toggle');
+  const anyVisible=(meetingsBtn&&meetingsBtn.style.display!=='none')||(todosBtn&&todosBtn.style.display!=='none');
+  const group=document.getElementById('status-util-group');
+  const divider=document.getElementById('sb-util-divider');
+  if(group)group.style.display=anyVisible?'':'none';
+  if(divider)divider.style.display=anyVisible?'':'none';
+}
 function applyMeetingsLocation(){
   const dockBtn=el('meetings-toggle');
   const hideAll=!meetingsFeatureEnabled;
   if(dockBtn)dockBtn.style.display=hideAll?'none':'';
   if(hideAll)closeMeetingsPanel();
+  updateStatusUtilGroupVisibility();
 }
 function setMeetingsFeatureEnabled(on){
   meetingsFeatureEnabled=!!on;
