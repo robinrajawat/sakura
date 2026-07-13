@@ -1312,9 +1312,15 @@ body.pad-diagrams-mode #pad-editor{display:none}
 #decision-body.is-empty #decision-list{display:none}
 .decision-row{display:flex;flex-direction:column;margin:0 -8px 4px;border-radius:8px}
 .decision-row:last-child{margin-bottom:0}
+.decision-row.decision-row-dragging{opacity:.4}
+.decision-row.decision-row-drag-over{border-top:2px solid var(--accent)}
 .decision-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px;cursor:pointer;border-radius:8px;transition:background .12s}
 .decision-row-summary:hover{background:var(--hover)}
 .decision-row.expanded .decision-row-summary{background:var(--hover)}
+.decision-row-drag-handle{flex-shrink:0;width:0;height:20px;margin-top:1px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
+.decision-row-summary:hover .decision-row-drag-handle{width:9px;opacity:.6;pointer-events:auto}
+.decision-row-drag-handle:hover{opacity:1!important}
+.decision-row-drag-handle:active{cursor:grabbing}
 .decision-row-status{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;flex-shrink:0}
 .decision-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .decision-row-status[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
@@ -20404,6 +20410,19 @@ function commitDecisionCardIfFocused(){
     }
   }
 }
+function decisionCanReorder(){
+  return !decisionListOpenOnly && !decisionListAuthorFilter;
+}
+function reorderDecisionRow(draggedId,targetId){
+  if(String(draggedId)===String(targetId))return;
+  const fromIdx=decisionLogs.findIndex(dl=>String(dl.id)===String(draggedId));
+  const toIdx=decisionLogs.findIndex(dl=>String(dl.id)===String(targetId));
+  if(fromIdx<0||toIdx<0)return;
+  const [moved]=decisionLogs.splice(fromIdx,1);
+  decisionLogs.splice(toIdx,0,moved);
+  renderDecisionLogsList();
+  markDirty(); scheduleAutoSave();
+}
 function renderDecisionLogsList(){
   const list=el('decision-list'); if(!list)return;
   commitDecisionCardIfFocused();
@@ -20434,11 +20453,27 @@ function renderDecisionLogsList(){
   const emptyEl=el('decision-list-empty');
   if(emptyEl)emptyEl.textContent=all.length===0?'No decision logs yet. Click + to create one — link it to a node afterward so it shows up there in Preview and exports.':'No decisions match this filter.';
   list.innerHTML='';
+  const canDrag=decisionCanReorder();
   filtered.forEach(dl=>{
     const status=decisionStatusOf(dl);
     const color=previewStatusBadgeColor(status);
     const row=document.createElement('div'); row.className='decision-row'+(dl.id===decisionExpandedId?' expanded':''); row.dataset.decisionId=String(dl.id);
     const summary=document.createElement('div'); summary.className='decision-row-summary';
+    const dragHandle=document.createElement('button'); dragHandle.className='decision-row-drag-handle'; dragHandle.type='button'; dragHandle.tabIndex=-1; dragHandle.setAttribute('aria-hidden','true'); dragHandle.dataset.tip='Drag to reorder';
+    dragHandle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
+    dragHandle.addEventListener('mousedown',e=>e.stopPropagation());
+    dragHandle.addEventListener('click',e=>e.stopPropagation());
+    dragHandle.style.visibility=canDrag?'visible':'hidden';
+    row.draggable=canDrag;
+    row.addEventListener('dragstart',e=>{
+      if(!canDrag||e.target.closest('.decision-row-delete')){ e.preventDefault(); return; }
+      e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(dl.id)); row.classList.add('decision-row-dragging');
+    });
+    row.addEventListener('dragend',()=>row.classList.remove('decision-row-dragging'));
+    row.addEventListener('dragover',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.add('decision-row-drag-over'); });
+    row.addEventListener('dragleave',()=>row.classList.remove('decision-row-drag-over'));
+    row.addEventListener('drop',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.remove('decision-row-drag-over'); const draggedId=e.dataTransfer.getData('text/plain'); reorderDecisionRow(draggedId,dl.id); });
+    summary.appendChild(dragHandle);
     const statusEl=document.createElement('span'); statusEl.className='decision-row-status'; statusEl.dataset.color=color; statusEl.textContent=decisionStatusLabel(status);
     const content=document.createElement('div'); content.className='decision-row-content';
     const anchorLabel=decisionLogAnchorLabel(dl);
