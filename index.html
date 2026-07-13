@@ -8211,8 +8211,24 @@ function openDiagramEditor(diagramId){
     if(!msg||!msg.event)return;
     sakuraLog('diagram','embed event',{event:msg.event,diagramId});
     if(msg.event==='init'){
-      iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
-      if(status)status.textContent='';
+      // If this diagram hasn't finished hydrating from the overflow store yet (see
+      // hydrateDiagramBlobsForDoc), d.xml right now may still be the blank placeholder it
+      // started with — loading that into draw.io would show an empty canvas even though the
+      // real content exists, and draw.io's own autosave could then commit that blank state
+      // right over it. Wait briefly for hydration rather than risk that; if it still hasn't
+      // completed after a few seconds (IndexedDB broken/unavailable — warnDiagramBlobWriteFailed
+      // will have already surfaced that separately), proceed anyway with whatever's there
+      // rather than leave the editor stuck on its loading spinner forever.
+      const startLoad=()=>{ if(!iframe.isConnected)return; iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*'); if(status)status.textContent=''; };
+      if(d._hydrated){ startLoad(); }
+      else{
+        const waitStart=Date.now();
+        (function pollHydration(){
+          if(!iframe.isConnected)return; // editor closed / another diagram opened while waiting
+          if(d._hydrated||Date.now()-waitStart>4000){ startLoad(); return; }
+          setTimeout(pollHydration,40);
+        })();
+      }
     } else if(msg.event==='save'){
       d.xml=msg.xml||d.xml;
       d.modifiedAt=Date.now();
