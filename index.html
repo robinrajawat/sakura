@@ -15250,7 +15250,7 @@ el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbCont
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,statusbarContextItems())});
 el('doc-tab-strip')?.addEventListener('contextmenu',e=>{if(e.target.closest('.doc-tab'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,tabbarContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,appbarContextItems())});
-el('diagrams-body')?.addEventListener('contextmenu',e=>{if(e.target.closest('.diagram-row'))return; if(!padDiagramsTabEnabled)return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,diagramsEmptyAreaContextItems())});
+el('diagrams-tab-body')?.addEventListener('contextmenu',e=>{if(e.target.closest('.diagram-row')||e.target.closest('input,textarea,[contenteditable="true"]'))return; if(!padDiagramsTabEnabled)return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,diagramsEmptyAreaContextItems())});
 el('decision-body')?.addEventListener('contextmenu',e=>{if(e.target.closest('.decision-row')||e.target.isContentEditable)return; if(!featureDecisionLogEnabled)return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,decisionEmptyAreaContextItems())});
 
 // === Floating per-node hover toolbar (Dynalist-style) ===
