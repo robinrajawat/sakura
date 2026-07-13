@@ -27362,7 +27362,33 @@ function _addTagPopoverFromInput(){
     // itself, or a query like "Pricing" would silently match nothing against a lowercased
     // "pricing plan" haystack.
     const query=String(q||'').trim().toLowerCase().replace(/\s+/g,' ');
-    if(!query){ box.innerHTML='<div class="link-pop-node-empty">Type to search documents and nodes</div>'; return; }
+    if(!query){
+      // Browse mode with nothing typed yet: list documents up front (same treatment Meeting
+      // Notes' link popover gained) so linking a whole document doesn't require typing its
+      // exact title first. Node search still needs a query — listing every node in every
+      // document unfiltered isn't useful.
+      const docsIdx=(typeof loadActiveDocsIndex==='function')?loadActiveDocsIndex():[];
+      if(!docsIdx.length){ box.innerHTML='<div class="link-pop-node-empty">No documents yet</div>'; return; }
+      box.innerHTML='';
+      const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Documents';
+      box.appendChild(label);
+      docsIdx.slice(0,30).forEach(d=>{
+        const item=document.createElement('button');
+        item.type='button';
+        item.className='link-pop-node-item link-pop-doc-item';
+        const row=document.createElement('span'); row.className='link-pop-node-item-row';
+        row.innerHTML=docRefIconSvg(11);
+        const txt=document.createElement('span'); txt.className='link-pop-node-item-text'; txt.textContent=d.title||'Untitled';
+        row.appendChild(txt);
+        const meta=document.createElement('span'); meta.className='link-pop-node-item-meta'; meta.textContent='Entire document';
+        item.appendChild(row); item.appendChild(meta);
+        item.addEventListener('click', ()=>commitNodeRef(d.id, null));
+        box.appendChild(item);
+      });
+      const hint=document.createElement('div'); hint.className='link-pop-node-empty'; hint.textContent='Type to also search node text';
+      box.appendChild(hint);
+      return;
+    }
     const docResults=searchDocsForTodoLink(query);
     const nodeResults=searchNodesForTodoLink(query);
     if(!docResults.length && !nodeResults.length){ box.innerHTML='<div class="link-pop-node-empty">No matching documents or nodes</div>'; return; }
