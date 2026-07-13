@@ -6777,9 +6777,29 @@ const REVISION_KEY_PREFIX='sakura_doc_rev_v1_';
 const REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes between automatic snapshots
 const REVISION_MAX_PER_DOC=20;
 function revisionKey(id){ return REVISION_KEY_PREFIX+id }
-function loadDocRevisions(id){ try{ const raw=localStorage.getItem(revisionKey(id)); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
-function saveDocRevisions(id,list){ try{ localStorage.setItem(revisionKey(id),JSON.stringify(list)) }catch(e){} }
-function deleteDocRevisions(id){ try{ localStorage.removeItem(revisionKey(id)) }catch(e){} }
+// Version history moved from localStorage to the IndexedDB overflow store — up to 20 full
+// text snapshots per document adds up fast across many documents, and unlike diagrams/
+// attachments there's no "only the heavy part" split possible here, so the whole thing moves.
+// Each read opportunistically migrates any legacy copy still sitting in localStorage from
+// before this change (one-time, self-healing — no separate migration pass needed at startup).
+async function loadDocRevisions(id){
+  try{
+    const existing=await idbGet('docrev:'+id);
+    if(Array.isArray(existing))return existing;
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(revisionKey(id));
+    if(raw){
+      const arr=JSON.parse(raw);
+      const list=Array.isArray(arr)?arr:[];
+      try{ await idbSet('docrev:'+id,list); localStorage.removeItem(revisionKey(id)); }catch(e){}
+      return list;
+    }
+  }catch(e){}
+  return [];
+}
+async function saveDocRevisions(id,list){ try{ await idbSet('docrev:'+id,list) }catch(e){} }
+async function deleteDocRevisions(id){ try{ await idbDelete('docrev:'+id); localStorage.removeItem(revisionKey(id)) }catch(e){} }
 // `reason` shows in the History panel — 'Auto', 'Manual checkpoint', or 'Before restoring
 // an older version' (recorded automatically so restoring itself is never destructive).
 //
@@ -6817,19 +6837,29 @@ function trimPadHtmlForRevision(html){
     return div.innerHTML;
   }catch(e){ return ''; }
 }
-function recordDocRevision(id,contentObj,reason){
+async function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
-  const list=loadDocRevisions(id);
+  const list=await loadDocRevisions(id);
   list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams),decisionLogs:Array.isArray(contentObj.decisionLogs)?contentObj.decisionLogs:[],qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
-  saveDocRevisions(id,list);
+  await saveDocRevisions(id,list);
 }
-function maybeAutoSnapshotBeforeSave(id){
+async function maybeAutoSnapshotBeforeSave(id){
   try{
     const raw=localStorage.getItem(docKey(id)); if(!raw)return;
     const prev=JSON.parse(raw);
     if(!Array.isArray(prev.nodes)||!prev.nodes.length)return; // nothing meaningful to preserve
-    const revisions=loadDocRevisions(id);
+    // prev.diagrams only carries lightweight metadata now (see saveToStorage's diagram/
+    // overflow-store split) — hydrate the real xml from there before this snapshot compares
+    // or records it, otherwise every revision taken after that split would remember a diagram
+    // with no recoverable content at all.
+    if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
+      for(const dg of prev.diagrams){
+        if(dg.xml)continue; // legacy pre-split shape already has it inline — nothing to fetch
+        try{ const blob=await idbGet('diagblob:'+id+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
+      }
+    }
+    const revisions=await loadDocRevisions(id);
     const last=revisions[revisions.length-1];
     // last.pad is already trimmed (that's how it was stored) — only prev.pad, the live
     // untrimmed HTML, needs trimming here so the two sides compare like for like.
@@ -6837,15 +6867,41 @@ function maybeAutoSnapshotBeforeSave(id){
     const lastKey=last?JSON.stringify({n:last.nodes,d:trimDiagramsForRevision(last.diagrams),q:last.qa||[],p:last.pad||''}):null;
     if(last&&lastKey===prevKey)return; // no real change (nodes, diagrams, Q&A, or Pad text) since the last snapshot
     if(last&&(Date.now()-last.ts)<REVISION_MIN_GAP_MS)return;
-    recordDocRevision(id,prev,'Auto');
+    await recordDocRevision(id,prev,'Auto');
   }catch(e){}
 }
+
+// Tracks the modifiedAt we last successfully wrote to the diagram-blob overflow store, per
+// diagram id, so saveToStorage (which runs on every debounced edit, not just diagram edits)
+// doesn't re-write every diagram's XML/SVG to IndexedDB on every keystroke — only on saves
+// where a diagram actually changed since the last successful write.
+let _diagramBlobSyncCache={};
 function saveToStorage(){
   try{
     if(!currentDocId)return;
     if(typeof commitDecisionCardIfFocused==='function')commitDecisionCardIfFocused();
     maybeAutoSnapshotBeforeSave(currentDocId);
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams,decisionLogs};
+    // Diagram XML + rendered SVG page thumbnails are the single heaviest thing any document
+    // holds, and writing them into localStorage on every save is what actually exhausts its
+    // quota. Only lightweight metadata (title, status, note, link, page count) goes into the
+    // synchronous localStorage payload below; the heavy fields go to the IndexedDB overflow
+    // store instead, fire-and-forget. This save must stay fully synchronous — the
+    // beforeunload handler relies on it completing before the page tears down, and async work
+    // isn't guaranteed to finish during that window. Worst case if a write races a tab close:
+    // the very latest diagram edit's XML/thumbnail isn't in the overflow store yet, and the
+    // next load falls back to whatever was written before — never a corrupt diagram, and the
+    // metadata (title, status, node link) is never at risk since that's in this same
+    // synchronous write. See hydrateDiagramBlobsForDoc for the read side.
+    const diagramMeta=diagrams.map(d=>{
+      const {xml,previewSvg,pageSvgs,_hydrated,...meta}=d;
+      if(_diagramBlobSyncCache[d.id]!==d.modifiedAt){
+        const syncedAt=d.modifiedAt;
+        idbSet('diagblob:'+currentDocId+':'+d.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]})
+          .then(ok=>{ if(ok)_diagramBlobSyncCache[d.id]=syncedAt; }).catch(()=>{});
+      }
+      return meta;
+    });
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -6892,8 +6948,33 @@ function loadDocFromStorage(id){
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
     decisionLogs=Array.isArray(d.decisionLogs)?d.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null;
+    hydrateDiagramBlobsForDoc(id);
     return true;
   }catch(e){} return false;
+}
+// Fills in each diagram's real xml/previewSvg/pageSvgs from the IndexedDB overflow store, in
+// the background, after loadDocFromStorage has already populated `diagrams` with lightweight
+// metadata from the (synchronous) localStorage read. A diagram whose blob hasn't arrived yet
+// just renders with whatever it already has for a moment — a brand-new one has nothing to show
+// regardless, and a legacy diagram saved before this split still has its xml/previewSvg inline
+// in that metadata already (no IndexedDB entry exists for it yet), so the `if(blob)` guard
+// below leaves it exactly as loaded rather than blanking it out. It gets split into the
+// overflow store automatically the next time this document is saved.
+async function hydrateDiagramBlobsForDoc(id){
+  const targets=diagrams.filter(dg=>dg&&!dg.xml);
+  if(!targets.length)return;
+  let changed=false;
+  for(const dgMeta of targets){
+    if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
+    let blob;
+    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); }catch(e){ continue; }
+    if(currentDocId!==id)return;
+    if(!blob)continue;
+    const live=diagrams.find(dg=>dg.id===dgMeta.id); if(!live)continue;
+    live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[];
+    changed=true;
+  }
+  if(changed&&currentDocId===id){ renderDiagramsList(); render(); }
 }
 // === Document tabs ===
 // Each open document keeps its own undo/redo stack, selection, scroll position and search state
@@ -6940,6 +7021,7 @@ function applyTabSnapshot(tab){
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
+  hydrateDiagramBlobsForDoc(tab.docId);
   ensureSelection(); render(); updateDirtyIndicator();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   const pane=el('editor-pane'); const restoreScroll=tab.scrollTop||0;
@@ -7218,7 +7300,23 @@ async function duplicateDoc(id){
     const newId=genDocId();
     const baseTitle=(d.title||'Untitled').trim()||'Untitled';
     const newTitle=baseTitle+' (copy)';
-    const payload={...d,title:newTitle};
+    // Diagrams carry their own id, used as an IndexedDB overflow-store key scoped to *this*
+    // document (diagblob:<docId>:<diagramId> — see saveToStorage) — reusing the same diagram
+    // id in the duplicate would point at a blob under the wrong doc's scope (a blank diagram,
+    // since nothing was ever written under the new doc's key). Minting a fresh id per diagram
+    // and copying its blob under the new doc's scope keeps the duplicate fully independent,
+    // same as everywhere else "duplicate" mints new ids rather than reusing them.
+    const srcDiagrams=Array.isArray(d.diagrams)?d.diagrams:[];
+    const newDiagrams=[];
+    for(const dg of srcDiagrams){
+      const newDgId=newDiagramId();
+      try{
+        const blob=await idbGet('diagblob:'+id+':'+dg.id);
+        if(blob)await idbSet('diagblob:'+newId+':'+newDgId,blob);
+      }catch(e){}
+      newDiagrams.push({...dg,id:newDgId});
+    }
+    const payload={...d,title:newTitle,diagrams:newDiagrams};
     localStorage.setItem(docKey(newId),JSON.stringify(payload));
     touchDocIndex(newId,newTitle);
     el('docs-menu').classList.remove('open');
@@ -7262,6 +7360,13 @@ function restoreDocFromTrashCore(id){
 // Removes a trashed document for real: storage, index, folder/order maps. Assumes the
 // document is already out of openTabs (true for anything currently sitting in Trash).
 function permanentlyDeleteDocCore(id){
+  try{
+    const raw=localStorage.getItem(docKey(id));
+    if(raw){
+      const d=JSON.parse(raw);
+      if(Array.isArray(d.diagrams))d.diagrams.forEach(dg=>{ idbDelete('diagblob:'+id+':'+dg.id).catch(()=>{}); });
+    }
+  }catch(e){}
   try{localStorage.removeItem(docKey(id))}catch(e){}
   deleteDocRevisions(id);
   saveDocsIndex(loadDocsIndex().filter(d=>d.id!==id));
@@ -7295,7 +7400,7 @@ function closeVersionHistory(){
   historyModalDocId=null;
   historyModalNodeId=null;
 }
-function renderVersionHistoryList(){
+async function renderVersionHistoryList(){
   const body=el('history-modal-body'); if(!body)return;
   const docId=historyModalDocId; if(!docId)return;
   const nameEl=el('history-modal-docname');
@@ -7319,7 +7424,7 @@ function renderVersionHistoryList(){
     nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
     nowRow.appendChild(nowInfo);
     body.appendChild(nowRow);
-    const revisions=loadDocRevisions(docId).slice().reverse(); // newest first
+    const revisions=(await loadDocRevisions(docId)).slice().reverse(); // newest first
     let lastText=currentText, shown=0;
     for(const rev of revisions){
       const n=rev.nodes.find(x=>x.id===historyModalNodeId);
@@ -7350,7 +7455,7 @@ function renderVersionHistoryList(){
   if(saveNowBtn)saveNowBtn.style.display='';
   const entry=loadDocsIndex().find(d=>d.id===docId);
   if(nameEl)nameEl.textContent=(docId===currentDocId?el('header-title')?.value:entry?.title)||entry?.title||'Untitled';
-  const revisions=loadDocRevisions(docId).slice().reverse(); // newest first
+  const revisions=(await loadDocRevisions(docId)).slice().reverse(); // newest first
   body.innerHTML='';
   if(!revisions.length){
     body.innerHTML='<div class="history-empty">No earlier versions yet. They\'re captured automatically as you edit — roughly every 10 minutes of active changes, never more often — or save one manually below right before a big change.</div>';
@@ -7390,7 +7495,7 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,decisionLogList)
   return ' — '+parts.join(' and ')+' no longer linked to a node (see the Diagrams/Decision Log tab to re-anchor)';
 }
 async function restoreDocRevision(docId,ts){
-  const revisions=loadDocRevisions(docId);
+  const revisions=await loadDocRevisions(docId);
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
   const diagramNote=Array.isArray(rev.diagrams)&&rev.diagrams.length?'\n\nDiagrams restore too — a diagram\'s thumbnail regenerates the next time it\'s reopened and saved.':'';
   const qaNote=Array.isArray(rev.qa)&&rev.qa.length?'\n\nQ&A restores too.':'';
@@ -7441,7 +7546,17 @@ async function restoreDocRevision(docId,ts){
       const raw=localStorage.getItem(docKey(docId));
       if(raw){
         const prev=JSON.parse(raw);
-        recordDocRevision(docId,prev,'Before restoring an older version');
+        // prev.diagrams only carries lightweight metadata (see saveToStorage's diagram/
+        // overflow-store split) — hydrate real xml before this gets snapshotted, same fix as
+        // maybeAutoSnapshotBeforeSave, and for the same reason (otherwise the "before restore"
+        // safety snapshot would remember diagrams with no recoverable content).
+        if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
+          for(const dg of prev.diagrams){
+            if(dg.xml)continue;
+            try{ const blob=await idbGet('diagblob:'+docId+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
+          }
+        }
+        await recordDocRevision(docId,prev,'Before restoring an older version');
         prevQa=Array.isArray(prev.qa)?prev.qa:[];
         prevPad=prev.pad||'';
         prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
@@ -7505,15 +7620,28 @@ async function restoreNodeTextFromRevision(nodeId,text){
   showToast('Text restored — Ctrl+Z to undo');
   renderVersionHistoryList();
 }
-function saveManualDocVersion(){
+async function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
+    await recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
-      if(raw)recordDocRevision(docId,JSON.parse(raw),'Manual checkpoint');
+      if(raw){
+        const prev=JSON.parse(raw);
+        // Same hydration gap as maybeAutoSnapshotBeforeSave/restoreDocRevision's background-doc
+        // branch — prev.diagrams here is metadata-only, so a manual checkpoint on a document
+        // that isn't the active one needs its diagram xml filled in from the overflow store
+        // before recording, or the checkpoint would remember diagrams with no content.
+        if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
+          for(const dg of prev.diagrams){
+            if(dg.xml)continue;
+            try{ const blob=await idbGet('diagblob:'+docId+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
+          }
+        }
+        await recordDocRevision(docId,prev,'Manual checkpoint');
+      }
     }catch(e){}
   }
   renderVersionHistoryList();
@@ -7996,6 +8124,12 @@ async function deleteDiagram(id){
     diagrams.splice(Math.min(idx2,diagrams.length),0,removed);
     markDirty(); scheduleAutoSave(); renderDiagramsList();
   });
+  // Deliberately delayed rather than immediate: if the person clicks Undo above, the diagram's
+  // blob needs to still be in the overflow store when the next save re-splits it out. By the
+  // time this fires, an undo within the toast window has already put `removed` back into
+  // `diagrams` in memory, but the blob itself is untouched until now regardless — this cleanup
+  // is best-effort and only matters if Undo was NOT used.
+  setTimeout(()=>{ if(!diagrams.some(d=>d.id===id)) idbDelete('diagblob:'+currentDocId+':'+id).catch(()=>{}); },8000);
 }
 
 // ── Full-screen editor (real draw.io via embed mode) ──────────────────────
@@ -18507,8 +18641,45 @@ function idbOpen(){
 async function idbGet(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).get(key); req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error) }) }catch(e){ return undefined } }
 async function idbSet(key,value){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(value,key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
 async function idbDelete(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).delete(key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
+// Used only by the full-backup builder, to enumerate what's in the overflow store (diagram
+// blobs, meeting notes, document revisions — see "Overflow storage" below) so backups/exports
+// stay complete without needing a separately-maintained index of what's in there.
+async function idbGetAllKeys(){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).getAllKeys(); req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error) }) }catch(e){ return [] } }
 
-function buildFullBackupPayload(){ const data={}; for(let i=0;i<localStorage.length;i++){ const key=localStorage.key(i); data[key]=localStorage.getItem(key) } return {_sakuraExport:true, formatVersion:SAKURA_EXPORT_FORMAT_VERSION, exportedAt:Date.now(), data} }
+// Prefix marking a backup key as belonging to the IndexedDB overflow store (diagram blobs,
+// meeting notes/revisions, document revisions — see "Overflow storage" section above) rather
+// than localStorage, so a restore knows which store to write each key back into. Machinery
+// keys used by the backup system itself (fsHandle, preRestoreSnapshot, localStorageMirror,
+// fsBackupHistory) are deliberately excluded — those describe *this browser's* backup
+// connections, not app data, and round-tripping them through a backup file would be wrong
+// (e.g. restoring someone else's fsHandle makes no sense).
+const IDB_BACKUP_KEY_PREFIX='idb::';
+const IDB_BACKUP_EXCLUDED_KEYS=new Set(['fsHandle','preRestoreSnapshot','localStorageMirror','fsBackupHistory']);
+async function buildFullBackupPayload(){
+  const data={};
+  for(let i=0;i<localStorage.length;i++){ const key=localStorage.key(i); data[key]=localStorage.getItem(key) }
+  try{
+    const idbKeys=await idbGetAllKeys();
+    for(const k of idbKeys){
+      if(typeof k!=='string'||IDB_BACKUP_EXCLUDED_KEYS.has(k))continue;
+      try{ data[IDB_BACKUP_KEY_PREFIX+k]=await idbGet(k); }catch(e){}
+    }
+  }catch(e){}
+  return {_sakuraExport:true, formatVersion:SAKURA_EXPORT_FORMAT_VERSION, exportedAt:Date.now(), data};
+}
+// Writes a full-backup payload's data entries back into the right store — localStorage for a
+// plain key, the IndexedDB overflow store for an idb::-prefixed one (see buildFullBackupPayload
+// above). Shared by every restore path (file import, backup history, safety-copy mirror, undo-
+// last-restore) so the routing logic exists in exactly one place.
+async function applyBackupDataEntries(data){
+  for(const [k,v] of Object.entries(data)){
+    if(k.startsWith(IDB_BACKUP_KEY_PREFIX)){
+      try{ await idbSet(k.slice(IDB_BACKUP_KEY_PREFIX.length),v); }catch(e){}
+    }else{
+      try{ localStorage.setItem(k,v); }catch(e){}
+    }
+  }
+}
 
 function setFsBackupStatus(status){
   fsBackupStatus=status; const btn=el('sb-fs-backup-btn'); const note=el('sb-fs-status'); const nowBtn=el('sb-fs-backup-now-btn');
@@ -18630,7 +18801,7 @@ async function disconnectFsBackup(){
 
 async function writeFsBackupNow(){
   if(!fsBackupHandle||fsBackupStatus!=='connected')return;
-  try{ const writable=await fsBackupHandle.createWritable(); await writable.write(JSON.stringify(buildFullBackupPayload(),null,2)); await writable.close(); try{ localStorage.setItem(LAST_FSBACKUP_KEY,String(Date.now())) }catch(e){} checkBackupReminder(); rotateFsBackupHistory() }
+  try{ const writable=await fsBackupHandle.createWritable(); await writable.write(JSON.stringify(await buildFullBackupPayload(),null,2)); await writable.close(); try{ localStorage.setItem(LAST_FSBACKUP_KEY,String(Date.now())) }catch(e){} checkBackupReminder(); rotateFsBackupHistory() }
   catch(e){ setFsBackupStatus('permission-needed') }
 }
 
@@ -18648,7 +18819,7 @@ async function rotateFsBackupHistory(){
     const hist=(await idbGet('fsBackupHistory'))||[];
     const now=Date.now();
     if(hist.length&&(now-hist[0].savedAt)<FS_BACKUP_HISTORY_MIN_GAP_MS)return;
-    hist.unshift({savedAt:now,payload:buildFullBackupPayload()});
+    hist.unshift({savedAt:now,payload:await buildFullBackupPayload()});
     while(hist.length>FS_BACKUP_HISTORY_MAX)hist.pop();
     await idbSet('fsBackupHistory',hist);
   }catch(e){}
@@ -18681,17 +18852,17 @@ async function restoreFsBackupHistoryEntry(idx){
   const keyCount=Object.keys(entry.payload.data).length; const savedAt=new Date(entry.savedAt).toLocaleString();
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V8Z"/></svg>',title:'Restore Backup History Entry',body:`This will replace everything currently in the app with the backup from ${savedAt} (${keyCount} item${keyCount===1?'':'s'}).\n\nThis cannot be undone, though you'll be able to undo the restore itself right after (Settings → Data → Undo last restore). Continue?`,confirmLabel:'Restore',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
-  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup history'}) }catch(e){}
+  try{ await idbSet('preRestoreSnapshot',{payload:await buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup history'}) }catch(e){}
   try{
     localStorage.clear();
-    Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    await applyBackupDataEntries(entry.payload.data);
     suppressSaveToStorageOnUnload=true;
     sakuraLog('restore','Backup History restore',{savedAt:entry.savedAt,keyCount});
     showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
   }catch(e){ showToast('Restore failed') }
 }
 
-async function mirrorToIndexedDb(){ try{ await idbSet('localStorageMirror',{payload:buildFullBackupPayload(), savedAt:Date.now()}) }catch(e){} updateSafetyCopyStatus() }
+async function mirrorToIndexedDb(){ try{ await idbSet('localStorageMirror',{payload:await buildFullBackupPayload(), savedAt:Date.now()}) }catch(e){} updateSafetyCopyStatus() }
 
 async function updateSafetyCopyStatus(){
   const note=el('sb-safetycopy-status'); if(!note)return;
@@ -18709,10 +18880,10 @@ async function restoreFromIndexedDbMirror(){
   const keyCount=Object.keys(entry.payload.data).length; const savedAt=entry.savedAt?new Date(entry.savedAt).toLocaleString():'unknown time';
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg>',title:'Restore Safety Copy',body:`This will replace everything currently in the app with the local safety copy from ${savedAt} (${keyCount} item${keyCount===1?'':'s'}).\n\nThis cannot be undone. Continue?`,confirmLabel:'Restore',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
-  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from safety copy'}) }catch(e){}
+  try{ await idbSet('preRestoreSnapshot',{payload:await buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from safety copy'}) }catch(e){}
   try{
     localStorage.clear();
-    Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    await applyBackupDataEntries(entry.payload.data);
     suppressSaveToStorageOnUnload=true;
     sakuraLog('restore','Safety copy restore',{savedAt:entry.savedAt,keyCount});
     showToast('Restored — reloading…'); setTimeout(()=>location.reload(),700);
@@ -18726,7 +18897,7 @@ async function restoreFromPreRestoreSnapshot(){
   if(!ok)return;
   try{
     localStorage.clear();
-    Object.entries(entry.payload.data).forEach(([k,v])=>{ try{ localStorage.setItem(k,v) }catch(e){} });
+    await applyBackupDataEntries(entry.payload.data);
     try{ await idbDelete('preRestoreSnapshot') }catch(e){}
     suppressSaveToStorageOnUnload=true;
     sakuraLog('restore','Undo last restore',{savedAt:entry.savedAt,keyCount});
@@ -18976,11 +19147,9 @@ el('sb-backup-reminder-chip')?.addEventListener('click',()=>{
   el('settings-panel')?.classList.add('open');
   setTimeout(()=>{ el('sb-export-all-btn')?.scrollIntoView({block:'center',behavior:'smooth'}) },50);
 });
-function exportAllData(){
+async function exportAllData(){
   try{
-    const data={};
-    for(let i=0;i<localStorage.length;i++){ const key=localStorage.key(i); data[key]=localStorage.getItem(key); }
-    const payload={_sakuraExport:true, formatVersion:SAKURA_EXPORT_FORMAT_VERSION, exportedAt:Date.now(), data};
+    const payload=await buildFullBackupPayload();
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const dateStr=new Date().toISOString().slice(0,10);
     downloadFileBlob(`sakura-backup-${dateStr}.json`, blob);
@@ -19010,22 +19179,32 @@ async function importAllDataFromPayload(payload,opts={}){
   // the wrong file (old backup, wrong version, etc.) is itself undoable via "Undo last restore"
   // below — separate from the ongoing localStorageMirror safety copy, which will itself get
   // overwritten by the very next auto-mirror tick after this restore completes.
-  try{ await idbSet('preRestoreSnapshot',{payload:buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup file'}) }catch(e){}
+  try{ await idbSet('preRestoreSnapshot',{payload:await buildFullBackupPayload(), savedAt:Date.now(), reason:'restore from backup file'}) }catch(e){}
   // Secrets (AI provider keys, cloud backup tokens) are deliberately left out of cloud-sourced
   // payloads before upload — see buildCloudSafeBackupPayload. Snapshot this browser's current
   // values for those keys so the clear() below doesn't wipe them out along with everything else.
   const preserved={};
   preserveKeys.forEach(k=>{ const v=localStorage.getItem(k); if(v!==null)preserved[k]=v; });
+  // Split the backup's data into what actually goes to localStorage vs. the IndexedDB overflow
+  // store (idb::-prefixed keys — see buildFullBackupPayload/applyBackupDataEntries). Only the
+  // localStorage-bound portion needs the staging-and-verify treatment below: IndexedDB's quota
+  // is large enough that pre-checking it the same way isn't the concern here, and staging the
+  // *entire* payload (including diagram/meeting/revision blobs) into one localStorage key would
+  // itself overflow the very quota this split exists to stay under.
+  const localData={}, idbData={};
+  for(const [k,v] of Object.entries(payload.data)){
+    if(k.startsWith(IDB_BACKUP_KEY_PREFIX)) idbData[k]=v; else localData[k]=v;
+  }
   // Stage all writes into a temp key first to verify they fit before wiping existing data.
   // localStorage.clear() followed by a mid-loop failure would otherwise leave the app with
   // partial data and no way to recover — the backup file is only in memory at this point.
   const IMPORT_STAGE_KEY='_sakura_import_stage';
   try{
-    localStorage.setItem(IMPORT_STAGE_KEY, JSON.stringify(payload.data));
+    localStorage.setItem(IMPORT_STAGE_KEY, JSON.stringify(localData));
   }catch(e){ showToast('Import failed — backup too large for available storage'); return; }
   try{
     localStorage.clear();
-    const entries=Object.entries(payload.data);
+    const entries=Object.entries(localData);
     let failed=false;
     for(const [k,v] of entries){
       try{ localStorage.setItem(k,v); }catch(e){ failed=true; break; }
@@ -19033,7 +19212,8 @@ async function importAllDataFromPayload(payload,opts={}){
     if(failed){ showToast('Import failed partway — reload and try again'); return; }
     // Clean up stage key if it survived the clear (it shouldn't, but be safe)
     try{ localStorage.removeItem(IMPORT_STAGE_KEY); }catch(e){}
-    Object.entries(preserved).forEach(([k,v])=>{ if(!(k in payload.data)){ try{ localStorage.setItem(k,v); }catch(e){} } });
+    Object.entries(preserved).forEach(([k,v])=>{ if(!(k in localData)){ try{ localStorage.setItem(k,v); }catch(e){} } });
+    await applyBackupDataEntries(idbData);
   }catch(e){ showToast('Import failed'); return; }
   suppressSaveToStorageOnUnload=true;
   sakuraLog('restore','Data import',{keyCount:Object.keys(payload.data||{}).length});
@@ -19054,8 +19234,8 @@ const CLOUD_UNSAFE_KEYS=[AI_PREFS_KEY,CLOUD_BACKUP_KEY,SAKURA_VAULT_META_KEY,AI_
 // free-text the user pastes in, and some API providers expect the key as a URL query param
 // rather than a header, so a pasted baseUrl could itself contain a secret. Safer to keep the
 // whole custom-provider list local-only, same as the keys themselves, than to try to sanitize it.
-function buildCloudSafeBackupPayload(){
-  const full=buildFullBackupPayload();
+async function buildCloudSafeBackupPayload(){
+  const full=await buildFullBackupPayload();
   const data={...full.data};
   CLOUD_UNSAFE_KEYS.forEach(k=>{ delete data[k]; });
   return {...full,data};
@@ -19146,7 +19326,7 @@ async function saveBackupToGist(opts={}){
         }
       }catch(e){ /* if the check itself fails, fall through and attempt the push anyway */ }
     }
-    const content=JSON.stringify(buildCloudSafeBackupPayload());
+    const content=JSON.stringify(await buildCloudSafeBackupPayload());
     const body={description:CLOUD_GIST_DESC,public:false,files:{[CLOUD_GIST_FILENAME]:{content}}};
     const res=gistId
       ?await gistApiFetch('/gists/'+gistId,d.gistToken,{method:'PATCH',body:JSON.stringify(body)})
@@ -19318,7 +19498,7 @@ async function saveBackupToDrive(opts={}){
   const btn=el('cloud-drive-save-btn'); if(!silent&&btn){btn.disabled=true; btn.textContent='Saving…'}
   try{
     const d=loadCloudBackupPrefs();
-    const content=JSON.stringify(buildCloudSafeBackupPayload());
+    const content=JSON.stringify(await buildCloudSafeBackupPayload());
     let fileId=d.driveFileId||await findDriveFileId();
     let res;
     if(fileId){
@@ -29919,18 +30099,34 @@ function normalizeMeetingNote(m){
     modifiedAt:(m&&Number.isFinite(m.modifiedAt))?m.modifiedAt:now
   };
 }
-function loadMeetingNotes(){
+// Meeting notes moved from their own localStorage key to the IndexedDB overflow store — free-
+// text bodies with no size cap, easy to accumulate a lot of across many meetings. loadMeetingNotes
+// is async (called once at startup, fire-and-forget — see its call site) but saveMeetingNotes
+// stays a plain synchronous function so its ~25 existing call sites throughout the meetings UI
+// don't all need to become async: the actual IndexedDB write happens fire-and-forget inside it,
+// same pattern as diagram blobs in saveToStorage. `meetingNotes` itself stays a full in-memory
+// array the whole session, exactly as before — nothing about reading/editing meetings changes.
+async function loadMeetingNotes(){
+  try{
+    const idbNotes=await idbGet(MEETINGS_KEY);
+    if(Array.isArray(idbNotes)){ meetingNotes=idbNotes.map(normalizeMeetingNote); return; }
+  }catch(e){}
   try{
     const raw=localStorage.getItem(MEETINGS_KEY);
     if(!raw)return;
     const data=JSON.parse(raw);
-    if(Array.isArray(data))meetingNotes=data.map(normalizeMeetingNote);
+    if(Array.isArray(data)){
+      meetingNotes=data.map(normalizeMeetingNote);
+      try{ await idbSet(MEETINGS_KEY,meetingNotes); localStorage.removeItem(MEETINGS_KEY); }catch(e){}
+    }
   }catch(e){}
 }
 function saveMeetingNotes(){
-  maybeAutoSnapshotMeetings();
+  maybeAutoSnapshotMeetings().catch(()=>{});
   try{
-    localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetingNotes));
+    idbSet(MEETINGS_KEY, meetingNotes).catch(()=>{
+      showMeetingsToast('Storage full — this change was not saved');
+    });
     // Same reasoning as saveTodos' identical hook: Meeting Notes live in their own storage
     // key outside the per-document save path, so without this a session that only touched
     // Meetings never updated lastSavedAt/triggered scheduleBackupWrite — the "no backup taken
@@ -29948,24 +30144,39 @@ function saveMeetingNotes(){
 const MEETINGS_REVISION_KEY='sakura_meetings_revisions_v1';
 const MEETINGS_REVISION_MAX=20;
 const MEETINGS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as To-Dos/document revisions
-function loadMeetingsRevisions(){ try{ const raw=localStorage.getItem(MEETINGS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
-function saveMeetingsRevisions(list){ try{ localStorage.setItem(MEETINGS_REVISION_KEY,JSON.stringify(list)) }catch(e){} }
-function recordMeetingsRevision(snapshotNotes,reason){
+async function loadMeetingsRevisions(){
+  try{
+    const existing=await idbGet(MEETINGS_REVISION_KEY);
+    if(Array.isArray(existing))return existing;
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(MEETINGS_REVISION_KEY);
+    if(raw){
+      const arr=JSON.parse(raw);
+      const list=Array.isArray(arr)?arr:[];
+      try{ await idbSet(MEETINGS_REVISION_KEY,list); localStorage.removeItem(MEETINGS_REVISION_KEY); }catch(e){}
+      return list;
+    }
+  }catch(e){}
+  return [];
+}
+async function saveMeetingsRevisions(list){ try{ await idbSet(MEETINGS_REVISION_KEY,list) }catch(e){} }
+async function recordMeetingsRevision(snapshotNotes,reason){
   if(!Array.isArray(snapshotNotes))return;
-  const list=loadMeetingsRevisions();
+  const list=await loadMeetingsRevisions();
   list.push({ts:Date.now(),reason:reason||'Auto',notes:JSON.parse(JSON.stringify(snapshotNotes))});
   while(list.length>MEETINGS_REVISION_MAX)list.shift();
-  saveMeetingsRevisions(list);
+  await saveMeetingsRevisions(list);
 }
-function maybeAutoSnapshotMeetings(){
+async function maybeAutoSnapshotMeetings(){
   try{
-    const raw=localStorage.getItem(MEETINGS_KEY); if(!raw)return;
-    const prev=JSON.parse(raw); if(!Array.isArray(prev)||!prev.length)return;
-    const revisions=loadMeetingsRevisions();
+    const prev=await idbGet(MEETINGS_KEY);
+    if(!Array.isArray(prev)||!prev.length)return;
+    const revisions=await loadMeetingsRevisions();
     const last=revisions[revisions.length-1];
     if(last&&JSON.stringify(last.notes)===JSON.stringify(prev))return; // no real change since the last snapshot
     if(last&&(Date.now()-last.ts)<MEETINGS_REVISION_MIN_GAP_MS)return;
-    recordMeetingsRevision(prev,'Auto');
+    await recordMeetingsRevision(prev,'Auto');
   }catch(e){}
 }
 function findMeeting(id){ return meetingNotes.find(m=>m.id===id); }
@@ -31243,7 +31454,7 @@ function meetingsHistorySummary(list){
   if(!Array.isArray(list)||!list.length)return '(empty)';
   return list.length+' meeting'+(list.length===1?'':'s');
 }
-function renderMeetingsHistoryList(){
+async function renderMeetingsHistoryList(){
   const body=el('meetings-history-body'); if(!body)return;
   body.innerHTML='';
   const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
@@ -31253,7 +31464,7 @@ function renderMeetingsHistoryList(){
   nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
   nowRow.appendChild(nowInfo);
   body.appendChild(nowRow);
-  const revisions=loadMeetingsRevisions().slice().reverse(); // newest first
+  const revisions=(await loadMeetingsRevisions()).slice().reverse(); // newest first
   if(!revisions.length){
     const empty=document.createElement('div'); empty.className='history-empty';
     empty.textContent='No earlier versions yet — one is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" below.';
@@ -31274,11 +31485,11 @@ function renderMeetingsHistoryList(){
   });
 }
 async function restoreMeetingsRevision(ts){
-  const revisions=loadMeetingsRevisions();
+  const revisions=await loadMeetingsRevisions();
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace all current meeting notes with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
   if(!ok)return;
-  recordMeetingsRevision(meetingNotes,'Before restoring an older version');
+  await recordMeetingsRevision(meetingNotes,'Before restoring an older version');
   meetingNotes=JSON.parse(JSON.stringify(rev.notes)).map(normalizeMeetingNote);
   meetingExpandedId=null;
   saveMeetingNotes();
@@ -31286,8 +31497,8 @@ async function restoreMeetingsRevision(ts){
   renderMeetingsHistoryList();
   showMeetingsToast('Version restored');
 }
-function saveMeetingsVersionNow(){
-  recordMeetingsRevision(meetingNotes,'Manual checkpoint');
+async function saveMeetingsVersionNow(){
+  await recordMeetingsRevision(meetingNotes,'Manual checkpoint');
   renderMeetingsHistoryList();
   showMeetingsToast('Version saved');
 }
@@ -31544,7 +31755,7 @@ initMeetingsSettingsUi();
 initMeetingsDrag();
 initMeetingsResize();
 
-loadMeetingNotes();
+loadMeetingNotes().then(()=>{ renderMeetingsList(); render(); }).catch(()=>{});
 window.toggleMeetingsPanel=toggleMeetingsPanel;
 window.sakuraMeetingsSetFeatureEnabled=setMeetingsFeatureEnabled;
 // Consumed by To-Dos' "from meeting" chip (see meetingRef handling in todoRowHtml). Kept as
