@@ -2729,8 +2729,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #meetings-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
 #meetings-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
-#meetings-panel-maximize,#meetings-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#meetings-panel-maximize:hover,#meetings-panel-close:hover{color:var(--fg);background:var(--hover)}
+#meetings-history-btn,#meetings-panel-maximize,#meetings-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#meetings-history-btn:hover,#meetings-panel-maximize:hover,#meetings-panel-close:hover{color:var(--fg);background:var(--hover)}
 #meetings-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 #meetings-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #meetings-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
@@ -5062,6 +5062,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="meetings-panel-header">
     <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span>
     <span id="meetings-panel-title">Meeting Notes</span>
+    <button id="meetings-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="meetings-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Meeting Notes"><svg id="meetings-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="meetings-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -5608,6 +5609,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
         <button id="todos-history-save-now-btn" class="btn">Save a version now</button>
+      </div>
+    </div>
+  </div>
+  <div id="meetings-history-overlay" class="history-modal-overlay">
+    <div class="history-modal">
+      <div class="history-modal-header">
+        <span class="history-modal-title">Meeting Notes Version History</span>
+        <button id="meetings-history-close-x" class="history-modal-close-x" data-tip="Close">×</button>
+      </div>
+      <div id="meetings-history-body" class="history-modal-body"></div>
+      <div class="history-modal-footer">
+        <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
+        <button id="meetings-history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
   </div>
@@ -27215,7 +27229,8 @@ function _addTagPopoverFromInput(){
     // flip above the button if the popover would overflow the bottom of the viewport
     const pr=pop.getBoundingClientRect();
     if(pr.bottom>window.innerHeight-8){
-      pop.style.top=Math.max(8, rect.top-pr.height-4)+'px';
+      const flippedTop=rect.top-pr.height-4;
+      pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
     }
   }
 
@@ -27246,7 +27261,8 @@ function _addTagPopoverFromInput(){
     pop.classList.add('open');
     const pr=pop.getBoundingClientRect();
     if(pr.bottom>window.innerHeight-8){
-      pop.style.top=Math.max(8, rect.top-pr.height-4)+'px';
+      const flippedTop=rect.top-pr.height-4;
+      pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
     }
   }
 
@@ -27461,7 +27477,14 @@ function _addTagPopoverFromInput(){
     pop.classList.add('open');
     const pr=pop.getBoundingClientRect();
     if(pr.bottom>window.innerHeight-8){
-      pop.style.top=Math.max(8, rect.top-pr.height-4)+'px';
+      const flippedTop=rect.top-pr.height-4;
+      // Flipping above only helps if it actually lands on-screen; if the trigger button is
+      // itself near the top of the viewport, a naive Math.max(8, flippedTop) clamp would keep
+      // the popover pinned at the top edge while its (unrelocated) height still ran off the
+      // bottom — same overflow, just from the other direction. Fall back to pinning the
+      // bottom against the viewport instead whenever the flip itself doesn't fit above.
+      const top=(flippedTop>=8) ? flippedTop : Math.max(8, window.innerHeight-8-pr.height);
+      pop.style.top=top+'px';
     }
     setTimeout(()=>{
       if(_linkPopMode==='web'){ input?.focus(); input?.select(); }
@@ -28943,8 +28966,36 @@ function loadMeetingNotes(){
   }catch(e){}
 }
 function saveMeetingNotes(){
+  maybeAutoSnapshotMeetings();
   try{ localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetingNotes)); }
   catch(e){ showMeetingsToast('Storage full — this change was not saved'); }
+}
+// ── Version history ── same self-contained pattern as To-Dos' own (its own storage key,
+// its own periodic auto-snapshot, its own small restore panel) rather than sharing the
+// per-document History modal, which is tightly coupled to document/node concepts meeting
+// notes don't have.
+const MEETINGS_REVISION_KEY='sakura_meetings_revisions_v1';
+const MEETINGS_REVISION_MAX=20;
+const MEETINGS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as To-Dos/document revisions
+function loadMeetingsRevisions(){ try{ const raw=localStorage.getItem(MEETINGS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
+function saveMeetingsRevisions(list){ try{ localStorage.setItem(MEETINGS_REVISION_KEY,JSON.stringify(list)) }catch(e){} }
+function recordMeetingsRevision(snapshotNotes,reason){
+  if(!Array.isArray(snapshotNotes))return;
+  const list=loadMeetingsRevisions();
+  list.push({ts:Date.now(),reason:reason||'Auto',notes:JSON.parse(JSON.stringify(snapshotNotes))});
+  while(list.length>MEETINGS_REVISION_MAX)list.shift();
+  saveMeetingsRevisions(list);
+}
+function maybeAutoSnapshotMeetings(){
+  try{
+    const raw=localStorage.getItem(MEETINGS_KEY); if(!raw)return;
+    const prev=JSON.parse(raw); if(!Array.isArray(prev)||!prev.length)return;
+    const revisions=loadMeetingsRevisions();
+    const last=revisions[revisions.length-1];
+    if(last&&JSON.stringify(last.notes)===JSON.stringify(prev))return; // no real change since the last snapshot
+    if(last&&(Date.now()-last.ts)<MEETINGS_REVISION_MIN_GAP_MS)return;
+    recordMeetingsRevision(prev,'Auto');
+  }catch(e){}
 }
 function findMeeting(id){ return meetingNotes.find(m=>m.id===id); }
 
@@ -29136,7 +29187,10 @@ function openMeetingTemplateMenu(btn){
   btn.setAttribute('aria-expanded','true');
   _meetingTemplateMenuOpen=true;
   const mr=menu.getBoundingClientRect();
-  if(mr.bottom>window.innerHeight-8){ menu.style.top=Math.max(8,r.top-mr.height-4)+'px'; }
+  if(mr.bottom>window.innerHeight-8){
+    const flippedTop=r.top-mr.height-4;
+    menu.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-mr.height))+'px';
+  }
 }
 function closeMeetingTemplateMenu(){
   el('meetings-template-menu')?.classList.remove('open');
@@ -29355,7 +29409,10 @@ function openMeetingDatePopover(btn){
   pop.classList.add('open');
   _meetingDatePopoverOpen=true;
   const pr=pop.getBoundingClientRect();
-  if(pr.bottom>window.innerHeight-8){ pop.style.top=Math.max(8,rect.top-pr.height-4)+'px'; }
+  if(pr.bottom>window.innerHeight-8){
+    const flippedTop=rect.top-pr.height-4;
+    pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
+  }
 }
 function closeMeetingDatePopover(){
   el('meeting-date-popover')?.classList.remove('open');
@@ -29628,7 +29685,10 @@ function openMeetingLinkPopover(btn){
   const input=el('meeting-link-search-input'); if(input){ input.value=''; setTimeout(()=>input.focus(),30); }
   renderMeetingLinkResults('');
   const pr=pop.getBoundingClientRect();
-  if(pr.bottom>window.innerHeight-8){ pop.style.top=Math.max(8,r.top-pr.height-4)+'px'; }
+  if(pr.bottom>window.innerHeight-8){
+    const flippedTop=r.top-pr.height-4;
+    pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
+  }
 }
 function closeMeetingLinkPopover(){
   el('meeting-link-popover')?.classList.remove('open');
@@ -29746,6 +29806,75 @@ async function rewriteMeetingField(key){
 }
 ['agenda','body'].forEach(key=>{
   el('meeting-rewrite-'+key)?.addEventListener('click',()=>rewriteMeetingField(key));
+});
+
+// ── Version history UI ──
+function openMeetingsHistory(){
+  const overlay=el('meetings-history-overlay'); if(!overlay)return;
+  renderMeetingsHistoryList();
+  overlay.classList.add('open');
+}
+function closeMeetingsHistory(){
+  el('meetings-history-overlay')?.classList.remove('open');
+}
+function meetingsHistorySummary(list){
+  if(!Array.isArray(list)||!list.length)return '(empty)';
+  return list.length+' meeting'+(list.length===1?'':'s');
+}
+function renderMeetingsHistoryList(){
+  const body=el('meetings-history-body'); if(!body)return;
+  body.innerHTML='';
+  const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
+  const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
+  const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
+  const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=meetingsHistorySummary(meetingNotes);
+  nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
+  nowRow.appendChild(nowInfo);
+  body.appendChild(nowRow);
+  const revisions=loadMeetingsRevisions().slice().reverse(); // newest first
+  if(!revisions.length){
+    const empty=document.createElement('div'); empty.className='history-empty';
+    empty.textContent='No earlier versions yet — one is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" below.';
+    body.appendChild(empty);
+    return;
+  }
+  revisions.forEach(rev=>{
+    const row=document.createElement('div'); row.className='history-row';
+    const info=document.createElement('div'); info.className='history-row-info';
+    const time=document.createElement('div'); time.className='history-row-time';
+    time.textContent=new Date(rev.ts).toLocaleString()+(rev.reason&&rev.reason!=='Auto'?' · '+rev.reason:'');
+    const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=meetingsHistorySummary(rev.notes);
+    info.appendChild(time); info.appendChild(meta);
+    const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
+    restoreBtn.addEventListener('click',()=>restoreMeetingsRevision(rev.ts));
+    row.appendChild(info); row.appendChild(restoreBtn);
+    body.appendChild(row);
+  });
+}
+async function restoreMeetingsRevision(ts){
+  const revisions=loadMeetingsRevisions();
+  const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace all current meeting notes with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  if(!ok)return;
+  recordMeetingsRevision(meetingNotes,'Before restoring an older version');
+  meetingNotes=JSON.parse(JSON.stringify(rev.notes)).map(normalizeMeetingNote);
+  meetingExpandedId=null;
+  saveMeetingNotes();
+  renderMeetingsList();
+  renderMeetingsHistoryList();
+  showMeetingsToast('Version restored');
+}
+function saveMeetingsVersionNow(){
+  recordMeetingsRevision(meetingNotes,'Manual checkpoint');
+  renderMeetingsHistoryList();
+  showMeetingsToast('Version saved');
+}
+el('meetings-history-btn')?.addEventListener('click', openMeetingsHistory);
+el('meetings-history-close-x')?.addEventListener('click', closeMeetingsHistory);
+el('meetings-history-save-now-btn')?.addEventListener('click', saveMeetingsVersionNow);
+el('meetings-history-overlay')?.addEventListener('click', e=>{ if(e.target===el('meetings-history-overlay'))closeMeetingsHistory(); });
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('meetings-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeMeetingsHistory(); }
 });
 
 // ── Toolbar wiring ──
