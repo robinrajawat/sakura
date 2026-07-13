@@ -29651,7 +29651,7 @@ el('meetings-search-clear-btn')?.addEventListener('click',()=>{
   renderMeetingsList();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen){
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
     closeMeetingsPanel();
   }
@@ -29662,6 +29662,7 @@ document.addEventListener('mousedown',e=>{
   const sbBtn=el('sb-meetings-chip');
   if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
   if(_meetingTemplateMenuOpen)return; // its own outside-click handler covers this
+  if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||(sbBtn&&sbBtn.contains(e.target));
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeMeetingsPanel();
