@@ -6913,14 +6913,29 @@ function saveToStorage(){
     // xml is trustworthy (immediately for ones created/edited this session, once
     // hydrateDiagramBlobsForDoc finishes for ones freshly loaded from storage), so skipping
     // un-hydrated diagrams here leaves their existing blob untouched until that's true.
+    //
+    // The `!d.blobSynced` branch below closes a second, separate gap: the IndexedDB write two
+    // lines down is fire-and-forget precisely so this synchronous localStorage write (which
+    // beforeunload depends on completing before the tab tears down) never blocks on it. That's
+    // fine for a diagram that's been synced before — the comment above is right that a race just
+    // means falling back to a slightly-stale but real blob. It's NOT fine for a diagram's
+    // first-ever save: there is no "before" to fall back to, so a refresh landing before that
+    // first idbSet resolves loses the diagram's content for good. `blobSynced` (persisted in
+    // this same localStorage payload, unlike `_diagramBlobSyncCache` which is memory-only and
+    // resets every reload) tracks whether a confirmed write has ever landed. Until it has, the
+    // heavy fields ride along inline here as a synchronous safety net — loadDocFromStorage
+    // already treats a diagram loaded with inline xml as trustworthy (_hydrated=true)
+    // immediately, same as a pre-migration legacy diagram, so no read-side changes are needed.
+    // Once a sync is confirmed, later saves go back to stripping it, same as always.
     const diagramMeta=diagrams.map(d=>{
       const {xml,previewSvg,pageSvgs,_hydrated,...meta}=d;
       if(_hydrated&&_diagramBlobSyncCache[d.id]!==d.modifiedAt){
         const syncedAt=d.modifiedAt;
         idbSet('diagblob:'+currentDocId+':'+d.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]})
-          .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; diagramBlobWriteFailed=false;} else warnDiagramBlobWriteFailed(); })
+          .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; d.blobSynced=true; diagramBlobWriteFailed=false;} else warnDiagramBlobWriteFailed(); })
           .catch(()=>warnDiagramBlobWriteFailed());
       }
+      if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
     const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
