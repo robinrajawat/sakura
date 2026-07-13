@@ -7927,7 +7927,7 @@ function renderDiagramsList(){
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
     row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
-    row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
+    row.addEventListener('contextmenu',e=>{ if(e.target.closest('input,textarea,[contenteditable="true"]'))return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
       {label:'Copy diagram', onClick: async()=>{ await copyDiagramToClipboard(d.id); }},
       {label:'Duplicate diagram', onClick: async()=>{ duplicateDiagram(d.id); }},
       {divider:true},
@@ -21315,7 +21315,7 @@ function renderDecisionLogsList(){
     summary.appendChild(delBtn);
     summary.addEventListener('click',()=>toggleDecisionExpanded(dl.id));
     row.appendChild(summary);
-    row.addEventListener('contextmenu',e=>{ if(e.target.isContentEditable)return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
+    row.addEventListener('contextmenu',e=>{ if(e.target.closest('input,textarea,[contenteditable="true"]'))return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[
       {label:'Copy decision log', onClick: async()=>{ await copyDecisionLogToClipboard(dl.id); }},
       {divider:true},
       {label:'Delete decision log', danger:true, onClick: async()=>{ await deleteDecisionLog(dl.id); }}
