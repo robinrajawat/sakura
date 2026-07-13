@@ -7922,10 +7922,13 @@ function renderDiagramsList(){
     const dupBtn=document.createElement('button'); dupBtn.className='diagram-row-dup'; dupBtn.dataset.tip='Duplicate diagram';
     dupBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     dupBtn.addEventListener('click',e=>{ e.stopPropagation(); duplicateDiagram(d.id); });
+    const copyBtn=document.createElement('button'); copyBtn.className='diagram-row-dup'; copyBtn.dataset.tip='Copy diagram to clipboard \u2014 paste into another document';
+    copyBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
+    copyBtn.addEventListener('click',e=>{ e.stopPropagation(); copyDiagramToClipboard(d.id); });
     const delBtn=document.createElement('button'); delBtn.className='diagram-row-delete'; delBtn.dataset.tip='Delete diagram';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDiagram(d.id); });
-    row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(delBtn);
+    row.appendChild(selectCb); row.appendChild(dragHandle); row.appendChild(thumb); row.appendChild(info); row.appendChild(dupBtn); row.appendChild(copyBtn); row.appendChild(delBtn);
     row.addEventListener('click',()=>openDiagramEditor(d.id));
     body.appendChild(row);
   });
@@ -13259,6 +13262,17 @@ function openImportDiagramModal(){
     // The paste box, if it's open and has content, takes precedence over an already-loaded
     // file — covers replacing a bad file drop without needing to reopen the dialog.
     if(ta.style.display!=='none'&&ta.value.trim()){
+      const pasted=ta.value.trim();
+      if(pasted.startsWith('SAKURA-DIAGRAM:')){
+        try{
+          const payload=JSON.parse(decodeURIComponent(escape(atob(pasted.slice('SAKURA-DIAGRAM:'.length)))));
+          if(payload&&payload.kind==='sakura-diagram'){
+            overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line';
+            addDiagramFromSakuraPayload(payload);
+            return;
+          }
+        }catch(e){ showError('That looked like a copied Sakura diagram but could not be read \u2014 try copying it again.'); ta.focus(); return; }
+      }
       const result=extractDrawioXml(ta.value);
       if(!result.ok){ showError(result.error); ta.focus(); return; }
       overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line';
@@ -13290,6 +13304,39 @@ function addDiagramFromXml(xml){
   renderDiagramsList();
   showToast('Diagram added');
   regenerateDiagramThumbnail(d.id);
+}
+// Sibling of addDiagramFromXml for a diagram copied whole via the row's own Copy button
+// (see copyDiagramToClipboard) — the payload already carries title/status/note/pageSvgs, so
+// unlike a raw XML paste there's no metadata loss and no thumbnail regen needed.
+function addDiagramFromSakuraPayload(payload){
+  if(!padDiagramsTabEnabled)return;
+  ensureDocumentForEditing();
+  const preferredNodeId=(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
+  const ts=Date.now();
+  const d={id:newDiagramId(),title:payload.title||'',xml:payload.xml||'',previewSvg:payload.previewSvg||'',pageSvgs:Array.isArray(payload.pageSvgs)?payload.pageSvgs.map(p=>({...p})):[],pageCount:payload.pageCount||1,status:payload.status||'draft',note:payload.note||'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts};
+  diagrams.push(d);
+  markDirty(); scheduleAutoSave();
+  if(!padOpen)setPadOpen(true);
+  setPadViewMode('diagrams');
+  renderDiagramsList();
+  showToast('Diagram pasted'+(d.previewSvg?'':' — reopen it once to regenerate its thumbnail'));
+  if(!d.previewSvg)regenerateDiagramThumbnail(d.id);
+}
+// Copies one diagram — title, XML, status, note, thumbnail — as a self-contained payload to the
+// system clipboard, so it can travel to another document (or another browser tab/window
+// entirely) via the Import dialog's "Paste XML text instead" box, which auto-detects this marker.
+async function copyDiagramToClipboard(id){
+  const d=diagrams.find(dg=>dg.id===id); if(!d)return;
+  const payload={v:1,kind:'sakura-diagram',title:d.title||'',xml:d.xml||'',previewSvg:d.previewSvg||'',pageSvgs:Array.isArray(d.pageSvgs)?d.pageSvgs.map(p=>({...p})):[],pageCount:d.pageCount||1,status:d.status||'draft',note:d.note||''};
+  const text='SAKURA-DIAGRAM:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text) }
+    else throw new Error('Clipboard API unavailable');
+    showToast('Diagram copied — paste it into another document via Diagrams → + → Paste XML text instead');
+  }catch(e){
+    const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    showToast('Diagram copied — paste it into another document via Diagrams → + → Paste XML text instead');
+  }
 }
 
 
