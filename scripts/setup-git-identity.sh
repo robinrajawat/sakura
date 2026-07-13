@@ -7,7 +7,7 @@
 
 set -e
 git config user.name "Robin"
-git config user.email "67589492+robinrajawat@users.noreply.github.com"
+git config user.email "robinsinghrajawat@gmail.com"
 git config core.hooksPath .githooks
-echo "✓ Git identity set to Robin <67589492+robinrajawat@users.noreply.github.com>"
+echo "✓ Git identity set to Robin <robinsinghrajawat@gmail.com>"
 echo "✓ core.hooksPath set to .githooks (pre-commit guard active)"
