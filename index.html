@@ -9769,6 +9769,7 @@ function collectSearchGroups(q){
     {name:'Tags',items:collectTagMatches(q)},
     {name:'Pad',items:collectPadMatches(q)},
     {name:'Todos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
+    {name:'Meetings',items:(typeof collectMeetingMatches==='function'?collectMeetingMatches(q):[])},
     {name:'Folders',items:collectFolderMatches(q)},
     {name:'Templates',items:collectTemplateMatches(q)},
     {name:'Settings',items:collectSettingsMatches(q)},
@@ -10047,6 +10048,7 @@ const QA_SEARCH_CATEGORIES=[
   {key:'tags',group:'Tags'},
   {key:'pad',group:'Pad'},
   {key:'todos',group:'To-Dos'},
+  {key:'meetings',group:'Meetings'},
   {key:'settings',group:'Settings'},
   {key:'features',group:'Features'},
   {key:'help',group:'Help'}
@@ -30209,6 +30211,10 @@ function addMeetingAttendee(m,name){
   saveMeetingNotes();
   renderMeetingAttendees(m);
   refreshMeetingRowInList(m);
+  // Same shared recency list Q&A's "Answered by" and Decision Log's "Decided by" already
+  // feed (qaRecordAnswerer/qaRecentAnswerers) — same people show up across all three, so
+  // attendees typed here surface as suggestions there too, and vice versa.
+  if(typeof qaRecordAnswerer==='function')qaRecordAnswerer(trimmed);
 }
 function renderMeetingAttendees(m){
   const wrap=el('meeting-attendees-chips'); if(!wrap)return;
@@ -30239,6 +30245,16 @@ el('meeting-attendee-input')?.addEventListener('keydown',e=>{
   }
 });
 el('meeting-attendee-input')?.addEventListener('blur',e=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  if(e.target.value.trim()){ addMeetingAttendee(m,e.target.value); e.target.value=''; }
+});
+// Same shared singleton popup as "Answered by" (Q&A) / "Decided by" (Decision Log) —
+// attachAnswererAutocomplete already handles focus/input/blur/Escape wiring generically.
+if(typeof attachAnswererAutocomplete==='function')attachAnswererAutocomplete(el('meeting-attendee-input'));
+// commitAnswererSuggest() fills the value and fires 'change' rather than 'Enter' (it's built
+// for single-value fields) — for this chip-list field, treat a click on a suggestion the same
+// as pressing Enter, so picking a name adds the chip immediately instead of just filling the box.
+el('meeting-attendee-input')?.addEventListener('change',e=>{
   const m=findMeeting(meetingExpandedId); if(!m)return;
   if(e.target.value.trim()){ addMeetingAttendee(m,e.target.value); e.target.value=''; }
 });
@@ -31137,6 +31153,31 @@ window.sakuraOpenMeetingFromRef=function(meetingId){
   renderMeetingsList();
   setTimeout(()=>{ document.querySelector(`.meeting-row[data-meeting-id="${m.id}"]`)?.scrollIntoView({block:'nearest'}); },30);
   return true;
+};
+// Same shape as window.collectTodoMatches (To-Dos module) — Quick Assist / Global Search
+// previously had no visibility into Meeting Notes at all, since they live in their own
+// storage key outside the per-document search path. Matches title, attendees, and the plain-
+// text content of Agenda/Notes, same fields meetingDisplayList()'s own in-panel search checks.
+window.collectMeetingMatches=function(q){
+  if(!meetingsFeatureEnabled) return [];
+  const out=[];
+  const tokens=(typeof qaTokenizeQuery==='function')?qaTokenizeQuery(q):String(q||'').split(/\s+/).filter(Boolean);
+  const hayMatch=(typeof qaHayMatches==='function')?qaHayMatches:((hay,toks)=>toks.every(t=>hay.toLowerCase().includes(t.toLowerCase())));
+  const snippet=(typeof buildMatchSnippetHtml==='function')?buildMatchSnippetHtml:((text)=>esc(text));
+  for(const m of meetingNotes){
+    if(out.length>=6) break;
+    const hay=[m.title||'', (m.attendees||[]).join(' '), stripHtmlToText(m.agenda||''), stripHtmlToText(m.body||'')].join(' ');
+    if(!hayMatch(hay, tokens)) continue;
+    const label=m.title||'Untitled meeting';
+    out.push({
+      group:'Meetings',
+      label:label.slice(0,80),
+      labelHtml:snippet(label,q),
+      meta: m.date ? formatMeetingDateLabel(m.date) : 'Undated',
+      action:()=>{ if(typeof closeAllPanelsExceptGlobalSearch==='function') closeAllPanelsExceptGlobalSearch(); window.sakuraOpenMeetingFromRef(m.id); }
+    });
+  }
+  return out;
 };
 // initFeatureActivationPanel() already ran as part of page startup, before this module (a
 // later script block) had defined window.sakuraMeetingsFeatureEnabled — so the Feature
