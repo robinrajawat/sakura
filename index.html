@@ -3919,6 +3919,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
               <div class="settings-list" style="margin-top:10px">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">To-Dos</span><span class="settings-row-desc">App-level task list, separate from documents — app bar/status bar button and the To-Dos panel itself</span></div><button id="feat-todos-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable To-Dos"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Meeting Notes</span><span class="settings-row-desc">App-level meeting log, separate from documents — app bar/status bar button and the Meeting Notes panel itself</span></div><button id="feat-meetings-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Meeting Notes"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist</span><span class="settings-row-desc">Ctrl/Cmd+Space command box — type plain-English instructions like "hide sidebar" and they run immediately, run one-off actions like "new document" or "duplicate node," run AI actions like "rewrite document" or "expand node" (each reuses the same AI feature as its toolbar button, so it needs an API key configured under AI Rewrite and respects AI Capabilities being on), or type anything else to search documents, notes, tags, settings, and help. Toggles, one-off actions, and settings changes are instant and reversible with Undo; AI actions are the exception — they call the configured AI provider and can take a few seconds or fail like any other AI call, but their results are still added to Undo once they land</span></div><button id="feat-quickassist-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Assist"></button></div>
               </div>
             </div>
@@ -4438,6 +4439,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><span class="todo-tag-chip">#tag</span> renders as a colored tag chip — same autocomplete popup, suggesting tags you've already used. <span class="todo-remark">&gt;remark</span> renders everything from the &gt; to the end of the line as a muted italic aside. Both are display only, same as @ tokens</li>
 <li>Quick-find already searches the raw task text, so it matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text without any special handling — priority stays a separate structured field with its own dedicated filter</li>
 <li>Quick Assist searches your tasks too — type a task's text, or scope it with <code>todo: milk</code> — and clicking a result opens the panel and flashes the match</li>
+</ul>
+</div>
+          <div class="help-section" data-cat="panels" id="help-section-meetings">
+<h4>Meeting Notes</h4>
+<ul>
+<li>An app-level meeting log — not tied to any document. One shared list across your whole workspace, same idea as To-Dos</li>
+<li>Open it from the app bar (or the status bar, if you've moved it there) with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>; the same shortcut closes it again</li>
+<li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> to add a meeting note — it opens expanded and ready to type into immediately. Notes are listed newest first, click any row to expand it in place and edit it, click again (or click another row) to fold it back up</li>
+<li>Each note has a title, date, attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo), and a list of action items</li>
+<li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> button next to one adds it as a real To-Do (prefixed with the meeting's title so you can trace it back) — once promoted it shows "In To-Dos" and can't be promoted again, so re-clicking never creates a duplicate</li>
+<li><strong>Linked nodes</strong>: click the link icon to search node text across every document (open or not) and attach one, or attach a whole document without picking a specific node. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
+<li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
+<li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
 </ul>
 </div>
           <div class="help-section" data-cat="features" id="help-section-features">
@@ -8702,10 +8716,11 @@ const FEATURE_FLAGS={
   padnotepad:{get:()=>padNotepadTabEnabled,set:v=>{if(!v&&!padQaTabEnabled&&!featureDecisionLogEnabled){showToast('Keep at least one Pad tab enabled'); return;} padNotepadTabEnabled=v; padEnsureValidViewMode();}},
   padqa:{get:()=>padQaTabEnabled,set:v=>{if(!v&&!padNotepadTabEnabled&&!featureDecisionLogEnabled){showToast('Keep at least one Pad tab enabled'); return;} padQaTabEnabled=v; padEnsureValidViewMode();}},
   paddiagrams:{get:()=>padDiagramsTabEnabled,set:v=>{padDiagramsTabEnabled=v; padEnsureValidViewMode(); if(typeof renderDiagramsList==='function')renderDiagramsList();}},
-  todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}}
+  todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}},
+  meetings:{get:()=>(typeof window.sakuraMeetingsFeatureEnabled==='function'?window.sakuraMeetingsFeatureEnabled():true),set:v=>{if(typeof window.sakuraMeetingsSetFeatureEnabled==='function')window.sakuraMeetingsSetFeatureEnabled(v);}}
 };
-const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-subsection-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog']};
-const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos']};
+const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-subsection-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],meetings:['settings-section-meetings'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog']};
+const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
   ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
@@ -8835,7 +8850,7 @@ function syncFeaturesBtnState(){
   const anyOff=Object.keys(FEATURE_FLAGS).some(k=>!FEATURE_FLAGS[k].get());
   btns.forEach(btn=>{btn.classList.toggle('has-off-features',anyOff); btn.dataset.tip=anyOff?'Features — some capabilities are off':'Features';});
 }
-const MINIMAL_KEYS=['note','codeblock','pad','ai','decisionlog','tagging','backlinks','quickassist','nodeqa','hovertoolbar','todos'];
+const MINIMAL_KEYS=['note','codeblock','pad','ai','decisionlog','tagging','backlinks','quickassist','nodeqa','hovertoolbar','todos','meetings'];
 function isMinimalMode(){return MINIMAL_KEYS.every(k=>!FEATURE_FLAGS[k].get());}
 function initFeatureActivationPanel(){
   Object.keys(FEATURE_FLAGS).forEach(key=>{
@@ -15654,6 +15669,7 @@ const STATUSBAR_RIGHT_ORDER_MAP={
   scale:{item:'scale-wrap',divider:'sb-scale-divider',label:'Text size control'},
   author:{item:'sb-author',divider:'sb-author-divider',label:'Author field'},
   todos:{item:'sb-todos-chip',divider:'sb-todos-divider',label:'To-Dos'},
+  meetings:{item:'sb-meetings-chip',divider:'sb-meetings-divider',label:'Meeting Notes'},
   qa:{item:'global-search-wrap',divider:'sb-qa-divider',label:'Quick Assist'},
 };
 const STATUSBAR_RIGHT_ORDER_KEYS=Object.keys(STATUSBAR_RIGHT_ORDER_MAP);
@@ -15680,6 +15696,7 @@ function applyStatusbarRightOrder(){
   statusbarRightOrder.forEach(k=>{
     if(k==='qa'&&qaLocation==='appbar')return;
     if(k==='todos'&&!(typeof sakuraTodosIsStatusbar==='function'&&sakuraTodosIsStatusbar()))return;
+    if(k==='meetings'&&!(typeof sakuraMeetingsIsStatusbar==='function'&&sakuraMeetingsIsStatusbar()))return;
     const map=STATUSBAR_RIGHT_ORDER_MAP[k]; if(!map)return;
     const d=el(map.divider); const it=el(map.item);
     if(d)container.appendChild(d);
@@ -15703,6 +15720,7 @@ function renderStatusbarOrderList(){
   statusbarRightOrder.forEach((key,idx)=>{
     if(key==='qa'&&qaLocation==='appbar')return;
     if(key==='todos'&&!(typeof sakuraTodosIsStatusbar==='function'&&sakuraTodosIsStatusbar()))return;
+    if(key==='meetings'&&!(typeof sakuraMeetingsIsStatusbar==='function'&&sakuraMeetingsIsStatusbar()))return;
     const map=STATUSBAR_RIGHT_ORDER_MAP[key]; if(!map)return;
     const row=document.createElement('div');
     row.dataset.key=key;
@@ -28646,7 +28664,7 @@ function _addTagPopoverFromInput(){
         </ul>
       </div>
 
-      <div class="cs-card" data-cs-anchor="meetings">
+      <div class="cs-card" data-feature-requires="meetings" data-cs-anchor="meetings">
         <h3>Meeting Notes</h3>
         <ul>
           <li><span class="cs-desc">App-level, like To-Dos — not tied to any document or node</span> · <span class="cs-combo" data-cs-shortcut="toggleMeetings"></span></li>
@@ -29351,24 +29369,34 @@ document.addEventListener('mousedown',e=>{
 // usual top-right one.
 const MEETINGS_SETTINGS_KEY='sakura_meetings_settings_v1';
 let meetingsLocation='appbar';
+let meetingsFeatureEnabled=true;
 function loadMeetingsSettings(){
   try{
     const raw=localStorage.getItem(MEETINGS_SETTINGS_KEY);
-    if(raw){ const d=JSON.parse(raw); meetingsLocation=d.location==='statusbar'?'statusbar':'appbar'; }
+    if(raw){ const d=JSON.parse(raw); meetingsLocation=d.location==='statusbar'?'statusbar':'appbar'; meetingsFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; }
   }catch(e){}
 }
 function saveMeetingsSettings(){
-  try{ localStorage.setItem(MEETINGS_SETTINGS_KEY, JSON.stringify({location:meetingsLocation})); }catch(e){}
+  try{ localStorage.setItem(MEETINGS_SETTINGS_KEY, JSON.stringify({location:meetingsLocation,featureEnabled:meetingsFeatureEnabled})); }catch(e){}
 }
 function applyMeetingsLocation(){
   const appbarBtn=el('meetings-toggle');
   const sbDivider=el('sb-meetings-divider');
   const sbBtn=el('sb-meetings-chip');
   const inStatusbar=meetingsLocation==='statusbar';
-  if(appbarBtn)appbarBtn.style.display=inStatusbar?'none':'';
-  if(sbDivider)sbDivider.style.display=inStatusbar?'':'none';
-  if(sbBtn)sbBtn.style.display=inStatusbar?'':'none';
-  el('meetings-panel')?.classList.toggle('statusbar-anchored',inStatusbar);
+  const hideAll=!meetingsFeatureEnabled;
+  if(appbarBtn)appbarBtn.style.display=(hideAll||inStatusbar)?'none':'';
+  if(sbDivider)sbDivider.style.display=(hideAll||!inStatusbar)?'none':'';
+  if(sbBtn)sbBtn.style.display=(hideAll||!inStatusbar)?'none':'';
+  if(hideAll)closeMeetingsPanel();
+  el('meetings-panel')?.classList.toggle('statusbar-anchored',inStatusbar&&!hideAll);
+  if(typeof applyStatusbarRightOrder==='function')applyStatusbarRightOrder();
+  if(typeof renderStatusbarOrderList==='function')renderStatusbarOrderList();
+}
+function setMeetingsFeatureEnabled(on){
+  meetingsFeatureEnabled=!!on;
+  saveMeetingsSettings();
+  applyMeetingsLocation();
 }
 function setMeetingsLocation(loc){
   meetingsLocation=loc==='statusbar'?'statusbar':'appbar';
@@ -29388,5 +29416,15 @@ applyMeetingsLocation();
 
 loadMeetingNotes();
 window.toggleMeetingsPanel=toggleMeetingsPanel;
+window.sakuraMeetingsIsStatusbar=function(){ return meetingsLocation==='statusbar' && meetingsFeatureEnabled; };
+window.sakuraMeetingsFeatureEnabled=function(){ return meetingsFeatureEnabled; };
+window.sakuraMeetingsSetFeatureEnabled=setMeetingsFeatureEnabled;
+// initFeatureActivationPanel() already ran as part of page startup, before this module (a
+// later script block) had defined window.sakuraMeetingsFeatureEnabled — so the Feature
+// Activation toggle it built was working off FEATURE_FLAGS.meetings.get()'s "not ready yet"
+// fallback (always true) rather than the actual persisted value. Now that the real function
+// exists, correct that one row instead of waiting for something unrelated to happen to
+// refresh it later.
+if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetingsFeatureEnabled);
 </script>
 </body></html>
