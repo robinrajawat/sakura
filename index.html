@@ -6426,6 +6426,7 @@ function maybeAutoSnapshotBeforeSave(id){
 function saveToStorage(){
   try{
     if(!currentDocId)return;
+    if(typeof commitDecisionCardIfFocused==='function')commitDecisionCardIfFocused();
     maybeAutoSnapshotBeforeSave(currentDocId);
     const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
