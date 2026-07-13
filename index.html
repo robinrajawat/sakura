@@ -2615,8 +2615,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 .todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
 .todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
-#todo-due-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
-#todo-due-popover.open{display:block}
+#todo-due-popover,#meeting-date-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
+#todo-due-popover.open,#meeting-date-popover.open{display:block}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
 .due-pop-preset-btn{flex:1;appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:500 10.5px 'Inter',sans-serif;padding:5px 2px;border-radius:6px;cursor:pointer;text-align:center;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
 .due-pop-preset-btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent)}
@@ -2725,19 +2725,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-search-row input::placeholder{color:var(--hint)}
 #meetings-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:5px;display:inline-flex}
 #meetings-search-clear-btn:hover{color:var(--fg)}
-#meetings-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
+#meetings-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;background:var(--canvas-bg)}
 #meetings-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
 #meetings-body.is-empty #meetings-empty{display:block}
 #meetings-body.is-empty #meetings-list{display:none}
-#meeting-card{display:none;background:var(--edit-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:2px}
+#meeting-card{display:none;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:16px 18px 14px;margin-top:2px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
 
 .meeting-row{display:flex;flex-direction:column;margin:0 -6px 4px;border-radius:8px}
 .meeting-row:last-child{margin-bottom:0}
 .meeting-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px;transition:background .12s}
 .meeting-row-summary:hover{background:var(--hover)}
 .meeting-row.expanded .meeting-row-summary{background:var(--hover)}
-.meeting-row-date{flex:0 0 auto;width:44px;text-align:center;font:600 10px 'Inter',sans-serif;color:var(--muted);line-height:1.25;padding-top:1px}
-.meeting-row-date .mrd-day{display:block;font-size:15px;color:var(--fg)}
+.meeting-row-date{flex:0 0 auto;width:42px;text-align:center;font:700 9.5px 'Inter',sans-serif;color:var(--accent);line-height:1.1;border:1px solid var(--border);border-radius:8px;overflow:hidden;text-transform:uppercase;letter-spacing:.03em;padding-top:3px}
+.meeting-row-date .mrd-day{display:block;font-size:16px;font-weight:700;color:var(--fg);background:var(--hover);padding:3px 0 2px;letter-spacing:0}
 .meeting-row-content{flex:1;min-width:0}
 .meeting-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meeting-row-title:empty::before{content:'Untitled meeting';color:var(--hint);font-style:italic}
@@ -2754,8 +2754,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meeting-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
 #meeting-title-input:hover{background:var(--hover)}
 #meeting-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-#meeting-date-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 6px;border-radius:7px;outline:none;flex:0 0 auto}
-#meeting-date-input:focus{border-color:var(--accent)}
+#meeting-date-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;padding:5px 9px;border-radius:7px;outline:none;flex:0 0 auto;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:border-color .12s,color .12s,background .12s}
+#meeting-date-input:hover{border-color:var(--accent);color:var(--accent)}
+#meeting-date-input.set{color:var(--fg);border-color:var(--border)}
+#meeting-date-input.unset #meeting-date-input-label{color:var(--hint);font-style:italic}
 #meeting-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
 #meeting-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
 #meeting-attendees-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
@@ -2778,7 +2780,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-field-body li{margin:2px 0}
 
 #meeting-action-items{display:flex;flex-direction:column;gap:2px}
-.meeting-action-item{display:flex;align-items:flex-start;gap:7px;padding:3px 0}
+.meeting-action-item{display:flex;align-items:flex-start;gap:7px;padding:5px 8px;margin-bottom:3px;border-radius:7px;background:color-mix(in srgb,var(--fc-orange) 5%,transparent);transition:background .12s}
+.meeting-action-item:hover{background:color-mix(in srgb,var(--fc-orange) 9%,transparent)}
+.meeting-action-item.done{background:color-mix(in srgb,var(--muted) 7%,transparent)}
+.meeting-action-item.done:hover{background:color-mix(in srgb,var(--muted) 11%,transparent)}
 .meeting-action-item-check{margin-top:3px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)}
 .meeting-action-item-text{flex:1;min-width:0;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;word-break:break-word;outline:none}
 .meeting-action-item.done .meeting-action-item-text{color:var(--muted);text-decoration:line-through}
@@ -5040,7 +5045,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="meeting-card">
       <div id="meeting-card-top-row">
         <input id="meeting-title-input" type="text" placeholder="Meeting title" maxlength="160" autocomplete="off" />
-        <input id="meeting-date-input" type="date" aria-label="Meeting date" />
+        <button type="button" id="meeting-date-input" aria-label="Meeting date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="meeting-date-input-label">Set date</span></button>
         <button type="button" id="meeting-delete-btn" data-tip="Delete meeting note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div>
       <div id="meeting-attendees-row">
@@ -5048,15 +5053,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <input id="meeting-attendee-input" type="text" placeholder="+ Add attendee" autocomplete="off" maxlength="80" />
       </div>
       <div class="meeting-field">
-        <div class="meeting-field-label">Agenda</div>
+        <div class="meeting-field-label" style="color:var(--fc-blue)">Agenda</div>
         <div id="meeting-agenda" class="meeting-field-body" contenteditable="true" data-placeholder="What's on the agenda?"></div>
       </div>
       <div class="meeting-field">
-        <div class="meeting-field-label">Notes</div>
+        <div class="meeting-field-label" style="color:var(--fc-purple)">Notes</div>
         <div id="meeting-body-field" class="meeting-field-body" contenteditable="true" data-placeholder="Meeting notes…"></div>
       </div>
       <div class="meeting-field">
-        <div class="meeting-field-label">Action items</div>
+        <div class="meeting-field-label" style="color:var(--fc-orange)">Action items</div>
         <div id="meeting-action-items"></div>
         <div id="meeting-action-item-add-row">
           <input id="meeting-action-item-input" type="text" placeholder="+ Add action item" autocomplete="off" maxlength="300" />
@@ -5064,7 +5069,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
       <div class="meeting-field">
         <div class="meeting-field-label-row">
-          <div class="meeting-field-label">Linked nodes</div>
+          <div class="meeting-field-label" style="color:var(--fc-gray)">Linked nodes</div>
           <button type="button" id="meeting-add-link-btn" data-tip="Link a node or document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
         </div>
         <div id="meeting-links"></div>
@@ -5077,6 +5082,23 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <div id="meeting-link-popover" role="dialog" aria-label="Link a node or document">
   <input id="meeting-link-search-input" type="text" placeholder="Search nodes across all documents…" autocomplete="off" spellcheck="false" />
   <div id="meeting-link-results"></div>
+</div>
+<div id="meeting-date-popover" role="dialog" aria-label="Set meeting date">
+  <div class="due-pop-presets">
+    <button type="button" class="due-pop-preset-btn" data-preset="0">Today</button>
+    <button type="button" class="due-pop-preset-btn" data-preset="1">Tomorrow</button>
+    <button type="button" class="due-pop-preset-btn" data-preset="-1">Yesterday</button>
+  </div>
+  <div class="due-pop-cal-header">
+    <button type="button" class="due-pop-cal-nav" id="meeting-date-pop-cal-prev" aria-label="Previous month"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="due-pop-cal-title" id="meeting-date-pop-cal-title"></span>
+    <button type="button" class="due-pop-cal-nav" id="meeting-date-pop-cal-next" aria-label="Next month"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>
+  <div class="due-pop-cal-grid" id="meeting-date-pop-cal-dow"></div>
+  <div class="due-pop-cal-grid" id="meeting-date-pop-cal-days"></div>
+  <div class="due-pop-footer">
+    <button type="button" class="due-pop-clear-btn" id="meeting-date-pop-clear-btn">Clear date</button>
+  </div>
 </div>
 
 <div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
@@ -28994,8 +29016,6 @@ function commitMeetingCardIfFocused(){
   const m=findMeeting(meetingExpandedId); if(!m)return;
   if(active.id==='meeting-title-input'){
     if(active.value!==(m.title||'')){ m.title=active.value; m.modifiedAt=Date.now(); saveMeetingNotes(); }
-  } else if(active.id==='meeting-date-input'){
-    if(active.value!==(m.date||'')){ m.date=active.value; m.modifiedAt=Date.now(); saveMeetingNotes(); }
   } else if(active.id==='meeting-agenda'||active.id==='meeting-body-field'){
     const key=active.id==='meeting-agenda'?'agenda':'body';
     const html=sakuraSanitizeRichHtml(active.innerHTML);
@@ -29033,11 +29053,28 @@ function renderMeetingsList(){
 
 // ── Expanded card ──
 let _meetingCardUndoId=null;
+function formatMeetingDateLabel(dateStr){
+  if(!dateStr)return 'Set date';
+  const d=new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime()))return 'Set date';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const diffDays=Math.round((d-today)/86400000);
+  if(diffDays===0)return 'Today';
+  if(diffDays===1)return 'Tomorrow';
+  if(diffDays===-1)return 'Yesterday';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:d.getFullYear()!==today.getFullYear()?'numeric':undefined});
+}
+function updateMeetingDateButton(m){
+  const btn=el('meeting-date-input'); const label=el('meeting-date-input-label'); if(!btn||!label)return;
+  label.textContent=formatMeetingDateLabel(m.date);
+  btn.classList.toggle('set',!!m.date);
+  btn.classList.toggle('unset',!m.date);
+}
 function populateMeetingCard(m){
   if(!m)return;
   if(_meetingCardUndoId!==m.id){ meetingFieldSessionUndo={}; _meetingFieldCheckpointPending={}; _meetingCardUndoId=m.id; }
   const titleInput=el('meeting-title-input'); if(titleInput)titleInput.value=m.title||'';
-  const dateInput=el('meeting-date-input'); if(dateInput)dateInput.value=m.date||'';
+  updateMeetingDateButton(m);
   const agendaField=el('meeting-agenda'); if(agendaField)agendaField.innerHTML=sakuraSanitizeRichHtml(m.agenda||'');
   const bodyField=el('meeting-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(m.body||'');
   renderMeetingAttendees(m);
@@ -29051,13 +29088,113 @@ el('meeting-title-input')?.addEventListener('input',()=>{
   saveMeetingNotes();
   refreshMeetingRowInList(m);
 });
-el('meeting-date-input')?.addEventListener('change',()=>{
-  const m=findMeeting(meetingExpandedId); if(!m)return;
-  m.date=el('meeting-date-input').value; m.modifiedAt=Date.now();
-  saveMeetingNotes();
-  renderMeetingsList(); // date affects sort position, unlike the other fields
-});
 el('meeting-delete-btn')?.addEventListener('click',()=>{ if(meetingExpandedId!=null)deleteMeetingNote(meetingExpandedId); });
+
+// ── Date popover — same look and mechanics as To-Dos' own due-date popover (presets, month
+// grid, clear), reusing its .due-pop-* CSS classes since they're already generic. A separate
+// instance rather than sharing #todo-due-popover itself, since that one's JS is private inside
+// the To-Dos module and wired specifically to a todo's dueDate, not a meeting's date. ──
+let _meetingDateViewMonth=null;
+function toMeetingISODate(d){
+  const y=d.getFullYear(), mo=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${mo}-${day}`;
+}
+function meetingDatePreset(daysFromToday){
+  const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+daysFromToday);
+  return toMeetingISODate(d);
+}
+function parseMeetingISODate(s){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s||''))return null;
+  const [y,mo,d]=s.split('-').map(Number);
+  return new Date(y,mo-1,d);
+}
+function commitMeetingDate(val){
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  m.date=val||''; m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  closeMeetingDatePopover();
+  renderMeetingsList(); // date affects sort position, unlike the other fields
+}
+function renderMeetingDatePopover(){
+  const m=findMeeting(meetingExpandedId); if(!m||!_meetingDateViewMonth)return;
+  const current=m.date||'';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayIso=toMeetingISODate(today);
+  const titleEl=el('meeting-date-pop-cal-title');
+  if(titleEl)titleEl.textContent=_meetingDateViewMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const dowEl=el('meeting-date-pop-cal-dow');
+  if(dowEl&&!dowEl.childElementCount){
+    dowEl.innerHTML=['S','M','T','W','T','F','S'].map(d=>`<span class="due-pop-cal-dow">${d}</span>`).join('');
+  }
+  const daysEl=el('meeting-date-pop-cal-days');
+  if(daysEl){
+    const y=_meetingDateViewMonth.getFullYear(), mo=_meetingDateViewMonth.getMonth();
+    const firstDow=new Date(y,mo,1).getDay();
+    const daysInMonth=new Date(y,mo+1,0).getDate();
+    const daysInPrevMonth=new Date(y,mo,0).getDate();
+    let html='';
+    for(let i=0;i<firstDow;i++){
+      html+=`<button type="button" class="due-pop-cal-day muted" disabled>${daysInPrevMonth-firstDow+1+i}</button>`;
+    }
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=toMeetingISODate(new Date(y,mo,d));
+      const isToday=iso===todayIso;
+      const isSelected=current===iso;
+      html+=`<button type="button" class="due-pop-cal-day${isToday?' today':''}${isSelected?' selected':''}" data-date="${iso}">${d}</button>`;
+    }
+    const trailing=(7-((firstDow+daysInMonth)%7))%7;
+    for(let i=1;i<=trailing;i++){
+      html+=`<button type="button" class="due-pop-cal-day muted" disabled>${i}</button>`;
+    }
+    daysEl.innerHTML=html;
+    daysEl.querySelectorAll('.due-pop-cal-day[data-date]').forEach(dBtn=>{
+      dBtn.addEventListener('click',()=>commitMeetingDate(dBtn.getAttribute('data-date')));
+    });
+  }
+  const clearBtn=el('meeting-date-pop-clear-btn');
+  if(clearBtn)clearBtn.disabled=!current;
+}
+let _meetingDatePopoverOpen=false;
+function openMeetingDatePopover(btn){
+  const pop=el('meeting-date-popover'); if(!pop||!btn)return;
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  const current=parseMeetingISODate(m.date);
+  const today=new Date(); today.setHours(0,0,0,0);
+  _meetingDateViewMonth=current?new Date(current.getFullYear(),current.getMonth(),1):new Date(today.getFullYear(),today.getMonth(),1);
+  const rect=btn.getBoundingClientRect();
+  const pw=216;
+  let left=rect.left;
+  if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  if(left<8)left=8;
+  pop.style.left=left+'px';
+  pop.style.top=(rect.bottom+4)+'px';
+  renderMeetingDatePopover();
+  pop.classList.add('open');
+  _meetingDatePopoverOpen=true;
+  const pr=pop.getBoundingClientRect();
+  if(pr.bottom>window.innerHeight-8){ pop.style.top=Math.max(8,rect.top-pr.height-4)+'px'; }
+}
+function closeMeetingDatePopover(){
+  el('meeting-date-popover')?.classList.remove('open');
+  _meetingDatePopoverOpen=false;
+}
+el('meeting-date-input')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(_meetingDatePopoverOpen){ closeMeetingDatePopover(); return; }
+  openMeetingDatePopover(e.currentTarget);
+});
+document.querySelectorAll('#meeting-date-popover .due-pop-preset-btn').forEach(pBtn=>{
+  pBtn.addEventListener('click',()=>commitMeetingDate(meetingDatePreset(Number(pBtn.getAttribute('data-preset')))));
+});
+el('meeting-date-pop-cal-prev')?.addEventListener('click',()=>{ _meetingDateViewMonth.setMonth(_meetingDateViewMonth.getMonth()-1); renderMeetingDatePopover(); });
+el('meeting-date-pop-cal-next')?.addEventListener('click',()=>{ _meetingDateViewMonth.setMonth(_meetingDateViewMonth.getMonth()+1); renderMeetingDatePopover(); });
+el('meeting-date-pop-clear-btn')?.addEventListener('click',()=>commitMeetingDate(null));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&_meetingDatePopoverOpen){ e.stopPropagation(); closeMeetingDatePopover(); }
+},true);
+document.addEventListener('mousedown',e=>{
+  if(_meetingDatePopoverOpen&&!e.target.closest('#meeting-date-popover')&&!e.target.closest('#meeting-date-input'))closeMeetingDatePopover();
+},true);
 
 // ── Attendees ──
 function addMeetingAttendee(m,name){
