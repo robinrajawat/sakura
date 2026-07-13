@@ -5092,7 +5092,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div class="meeting-field">
         <div class="meeting-field-label-row">
           <div class="meeting-field-label" style="color:var(--fc-gray)">Linked nodes</div>
-          <button type="button" id="meeting-add-link-btn" data-tip="Link a node or document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+          <button type="button" id="meeting-add-link-btn" data-tip="Link a node or document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M5 8v10"/><path d="M5 12h13"/></svg></button>
         </div>
         <div id="meeting-links"></div>
       </div>
@@ -29054,11 +29054,17 @@ function openMeetingTemplateMenu(btn){
   const menu=el('meetings-template-menu'); if(!menu||!btn)return;
   buildMeetingTemplateMenu();
   const r=btn.getBoundingClientRect();
-  menu.style.left=Math.min(r.left,window.innerWidth-206)+'px';
+  const mw=190;
+  let left=r.left;
+  if(left+mw>window.innerWidth-8)left=window.innerWidth-mw-8;
+  if(left<8)left=8;
+  menu.style.left=left+'px';
   menu.style.top=(r.bottom+4)+'px';
   menu.classList.add('open');
   btn.setAttribute('aria-expanded','true');
   _meetingTemplateMenuOpen=true;
+  const mr=menu.getBoundingClientRect();
+  if(mr.bottom>window.innerHeight-8){ menu.style.top=Math.max(8,r.top-mr.height-4)+'px'; }
 }
 function closeMeetingTemplateMenu(){
   el('meetings-template-menu')?.classList.remove('open');
@@ -29491,12 +29497,18 @@ function renderMeetingLinkResults(query){
 function openMeetingLinkPopover(btn){
   const pop=el('meeting-link-popover'); if(!pop||!btn)return;
   const r=btn.getBoundingClientRect();
-  pop.style.left=Math.min(r.left,window.innerWidth-320)+'px';
+  const pw=300;
+  let left=r.left;
+  if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  if(left<8)left=8;
+  pop.style.left=left+'px';
   pop.style.top=(r.bottom+4)+'px';
   pop.classList.add('open');
   _meetingLinkPopoverOpen=true;
   const input=el('meeting-link-search-input'); if(input){ input.value=''; setTimeout(()=>input.focus(),30); }
   renderMeetingLinkResults('');
+  const pr=pop.getBoundingClientRect();
+  if(pr.bottom>window.innerHeight-8){ pop.style.top=Math.max(8,r.top-pr.height-4)+'px'; }
 }
 function closeMeetingLinkPopover(){
   el('meeting-link-popover')?.classList.remove('open');
