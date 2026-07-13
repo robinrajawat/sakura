@@ -2706,6 +2706,115 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #todos-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
 #todos-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 #todos-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== Meeting Notes panel ===== */
+#meetings-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(78vh,680px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#meetings-panel.open{display:flex}
+#meetings-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
+#meetings-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#meetings-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
+#meetings-panel-maximize,#meetings-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#meetings-panel-maximize:hover,#meetings-panel-close:hover{color:var(--fg);background:var(--hover)}
+#meetings-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+#meetings-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#meetings-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
+#meetings-toolbar-row button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+#meetings-count-label{margin-left:auto;font:400 11px 'Inter',sans-serif;color:var(--hint)}
+#meetings-search-row{display:flex;align-items:center;gap:6px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);color:var(--hint)}
+#meetings-search-row input{flex:1;appearance:none;border:none;background:none;color:var(--fg);font:400 12.5px 'Inter',sans-serif;outline:none}
+#meetings-search-row input::placeholder{color:var(--hint)}
+#meetings-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:5px;display:inline-flex}
+#meetings-search-clear-btn:hover{color:var(--fg)}
+#meetings-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
+#meetings-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
+#meetings-body.is-empty #meetings-empty{display:block}
+#meetings-body.is-empty #meetings-list{display:none}
+#meeting-card{display:none;background:var(--edit-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:2px}
+
+.meeting-row{display:flex;flex-direction:column;margin:0 -6px 4px;border-radius:8px}
+.meeting-row:last-child{margin-bottom:0}
+.meeting-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px;transition:background .12s}
+.meeting-row-summary:hover{background:var(--hover)}
+.meeting-row.expanded .meeting-row-summary{background:var(--hover)}
+.meeting-row-date{flex:0 0 auto;width:44px;text-align:center;font:600 10px 'Inter',sans-serif;color:var(--muted);line-height:1.25;padding-top:1px}
+.meeting-row-date .mrd-day{display:block;font-size:15px;color:var(--fg)}
+.meeting-row-content{flex:1;min-width:0}
+.meeting-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-row-title:empty::before{content:'Untitled meeting';color:var(--hint);font-style:italic}
+.meeting-row-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px}
+.meeting-row-attendee-chip{font:400 10px 'Inter',sans-serif;color:var(--hint);background:color-mix(in srgb,var(--muted) 14%,transparent);border-radius:999px;padding:1px 6px}
+.meeting-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-row-progress{font:500 10px 'Inter',sans-serif;color:var(--accent);flex-shrink:0}
+.meeting-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.meeting-row-summary:hover .meeting-row-delete{opacity:1}
+.meeting-row-delete:hover{color:var(--fc-red);background:var(--hover)}
+.meeting-row-expand-slot{padding:0 6px 10px}
+
+#meeting-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#meeting-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
+#meeting-title-input:hover{background:var(--hover)}
+#meeting-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#meeting-date-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:4px 6px;border-radius:7px;outline:none;flex:0 0 auto}
+#meeting-date-input:focus{border-color:var(--accent)}
+#meeting-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
+#meeting-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
+#meeting-attendees-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
+#meeting-attendees-chips{display:flex;flex-wrap:wrap;gap:5px}
+.meeting-attendee-chip{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:2px 4px 2px 9px}
+.meeting-attendee-chip button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.meeting-attendee-chip button:hover{color:var(--fc-red);background:var(--hover)}
+#meeting-attendee-input{flex:1;min-width:90px;appearance:none;border:none;background:none;color:var(--fg);font:400 11.5px 'Inter',sans-serif;outline:none;padding:2px 0}
+#meeting-attendee-input::placeholder{color:var(--hint)}
+
+.meeting-field{margin-top:12px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.meeting-field:first-of-type{margin-top:0;padding-top:0;border-top:none}
+.meeting-field-label{font:700 10.5px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.meeting-field-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.meeting-field-label-row .meeting-field-label{margin-bottom:0}
+.meeting-field-body{outline:none;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.6;font-family:var(--content-font);min-height:1.6em}
+.meeting-field-body:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
+.meeting-field-body b,.meeting-field-body strong{font-weight:600}
+.meeting-field-body ul,.meeting-field-body ol{margin:4px 0 4px 20px;padding:0}
+.meeting-field-body li{margin:2px 0}
+
+#meeting-action-items{display:flex;flex-direction:column;gap:2px}
+.meeting-action-item{display:flex;align-items:flex-start;gap:7px;padding:3px 0}
+.meeting-action-item-check{margin-top:3px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)}
+.meeting-action-item-text{flex:1;min-width:0;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;word-break:break-word;outline:none}
+.meeting-action-item.done .meeting-action-item-text{color:var(--muted);text-decoration:line-through}
+.meeting-action-item-promote{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:500 10px 'Inter',sans-serif;padding:2px 7px;border-radius:999px;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:color .12s,border-color .12s,background .12s}
+.meeting-action-item-promote:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.meeting-action-item-promote.promoted{color:var(--fc-green);border-color:color-mix(in srgb,var(--fc-green) 40%,var(--border));cursor:default}
+.meeting-action-item-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px;border-radius:5px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.meeting-action-item:hover .meeting-action-item-delete{opacity:1}
+.meeting-action-item-delete:hover{color:var(--fc-red);background:var(--hover)}
+#meeting-action-item-add-row{margin-top:4px}
+#meeting-action-item-input{width:100%;box-sizing:border-box;appearance:none;border:none;background:none;color:var(--fg);font:400 12.5px 'Inter',sans-serif;outline:none;padding:3px 0}
+#meeting-action-item-input::placeholder{color:var(--hint)}
+
+#meeting-links{display:flex;flex-wrap:wrap;gap:6px}
+.meeting-link-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 11px 'Inter',sans-serif;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 4px 2px 8px;cursor:pointer;transition:color .12s,border-color .12s}
+.meeting-link-chip:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.meeting-link-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.meeting-link-chip.missing{color:var(--fc-orange);border-color:color-mix(in srgb,var(--fc-orange) 40%,var(--border))}
+.meeting-link-chip button{appearance:none;border:none;background:none;color:inherit;cursor:pointer;padding:2px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;opacity:.7}
+.meeting-link-chip button:hover{opacity:1;color:var(--fc-red)}
+
+#meeting-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
+
+#meeting-link-popover{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:8px;width:300px;max-height:320px;font-family:'Inter',sans-serif}
+#meeting-link-popover.open{display:flex;flex-direction:column}
+#meeting-link-search-input{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 8px;border-radius:7px;outline:none;margin-bottom:6px;flex-shrink:0}
+#meeting-link-search-input:focus{border-color:var(--accent)}
+#meeting-link-results{overflow-y:auto;min-height:40px}
+.meeting-link-result{padding:6px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
+.meeting-link-result:hover{background:var(--hover);color:var(--accent)}
+.meeting-link-result-doc{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:1px}
+.meeting-link-result-empty{padding:10px 8px;color:var(--hint);font-size:12px;font-style:italic}
+
+#meetings-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
+#meetings-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
+#meetings-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
 /* Status summary highlighting: reuses the exact colors from the row chips
@@ -3848,6 +3957,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         </div>
       </div>
       <button class="btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)">To-Dos</button>
+      <button class="btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)">Meetings</button>
       <div class="help-wrap">
         <button class="btn" id="help-toggle">Help</button>
         <div class="help-panel" id="help-panel">
@@ -4883,6 +4993,68 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
   <div id="todos-body"></div>
   <div id="todos-toast" role="status" aria-live="polite"></div>
+</div>
+
+<div id="meetings-panel" role="dialog" aria-label="Meeting Notes">
+  <div id="meetings-panel-header">
+    <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span>
+    <span id="meetings-panel-title">Meeting Notes</span>
+    <button id="meetings-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Meeting Notes"><svg id="meetings-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
+    <button id="meetings-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="meetings-toolbar-row">
+    <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <span id="meetings-count-label"></span>
+  </div>
+  <div id="meetings-search-row" style="display:none">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="meetings-search-input" type="text" placeholder="Find a meeting…" autocomplete="off" spellcheck="false" maxlength="200" aria-label="Find a meeting" />
+    <button type="button" id="meetings-search-clear-btn" data-tip="Clear" aria-label="Clear search" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="meetings-body">
+    <div id="meetings-list"></div>
+    <div id="meetings-empty">No meeting notes yet.<br>Click + to add one.</div>
+    <div id="meeting-card">
+      <div id="meeting-card-top-row">
+        <input id="meeting-title-input" type="text" placeholder="Meeting title" maxlength="160" autocomplete="off" />
+        <input id="meeting-date-input" type="date" aria-label="Meeting date" />
+        <button type="button" id="meeting-delete-btn" data-tip="Delete meeting note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+      <div id="meeting-attendees-row">
+        <div id="meeting-attendees-chips"></div>
+        <input id="meeting-attendee-input" type="text" placeholder="+ Add attendee" autocomplete="off" maxlength="80" />
+      </div>
+      <div class="meeting-field">
+        <div class="meeting-field-label">Agenda</div>
+        <div id="meeting-agenda" class="meeting-field-body" contenteditable="true" data-placeholder="What's on the agenda?"></div>
+      </div>
+      <div class="meeting-field">
+        <div class="meeting-field-label">Notes</div>
+        <div id="meeting-body-field" class="meeting-field-body" contenteditable="true" data-placeholder="Meeting notes…"></div>
+      </div>
+      <div class="meeting-field">
+        <div class="meeting-field-label">Action items</div>
+        <div id="meeting-action-items"></div>
+        <div id="meeting-action-item-add-row">
+          <input id="meeting-action-item-input" type="text" placeholder="+ Add action item" autocomplete="off" maxlength="300" />
+        </div>
+      </div>
+      <div class="meeting-field">
+        <div class="meeting-field-label-row">
+          <div class="meeting-field-label">Linked nodes</div>
+          <button type="button" id="meeting-add-link-btn" data-tip="Link a node or document"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+        </div>
+        <div id="meeting-links"></div>
+      </div>
+      <div id="meeting-timestamp"></div>
+    </div>
+  </div>
+  <div id="meetings-toast" role="status" aria-live="polite"></div>
+</div>
+<div id="meeting-link-popover" role="dialog" aria-label="Link a node or document">
+  <input id="meeting-link-search-input" type="text" placeholder="Search nodes across all documents…" autocomplete="off" spellcheck="false" />
+  <div id="meeting-link-results"></div>
 </div>
 
 <div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
@@ -14499,6 +14671,7 @@ const SHORTCUTS = {
   toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
+  toggleMeetings: {combo:'mod+shift+e',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleMeetingsPanel==='function') toggleMeetingsPanel();}},
   toggleDiagrams: {combo:'mod+shift+g',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
@@ -24573,6 +24746,30 @@ document.addEventListener('keydown', e=>{
   }
 }, true);
 
+// Ctrl/Cmd+Shift+E — toggle Meeting Notes. Combo lives in the SHORTCUTS registry
+// (toggleMeetings). Capture phase so it fires even with a meeting field focused.
+document.addEventListener('keydown', e=>{
+  if(isRecordingShortcut) return;
+  if(matchesShortcut(e, 'toggleMeetings')){
+    if(isControlTarget(e.target) && !el('meetings-panel')?.contains(e.target)) return;
+    e.preventDefault();
+    fireShortcut('toggleMeetings');
+  }
+}, true);
+
+// Ctrl/Cmd+Shift+G — toggle Diagrams. Combo lives in the SHORTCUTS registry
+// (toggleDiagrams) but, until now, was never actually wired to a keydown listener anywhere —
+// registered and documented, but the shortcut itself silently did nothing. Same pattern as
+// toggleTodos/toggleMeetings above.
+document.addEventListener('keydown', e=>{
+  if(isRecordingShortcut) return;
+  if(matchesShortcut(e, 'toggleDiagrams')){
+    if(isControlTarget(e.target)) return;
+    e.preventDefault();
+    fireShortcut('toggleDiagrams');
+  }
+}, true);
+
 // Pad toolbar commands
 function padExecCmd(cmd, value){
   el('pad-editor')?.focus();
@@ -25668,6 +25865,20 @@ function _addTagPopoverFromInput(){
     todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
+  }
+  // Same shape as addTodo above, but returns the new todo's id — needed by external callers
+  // (currently just Meeting Notes' "Promote to To-Do") that need to remember which todo an
+  // action item became, so a second click doesn't create a duplicate. Kept as its own function
+  // rather than changing addTodo's return value, so the UI's own "add a task" flow (which
+  // ignores the return value entirely) can't be affected by this.
+  function addTodoExternal(text){
+    const trimmed=String(text||'').trim();
+    if(!trimmed) return null;
+    const id=uid();
+    todos.push({ id, text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
+    saveTodos();
+    renderTodos();
+    return id;
   }
   function toggleTodo(id){
     const t=todos.find(x=>x.id===id);
@@ -28269,6 +28480,7 @@ function _addTagPopoverFromInput(){
   window.toggleTodosPanel=toggleTodosPanel;
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
+  window.addTodoFromMeeting=addTodoExternal;
 })();
 </script>
 
@@ -28426,6 +28638,16 @@ function _addTagPopoverFromInput(){
         </ul>
       </div>
 
+      <div class="cs-card" data-cs-anchor="meetings">
+        <h3>Meeting Notes</h3>
+        <ul>
+          <li><span class="cs-desc">App-level, like To-Dos — not tied to any document or node</span> · <span class="cs-combo" data-cs-shortcut="toggleMeetings"></span></li>
+          <li><span class="cs-desc">Chronological list, newest first — click a row to expand it in place; title, date, attendees, agenda, notes, action items, and links to any node in any document</span></li>
+          <li><span class="cs-desc">Action items have a <strong>Promote</strong> button that adds them as a real To-Do, prefixed with the meeting's title — a second click is disabled once it's already been promoted</span></li>
+          <li><span class="cs-desc">Attendees: type a name and press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add a chip; <span class="help-kbd">Backspace</span> on an empty field removes the last one</span></li>
+        </ul>
+      </div>
+
       <div class="cs-card" data-feature-requires="codeblock" data-cs-anchor="codeblock">
         <h3>Code (Note panel)</h3>
         <ul>
@@ -28543,4 +28765,575 @@ function _addTagPopoverFromInput(){
     <div id="cheatsheet-foot"><span>Shortcuts blocked by the OS or browser always have a matching button or menu item that works instead.</span><button type="button" id="cheatsheet-to-shortcuts-btn">Customize shortcuts →</button></div>
   </div>
 </div>
+<script>
+// =====================================================================
+// === Meeting Notes panel (app-level, no document association) =======
+// Same "own floating panel, own storage, optional cross-document node
+// links" shape as the To-Dos panel, since meetings usually cut across
+// several documents rather than belonging to just one. Unlike To-Dos,
+// this v1 panel doesn't support drag-repositioning or resize — it sits
+// at a fixed default position with just an open/close/maximize toggle,
+// to keep the first version's surface area manageable.
+// =====================================================================
+const MEETINGS_KEY='sakura_meetings_v1';
+let meetingNotes=[];
+let meetingExpandedId=null;
+let meetingsPanelOpen=false;
+let meetingSearchOpen=false;
+let meetingSearchQuery='';
+function mnUid(){ return 'mn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function normalizeMeetingActionItem(it){
+  return { id: (it&&typeof it.id==='string')?it.id:mnUid(), text:(it&&typeof it.text==='string')?it.text:'', done:!!(it&&it.done), promotedTodoId:(it&&typeof it.promotedTodoId==='string')?it.promotedTodoId:null };
+}
+function normalizeMeetingLink(l){
+  if(!l||typeof l!=='object'||typeof l.docId!=='string'||!l.docId)return null;
+  return { docId:l.docId, nodeId:(l.nodeId===null||l.nodeId===undefined)?null:(Number.isFinite(l.nodeId)?l.nodeId:null), label:typeof l.label==='string'?l.label:'' };
+}
+function normalizeMeetingNote(m){
+  const now=Date.now();
+  return {
+    id:(m&&typeof m.id==='string')?m.id:mnUid(),
+    title:(m&&typeof m.title==='string')?m.title:'',
+    date:(m&&typeof m.date==='string')?m.date:'',
+    attendees:(m&&Array.isArray(m.attendees))?m.attendees.filter(a=>typeof a==='string'&&a.trim()).map(a=>a.trim()):[],
+    agenda:(m&&typeof m.agenda==='string')?m.agenda:'',
+    body:(m&&typeof m.body==='string')?m.body:'',
+    actionItems:(m&&Array.isArray(m.actionItems))?m.actionItems.map(normalizeMeetingActionItem):[],
+    links:(m&&Array.isArray(m.links))?m.links.map(normalizeMeetingLink).filter(Boolean):[],
+    createdAt:(m&&Number.isFinite(m.createdAt))?m.createdAt:now,
+    modifiedAt:(m&&Number.isFinite(m.modifiedAt))?m.modifiedAt:now
+  };
+}
+function loadMeetingNotes(){
+  try{
+    const raw=localStorage.getItem(MEETINGS_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data))meetingNotes=data.map(normalizeMeetingNote);
+  }catch(e){}
+}
+function saveMeetingNotes(){
+  try{ localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetingNotes)); }
+  catch(e){ showMeetingsToast('Storage full — this change was not saved'); }
+}
+function findMeeting(id){ return meetingNotes.find(m=>m.id===id); }
+
+// ── Panel open/close/maximize ──
+function openMeetingsPanel(){
+  meetingsPanelOpen=true;
+  el('meetings-panel')?.classList.add('open');
+  renderMeetingsList();
+}
+function closeMeetingsPanel(){
+  meetingsPanelOpen=false;
+  el('meetings-panel')?.classList.remove('open');
+  closeMeetingLinkPopover();
+}
+function toggleMeetingsPanel(){
+  if(!meetingsPanelOpen){ openMeetingsPanel(); return; }
+  closeMeetingsPanel();
+}
+function toggleMeetingsMaximize(){
+  const panel=el('meetings-panel'); if(!panel)return;
+  const goingMax=!panel.classList.contains('maximized');
+  panel.classList.toggle('maximized',goingMax);
+  const btn=el('meetings-panel-maximize');
+  if(btn){
+    if(goingMax){
+      btn.dataset.tip='Restore default view';
+      btn.querySelector('svg').innerHTML='<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>';
+    } else {
+      btn.dataset.tip='Expand to full view';
+      btn.querySelector('svg').innerHTML='<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
+    }
+  }
+}
+function showMeetingsToast(msg){
+  const t=el('meetings-toast'); if(!t)return;
+  t.innerHTML=''; const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function showMeetingsActionToast(msg,actionLabel,actionFn){
+  const t=el('meetings-toast'); if(!t)return;
+  t.innerHTML='';
+  const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
+  const btn=document.createElement('button'); btn.type='button'; btn.textContent=actionLabel;
+  btn.style.cssText='appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px \'Inter\',sans-serif;cursor:pointer;flex-shrink:0;';
+  btn.addEventListener('click',()=>{ t.classList.remove('show'); actionFn(); });
+  t.appendChild(btn);
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(()=>t.classList.remove('show'),6000);
+}
+
+// ── List ──
+function meetingDisplayList(){
+  let list=meetingNotes.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);
+  const q=meetingSearchQuery.trim().toLowerCase();
+  if(q){
+    list=list.filter(m=>
+      (m.title||'').toLowerCase().includes(q) ||
+      (m.attendees||[]).some(a=>a.toLowerCase().includes(q)) ||
+      stripHtmlToText(m.body||'').toLowerCase().includes(q) ||
+      stripHtmlToText(m.agenda||'').toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+function meetingRowSnippet(m){
+  return stripHtmlToText(m.body||'').trim() || stripHtmlToText(m.agenda||'').trim();
+}
+function formatMeetingDateChip(dateStr){
+  if(!dateStr)return '<span class="mrd-day">—</span>';
+  const d=new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime()))return '<span class="mrd-day">—</span>';
+  return esc(d.toLocaleDateString(undefined,{month:'short'}))+'<span class="mrd-day">'+d.getDate()+'</span>';
+}
+function toggleMeetingExpanded(id){
+  meetingExpandedId=(meetingExpandedId===id)?null:id;
+  renderMeetingsList();
+  if(meetingExpandedId===id){
+    document.querySelector(`.meeting-row[data-meeting-id="${id}"]`)?.scrollIntoView({block:'nearest'});
+    setTimeout(()=>el('meeting-title-input')?.focus(),30);
+  }
+}
+async function deleteMeetingNote(id){
+  const idx=meetingNotes.findIndex(m=>m.id===id); if(idx<0)return;
+  const removed=meetingNotes[idx];
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',title:'Delete Meeting Note',body:'Delete this meeting note?',confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  const idx2=meetingNotes.findIndex(m=>m.id===id); if(idx2<0)return;
+  meetingNotes.splice(idx2,1);
+  if(meetingExpandedId===id)meetingExpandedId=null;
+  saveMeetingNotes(); renderMeetingsList();
+  showMeetingsActionToast('Meeting note deleted','Undo',()=>{
+    meetingNotes.splice(Math.min(idx2,meetingNotes.length),0,removed);
+    saveMeetingNotes(); renderMeetingsList();
+  });
+}
+async function createMeetingNote(){
+  const now=Date.now();
+  const m=normalizeMeetingNote({id:mnUid(),title:'',date:new Date().toISOString().slice(0,10),attendees:[],agenda:'',body:'',actionItems:[],links:[],createdAt:now,modifiedAt:now});
+  meetingNotes.push(m);
+  saveMeetingNotes();
+  meetingExpandedId=m.id;
+  renderMeetingsList();
+  setTimeout(()=>{ const ti=el('meeting-title-input'); if(ti){ ti.focus(); ti.select(); } },30);
+}
+function buildMeetingRowSummary(m){
+  const summary=document.createElement('div'); summary.className='meeting-row-summary';
+  const dateEl=document.createElement('div'); dateEl.className='meeting-row-date';
+  dateEl.innerHTML=formatMeetingDateChip(m.date);
+  const content=document.createElement('div'); content.className='meeting-row-content';
+  const titleEl=document.createElement('div'); titleEl.className='meeting-row-title'; titleEl.textContent=m.title||'';
+  content.appendChild(titleEl);
+  const metaEl=document.createElement('div'); metaEl.className='meeting-row-meta';
+  (m.attendees||[]).slice(0,3).forEach(a=>{ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent=a; metaEl.appendChild(chip); });
+  if((m.attendees||[]).length>3){ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent='+'+(m.attendees.length-3); metaEl.appendChild(chip); }
+  if((m.actionItems||[]).length){
+    const done=m.actionItems.filter(it=>it.done).length;
+    const prog=document.createElement('span'); prog.className='meeting-row-progress'; prog.textContent=done+'/'+m.actionItems.length;
+    metaEl.appendChild(prog);
+  }
+  if(metaEl.children.length)content.appendChild(metaEl);
+  const snippetText=meetingRowSnippet(m);
+  if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='meeting-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
+  summary.appendChild(dateEl); summary.appendChild(content);
+  const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='meeting-row-delete'; delBtn.dataset.tip='Delete meeting note';
+  delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+  delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteMeetingNote(m.id); });
+  summary.appendChild(delBtn);
+  summary.addEventListener('click',()=>toggleMeetingExpanded(m.id));
+  return summary;
+}
+// Refreshes just one row's folded preview (title/attendees/progress/snippet) without a full
+// list rebuild — used while typing so the expanded card (a sibling of the summary, not inside
+// it) never gets torn down and focus never gets lost mid-keystroke.
+function refreshMeetingRowInList(m){
+  const row=document.querySelector(`.meeting-row[data-meeting-id="${m.id}"]`); if(!row)return;
+  const oldSummary=row.querySelector('.meeting-row-summary'); if(!oldSummary)return;
+  oldSummary.replaceWith(buildMeetingRowSummary(m));
+}
+// Same "catch mid-edit before rebuild" pattern used by Q&A/Diagrams/Decision Log: renderMeetingsList()
+// rebuilds #meetings-list from scratch (and can move #meeting-card elsewhere), so a field that
+// only commits on blur/change needs flushing first, or the rebuild itself would trigger that
+// blur against a card that's mid-teardown.
+function commitMeetingCardIfFocused(){
+  const active=document.activeElement;
+  if(!active||meetingExpandedId==null)return;
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  if(active.id==='meeting-title-input'){
+    if(active.value!==(m.title||'')){ m.title=active.value; m.modifiedAt=Date.now(); saveMeetingNotes(); }
+  } else if(active.id==='meeting-date-input'){
+    if(active.value!==(m.date||'')){ m.date=active.value; m.modifiedAt=Date.now(); saveMeetingNotes(); }
+  } else if(active.id==='meeting-agenda'||active.id==='meeting-body-field'){
+    const key=active.id==='meeting-agenda'?'agenda':'body';
+    const html=sakuraSanitizeRichHtml(active.innerHTML);
+    if(html!==(m[key]||'')){ m[key]=html; m.modifiedAt=Date.now(); saveMeetingNotes(); }
+  } else if(active.id==='meeting-attendee-input'&&active.value.trim()){
+    addMeetingAttendee(m,active.value); active.value='';
+  }
+}
+function renderMeetingsList(){
+  const list=el('meetings-list'); if(!list)return;
+  commitMeetingCardIfFocused();
+  const card=el('meeting-card'), body=el('meetings-body');
+  if(card&&body&&card.parentElement!==body){ body.appendChild(card); }
+  if(card)card.style.display='none';
+  const countLabel=el('meetings-count-label');
+  if(countLabel)countLabel.textContent=meetingNotes.length?`${meetingNotes.length} meeting${meetingNotes.length===1?'':'s'}`:'';
+  const filtered=meetingDisplayList();
+  if(meetingExpandedId!=null&&!filtered.some(m=>m.id===meetingExpandedId))meetingExpandedId=null;
+  if(body)body.classList.toggle('is-empty',filtered.length===0);
+  const emptyEl=el('meetings-empty');
+  if(emptyEl)emptyEl.innerHTML=meetingNotes.length===0?'No meeting notes yet.<br>Click + to add one.':(filtered.length===0?'No meetings match this search.':'');
+  list.innerHTML='';
+  filtered.forEach(m=>{
+    const row=document.createElement('div'); row.className='meeting-row'+(m.id===meetingExpandedId?' expanded':''); row.dataset.meetingId=m.id;
+    row.appendChild(buildMeetingRowSummary(m));
+    if(m.id===meetingExpandedId){ const slot=document.createElement('div'); slot.className='meeting-row-expand-slot'; row.appendChild(slot); }
+    list.appendChild(row);
+  });
+  if(meetingExpandedId!=null){
+    const slot=list.querySelector('.meeting-row-expand-slot');
+    const m=findMeeting(meetingExpandedId);
+    if(slot&&card&&m){ slot.appendChild(card); card.style.display=''; populateMeetingCard(m); }
+  }
+}
+
+// ── Expanded card ──
+let _meetingCardUndoId=null;
+function populateMeetingCard(m){
+  if(!m)return;
+  if(_meetingCardUndoId!==m.id){ meetingFieldSessionUndo={}; _meetingFieldCheckpointPending={}; _meetingCardUndoId=m.id; }
+  const titleInput=el('meeting-title-input'); if(titleInput)titleInput.value=m.title||'';
+  const dateInput=el('meeting-date-input'); if(dateInput)dateInput.value=m.date||'';
+  const agendaField=el('meeting-agenda'); if(agendaField)agendaField.innerHTML=sakuraSanitizeRichHtml(m.agenda||'');
+  const bodyField=el('meeting-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(m.body||'');
+  renderMeetingAttendees(m);
+  renderMeetingActionItems(m);
+  renderMeetingLinks(m);
+  const ts=el('meeting-timestamp'); if(ts)ts.textContent=m.modifiedAt?('Last updated '+formatTimestamp(m.modifiedAt)):'';
+}
+el('meeting-title-input')?.addEventListener('input',()=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  m.title=el('meeting-title-input').value; m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  refreshMeetingRowInList(m);
+});
+el('meeting-date-input')?.addEventListener('change',()=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  m.date=el('meeting-date-input').value; m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  renderMeetingsList(); // date affects sort position, unlike the other fields
+});
+el('meeting-delete-btn')?.addEventListener('click',()=>{ if(meetingExpandedId!=null)deleteMeetingNote(meetingExpandedId); });
+
+// ── Attendees ──
+function addMeetingAttendee(m,name){
+  const trimmed=String(name||'').trim(); if(!trimmed)return;
+  if(m.attendees.some(a=>a.toLowerCase()===trimmed.toLowerCase()))return;
+  m.attendees.push(trimmed); m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  renderMeetingAttendees(m);
+  refreshMeetingRowInList(m);
+}
+function renderMeetingAttendees(m){
+  const wrap=el('meeting-attendees-chips'); if(!wrap)return;
+  wrap.innerHTML='';
+  (m.attendees||[]).forEach((name,idx)=>{
+    const chip=document.createElement('span'); chip.className='meeting-attendee-chip';
+    const label=document.createElement('span'); label.textContent=name; chip.appendChild(label);
+    const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.dataset.tip='Remove';
+    removeBtn.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    removeBtn.addEventListener('click',()=>{
+      m.attendees.splice(idx,1); m.modifiedAt=Date.now(); saveMeetingNotes();
+      renderMeetingAttendees(m); refreshMeetingRowInList(m);
+    });
+    chip.appendChild(removeBtn);
+    wrap.appendChild(chip);
+  });
+}
+el('meeting-attendee-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const m=findMeeting(meetingExpandedId); if(!m)return;
+    addMeetingAttendee(m,e.target.value); e.target.value='';
+  } else if(e.key==='Backspace'&&!e.target.value){
+    const m=findMeeting(meetingExpandedId); if(!m||!m.attendees.length)return;
+    m.attendees.pop(); m.modifiedAt=Date.now(); saveMeetingNotes();
+    renderMeetingAttendees(m); refreshMeetingRowInList(m);
+  }
+});
+el('meeting-attendee-input')?.addEventListener('blur',e=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  if(e.target.value.trim()){ addMeetingAttendee(m,e.target.value); e.target.value=''; }
+});
+
+// ── Action items ──
+function renderMeetingActionItems(m){
+  const wrap=el('meeting-action-items'); if(!wrap)return;
+  wrap.innerHTML='';
+  (m.actionItems||[]).forEach(item=>{
+    const row=document.createElement('div'); row.className='meeting-action-item'+(item.done?' done':'');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.className='meeting-action-item-check'; cb.checked=item.done;
+    cb.addEventListener('change',()=>{
+      item.done=cb.checked; m.modifiedAt=Date.now(); saveMeetingNotes();
+      row.classList.toggle('done',item.done);
+      refreshMeetingRowInList(m);
+    });
+    const text=document.createElement('div'); text.className='meeting-action-item-text'; text.contentEditable='true'; text.textContent=item.text||'';
+    text.addEventListener('blur',()=>{
+      const val=text.textContent.trim();
+      if(val!==(item.text||'')){ item.text=val; m.modifiedAt=Date.now(); saveMeetingNotes(); refreshMeetingRowInList(m); }
+    });
+    text.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); text.blur(); } });
+    const promoteBtn=document.createElement('button'); promoteBtn.type='button'; promoteBtn.className='meeting-action-item-promote'+(item.promotedTodoId?' promoted':'');
+    promoteBtn.textContent=item.promotedTodoId?'In To-Dos':'Promote';
+    promoteBtn.dataset.tip=item.promotedTodoId?'Already added to To-Dos':'Add this as a real To-Do';
+    promoteBtn.addEventListener('click',()=>{
+      if(item.promotedTodoId)return;
+      if(typeof window.addTodoFromMeeting!=='function'){ showMeetingsToast('To-Dos isn\'t available right now'); return; }
+      const todoText=(m.title?`[${m.title}] `:'')+(item.text||'').trim();
+      if(!todoText.trim()){ showMeetingsToast('Add some text to this action item first'); return; }
+      const newId=window.addTodoFromMeeting(todoText);
+      if(!newId)return;
+      item.promotedTodoId=newId; m.modifiedAt=Date.now(); saveMeetingNotes();
+      promoteBtn.textContent='In To-Dos'; promoteBtn.classList.add('promoted'); promoteBtn.dataset.tip='Already added to To-Dos';
+      showMeetingsToast('Added to To-Dos');
+    });
+    const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='meeting-action-item-delete'; delBtn.dataset.tip='Delete';
+    delBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    delBtn.addEventListener('click',()=>{
+      const idx=m.actionItems.indexOf(item); if(idx<0)return;
+      m.actionItems.splice(idx,1); m.modifiedAt=Date.now(); saveMeetingNotes();
+      renderMeetingActionItems(m); refreshMeetingRowInList(m);
+    });
+    row.appendChild(cb); row.appendChild(text); row.appendChild(promoteBtn); row.appendChild(delBtn);
+    wrap.appendChild(row);
+  });
+}
+el('meeting-action-item-input')?.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  e.preventDefault();
+  const input=e.target; const val=input.value.trim(); if(!val)return;
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  m.actionItems.push(normalizeMeetingActionItem({id:mnUid(),text:val,done:false,promotedTodoId:null}));
+  m.modifiedAt=Date.now(); saveMeetingNotes();
+  input.value='';
+  renderMeetingActionItems(m); refreshMeetingRowInList(m);
+});
+
+// ── Links (cross-document node references) ──
+let _meetingLinkPopoverOpen=false;
+function meetingLinkResolve(link){
+  const idxEntry=loadActiveDocsIndex().find(d=>d.id===link.docId);
+  if(!idxEntry)return {missing:true,text:'',docTitle:''};
+  if(link.nodeId==null)return {missing:false,text:'',docTitle:idxEntry.title||'Untitled'};
+  const {docNodes,docTitle}=getDocNodesForSearch(link.docId,idxEntry);
+  if(!Array.isArray(docNodes))return {missing:true,text:'',docTitle:idxEntry.title||'Untitled'};
+  const node=docNodes.find(n=>n.id===link.nodeId);
+  if(!node)return {missing:true,text:'',docTitle:idxEntry.title||'Untitled'};
+  return {missing:false,text:stripSemanticMarkers(node.text||'').trim(),docTitle:docTitle||idxEntry.title||'Untitled'};
+}
+function renderMeetingLinks(m){
+  const wrap=el('meeting-links'); if(!wrap)return;
+  wrap.innerHTML='';
+  (m.links||[]).forEach((link,idx)=>{
+    const info=meetingLinkResolve(link);
+    const chip=document.createElement('span'); chip.className='meeting-link-chip'+(info.missing?' missing':'');
+    const label=document.createElement('span');
+    label.textContent=info.missing?'Missing document/node':(link.nodeId==null?(info.docTitle||'Untitled'):(info.text||'(untitled node)'));
+    chip.dataset.tip=info.missing?'That document or node no longer exists':(link.nodeId==null?'Jump to document: '+(info.docTitle||'Untitled'):'Jump to node in '+(info.docTitle||'Untitled'));
+    chip.appendChild(label);
+    chip.addEventListener('click',e=>{
+      if(e.target.closest('button'))return;
+      if(info.missing){ showMeetingsToast('That document or node no longer exists'); return; }
+      closeMeetingsPanel();
+      if(link.nodeId==null)switchDoc(link.docId); else revealNodeInDoc(link.docId,link.nodeId);
+    });
+    const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.dataset.tip='Remove link';
+    removeBtn.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    removeBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      m.links.splice(idx,1); m.modifiedAt=Date.now(); saveMeetingNotes();
+      renderMeetingLinks(m);
+    });
+    chip.appendChild(removeBtn);
+    wrap.appendChild(chip);
+  });
+}
+function renderMeetingLinkResults(query){
+  const results=el('meeting-link-results'); if(!results)return;
+  results.innerHTML='';
+  const q=String(query||'').trim().toLowerCase();
+  const docs=loadActiveDocsIndex();
+  const rows=[];
+  for(const d of docs){
+    const {docNodes,docTitle}=getDocNodesForSearch(d.id,d);
+    if(!q){ rows.push({docId:d.id,nodeId:null,label:docTitle||'Untitled',sub:'Whole document'}); }
+    if(!Array.isArray(docNodes))continue;
+    let perDoc=0;
+    for(const n of docNodes){
+      if(perDoc>=4||rows.length>=30)break;
+      const text=String(n.text||'').trim(); if(!text)continue;
+      if(q&&!text.toLowerCase().includes(q))continue;
+      perDoc++;
+      rows.push({docId:d.id,nodeId:n.id,label:text.slice(0,80),sub:docTitle||'Untitled'});
+    }
+    if(rows.length>=30)break;
+  }
+  if(!rows.length){ const empty=document.createElement('div'); empty.className='meeting-link-result-empty'; empty.textContent=q?'No matching nodes':'Type to search node text across all documents, or pick a document below'; results.appendChild(empty); }
+  rows.slice(0,30).forEach(r=>{
+    const item=document.createElement('div'); item.className='meeting-link-result';
+    item.textContent=r.label;
+    const sub=document.createElement('div'); sub.className='meeting-link-result-doc'; sub.textContent=r.sub;
+    item.appendChild(sub);
+    item.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const m=findMeeting(meetingExpandedId); if(!m)return;
+      if(m.links.some(l=>l.docId===r.docId&&l.nodeId===r.nodeId)){ closeMeetingLinkPopover(); return; }
+      m.links.push({docId:r.docId,nodeId:r.nodeId,label:r.label});
+      m.modifiedAt=Date.now(); saveMeetingNotes();
+      renderMeetingLinks(m);
+      closeMeetingLinkPopover();
+    });
+    results.appendChild(item);
+  });
+}
+function openMeetingLinkPopover(btn){
+  const pop=el('meeting-link-popover'); if(!pop||!btn)return;
+  const r=btn.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-320)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _meetingLinkPopoverOpen=true;
+  const input=el('meeting-link-search-input'); if(input){ input.value=''; setTimeout(()=>input.focus(),30); }
+  renderMeetingLinkResults('');
+}
+function closeMeetingLinkPopover(){
+  el('meeting-link-popover')?.classList.remove('open');
+  _meetingLinkPopoverOpen=false;
+}
+el('meeting-add-link-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(_meetingLinkPopoverOpen){ closeMeetingLinkPopover(); return; }
+  openMeetingLinkPopover(el('meeting-add-link-btn'));
+});
+el('meeting-link-search-input')?.addEventListener('input',e=>renderMeetingLinkResults(e.target.value));
+document.addEventListener('mousedown',e=>{
+  if(_meetingLinkPopoverOpen&&!e.target.closest('#meeting-link-popover')&&!e.target.closest('#meeting-add-link-btn'))closeMeetingLinkPopover();
+},true);
+
+// ── Rich-text fields (agenda/notes) — same per-field session undo/redo pattern as Decision
+// Log's fields, minus the AI-rewrite affordance (kept out of v1 to keep the panel focused). ──
+function meetingFieldAutoList(e){
+  if(e.data!==' ')return;
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return;
+  const range=sel.getRangeAt(0);
+  const node=range.startContainer;
+  if(node.nodeType!==Node.TEXT_NODE)return;
+  const before=node.textContent.slice(0,range.startOffset);
+  const numbered=/^(\d+)\.\s$/.test(before);
+  const bulleted=/^[-*]\s$/.test(before);
+  if(!numbered&&!bulleted)return;
+  node.textContent=node.textContent.slice(before.length);
+  const r=document.createRange(); r.setStart(node,0); r.collapse(true);
+  sel.removeAllRanges(); sel.addRange(r);
+  document.execCommand(numbered?'insertOrderedList':'insertUnorderedList');
+}
+let meetingFieldSessionUndo={};
+let _meetingFieldIdleTimer=null;
+let _meetingFieldCheckpointPending={};
+function pushMeetingFieldSessionUndo(key){
+  const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field'); if(!field)return;
+  if(!meetingFieldSessionUndo[key])meetingFieldSessionUndo[key]={undo:[],redo:[]};
+  const st=meetingFieldSessionUndo[key];
+  st.undo.push(field.innerHTML);
+  if(st.undo.length>100)st.undo.shift();
+  st.redo=[];
+}
+function meetingFieldSyncModel(key,field){
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  m[key]=sakuraSanitizeRichHtml(field.innerHTML);
+  m.modifiedAt=Date.now();
+  const ts=el('meeting-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(m.modifiedAt);
+  saveMeetingNotes();
+  if(key==='body')refreshMeetingRowInList(m);
+}
+function meetingFieldSessionUndoRun(key){
+  const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field'); if(!field)return;
+  const st=meetingFieldSessionUndo[key]; if(!st||!st.undo.length)return;
+  st.redo.push(field.innerHTML);
+  field.innerHTML=st.undo.pop();
+  meetingFieldSyncModel(key,field);
+  clearTimeout(_meetingFieldIdleTimer); _meetingFieldCheckpointPending[key]=true;
+}
+function meetingFieldSessionRedoRun(key){
+  const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field'); if(!field)return;
+  const st=meetingFieldSessionUndo[key]; if(!st||!st.redo.length)return;
+  st.undo.push(field.innerHTML);
+  field.innerHTML=st.redo.pop();
+  meetingFieldSyncModel(key,field);
+  clearTimeout(_meetingFieldIdleTimer); _meetingFieldCheckpointPending[key]=true;
+}
+['agenda','body'].forEach(key=>{
+  const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field'); if(!field)return;
+  field.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='b'){ e.preventDefault(); document.execCommand('bold'); return; }
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='i'){ e.preventDefault(); document.execCommand('italic'); return; }
+    if(matchesShortcut(e,'undo')){ e.preventDefault(); e.stopPropagation(); meetingFieldSessionUndoRun(key); return; }
+    if(matchesShortcut(e,'redo')){ e.preventDefault(); e.stopPropagation(); meetingFieldSessionRedoRun(key); return; }
+  });
+  field.addEventListener('beforeinput',()=>{
+    if(_meetingFieldCheckpointPending[key]!==false){ pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=false; }
+    clearTimeout(_meetingFieldIdleTimer);
+    _meetingFieldIdleTimer=setTimeout(()=>{ _meetingFieldCheckpointPending[key]=true; },800);
+  });
+  field.addEventListener('input',e=>{ meetingFieldAutoList(e); meetingFieldSyncModel(key,field); });
+  field.addEventListener('blur',()=>{ if(linkifySapNotesInElement(field))meetingFieldSyncModel(key,field); });
+});
+
+// ── Toolbar wiring ──
+el('meetings-toggle')?.addEventListener('click',toggleMeetingsPanel);
+el('meetings-panel-close')?.addEventListener('click',closeMeetingsPanel);
+el('meetings-panel-maximize')?.addEventListener('click',toggleMeetingsMaximize);
+el('meetings-add-btn')?.addEventListener('click',createMeetingNote);
+el('meetings-search-toggle')?.addEventListener('click',()=>{
+  meetingSearchOpen=!meetingSearchOpen;
+  const row=el('meetings-search-row'); if(row)row.style.display=meetingSearchOpen?'flex':'none';
+  const btn=el('meetings-search-toggle'); if(btn)btn.setAttribute('aria-pressed',String(meetingSearchOpen));
+  if(meetingSearchOpen){ setTimeout(()=>el('meetings-search-input')?.focus(),0); }
+  else { meetingSearchQuery=''; const inp=el('meetings-search-input'); if(inp)inp.value=''; el('meetings-search-clear-btn').style.display='none'; renderMeetingsList(); }
+});
+el('meetings-search-input')?.addEventListener('input',e=>{
+  meetingSearchQuery=e.target.value;
+  el('meetings-search-clear-btn').style.display=meetingSearchQuery?'flex':'none';
+  renderMeetingsList();
+});
+el('meetings-search-clear-btn')?.addEventListener('click',()=>{
+  meetingSearchQuery=''; const inp=el('meetings-search-input'); if(inp){ inp.value=''; inp.focus(); }
+  el('meetings-search-clear-btn').style.display='none';
+  renderMeetingsList();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen){
+    if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
+    closeMeetingsPanel();
+  }
+});
+document.addEventListener('mousedown',e=>{
+  const panel=el('meetings-panel');
+  const toggleBtn=el('meetings-toggle');
+  if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
+  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!(toggleBtn&&toggleBtn.contains(e.target))){
+    closeMeetingsPanel();
+  }
+},true);
+
+loadMeetingNotes();
+window.toggleMeetingsPanel=toggleMeetingsPanel;
+</script>
 </body></html>
