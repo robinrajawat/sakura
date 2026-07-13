@@ -2644,8 +2644,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 .todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
 .todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
-#todo-due-popover,#meeting-date-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
-#todo-due-popover.open,#meeting-date-popover.open{display:block}
+#todo-due-popover,#meeting-date-popover,#meeting-time-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
+#todo-due-popover.open,#meeting-date-popover.open,#meeting-time-popover.open{display:block}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
 .due-pop-preset-btn{flex:1;appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:500 10.5px 'Inter',sans-serif;padding:5px 2px;border-radius:6px;cursor:pointer;text-align:center;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
 .due-pop-preset-btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent)}
@@ -2663,6 +2663,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .due-pop-cal-day:disabled{cursor:default;opacity:.25;pointer-events:none}
 .due-pop-footer{display:flex;justify-content:flex-end;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
 .due-pop-clear-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:3px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
+#meeting-time-pop-selects{display:flex;align-items:center;justify-content:center;gap:5px}
+#meeting-time-pop-selects .select-wrap{flex:1}
+#meeting-time-pop-selects .select{width:100%}
+.meeting-time-pop-colon{color:var(--muted);font:600 13px 'Inter',sans-serif}
 .due-pop-clear-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .due-pop-clear-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
 #todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:280px;max-height:min(400px,calc(100vh - 16px));overflow-y:auto;font-family:'Inter',sans-serif}
@@ -2790,17 +2794,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-row-delete:hover{color:var(--fc-red);background:var(--hover)}
 .meeting-row-expand-slot{padding:0 6px 10px}
 
-#meeting-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+#meeting-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#meeting-schedule-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+#meeting-date-input,#meeting-time-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;padding:5px 9px;border-radius:7px;outline:none;flex:0 0 auto;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:border-color .12s,color .12s,background .12s}
+#meeting-date-input:hover,#meeting-time-input:hover{border-color:var(--accent);color:var(--accent)}
+#meeting-date-input.set,#meeting-time-input.set{color:var(--fg);border-color:var(--border)}
+#meeting-date-input.unset #meeting-date-input-label,#meeting-time-input.unset #meeting-time-input-label{color:var(--hint);font-style:italic}
 #meeting-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
 #meeting-title-input:hover{background:var(--hover)}
 #meeting-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-#meeting-date-input{appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;padding:5px 9px;border-radius:7px;outline:none;flex:0 0 auto;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:border-color .12s,color .12s,background .12s}
-#meeting-date-input:hover{border-color:var(--accent);color:var(--accent)}
-#meeting-date-input.set{color:var(--fg);border-color:var(--border)}
-#meeting-date-input.unset #meeting-date-input-label{color:var(--hint);font-style:italic}
-#meeting-time-input{appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;flex:0 0 auto;cursor:pointer;color-scheme:light dark;transition:border-color .12s,color .12s,background .12s}
-#meeting-time-input:hover{border-color:var(--accent)}
-#meeting-time-input:focus{border-color:var(--accent)}
 #meeting-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
 #meeting-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
 #meeting-add-link-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
@@ -4537,7 +4539,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>An app-level meeting log — not tied to any document. One shared list across your whole workspace, same idea as To-Dos</li>
 <li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>; the same shortcut closes it again</li>
 <li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> to add a blank meeting note, or the layout icon next to it for <strong>New from template</strong> — Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, or Retrospective, each pre-filling the title/Agenda/Notes fields (and a starter action item, for the templates that call for one) so you're not starting from nothing. Either way it opens expanded and ready to type into immediately. Notes are listed newest first, click any row to expand it in place and edit it, click again (or click another row) to fold it back up</li>
-<li>Each note has a title, date, an optional start time and duration (shown together on the row as e.g. "2:30–3:30 PM"), attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
+<li>Each note has a title, date, and an optional time of day (shown on the row next to the date, e.g. "2:30 PM") — just a quick time reference, not a full scheduling system, so there's no separate end time or duration to fill in. Below that: attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
@@ -5135,10 +5137,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="meeting-card">
       <div id="meeting-card-top-row">
         <input id="meeting-title-input" type="text" placeholder="Meeting title" maxlength="160" autocomplete="off" />
-        <button type="button" id="meeting-date-input" aria-label="Meeting date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="meeting-date-input-label">Set date</span></button>
-        <input type="time" id="meeting-time-input" aria-label="Meeting time" data-tip="Start time" />
-        <span class="select-wrap"><select id="meeting-duration-select" class="select" style="width:auto" aria-label="Meeting duration" data-tip="Duration"><option value="0">No duration</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hr</option><option value="90">1.5 hr</option><option value="120">2 hr</option><option value="150">2.5 hr</option><option value="180">3 hr</option></select><svg class="select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         <button type="button" id="meeting-delete-btn" data-tip="Delete meeting note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+      <div id="meeting-schedule-row">
+        <button type="button" id="meeting-date-input" aria-label="Meeting date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="meeting-date-input-label">Set date</span></button>
+        <button type="button" id="meeting-time-input" aria-label="Meeting time"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg><span id="meeting-time-input-label">Set time</span></button>
       </div>
       <div id="meeting-attendees-row">
         <div id="meeting-attendees-chips"></div>
@@ -5194,6 +5197,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div class="due-pop-cal-grid" id="meeting-date-pop-cal-days"></div>
   <div class="due-pop-footer">
     <button type="button" class="due-pop-clear-btn" id="meeting-date-pop-clear-btn">Clear date</button>
+  </div>
+</div>
+
+<div id="meeting-time-popover" role="dialog" aria-label="Set meeting time">
+  <div class="due-pop-presets">
+    <button type="button" class="due-pop-preset-btn" id="meeting-time-pop-now-btn">Now</button>
+  </div>
+  <div id="meeting-time-pop-selects">
+    <span class="select-wrap"><select id="meeting-time-pop-hour" class="select" aria-label="Hour"></select><svg class="select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+    <span class="meeting-time-pop-colon">:</span>
+    <span class="select-wrap"><select id="meeting-time-pop-minute" class="select" aria-label="Minute"></select><svg class="select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+    <span class="select-wrap"><select id="meeting-time-pop-ampm" class="select" aria-label="AM or PM"><option value="AM">AM</option><option value="PM">PM</option></select><svg class="select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+  </div>
+  <div class="due-pop-footer">
+    <button type="button" class="due-pop-clear-btn" id="meeting-time-pop-clear-btn">Clear time</button>
   </div>
 </div>
 
@@ -29192,7 +29210,6 @@ function normalizeMeetingNote(m){
     title:(m&&typeof m.title==='string')?m.title:'',
     date:(m&&typeof m.date==='string')?m.date:'',
     time:(m&&typeof m.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(m.time))?m.time:'',
-    durationMin:(m&&[0,15,30,45,60,90,120,150,180].includes(Number(m.durationMin)))?Number(m.durationMin):0,
     attendees:(m&&Array.isArray(m.attendees))?m.attendees.filter(a=>typeof a==='string'&&a.trim()).map(a=>a.trim()):[],
     agenda:(m&&typeof m.agenda==='string')?m.agenda:'',
     body:(m&&typeof m.body==='string')?m.body:'',
@@ -29369,16 +29386,10 @@ function formatMeetingDateChip(dateStr){
   if(isNaN(d.getTime()))return '<span class="mrd-day">—</span>';
   return esc(d.toLocaleDateString(undefined,{month:'short'}))+'<span class="mrd-day">'+d.getDate()+'</span>';
 }
-function formatMeetingTimeLabel(time,durationMin){
+function formatMeetingTimeLabel(time){
   if(!time)return '';
   const [h,mi]=time.split(':').map(Number);
-  const d=new Date(2000,0,1,h,mi);
-  let label=d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
-  if(durationMin>0){
-    const endD=new Date(d.getTime()+durationMin*60000);
-    label+='–'+endD.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
-  }
-  return label;
+  return new Date(2000,0,1,h,mi).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
 function toggleMeetingExpanded(id){
   meetingExpandedId=(meetingExpandedId===id)?null:id;
@@ -29522,7 +29533,7 @@ function buildMeetingRowSummary(m){
   const titleEl=document.createElement('div'); titleEl.className='meeting-row-title'; titleEl.textContent=m.title||'';
   content.appendChild(titleEl);
   const metaEl=document.createElement('div'); metaEl.className='meeting-row-meta';
-  const timeLabel=formatMeetingTimeLabel(m.time,m.durationMin);
+  const timeLabel=formatMeetingTimeLabel(m.time);
   if(timeLabel){ const timeChip=document.createElement('span'); timeChip.className='meeting-row-time'; timeChip.textContent=timeLabel; metaEl.appendChild(timeChip); }
   (m.attendees||[]).slice(0,3).forEach(a=>{ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent=a; metaEl.appendChild(chip); });
   if((m.attendees||[]).length>3){ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent='+'+(m.attendees.length-3); metaEl.appendChild(chip); }
@@ -29629,13 +29640,23 @@ function updateMeetingDateButton(m){
   btn.classList.toggle('set',!!m.date);
   btn.classList.toggle('unset',!m.date);
 }
+function formatMeetingTimeButtonLabel(time){
+  if(!time)return 'Set time';
+  const [h,mi]=time.split(':').map(Number);
+  return new Date(2000,0,1,h,mi).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+function updateMeetingTimeButton(m){
+  const btn=el('meeting-time-input'); const label=el('meeting-time-input-label'); if(!btn||!label)return;
+  label.textContent=formatMeetingTimeButtonLabel(m.time);
+  btn.classList.toggle('set',!!m.time);
+  btn.classList.toggle('unset',!m.time);
+}
 function populateMeetingCard(m){
   if(!m)return;
   if(_meetingCardUndoId!==m.id){ meetingFieldSessionUndo={}; _meetingFieldCheckpointPending={}; _meetingCardUndoId=m.id; }
   const titleInput=el('meeting-title-input'); if(titleInput)titleInput.value=m.title||'';
   updateMeetingDateButton(m);
-  const timeInput=el('meeting-time-input'); if(timeInput)timeInput.value=m.time||'';
-  const durationSelect=el('meeting-duration-select'); if(durationSelect)durationSelect.value=String(m.durationMin||0);
+  updateMeetingTimeButton(m);
   const agendaField=el('meeting-agenda'); if(agendaField)agendaField.innerHTML=sakuraSanitizeRichHtml(m.agenda||'');
   const bodyField=el('meeting-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(m.body||'');
   renderMeetingAttendees(m);
@@ -29649,22 +29670,15 @@ el('meeting-title-input')?.addEventListener('input',()=>{
   saveMeetingNotes();
   refreshMeetingRowInList(m);
 });
-el('meeting-time-input')?.addEventListener('change',()=>{
+function commitMeetingTime(time){
   const m=findMeeting(meetingExpandedId); if(!m)return;
-  const val=el('meeting-time-input').value;
-  m.time=/^([01]\d|2[0-3]):[0-5]\d$/.test(val)?val:'';
+  m.time=time&&/^([01]\d|2[0-3]):[0-5]\d$/.test(time)?time:'';
   m.modifiedAt=Date.now();
   saveMeetingNotes();
+  updateMeetingTimeButton(m);
   refreshMeetingRowInList(m);
-});
-el('meeting-duration-select')?.addEventListener('change',()=>{
-  const m=findMeeting(meetingExpandedId); if(!m)return;
-  const val=Number(el('meeting-duration-select').value);
-  m.durationMin=[0,15,30,45,60,90,120,150,180].includes(val)?val:0;
-  m.modifiedAt=Date.now();
-  saveMeetingNotes();
-  refreshMeetingRowInList(m);
-});
+  closeMeetingTimePopover();
+}
 el('meeting-delete-btn')?.addEventListener('click',()=>{ if(meetingExpandedId!=null)deleteMeetingNote(meetingExpandedId); });
 
 // ── Date popover — same look and mechanics as To-Dos' own due-date popover (presets, month
@@ -29774,6 +29788,83 @@ document.addEventListener('keydown',e=>{
 },true);
 document.addEventListener('mousedown',e=>{
   if(_meetingDatePopoverOpen&&!e.target.closest('#meeting-date-popover')&&!e.target.closest('#meeting-date-input'))closeMeetingDatePopover();
+},true);
+
+// ── Time popover — a single "when in the day" field, deliberately not a start+duration+end
+// scheduling system. Three plain <select>s (hour/5-minute/AM-PM) instead of the browser's own
+// <input type="time">, so it looks like the rest of Sakura's own controls (and the same clock-
+// glyph button pattern as the date field) rather than dropping an OS-native widget into an
+// otherwise custom UI.
+let _meetingTimePopoverOpen=false;
+let _meetingTimePopSelectsBuilt=false;
+function buildMeetingTimePopSelects(){
+  if(_meetingTimePopSelectsBuilt)return;
+  const hourSel=el('meeting-time-pop-hour');
+  if(hourSel){ for(let h=1;h<=12;h++){ const opt=document.createElement('option'); opt.value=String(h); opt.textContent=String(h); hourSel.appendChild(opt); } }
+  const minSel=el('meeting-time-pop-minute');
+  if(minSel){ for(let m=0;m<60;m+=5){ const opt=document.createElement('option'); opt.value=String(m); opt.textContent=String(m).padStart(2,'0'); minSel.appendChild(opt); } }
+  _meetingTimePopSelectsBuilt=true;
+}
+function openMeetingTimePopover(btn){
+  const pop=el('meeting-time-popover'); if(!pop||!btn)return;
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  buildMeetingTimePopSelects();
+  let h24=9, mi=0; // default to 9:00 AM when nothing set yet — a plausible starting guess, not a real value until confirmed
+  if(m.time){ const parts=m.time.split(':').map(Number); h24=parts[0]; mi=parts[1]; }
+  const isPM=h24>=12;
+  let h12=h24%12; if(h12===0)h12=12;
+  const roundedMin=Math.round(mi/5)*5%60;
+  const hourSel=el('meeting-time-pop-hour'); if(hourSel)hourSel.value=String(h12);
+  const minSel=el('meeting-time-pop-minute'); if(minSel)minSel.value=String(roundedMin);
+  const ampmSel=el('meeting-time-pop-ampm'); if(ampmSel)ampmSel.value=isPM?'PM':'AM';
+  const rect=btn.getBoundingClientRect();
+  const pw=216;
+  let left=rect.left;
+  if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  if(left<8)left=8;
+  pop.style.left=left+'px';
+  pop.style.top=(rect.bottom+4)+'px';
+  pop.classList.add('open');
+  _meetingTimePopoverOpen=true;
+  const pr=pop.getBoundingClientRect();
+  if(pr.bottom>window.innerHeight-8){
+    const flippedTop=rect.top-pr.height-4;
+    pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
+  }
+}
+function closeMeetingTimePopover(){
+  el('meeting-time-popover')?.classList.remove('open');
+  _meetingTimePopoverOpen=false;
+}
+function commitMeetingTimeFromPopSelects(){
+  const hourSel=el('meeting-time-pop-hour'), minSel=el('meeting-time-pop-minute'), ampmSel=el('meeting-time-pop-ampm');
+  if(!hourSel||!minSel||!ampmSel)return;
+  let h12=Number(hourSel.value), mi=Number(minSel.value);
+  const isPM=ampmSel.value==='PM';
+  let h24=h12%12; if(isPM)h24+=12;
+  commitMeetingTime(String(h24).padStart(2,'0')+':'+String(mi).padStart(2,'0'));
+}
+el('meeting-time-input')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(_meetingTimePopoverOpen){ closeMeetingTimePopover(); return; }
+  openMeetingTimePopover(e.currentTarget);
+});
+el('meeting-time-pop-now-btn')?.addEventListener('click',()=>{
+  const now=new Date();
+  const rounded=Math.round(now.getMinutes()/5)*5;
+  const h=rounded===60?(now.getHours()+1)%24:now.getHours();
+  const mi=rounded===60?0:rounded;
+  commitMeetingTime(String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'));
+});
+['meeting-time-pop-hour','meeting-time-pop-minute','meeting-time-pop-ampm'].forEach(id=>{
+  el(id)?.addEventListener('change',commitMeetingTimeFromPopSelects);
+});
+el('meeting-time-pop-clear-btn')?.addEventListener('click',()=>commitMeetingTime(null));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&_meetingTimePopoverOpen){ e.stopPropagation(); closeMeetingTimePopover(); }
+},true);
+document.addEventListener('mousedown',e=>{
+  if(_meetingTimePopoverOpen&&!e.target.closest('#meeting-time-popover')&&!e.target.closest('#meeting-time-input'))closeMeetingTimePopover();
 },true);
 
 // ── Attendees ──
