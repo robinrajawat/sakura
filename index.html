@@ -6511,6 +6511,19 @@ function featuredTablesForNode(nodeId){
   const editor=el('pad-editor'); if(!editor)return [];
   return Array.from(editor.querySelectorAll('table[data-feature-node="'+nodeId+'"]'));
 }
+// Diagrams/decision logs already leave an orphaned-but-harmless anchorNodeId behind when their
+// linked node is deleted (they just stop appearing anywhere, no cleanup call exists for them
+// either) — consistent, fine, since they live in their own tab and don't visually claim to
+// still be linked to something. A featured table is different: it keeps a persistent accent
+// outline directly in the Pad, which would go on implying "this is linked to a node" forever
+// after that node is gone. So this one specifically gets swept on delete.
+function cleanupOrphanedFeaturedTables(deletedIds){
+  const editor=el('pad-editor'); if(!editor||!deletedIds||!deletedIds.length)return;
+  const idSet=new Set(deletedIds.map(String));
+  editor.querySelectorAll('table[data-feature-node]').forEach(t=>{
+    if(idSet.has(t.getAttribute('data-feature-node')))t.removeAttribute('data-feature-node');
+  });
+}
 function cleanEditorHtml(editor){
   if(!editor) return '';
   if(!editor.querySelector('.editor-img-selected')) return editor.innerHTML;
@@ -12338,7 +12351,7 @@ function splitNodeAtCursor(id,caretPos){
 function indentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots[0]<=0)return; pushUndo(); markDirty(); roots.forEach(idx=>{const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)nodes[i].depth+=1}); rebuildParentIds(); render()}
 function outdentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots.every(idx=>nodes[idx].depth===0))return; pushUndo(); markDirty(); roots.forEach(idx=>{if(nodes[idx].depth===0)return; const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)nodes[i].depth-=1}); rebuildParentIds(); render()}
 function deleteSelected(){
-  if(selectAllMode){pushUndo(); markDirty(); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); render(); showToast('Cleared tree'); return}
+  if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); cleanupOrphanedFeaturedTables(allIds); render(); showToast('Cleared tree'); return}
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
   const count=getDeleteImpactCount();
   // Collect texts of nodes being deleted for backlink cleanup, and their ids so any of them
@@ -12349,6 +12362,7 @@ function deleteSelected(){
   for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(idx); nodes.splice(idx,end-idx)}
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
+  cleanupOrphanedFeaturedTables(deletedIds);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'')); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
