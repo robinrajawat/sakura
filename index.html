@@ -4546,7 +4546,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Each note has a title, date, and an optional time of day (shown on the row next to the date, e.g. "2:30 PM") — just a quick time reference, not a full scheduling system, so there's no separate end time or duration to fill in. Below that: attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
-<li>Export a single meeting note as formatted text (download icon on hover, next to trash) — a .txt file using Markdown syntax (# headings, **bold**, *italic*, ~~strikethrough~~, bullets, links) carried over from what you typed, not flattened to bare plain text. Windows 11's modern Notepad and other Markdown-aware apps render this as real formatting; anywhere else it still reads cleanly. Action items come through as a checklist (completed ones struck through), and linked nodes/documents as a plain list. To-Dos' own list export and Q&amp;A's own export use the same approach</li>
+<li>Export a single meeting note as formatted text (download icon on hover, next to trash) — a .md file using Markdown syntax (# headings, **bold**, *italic*, ~~strikethrough~~, bullets, links) carried over from what you typed, not flattened to bare plain text. Windows 11's modern Notepad and other Markdown-aware apps render this as real formatting — Notepad specifically only keeps that rendering on save if the file is named .md, so that's the extension used here rather than .txt. Action items come through as a checklist (completed ones struck through), and linked nodes/documents as a plain list. To-Dos' own list export and Q&amp;A's own export use the same approach</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
 <li>The clock icon in the panel header opens <strong>Version history</strong> for the whole list — same idea as To-Dos' own, kept separately since Meeting Notes isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
 <li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
@@ -4950,7 +4950,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="diagram-bulk-count" class="diagrams-only-btn diagram-bulk-btn"></span>
     <button class="note-tb-btn diagrams-only-btn diagram-bulk-btn" id="dtb-bulk-delete" data-tip="Delete selected diagrams"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as formatted text (.txt)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as formatted text (.md)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
   </div>
   <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links, attach files."></div>
   <div id="qa-body">
@@ -5031,7 +5031,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="todos-panel-title">To-Dos</span>
     <button id="todos-extract-btn" data-tip="Extract action items from document (AI)" aria-label="Extract action items from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/><path d="M9 20h6"/><path d="M10 20v-3"/><path d="M14 20v-3"/></svg></button>
     <button id="todos-summary-btn" data-tip="Status summary (AI)" aria-label="Generate status summary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
-    <button id="todos-export-btn" data-tip="Export list as formatted text (.txt)" aria-label="Export list as formatted text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button id="todos-export-btn" data-tip="Export list as formatted text (.md)" aria-label="Export list as formatted text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
     <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -12708,13 +12708,14 @@ function downloadRtf(filename,bodyRtf,titleText){
 function rtfSafeFilename(name){
   return String(name||'Untitled').replace(/[\\\/:*?"<>|]+/g,'_').slice(0,120);
 }
-// ── Shared Markdown/.txt export library ─────────────────────────────────
-// Same idea as the RTF library above, but the output is a plain .txt file whose body happens to
-// use Markdown syntax (**bold**, *italic*, ~~strike~~, # headings, - bullets, [text](url) links).
-// Windows 11's modern Notepad (and any Markdown-aware viewer) renders that syntax as real
-// formatting; anywhere else it still reads fine as plain text with light structural hints. Reuses
-// rtfCollectRuns for DOM walking since that step is format-agnostic — only the run-to-text and
-// escaping steps differ from the RTF path.
+// ── Shared Markdown (.md) export library ─────────────────────────────────
+// Same idea as the RTF library above, but the output is a .md file using Markdown syntax
+// (**bold**, *italic*, ~~strike~~, # headings, - bullets, [text](url) links). Windows 11's
+// modern Notepad (and any other Markdown-aware app) renders that as real formatting — but only
+// keeps the rendered formatting on save if the file is actually named .md; saving the same
+// content as .txt strips it back to raw symbols, so .md is the extension that actually works
+// here, not just a nice-to-have. Reuses rtfCollectRuns for DOM walking since that step is
+// format-agnostic — only the run-to-text and escaping steps differ from the RTF path.
 function escMd(text){
   const s=String(text==null?'':text);
   return s.replace(/[\\`*_~\[\]]/g,'\\$&');
@@ -12770,8 +12771,8 @@ function mdBlocksFromHtml(html){
   walk(container);
   return out.trimEnd()+'\n';
 }
-function downloadTxt(filename,content){
-  downloadBlob(filename,'text/plain;charset=utf-8',content);
+function downloadMd(filename,content){
+  downloadBlob(filename,'text/markdown;charset=utf-8',content);
 }
 async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0; const plain=serializeTreeText(scopeNodes,useRebase); const html=serializeClipboardHtml(scopeNodes,useRebase); const toastLabel=forceFull||selectAllMode||!multiSelectedIds.length?'Tree copied':`Copied ${scopeNodes.length} selected node${scopeNodes.length===1?'':'s'}`; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false))}
@@ -21340,7 +21341,7 @@ function exportQaText(){
     body+='**Q:** '+escMd(q)+'\n\n';
     body+='*A:* '+(a?escMd(a):'No answer provided')+'\n\n';
   });
-  downloadTxt(rtfSafeFilename(title+' - QA')+'.txt', body);
+  downloadMd(rtfSafeFilename(title+' - QA')+'.md', body);
 }
 function toggleQaSelect(id,shiftKey){
   if(shiftKey && qaSelectionAnchorId!=null && qaSelectionAnchorId!==id){
@@ -28869,7 +28870,7 @@ function _addTagPopoverFromInput(){
     body+='\n## Completed ('+done.length+')\n\n';
     if(!done.length) body+='*(none)*\n\n';
     done.forEach(t=>taskLine(t,true));
-    downloadTxt('To-Dos.txt', body);
+    downloadMd('To-Dos.md', body);
     showTodosToast('To-Dos exported');
   }
 
@@ -29619,7 +29620,7 @@ function formatMeetingTimeLabel(time){
   const [h,mi]=time.split(':').map(Number);
   return new Date(2000,0,1,h,mi).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
-// Exports one meeting note as a standalone .txt — title, date/time/attendees line, Agenda and
+// Exports one meeting note as a standalone .md — title, date/time/attendees line, Agenda and
 // Notes with their real formatting preserved as Markdown syntax (headings/bold/italic/strike/
 // lists/links, via the shared Markdown library — see mdBlocksFromHtml), and action items as a
 // checklist with completed ones struck through. Windows 11's modern Notepad (and any Markdown
@@ -29657,7 +29658,7 @@ function exportSingleMeetingAsText(m){
       body+='- '+escMd(label)+'\n';
     });
   }
-  downloadTxt(rtfSafeFilename(m.title||'Untitled meeting')+'.txt', body);
+  downloadMd(rtfSafeFilename(m.title||'Untitled meeting')+'.md', body);
   showMeetingsToast('Meeting exported');
 }
 function toggleMeetingExpanded(id){
@@ -29815,7 +29816,7 @@ function buildMeetingRowSummary(m){
   const snippetText=meetingRowSnippet(m);
   if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='meeting-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
   summary.appendChild(dateEl); summary.appendChild(content);
-  const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as formatted text (.txt)';
+  const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as formatted text (.md)';
   exportBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   exportBtn.addEventListener('click',e=>{ e.stopPropagation(); exportSingleMeetingAsText(m); });
   summary.appendChild(exportBtn);
