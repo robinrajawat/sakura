@@ -14918,6 +14918,14 @@ let hideNodeTooltip=function(){};
   // fired on any descendant (sidebar list, settings panel, a modal body, etc.), so the tip is
   // still dismissed no matter which internal scroll container actually moved.
   window.addEventListener('scroll',()=>{ hoveredEl=null; tip.classList.remove('visible'); },true);
+  // A click can remove or re-render the currently-hovered element entirely — delete/remove
+  // buttons in particular (e.g. the meeting "Remove link" chip button, which wipes and rebuilds
+  // its whole list on click) — before a natural mouseout ever gets a chance to fire on it, since
+  // detaching an element from the DOM doesn't synchronously trigger one. Left unhandled, the
+  // tooltip stays stuck on screen indefinitely, pointing at an element that's no longer there.
+  // A single capture-phase mousedown covers every such case in one place, rather than needing a
+  // bespoke hide-tooltip call added to each button that might remove itself.
+  document.addEventListener('mousedown',()=>{ hoveredEl=null; tip.classList.remove('visible'); },true);
 })();
 el('editor-pane').addEventListener('drop',e=>{if(e.target.closest('.node-row'))return; const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); handleDrop(draggedId,null,'end')});
 document.addEventListener('paste',e=>{if(isControlTarget(e.target))return; if(editingId!==null)return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}} const parsed=parseTreeClipboardHtml(html); const fallback=parsed.length?parsed:parseTextToTreeNodes(text); if(!fallback.length)return; e.preventDefault(); pasteParsedNodes(fallback)});
@@ -30868,6 +30876,7 @@ document.addEventListener('mousedown',e=>{
   if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
   if(_meetingTemplateMenuOpen)return; // its own outside-click handler covers this
   if(_meetingDatePopoverOpen||_meetingTimePopoverOpen)return; // same reason — both live outside #meetings-panel in the DOM (siblings, not descendants), so without this a click inside either one reads as "outside the panel" and closes the whole thing instead of just picking a date/time
+  if(e.target.closest('#selection-fmt-popover'))return; // same reason again — the selection formatting popover is also a sibling of #meetings-panel (needed for position:fixed placement above an arbitrary selection), not a descendant
   if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
