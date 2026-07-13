@@ -12812,6 +12812,62 @@ function mdBlocksFromHtml(html,headingOffset){
 function downloadMd(filename,content){
   downloadBlob(filename,'text/markdown;charset=utf-8',content);
 }
+// ── Reverse of mdBlocksFromHtml, above — used so AI rewrite of rich-text fields (Meeting
+// Agenda/Notes, Pad Notepad, Node Note) can round-trip through Markdown instead of flattening
+// to plain text on the way out and dumping plain text back on the way in (the previous
+// behavior, which silently destroyed bullet/numbered lists, bold/italic, and headings on every
+// rewrite). Deliberately mirrors mdBlocksFromHtml's exact syntax (**bold**, *italic*, ***both***,
+// ~~strike~~, [text](url), #-###### headings, - bullets, N. numbered) rather than a generic
+// Markdown dialect, since that's the only syntax this app ever emits or asks the AI to preserve.
+// Inline scan (not regex-replace) so a literal "\*" survives as a literal "*" rather than being
+// mistaken for emphasis — same char-by-char approach parseStyledText already uses elsewhere.
+function mdInlineToHtml(text){
+  const src=String(text||''); let out=''; let i=0;
+  while(i<src.length){
+    if(src[i]==='\\'&&i+1<src.length){ out+=esc(src[i+1]); i+=2; continue; }
+    if(src.startsWith('***',i)){ const end=src.indexOf('***',i+3); if(end>i+3){ out+='<b><i>'+esc(src.slice(i+3,end))+'</i></b>'; i=end+3; continue; } }
+    if(src.startsWith('**',i)){ const end=src.indexOf('**',i+2); if(end>i+2){ out+='<b>'+esc(src.slice(i+2,end))+'</b>'; i=end+2; continue; } }
+    if(src.startsWith('~~',i)){ const end=src.indexOf('~~',i+2); if(end>i+2){ out+='<s>'+esc(src.slice(i+2,end))+'</s>'; i=end+2; continue; } }
+    if(src[i]==='*'){ const end=src.indexOf('*',i+1); if(end>i+1){ out+='<i>'+esc(src.slice(i+1,end))+'</i>'; i=end+1; continue; } }
+    if(src[i]==='['){
+      const close=src.indexOf(']',i+1);
+      if(close>i+1&&src[close+1]==='('){
+        const parenEnd=src.indexOf(')',close+2);
+        if(parenEnd>close+2){ out+='<a href="'+escAttr(src.slice(close+2,parenEnd))+'" target="_blank" rel="noopener">'+esc(src.slice(i+1,close))+'</a>'; i=parenEnd+1; continue; }
+      }
+    }
+    out+=esc(src[i]); i++;
+  }
+  return out;
+}
+function mdTextToHtml(md){
+  const lines=String(md||'').replace(/\r\n/g,'\n').split('\n');
+  let html=''; let i=0; const paraBuf=[];
+  function flushPara(){ if(paraBuf.length){ html+='<p>'+paraBuf.map(mdInlineToHtml).join('<br>')+'</p>'; paraBuf.length=0; } }
+  while(i<lines.length){
+    const line=lines[i];
+    const headingM=line.match(/^(#{1,6})\s+(.*)$/);
+    const bulletM=line.match(/^[-*•]\s+(.*)$/);
+    const numM=line.match(/^(\d+)\.\s+(.*)$/);
+    if(headingM){ flushPara(); const lvl=headingM[1].length; html+='<h'+lvl+'>'+mdInlineToHtml(headingM[2])+'</h'+lvl+'>'; i++; continue; }
+    if(bulletM){
+      flushPara(); const items=[];
+      while(i<lines.length){ const m2=lines[i].match(/^[-*•]\s+(.*)$/); if(!m2)break; items.push(m2[1]); i++; }
+      html+='<ul>'+items.map(t=>'<li>'+mdInlineToHtml(t)+'</li>').join('')+'</ul>';
+      continue;
+    }
+    if(numM){
+      flushPara(); const items=[]; const startN=parseInt(numM[1],10);
+      while(i<lines.length){ const m2=lines[i].match(/^(\d+)\.\s+(.*)$/); if(!m2)break; items.push(m2[2]); i++; }
+      html+='<ol'+(startN!==1?' start="'+startN+'"':'')+'>'+items.map(t=>'<li>'+mdInlineToHtml(t)+'</li>').join('')+'</ol>';
+      continue;
+    }
+    if(line.trim()===''){ flushPara(); i++; continue; }
+    paraBuf.push(line); i++;
+  }
+  flushPara();
+  return html||'<p></p>';
+}
 async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0; const plain=serializeTreeText(scopeNodes,useRebase); const html=serializeClipboardHtml(scopeNodes,useRebase); const toastLabel=forceFull||selectAllMode||!multiSelectedIds.length?'Tree copied':`Copied ${scopeNodes.length} selected node${scopeNodes.length===1?'':'s'}`; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false))}
 function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.txt`,'text/plain;charset=utf-8',serializeTreeText(getScopedNodes(true),false))}
@@ -20280,14 +20336,17 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
     savedRange = sel.getRangeAt(0).cloneRange();
     inputText = savedRange.toString().trim();
   } else {
-    inputText = editor.innerText.trim();
+    // Markdown extraction (mdBlocksFromHtml), not innerText — same reasoning as the Pad's
+    // whole-content rewrite above: innerText discards list/bold/heading structure entirely,
+    // leaving nothing for aiRewritePrompt's preservation instructions to preserve.
+    inputText = mdBlocksFromHtml(editor.innerHTML,0).trim();
   }
 
   if (!inputText) return;
 
-  // Same bug as the Pad's whole-content AI rewrite (fixed above): with nothing
-  // selected, this selects the ENTIRE note and replaces it with plain rewritten
-  // text — silently destroying any embedded images or tables. Confirm first.
+  // With nothing selected, this replaces the ENTIRE note — lists, bold/italic, and headings
+  // now survive the round-trip via Markdown (see extraction above), but embedded images and
+  // tables still don't since mdBlocksFromHtml has no representation for them. Confirm first.
   if(!hasSelection){
     const nImg=editor.querySelectorAll('img').length;
     const nTable=editor.querySelectorAll('table').length;
@@ -20298,7 +20357,7 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
       const ok=await sakuraConfirm({
         icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
         title:'Rewrite the whole note?',
-        body:`This replaces all of the note's content with plain AI-rewritten text, which will remove ${parts.join(', ')}. Select just the text you want rewritten instead if you'd like to keep them.`,
+        body:`This replaces all of the note's content with AI-rewritten text, which will remove ${parts.join(', ')} (other formatting like lists and bold text is preserved). Select just the text you want rewritten instead if you'd like to keep them.`,
         confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
       });
       if(!ok) return;
@@ -20323,14 +20382,10 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
       selRestore.addRange(savedRange);
       document.execCommand('insertText', false, result);
     } else {
-      // Move cursor to end
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      const s = window.getSelection();
-      s.removeAllRanges();
-      s.addRange(range);
-      // execCommand (not editor.innerText=) — same reasoning as above.
-      document.execCommand('insertText', false, result);
+      // Parse the AI's Markdown response back into real HTML instead of selecting-all +
+      // execCommand('insertText', result) — that always inserts a flat text node, which is
+      // exactly what used to destroy list/bold/heading structure on every whole-note rewrite.
+      editor.innerHTML = sakuraSanitizeRichHtml(mdTextToHtml(result));
     }
     // Persist. pushUndo() here (previously missing) puts the rewrite on the
     // app-level undo stack too — without it, commitNoteEdit()'s on-close diff
@@ -25862,15 +25917,20 @@ el('ptb-ai-rewrite')?.addEventListener('click', async () => {
     savedRange=sel.getRangeAt(0).cloneRange();
     inputText=savedRange.toString().trim();
   } else {
-    inputText=editor.innerText.trim();
+    // Markdown extraction (mdBlocksFromHtml), not innerText — innerText discards all
+    // structure, so a bulleted/numbered list, bold/italic, or headings had nothing left
+    // for aiRewritePrompt's preservation instructions to actually preserve. Selection-based
+    // rewrite (above) is left as plain text for now — reconstructing HTML back into an
+    // arbitrary mid-document selection range is a separate, harder problem.
+    inputText=mdBlocksFromHtml(editor.innerHTML,0).trim();
   }
   if(!inputText) return;
 
-  // Rewriting with nothing selected replaces the ENTIRE editor with plain rewritten
-  // text (see the insertText call below) — that silently destroys any attachment
-  // chips, images, or tables in the Pad, not just formatting. Pre-existing behavior
-  // for images/tables; attachments raise the stakes since they're real files, so
-  // this now confirms first rather than losing them without warning.
+  // Rewriting with nothing selected replaces the ENTIRE editor — lists, bold/italic, and
+  // headings now survive the round-trip via Markdown (see extraction above), but attachment
+  // chips, images, and tables still don't since mdBlocksFromHtml has no representation for
+  // them. Attachments raise the stakes since they're real files, so this confirms first
+  // rather than losing them without warning.
   if(!hasSelection){
     const nAttach=editor.querySelectorAll('.pad-attachment').length;
     const nImg=editor.querySelectorAll('img').length;
@@ -25883,7 +25943,7 @@ el('ptb-ai-rewrite')?.addEventListener('click', async () => {
       const ok=await sakuraConfirm({
         icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
         title:'Rewrite the whole Pad?',
-        body:`This replaces all of the Pad's content with plain AI-rewritten text, which will remove ${parts.join(', ')}. Select just the text you want rewritten instead if you'd like to keep them.`,
+        body:`This replaces all of the Pad's content with AI-rewritten text, which will remove ${parts.join(', ')} (other formatting like lists and bold text is preserved). Select just the text you want rewritten instead if you'd like to keep them.`,
         confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
       });
       if(!ok) return;
@@ -25908,12 +25968,10 @@ el('ptb-ai-rewrite')?.addEventListener('click', async () => {
       selRestore.addRange(savedRange);
       document.execCommand('insertText', false, result);
     } else {
-      const range=document.createRange();
-      range.selectNodeContents(editor);
-      const s=window.getSelection();
-      s.removeAllRanges();
-      s.addRange(range);
-      document.execCommand('insertText', false, result);
+      // Parse the AI's Markdown response back into real HTML instead of selecting-all +
+      // execCommand('insertText', result) — that always inserts a flat text node, which is
+      // exactly what used to destroy list/bold/heading structure on every whole-pad rewrite.
+      editor.innerHTML=sakuraSanitizeRichHtml(mdTextToHtml(result));
     }
     markDirty();
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
@@ -30610,13 +30668,21 @@ async function rewriteMeetingField(key){
   const text=(field?.textContent||'').trim();
   if(!text){ showMeetingsToast('Nothing to rewrite yet'); return; }
   const originalHtml=m[key]||'';
+  // Extract as Markdown (mdBlocksFromHtml), not plain textContent — a bulleted/numbered list
+  // or bold/italic text needs its markers in what's actually sent to the AI, or there's
+  // nothing for aiRewritePrompt's preservation instructions to preserve.
+  const inputMd=mdBlocksFromHtml(originalHtml,0).trim();
   const btn=el('meeting-rewrite-'+key); if(btn)btn.classList.add('ai-busy');
   try{
-    const result=await callAiApi(text);
+    const result=await callAiApi(inputMd||text);
     if(!result)throw new Error('Empty response from AI');
     pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=true;
-    if(field)field.textContent=result;
-    m[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
+    // Parse the AI's Markdown response back into real HTML (mdTextToHtml) instead of dumping
+    // it in as field.textContent — that used to wipe out any list/bold/heading structure by
+    // replacing it with a single flattened text node.
+    const rebuiltHtml=sakuraSanitizeRichHtml(mdTextToHtml(result));
+    if(field)field.innerHTML=rebuiltHtml;
+    m[key]=rebuiltHtml;
     m.modifiedAt=Date.now();
     const ts=el('meeting-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(m.modifiedAt);
     saveMeetingNotes();
