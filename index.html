@@ -15683,14 +15683,20 @@ const AI_BATCH_CHUNK_SIZE=30;
 
 async function callAiApiBatchChunk(texts){
   const key=requireAiKey();
-  const numbered=texts.map((t,i)=>`[${i+1}] ${t}`).join('\n');
-  const batchPrompt=aiRewritePrompt+'\n\nYou will receive a numbered list of texts. Return ONLY a numbered list in the exact same format [1], [2], etc. with each corrected text. Do not add any other content.\n\nTexts:\n'+numbered;
+  // Marker is a token no real node text would plausibly contain — deliberately not "[N]"
+  // (used until this point). A node whose own content is a numbered/bulleted list (now
+  // correctly preserved by aiRewritePrompt) could contain "1." / "2." etc, and some models
+  // would echo those back in bracket style ("[1] Step one") since that's the pattern they
+  // just saw in the prompt — indistinguishable from the real batch boundary, silently
+  // merging or misaligning items. This marker can't collide with ordinary list formatting.
+  const numbered=texts.map((t,i)=>`<<<SAKURA-ITEM-${i+1}>>>\n${t}`).join('\n');
+  const batchPrompt=aiRewritePrompt+'\n\nYou will receive several texts, each preceded by its own marker line in the exact form <<<SAKURA-ITEM-N>>> on its own line, where N is the item number. Return each corrected/rewritten text preceded by that exact same marker line, in the same order, with no other content before, between, or after them. Do not alter, remove, or reformat the marker lines themselves — copy them exactly as given, including the number.\n\nTexts:\n'+numbered;
   const provider=getAiProviderById(aiProvider);
   const raw=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt,batchPrompt.replace(aiRewritePrompt+'\n\n',''),8192,provider.id);
   sakuraLog('ai','batch raw response received',{length:raw.length});
-  // Parse [N] prefixed lines back into array
+  // Parse <<<SAKURA-ITEM-N>>> prefixed blocks back into array
   const results=new Array(texts.length).fill('');
-  const regex=/\[(\d+)\]\s*([\s\S]*?)(?=\n\[\d+\]|$)/g;
+  const regex=/<<<SAKURA-ITEM-(\d+)>>>\s*\n?([\s\S]*?)(?=\n<<<SAKURA-ITEM-\d+>>>|$)/g;
   let m; while((m=regex.exec(raw))!==null){const i=parseInt(m[1],10)-1; if(i>=0&&i<texts.length)results[i]=m[2].trim()||texts[i];}
   return results.map((r,i)=>r||texts[i]);
 }
