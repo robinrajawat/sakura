@@ -12395,7 +12395,29 @@ async function resetDefaultTemplate(){
   showToast('Default template reset');
 }
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
-function pasteParsedNodes(parsed,toastVerb='Pasted'){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'')); if(!nodes.length||selectedId===null||getIndex(selectedId)<0){nodes=mapped}else{const idx=getIndex(selectedId); nodes.splice(getSubtreeEnd(idx),0,...mapped)} rebuildParentIds(); selectedId=nodes[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render(); showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}`)}
+function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'')); if(!nodes.length||selectedId===null||getIndex(selectedId)<0){nodes=mapped}else{const idx=getIndex(selectedId); nodes.splice(getSubtreeEnd(idx),0,...mapped)} rebuildParentIds();
+  let dlAdded=0,dgAdded=0;
+  if(Array.isArray(clipExtras)&&clipExtras.length){
+    clipExtras.forEach(ex=>{
+      const targetNode=mapped[ex.i]; if(!targetNode)return;
+      if(ex.dl&&!decisionLogForNode(targetNode.id)){
+        const ts=Date.now();
+        decisionLogs.push({id:newDecisionLogId(),anchorNodeId:targetNode.id,context:ex.dl.context||'',decision:ex.dl.decision||'',rationale:ex.dl.rationale||'',alternatives:ex.dl.alternatives||'',impact:ex.dl.impact||'',status:ex.dl.status||'proposed',author:ex.dl.author||'',timestamp:ex.dl.timestamp||ts,createdAt:ts,modifiedAt:ts});
+        dlAdded++;
+      }
+      if(Array.isArray(ex.dgs)&&ex.dgs.length){
+        ex.dgs.forEach(dg=>{
+          const ts=Date.now();
+          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts});
+          dgAdded++;
+        });
+      }
+    });
+    if(dlAdded||dgAdded)scheduleAutoSave();
+  }
+  selectedId=nodes[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render();
+  const extrasLabel=(dlAdded||dgAdded)?` (incl. ${[dlAdded?`${dlAdded} decision log${dlAdded===1?'':'s'}`:'',dgAdded?`${dgAdded} diagram${dgAdded===1?'':'s'}`:''].filter(Boolean).join(', ')})`:'';
+  showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}${extrasLabel}`)}
 function parseTreeClipboardHtml(html){if(!html||!html.trim())return []; const d=document.createElement('div'); d.innerHTML=html; const text=(d.innerText||d.textContent||'').trim(); return text?parseTextToTreeNodes(text):[]}
 async function smartPasteFromClipboard(){
   // Returns true if it actually pasted something, false if the caller should
@@ -12910,7 +12932,42 @@ function mdTextToHtml(md){
   flushPara();
   return html||'<p></p>';
 }
-async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0; const plain=serializeTreeText(scopeNodes,useRebase); const html=serializeClipboardHtml(scopeNodes,useRebase); const toastLabel=forceFull||selectAllMode||!multiSelectedIds.length?'Tree copied':`Copied ${scopeNodes.length} selected node${scopeNodes.length===1?'':'s'}`; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
+// Decision logs and diagrams live in their own per-document arrays (keyed by anchorNodeId),
+// not on the node object itself — so a plain text/HTML clipboard copy never carried them.
+// buildNodeClipboardPayload snapshots any decision log / diagrams anchored to the copied nodes;
+// it's embedded as a base64 HTML comment alongside the normal text/html clipboard content, so
+// pasting outside Sakura (or into an older version) just silently falls back to today's
+// text-only behavior, while pasting back into Sakura — same document, another tab, or a
+// different document entirely — can restore the rich data via extractSakuraClipPayload below.
+function buildNodeClipboardPayload(scopeNodes){
+  if(!scopeNodes||!scopeNodes.length)return null;
+  const extras=[];
+  scopeNodes.forEach((n,i)=>{
+    const dl=decisionLogForNode(n.id);
+    const dgs=Array.isArray(diagrams)?diagrams.filter(dg=>dg.anchorNodeId===n.id):[];
+    if(!dl&&!dgs.length)return;
+    extras.push({
+      i,
+      dl:dl?{context:dl.context||'',decision:dl.decision||'',rationale:dl.rationale||'',alternatives:dl.alternatives||'',impact:dl.impact||'',status:dl.status||'proposed',author:dl.author||'',timestamp:dl.timestamp||Date.now()}:null,
+      dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||''}))
+    });
+  });
+  return extras.length?{v:1,extras}:null;
+}
+function encodeSakuraClipComment(payload){
+  try{ return `<!--sakura-dl:${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}-->` }catch(e){ return '' }
+}
+function extractSakuraClipPayload(html){
+  if(!html)return null;
+  const m=html.match(/<!--sakura-dl:([A-Za-z0-9+/=]+)-->/);
+  if(!m)return null;
+  try{
+    const data=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    if(data&&data.v===1&&Array.isArray(data.extras))return data.extras;
+  }catch(e){}
+  return null;
+}
+async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dlCount=clipPayload?clipPayload.extras.filter(x=>x.dl).length:0; const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const extrasLabel=(dlCount||dgCount)?` (incl. ${[dlCount?`${dlCount} decision log${dlCount===1?'':'s'}`:'',dgCount?`${dgCount} diagram${dgCount===1?'':'s'}`:''].filter(Boolean).join(', ')})`:''; const toastLabel=(forceFull||selectAllMode||!multiSelectedIds.length?'Tree copied':`Copied ${scopeNodes.length} selected node${scopeNodes.length===1?'':'s'}`)+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false))}
 function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.txt`,'text/plain;charset=utf-8',serializeTreeText(getScopedNodes(true),false))}
 // === OPML ===
@@ -15109,7 +15166,7 @@ let hideNodeTooltip=function(){};
   document.addEventListener('mousedown',()=>{ hoveredEl=null; tip.classList.remove('visible'); },true);
 })();
 el('editor-pane').addEventListener('drop',e=>{if(e.target.closest('.node-row'))return; const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); handleDrop(draggedId,null,'end')});
-document.addEventListener('paste',e=>{if(isControlTarget(e.target))return; if(editingId!==null)return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}} const parsed=parseTreeClipboardHtml(html); const fallback=parsed.length?parsed:parseTextToTreeNodes(text); if(!fallback.length)return; e.preventDefault(); pasteParsedNodes(fallback)});
+document.addEventListener('paste',e=>{if(isControlTarget(e.target))return; if(editingId!==null)return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}} const parsed=parseTreeClipboardHtml(html); const fallback=parsed.length?parsed:parseTextToTreeNodes(text); if(!fallback.length)return; e.preventDefault(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(fallback,undefined,clipExtras)});
 el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-row'))return; hideContextMenu(); e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,editorEmptyAreaContextItems())});
 el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,sidebarEmptyAreaContextItems())});
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,statusbarContextItems())});
