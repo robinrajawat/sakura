@@ -6876,6 +6876,18 @@ async function maybeAutoSnapshotBeforeSave(id){
 // doesn't re-write every diagram's XML/SVG to IndexedDB on every keystroke — only on saves
 // where a diagram actually changed since the last successful write.
 let _diagramBlobSyncCache={};
+// Unlike storageWriteFailed (localStorage quota — surfaced immediately, every time, since it's
+// common and self-explanatory), a diagram-blob write failure usually means IndexedDB itself is
+// unavailable or broken (disabled, strict private-browsing, storage wiped mid-session) — rarer,
+// and worth a one-time explanation rather than a toast on every single debounced autosave while
+// it stays broken. Resets the moment a write succeeds again, so a genuinely transient failure
+// doesn't leave a stale "still broken" impression.
+let diagramBlobWriteFailed=false;
+function warnDiagramBlobWriteFailed(){
+  if(diagramBlobWriteFailed)return;
+  diagramBlobWriteFailed=true;
+  showToast('Could not save diagram content — this browser\u2019s IndexedDB storage seems unavailable. Diagram metadata is still saving, but drawings themselves may be lost on reload.');
+}
 function saveToStorage(){
   try{
     if(!currentDocId)return;
@@ -6897,7 +6909,8 @@ function saveToStorage(){
       if(_diagramBlobSyncCache[d.id]!==d.modifiedAt){
         const syncedAt=d.modifiedAt;
         idbSet('diagblob:'+currentDocId+':'+d.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]})
-          .then(ok=>{ if(ok)_diagramBlobSyncCache[d.id]=syncedAt; }).catch(()=>{});
+          .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; diagramBlobWriteFailed=false;} else warnDiagramBlobWriteFailed(); })
+          .catch(()=>warnDiagramBlobWriteFailed());
       }
       return meta;
     });
@@ -8129,7 +8142,7 @@ async function deleteDiagram(id){
   // time this fires, an undo within the toast window has already put `removed` back into
   // `diagrams` in memory, but the blob itself is untouched until now regardless — this cleanup
   // is best-effort and only matters if Undo was NOT used.
-  setTimeout(()=>{ if(!diagrams.some(d=>d.id===id)) idbDelete('diagblob:'+currentDocId+':'+id).catch(()=>{}); },8000);
+  setTimeout(()=>{ if(!diagrams.some(d=>d.id===id)){ idbDelete('diagblob:'+currentDocId+':'+id).catch(()=>{}); delete _diagramBlobSyncCache[id]; } },8000);
 }
 
 // ── Full-screen editor (real draw.io via embed mode) ──────────────────────
