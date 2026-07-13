@@ -1315,13 +1315,14 @@ body.pad-diagrams-mode #pad-editor{display:none}
 .decision-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px;cursor:pointer;border-radius:8px;transition:background .12s}
 .decision-row-summary:hover{background:var(--hover)}
 .decision-row.expanded .decision-row-summary{background:var(--hover)}
-.decision-row-status{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;flex-shrink:0;margin-top:1px}
+.decision-row-status{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;flex-shrink:0}
 .decision-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .decision-row-status[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .decision-row-status[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .decision-row-status[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .decision-row-content{flex:1;min-width:0}
-.decision-row-node{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.decision-row-title-row{display:flex;align-items:center;gap:6px}
+.decision-row-node{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .decision-row-node.decision-row-node-warn{color:var(--fc-orange)}
 .decision-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .decision-row-meta{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:4px}
@@ -2769,6 +2770,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meeting-date-input.unset #meeting-date-input-label{color:var(--hint);font-style:italic}
 #meeting-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
 #meeting-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
+#meeting-add-link-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#meeting-add-link-btn:hover{color:var(--accent);background:var(--hover)}
 #meeting-attendees-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
 #meeting-attendees-chips{display:flex;flex-wrap:wrap;gap:5px}
 .meeting-attendee-chip{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:2px 4px 2px 9px}
@@ -20435,12 +20438,14 @@ function renderDecisionLogsList(){
     const anchorLabel=decisionLogAnchorLabel(dl);
     const nodeEl=document.createElement('div'); nodeEl.className='decision-row-node'; nodeEl.textContent=anchorLabel; nodeEl.title=anchorLabel;
     if(dl.anchorNodeId==null||!nodes.some(n=>n.id===dl.anchorNodeId))nodeEl.classList.add('decision-row-node-warn');
-    content.appendChild(nodeEl);
+    const titleRow=document.createElement('div'); titleRow.className='decision-row-title-row';
+    titleRow.appendChild(nodeEl); titleRow.appendChild(statusEl);
+    content.appendChild(titleRow);
     const snippetText=decisionRowSnippet(dl);
     if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='decision-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
     const metaBits=[]; if(dl.author)metaBits.push(dl.author); if(dl.timestamp)metaBits.push(qaFormatShortDate(dl.timestamp));
     if(metaBits.length){ const metaEl=document.createElement('div'); metaEl.className='decision-row-meta'; metaEl.textContent=metaBits.join(' · '); content.appendChild(metaEl); }
-    summary.appendChild(statusEl); summary.appendChild(content);
+    summary.appendChild(content);
     const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='decision-row-delete'; delBtn.dataset.tip='Delete decision log';
     delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteDecisionLog(dl.id); });
