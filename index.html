@@ -6904,9 +6904,18 @@ function saveToStorage(){
     // next load falls back to whatever was written before — never a corrupt diagram, and the
     // metadata (title, status, node link) is never at risk since that's in this same
     // synchronous write. See hydrateDiagramBlobsForDoc for the read side.
+    //
+    // Gating on `_hydrated` (not just "does xml exist") matters: right after a page load, a
+    // diagram's in-memory xml can briefly be the blank placeholder it had before
+    // hydrateDiagramBlobsForDoc finished fetching the real content. A save that fires in that
+    // window — any edit made quickly after opening the document — must NOT write that blank
+    // placeholder over the real, already-saved blob. Every diagram is _hydrated by the time its
+    // xml is trustworthy (immediately for ones created/edited this session, once
+    // hydrateDiagramBlobsForDoc finishes for ones freshly loaded from storage), so skipping
+    // un-hydrated diagrams here leaves their existing blob untouched until that's true.
     const diagramMeta=diagrams.map(d=>{
       const {xml,previewSvg,pageSvgs,_hydrated,...meta}=d;
-      if(_diagramBlobSyncCache[d.id]!==d.modifiedAt){
+      if(_hydrated&&_diagramBlobSyncCache[d.id]!==d.modifiedAt){
         const syncedAt=d.modifiedAt;
         idbSet('diagblob:'+currentDocId+':'+d.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]})
           .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; diagramBlobWriteFailed=false;} else warnDiagramBlobWriteFailed(); })
@@ -6960,6 +6969,7 @@ function loadDocFromStorage(id){
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
+    diagrams.forEach(dg=>{ if(dg&&dg.xml)dg._hydrated=true; });
     decisionLogs=Array.isArray(d.decisionLogs)?d.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null;
     hydrateDiagramBlobsForDoc(id);
     return true;
@@ -6967,24 +6977,29 @@ function loadDocFromStorage(id){
 }
 // Fills in each diagram's real xml/previewSvg/pageSvgs from the IndexedDB overflow store, in
 // the background, after loadDocFromStorage has already populated `diagrams` with lightweight
-// metadata from the (synchronous) localStorage read. A diagram whose blob hasn't arrived yet
-// just renders with whatever it already has for a moment — a brand-new one has nothing to show
-// regardless, and a legacy diagram saved before this split still has its xml/previewSvg inline
-// in that metadata already (no IndexedDB entry exists for it yet), so the `if(blob)` guard
-// below leaves it exactly as loaded rather than blanking it out. It gets split into the
-// overflow store automatically the next time this document is saved.
+// metadata from the (synchronous) localStorage read. Each diagram is marked `_hydrated` once
+// this has run for it (successfully or not) — saveToStorage checks that flag before writing a
+// diagram's blob, specifically so a save that fires while a diagram is still mid-hydration
+// writes nothing for it rather than overwriting real, previously-saved content with the blank
+// placeholder xml it started with. (An earlier version of this gated on "does it have xml"
+// instead, which doesn't distinguish "genuinely empty" from "hasn't loaded yet" — that gap let
+// exactly this kind of save-during-hydration race silently blank out a diagram's saved XML.)
+// A legacy diagram saved before this split already has its xml/previewSvg inline from the
+// synchronous read (see loadDocFromStorage, which marks those _hydrated immediately) and never
+// reaches this function at all.
 async function hydrateDiagramBlobsForDoc(id){
-  const targets=diagrams.filter(dg=>dg&&!dg.xml);
+  const targets=diagrams.filter(dg=>dg&&!dg._hydrated);
   if(!targets.length)return;
   let changed=false;
   for(const dgMeta of targets){
     if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
     let blob;
-    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); }catch(e){ continue; }
+    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); }
+    catch(e){ warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
     if(currentDocId!==id)return;
-    if(!blob)continue;
     const live=diagrams.find(dg=>dg.id===dgMeta.id); if(!live)continue;
-    live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[];
+    if(blob){ live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
+    live._hydrated=true;
     changed=true;
   }
   if(changed&&currentDocId===id){ renderDiagramsList(); render(); }
@@ -8081,7 +8096,7 @@ function createDiagram(){
 
   if(!padDiagramsTabEnabled)return;
   ensureDocumentForEditing();
-  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now()};
+  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now(),_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
@@ -8102,7 +8117,12 @@ function cloneDiagramRecord(src){
     note:src.note||'',
     anchorNodeId:src.anchorNodeId??null,
     createdAt:Date.now(),
-    modifiedAt:Date.now()
+    modifiedAt:Date.now(),
+    // If the source hasn't finished hydrating from the overflow store yet (see
+    // hydrateDiagramBlobsForDoc), its xml above may be a stale placeholder rather than the
+    // real content — the clone inherits that same untrustworthy state rather than being
+    // marked trustworthy by default, so saveToStorage won't write a blank blob for it either.
+    _hydrated:!!src._hydrated
   };
 }
 function duplicateDiagram(id){
@@ -13474,7 +13494,7 @@ function addDiagramFromXml(xml){
   ensureDocumentForEditing();
   const preferredNodeId=(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
   const ts=Date.now();
-  const d={id:newDiagramId(),title:'',xml,previewSvg:'',pageSvgs:[],pageCount:splitMxfilePages(xml).length,status:'draft',note:'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts};
+  const d={id:newDiagramId(),title:'',xml,previewSvg:'',pageSvgs:[],pageCount:splitMxfilePages(xml).length,status:'draft',note:'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts,_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   if(!padOpen)setPadOpen(true);
@@ -13491,7 +13511,7 @@ function addDiagramFromSakuraPayload(payload){
   ensureDocumentForEditing();
   const preferredNodeId=(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
   const ts=Date.now();
-  const d={id:newDiagramId(),title:payload.title||'',xml:payload.xml||'',previewSvg:payload.previewSvg||'',pageSvgs:Array.isArray(payload.pageSvgs)?payload.pageSvgs.map(p=>({...p})):[],pageCount:payload.pageCount||1,status:payload.status||'draft',note:payload.note||'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts};
+  const d={id:newDiagramId(),title:payload.title||'',xml:payload.xml||'',previewSvg:payload.previewSvg||'',pageSvgs:Array.isArray(payload.pageSvgs)?payload.pageSvgs.map(p=>({...p})):[],pageCount:payload.pageCount||1,status:payload.status||'draft',note:payload.note||'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts,_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   if(!padOpen)setPadOpen(true);
