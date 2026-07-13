@@ -2784,12 +2784,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-row-attendee-chip{font:400 10px 'Inter',sans-serif;color:var(--hint);background:color-mix(in srgb,var(--muted) 14%,transparent);border-radius:999px;padding:1px 6px}
 .meeting-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meeting-row-progress{font:500 10px 'Inter',sans-serif;color:var(--accent);flex-shrink:0}
+.meeting-row-time{font:500 10px 'Inter',sans-serif;color:var(--muted);flex-shrink:0}
 .meeting-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
 .meeting-row-summary:hover .meeting-row-delete{opacity:1}
 .meeting-row-delete:hover{color:var(--fc-red);background:var(--hover)}
 .meeting-row-expand-slot{padding:0 6px 10px}
 
-#meeting-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#meeting-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 #meeting-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
 #meeting-title-input:hover{background:var(--hover)}
 #meeting-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
@@ -2797,6 +2798,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meeting-date-input:hover{border-color:var(--accent);color:var(--accent)}
 #meeting-date-input.set{color:var(--fg);border-color:var(--border)}
 #meeting-date-input.unset #meeting-date-input-label{color:var(--hint);font-style:italic}
+#meeting-time-input{appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;flex:0 0 auto;cursor:pointer;color-scheme:light dark;transition:border-color .12s,color .12s,background .12s}
+#meeting-time-input:hover{border-color:var(--accent)}
+#meeting-time-input:focus{border-color:var(--accent)}
 #meeting-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
 #meeting-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
 #meeting-add-link-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
@@ -2897,11 +2901,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-resize-handle:hover::after,#meetings-resize-handle.dragging::after{opacity:1}
 #meetings-panel.maximized #meetings-resize-handle{display:none}
 #meetings-panel.dragging{user-select:none}
-#meetings-toggle.is-active,#todos-toggle.is-active{color:var(--accent);border-color:var(--accent)}
-#status-util-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
-#status-util-group .dock-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));background:transparent;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
-#status-util-group .dock-btn:hover{color:var(--accent);border-color:var(--accent)}
-#status-util-group .dock-btn.is-active{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#status-util-group{display:flex;align-items:center;gap:1px;flex-shrink:0;background:color-mix(in srgb,var(--accent) 9%,transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border));border-radius:999px;padding:2px}
+#status-util-group .dock-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;transition:color .12s,background .12s}
+#status-util-group .dock-btn:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#status-util-group .dock-btn.is-active{color:#fff;background:var(--accent)}
 #status-util-group .dock-btn svg{flex-shrink:0}
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
@@ -4504,7 +4507,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>To-Dos</h4>
 <ul>
 <li>An app-level task list — not tied to any document, node, or Pad. One shared list across your whole workspace</li>
-<li>Open it from the app bar (or the status bar, if you've moved it there) with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">U</span>; the same shortcut closes it again</li>
+<li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">U</span>; the same shortcut closes it again</li>
 <li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen); the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> button next to it exports the whole list as plain text</li>
 <li>Type a task and press Enter (or use the + button) to add it — the box grows as you type so long tasks stay readable. Shift+Enter inserts a line break instead of adding the task, both here and while editing an existing task's text</li>
 <li>The clock icon next to Export opens <strong>Version History</strong> for the whole list — same idea as a document's Version History, kept separately since To-Dos isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first, so restoring is never itself destructive) — keeps the last 20 versions, app-wide</li>
@@ -4532,9 +4535,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Meeting Notes</h4>
 <ul>
 <li>An app-level meeting log — not tied to any document. One shared list across your whole workspace, same idea as To-Dos</li>
-<li>Open it from the app bar (or the status bar, if you've moved it there) with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>; the same shortcut closes it again</li>
+<li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>; the same shortcut closes it again</li>
 <li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> to add a blank meeting note, or the layout icon next to it for <strong>New from template</strong> — Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, or Retrospective, each pre-filling the title/Agenda/Notes fields (and a starter action item, for the templates that call for one) so you're not starting from nothing. Either way it opens expanded and ready to type into immediately. Notes are listed newest first, click any row to expand it in place and edit it, click again (or click another row) to fold it back up</li>
-<li>Each note has a title, date, attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
+<li>Each note has a title, date, an optional start time and duration (shown together on the row as e.g. "2:30–3:30 PM"), attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label), and a list of action items</li>
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
@@ -5133,6 +5136,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="meeting-card-top-row">
         <input id="meeting-title-input" type="text" placeholder="Meeting title" maxlength="160" autocomplete="off" />
         <button type="button" id="meeting-date-input" aria-label="Meeting date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="meeting-date-input-label">Set date</span></button>
+        <input type="time" id="meeting-time-input" aria-label="Meeting time" data-tip="Start time" />
+        <span class="select-wrap"><select id="meeting-duration-select" class="select" style="width:auto" aria-label="Meeting duration" data-tip="Duration"><option value="0">No duration</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hr</option><option value="90">1.5 hr</option><option value="120">2 hr</option><option value="150">2.5 hr</option><option value="180">3 hr</option></select><svg class="select-arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
         <button type="button" id="meeting-delete-btn" data-tip="Delete meeting note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div>
       <div id="meeting-attendees-row">
@@ -29182,6 +29187,8 @@ function normalizeMeetingNote(m){
     id:(m&&typeof m.id==='string')?m.id:mnUid(),
     title:(m&&typeof m.title==='string')?m.title:'',
     date:(m&&typeof m.date==='string')?m.date:'',
+    time:(m&&typeof m.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(m.time))?m.time:'',
+    durationMin:(m&&[0,15,30,45,60,90,120,150,180].includes(Number(m.durationMin)))?Number(m.durationMin):0,
     attendees:(m&&Array.isArray(m.attendees))?m.attendees.filter(a=>typeof a==='string'&&a.trim()).map(a=>a.trim()):[],
     agenda:(m&&typeof m.agenda==='string')?m.agenda:'',
     body:(m&&typeof m.body==='string')?m.body:'',
@@ -29358,6 +29365,17 @@ function formatMeetingDateChip(dateStr){
   if(isNaN(d.getTime()))return '<span class="mrd-day">—</span>';
   return esc(d.toLocaleDateString(undefined,{month:'short'}))+'<span class="mrd-day">'+d.getDate()+'</span>';
 }
+function formatMeetingTimeLabel(time,durationMin){
+  if(!time)return '';
+  const [h,mi]=time.split(':').map(Number);
+  const d=new Date(2000,0,1,h,mi);
+  let label=d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  if(durationMin>0){
+    const endD=new Date(d.getTime()+durationMin*60000);
+    label+='–'+endD.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  }
+  return label;
+}
 function toggleMeetingExpanded(id){
   meetingExpandedId=(meetingExpandedId===id)?null:id;
   renderMeetingsList();
@@ -29500,6 +29518,8 @@ function buildMeetingRowSummary(m){
   const titleEl=document.createElement('div'); titleEl.className='meeting-row-title'; titleEl.textContent=m.title||'';
   content.appendChild(titleEl);
   const metaEl=document.createElement('div'); metaEl.className='meeting-row-meta';
+  const timeLabel=formatMeetingTimeLabel(m.time,m.durationMin);
+  if(timeLabel){ const timeChip=document.createElement('span'); timeChip.className='meeting-row-time'; timeChip.textContent=timeLabel; metaEl.appendChild(timeChip); }
   (m.attendees||[]).slice(0,3).forEach(a=>{ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent=a; metaEl.appendChild(chip); });
   if((m.attendees||[]).length>3){ const chip=document.createElement('span'); chip.className='meeting-row-attendee-chip'; chip.textContent='+'+(m.attendees.length-3); metaEl.appendChild(chip); }
   if((m.actionItems||[]).length){
@@ -29610,6 +29630,8 @@ function populateMeetingCard(m){
   if(_meetingCardUndoId!==m.id){ meetingFieldSessionUndo={}; _meetingFieldCheckpointPending={}; _meetingCardUndoId=m.id; }
   const titleInput=el('meeting-title-input'); if(titleInput)titleInput.value=m.title||'';
   updateMeetingDateButton(m);
+  const timeInput=el('meeting-time-input'); if(timeInput)timeInput.value=m.time||'';
+  const durationSelect=el('meeting-duration-select'); if(durationSelect)durationSelect.value=String(m.durationMin||0);
   const agendaField=el('meeting-agenda'); if(agendaField)agendaField.innerHTML=sakuraSanitizeRichHtml(m.agenda||'');
   const bodyField=el('meeting-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(m.body||'');
   renderMeetingAttendees(m);
@@ -29620,6 +29642,22 @@ function populateMeetingCard(m){
 el('meeting-title-input')?.addEventListener('input',()=>{
   const m=findMeeting(meetingExpandedId); if(!m)return;
   m.title=el('meeting-title-input').value; m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  refreshMeetingRowInList(m);
+});
+el('meeting-time-input')?.addEventListener('change',()=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  const val=el('meeting-time-input').value;
+  m.time=/^([01]\d|2[0-3]):[0-5]\d$/.test(val)?val:'';
+  m.modifiedAt=Date.now();
+  saveMeetingNotes();
+  refreshMeetingRowInList(m);
+});
+el('meeting-duration-select')?.addEventListener('change',()=>{
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  const val=Number(el('meeting-duration-select').value);
+  m.durationMin=[0,15,30,45,60,90,120,150,180].includes(val)?val:0;
+  m.modifiedAt=Date.now();
   saveMeetingNotes();
   refreshMeetingRowInList(m);
 });
