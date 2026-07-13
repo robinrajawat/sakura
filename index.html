@@ -2624,6 +2624,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-row:hover .todo-subtask-delete{opacity:1}
 .todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.todo-subtask-rewrite{appearance:none;border:none;background:none;color:var(--accent);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.todo-subtask-row:hover .todo-subtask-rewrite{opacity:.7}
+.todo-subtask-rewrite:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.todo-subtask-rewrite.ai-busy{opacity:.45!important;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .todo-subtask-input-row{margin-top:3px;display:flex;align-items:center;gap:6px}
 .todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;font-family:var(--content-font);padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
 .todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
@@ -2882,12 +2886,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-panel.maximized #meetings-resize-handle{display:none}
 #meetings-panel.dragging{user-select:none}
 #meetings-toggle.is-active,#todos-toggle.is-active{color:var(--accent);border-color:var(--accent)}
-#util-dock{position:fixed;right:16px;bottom:16px;z-index:90;display:flex;align-items:center;gap:8px;pointer-events:none}
-#util-dock .dock-btn{pointer-events:auto;appearance:none;display:inline-flex;align-items:center;gap:6px;padding:8px 14px 8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.12);transition:border-color .12s,color .12s,transform .12s,box-shadow .12s}
-#util-dock .dock-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,0,0,.16)}
-#util-dock .dock-btn.is-active{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--bg))}
-#util-dock .dock-btn svg{flex-shrink:0}
-#util-dock .dock-btn-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;padding:0 3px;border-radius:999px;background:var(--sem-alert,#b85450);color:#fff;font:600 9.5px 'Inter',sans-serif;line-height:1}
+#status-util-group{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-left:10px;margin-left:2px;border-left:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border))}
+#status-util-group .dock-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));background:transparent;color:inherit;font:inherit;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
+#status-util-group .dock-btn:hover{color:var(--accent);border-color:var(--accent)}
+#status-util-group .dock-btn.is-active{color:var(--accent);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#status-util-group .dock-btn svg{flex-shrink:0}
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
 /* Status summary highlighting: reuses the exact colors from the row chips
@@ -4973,7 +4976,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -5173,11 +5176,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div class="due-pop-footer">
     <button type="button" class="due-pop-clear-btn" id="meeting-date-pop-clear-btn">Clear date</button>
   </div>
-</div>
-
-<div id="util-dock">
-  <button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Meetings</span></button>
-  <button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>To-Dos</span></button>
 </div>
 
 <div id="diagram-editor-overlay" role="dialog" aria-modal="true" aria-label="Diagram editor">
@@ -26820,7 +26818,19 @@ function _addTagPopoverFromInput(){
       };
       inp.addEventListener('input', updateCount);
       inp.addEventListener('keydown',e=>{
-        if(e.key==='Enter'){ e.preventDefault(); addSubtask(inp.getAttribute('data-id'), inp.value); }
+        if(e.key==='Enter'){
+          e.preventDefault();
+          const parentId=inp.getAttribute('data-id'), text=inp.value;
+          // Clear before calling addSubtask — addSubtask's own renderTodos() call rebuilds this
+          // row and, at the top of that render, checks for an unsaved subtask draft still
+          // focused with text in it (a safety net for a *different* case: the row getting torn
+          // down mid-typing by some other action). Leaving this input non-empty here made that
+          // safety net mistake "already submitted, about to be cleared" for "abandoned draft"
+          // and call addSubtask() a second time with the same text — a duplicate subtask per
+          // Enter press.
+          inp.value='';
+          addSubtask(parentId, text);
+        }
         else if(e.key==='Escape'){ e.preventDefault(); inp.value=''; inp.blur(); }
       });
       inp.addEventListener('blur',()=>{
@@ -26835,6 +26845,9 @@ function _addTagPopoverFromInput(){
     });
     body.querySelectorAll('.todo-subtask-delete').forEach(btn=>{
       btn.addEventListener('click',()=>deleteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
+    });
+    body.querySelectorAll('.todo-subtask-rewrite').forEach(btn=>{
+      btn.addEventListener('click',()=>rewriteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
     });
     body.querySelectorAll('.todo-row').forEach(row=>{
       row.addEventListener('contextmenu', e=>{
@@ -27106,6 +27119,7 @@ function _addTagPopoverFromInput(){
         html+=`<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
           +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
           +`<span class="todo-subtask-text${s.done?' completed':''}">${esc(s.text)}</span>`
+          +`<button type="button" class="todo-subtask-rewrite" data-parent="${t.id}" data-sub="${s.id}" data-tip="Rewrite with AI" aria-label="Rewrite subtask with AI"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>`
           +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
         +`</div>`;
       });
@@ -27667,6 +27681,32 @@ function _addTagPopoverFromInput(){
       if(btn) btn.classList.remove('ai-busy');
     }
   }
+  // Same shape as rewriteTodo above, just operating on one subtask's short text instead of the
+  // parent task's — its own button (see .todo-subtask-rewrite) so a bad rewrite only touches
+  // that one step, not the whole checklist.
+  async function rewriteSubtask(parentId, subId){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t||!t.subtasks) return;
+    const s=t.subtasks.find(x=>x.id===subId);
+    if(!s) return;
+    if(typeof callAiRaw!=='function'){ showTodosToast('AI is not available'); return; }
+    const body=document.getElementById('todos-body');
+    const btn=body?.querySelector(`.todo-subtask-rewrite[data-parent="${parentId}"][data-sub="${subId}"]`);
+    if(btn) btn.classList.add('ai-busy');
+    try{
+      const basePrompt=(typeof aiRewritePrompt==='string'&&aiRewritePrompt) ? aiRewritePrompt : 'Rewrite the following text to be clearer and more concise, keeping the same meaning.';
+      const prompt=basePrompt+'\n\nText: '+s.text;
+      const maxTok=(typeof aiMaxTokens==='number')?aiMaxTokens:1024;
+      const result=await callAiRaw(prompt, maxTok);
+      if(!result) throw new Error('Empty response from AI');
+      s.text=String(result).trim().slice(0,300);
+      saveTodos();
+      renderTodos();
+    }catch(e){
+      showTodosToast('AI rewrite failed: '+(e.message||'unknown error'));
+      if(btn) btn.classList.remove('ai-busy');
+    }
+  }
 
   // ── AI capabilities (configurable in Settings → AI → To-Dos AI) ─────────
   // All three reuse the same provider/key/AI Capabilities gate as Rewrite above — see
@@ -28217,9 +28257,9 @@ function _addTagPopoverFromInput(){
   }
 
   // ── Settings: dock visibility (feature toggle), expiry, cap ─
-  // The To-Dos button now lives permanently in #util-dock (bottom-right, alongside Meetings)
-  // rather than choosing between the app bar and status bar — this only toggles it hidden when
-  // the feature itself is off.
+  // The To-Dos button now lives permanently in its own separated group at the end of the
+  // status bar (alongside Meetings) rather than choosing between the app bar and status bar —
+  // this only toggles it hidden when the feature itself is off.
   function applyTodosLocation(){
     const dockBtn=document.getElementById('todos-toggle');
     const hideAll = !settings.featureEnabled;
@@ -30093,7 +30133,7 @@ document.addEventListener('mousedown',e=>{
 },true);
 
 // ── Dock anchoring, drag & resize — same pattern as To-Dos' own (see anchorTodosToStatusbarChip
-// etc.), now that both live permanently in #util-dock instead of choosing between an app bar
+// etc.), now that both live permanently in #status-util-group instead of choosing between an app bar
 // button and a status bar chip. Kept as this module's own parallel implementation (not shared
 // code) since To-Dos' versions live inside that module's own closure.
 const MEETINGS_SETTINGS_KEY='sakura_meetings_settings_v1';
