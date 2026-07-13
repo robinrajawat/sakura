@@ -12736,7 +12736,7 @@ function mdRunsToText(runs){
 }
 // Converts rich-text HTML into Markdown blocks: real headings (#-######), bullet/numbered lists,
 // and inline formatting via mdRunsToText above. Mirrors rtfBlocksFromHtml's structure/behavior.
-function mdBlocksFromHtml(html){
+function mdBlocksFromHtml(html,headingOffset){
   const container=document.createElement('div');
   container.innerHTML=(typeof sakuraSanitizeRichHtml==='function'?sakuraSanitizeRichHtml(html||''):(html||''));
   let out='';
@@ -12760,7 +12760,12 @@ function mdBlocksFromHtml(html){
         out+='\n';
       } else if(/^h[1-6]$/.test(tag)){
         const text=mdRunsToText(rtfCollectRuns(child)).trim();
-        if(text)out+='#'.repeat(Number(tag[1]))+' '+text+'\n\n';
+        // Headings the person actually typed inside a note (Agenda/Notes body) shouldn't come
+        // out the same size as the export's own title/section headings — headingOffset nudges
+        // them down a level or two so they nest visually under those, capped at H6 (Markdown's
+        // smallest) rather than silently doing nothing past that point.
+        const level=Math.min(6,Number(tag[1])+(headingOffset||0));
+        if(text)out+='#'.repeat(level)+' '+text+'\n\n';
       } else if(tag==='p'||tag==='div'){
         walk(child);
       } else {
@@ -21334,7 +21339,7 @@ function exportQaText(){
   if(!qaItems.some(it=>(it.question||'').trim())){ showToast('No Q&A rows to export yet'); return; }
   const title=(getMeta().title||'tree');
   const valid=qaItems.filter(it=>(it.question||'').trim());
-  let body='# '+escMd(title)+' — Q&A\n\n';
+  let body='## '+escMd(title)+' — Q&A\n\n';
   valid.forEach(it=>{
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
@@ -28847,7 +28852,7 @@ function _addTagPopoverFromInput(){
   // ── Plain text export — the To-Dos list only, nothing else in the app ───
   function exportTodosAsText(){
     const {open, done}=getVisibleTodos();
-    let body='# To-Dos\n\n';
+    let body='## To-Dos\n\n';
     function taskLine(t,isDone){
       const box=isDone?'\u2611':'\u2610';
       const bits=[];
@@ -28864,10 +28869,10 @@ function _addTagPopoverFromInput(){
         body+='  - '+sbox+' '+(s.done?'~~'+stext+'~~':stext)+'\n';
       });
     }
-    body+='## Open ('+open.length+')\n\n';
+    body+='### Open ('+open.length+')\n\n';
     if(!open.length) body+='*(none)*\n\n';
     open.forEach(t=>taskLine(t,false));
-    body+='\n## Completed ('+done.length+')\n\n';
+    body+='\n### Completed ('+done.length+')\n\n';
     if(!done.length) body+='*(none)*\n\n';
     done.forEach(t=>taskLine(t,true));
     downloadMd('To-Dos.md', body);
@@ -29627,22 +29632,22 @@ function formatMeetingTimeLabel(time){
 // viewer) renders that syntax as real formatting; elsewhere it still reads cleanly as plain text.
 function exportSingleMeetingAsText(m){
   if(!m)return;
-  let body='# '+escMd(m.title||'Untitled meeting')+'\n\n';
+  let body='## '+escMd(m.title||'Untitled meeting')+'\n\n';
   const metaBits=[];
   if(m.date) metaBits.push(formatMeetingDateLabel(m.date));
   if(m.time) metaBits.push(formatMeetingTimeLabel(m.time));
   if(m.attendees&&m.attendees.length) metaBits.push('Attendees: '+m.attendees.join(', '));
   if(metaBits.length) body+='*'+escMd(metaBits.join('   •   '))+'*\n\n';
   if(m.agenda&&stripHtmlToText(m.agenda).trim()){
-    body+='## Agenda\n\n';
-    body+=mdBlocksFromHtml(m.agenda)+'\n';
+    body+='### Agenda\n\n';
+    body+=mdBlocksFromHtml(m.agenda,2)+'\n';
   }
   if(m.body&&stripHtmlToText(m.body).trim()){
-    body+='## Notes\n\n';
-    body+=mdBlocksFromHtml(m.body)+'\n';
+    body+='### Notes\n\n';
+    body+=mdBlocksFromHtml(m.body,2)+'\n';
   }
   if(m.actionItems&&m.actionItems.length){
-    body+='## Action Items\n\n';
+    body+='### Action Items\n\n';
     m.actionItems.forEach(it=>{
       const box=it.done?'\u2611':'\u2610';
       const text=escMd(it.text||'');
@@ -29651,7 +29656,7 @@ function exportSingleMeetingAsText(m){
     body+='\n';
   }
   if(m.links&&m.links.length){
-    body+='## Linked Nodes\n\n';
+    body+='### Linked Nodes\n\n';
     m.links.forEach(link=>{
       const info=meetingLinkResolve(link);
       const label=info.missing?'(missing)':(link.nodeId==null?(info.docTitle||'Untitled'):(info.text||'(untitled node)'));
