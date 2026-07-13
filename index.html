@@ -2815,6 +2815,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
 #meetings-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 #meetings-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#meetings-panel.statusbar-anchored{top:auto!important;bottom:40px;right:16px}
+#meetings-toggle.is-active,#sb-meetings-chip.is-active{color:var(--accent);border-color:var(--accent)}
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
 /* Status summary highlighting: reuses the exact colors from the row chips
@@ -3282,6 +3284,12 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Automatically delete completed tasks after this long. "Never" keeps them until you delete them yourself.</span></div><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep at most</span><span class="settings-row-desc">Once completed tasks exceed this count, the oldest completions are dropped first. "No limit" keeps everything until expiry or manual delete.</span></div><select id="todos-cap-select" class="select" style="width:auto"><option value="0">No limit</option><option value="10">10 tasks</option><option value="25">25 tasks</option><option value="50">50 tasks</option><option value="100">100 tasks</option></select></div>
+            </div>
+          </div>
+          <div class="settings-section" data-cat="panels" id="settings-section-meetings">
+            <div class="settings-section-title">Meeting Notes</div>
+            <div class="settings-list">
+              <div class="settings-list-row" id="meetings-location-row"><div class="settings-row-text"><span class="settings-switch-text">Dock in status bar</span><span class="settings-row-desc" id="meetings-location-desc">Move the Meetings button down into the status bar instead of the app bar.</span></div><button id="meetings-location-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Dock Meeting Notes in the status bar instead of the app bar"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="toolbar">
@@ -4879,7 +4887,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-todos-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-todos-chip" class="status-chip status-chip-btn" data-tip="To-Dos (Ctrl/Cmd+Shift+U)" style="display:none">To-Dos</button><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-todos-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-todos-chip" class="status-chip status-chip-btn" data-tip="To-Dos (Ctrl/Cmd+Shift+U)" style="display:none">To-Dos</button><span id="sb-meetings-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-meetings-chip" class="status-chip status-chip-btn" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)" style="display:none">Meetings</button><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -20440,7 +20448,7 @@ function renderDecisionLogsList(){
   if(decisionExpandedId!=null){
     const slot=list.querySelector('.decision-row-expand-slot');
     const dl=findDecisionLog(decisionExpandedId);
-    if(slot&&card&&dl){ slot.appendChild(card); card.style.display=''; populateDecisionCard(dl); }
+    if(slot&&card&&dl){ slot.appendChild(card); card.style.display='block'; populateDecisionCard(dl); }
   }
 }
 function renderDecisionQuicknav(dl){
@@ -28822,11 +28830,13 @@ function findMeeting(id){ return meetingNotes.find(m=>m.id===id); }
 function openMeetingsPanel(){
   meetingsPanelOpen=true;
   el('meetings-panel')?.classList.add('open');
+  document.querySelectorAll('#meetings-toggle,#sb-meetings-chip').forEach(b=>b.classList.add('is-active'));
   renderMeetingsList();
 }
 function closeMeetingsPanel(){
   meetingsPanelOpen=false;
   el('meetings-panel')?.classList.remove('open');
+  document.querySelectorAll('#meetings-toggle,#sb-meetings-chip').forEach(b=>b.classList.remove('is-active'));
   closeMeetingLinkPopover();
 }
 function toggleMeetingsPanel(){
@@ -28999,7 +29009,7 @@ function renderMeetingsList(){
   if(meetingExpandedId!=null){
     const slot=list.querySelector('.meeting-row-expand-slot');
     const m=findMeeting(meetingExpandedId);
-    if(slot&&card&&m){ slot.appendChild(card); card.style.display=''; populateMeetingCard(m); }
+    if(slot&&card&&m){ slot.appendChild(card); card.style.display='block'; populateMeetingCard(m); }
   }
 }
 
@@ -29327,11 +29337,54 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('mousedown',e=>{
   const panel=el('meetings-panel');
   const toggleBtn=el('meetings-toggle');
+  const sbBtn=el('sb-meetings-chip');
   if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
-  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!(toggleBtn&&toggleBtn.contains(e.target))){
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||(sbBtn&&sbBtn.contains(e.target));
+  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeMeetingsPanel();
   }
 },true);
+
+// ── App bar vs status bar placement — same idea as To-Dos' own location toggle, simplified
+// since this panel doesn't drag/resize: instead of live-anchoring to the chip's exact
+// position, it just rests at a fixed bottom-right spot near the status bar instead of its
+// usual top-right one.
+const MEETINGS_SETTINGS_KEY='sakura_meetings_settings_v1';
+let meetingsLocation='appbar';
+function loadMeetingsSettings(){
+  try{
+    const raw=localStorage.getItem(MEETINGS_SETTINGS_KEY);
+    if(raw){ const d=JSON.parse(raw); meetingsLocation=d.location==='statusbar'?'statusbar':'appbar'; }
+  }catch(e){}
+}
+function saveMeetingsSettings(){
+  try{ localStorage.setItem(MEETINGS_SETTINGS_KEY, JSON.stringify({location:meetingsLocation})); }catch(e){}
+}
+function applyMeetingsLocation(){
+  const appbarBtn=el('meetings-toggle');
+  const sbDivider=el('sb-meetings-divider');
+  const sbBtn=el('sb-meetings-chip');
+  const inStatusbar=meetingsLocation==='statusbar';
+  if(appbarBtn)appbarBtn.style.display=inStatusbar?'none':'';
+  if(sbDivider)sbDivider.style.display=inStatusbar?'':'none';
+  if(sbBtn)sbBtn.style.display=inStatusbar?'':'none';
+  el('meetings-panel')?.classList.toggle('statusbar-anchored',inStatusbar);
+}
+function setMeetingsLocation(loc){
+  meetingsLocation=loc==='statusbar'?'statusbar':'appbar';
+  saveMeetingsSettings();
+  applyMeetingsLocation();
+  const toggle=el('meetings-location-toggle');
+  if(toggle){ toggle.classList.toggle('on',meetingsLocation==='statusbar'); toggle.setAttribute('aria-checked',String(meetingsLocation==='statusbar')); }
+}
+el('sb-meetings-chip')?.addEventListener('click',toggleMeetingsPanel);
+el('meetings-location-toggle')?.addEventListener('click',()=>setMeetingsLocation(meetingsLocation==='statusbar'?'appbar':'statusbar'));
+loadMeetingsSettings();
+applyMeetingsLocation();
+{
+  const toggle=el('meetings-location-toggle');
+  if(toggle){ toggle.classList.toggle('on',meetingsLocation==='statusbar'); toggle.setAttribute('aria-checked',String(meetingsLocation==='statusbar')); }
+}
 
 loadMeetingNotes();
 window.toggleMeetingsPanel=toggleMeetingsPanel;
