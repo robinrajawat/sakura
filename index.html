@@ -4567,7 +4567,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Each note has a title, date, and an optional time of day (shown on the row next to the date, e.g. "2:30 PM") — just a quick time reference, not a full scheduling system, so there's no separate end time or duration to fill in. Below that: attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label). Highlight any text in either field and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight (a yellow inline highlight, click again on already-highlighted text to remove it), Link, and Rewrite (AI, rewrites just the highlighted phrase); Link and Rewrite have no other way in from these two fields' own fixed toolbar. Settings → Editing → "Selection formatting popover" turns this off if it's not wanted. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> in the title, attendees, Agenda, Notes, or any action item field opens a small character-insert menu (em dash, en dash, arrow, check mark, cross mark, middle dot, date/time) — the same mini menu Node Quick Assist uses elsewhere, restricted to what makes sense outside outline editing. Below the fields sits a list of action items</li>
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
-<li>Export a single meeting note as formatted text (download icon on hover, next to trash) — a .md file using Markdown syntax (**bold**, *italic*, ~~strikethrough~~, bullets, links) carried over from what you typed, not flattened to bare plain text. The title and section labels (Agenda, Notes, Action Items, Linked Nodes) are bold text rather than Markdown headings — headings rendered oversized in Notepad's formatted view, so only genuine headings you actually typed inside Agenda/Notes are kept as real Markdown headings, and even those are capped down a couple of levels rather than reproduced 1:1. Windows 11's modern Notepad and other Markdown-aware apps render this as real formatting — Notepad specifically only keeps that rendering on save if the file is named .md, so that's the extension used here rather than .txt. Action items come through as a checklist (completed ones struck through), and linked nodes/documents as a plain list. To-Dos' own list export and Q&amp;A's own export use the same approach</li>
+<li>Export a single meeting note as formatted text (download icon on hover, next to trash) — a .md file using Markdown syntax (headings, **bold**, *italic*, ~~strikethrough~~, bullets, links) carried over from what you typed, not flattened to bare plain text. The title and section labels (Agenda, Notes, Action Items, Linked Nodes) use the smallest Markdown heading level (H6 — "Subsection" in Windows 11 Notepad's own heading dropdown), so they still read as real headings rather than plain body text, without the oversized look a top-level heading gets in Notepad's formatted view. Genuine headings you actually typed inside Agenda/Notes are kept as real Markdown headings too, nudged down toward that same small end of the scale rather than reproduced at their original (often much larger) level. Windows 11's modern Notepad and other Markdown-aware apps render this as real formatting — Notepad specifically only keeps that rendering on save if the file is named .md, so that's the extension used here rather than .txt. Action items come through as a checklist (completed ones struck through), and linked nodes/documents as a plain list. To-Dos' own list export and Q&amp;A's own export use the same approach</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
 <li>The clock icon in the panel header opens <strong>Version history</strong> for the whole list — same idea as To-Dos' own, kept separately since Meeting Notes isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
 <li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
@@ -21391,7 +21391,7 @@ function exportQaText(){
   if(!qaItems.some(it=>(it.question||'').trim())){ showToast('No Q&A rows to export yet'); return; }
   const title=(getMeta().title||'tree');
   const valid=qaItems.filter(it=>(it.question||'').trim());
-  let body='**'+escMd(title)+' — Q&A**\n\n';
+  let body='###### '+escMd(title)+' — Q&A\n\n';
   valid.forEach(it=>{
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
@@ -28904,7 +28904,7 @@ function _addTagPopoverFromInput(){
   // ── Plain text export — the To-Dos list only, nothing else in the app ───
   function exportTodosAsText(){
     const {open, done}=getVisibleTodos();
-    let body='**To-Dos**\n\n';
+    let body='###### To-Dos\n\n';
     function taskLine(t,isDone){
       const box=isDone?'\u2611':'\u2610';
       const bits=[];
@@ -28921,10 +28921,10 @@ function _addTagPopoverFromInput(){
         body+='  - '+sbox+' '+(s.done?'~~'+stext+'~~':stext)+'\n';
       });
     }
-    body+='**Open ('+open.length+')**\n\n';
+    body+='###### Open ('+open.length+')\n\n';
     if(!open.length) body+='*(none)*\n\n';
     open.forEach(t=>taskLine(t,false));
-    body+='\n**Completed ('+done.length+')**\n\n';
+    body+='\n###### Completed ('+done.length+')\n\n';
     if(!done.length) body+='*(none)*\n\n';
     done.forEach(t=>taskLine(t,true));
     downloadMd('To-Dos.md', body);
@@ -29684,22 +29684,22 @@ function formatMeetingTimeLabel(time){
 // viewer) renders that syntax as real formatting; elsewhere it still reads cleanly as plain text.
 function exportSingleMeetingAsText(m){
   if(!m)return;
-  let body='**'+escMd(m.title||'Untitled meeting')+'**\n\n';
+  let body='###### '+escMd(m.title||'Untitled meeting')+'\n\n';
   const metaBits=[];
   if(m.date) metaBits.push(formatMeetingDateLabel(m.date));
   if(m.time) metaBits.push(formatMeetingTimeLabel(m.time));
   if(m.attendees&&m.attendees.length) metaBits.push('Attendees: '+m.attendees.join(', '));
   if(metaBits.length) body+='*'+escMd(metaBits.join('   •   '))+'*\n\n';
   if(m.agenda&&stripHtmlToText(m.agenda).trim()){
-    body+='**Agenda**\n\n';
-    body+=mdBlocksFromHtml(m.agenda,2)+'\n';
+    body+='###### Agenda\n\n';
+    body+=mdBlocksFromHtml(m.agenda,4)+'\n';
   }
   if(m.body&&stripHtmlToText(m.body).trim()){
-    body+='**Notes**\n\n';
-    body+=mdBlocksFromHtml(m.body,2)+'\n';
+    body+='###### Notes\n\n';
+    body+=mdBlocksFromHtml(m.body,4)+'\n';
   }
   if(m.actionItems&&m.actionItems.length){
-    body+='**Action Items**\n\n';
+    body+='###### Action Items\n\n';
     m.actionItems.forEach(it=>{
       const box=it.done?'\u2611':'\u2610';
       const text=escMd(it.text||'');
@@ -29708,7 +29708,7 @@ function exportSingleMeetingAsText(m){
     body+='\n';
   }
   if(m.links&&m.links.length){
-    body+='**Linked Nodes**\n\n';
+    body+='###### Linked Nodes\n\n';
     m.links.forEach(link=>{
       const info=meetingLinkResolve(link);
       const label=info.missing?'(missing)':(link.nodeId==null?(info.docTitle||'Untitled'):(info.text||'(untitled node)'));
