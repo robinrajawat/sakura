@@ -7357,7 +7357,15 @@ async function duplicateDoc(id){
         const blob=await idbGet('diagblob:'+id+':'+dg.id);
         if(blob)await idbSet('diagblob:'+newId+':'+newDgId,blob);
       }catch(e){}
-      newDiagrams.push({...dg,id:newDgId});
+      // blobSynced deliberately reset here, not inherited from the source: it lives under a
+      // brand-new IndexedDB key (diagblob:<newId>:<newDgId>) that's only actually populated if
+      // the copy above succeeds, which isn't guaranteed (the try/catch around it swallows
+      // failures). Carrying over the source's blobSynced=true would tell this document's own
+      // saveToStorage the copy is already durably confirmed when it might not be — and since
+      // that flag is exactly what gates the inline-fallback safety net (see saveToStorage), a
+      // false positive here means a failed copy gets silently and permanently blanked on this
+      // new document's very next save instead of being protected until it's actually confirmed.
+      newDiagrams.push({...dg,id:newDgId,blobSynced:false});
     }
     const payload={...d,title:newTitle,diagrams:newDiagrams};
     localStorage.setItem(docKey(newId),JSON.stringify(payload));
