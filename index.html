@@ -277,7 +277,7 @@ body.hide-tb-history #ag-history,body.hide-tb-structure #ag-structure,body.hide-
 /* === Feature Activation: hide every entry point for a deactivated feature === */
 body.feature-off-note #qb-note,body.feature-off-note #itbsec-note,body.feature-off-note .node-note-dot,body.feature-off-note #note-panel,body.feature-off-note #feat-codeblock-row{display:none!important}
 body.feature-off-codeblock #npanel-tab-code,body.feature-off-codeblock .node-code-badge{display:none!important}
-body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai #dtb-ai-generate,body.feature-off-ai #dtb-ai-import,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-summarise),body.feature-off-ai #ntb-ai-rewrite,body.feature-off-ai #ntb-ai-summarise,body.feature-off-ai #ptb-ai-rewrite{display:none!important}
+body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-summarise),body.feature-off-ai #ntb-ai-rewrite,body.feature-off-ai #ntb-ai-summarise,body.feature-off-ai #ptb-ai-rewrite{display:none!important}
 body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog .node-dlog-dot,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
 body.feature-off-padnotepad #pad-tab-notes{display:none!important}
 body.feature-off-padqa #pad-tab-qa{display:none!important}
@@ -1340,7 +1340,6 @@ body.pad-diagrams-mode #pad-toolbar>.note-tb-btn:not(.diagrams-only-btn),body.pa
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
-#dtb-ai-generate.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
 #dtb-search.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #diagram-summary-chip{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default;border:1px solid transparent;background:transparent;appearance:none;transition:background .12s,color .12s,border-color .12s}
 body.pad-diagrams-mode #diagram-summary-chip{display:inline-flex}
@@ -4278,8 +4277,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Diagrams, Q&amp;A, and Pad content are all included in Sakura's Version History now (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores all three alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected, only the cached preview image. Pad content restores as text only — any file attachments or pasted images that were in the Pad at that point in time are gone for good, replaced with a small note of what was there, since keeping every version of a 5&nbsp;MB attachment would make History unusably large. Restoring a version with older revisions recorded before this existed leaves diagrams/Q&amp;A/Pad exactly as they currently are, rather than guessing or wiping them</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
-<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> <strong>Generate diagram (AI)</strong> — turns the current outline into a styled draw.io flowchart in one click, using whichever AI provider is configured in Settings → AI → Provider. Lines ending in "?" are flagged as decision points so the result gets diamonds/branches instead of plain boxes. Adds the result straight to this list, linked to the selected node if it's free, with its thumbnail generated automatically — no copy-paste round trip needed</li>
-<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M19 16v6"/><path d="M16 19l3 3 3-3"/></svg></span> <strong>Import AI diagram</strong> — the manual-round-trip alternative: "Copy outline prompt" copies the same prompt Generate uses, to paste into any external AI assistant instead (Claude.ai, ChatGPT, etc.); paste its reply back into the box and it's added to this list the same way Generate's result is — code fences and any stray text around the XML are stripped automatically, and an invalid reply says why instead of silently failing</li>
+<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> — brings in an existing <span class="help-kbd">.drawio</span>/<span class="help-kbd">.xml</span> file: drag one onto the dropzone, or click it to browse. "Paste XML text instead" is there too for XML that's only sitting in your clipboard rather than saved as a file. Either way it's added to this list, linked to the selected node if it's free, with its thumbnail generated automatically. A small "Copy a prompt built from your outline" link is included for anyone who wants an AI assistant's help getting started — paste the prompt into whichever one you like, save or copy its reply, then bring that back in through Import</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-pad">
@@ -4704,8 +4702,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="dltb-add" class="note-tb-btn decision-only-btn" data-tip="New decision log"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    <button class="note-tb-btn diagrams-only-btn" id="dtb-ai-generate" data-tip="Generate diagram from outline (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
-    <button class="note-tb-btn diagrams-only-btn" id="dtb-ai-import" data-tip="Import a diagram from an AI reply"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M19 16v6"/><path d="M16 19l3 3 3-3"/></svg></button>
+    <button class="note-tb-btn diagrams-only-btn" id="dtb-import" data-tip="Import a diagram file (.drawio/.xml)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-search" data-tip="Filter diagrams" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <div class="todo-dd-wrap diagrams-only-btn" id="diagram-sort-wrap">
       <button type="button" class="todo-dd-trigger" id="diagram-sort-trigger" data-tip="Sort by" aria-label="Sort diagrams by" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></button>
@@ -7761,8 +7758,7 @@ document.addEventListener('mousedown',e=>{
 },true);
 
 el('dtb-add')?.addEventListener('click',createDiagram);
-el('dtb-ai-generate')?.addEventListener('click',()=>generateAiDiagram());
-el('dtb-ai-import')?.addEventListener('click',openPasteDrawioModal);
+el('dtb-import')?.addEventListener('click',openImportDiagramModal);
 el('dtb-search')?.addEventListener('mousedown',e=>{ e.preventDefault(); toggleDiagramSearch(); });
 el('diagram-search-input')?.addEventListener('input',e=>{
   diagramSearchQuery=e.target.value;
@@ -12321,7 +12317,7 @@ function showDiagramPromptModal(promptText){
   overlay.classList.add('open');
   setTimeout(()=>ta.focus(),80);
 }
-// === Import AI diagram (paste-back companion to Generate diagram (AI)) ===
+// === Import diagram (file drop/picker, with a plain-text paste fallback) ===
 // Takes whatever an AI assistant replied with — ideally just the raw XML, but
 // in practice often wrapped in a ```xml code fence or preceded/followed by a
 // sentence or two of prose even when the prompt says not to — and turns it
@@ -12365,38 +12361,86 @@ function extractDrawioXml(raw){
   }
   return {ok:true,xml:text};
 }
-function openPasteDrawioModal(){
+function openImportDiagramModal(){
   const overlay=el('sakura-modal-overlay'); if(!overlay)return;
-  el('sakura-modal-icon').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M19 16v6"/><path d="M16 19l3 3 3-3"/></svg>';
+  el('sakura-modal-icon').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   el('sakura-modal-icon').style.display='block';
-  el('sakura-modal-title').textContent='Import AI diagram';
+  el('sakura-modal-title').textContent='Import diagram';
   const bodyEl=el('sakura-modal-body');
   bodyEl.innerHTML='';
   bodyEl.style.whiteSpace='normal';
-  const hint=document.createElement('div');
-  hint.textContent='Paste a draw.io XML reply below to add it as a new diagram, linked to the selected node if it\u2019s free \u2014 code fences and any stray text around the XML are stripped automatically.';
-  hint.style.marginBottom='6px';
-  bodyEl.appendChild(hint);
-  const copyPromptBtn=document.createElement('button');
-  copyPromptBtn.type='button'; copyPromptBtn.className='smodal-btn';
-  copyPromptBtn.style.marginBottom='10px'; copyPromptBtn.style.fontSize='12px'; copyPromptBtn.style.padding='5px 10px';
-  copyPromptBtn.textContent='Copy outline prompt';
-  copyPromptBtn.dataset.tip='Copies a prompt built from your current outline \u2014 paste it into any AI assistant, then paste its reply below';
-  copyPromptBtn.onclick=async()=>{
-    await exportDiagramPrompt();
-    copyPromptBtn.textContent='Copied'; setTimeout(()=>copyPromptBtn.textContent='Copy outline prompt',1400);
-  };
-  bodyEl.appendChild(copyPromptBtn);
+
+  let resultXml=null;
+
+  const dropzone=document.createElement('div');
+  dropzone.style.cssText='border:2px dashed var(--border);border-radius:10px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s;';
+  const dropzoneText=document.createElement('div');
+  dropzoneText.textContent='Drop a .drawio or .xml file here, or click to browse';
+  dropzoneText.style.cssText='font-size:12.5px;color:var(--muted)';
+  dropzone.appendChild(dropzoneText);
+  const fileInput=document.createElement('input');
+  fileInput.type='file'; fileInput.accept='.drawio,.xml,application/xml,text/xml'; fileInput.style.display='none';
+  dropzone.appendChild(fileInput);
+  bodyEl.appendChild(dropzone);
+
+  const pasteToggle=document.createElement('button');
+  pasteToggle.type='button';
+  pasteToggle.style.cssText='display:block;margin-top:10px;font-size:11.5px;padding:0;background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;';
+  pasteToggle.textContent='Paste XML text instead';
+  bodyEl.appendChild(pasteToggle);
+
   const ta=document.createElement('textarea');
-  ta.placeholder='Paste the draw.io XML (or the AI\u2019s whole reply containing it) here\u2026';
-  ta.style.width='100%'; ta.style.height='220px'; ta.style.resize='vertical'; ta.style.boxSizing='border-box';
-  ta.style.font="12px Consolas,'Courier New',monospace"; ta.style.background='var(--edit-bg)'; ta.style.color='var(--fg)';
-  ta.style.border='1px solid var(--border)'; ta.style.borderRadius='8px'; ta.style.padding='8px';
+  ta.placeholder='Paste the draw.io XML here\u2026';
+  ta.style.cssText="width:100%;height:160px;resize:vertical;box-sizing:border-box;font:12px Consolas,'Courier New',monospace;background:var(--edit-bg);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:8px;display:none;";
   bodyEl.appendChild(ta);
+
   const errEl=document.createElement('div');
-  errEl.style.color='#dc2626'; errEl.style.fontSize='12px'; errEl.style.marginTop='8px'; errEl.style.lineHeight='1.4'; errEl.style.display='none';
+  errEl.style.cssText='color:#dc2626;font-size:12px;margin-top:10px;line-height:1.4;display:none;';
   bodyEl.appendChild(errEl);
-  ta.addEventListener('input',()=>{ if(errEl.style.display!=='none'){errEl.style.display='none'; errEl.textContent=''} });
+
+  function clearError(){ errEl.style.display='none'; errEl.textContent=''; }
+  function showError(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+  function handleFile(file){
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const result=extractDrawioXml(String(reader.result||''));
+      if(!result.ok){ showError(result.error); return; }
+      resultXml=result.xml; clearError();
+      dropzoneText.textContent='Loaded '+file.name+' \u2014 click "Add diagram" below, or drop another file to replace it';
+    };
+    reader.onerror=()=>showError('Could not read that file \u2014 try again');
+    reader.readAsText(file);
+  }
+  fileInput.addEventListener('change',()=>{ if(fileInput.files[0])handleFile(fileInput.files[0]); });
+  dropzone.addEventListener('click',()=>fileInput.click());
+  dropzone.addEventListener('dragover',e=>{ e.preventDefault(); dropzone.style.borderColor='var(--accent)'; dropzone.style.background='var(--hover)'; });
+  dropzone.addEventListener('dragleave',()=>{ dropzone.style.borderColor='var(--border)'; dropzone.style.background='transparent'; });
+  dropzone.addEventListener('drop',e=>{
+    e.preventDefault();
+    dropzone.style.borderColor='var(--border)'; dropzone.style.background='transparent';
+    const file=e.dataTransfer?.files?.[0];
+    if(file)handleFile(file);
+  });
+  pasteToggle.addEventListener('click',()=>{
+    const showing=ta.style.display!=='none';
+    ta.style.display=showing?'none':'block';
+    pasteToggle.textContent=showing?'Paste XML text instead':'Hide paste box';
+    if(!showing)ta.focus();
+  });
+  ta.addEventListener('input',clearError);
+
+  const promptLink=document.createElement('button');
+  promptLink.type='button';
+  promptLink.style.cssText='display:block;margin-top:14px;font-size:11.5px;color:var(--hint);background:none;border:none;text-decoration:underline;cursor:pointer;padding:0;';
+  promptLink.textContent='Need a starting point? Copy a prompt built from your outline';
+  promptLink.addEventListener('click',async()=>{
+    await exportDiagramPrompt();
+    promptLink.textContent='Copied \u2014 paste it into any AI assistant, then bring the reply back here';
+    setTimeout(()=>promptLink.textContent='Need a starting point? Copy a prompt built from your outline',2400);
+  });
+  bodyEl.appendChild(promptLink);
+
   const inputWrap=el('sakura-modal-input-wrap'); if(inputWrap)inputWrap.style.display='none';
   const inputWrap2=el('sakura-modal-input2-wrap'); if(inputWrap2)inputWrap2.style.display='none';
   const actions=el('sakura-modal-actions');
@@ -12405,21 +12449,27 @@ function openPasteDrawioModal(){
   cancelBtn.onclick=()=>{ overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line'; };
   const saveBtn=document.createElement('button'); saveBtn.className='smodal-btn primary'; saveBtn.textContent='Add diagram';
   saveBtn.onclick=()=>{
-    const result=extractDrawioXml(ta.value);
-    if(!result.ok){ errEl.textContent=result.error; errEl.style.display='block'; ta.focus(); return; }
+    // The paste box, if it's open and has content, takes precedence over an already-loaded
+    // file — covers replacing a bad file drop without needing to reopen the dialog.
+    if(ta.style.display!=='none'&&ta.value.trim()){
+      const result=extractDrawioXml(ta.value);
+      if(!result.ok){ showError(result.error); ta.focus(); return; }
+      overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line';
+      addDiagramFromXml(result.xml);
+      return;
+    }
+    if(!resultXml){ showError('Drop a file, browse for one, or paste XML text first.'); return; }
     overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line';
-    addDiagramFromXml(result.xml);
+    addDiagramFromXml(resultXml);
   };
   actions.appendChild(cancelBtn); actions.appendChild(saveBtn);
   overlay.classList.add('open');
-  setTimeout(()=>ta.focus(),80);
 }
-// Shared by both AI diagram paths (direct generation and manual paste-back): creates a real
-// Diagram entry from already-validated XML - linked to the selected node if it's free, same
-// "reuse the selection, else leave unlinked" rule createDiagram/createDecisionLog use - and
-// regenerates its thumbnail immediately via the same headless draw.io frame the row's own
-// refresh icon uses, so it shows up in the list looking finished rather than as a placeholder
-// icon until manually opened and saved once.
+// Creates a real Diagram entry from already-validated XML \u2014 linked to the selected node if
+// it's free, same "reuse the selection, else leave unlinked" rule createDiagram/
+// createDecisionLog use \u2014 and regenerates its thumbnail immediately via the same headless
+// draw.io frame the row's own refresh icon uses, so it shows up in the list looking finished
+// rather than as a placeholder icon until manually opened and saved once.
 function addDiagramFromXml(xml){
   if(!padDiagramsTabEnabled)return;
   ensureDocumentForEditing();
@@ -12431,25 +12481,10 @@ function addDiagramFromXml(xml){
   if(!padOpen)setPadOpen(true);
   setPadViewMode('diagrams');
   renderDiagramsList();
-  showToast('Diagram added \u2726');
+  showToast('Diagram added');
   regenerateDiagramThumbnail(d.id);
 }
-const AI_DIAGRAM_SYSTEM_PROMPT='You generate draw.io (diagrams.net) XML flowcharts from process outlines. Follow the formatting and styling instructions in the message exactly. Return only the raw, valid draw.io XML \u2014 no explanation, no markdown, no code fences.';
-async function generateAiDiagram(foldOverride){
-  if(!padDiagramsTabEnabled)return;
-  commitEdit();
-  const btn=el('dtb-ai-generate'); if(btn)btn.classList.add('ai-busy');
-  showToast('Generating diagram\u2026 \u2726');
-  try{
-    const prompt=buildDiagramPrompt(foldOverride);
-    const raw=await callAiApiWithPrompt(AI_DIAGRAM_SYSTEM_PROMPT,prompt,8192);
-    if(!raw)throw new Error('Empty response from AI');
-    const result=extractDrawioXml(raw);
-    if(!result.ok)throw new Error(result.error);
-    addDiagramFromXml(result.xml);
-  }catch(e){ showToast('Diagram generation failed \u2014 '+(e.message||'try again')); }
-  finally{ if(btn)btn.classList.remove('ai-busy'); }
-}
+
 
 // Parses an .opml document into the same flat {text,depth,note} shape used by
 // the paste-a-tree importer, so it can be handed straight to pasteParsedNodes().
