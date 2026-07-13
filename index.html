@@ -1307,7 +1307,6 @@ body.pad-diagrams-mode #pad-editor{display:none}
 #decision-open-chip:disabled{cursor:default;opacity:.75}
 #decision-author-filter{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 8px;border-radius:7px;outline:none;cursor:pointer;max-width:150px}
 #decision-author-filter:hover,#decision-author-filter:focus{border-color:var(--accent)}
-#decision-list-filters{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;position:sticky;top:0;background:var(--canvas-bg);padding-bottom:4px;z-index:1}
 #decision-list-empty{display:none;color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:24px 12px;line-height:1.5}
 #decision-body.is-empty #decision-list-empty{display:block}
 #decision-body.is-empty #decision-list{display:none}
@@ -1344,6 +1343,7 @@ body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
 #diagram-summary-chip{align-items:center;font:500 11px 'Inter',sans-serif;color:var(--muted);padding:1px 7px;border-radius:999px;white-space:nowrap;user-select:none;cursor:default;border:1px solid transparent;background:transparent;appearance:none;transition:background .12s,color .12s,border-color .12s}
 body.pad-diagrams-mode #diagram-summary-chip{display:inline-flex}
 #diagram-summary-chip.chip-empty{display:none}
+body.pad-decision-mode #decision-open-chip{display:inline-flex}
 #diagram-summary-chip.has-warn{color:var(--fc-orange)}
 #diagram-summary-chip.chip-clickable{cursor:pointer}
 #diagram-summary-chip.chip-clickable:hover{background:var(--hover)}
@@ -2322,7 +2322,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
 .history-modal-body,.code-lang-menu,#at-suggest,#node-qa-suggest,#demo-chapters-menu,#demo-preview-body,
-#preview-toc,#preview-body,.pv-popover,#ai-prompt-input
+#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#meetings-body,#meeting-link-results,#meetings-template-menu
 {scrollbar-gutter:stable}
 .settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
 #cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#qa-insert-modal::-webkit-scrollbar,#qa-insert-list::-webkit-scrollbar,
@@ -2330,7 +2330,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
-#diagram-anchor-suggest::-webkit-scrollbar,#decision-anchor-suggest::-webkit-scrollbar
+#diagram-anchor-suggest::-webkit-scrollbar,#decision-anchor-suggest::-webkit-scrollbar,#meetings-body::-webkit-scrollbar,#meeting-link-results::-webkit-scrollbar,#meetings-template-menu::-webkit-scrollbar
 {width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,
@@ -2338,7 +2338,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
-#diagram-anchor-suggest::-webkit-scrollbar-thumb,#decision-anchor-suggest::-webkit-scrollbar-thumb
+#diagram-anchor-suggest::-webkit-scrollbar-thumb,#decision-anchor-suggest::-webkit-scrollbar-thumb,#meetings-body::-webkit-scrollbar-thumb,#meeting-link-results::-webkit-scrollbar-thumb,#meetings-template-menu::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
@@ -2689,6 +2689,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .todo-link-open{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:opacity .12s,color .12s,background .12s}
 .todo-link-open:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.todo-meeting-chip{display:inline-flex;align-items:center;gap:2px;max-width:150px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:1px 2px 1px 6px;background:var(--bg)}
+.todo-meeting-chip.missing{border-style:dashed;border-color:color-mix(in srgb,var(--sem-alert,#b85450) 40%,transparent)}
+.todo-meeting-chip-open{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 0;font:400 10.5px 'Inter',sans-serif;max-width:110px;min-width:0}
+.todo-meeting-chip-open span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-meeting-chip-open:hover{color:var(--accent)}
+.todo-meeting-chip.missing .todo-meeting-chip-open{color:var(--sem-alert,#b85450)}
+.todo-meeting-chip-remove{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.todo-row:hover .todo-meeting-chip-remove,.todo-meeting-chip-remove:focus{opacity:.7}
+.todo-meeting-chip-remove:hover{opacity:1;color:var(--fc-red);background:var(--hover)}
 .todo-row.qa-flash{animation:todo-flash 1.1s ease}
 @keyframes todo-flash{0%{background:color-mix(in srgb,var(--accent) 28%,transparent)}100%{background:transparent}}
 /* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
@@ -2725,7 +2734,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-search-row input::placeholder{color:var(--hint)}
 #meetings-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:5px;display:inline-flex}
 #meetings-search-clear-btn:hover{color:var(--fg)}
-#meetings-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px;background:var(--canvas-bg)}
+#meetings-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
 #meetings-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
 #meetings-body.is-empty #meetings-empty{display:block}
 #meetings-body.is-empty #meetings-list{display:none}
@@ -2773,6 +2782,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-field-label{font:700 10.5px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
 .meeting-field-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .meeting-field-label-row .meeting-field-label{margin-bottom:0}
+.meeting-field-rewrite{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:4px;display:inline-flex;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.meeting-field:hover .meeting-field-rewrite,.meeting-field-rewrite:focus{opacity:.6}
+.meeting-field-rewrite:hover{opacity:1;color:var(--accent);background:var(--hover)}
+.meeting-field-rewrite.ai-busy{opacity:1;color:var(--accent);animation:qa-pulse 1s ease-in-out infinite}
 .meeting-field-body{outline:none;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.6;font-family:var(--content-font);min-height:1.6em}
 .meeting-field-body:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
 .meeting-field-body b,.meeting-field-body strong{font-weight:600}
@@ -2801,12 +2814,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-link-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 11px 'Inter',sans-serif;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 4px 2px 8px;cursor:pointer;transition:color .12s,border-color .12s}
 .meeting-link-chip:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 .meeting-link-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.meeting-link-chip-icon{flex:0 0 auto;display:inline-flex!important;max-width:none!important;color:var(--hint)}
+.meeting-link-chip:hover .meeting-link-chip-icon{color:inherit}
 .meeting-link-chip.missing{color:var(--fc-orange);border-color:color-mix(in srgb,var(--fc-orange) 40%,var(--border))}
 .meeting-link-chip button{appearance:none;border:none;background:none;color:inherit;cursor:pointer;padding:2px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;opacity:.7}
 .meeting-link-chip button:hover{opacity:1;color:var(--fc-red)}
 
 #meeting-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
 
+#meetings-template-menu{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:190px;max-height:340px;overflow-y:auto;font-family:'Inter',sans-serif}
+#meetings-template-menu.open{display:block}
+.meetings-template-menu-item{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:7px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
+.meetings-template-menu-item:hover{background:var(--hover);color:var(--accent)}
+.meetings-template-menu-icon{flex:0 0 auto;display:inline-flex;color:var(--hint)}
+.meetings-template-menu-item:hover .meetings-template-menu-icon{color:inherit}
+.meetings-template-menu-sep{height:1px;background:var(--border);margin:5px 2px}
 #meeting-link-popover{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:8px;width:300px;max-height:320px;font-family:'Inter',sans-serif}
 #meeting-link-popover.open{display:flex;flex-direction:column}
 #meeting-link-search-input{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 8px;border-radius:7px;outline:none;margin-bottom:6px;flex-shrink:0}
@@ -4305,7 +4327,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> button next to ⋯ → new template folder, for grouping templates (single level; templates can be moved between folders via the move-to-folder button or right-click, but folders themselves can't be nested or reordered)</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></span> / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></span> buttons by "Templates" → collapse all / expand all template folders (only shown once a template folder exists)</li>
 <li>Click a template's icon → same small icon-picker as documents, to mark it visually. Built-in templates keep their fixed icon (grouped by document shape) and aren't customizable this way</li>
-<li>Ships with a built-in pack — Meeting Notes, 1:1 Notes, Daily Standup, Weekly Status, Decision Record, Project Kickoff, Retrospective — grouped in a "Built-in" folder. The folder and the templates in it can be renamed and moved like any other, but are deleted like any other — deletion goes to Trash and is reversible. Use the ↺ restore button in the Templates sidebar header to restore any deleted or renamed built-in templates at any time. Icons are grouped by document shape, not unique per template: calendar for anything written on a recurring cadence, checkmark for the decision record, flag for one-off project milestones</li>
+<li>Ships with a built-in pack — Decision Record, plus a set of SAP architecture templates — grouped in a "Built-in" folder. (Meeting-style templates like Meeting Notes, 1:1s, Daily Standup, Weekly Status, Project Kickoff, and Retrospective live inside the Meetings panel's own "New from template" menu instead, since they fill in a meeting note rather than insert outline nodes.) The folder and the templates in it can be renamed and moved like any other, but are deleted like any other — deletion goes to Trash and is reversible. Use the ↺ restore button in the Templates sidebar header to restore any deleted or renamed built-in templates at any time. Icons are grouped by document shape, not unique per template</li>
 <li>The "Templates ▾" button in the header toolbar opens the same template list as a quick-access dropdown, grouped by folder exactly like the sidebar (icons included) — useful when the sidebar itself is hidden, e.g. in zen mode. It's read-mostly there: click a template to load it, plus rename/move-to-folder/delete per row, but folders themselves are only created from the sidebar</li>
 <li>A line that's exactly "Date:", "Author:", or "Date · Author" in any template (built-in or your own) gets auto-filled the moment the template loads — today's date, and the document's current author if one is set (see Settings → Editing → "Default author" to pre-fill that automatically too). The merged "Date · Author" form fills in with no labels, just the values</li>
 <li>Built-in templates use one color convention throughout, worth keeping if you duplicate and extend one: purple = neutral section header, orange = action/decision, red = risk/blocker, green = positive</li>
@@ -4838,6 +4860,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="dltb-add" class="note-tb-btn decision-only-btn" data-tip="New decision log"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <span class="note-tb-sep decision-only-btn"></span>
+    <button type="button" id="decision-open-chip" class="decision-only-btn" data-tip="Show open (proposed) decisions only" aria-pressed="false"></button>
+    <select id="decision-author-filter" class="decision-only-btn" aria-label="Filter by author"><option value="">All authors</option></select>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-import" data-tip="Import a diagram file (.drawio/.xml)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-search" data-tip="Filter diagrams" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
@@ -4866,10 +4891,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="qa-empty">No Q&amp;A rows yet. Scan the outline for questions ending in "?", or add a blank row.</div>
   </div>
   <div id="decision-body">
-    <div id="decision-list-filters">
-      <button type="button" id="decision-open-chip" data-tip="Show open (proposed) decisions only" aria-pressed="false"></button>
-      <select id="decision-author-filter" aria-label="Filter by author"><option value="">All authors</option></select>
-    </div>
     <div id="decision-list"></div>
     <div id="decision-list-empty">No decision logs yet.<br>Click + to create one — link it to a node afterward so it shows up there in Preview and exports.</div>
     <div id="decision-card">
@@ -5031,6 +5052,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
   <div id="meetings-toolbar-row">
     <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button type="button" id="meetings-template-btn" data-tip="New from template" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></button>
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <span id="meetings-count-label"></span>
   </div>
@@ -5053,11 +5075,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <input id="meeting-attendee-input" type="text" placeholder="+ Add attendee" autocomplete="off" maxlength="80" />
       </div>
       <div class="meeting-field">
-        <div class="meeting-field-label" style="color:var(--fc-blue)">Agenda</div>
+        <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-blue)">Agenda</span><button type="button" class="meeting-field-rewrite" id="meeting-rewrite-agenda" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div>
         <div id="meeting-agenda" class="meeting-field-body" contenteditable="true" data-placeholder="What's on the agenda?"></div>
       </div>
       <div class="meeting-field">
-        <div class="meeting-field-label" style="color:var(--fc-purple)">Notes</div>
+        <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-purple)">Notes</span><button type="button" class="meeting-field-rewrite" id="meeting-rewrite-body" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div>
         <div id="meeting-body-field" class="meeting-field-body" contenteditable="true" data-placeholder="Meeting notes…"></div>
       </div>
       <div class="meeting-field">
@@ -5078,6 +5100,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
   </div>
   <div id="meetings-toast" role="status" aria-live="polite"></div>
+</div>
+<div id="meetings-template-menu" role="menu" aria-label="New meeting from template">
+  <button type="button" class="meetings-template-menu-item" data-template="" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span>Blank meeting</span></button>
+  <div class="meetings-template-menu-sep"></div>
 </div>
 <div id="meeting-link-popover" role="dialog" aria-label="Link a node or document">
   <input id="meeting-link-search-input" type="text" placeholder="Search nodes across all documents…" autocomplete="off" spellcheck="false" />
@@ -8110,62 +8136,6 @@ function getBuiltinTemplateDefs(){
   const italicStyle=()=>({...emptyStyles(),italic:true});
   const icons=builtinTplIcons();
   return [
-    {key:'meeting-notes',title:'Meeting Notes',icon:icons.cadence,nodes:[
-      {text:'Meeting Notes',depth:0,styles:headerStyle()},
-      {text:'Title:',depth:1,styles:plainStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'Attendees:',depth:1,styles:plainStyle()},
-      {text:'Agenda',depth:1,styles:headerStyle()},
-      {text:'Topic 1',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Topic 2',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Topic 3',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Notes',depth:1,styles:headerStyle()},
-      {text:'Write your notes here...',depth:2,styles:italicStyle()},
-      {text:'Decisions',depth:1,styles:headerStyle()},
-      {text:'Decision Log',depth:2,styles:plainStyle()},
-      {text:'Action Items',depth:1,styles:headerStyle('orange')},
-      {text:'Owner — task',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Follow-up',depth:1,styles:headerStyle('red')},
-      {text:'Next steps, decisions, or open questions...',depth:2,styles:italicStyle()}
-    ]},
-    {key:'one-on-one',title:'1:1 Notes',icon:icons.cadence,nodes:[
-      {text:'1:1 Notes',depth:0,styles:headerStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'With:',depth:1,styles:plainStyle()},
-      {text:'Talking Points',depth:1,styles:headerStyle()},
-      {text:'Topic 1',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Topic 2',depth:2,styles:italicStyle(),isCheckbox:true,checked:false},
-      {text:'Wins',depth:1,styles:headerStyle('green')},
-      {text:'What went well...',depth:2,styles:italicStyle()},
-      {text:'Blockers',depth:1,styles:headerStyle('red')},
-      {text:'What is stuck...',depth:2,styles:italicStyle()},
-      {text:'Growth & Career',depth:1,styles:headerStyle()},
-      {text:'Notes carried forward to next time...',depth:2,styles:italicStyle()},
-      {text:'Action Items',depth:1,styles:headerStyle('orange')},
-      {text:'Owner — task',depth:2,styles:italicStyle(),isCheckbox:true,checked:false}
-    ]},
-    {key:'daily-standup',title:'Daily Standup',icon:icons.cadence,nodes:[
-      {text:'Daily Standup',depth:0,styles:headerStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'Yesterday',depth:1,styles:headerStyle()},
-      {text:'What I did...',depth:2,styles:italicStyle()},
-      {text:'Today',depth:1,styles:headerStyle()},
-      {text:'What I plan to do...',depth:2,styles:italicStyle()},
-      {text:'Blockers',depth:1,styles:headerStyle('red')},
-      {text:'What is stuck...',depth:2,styles:italicStyle()}
-    ]},
-    {key:'weekly-status',title:'Weekly Status',icon:icons.cadence,nodes:[
-      {text:'Weekly Status',depth:0,styles:headerStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'Accomplishments',depth:1,styles:headerStyle('green')},
-      {text:'What got done...',depth:2,styles:italicStyle()},
-      {text:'In Progress',depth:1,styles:headerStyle()},
-      {text:'What is underway...',depth:2,styles:italicStyle()},
-      {text:'Blockers',depth:1,styles:headerStyle('red')},
-      {text:'What is stuck...',depth:2,styles:italicStyle()},
-      {text:'Next Week',depth:1,styles:headerStyle('orange')},
-      {text:'What is planned...',depth:2,styles:italicStyle()}
-    ]},
     {key:'decision-record',title:'Decision Record',icon:icons.decision,nodes:[
       {text:'Decision Record',depth:0,styles:headerStyle()},
       {text:'Date · Author',depth:1,styles:plainStyle()},
@@ -8181,33 +8151,6 @@ function getBuiltinTemplateDefs(){
       {text:'Consequences',depth:1,styles:headerStyle('red')},
       {text:'What this changes, good and bad...',depth:2,styles:italicStyle()}
     ]},
-    {key:'project-kickoff',title:'Project Kickoff',icon:icons.milestone,nodes:[
-      {text:'Project Kickoff',depth:0,styles:headerStyle()},
-      {text:'Project:',depth:1,styles:plainStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'Goal',depth:1,styles:headerStyle()},
-      {text:'What success looks like...',depth:2,styles:italicStyle()},
-      {text:'Scope',depth:1,styles:headerStyle()},
-      {text:'In scope / out of scope...',depth:2,styles:italicStyle()},
-      {text:'Stakeholders',depth:1,styles:headerStyle()},
-      {text:'Name — role...',depth:2,styles:italicStyle()},
-      {text:'Milestones',depth:1,styles:headerStyle('orange')},
-      {text:'Milestone — target date...',depth:2,styles:italicStyle()},
-      {text:'Risks',depth:1,styles:headerStyle('red')},
-      {text:'What could go wrong...',depth:2,styles:italicStyle()}
-    ]},
-    {key:'retrospective',title:'Retrospective',icon:icons.milestone,nodes:[
-      {text:'Retrospective',depth:0,styles:headerStyle()},
-      {text:'Project · Sprint:',depth:1,styles:plainStyle()},
-      {text:'Date · Author',depth:1,styles:plainStyle()},
-      {text:'Went Well',depth:1,styles:headerStyle('green')},
-      {text:'What worked...',depth:2,styles:italicStyle()},
-      {text:'Didn\'t Go Well',depth:1,styles:headerStyle('red')},
-      {text:'What did not work...',depth:2,styles:italicStyle()},
-      {text:'Action Items',depth:1,styles:headerStyle('orange')},
-      {text:'Owner — task',depth:2,styles:italicStyle(),isCheckbox:true,checked:false}
-    ]},
-
     {key:'sap-ewm-architecture',title:'EWM Architecture',icon:icons.sap,nodes:[
       {text:'🏭 EWM Architecture',depth:0,styles:headerStyle()},
       {text:'Date · Author',depth:1,styles:plainStyle()},
@@ -8418,7 +8361,29 @@ function performBuiltinTemplateSeed(){
 // own existence) so deleting one later doesn't cause it to silently reappear on the next
 // reload — that would override the user's choice. Bump BUILTIN_TEMPLATES_VERSION (and add
 // the old ids to LEGACY_BUILTIN_TEMPLATE_IDS) whenever pack content changes again.
+// The six meeting-cadence templates (Meeting Notes, 1:1 Notes, Daily Standup, Weekly Status,
+// Project Kickoff, Retrospective) moved out of the sidebar pack and into the Meetings panel's
+// own template picker — getBuiltinTemplateDefs() no longer lists them, so performBuiltinTemplateSeed
+// stops recreating them. This is a targeted one-time removal of any copies already seeded into
+// existing users' localStorage under BUILTIN_TEMPLATES_VERSION 9, rather than a version bump —
+// bumping the shared version would've also changed Decision Record's and the SAP templates' ids,
+// leaving their v9 copies as orphaned duplicates alongside new v10 ones instead of being updated.
+const RETIRED_MEETING_TEMPLATE_IDS=['t_builtin_meeting-notes_v9','t_builtin_one-on-one_v9','t_builtin_daily-standup_v9','t_builtin_weekly-status_v9','t_builtin_project-kickoff_v9','t_builtin_retrospective_v9'];
+const RETIRED_MEETING_TEMPLATES_CLEAN_KEY='sakura_retired_meeting_tpls_cleaned_v1';
+function cleanupRetiredMeetingTemplates(){
+  try{ if(localStorage.getItem(RETIRED_MEETING_TEMPLATES_CLEAN_KEY)==='1')return; }catch(e){ return }
+  try{
+    RETIRED_MEETING_TEMPLATE_IDS.forEach(oldId=>{ try{localStorage.removeItem(templateKey(oldId))}catch(e){} });
+    saveTemplatesIndex(loadTemplatesIndex().filter(t=>!RETIRED_MEETING_TEMPLATE_IDS.includes(t.id)));
+    const folderMap=loadTplFolderMap();
+    let changed=false;
+    RETIRED_MEETING_TEMPLATE_IDS.forEach(oldId=>{ if(oldId in folderMap){ delete folderMap[oldId]; changed=true; } });
+    if(changed)saveTplFolderMap(folderMap);
+  }catch(e){}
+  try{ localStorage.setItem(RETIRED_MEETING_TEMPLATES_CLEAN_KEY,'1'); }catch(e){}
+}
 function seedBuiltinTemplates(){
+  cleanupRetiredMeetingTemplates();
   try{ if(localStorage.getItem(BUILTIN_TEMPLATES_SEEDED_KEY)==='1')return; }catch(e){ return }
   performBuiltinTemplateSeed();
   try{ localStorage.setItem(BUILTIN_TEMPLATES_SEEDED_KEY,'1'); }catch(e){}
@@ -8428,7 +8393,7 @@ function seedBuiltinTemplates(){
 // still present back to shipped defaults. Templates/folders the user made themselves are
 // untouched since they don't share the built-in id pattern.
 async function restoreBuiltinTemplates(){
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Restore Built-in Templates',body:'Recreates the built-in template pack (Meeting Notes, 1:1 Notes, Daily Standup, Weekly Status, Decision Record, Project Kickoff, Retrospective) and the "Built-in" folder using their original shipped content — fixes anything deleted or renamed.\n\nTemplates you duplicated or created yourself are not affected.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Restore Built-in Templates',body:'Recreates the built-in template pack (Decision Record) and the "Built-in" folder using their original shipped content — fixes anything deleted or renamed.\n\nMeeting-style templates now live in the Meetings panel\'s own "New from template" menu instead. Templates you duplicated or created yourself are not affected.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
   if(!ok)return;
   performBuiltinTemplateSeed();
   renderTemplatesList(); renderSidebar();
@@ -25804,6 +25769,7 @@ function _addTagPopoverFromInput(){
         // (an easy mistake given docId legitimately is one) silently nulled out every saved
         // nodeRef on load, which looked exactly like "the link doesn't survive a reload".
         nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || Number.isFinite(t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId===null?null:t.nodeRef.nodeId)} : null,
+        meetingRef: (t.meetingRef && typeof t.meetingRef==='object' && typeof t.meetingRef.meetingId==='string' && t.meetingRef.meetingId) ? {meetingId:t.meetingRef.meetingId, title:(typeof t.meetingRef.title==='string'?t.meetingRef.title.slice(0,160):'')} : null,
         repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
@@ -25910,7 +25876,7 @@ function _addTagPopoverFromInput(){
   function addTodo(text){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
-    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
+    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, meetingRef:null, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
   }
@@ -25919,11 +25885,17 @@ function _addTagPopoverFromInput(){
   // action item became, so a second click doesn't create a duplicate. Kept as its own function
   // rather than changing addTodo's return value, so the UI's own "add a task" flow (which
   // ignores the return value entirely) can't be affected by this.
-  function addTodoExternal(text){
+  // meetingCtx (optional) carries the promoting meeting's id/title/date over: the date becomes
+  // the new task's due date (a meeting-sourced action item is naturally due around when the
+  // meeting happened), and the id+title become a clickable "from meeting" chip on the row —
+  // see meetingRef handling in todoRowHtml and window.sakuraOpenMeetingFromRef below.
+  function addTodoExternal(text,meetingCtx){
     const trimmed=String(text||'').trim();
     if(!trimmed) return null;
     const id=uid();
-    todos.push({ id, text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
+    const dueDate=(meetingCtx&&/^\d{4}-\d{2}-\d{2}$/.test(meetingCtx.date||''))?meetingCtx.date:null;
+    const meetingRef=(meetingCtx&&typeof meetingCtx.meetingId==='string'&&meetingCtx.meetingId)?{meetingId:meetingCtx.meetingId,title:(typeof meetingCtx.title==='string'?meetingCtx.title.slice(0,160):'')}:null;
+    todos.push({ id, text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate, link:null, linkLabel:null, nodeRef:null, meetingRef, repeat:null, subtasks:[], subtasksOpen:true });
     saveTodos();
     renderTodos();
     return id;
@@ -26651,6 +26623,25 @@ function _addTagPopoverFromInput(){
         if(t && t.nodeRef) jumpToTodoNodeRef(t.nodeRef);
       });
     });
+    body.querySelectorAll('.todo-meeting-chip-open').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
+        if(!t||!t.meetingRef)return;
+        if(typeof window.sakuraOpenMeetingFromRef!=='function'){ showTodosToast('Meetings isn\'t available right now'); return; }
+        closeTodosPanel();
+        const ok=window.sakuraOpenMeetingFromRef(t.meetingRef.meetingId);
+        if(!ok)showTodosToast('That meeting note no longer exists');
+      });
+    });
+    body.querySelectorAll('.todo-meeting-chip-remove').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
+        if(!t)return;
+        t.meetingRef=null;
+        saveTodos(); renderTodos();
+      });
+    });
     body.querySelectorAll('.todo-repeat').forEach(btn=>{
       btn.addEventListener('click',()=>cycleRepeat(btn.getAttribute('data-id')));
     });
@@ -27065,6 +27056,18 @@ function _addTagPopoverFromInput(){
     const nodeRefInfo=nodeRef?resolveNodeRef(nodeRef):null;
     const hasAttachment=!!(link||nodeRef);
     const linkLabel=t.linkLabel||'';
+    // Guarded via window.sakuraGetMeetingRefInfo (set once the Meetings module finishes
+    // initializing) rather than calling findMeeting()/meetingNotes directly — those are a
+    // top-level `let` further down the file, and this render path also runs once during
+    // startup (render() fires before the Meetings module's own top-level code has executed),
+    // where a direct reference would hit the temporal dead zone and throw.
+    const meetingRef=t.meetingRef||null;
+    let meetingChipTitle='', meetingChipMissing=false;
+    if(meetingRef){
+      const info=(typeof window.sakuraGetMeetingRefInfo==='function')?window.sakuraGetMeetingRefInfo(meetingRef.meetingId):null;
+      if(info&&!info.missing){ meetingChipTitle=info.title; }
+      else { meetingChipMissing=true; meetingChipTitle=meetingRef.title||'Untitled meeting'; }
+    }
     const linkDisplay=nodeRef
       ? (nodeRefInfo.missing
           ? (isDocRef ? 'Document not found' : 'Node not found')
@@ -27105,6 +27108,13 @@ function _addTagPopoverFromInput(){
         + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
         +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
       +`</button>` : '')
+      + (meetingRef ? `<span class="todo-meeting-chip${meetingChipMissing?' missing':''}">`
+        +`<button type="button" class="todo-meeting-chip-open" data-id="${t.id}" data-tip="${meetingChipMissing?'That meeting note no longer exists':'From meeting: '+esc(meetingChipTitle)}" aria-label="Open meeting note">`
+          +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
+          +`<span>${esc(meetingChipTitle||'Untitled meeting')}</span>`
+        +`</button>`
+        +`<button type="button" class="todo-meeting-chip-remove" data-id="${t.id}" data-tip="Remove meeting reference" aria-label="Remove meeting reference"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>`
+      +`</span>` : '')
       + (showRepeat&&!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
         +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
@@ -28878,6 +28888,7 @@ function closeMeetingsPanel(){
   el('meetings-panel')?.classList.remove('open');
   document.querySelectorAll('#meetings-toggle,#sb-meetings-chip').forEach(b=>b.classList.remove('is-active'));
   closeMeetingLinkPopover();
+  if(typeof closeMeetingTemplateMenu==='function')closeMeetingTemplateMenu();
 }
 function toggleMeetingsPanel(){
   if(!meetingsPanelOpen){ openMeetingsPanel(); return; }
@@ -28963,15 +28974,109 @@ async function deleteMeetingNote(id){
     saveMeetingNotes(); renderMeetingsList();
   });
 }
-async function createMeetingNote(){
+// ── Templates ── previously lived in the sidebar Templates pack as outline-node presets;
+// moved here since a meeting note isn't outline nodes — it's the Agenda/Notes rich-text
+// fields, attendees, and action items this panel already has. builtinTplIcons() is still
+// defined globally for the sidebar's own remaining templates (Decision Record, SAP
+// architecture), so it's reused here rather than duplicated.
+const MEETING_TEMPLATES=(()=>{
+  const icons=(typeof builtinTplIcons==='function')?builtinTplIcons():{};
+  return [
+    {key:'meeting-notes',title:'Meeting Notes',icon:icons.cadence||'',
+      agendaHtml:'<ul><li>Topic 1</li><li>Topic 2</li><li>Topic 3</li></ul>',
+      bodyHtml:'<p><b>Decisions</b></p><p><i>Decision log…</i></p><p><b>Follow-up</b></p><p><i>Next steps, decisions, or open questions…</i></p>',
+      actionItems:['Owner — task']},
+    {key:'one-on-one',title:'1:1 Notes',icon:icons.cadence||'',
+      agendaHtml:'<ul><li>Topic 1</li><li>Topic 2</li></ul>',
+      bodyHtml:'<p><b>Wins</b></p><p><i>What went well…</i></p><p><b>Blockers</b></p><p><i>What is stuck…</i></p><p><b>Growth &amp; Career</b></p><p><i>Notes carried forward to next time…</i></p>',
+      actionItems:['Owner — task']},
+    {key:'daily-standup',title:'Daily Standup',icon:icons.cadence||'',
+      agendaHtml:'',
+      bodyHtml:'<p><b>Yesterday</b></p><p><i>What I did…</i></p><p><b>Today</b></p><p><i>What I plan to do…</i></p><p><b>Blockers</b></p><p><i>What is stuck…</i></p>',
+      actionItems:[]},
+    {key:'weekly-status',title:'Weekly Status',icon:icons.cadence||'',
+      agendaHtml:'',
+      bodyHtml:'<p><b>Accomplishments</b></p><p><i>What got done…</i></p><p><b>In Progress</b></p><p><i>What is underway…</i></p><p><b>Blockers</b></p><p><i>What is stuck…</i></p><p><b>Next Week</b></p><p><i>What is planned…</i></p>',
+      actionItems:[]},
+    {key:'project-kickoff',title:'Project Kickoff',icon:icons.milestone||'',
+      agendaHtml:'<ul><li>Goal</li><li>Scope</li><li>Stakeholders</li><li>Milestones</li><li>Risks</li></ul>',
+      bodyHtml:'<p><b>Goal</b></p><p><i>What success looks like…</i></p><p><b>Scope</b></p><p><i>In scope / out of scope…</i></p><p><b>Stakeholders</b></p><p><i>Name — role…</i></p><p><b>Milestones</b></p><p><i>Milestone — target date…</i></p><p><b>Risks</b></p><p><i>What could go wrong…</i></p>',
+      actionItems:[]},
+    {key:'retrospective',title:'Retrospective',icon:icons.milestone||'',
+      agendaHtml:'',
+      bodyHtml:'<p><b>Went Well</b></p><p><i>What worked…</i></p><p><b>Didn\'t Go Well</b></p><p><i>What did not work…</i></p>',
+      actionItems:['Owner — task']}
+  ];
+})();
+async function createMeetingNote(templateKey){
+  const tpl=templateKey?MEETING_TEMPLATES.find(t=>t.key===templateKey):null;
   const now=Date.now();
-  const m=normalizeMeetingNote({id:mnUid(),title:'',date:new Date().toISOString().slice(0,10),attendees:[],agenda:'',body:'',actionItems:[],links:[],createdAt:now,modifiedAt:now});
+  const m=normalizeMeetingNote({
+    id:mnUid(),
+    title:tpl?tpl.title:'',
+    date:new Date().toISOString().slice(0,10),
+    attendees:[],
+    agenda:tpl?sakuraSanitizeRichHtml(tpl.agendaHtml):'',
+    body:tpl?sakuraSanitizeRichHtml(tpl.bodyHtml):'',
+    actionItems:(tpl&&tpl.actionItems.length)?tpl.actionItems.map(text=>({text})):[],
+    links:[],
+    createdAt:now,modifiedAt:now
+  });
   meetingNotes.push(m);
   saveMeetingNotes();
   meetingExpandedId=m.id;
   renderMeetingsList();
-  setTimeout(()=>{ const ti=el('meeting-title-input'); if(ti){ ti.focus(); ti.select(); } },30);
+  setTimeout(()=>{ const ti=el('meeting-title-input'); if(ti){ ti.focus(); if(!tpl)ti.select(); } },30);
 }
+// ── Template picker menu ──
+let _meetingTemplateMenuBuilt=false;
+let _meetingTemplateMenuOpen=false;
+function buildMeetingTemplateMenu(){
+  if(_meetingTemplateMenuBuilt)return;
+  const menu=el('meetings-template-menu'); if(!menu)return;
+  MEETING_TEMPLATES.forEach(t=>{
+    const item=document.createElement('button');
+    item.type='button'; item.className='meetings-template-menu-item'; item.setAttribute('role','menuitem');
+    item.dataset.template=t.key;
+    const icon=document.createElement('span'); icon.className='meetings-template-menu-icon'; icon.innerHTML=t.icon||'';
+    const label=document.createElement('span'); label.textContent=t.title;
+    item.appendChild(icon); item.appendChild(label);
+    menu.appendChild(item);
+  });
+  menu.addEventListener('click',e=>{
+    const item=e.target.closest('.meetings-template-menu-item'); if(!item)return;
+    closeMeetingTemplateMenu();
+    createMeetingNote(item.dataset.template||undefined);
+  });
+  _meetingTemplateMenuBuilt=true;
+}
+function openMeetingTemplateMenu(btn){
+  const menu=el('meetings-template-menu'); if(!menu||!btn)return;
+  buildMeetingTemplateMenu();
+  const r=btn.getBoundingClientRect();
+  menu.style.left=Math.min(r.left,window.innerWidth-206)+'px';
+  menu.style.top=(r.bottom+4)+'px';
+  menu.classList.add('open');
+  btn.setAttribute('aria-expanded','true');
+  _meetingTemplateMenuOpen=true;
+}
+function closeMeetingTemplateMenu(){
+  el('meetings-template-menu')?.classList.remove('open');
+  el('meetings-template-btn')?.setAttribute('aria-expanded','false');
+  _meetingTemplateMenuOpen=false;
+}
+el('meetings-template-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(_meetingTemplateMenuOpen){ closeMeetingTemplateMenu(); return; }
+  openMeetingTemplateMenu(el('meetings-template-btn'));
+});
+document.addEventListener('mousedown',e=>{
+  if(_meetingTemplateMenuOpen&&!e.target.closest('#meetings-template-menu')&&!e.target.closest('#meetings-template-btn'))closeMeetingTemplateMenu();
+},true);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&_meetingTemplateMenuOpen)closeMeetingTemplateMenu();
+});
+
 function buildMeetingRowSummary(m){
   const summary=document.createElement('div'); summary.className='meeting-row-summary';
   const dateEl=document.createElement('div'); dateEl.className='meeting-row-date';
@@ -29261,9 +29366,9 @@ function renderMeetingActionItems(m){
     promoteBtn.addEventListener('click',()=>{
       if(item.promotedTodoId)return;
       if(typeof window.addTodoFromMeeting!=='function'){ showMeetingsToast('To-Dos isn\'t available right now'); return; }
-      const todoText=(m.title?`[${m.title}] `:'')+(item.text||'').trim();
-      if(!todoText.trim()){ showMeetingsToast('Add some text to this action item first'); return; }
-      const newId=window.addTodoFromMeeting(todoText);
+      const todoText=(item.text||'').trim();
+      if(!todoText){ showMeetingsToast('Add some text to this action item first'); return; }
+      const newId=window.addTodoFromMeeting(todoText,{meetingId:m.id,title:m.title||'Untitled meeting',date:m.date||null});
       if(!newId)return;
       item.promotedTodoId=newId; m.modifiedAt=Date.now(); saveMeetingNotes();
       promoteBtn.textContent='In To-Dos'; promoteBtn.classList.add('promoted'); promoteBtn.dataset.tip='Already added to To-Dos';
@@ -29303,12 +29408,27 @@ function meetingLinkResolve(link){
   if(!node)return {missing:true,text:'',docTitle:idxEntry.title||'Untitled'};
   return {missing:false,text:stripSemanticMarkers(node.text||'').trim(),docTitle:docTitle||idxEntry.title||'Untitled'};
 }
+// Same two glyphs To-Dos uses to tell "linked to a specific node" from "linked to a whole
+// document" apart at a glance — a small node/graph icon and a folded-corner document icon —
+// rather than the generic chain-link icon (which only makes sense on the "add a link" button
+// itself, not once a link is actually attached and needs to say *what kind* it is).
+function meetingLinkNodeIconSvg(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M5 8v10"/><path d="M5 12h13"/></svg>`;
+}
+function meetingLinkDocIconSvg(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+}
 function renderMeetingLinks(m){
   const wrap=el('meeting-links'); if(!wrap)return;
   wrap.innerHTML='';
   (m.links||[]).forEach((link,idx)=>{
     const info=meetingLinkResolve(link);
     const chip=document.createElement('span'); chip.className='meeting-link-chip'+(info.missing?' missing':'');
+    if(!info.missing){
+      const icon=document.createElement('span'); icon.className='meeting-link-chip-icon';
+      icon.innerHTML=link.nodeId==null?meetingLinkDocIconSvg(11):meetingLinkNodeIconSvg(11);
+      chip.appendChild(icon);
+    }
     const label=document.createElement('span');
     label.textContent=info.missing?'Missing document/node':(link.nodeId==null?(info.docTitle||'Untitled'):(info.text||'(untitled node)'));
     chip.dataset.tip=info.missing?'That document or node no longer exists':(link.nodeId==null?'Jump to document: '+(info.docTitle||'Untitled'):'Jump to node in '+(info.docTitle||'Untitled'));
@@ -29460,6 +29580,41 @@ function meetingFieldSessionRedoRun(key){
   field.addEventListener('input',e=>{ meetingFieldAutoList(e); meetingFieldSyncModel(key,field); });
   field.addEventListener('blur',()=>{ if(linkifySapNotesInElement(field))meetingFieldSyncModel(key,field); });
 });
+// AI rewrite for the Agenda/Notes fields — same shape as rewriteDecisionField, adapted to
+// meetings' own model (m.agenda/m.body instead of dl[key]), toasts, and per-field session
+// undo stack, so a bad rewrite is a single Undo away without disturbing the other field.
+async function rewriteMeetingField(key){
+  const m=findMeeting(meetingExpandedId); if(!m)return;
+  const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field');
+  const text=(field?.textContent||'').trim();
+  if(!text){ showMeetingsToast('Nothing to rewrite yet'); return; }
+  const originalHtml=m[key]||'';
+  const btn=el('meeting-rewrite-'+key); if(btn)btn.classList.add('ai-busy');
+  try{
+    const result=await callAiApi(text);
+    if(!result)throw new Error('Empty response from AI');
+    pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=true;
+    if(field)field.textContent=result;
+    m[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
+    m.modifiedAt=Date.now();
+    const ts=el('meeting-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(m.modifiedAt);
+    saveMeetingNotes();
+    if(key==='body')refreshMeetingRowInList(m);
+    showMeetingsActionToast((key==='agenda'?'Agenda':'Notes')+' rewritten','Undo',()=>{
+      const it=findMeeting(m.id); if(!it)return;
+      it[key]=originalHtml;
+      const field2=el(key==='agenda'?'meeting-agenda':'meeting-body-field');
+      if(field2&&meetingExpandedId===it.id)field2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
+      it.modifiedAt=Date.now();
+      saveMeetingNotes();
+      if(key==='body')refreshMeetingRowInList(it);
+    });
+  }catch(e){ showMeetingsToast('Rewrite failed — '+(e.message||'try again')); }
+  finally{ if(btn)btn.classList.remove('ai-busy'); }
+}
+['agenda','body'].forEach(key=>{
+  el('meeting-rewrite-'+key)?.addEventListener('click',()=>rewriteMeetingField(key));
+});
 
 // ── Toolbar wiring ──
 el('meetings-toggle')?.addEventListener('click',toggleMeetingsPanel);
@@ -29484,7 +29639,7 @@ el('meetings-search-clear-btn')?.addEventListener('click',()=>{
   renderMeetingsList();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen){
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen){
     if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
     closeMeetingsPanel();
   }
@@ -29494,6 +29649,7 @@ document.addEventListener('mousedown',e=>{
   const toggleBtn=el('meetings-toggle');
   const sbBtn=el('sb-meetings-chip');
   if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
+  if(_meetingTemplateMenuOpen)return; // its own outside-click handler covers this
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||(sbBtn&&sbBtn.contains(e.target));
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeMeetingsPanel();
@@ -29507,6 +29663,15 @@ document.addEventListener('mousedown',e=>{
 const MEETINGS_SETTINGS_KEY='sakura_meetings_settings_v1';
 let meetingsLocation='appbar';
 let meetingsFeatureEnabled=true;
+// Exposed before loadMeetingsSettings()/applyMeetingsLocation() run below — both call into
+// applyStatusbarRightOrder()/renderStatusbarOrderList(), which check
+// window.sakuraMeetingsIsStatusbar while deciding whether to show the Meetings row. Defining
+// it only at the bottom of this block (after those calls) meant it didn't exist yet on first
+// load, so the check always failed closed and Meetings never appeared in the status-bar order
+// list or #status-right on startup — same bug class the To-Dos equivalent avoids by defining
+// window.sakuraTodosIsStatusbar before its own applyTodosLocation() call.
+window.sakuraMeetingsIsStatusbar=function(){ return meetingsLocation==='statusbar' && meetingsFeatureEnabled; };
+window.sakuraMeetingsFeatureEnabled=function(){ return meetingsFeatureEnabled; };
 function loadMeetingsSettings(){
   try{
     const raw=localStorage.getItem(MEETINGS_SETTINGS_KEY);
@@ -29553,9 +29718,24 @@ applyMeetingsLocation();
 
 loadMeetingNotes();
 window.toggleMeetingsPanel=toggleMeetingsPanel;
-window.sakuraMeetingsIsStatusbar=function(){ return meetingsLocation==='statusbar' && meetingsFeatureEnabled; };
-window.sakuraMeetingsFeatureEnabled=function(){ return meetingsFeatureEnabled; };
 window.sakuraMeetingsSetFeatureEnabled=setMeetingsFeatureEnabled;
+// Consumed by To-Dos' "from meeting" chip (see meetingRef handling in todoRowHtml). Kept as
+// plain data lookups / an open action rather than exposing findMeeting or meetingNotes
+// directly — same lazy window.sakura* export pattern as addTodoFromMeeting below, since
+// To-Dos' render path also runs once during startup before this module's own top-level code
+// (including `let meetingNotes`) has executed.
+window.sakuraGetMeetingRefInfo=function(meetingId){
+  const m=findMeeting(meetingId);
+  return m?{title:m.title||'Untitled meeting',missing:false}:{missing:true};
+};
+window.sakuraOpenMeetingFromRef=function(meetingId){
+  const m=findMeeting(meetingId); if(!m)return false;
+  openMeetingsPanel();
+  meetingExpandedId=m.id;
+  renderMeetingsList();
+  setTimeout(()=>{ document.querySelector(`.meeting-row[data-meeting-id="${m.id}"]`)?.scrollIntoView({block:'nearest'}); },30);
+  return true;
+};
 // initFeatureActivationPanel() already ran as part of page startup, before this module (a
 // later script block) had defined window.sakuraMeetingsFeatureEnabled — so the Feature
 // Activation toggle it built was working off FEATURE_FLAGS.meetings.get()'s "not ready yet"
