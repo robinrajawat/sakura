@@ -30540,6 +30540,16 @@ function meetingFieldSyncModel(key,field){
   saveMeetingNotes();
   if(key==='body')refreshMeetingRowInList(m);
 }
+// Shared with the beforeinput listener below (same pending-flag guard, same idle-timer reset) —
+// exposed so callers that mutate a meeting field via document.execCommand from outside normal
+// typing (the selection formatting popover's Bold/Italic/Strike/Highlight/Link/Rewrite) can
+// checkpoint explicitly rather than relying on execCommand reliably firing a native beforeinput
+// event, which isn't guaranteed for every formatting command across browsers.
+function checkpointMeetingField(key){
+  if(_meetingFieldCheckpointPending[key]!==false){ pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=false; }
+  clearTimeout(_meetingFieldIdleTimer);
+  _meetingFieldIdleTimer=setTimeout(()=>{ _meetingFieldCheckpointPending[key]=true; },800);
+}
 function meetingFieldSessionUndoRun(key){
   const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field'); if(!field)return;
   const st=meetingFieldSessionUndo[key]; if(!st||!st.undo.length)return;
@@ -30565,11 +30575,7 @@ function meetingFieldSessionRedoRun(key){
     if(matchesShortcut(e,'undo')){ e.preventDefault(); e.stopPropagation(); meetingFieldSessionUndoRun(key); return; }
     if(matchesShortcut(e,'redo')){ e.preventDefault(); e.stopPropagation(); meetingFieldSessionRedoRun(key); return; }
   });
-  field.addEventListener('beforeinput',()=>{
-    if(_meetingFieldCheckpointPending[key]!==false){ pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=false; }
-    clearTimeout(_meetingFieldIdleTimer);
-    _meetingFieldIdleTimer=setTimeout(()=>{ _meetingFieldCheckpointPending[key]=true; },800);
-  });
+  field.addEventListener('beforeinput',()=>{ checkpointMeetingField(key); });
   field.addEventListener('input',e=>{ meetingFieldAutoList(e); meetingFieldSyncModel(key,field); });
   field.addEventListener('blur',()=>{ if(linkifySapNotesInElement(field))meetingFieldSyncModel(key,field); });
 });
@@ -30643,6 +30649,9 @@ function hideSelectionFmtPopover(){
   const pop=el('selection-fmt-popover'); if(pop)pop.classList.remove('open');
   _selectionFmtEditorId=null;
 }
+function meetingFieldKeyForEditorId(editorId){
+  return editorId==='meeting-agenda'?'agenda':(editorId==='meeting-body-field'?'body':null);
+}
 // hiliteColor's queryCommandValue reports the current selection's background as a color string —
 // 'transparent'/'rgba(0, 0, 0, 0)' (or, in some browsers, plain white) all mean "no highlight
 // applied here", everything else means it's already highlighted.
@@ -30698,9 +30707,10 @@ document.addEventListener('mousedown',e=>{
 // Rewrite: same selection-aware AI call and undo/persist handling as the Note editor's own
 // ntb-ai-rewrite button and the Pad's own ptb-ai-rewrite button (see their handlers above) —
 // reused rather than duplicated wholesale, just parameterized by which of the four editors
-// triggered it. Meeting fields need no special persistence step here: their own 'input' listener
-// (meetingFieldSyncModel) already checkpoints session undo and saves on any DOM mutation, and
-// execCommand('insertText',…) fires a real input event same as typing would.
+// triggered it. Meeting fields get an explicit checkpointMeetingField()/meetingFieldSyncModel()
+// call too, same reasoning as the rest of this popover's meeting-field handling below — not
+// relying on document.execCommand('insertText',…) firing a native beforeinput/input event, which
+// isn't guaranteed for every command across browsers.
 async function runSelectionFmtRewrite(editorId,btn){
   const editor=el(editorId); if(!editor)return;
   const sel=window.getSelection();
@@ -30717,14 +30727,18 @@ async function runSelectionFmtRewrite(editorId,btn){
     const selRestore=window.getSelection();
     selRestore.removeAllRanges();
     selRestore.addRange(savedRange);
+    const mfKey=meetingFieldKeyForEditorId(editorId);
     if(editorId==='note-editor')pushNoteSessionUndo();
     else if(editorId==='pad-editor')pushPadUndo();
+    else if(mfKey)checkpointMeetingField(mfKey);
     document.execCommand('insertText',false,result);
     if(editorId==='note-editor'&&notePanelNodeId!==null){
       const idx=getIndex(notePanelNodeId);
       if(idx>=0){ pushUndo(); nodes[idx].note=cleanEditorHtml(editor); markDirty(); }
     } else if(editorId==='pad-editor'){
       markDirty();
+    } else if(mfKey){
+      meetingFieldSyncModel(mfKey,editor);
     }
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦','success');
   }catch(err){
@@ -30740,6 +30754,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   const editorId=_selectionFmtEditorId; const editor=editorId?el(editorId):null;
   if(!editor)return;
   const cmd=btn.dataset.cmd;
+  const mfKey=meetingFieldKeyForEditorId(editorId);
   if(cmd==='link'){
     const sel=window.getSelection();
     const range=sel&&sel.rangeCount?sel.getRangeAt(0).cloneRange():null;
@@ -30751,8 +30766,10 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       if(range){ sel.removeAllRanges(); sel.addRange(range); }
       const url=(result.url||'').trim();
       if(url){
+        if(mfKey)checkpointMeetingField(mfKey);
         const text=(result.text||'').trim()||url;
         document.execCommand('insertHTML',false,`<a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
+        if(mfKey)meetingFieldSyncModel(mfKey,editor);
       }
       hideSelectionFmtPopover();
     });
@@ -30760,7 +30777,9 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   }
   if(cmd==='highlight'){
     editor.focus();
+    if(mfKey)checkpointMeetingField(mfKey);
     document.execCommand('hiliteColor',false,selectionIsHighlighted()?'transparent':SELECTION_HIGHLIGHT_COLOR);
+    if(mfKey)meetingFieldSyncModel(mfKey,editor);
     updateSelectionFmtButtonStates();
     return;
   }
@@ -30769,7 +30788,9 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     return;
   }
   editor.focus();
+  if(mfKey)checkpointMeetingField(mfKey);
   document.execCommand(cmd,false,null);
+  if(mfKey)meetingFieldSyncModel(mfKey,editor);
   updateSelectionFmtButtonStates();
 });
 
