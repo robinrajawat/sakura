@@ -20202,6 +20202,11 @@ document.addEventListener('click', e => {
   if (e.target.closest('#qb-note')) return;
   // Also don't close when clicking the shared note/code dot on a node row
   if (e.target.closest('.node-note-dot')) return;
+  // The selection formatting popover is intentionally a sibling of #note-panel in the DOM
+  // (needed for position:fixed placement above an arbitrary selection rect), so panel.contains()
+  // above never sees clicks on it as "inside" — without this, every popover button click read as
+  // a click outside the panel and closed it before the button's own handler even ran.
+  if (e.target.closest('#selection-fmt-popover')) return;
   closeNodePanel(true);
 }, true);
 
