@@ -2837,9 +2837,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meeting-link-search-input{appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 8px;border-radius:7px;outline:none;margin-bottom:6px;flex-shrink:0}
 #meeting-link-search-input:focus{border-color:var(--accent)}
 #meeting-link-results{overflow-y:auto;min-height:40px}
-.meeting-link-result{padding:6px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
-.meeting-link-result:hover{background:var(--hover);color:var(--accent)}
+.meeting-link-result{display:flex;flex-direction:column;gap:1px;width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:6px 8px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif}
+.meeting-link-result:hover{background:var(--hover)}
+.meeting-link-result-row{display:flex;align-items:center;gap:5px;min-width:0;color:var(--hint)}
+.meeting-link-result-row svg{flex:0 0 auto}
+.meeting-link-result-text{font:400 12px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-link-result:hover .meeting-link-result-text{color:var(--accent)}
 .meeting-link-result-doc{font:400 10.5px 'Inter',sans-serif;color:var(--hint);margin-top:1px}
+.meeting-link-result-group-label{font:600 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:6px 7px 3px;user-select:none}
+.meeting-link-result-group-label:first-child{padding-top:2px}
 .meeting-link-result-empty{padding:10px 8px;color:var(--hint);font-size:12px;font-style:italic}
 
 #meetings-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
@@ -29461,43 +29467,91 @@ function renderMeetingLinks(m){
     wrap.appendChild(chip);
   });
 }
-function renderMeetingLinkResults(query){
-  const results=el('meeting-link-results'); if(!results)return;
-  results.innerHTML='';
-  const q=String(query||'').trim().toLowerCase();
-  const docs=loadActiveDocsIndex();
-  const rows=[];
-  for(const d of docs){
+// Same idea as To-Dos' searchDocsForTodoLink/searchNodesForTodoLink (which live in that
+// module's own closure, so not reusable directly from here) — matches documents by title
+// using the same fuzzy token matching Quick Assist/Global Search use, rather than the crude
+// substring check the old flat list used, and rather than only ever showing documents when
+// the search box was empty.
+function meetingSearchDocsForLink(q){
+  const tokens=qaTokenizeQuery(q);
+  const docsIdx=loadActiveDocsIndex();
+  return docsIdx.filter(d=>qaHayMatches(d.title||'Untitled',tokens)).slice(0,5).map(d=>({docId:d.id,titleHtml:buildFullLabelMarkHtml(d.title||'Untitled',q)}));
+}
+function meetingSearchNodesForLink(q){
+  const out=[];
+  const tokens=qaTokenizeQuery(q);
+  const docsIdx=loadActiveDocsIndex();
+  for(const d of docsIdx){
+    if(out.length>=8)break;
     const {docNodes,docTitle}=getDocNodesForSearch(d.id,d);
-    if(!q){ rows.push({docId:d.id,nodeId:null,label:docTitle||'Untitled',sub:'Whole document'}); }
     if(!Array.isArray(docNodes))continue;
     let perDoc=0;
     for(const n of docNodes){
-      if(perDoc>=4||rows.length>=30)break;
-      const text=String(n.text||'').trim(); if(!text)continue;
-      if(q&&!text.toLowerCase().includes(q))continue;
+      if(perDoc>=3||out.length>=8)break;
+      const text=String(n.text||''); if(!text.trim()||!qaHayMatches(text,tokens))continue;
       perDoc++;
-      rows.push({docId:d.id,nodeId:n.id,label:text.slice(0,80),sub:docTitle||'Untitled'});
+      out.push({docId:d.id,nodeId:n.id,docTitle:docTitle||'Untitled',snippetHtml:buildMatchSnippetHtml(text.slice(0,90),q)});
     }
-    if(rows.length>=30)break;
   }
-  if(!rows.length){ const empty=document.createElement('div'); empty.className='meeting-link-result-empty'; empty.textContent=q?'No matching nodes':'Type to search node text across all documents, or pick a document below'; results.appendChild(empty); }
-  rows.slice(0,30).forEach(r=>{
-    const item=document.createElement('div'); item.className='meeting-link-result';
-    item.textContent=r.label;
-    const sub=document.createElement('div'); sub.className='meeting-link-result-doc'; sub.textContent=r.sub;
-    item.appendChild(sub);
-    item.addEventListener('mousedown',e=>{
-      e.preventDefault();
-      const m=findMeeting(meetingExpandedId); if(!m)return;
-      if(m.links.some(l=>l.docId===r.docId&&l.nodeId===r.nodeId)){ closeMeetingLinkPopover(); return; }
-      m.links.push({docId:r.docId,nodeId:r.nodeId,label:r.label});
-      m.modifiedAt=Date.now(); saveMeetingNotes();
-      renderMeetingLinks(m);
-      closeMeetingLinkPopover();
-    });
-    results.appendChild(item);
+  return out;
+}
+function buildMeetingLinkResultItem({docId,nodeId,titleHtml,metaText,icon}){
+  const item=document.createElement('button'); item.type='button'; item.className='meeting-link-result';
+  const row=document.createElement('span'); row.className='meeting-link-result-row';
+  row.innerHTML=icon;
+  const txt=document.createElement('span'); txt.className='meeting-link-result-text'; txt.innerHTML=titleHtml;
+  row.appendChild(txt);
+  item.appendChild(row);
+  const meta=document.createElement('span'); meta.className='meeting-link-result-doc'; meta.textContent=metaText;
+  item.appendChild(meta);
+  item.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    const m=findMeeting(meetingExpandedId); if(!m)return;
+    if(m.links.some(l=>l.docId===docId&&l.nodeId===nodeId)){ closeMeetingLinkPopover(); return; }
+    m.links.push({docId,nodeId,label:stripHtmlToText(titleHtml).trim().slice(0,200)});
+    m.modifiedAt=Date.now(); saveMeetingNotes();
+    renderMeetingLinks(m);
+    closeMeetingLinkPopover();
   });
+  return item;
+}
+function renderMeetingLinkResults(query){
+  const results=el('meeting-link-results'); if(!results)return;
+  results.innerHTML='';
+  const q=String(query||'').trim().toLowerCase().replace(/\s+/g,' ');
+  if(!q){
+    // Browse mode with nothing typed yet: list documents up front so linking a whole
+    // document doesn't require typing its exact title first — node search still needs a
+    // query, same as To-Dos, since listing every node in every document unfiltered isn't
+    // useful.
+    const docsIdx=loadActiveDocsIndex();
+    if(!docsIdx.length){ results.innerHTML='<div class="meeting-link-result-empty">No documents yet</div>'; return; }
+    const label=document.createElement('div'); label.className='meeting-link-result-group-label'; label.textContent='Documents';
+    results.appendChild(label);
+    docsIdx.slice(0,30).forEach(d=>{
+      results.appendChild(buildMeetingLinkResultItem({docId:d.id,nodeId:null,titleHtml:esc(d.title||'Untitled'),metaText:'Entire document',icon:meetingLinkDocIconSvg(11)}));
+    });
+    const hint=document.createElement('div'); hint.className='meeting-link-result-empty'; hint.textContent='Type to also search node text';
+    results.appendChild(hint);
+    return;
+  }
+  const docResults=meetingSearchDocsForLink(q);
+  const nodeResults=meetingSearchNodesForLink(q);
+  if(!docResults.length&&!nodeResults.length){ results.innerHTML='<div class="meeting-link-result-empty">No matching documents or nodes</div>'; return; }
+  if(docResults.length){
+    const label=document.createElement('div'); label.className='meeting-link-result-group-label'; label.textContent='Documents';
+    results.appendChild(label);
+    docResults.forEach(r=>{
+      results.appendChild(buildMeetingLinkResultItem({docId:r.docId,nodeId:null,titleHtml:r.titleHtml,metaText:'Entire document',icon:meetingLinkDocIconSvg(11)}));
+    });
+  }
+  if(nodeResults.length){
+    const label=document.createElement('div'); label.className='meeting-link-result-group-label'; label.textContent='Nodes';
+    results.appendChild(label);
+    nodeResults.forEach(r=>{
+      results.appendChild(buildMeetingLinkResultItem({docId:r.docId,nodeId:r.nodeId,titleHtml:r.snippetHtml,metaText:r.docTitle||'Untitled',icon:meetingLinkNodeIconSvg(11)}));
+    });
+  }
 }
 function openMeetingLinkPopover(btn){
   const pop=el('meeting-link-popover'); if(!pop||!btn)return;
