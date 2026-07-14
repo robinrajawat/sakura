@@ -6716,6 +6716,15 @@ function splitNoteDiagramImages(noteHtml){
 }
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
+// Moved up from its original spot much further down the file (near nodeMarkerLabel/Color/Glyph,
+// where it reads more naturally next to its UI helpers) — normalizeNode() below needs it, and
+// normalizeNode is called synchronously during the top-level startup sequence (restoreOpenTabsOnStartup,
+// itself called directly at the bottom of this script, not deferred to DOMContentLoaded). A `const`
+// declared after that call site is still in the temporal dead zone when the call actually runs,
+// throwing "Cannot access 'NODE_MARKERS' before initialization" on every single document load —
+// this was the root cause of documents silently failing to load and falling back to blank content
+// on every refresh, not a data-loss or storage-sync bug at all.
+const NODE_MARKERS=['confirmed','issue','parked','followup'];
 let lastHighlightColor=(()=>{try{const v=localStorage.getItem('sakura_lastHighlightColor'); return HIGHLIGHT_COLORS[v]?v:'yellow'}catch(e){return 'yellow'}})();
 let lastFontColor=(()=>{try{const v=localStorage.getItem('sakura_lastFontColor'); return FONT_COLORS.includes(v)?v:'gray'}catch(e){return 'gray'}})();
 function setLastHighlightColor(c){if(!HIGHLIGHT_COLORS[c])return; lastHighlightColor=c; try{localStorage.setItem('sakura_lastHighlightColor',c)}catch(e){}}
@@ -21860,7 +21869,6 @@ function setPadViewMode(mode){
 // applies to nodes that actually are decisions) — this is for marking any ordinary line during a
 // live walkthrough, most commonly from Presenter mode's right-click popover (see
 // openNodeMarkerPopover) but not exclusive to it.
-const NODE_MARKERS=['confirmed','issue','parked','followup'];
 function nodeMarkerLabel(m){ return ({confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'})[m]||''; }
 function nodeMarkerColor(m){ return ({confirmed:'green',issue:'red',parked:'gray',followup:'orange'})[m]||''; }
 function nodeMarkerGlyph(m){ return ({confirmed:'✓',issue:'✗',parked:'⏸',followup:'🚩'})[m]||''; }
