@@ -23253,6 +23253,7 @@ function renderQaList(){
     const qWrap=document.createElement('div'); qWrap.className='qa-field-wrap';
     const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.className='qa-field-q'; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
     qTa.addEventListener('input',()=>{ item.question=qTa.value; autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
+    qTa.addEventListener('keydown',e=>{ handleGenericQaKeydown(e,qTa); });
     const qIcons=document.createElement('div'); qIcons.className='qa-field-icons';
     if(item.sourceNodeId!=null && nodes.some(n=>n.id===item.sourceNodeId)){
       const linkBtn=document.createElement('button'); linkBtn.className='qa-link-btn'; linkBtn.dataset.tip='Jump to node in outline'; linkBtn.innerHTML=linkSvg;
@@ -23277,6 +23278,7 @@ function renderQaList(){
       if(hasAnswer){ item.answeredAt=Date.now(); } else { item.answeredAt=null; item.answeredBy=''; }
       updateQaAnsweredMeta(item.id);
     });
+    aTa.addEventListener('keydown',e=>{ handleGenericQaKeydown(e,aTa); });
     aRw.addEventListener('click',()=>rewriteQaField(item.id,'answer'));
     aIcons.appendChild(aRw);
     aWrap.appendChild(aTa); aWrap.appendChild(aIcons);
