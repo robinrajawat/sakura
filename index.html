@@ -2246,8 +2246,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-popover-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
 .pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .pv-popover-head-row .pv-popover-label{margin-bottom:0}
-.pv-inline-qa-line .pv-qm-btn{margin-left:auto;opacity:.5}
-.pv-inline-qa-line .pv-qm-btn:hover{opacity:1}
+.pv-inline-qa-row-multi{position:relative;padding-right:24px}
+.pv-inline-qa-row-multi .pv-qa-delete-btn{position:absolute;top:0;right:0;width:22px;height:22px}
 .pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-popover-link:last-child{border-bottom:none}
 .pv-popover-link:hover{color:var(--accent)}
@@ -2282,6 +2282,9 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
+.note-comment-entry{margin:8px 0}
+.note-comment-entry:first-child{margin-top:0}
+.note-comment-stamp{display:inline-block;font:600 10px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
 .pv-inline-note-body ul,.pv-inline-note-body ol{margin:5px 0;padding-left:22px}
 .pv-inline-note-body li{margin:2px 0}
 .pv-inline-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
@@ -24343,7 +24346,7 @@ function renderPreviewBody(){
   renderPreviewToc(filteredTocEntries,decisionEntries);
   updatePreviewProgress();
   updatePreviewFoldToggleButton();
-  if(previewPresenting)applyPresenterState();
+  if(previewPresenting)applyPresenterState(true);
 }
 function renderPreviewToc(entries,decisionEntries=[]){
   const toc=el('preview-toc'); if(!toc)return;
@@ -24455,14 +24458,18 @@ function previewOpenNotePopover(triggerEl,node){
   previewPopoverEl?.querySelector('.pv-qm-danger')?.addEventListener('click',()=>deleteNodeNote(node.id));
 }
 function previewOpenQaPopover(triggerEl,qRefs){
+  const single=qRefs.length===1;
   const rows=qRefs.map(item=>{
     const aTrimmed=(item.answer||'').trim();
-    return `<div class="pv-inline-qa-row">
-      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span><div class="pv-inline-qa-question">${esc(item.question||'')}</div><button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${item.id}">${markIconSvg('trash')}</button></div>
+    const delBtn=single?'':`<button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${item.id}">${markIconSvg('trash')}</button>`;
+    return `<div class="pv-inline-qa-row${single?'':' pv-inline-qa-row-multi'}">${delBtn}
+      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span><div class="pv-inline-qa-question">${esc(item.question||'')}</div></div>
       <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span><div class="pv-inline-qa-answer${aTrimmed?'':' pv-inline-qa-unanswered'}">${esc(aTrimmed||'No answer yet')}</div></div>
     </div>`;
   }).join('');
-  openPreviewPopover(triggerEl,`<div class="pv-popover-label">${qRefs.length>1?'Questions':'Question'}</div><div class="pv-inline-qa-body pv-popover-note">${rows}</div>`,'pv-popover-wide');
+  const headBtn=single?`<button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${qRefs[0].id}">${markIconSvg('trash')}</button>`:'';
+  const html=`<div class="pv-popover-head-row"><span class="pv-popover-label">${qRefs.length>1?'Questions':'Question'}</span>${headBtn}</div><div class="pv-inline-qa-body pv-popover-note">${rows}</div>`;
+  openPreviewPopover(triggerEl,html,'pv-popover-wide');
   previewPopoverEl?.querySelectorAll('.pv-qa-delete-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
@@ -24574,8 +24581,8 @@ function saveNodeComment(nodeId,text){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const trimmed=text.trim(); if(!trimmed)return;
   const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  const addition=`[${stamp}] ${trimmed}`;
-  node.note=node.note?(node.note.trim()+'\n'+addition):addition;
+  const addition=`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span><br>${esc(trimmed)}</div>`;
+  node.note=node.note?(node.note.trim()+addition):addition;
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   showToast('Comment added to node note');
@@ -24683,11 +24690,21 @@ function enterPresenterMode(){
   previewPresenting=true;
   previewSlideIndex=Math.min(previewSlideIndex,previewSlides.length-1);
   applyPresenterZoom();
-  if(presenterAutoExpandNoteCards){
-    let changed=false;
-    nodes.forEach(n=>{ if(n.note&&n.note.trim()&&!previewOpenNoteIds.has(n.id)){ previewOpenNoteIds.add(n.id); changed=true; } });
-    if(changed)renderPreviewBody();
+  // Presenting is popover-only by design (see previewOpenNotePopover/previewOpenQaPopover) —
+  // any notes/questions a casual (non-presenting) Preview browsing session earlier left
+  // toggled open inline shouldn't reappear as already-expanded cards the moment you start
+  // presenting. Clear that state on entry; "Expand note cards" right below re-adds all of it
+  // deliberately if that setting is on.
+  let _notesStateChanged=false;
+  if(previewOpenNoteIds.size||previewOpenQaIds.size){
+    previewOpenNoteIds=new Set();
+    previewOpenQaIds=new Set();
+    _notesStateChanged=true;
   }
+  if(presenterAutoExpandNoteCards){
+    nodes.forEach(n=>{ if(n.note&&n.note.trim()&&!previewOpenNoteIds.has(n.id)){ previewOpenNoteIds.add(n.id); _notesStateChanged=true; } });
+  }
+  if(_notesStateChanged)renderPreviewBody();
   el('preview-overlay')?.classList.add('pv-presenting');
   el('preview-present-btn')?.classList.add('active');
   // Fullscreen document.documentElement (the whole page), not #preview-overlay itself —
@@ -24715,15 +24732,16 @@ function exitPresenterMode(){
   closePresenterNotes();
   if(document.fullscreenElement){ try{ document.exitFullscreen?.(); }catch(e){} }
 }
-function applyPresenterState(){
+function applyPresenterState(preserveScroll){
   if(!previewSlides.length){ exitPresenterMode(); return; }
   if(previewSlideIndex>previewSlides.length-1)previewSlideIndex=previewSlides.length-1;
   if(previewSlideIndex<0)previewSlideIndex=0;
   const body=el('preview-body');
+  const _scrollBefore=preserveScroll?body?.scrollTop:0;
   body?.querySelectorAll('.pv-slide').forEach(s=>{
     s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex);
   });
-  requestAnimationFrame(()=>{ if(body)body.scrollTop=0; });
+  requestAnimationFrame(()=>{ if(body)body.scrollTop=preserveScroll?(_scrollBefore||0):0; });
   const slide=previewSlides[previewSlideIndex];
   const labelEl=el('presenter-slide-label'); if(labelEl)labelEl.textContent=slide?slide.label:'';
   const counterEl=el('presenter-slide-counter'); if(counterEl)counterEl.textContent=(previewSlideIndex+1)+' / '+previewSlides.length;
