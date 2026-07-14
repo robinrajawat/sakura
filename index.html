@@ -6862,8 +6862,7 @@ function reconcileDocState(list){
         try{ const raw=localStorage.getItem(key); const d=raw?JSON.parse(raw):null; if(d&&Array.isArray(d.nodes))realIds.add(key.slice(DOC_KEY_PREFIX.length)); }catch(e){}
       }
     }
-  }catch(e){ console.log('[sakura-debug] reconcileDocState: localStorage enumeration threw, leaving list untouched',e); return list }
-  console.log('[sakura-debug] reconcileDocState: real doc keys in storage =',[...realIds],'| index entries before =',list.map(d=>d.id));
+  }catch(e){ return list } // enumerating localStorage itself failed — leave list untouched rather than risk wiping it on bad data
   let changed=false;
   // Drop index entries with no backing document left in storage (e.g. a partial delete).
   let repaired=list.filter(d=>{ const ok=realIds.has(d.id); if(!ok)changed=true; return ok });
@@ -6876,28 +6875,26 @@ function reconcileDocState(list){
       changed=true;
     }
   });
-  if(changed){ console.log('[sakura-debug] reconcileDocState: index CHANGED, entries after =',repaired.map(d=>d.id)); saveDocsIndex(repaired); }
-  else { console.log('[sakura-debug] reconcileDocState: index unchanged'); }
+  if(changed) saveDocsIndex(repaired);
   // Clean the open-tabs list the same way, so a document that's genuinely gone can't leave a
   // ghost tab behind or an active-pointer stuck on something that no longer exists.
   try{
     const raw=localStorage.getItem(OPEN_TABS_KEY); const saved=raw?JSON.parse(raw):null;
-    console.log('[sakura-debug] reconcileDocState: raw OPEN_TABS_KEY before cleanup =',saved);
     if(saved){
       const tabs=Array.isArray(saved.tabs)?saved.tabs.filter(id=>realIds.has(id)):[];
       const pinned=Array.isArray(saved.pinned)?saved.pinned.filter(id=>realIds.has(id)):[];
       const active=(saved.active&&realIds.has(saved.active))?saved.active:null;
       if(tabs.length!==(Array.isArray(saved.tabs)?saved.tabs.length:0)||pinned.length!==(Array.isArray(saved.pinned)?saved.pinned.length:0)||active!==saved.active){
-        console.log('[sakura-debug] reconcileDocState: OPEN_TABS_KEY CHANGED ->',{tabs,pinned,active});
+        changed=true;
         localStorage.setItem(OPEN_TABS_KEY,JSON.stringify({tabs,pinned,active}));
       }
     }
   }catch(e){}
+  if(changed) console.warn('[sakura] reconcileDocState: docs index and/or open-tabs list were out of sync with storage and have been repaired.');
   return repaired;
 }
 function ensureDocSystem(){
   let list=loadDocsIndex();
-  console.log('[sakura-debug] ensureDocSystem start: loadCurrentDocId() =',loadCurrentDocId(),'| index length =',list.length);
   if(!list.length){
     // One-time migration from the old single-document storage format, if any is present.
     // If there's nothing to migrate, leave the index empty — zero documents is a valid
@@ -6936,7 +6933,6 @@ function ensureDocSystem(){
     if(!intentionallyEmpty) curId=list[0].id;
   }
   currentDocId=curId;
-  console.log('[sakura-debug] ensureDocSystem end: currentDocId set to',curId);
   if(curId) saveCurrentDocId(curId); else try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
 }
 function manualSave(){commitEdit(); saveToStorage(); savePrefs(); showToast('Saved')}
@@ -7065,28 +7061,20 @@ function warnDiagramBlobWriteFailed(){
 function saveToStorage(){
   try{
     if(!currentDocId)return;
-    if(nodes.length===0){
-      // Loud on purpose: writing zero nodes over a document that's ever had real content is
-      // exactly the failure mode being chased. The stack trace identifies which call site
-      // triggered this specific save (autosave interval, beforeunload, a UI action, etc).
-      console.log('[sakura-debug] saveToStorage: WRITING ZERO NODES for currentDocId =',currentDocId,'| dirty =',dirty,'| stack =',new Error().stack);
-      // Safety guard: if the in-memory doc is empty AND was never actually edited this session
-      // (dirty=false — a real "user emptied the doc" always sets dirty first), but storage
-      // already holds a real, non-empty document under this same id, this is almost certainly
-      // the load path failing to reconstruct the document (see loadTabFromStorageObj) and
-      // silently falling back to a blank in-memory tab — NOT the user's intent. Overwriting
-      // real content with that blank fallback is the actual data-loss mechanism; refuse the
-      // write instead and leave the existing storage untouched.
-      if(!dirty){
-        let existingHasContent=false;
-        try{ const raw=localStorage.getItem(docKey(currentDocId)); if(raw){const d=JSON.parse(raw); existingHasContent=Array.isArray(d.nodes)&&d.nodes.length>0;} }catch(e){}
-        if(existingHasContent){
-          console.log('[sakura-debug] saveToStorage: REFUSED — in-memory doc is empty/clean but storage already has real content for',currentDocId,'. This save would have destroyed it; skipping.');
-          return;
-        }
+    // Safety guard: if the in-memory doc is empty AND was never actually edited this session
+    // (dirty=false — a real "user emptied the doc" always sets dirty first), but storage
+    // already holds a real, non-empty document under this same id, this is almost certainly
+    // the load path failing to reconstruct the document (see loadTabFromStorageObj) and
+    // silently falling back to a blank in-memory tab — NOT the user's intent. Overwriting
+    // real content with that blank fallback is the actual data-loss mechanism; refuse the
+    // write instead and leave the existing storage untouched.
+    if(nodes.length===0&&!dirty){
+      let existingHasContent=false;
+      try{ const raw=localStorage.getItem(docKey(currentDocId)); if(raw){const d=JSON.parse(raw); existingHasContent=Array.isArray(d.nodes)&&d.nodes.length>0;} }catch(e){}
+      if(existingHasContent){
+        console.warn('[sakura] saveToStorage: refused to overwrite existing content for',currentDocId,'with an empty, unedited in-memory document — this save would have destroyed it.');
+        return;
       }
-    } else {
-      console.log('[sakura-debug] saveToStorage: writing',nodes.length,'nodes for currentDocId =',currentDocId);
     }
     if(typeof commitDecisionCardIfFocused==='function')commitDecisionCardIfFocused();
     maybeAutoSnapshotBeforeSave(currentDocId);
@@ -7283,7 +7271,6 @@ function applyTabSnapshot(tab){
   // its content is already correctly swapped in via tab.pad below.
   if(notePanelOpen) closeNodePanel(true);
   hideCrossTabWarning();
-  console.log('[sakura-debug] applyTabSnapshot: loading docId =',tab.docId,'| nodeCount =',(tab.nodes||[]).length,'| title =',tab.title);
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; padUndoStack=tab.padUndoStack||[]; padRedoStack=tab.padRedoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
@@ -7308,7 +7295,7 @@ function loadTabFromStorageObj(id){
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
     return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
-  }catch(e){ console.log('[sakura-debug] loadTabFromStorageObj(',id,') THREW — this is why it silently fell back to null:',e); return null }
+  }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
 function persistOpenTabs(){ try{ localStorage.setItem(OPEN_TABS_KEY, JSON.stringify({tabs:openTabs.map(t=>t.docId), pinned:openTabs.filter(t=>t.pinned).map(t=>t.docId), active:activeTabDocId})) }catch(e){} }
@@ -7489,7 +7476,6 @@ function activateTabOverviewSelection(){ if(tabOverviewActiveIndex<0||!tabOvervi
 
 function restoreOpenTabsOnStartup(forceActiveId){
   let saved=null; try{ const raw=localStorage.getItem(OPEN_TABS_KEY); saved=raw?JSON.parse(raw):null }catch(e){}
-  console.log('[sakura-debug] restoreOpenTabsOnStartup: forceActiveId =',forceActiveId,'| currentDocId =',currentDocId,'| raw OPEN_TABS_KEY =',saved,'| restoreTabsOnLaunch =',restoreTabsOnLaunch);
   const validIds=new Set(loadActiveDocsIndex().map(d=>d.id));
   let ids=(restoreTabsOnLaunch&&saved&&Array.isArray(saved.tabs)?saved.tabs:[]).filter(id=>validIds.has(id));
   if(!ids.length&&currentDocId) ids=[currentDocId];
@@ -7501,10 +7487,9 @@ function restoreOpenTabsOnStartup(forceActiveId){
   // sure the real current document is always among the restored tabs, so a stale OPEN_TABS_KEY
   // can never hide it behind some other tab.
   if(currentDocId&&!ids.includes(currentDocId)) ids=[...ids,currentDocId];
-  console.log('[sakura-debug] restoreOpenTabsOnStartup: validIds =',[...validIds],'| ids to load =',ids);
   const pinnedIds=new Set(restoreTabsOnLaunch&&saved&&Array.isArray(saved.pinned)?saved.pinned:[]);
   openTabs=[];
-  ids.forEach(id=>{ const t=loadTabFromStorageObj(id); console.log('[sakura-debug] restoreOpenTabsOnStartup: loadTabFromStorageObj(',id,') ->',t?{docId:t.docId,nodeCount:t.nodes.length,title:t.title}:null); if(t){ t.pinned=pinnedIds.has(id); openTabs.push(t) } });
+  ids.forEach(id=>{ const t=loadTabFromStorageObj(id); if(t){ t.pinned=pinnedIds.has(id); openTabs.push(t) } });
   // Active-tab priority: the real current document first (if it actually loaded), then the
   // persisted `active` pointer (if still valid), then just the first open tab.
   let activeId=(currentDocId&&findOpenTab(currentDocId))?currentDocId
@@ -7518,16 +7503,14 @@ function restoreOpenTabsOnStartup(forceActiveId){
     // silently stamp the built-in sample content over a slot that used to hold real work.
     const t=loadTabFromStorageObj(currentDocId)
       || {docId:currentDocId,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
-    console.log('[sakura-debug] restoreOpenTabsOnStartup: openTabs was empty, direct-loaded currentDocId ->',{docId:t.docId,nodeCount:t.nodes.length});
     openTabs.push(t); activeId=currentDocId;
     // Self-heal the index so this doesn't repeat on the next refresh.
     if(!validIds.has(currentDocId)) touchDocIndex(currentDocId, t.title||'Untitled');
   }
   if(forceActiveId){ if(!findOpenTab(forceActiveId)){ const t=loadTabFromStorageObj(forceActiveId); if(t)openTabs.push(t) } activeId=forceActiveId }
   const tab=findOpenTab(activeId)||openTabs[0];
-  console.log('[sakura-debug] restoreOpenTabsOnStartup: FINAL activeId =',activeId,'| tab applied =',tab?{docId:tab.docId,nodeCount:tab.nodes.length,title:tab.title}:null);
   if(tab){ applyTabSnapshot(tab) }
-  else { console.log('[sakura-debug] restoreOpenTabsOnStartup: no tab at all -> clearToNoDocumentState()'); clearToNoDocumentState() }
+  else { clearToNoDocumentState() }
   renderTabStrip();
 }
 function createDoc(folderId){
@@ -7565,7 +7548,6 @@ function ensureDocumentForEditing(){
 // Clears all in-memory document state and brings the UI to the empty welcome screen with no
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
-  console.log('[sakura-debug] clearToNoDocumentState called: previous currentDocId =',currentDocId,'| previous nodes.length =',nodes.length,'| stack =',new Error().stack);
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; padUndoStack=[]; padRedoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
@@ -17966,7 +17948,6 @@ async function resetAiSettingsToDefault(){
 }
 el('ai-settings-reset-btn')?.addEventListener('click',()=>resetAiSettingsToDefault());
 window.addEventListener('beforeunload',e=>{
-  console.log('[sakura-debug] beforeunload fired: currentDocId =',currentDocId,'| nodes.length =',nodes.length,'| dirty =',dirty,'| suppressSaveToStorageOnUnload =',suppressSaveToStorageOnUnload);
   sakuraLog('save','beforeunload fired',{suppressSaveToStorageOnUnload});
   if(!suppressSaveToStorageOnUnload){ saveToStorage(); persistOpenTabs(); }
   if(!suppressPrefsSaveOnUnload)savePrefs();
@@ -17994,7 +17975,6 @@ window.addEventListener('beforeunload',e=>{
 })
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
-    console.log('[sakura-debug] visibilitychange hidden: currentDocId =',currentDocId,'| nodes.length =',nodes.length,'| suppressSaveToStorageOnUnload =',suppressSaveToStorageOnUnload);
     if(!suppressSaveToStorageOnUnload)saveToStorage();
     if(!suppressPrefsSaveOnUnload)savePrefs();
     // Passive mode only — deliberately not wired into beforeunload, since that would
