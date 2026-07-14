@@ -778,7 +778,7 @@ body.toolbar-hidden #quick-bar{display:none}
 .doc-tab .doc-tab-close{flex:0 0 auto;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--muted);font-size:13px;line-height:1}
 .doc-tab .doc-tab-close:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
 .doc-tab.pinned{max-width:34px;min-width:34px;padding:6px 0 7px;justify-content:center;gap:0}
-.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close,.doc-tab.pinned .doc-tab-ref-badge{display:none}
+.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close,.doc-tab.pinned .doc-tab-ref-badge,.doc-tab.pinned .doc-tab-status-dot{display:none}
 .doc-tab.pinned .doc-tab-pin-icon{display:flex;color:var(--muted)}
 .doc-tab.pinned.active .doc-tab-pin-icon{color:var(--accent)}
 .doc-tab.pinned .doc-tab-dirty{position:absolute;top:4px;right:4px}
@@ -2488,6 +2488,27 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .diagram-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+#doc-status-wrap{position:relative;flex:0 0 auto}
+.doc-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);transition:background .12s,color .12s}
+.doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
+.doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
+.doc-status-chip[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
+.doc-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.doc-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
+.doc-status-chip[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
+.doc-status-chip[data-color="purple"]{background:color-mix(in srgb,var(--fc-purple) 16%,transparent);color:var(--fc-purple)}
+.doc-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+/* Small read-only dot version for tight spaces (sidebar doc rows, tab strip) — same color
+   mapping as the chip, just a dot instead of a text pill since there isn't room for a label
+   there. Full label always available via the tooltip. */
+.sdoc-status-dot,.doc-tab-status-dot{display:none;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--fc-gray)}
+.sdoc-status-dot.visible,.doc-tab-status-dot.visible{display:inline-block}
+.sdoc-status-dot[data-color="blue"],.doc-tab-status-dot[data-color="blue"]{background:var(--fc-blue)}
+.sdoc-status-dot[data-color="orange"],.doc-tab-status-dot[data-color="orange"]{background:var(--fc-orange)}
+.sdoc-status-dot[data-color="green"],.doc-tab-status-dot[data-color="green"]{background:var(--fc-green)}
+.sdoc-status-dot[data-color="red"],.doc-tab-status-dot[data-color="red"]{background:var(--fc-red)}
+.sdoc-status-dot[data-color="purple"],.doc-tab-status-dot[data-color="purple"]{background:var(--fc-purple)}
+.sdoc-status-dot[data-color="gray"],.doc-tab-status-dot[data-color="gray"]{background:var(--fc-gray)}
 #diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
 #diagram-editor-note-input:hover{background:var(--hover)}
 #diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
@@ -3055,6 +3076,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </button>
       <div id="header-meta">
         <input id="header-title" class="meta-inline" type="text" placeholder="Title" aria-label="Title" />
+        <div class="todo-dd-wrap" id="doc-status-wrap">
+          <button type="button" class="doc-status-chip unset" id="doc-status-chip" data-tip="Document status" aria-haspopup="true" aria-expanded="false">No status</button>
+          <div class="todo-dd-menu" id="doc-status-menu" role="menu">
+            <button type="button" class="todo-dd-item selected" data-value="" role="menuitemradio" aria-checked="true">No status<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="draft" role="menuitemradio" aria-checked="false">Draft<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="review" role="menuitemradio" aria-checked="false">Review<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="approved" role="menuitemradio" aria-checked="false">Approved<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="rejected" role="menuitemradio" aria-checked="false">Rejected<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="finalized" role="menuitemradio" aria-checked="false">Finalized<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-value="discarded" role="menuitemradio" aria-checked="false">Discarded<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="header-actions">
@@ -4210,6 +4243,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Skips Trash by default. Settings → Trash → "Include Trash in search" surfaces matches there too, across every content type above, clearly marked "In Trash"; clicking one reveals it in the Trash section rather than opening it directly, since restoring is a deliberate choice</li>
 <li>Rich-text fields (Notes, Pad) are stripped to plain text before matching, so a search never hits raw HTML markup and snippets always show readable text</li>
 <li>The sidebar's own filter box only matches document/template names, not their contents — for anything inside a document, this box is the one that actually looks</li>
+<li>Every document has a status chip — <strong>No status</strong> by default, or Draft, Review, Approved, Rejected, Finalized, Discarded. Click the chip next to the title field to open a small menu and pick one; it's not a cycle-through-in-order control like the diagram/decision-log status chips, since six options is too many to click past one at a time. The same status shows as a small colored dot next to the document in the sidebar and on its tab (hover either for the full label) — existing documents start with no status until you set one; it's never assumed. Duplicating a document resets its copy to No status rather than carrying the original's over, same reasoning as why the title gets "(copy)" appended instead of reused verbatim — a fresh copy hasn't itself been through review or approval. Version History restores status alongside everything else for versions saved after this feature shipped; older versions predating it simply leave the current status untouched on restore rather than guessing</li>
 <li>Settings → Workspace → Quick Assist controls the search side of this specifically: a switch to turn search results off entirely (command-only), how many results show at once, and which categories (Documents, Notes, Tags, Settings, Help, and so on) are eligible to appear at all</li>
 <li>As you type, the list runs in a fixed order top to bottom — matching commands first, then Run actions, then search results — each labeled with what it'll do ("Hide Sidebar," "Show Toolbar," "Run: New document," "Go to: …") and, for toggles, the setting's current state; <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through the combined list (disabled Run rows are skipped, since there's nothing to activate), <span class="help-kbd">Enter</span> runs or opens whichever is highlighted, <span class="help-kbd">Esc</span> closes and clears the box, or click any of them directly</li>
 <li>Every command and Run action shows a toast with an <strong>Undo</strong> button — nothing is ever silently applied. Just typing a bare toggle name with no verb ("toolbar," "sidebar") flips its current state rather than doing nothing. If a Run action has its own confirmation step (Insert decision log asks who's deciding first) and you cancel that step, nothing happens and the toast says so instead of falsely claiming success. "Go to" rows are navigation, not a change to anything, so there's nothing to undo for those</li>
@@ -6049,7 +6083,7 @@ const TEMPLATES_INDEX_KEY='sakura_templates_index_v1'; const TEMPLATE_KEY_PREFIX
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','delete']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let qaAiGenerateEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let collapseDepth=0; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='teal'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let decisionLogLabelBold=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['note','tags','ai-rewrite','delete']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=true; let qaAiSummaryEnabled=true; let qaAiGenerateEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=0; let previewTocIncludeSections=true; let sectionMarkersDepthZero=false; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=false; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let qaHintEnabled=true; let qaSearchResultCap=8; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','ai-rewrite','version-history']; let nqaIconOnly=false; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=true; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let boldKeyLabels=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let scheduleDarkStart=19; let scheduleLightStart=7; let _themeScheduleTimer=null; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=false; let appbarHiddenButtons=[]; let qaLocation='statusbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -6766,7 +6800,7 @@ function genDocId(){return 'd'+Date.now().toString(36)+Math.random().toString(36
 function docKey(id){return DOC_KEY_PREFIX+id}
 function loadDocsIndex(){try{const raw=localStorage.getItem(DOCS_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
 function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list))}catch(e){}}
-function touchDocIndex(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); const entry=i>=0?{...list[i],title:title||'Untitled',updatedAt:Date.now()}:{id,title:title||'Untitled',updatedAt:Date.now()}; if(i>=0)list[i]=entry; else list.push(entry); saveDocsIndex(list); return list}
+function touchDocIndex(id,title,status){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); const entry=i>=0?{...list[i],title:title||'Untitled',status:status||'',updatedAt:Date.now()}:{id,title:title||'Untitled',status:status||'',updatedAt:Date.now()}; if(i>=0)list[i]=entry; else list.push(entry); saveDocsIndex(list); return list}
 // Update title only — does NOT change updatedAt (prevents list from re-sorting on every autosave)
 function touchDocIndexTitleOnly(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],title:title||'Untitled'}; saveDocsIndex(list);} return list}
 function setDocIcon(id,icon){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],icon:icon||null}; saveDocsIndex(list);} return list}
@@ -6884,7 +6918,7 @@ function trimPadHtmlForRevision(html){
 async function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
   const list=await loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',diagrams:trimDiagramsForRevision(contentObj.diagrams),decisionLogs:Array.isArray(contentObj.decisionLogs)?contentObj.decisionLogs:[],qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
+  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),decisionLogs:Array.isArray(contentObj.decisionLogs)?contentObj.decisionLogs:[],qa:Array.isArray(contentObj.qa)?contentObj.qa:[],pad:trimPadHtmlForRevision(contentObj.pad||'')});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
   await saveDocRevisions(id,list);
 }
@@ -6982,7 +7016,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -7001,13 +7035,14 @@ function saveToStorage(){
     storageWriteFailed=false;
     const titleForIndex=payload.title||'Untitled';
     // Only bump updatedAt when content is actually dirty; title changes always persist title
-    if(dirty) touchDocIndex(currentDocId,titleForIndex);
+    if(dirty) touchDocIndex(currentDocId,titleForIndex,docStatus);
     else touchDocIndexTitleOnly(currentDocId,titleForIndex);
-    // The sidebar's doc list reads from the index above, not from `nodes`, so it
-    // needs an explicit re-render whenever the displayed title actually changes —
-    // otherwise the row keeps showing the stale title until something else (switching
-    // docs, opening a menu, etc.) happens to trigger a full renderSidebar().
-    if(titleForIndex!==_sbTitleSyncCache){_sbTitleSyncCache=titleForIndex; renderSidebar(); renderTabStrip();}
+    // The sidebar's doc list and the tab strip both read from the index above, not from `nodes`,
+    // so they need an explicit re-render whenever the displayed title OR status actually changes
+    // — otherwise a row keeps showing stale info until something else (switching docs, opening a
+    // menu, etc.) happens to trigger a full renderSidebar().
+    const sbSyncKey=titleForIndex+'|'+docStatus;
+    if(sbSyncKey!==_sbTitleSyncCache){_sbTitleSyncCache=sbSyncKey; renderSidebar(); renderTabStrip();}
     lastSavedAt=Date.now();
     updateSavedIndicator();
     const elx=el('sb-saved'); if(elx){elx.style.color='var(--accent)'; setTimeout(()=>{if(elx)elx.style.color=''},900)}
@@ -7025,6 +7060,7 @@ function loadDocFromStorage(id){
     focusedId=Number.isFinite(d.focusedId)&&nodes.some(n=>n.id===d.focusedId)?d.focusedId:null;
     if(el('header-title'))el('header-title').value=d.title||'';
     if(el('doc-author'))el('doc-author').value=d.author||'';
+    setDocStatus(typeof d.docStatus==='string'?d.docStatus:'',false);
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
@@ -7107,7 +7143,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -7131,6 +7167,7 @@ function applyTabSnapshot(tab){
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; padUndoStack=tab.padUndoStack||[]; padRedoStack=tab.padRedoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
+  setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
   diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
@@ -7150,7 +7187,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ return null }
 }
 
@@ -7226,7 +7263,7 @@ function reorderTab(draggedId,targetId,side){
 
 function renderTabStrip(){
   const strip=el('doc-tab-strip'); if(!strip)return;
-  const titleIndex=new Map(loadDocsIndex().map(d=>[d.id,d.title||'Untitled']));
+  const docIndexMap=new Map(loadDocsIndex().map(d=>[d.id,d]));
   strip.innerHTML='';
   const ordered=[...openTabs.filter(t=>t.pinned), ...openTabs.filter(t=>!t.pinned)];
   ordered.forEach(tab=>{
@@ -7235,7 +7272,9 @@ function renderTabStrip(){
     const tabIsDirty=isActive?dirty:!!tab.dirty;
     row.className='doc-tab'+(isActive?' active':'')+(tabIsDirty?' is-dirty':'')+(tab.pinned?' pinned':'');
     row.setAttribute('role','tab'); row.setAttribute('aria-selected',String(isActive));
-    const title=isActive?(el('header-title')?.value||'Untitled'):(titleIndex.get(tab.docId)||tab.title||'Untitled');
+    const indexEntry=docIndexMap.get(tab.docId);
+    const title=isActive?(el('header-title')?.value||'Untitled'):(indexEntry?.title||tab.title||'Untitled');
+    const tabStatus=isActive?docStatus:(indexEntry?.status||tab.docStatus||'');
     row.dataset.tip=tab.pinned?(title||'Untitled')+' (pinned — right-click for options)':'Double-click to rename';
     row.draggable=true;
     row.addEventListener('dragstart',e=>{ tabDragState={draggedId:tab.docId,targetId:null,side:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(tab.docId))}catch(err){} row.classList.add('dragging'); hideContextMenu(); closeTabOverviewMenu() });
@@ -7256,8 +7295,13 @@ function renderTabStrip(){
       tabDragState={draggedId:null,targetId:null,side:null};
     });
     row.addEventListener('dragend',()=>{ clearTabDragIndicators(); tabDragState={draggedId:null,targetId:null,side:null} });
-    row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-ref-badge" data-tip="Referenced by a meeting or to-do — click to view"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
+    row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-ref-badge" data-tip="Referenced by a meeting or to-do — click to view"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="doc-tab-status-dot"></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
     row.querySelector('.doc-tab-title').textContent=title||'Untitled';
+    const statusDot=row.querySelector('.doc-tab-status-dot');
+    if(statusDot){
+      if(tabStatus){ statusDot.classList.add('visible'); statusDot.dataset.color=docStatusColor(tabStatus); statusDot.dataset.tip=docStatusLabel(tabStatus); }
+      else { statusDot.classList.remove('visible'); delete statusDot.dataset.color; statusDot.dataset.tip=''; }
+    }
     const mWholeRefs=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled())?meetingRefsForWholeDoc(tab.docId):[];
     const tWholeRefs=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled())?todoRefsForWholeDoc(tab.docId):[];
     const refBadge=row.querySelector('.doc-tab-ref-badge');
@@ -7369,7 +7413,7 @@ function ensureDocumentForEditing(){
   const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:resolvedAuthor,pad:''};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
-  const tab={docId:id,title:'',author:resolvedAuthor,pad:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+  const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',pad:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
   openTabs.push(tab);
   currentDocId=id; activeTabDocId=id; saveCurrentDocId(id);
   // Sync the actual input the rest of the app reads from (template stamping, save, status
@@ -7377,6 +7421,7 @@ function ensureDocumentForEditing(){
   // a template into this brand-new doc) would still see an empty author field even though
   // the resolved default was already written to storage above.
   if(el('doc-author'))el('doc-author').value=resolvedAuthor;
+  setDocStatus('',false);
   persistOpenTabs(); renderTabStrip(); renderSidebar();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
 }
@@ -7386,6 +7431,7 @@ function clearToNoDocumentState(){
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; padUndoStack=[]; padRedoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
+  setDocStatus('',false);
   if(el('pad-editor'))el('pad-editor').innerHTML='';
   titleAutoSyncEnabled=true; lastAutoTitle='';
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
@@ -7441,7 +7487,11 @@ async function duplicateDoc(id){
       // new document's very next save instead of being protected until it's actually confirmed.
       newDiagrams.push({...dg,id:newDgId,blobSynced:false});
     }
-    const payload={...d,title:newTitle,diagrams:newDiagrams};
+    // Status deliberately reset, not copied from the source via the spread below — a duplicate
+    // is a fresh, unreviewed copy; carrying over "Approved" or "Finalized" would misleadingly
+    // imply the copy itself went through that process, same reasoning as why the title gets
+    // "(copy)" appended rather than reused verbatim.
+    const payload={...d,title:newTitle,docStatus:'',diagrams:newDiagrams};
     localStorage.setItem(docKey(newId),JSON.stringify(payload));
     touchDocIndex(newId,newTitle);
     el('docs-menu').classList.remove('open');
@@ -7631,7 +7681,7 @@ async function restoreDocRevision(docId,ts){
   let restoreOrphanMsg='';
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Before restoring an older version');
+    recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision)
@@ -7666,11 +7716,15 @@ async function restoreDocRevision(docId,ts){
       el('pad-editor').innerHTML=sakuraSanitizeRichHtml(rev.pad||'');
     }
     if(el('header-title'))el('header-title').value=rev.title||'';
+    // Older revisions predate docStatus entirely and simply lack the key — leaving the current
+    // status untouched in that case, rather than blanking it, since "unknown" isn't the same as
+    // "explicitly had no status at that point in time".
+    if('docStatus' in rev)setDocStatus(rev.docStatus||'',false);
     titleAutoSyncEnabled=!String(rev.title||'').trim(); lastAutoTitle=String(rev.title||'').trim();
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,decisionLogs);
   } else {
-    let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[]; let prevDecisionLogsCurrent=[];
+    let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[]; let prevDecisionLogsCurrent=[]; let prevDocStatusCurrent='';
     try{
       const raw=localStorage.getItem(docKey(docId));
       if(raw){
@@ -7690,6 +7744,7 @@ async function restoreDocRevision(docId,ts){
         prevPad=prev.pad||'';
         prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
         prevDecisionLogsCurrent=Array.isArray(prev.decisionLogs)?prev.decisionLogs:[];
+        prevDocStatusCurrent=typeof prev.docStatus==='string'?prev.docStatus:'';
       }
     }catch(e){}
     // Same fallback logic as the active-doc branch above: restore from the revision when it has
@@ -7729,10 +7784,11 @@ async function restoreDocRevision(docId,ts){
       try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]}); }catch(e){}
       restoredDiagramsMeta.push(meta);
     }
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',pad:restoredPad,qa:restoredQa,diagrams:restoredDiagramsMeta,decisionLogs:restoredDecisionLogs};
+    const restoredDocStatus='docStatus' in rev?(rev.docStatus||''):prevDocStatusCurrent;
+    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,pad:restoredPad,qa:restoredQa,diagrams:restoredDiagramsMeta,decisionLogs:restoredDecisionLogs};
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredDecisionLogs);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
-    touchDocIndex(docId,rev.title||'Untitled');
+    touchDocIndex(docId,rev.title||'Untitled',restoredDocStatus);
     // If it's open in the background (not on screen), refresh that cached copy too —
     // otherwise switching to it later would show what was there before this restore.
     const bgTab=openTabs.find(t=>t.docId===docId);
@@ -7765,7 +7821,7 @@ async function saveManualDocVersion(){
   const docId=historyModalDocId; if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    await recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||''},'Manual checkpoint');
+    await recordDocRevision(docId,{nodes,diagrams,decisionLogs,qa:qaItems,pad:cleanEditorHtml(el('pad-editor')),title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
@@ -7821,6 +7877,32 @@ function updateDiagramEditorStatusChip(d){
   const btn=el('diagram-editor-status-chip'); if(!btn)return;
   const s=diagramStatusOf(d);
   btn.dataset.color=diagramStatusColor(s); btn.textContent=diagramStatusLabel(s);
+}
+// Document-level status — same chip pattern as diagram/decision log status above, but a menu
+// instead of click-to-cycle: 6 named states plus "No status" is too many to cycle through one
+// click at a time and still feel fast, unlike the 3-4 states those two use. '' (empty string)
+// means unset — deliberately NOT defaulted to 'draft' on existing or newly-created documents,
+// since assuming every document in a large existing library is a fresh draft would just be
+// wrong for most of them; the chip only ever shows something once someone actually sets it.
+const DOC_STATUSES=['','draft','review','approved','rejected','finalized','discarded'];
+function docStatusLabel(s){ return ({'':'No status',draft:'Draft',review:'Review',approved:'Approved',rejected:'Rejected',finalized:'Finalized',discarded:'Discarded'})[s]||'No status'; }
+function docStatusColor(s){ return ({draft:'gray',review:'orange',approved:'green',rejected:'red',finalized:'blue',discarded:'purple'})[s]||''; }
+function updateDocStatusChip(){
+  const btn=el('doc-status-chip'); if(btn){
+    const color=docStatusColor(docStatus);
+    if(color)btn.dataset.color=color; else delete btn.dataset.color;
+    btn.textContent=docStatusLabel(docStatus);
+    btn.classList.toggle('unset',!docStatus);
+  }
+  document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
+    const match=item.getAttribute('data-value')===docStatus;
+    item.classList.toggle('selected',match); item.setAttribute('aria-checked',String(match));
+  });
+}
+function setDocStatus(status,persist=true){
+  docStatus=DOC_STATUSES.includes(status)?status:'';
+  updateDocStatusChip();
+  if(persist){ markDirty(); scheduleAutoSave(); }
 }
 // LAST_EXPORT_KEY is a single app-wide "anything exported, ever" timestamp — Sakura doesn't
 // track exports per document or per format, so this is necessarily approximate: it flags a
@@ -8602,6 +8684,24 @@ document.querySelectorAll('#diagram-sort-menu .todo-dd-item').forEach(item=>{
 });
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#diagram-sort-wrap'))el('diagram-sort-menu')?.classList.remove('open');
+});
+el('doc-status-chip')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const menu=el('doc-status-menu'); if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
+  menu.classList.toggle('open',!isOpen);
+  e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
+});
+document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
+  item.addEventListener('click',e=>{
+    e.stopPropagation();
+    setDocStatus(item.getAttribute('data-value')||'');
+    el('doc-status-menu')?.classList.remove('open');
+  });
+});
+document.addEventListener('mousedown',e=>{
+  if(!e.target.closest('#doc-status-wrap'))el('doc-status-menu')?.classList.remove('open');
 });
 el('dtb-bulk-delete')?.addEventListener('mousedown',e=>{ e.preventDefault(); bulkDeleteDiagramsSelected(); });
 el('diagram-summary-chip')?.addEventListener('click',()=>{
@@ -17972,6 +18072,11 @@ function makeDocItem(d, allFolders, filterActive){
     if(!nowCurrent){ switchDoc(d.id); } else if(hadSelection){ renderSidebar(); }
   });
   item.appendChild(nb);
+
+  if(d.status){
+    const statusDot=document.createElement('span'); statusDot.className='sdoc-status-dot visible'; statusDot.dataset.color=docStatusColor(d.status); statusDot.dataset.tip=docStatusLabel(d.status);
+    item.appendChild(statusDot);
+  }
 
   const meta = document.createElement('span'); meta.className='sdoc-meta';
   meta.textContent = sbRelativeTime(d.updatedAt);
