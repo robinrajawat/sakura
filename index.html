@@ -24467,6 +24467,12 @@ function showPopoverCaptureForm(nodeId,kind){
     closePreviewPopover();
     if(!text)return;
     if(kind==='comment')saveNodeComment(nodeId,text); else saveNodeQuestion(nodeId,text);
+    // Neither save function touches the Presenter/Preview DOM itself (saveNodeComment doesn't
+    // render at all; saveNodeQuestion only re-renders the Pad's own Q&A list, and only if that
+    // panel happens to be open) — without this, the new note/question dot wouldn't show up
+    // until the next unrelated re-render, e.g. exiting and reopening presenter mode. Same
+    // close-then-render sequence the marker buttons above already use for exactly this reason.
+    renderPreviewBody();
   };
   // Enter saves (Shift+Enter for a literal newline, same convention as chat-style inputs
   // elsewhere) — Escape is already handled globally by openPreviewPopover's own Escape listener.
