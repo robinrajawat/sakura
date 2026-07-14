@@ -6834,6 +6834,54 @@ function touchDocIndexTitleOnly(id,title){const list=loadDocsIndex(); const i=li
 function setDocIcon(id,icon){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],icon:icon||null}; saveDocsIndex(list);} return list}
 function saveCurrentDocId(id){try{localStorage.setItem(CURRENT_DOC_KEY,id)}catch(e){}}
 function loadCurrentDocId(){try{return localStorage.getItem(CURRENT_DOC_KEY)}catch(e){return null}}
+// Single reconciliation pass, run once at startup before anything else reads document state.
+// sakura_doc_v1_<id> (the actual per-document payload) is the only true source of truth for
+// "does this document exist" — everything else (the docs index, the open-tabs list, the
+// current-doc pointer) is separately-written metadata *about* that storage, and each of those
+// keys can independently fall out of sync with it: a failed/partial write, a race between two
+// tabs, a bug. Rather than patching each individual downstream symptom as it's discovered
+// (which is how this function came to exist), this walks every sakura_doc_v1_* key actually
+// present in localStorage and repairs the docs index and the open-tabs list to match it before
+// ensureDocSystem or restoreOpenTabsOnStartup make any decisions from them.
+function reconcileDocState(list){
+  let realIds;
+  try{
+    realIds=new Set();
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(key&&key.indexOf(DOC_KEY_PREFIX)===0){
+        try{ const raw=localStorage.getItem(key); const d=raw?JSON.parse(raw):null; if(d&&Array.isArray(d.nodes))realIds.add(key.slice(DOC_KEY_PREFIX.length)); }catch(e){}
+      }
+    }
+  }catch(e){ return list } // enumerating localStorage itself failed — leave list untouched rather than risk wiping it on bad data
+  let changed=false;
+  // Drop index entries with no backing document left in storage (e.g. a partial delete).
+  let repaired=list.filter(d=>{ const ok=realIds.has(d.id); if(!ok)changed=true; return ok });
+  // Add back any real document missing from the index — the exact desync this pass exists for.
+  realIds.forEach(id=>{
+    if(!repaired.some(d=>d.id===id)){
+      let title='Untitled';
+      try{ const raw=localStorage.getItem(docKey(id)); const d=raw?JSON.parse(raw):null; if(d&&d.title)title=d.title; }catch(e){}
+      repaired.push({id,title,updatedAt:Date.now()});
+      changed=true;
+    }
+  });
+  if(changed) saveDocsIndex(repaired);
+  // Clean the open-tabs list the same way, so a document that's genuinely gone can't leave a
+  // ghost tab behind or an active-pointer stuck on something that no longer exists.
+  try{
+    const raw=localStorage.getItem(OPEN_TABS_KEY); const saved=raw?JSON.parse(raw):null;
+    if(saved){
+      const tabs=Array.isArray(saved.tabs)?saved.tabs.filter(id=>realIds.has(id)):[];
+      const pinned=Array.isArray(saved.pinned)?saved.pinned.filter(id=>realIds.has(id)):[];
+      const active=(saved.active&&realIds.has(saved.active))?saved.active:null;
+      if(tabs.length!==(Array.isArray(saved.tabs)?saved.tabs.length:0)||pinned.length!==(Array.isArray(saved.pinned)?saved.pinned.length:0)||active!==saved.active){
+        localStorage.setItem(OPEN_TABS_KEY,JSON.stringify({tabs,pinned,active}));
+      }
+    }
+  }catch(e){}
+  return repaired;
+}
 function ensureDocSystem(){
   let list=loadDocsIndex();
   if(!list.length){
@@ -6858,18 +6906,12 @@ function ensureDocSystem(){
       try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(LEGACY_STORAGE_KEY); localStorage.removeItem(META_KEY); localStorage.removeItem(LEGACY_META_KEY); }catch(e){}
     }
   }
+  list=reconcileDocState(list);
   let curId=loadCurrentDocId();
   if(curId&&!list.some(d=>d.id===curId)){
-    // Not present in the index doesn't mean the document is actually gone — the index
-    // (sakura_docs_index_v1) can fall out of sync with the real per-document storage
-    // (sakura_doc_v1_<id>), e.g. after a failed/partial write. Check storage directly
-    // before discarding a document that might still be fully intact; this is the same
-    // desync restoreOpenTabsOnStartup() guards against, just caught one step earlier
-    // here so a stale-index doc never even gets replaced by a different one below.
-    let recovered=null;
-    try{ const raw=localStorage.getItem(docKey(curId)); if(raw){const d=JSON.parse(raw); if(Array.isArray(d.nodes))recovered=d;} }catch(e){}
-    if(recovered){ list=touchDocIndex(curId,recovered.title||'Untitled'); }
-    else { curId=null; }
+    // reconcileDocState() above already added back any document that still has real storage
+    // behind it — if it's still missing here, the document is genuinely gone.
+    curId=null;
   }
   if(!curId&&list.length){
     // No active document recorded. Only fall back to the first document if this looks
