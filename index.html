@@ -3888,7 +3888,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Diagrams in exports</span><span class="settings-row-desc">Includes each node's linked draw.io diagram (Pad → Diagrams tab) in Word and PowerPoint exports, same as it already appears in Preview and PDF. Off: diagrams stay visible in the app and PDF only, out of Word/PowerPoint files.</span></div><button id="diagram-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include Diagrams in exports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Folded-content notice in Export menu</span><span class="settings-row-desc">The reminder that appears in the Export ▾ menu whenever anything is folded ("Skips folded sections… Include them" or the reverse) — same info as the setting above, just surfaced right where you're about to export. Turn off once you know the behavior and don't need the reminder each time; the underlying Skip folded sections setting itself is unaffected.</span></div><button id="export-menu-fold-note-enabled-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show folded-content notice in Export menu"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time/decision stats) before the contents page when exporting to PDF or Word. The small wordmark above the title only appears if Settings → Preview → Presenter mode → "Branding" is also on.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF footer</span><span class="settings-row-desc">Add a small running footer — document title and export date — to the bottom-left of every page in PDF exports. No page numbers: browsers' print engines don't expose a "page X of Y" count to a web page, so this sticks to what's actually reliable. PDF-only for now.</span></div><button id="pdf-footer-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF footer"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF footer</span><span class="settings-row-desc">Adds a running footer to every PDF page: document title and export date (bottom-left), page numbers (bottom-center). Renders as real CSS page-margin content, not an overlay, so it can't end up overlapping the page's own content — Chrome-based browsers only; unsupported browsers just show no footer.</span></div><button id="pdf-footer-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF footer"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF page margins</span><span class="settings-row-desc">Default margin size when exporting to PDF — the print dialog that opens still lets you override this per export.</span></div><span class="select-wrap"><select class="select" id="preview-pdf-margin-select" style="width:120px"><option value="narrow">Narrow</option><option value="normal" selected>Normal</option><option value="wide">Wide</option></select><svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
             </div>
             <div class="settings-field" id="export-menu-buttons-field">
@@ -24485,8 +24485,31 @@ function exportPreviewAsPdf(onDone){
   // (some browsers don't inherit custom props through @media print body overrides reliably)
   const cs=getComputedStyle(document.documentElement);
   const v=n=>cs.getPropertyValue(n).trim()||cs.getPropertyValue('--'+n).trim();
+  const meta=getMeta();
+  // content: "..." in a CSS margin box (see @page below) is a plain generated-content string,
+  // not HTML/JS — needs its own escaping, same idea as docxXmlText/escMd elsewhere but for CSS
+  // string literals specifically: backslash and the quote character that would otherwise end
+  // the string early, and no raw newlines since a margin box renders on one line anyway.
+  const cssStr=s=>String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\r?\n/g,' ');
+  const footerDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const footerContent=cssStr(`${String(meta.title||'Untitled')} · ${footerDate}`);
+  const brandingContent=cssStr(getBrandingDisplayText());
   style.textContent=`
-    @page { margin: ${PDF_MARGIN_MM[previewPdfMargin]||PDF_MARGIN_MM.normal}mm; }
+    @page {
+      margin: ${PDF_MARGIN_MM[previewPdfMargin]||PDF_MARGIN_MM.normal}mm;
+      /* Chrome 131+ (Nov 2024) supports these margin-box at-rules natively — this replaced an
+         earlier position:fixed-based approach that could overlap the last line of content on a
+         page, since a fixed element doesn't know where the browser will actually paginate.
+         Margin boxes render strictly within the @page margin area by spec, so that overlap is
+         structurally impossible here, and counter(page)/counter(pages) genuinely works — the
+         "page numbers aren't buildable" limitation this used to have no longer applies.
+         Unsupported browsers (Firefox as of this writing) just render no footer at all, which
+         is a safe fallback rather than a broken one. Defining any margin box also suppresses
+         Chrome's own default header/footer (page URL + date) for the page. */
+      ${previewPdfFooterEnabled?`@bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }`:''}
+      ${previewPdfFooterEnabled?`@bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }`:''}
+      ${previewPresenterBranding?`@bottom-right{ content:"${brandingContent}"; font-family:'Inter',sans-serif; font-size:8pt; letter-spacing:.15em; color:#a3a099; }`:''}
+    }
     @media print {
       body.printing-preview > *:not(#preview-overlay){ display:none !important; }
       body.printing-preview #preview-overlay{
@@ -24619,20 +24642,9 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview #pv-doc-header { margin-bottom:24px !important; }
       body.printing-preview .pv-tag-chip-static { background:transparent !important; border:1px solid #aaa !important; color:#555 !important; }
       body.printing-preview .pv-dlog { break-inside:avoid; page-break-inside:avoid; }
-      body.printing-preview #sakura-print-branding{
-        display:block !important; position:fixed !important; right:10mm; bottom:8mm;
-        font:600 8px 'Inter',sans-serif !important; letter-spacing:.22em !important;
-        color:#a3a099 !important; z-index:9999;
-      }
-      body.printing-preview #sakura-print-footer{
-        display:block !important; position:fixed !important; left:10mm; bottom:8mm;
-        font:500 8px 'Inter',sans-serif !important; color:#a3a099 !important; z-index:9998;
-        max-width:60%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      }
     }
   `;
   document.head.appendChild(style);
-  const meta=getMeta();
   let coverEl=null;
   if(coverPageEnabled){
     document.body.classList.add('has-cover-page');
@@ -24660,29 +24672,6 @@ function exportPreviewAsPdf(onDone){
     const overlay=el('preview-overlay');
     overlay?.insertBefore(coverEl,overlay.firstChild);
   }
-  const overlay=el('preview-overlay');
-  // Same setting, same helper, same corner placement as PPTX export (see its own comment) and
-  // the presenter bar — one on/off switch and one custom-text field cover all three places
-  // rather than each export having its own separate branding toggle.
-  let brandEl=null;
-  if(previewPresenterBranding){
-    brandEl=document.createElement('div'); brandEl.id='sakura-print-branding'; brandEl.style.display='none';
-    brandEl.textContent=getBrandingDisplayText();
-    overlay?.appendChild(brandEl);
-  }
-  // No page numbers here on purpose: Chrome's print pipeline doesn't implement CSS Paged
-  // Media's @page margin boxes (@bottom-center { content: counter(page) } etc.), and there's
-  // no other way for a web page to learn how many pages window.print() will actually produce
-  // before it happens — so "page 3 of 12" simply isn't available to build here. Title + date
-  // is what's left that's actually reliable, on the opposite corner from the branding mark so
-  // the two never collide when both are on.
-  let footerEl=null;
-  if(previewPdfFooterEnabled){
-    footerEl=document.createElement('div'); footerEl.id='sakura-print-footer'; footerEl.style.display='none';
-    const footerDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
-    footerEl.textContent=`${String(meta.title||'Untitled')} · ${footerDate}`;
-    overlay?.appendChild(footerEl);
-  }
   const originalTitle=document.title;
   document.title=String(meta.title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_');
   previewPrintActive=true;
@@ -24691,8 +24680,6 @@ function exportPreviewAsPdf(onDone){
     if(_pdfCleanupDone)return; _pdfCleanupDone=true;
     previewPrintActive=false;
     coverEl?.remove();
-    brandEl?.remove();
-    footerEl?.remove();
     document.body.classList.remove('has-cover-page');
     document.title=originalTitle;
     document.body.classList.remove('printing-preview');
