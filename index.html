@@ -2280,7 +2280,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-cap-head-actions .pv-qm-btn{width:24px;height:24px}
 .pv-cap-head-actions .pv-qm-save:hover{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
 .pv-capture-input{width:100%;box-sizing:border-box;resize:none;min-height:64px;padding:0;border:none;background:transparent;color:var(--fg);font:400 13.5px/1.5 'Inter',sans-serif;outline:none;margin-bottom:2px}
-input.pv-capture-input{min-height:0;padding:2px 0;font-size:14px}
+.pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
 .pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
@@ -4466,7 +4466,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
 <li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
-<li>While actually presenting (not just browsing Preview), right-clicking a line's actual text opens a small popover built for capturing live feedback without breaking presenting flow — left-click always just advances to the next slide now, same as clicking anywhere else (matching the standard PowerPoint/Keynote/Google Slides convention with no exceptions); right-clicking anywhere that isn't a line's text still opens the laser-pointer toggle menu exactly as before. Four quick marks — ✓ Confirmed, ✗ Issue, ⏸ Parked, 🚩 Follow-up — click one to set it, click the same one again to clear it; a small colored glyph then shows on that line, both in Preview/Presenter and back in the editor's own outline, for the rest of the session (click the glyph in the editor to clear it from there too). Next to the marks, <strong>Edit</strong>, <strong>Note…</strong>, and <strong>Question…</strong> swap the same small popover's content in place for that specific action — rather than opening a separate full-screen prompt; for something that's genuinely a line or two, a modal taking over the whole screen was more interruption than the content warranted. Each of these three shows a compact header line (which one you're in, on the left; icon-only Cancel and Save on the right — Enter also saves, Escape also cancels) above a plain, borderless field. <strong>Edit</strong> is just that — the field is prefilled with the line's own current text, cursor already at the end, and Save commits it straight back to the node; it's the same underlying text the editor and outline both use, so it's picked up everywhere the next time anything re-renders. <strong>Note</strong> and <strong>Question</strong> both start blank and fold a short preview of which node you clicked into that same header line (label · node text), so you can confirm you've got the right one before typing without needing a whole extra row for it. Note appends a timestamped line to that node's Note field — if it already has note content, a Delete icon appears next to Save so you can clear the whole note in one action instead of only ever adding to it. Question adds a new Q&amp;A row linked to that node — neither Note nor Question copies the node's own text into what gets saved, only what you actually type; the Q&amp;A row links back via the same mechanism a Scan-created row uses for its own link icon, so nothing about the outline itself gets duplicated. Either way, a small indicator dot appears on that line (both in Preview/Presenter and back in the editor's own outline) — the same note-dot an ordinary note gets, or a dedicated question-mark dot for a Question — so a captured line stays visibly marked rather than only living inside the Pad; click either dot to jump straight to what was captured</li>
+<li>While actually presenting (not just browsing Preview), right-clicking a line's actual text opens a small popover built for capturing live feedback without breaking presenting flow — left-click always just advances to the next slide now, same as clicking anywhere else (matching the standard PowerPoint/Keynote/Google Slides convention with no exceptions); right-clicking anywhere that isn't a line's text still opens the laser-pointer toggle menu exactly as before. Four quick marks — ✓ Confirmed, ✗ Issue, ⏸ Parked, 🚩 Follow-up — click one to set it, click the same one again to clear it; a small colored glyph then shows on that line, both in Preview/Presenter and back in the editor's own outline, for the rest of the session (click the glyph in the editor to clear it from there too). Next to the marks, <strong>Edit</strong> turns that line's own text into a plain editable field right on the slide, in place — cursor already at the end, no popover involved at all; Enter or clicking away saves it straight back to the node, Escape reverts to what it said before. It's the same underlying text the editor and outline both use, so it's picked up everywhere the next time anything re-renders. <strong>Note…</strong> and <strong>Question…</strong> swap the same small popover's content in place for whichever one you picked instead — rather than opening a separate full-screen prompt; for something that's genuinely a line or two, a modal taking over the whole screen was more interruption than the content warranted. Each shows a compact header line (which one you're in, on the left; icon-only Cancel and Save on the right — Enter also saves, Escape also cancels) above a plain, borderless field, and both start blank and fold a short preview of which node you clicked into that same header line (label · node text), so you can confirm you've got the right one before typing without needing a whole extra row for it. Note appends a timestamped line to that node's Note field — if it already has note content, a Delete icon appears next to Save so you can clear the whole note in one action instead of only ever adding to it. Question adds a new Q&amp;A row linked to that node — neither Note nor Question copies the node's own text into what gets saved, only what you actually type; the Q&amp;A row links back via the same mechanism a Scan-created row uses for its own link icon, so nothing about the outline itself gets duplicated. Either way, a small indicator dot appears on that line (both in Preview/Presenter and back in the editor's own outline) — the same note-dot an ordinary note gets, or a dedicated question-mark dot for a Question — so a captured line stays visibly marked rather than only living inside the Pad; click either dot to jump straight to what was captured</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -24540,7 +24540,7 @@ function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const cur=node.marker||'';
   const mkBtn=(m)=>`<button type="button" class="pv-qm-btn pv-qm-mark${cur===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`;
-  const html=`<div class="pv-qm-row">${mkBtn('confirmed')}${mkBtn('issue')}${mkBtn('parked')}${mkBtn('followup')}<span class="pv-qm-sep"></span><button type="button" class="pv-qm-btn" data-action="edit" data-tip="Edit text…">${markIconSvg('edit')}</button><button type="button" class="pv-qm-btn" data-action="comment" data-tip="Note…">${markIconSvg('comment')}</button><button type="button" class="pv-qm-btn" data-action="question" data-tip="Question…">${markIconSvg('question')}</button></div>`;
+  const html=`<div class="pv-qm-row">${mkBtn('confirmed')}${mkBtn('issue')}${mkBtn('parked')}${mkBtn('followup')}<span class="pv-qm-sep"></span><button type="button" class="pv-qm-btn" data-action="edit" data-tip="Edit text">${markIconSvg('edit')}</button><button type="button" class="pv-qm-btn" data-action="comment" data-tip="Note…">${markIconSvg('comment')}</button><button type="button" class="pv-qm-btn" data-action="question" data-tip="Question…">${markIconSvg('question')}</button></div>`;
   openPreviewPopover(triggerEl,html,'pv-marker-popover',atPoint);
   previewPopoverEl?.querySelectorAll('.pv-qm-mark').forEach(b=>{
     b.addEventListener('click',()=>{
@@ -24554,9 +24554,48 @@ function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
   // only ever a line or two of text, a modal that takes over the whole screen is a lot of
   // interruption for not much content. Same position, same dismiss behavior (outside click/
   // Escape/scroll, all already wired by openPreviewPopover above), just different content inside.
-  previewPopoverEl?.querySelector('[data-action="edit"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'edit'); });
+  previewPopoverEl?.querySelector('[data-action="edit"]')?.addEventListener('click',()=>{ closePreviewPopover(); startInlineNodeEdit(nodeId); });
   previewPopoverEl?.querySelector('[data-action="comment"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'comment'); });
   previewPopoverEl?.querySelector('[data-action="question"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'question'); });
+}
+// Editing a line's own text happens right on the slide — no popover at all — since it's just
+// swapping the rendered text for a plain <input> prefilled with the same value, in the exact
+// same spot, styled to inherit the slide's own font/size/color so it doesn't look like a
+// foreign control dropped on top. Mirrors how the main outline editor itself edits a node (a
+// real <input> replacing the label, not contenteditable) rather than inventing a second way to
+// edit the same underlying text. Enter or blur saves; Escape reverts to the original text.
+let _pvInlineEditNodeId=null;
+function startInlineNodeEdit(nodeId){
+  const node=nodes.find(n=>n.id===nodeId); if(!node)return;
+  const container=document.querySelector('[data-pv-node="'+nodeId+'"]')||document.getElementById('pv-anchor-'+nodeId);
+  const contentEl=container?.querySelector('.pv-text,[class*="pv-heading-"],.pv-section');
+  if(!contentEl)return;
+  _pvInlineEditNodeId=nodeId;
+  const originalHtml=contentEl.innerHTML;
+  const input=document.createElement('input');
+  input.type='text'; input.className='pv-inline-edit-input'; input.value=node.text||'';
+  contentEl.innerHTML=''; contentEl.appendChild(input);
+  input.focus();
+  input.setSelectionRange(input.value.length,input.value.length);
+  let done=false;
+  const finish=(save)=>{
+    if(done)return; done=true; _pvInlineEditNodeId=null;
+    if(save){
+      const val=input.value;
+      if(val!==node.text)saveNodeText(nodeId,val);
+      renderPreviewBody();
+    } else {
+      contentEl.innerHTML=originalHtml;
+    }
+  };
+  // stopPropagation on both keys — without it, Escape bubbles up to the global Presenter
+  // keydown handler and exits Presenter mode entirely instead of just cancelling this edit.
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); finish(true); }
+    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); finish(false); }
+  });
+  input.addEventListener('blur',()=>finish(true));
+  input.addEventListener('click',e=>e.stopPropagation());
 }
 // A short, non-saved preview of the node's own text — confirms which line you're actually
 // capturing against without copying that text into anything that gets saved (the point being to
@@ -24580,25 +24619,15 @@ function showPopoverCaptureForm(nodeId,kind){
   const node=nodes.find(n=>n.id===nodeId); const pop=previewPopoverEl; if(!node||!pop)return;
   pop.classList.remove('pv-marker-popover');
   pop.classList.add('pv-popover-capture');
-  const label=kind==='edit'?'Edit':kind==='comment'?'Note':'QA';
-  const placeholder=kind==='edit'?'Node text…':kind==='comment'?'Type your note…':'Type your question…';
-  // Edit prefills with the node's current raw text (so you're revising it in place) and skips
-  // the node-text preview entirely — the field itself already is that line, a second copy of it
-  // would be redundant. Note/QA start blank and fold a short read-only preview of the node's
-  // text into the header line itself (label · preview), confirming which line you're capturing
-  // against without a whole extra row for it. Edit uses a plain single-line <input>, not a
-  // <textarea> — a node's text is one outline row, and Shift+Enter in a textarea would let a
-  // literal newline slip into a field that was never meant to hold one; Note/QA go into
-  // genuinely multi-line fields (the note body, a Q&A row) so they keep the textarea, and grow
-  // with what you type instead of sitting in a small fixed box with its own internal scrollbar.
-  const initialValue=kind==='edit'?(node.text||''):'';
-  const preview=kind==='edit'?'':_nodeCommentPreview(node);
-  const fieldHtml=kind==='edit'
-    ?`<input type="text" class="pv-capture-input" placeholder="${placeholder}" value="${esc(initialValue)}" />`
-    :`<textarea class="pv-capture-input" placeholder="${placeholder}" rows="3"></textarea>`;
-  // Delete only appears for Note, and only when the node already has note content — Edit has
-  // nothing separate to delete (clearing the field and saving empty already covers that), and
-  // Question always creates a brand-new row here rather than editing an existing one.
+  const label=kind==='comment'?'Note':'QA';
+  const placeholder=kind==='comment'?'Type your note…':'Type your question…';
+  // Both start blank and fold a short read-only preview of the node's text into the header line
+  // itself (label · preview), confirming which line you're capturing against without a whole
+  // extra row for it — neither copies that text into what actually gets saved.
+  const preview=_nodeCommentPreview(node);
+  const fieldHtml=`<textarea class="pv-capture-input" placeholder="${placeholder}" rows="3"></textarea>`;
+  // Delete only appears for Note, and only when the node already has note content — Question
+  // always creates a brand-new row here rather than editing an existing one.
   const showDelete=kind==='comment'&&!!(node.note&&node.note.trim());
   const actionsHtml=`<div class="pv-cap-head-actions">`
     +(showDelete?`<button type="button" class="pv-qm-btn pv-qm-danger" data-cap-action="delete" data-tip="Delete note">${markIconSvg('trash')}</button>`:'')
@@ -24606,7 +24635,7 @@ function showPopoverCaptureForm(nodeId,kind){
     +`<button type="button" class="pv-qm-btn pv-qm-save" data-cap-action="save" data-tip="Save (Enter)">${markIconSvg('save')}</button>`
     +`</div>`;
   // Label and the node-text preview share one line (with a middot between them) instead of
-  // separate rows — Edit has no preview to show, so its line is just the label on its own.
+  // separate rows.
   const headLineHtml=preview
     ?`<span class="pv-cap-head-label">${label}</span><span class="pv-cap-head-dot">·</span><span class="pv-cap-head-preview">${esc(preview)}</span>`
     :`<span class="pv-cap-head-label">${label}</span>`;
@@ -24614,32 +24643,23 @@ function showPopoverCaptureForm(nodeId,kind){
   clampPreviewPopoverToViewport();
   const ta=pop.querySelector('.pv-capture-input');
   ta?.focus();
-  if(kind==='edit'){
-    ta?.setSelectionRange(ta.value.length,ta.value.length);
-  } else {
-    autoGrowTextarea(ta);
-    clampPreviewPopoverToViewport();
-    ta?.addEventListener('input',()=>autoGrowTextarea(ta));
-  }
+  autoGrowTextarea(ta);
+  clampPreviewPopoverToViewport();
+  ta?.addEventListener('input',()=>autoGrowTextarea(ta));
   const doSave=()=>{
-    const text=kind==='edit'?(ta?.value||''):(ta?.value||'').trim();
+    const text=(ta?.value||'').trim();
     closePreviewPopover();
-    if(kind==='edit'){ saveNodeText(nodeId,text); }
-    else {
-      if(!text)return;
-      if(kind==='comment')saveNodeComment(nodeId,text); else saveNodeQuestion(nodeId,text);
-    }
-    // None of the three save functions touch the Presenter/Preview DOM itself (saveNodeText and
-    // saveNodeComment don't render at all; saveNodeQuestion only re-renders the Pad's own Q&A
-    // list, and only if that panel happens to be open) — without this, the edited text or new
-    // note/question dot wouldn't show up until the next unrelated re-render, e.g. exiting and
-    // reopening presenter mode. Same close-then-render sequence the marker buttons above already
-    // use for exactly this reason.
+    if(!text)return;
+    if(kind==='comment')saveNodeComment(nodeId,text); else saveNodeQuestion(nodeId,text);
+    // Neither save function touches the Presenter/Preview DOM itself (saveNodeComment doesn't
+    // render at all; saveNodeQuestion only re-renders the Pad's own Q&A list, and only if that
+    // panel happens to be open) — without this, the new note/question dot wouldn't show up
+    // until the next unrelated re-render, e.g. exiting and reopening presenter mode. Same
+    // close-then-render sequence the marker buttons above already use for exactly this reason.
     renderPreviewBody();
   };
-  // Enter saves (Shift+Enter for a literal newline in the textarea case, same convention as
-  // chat-style inputs elsewhere; a plain <input> has nowhere for Shift+Enter to go anyway) —
-  // Escape is already handled globally by openPreviewPopover's own Escape listener.
+  // Enter saves (Shift+Enter for a literal newline) — Escape is already handled globally by
+  // openPreviewPopover's own Escape listener.
   ta?.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSave(); } });
   pop.querySelector('[data-cap-action="save"]')?.addEventListener('click',doSave);
   pop.querySelector('[data-cap-action="cancel"]')?.addEventListener('click',()=>closePreviewPopover());
