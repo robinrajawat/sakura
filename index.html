@@ -2238,8 +2238,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-backlink-dot:hover{opacity:1;background:var(--hover)}
 .node-qa-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px;transition:opacity .12s,background .12s}
 .node-qa-dot:hover{opacity:1;background:var(--hover)}
-.pv-popover{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 32px rgba(0,0,0,.22);padding:12px 14px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
+.pv-popover{position:fixed;z-index:1110;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 100%,#fff 4%),var(--bg));border:1px solid color-mix(in srgb,var(--border) 55%,transparent);border-radius:16px;box-shadow:0 24px 56px rgba(0,0,0,.24),0 4px 14px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:14px 16px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;animation:pv-popover-in .16s cubic-bezier(.22,.8,.34,1)}
+@keyframes pv-popover-in{from{opacity:0;transform:scale(.96) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .pv-popover-wide{max-width:380px;max-height:420px}
+.pv-popover-capture{width:460px;max-width:calc(100vw - 24px);max-height:520px}
 .pv-popover .pv-popover-note.pv-inline-note-body,.pv-popover .pv-popover-note.pv-inline-qa-body{background:transparent;border:none;border-left:none;padding:0}
 
 
@@ -2269,12 +2271,15 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-qm-sep{width:1px;align-self:stretch;background:var(--border);margin:0 3px}
 .pv-marker-popover{padding:6px}
 .pv-popover-sep{height:1px;background:var(--border);margin:2px 0 8px}
-.pv-capture-context{font-size:11.5px;color:var(--muted);font-style:italic;margin-bottom:8px;line-height:1.4}
-.pv-capture-input{width:100%;box-sizing:border-box;resize:vertical;min-height:52px;padding:7px 8px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:400 13px 'Inter',sans-serif;outline:none;margin-bottom:8px}
-.pv-capture-input:focus{border-color:var(--accent)}
-.pv-capture-actions{display:flex;justify-content:flex-end;gap:8px}
-.pv-capture-actions .btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12px 'Inter',sans-serif;cursor:pointer}
-.pv-capture-actions .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.pv-capture-context{font-size:11.5px;color:var(--muted);font-style:italic;margin-bottom:9px;line-height:1.4}
+.pv-capture-input{width:100%;box-sizing:border-box;resize:none;min-height:120px;padding:11px 13px;border-radius:12px;border:1px solid color-mix(in srgb,var(--border) 70%,transparent);background:color-mix(in srgb,var(--tb-bg) 92%,var(--bg) 8%);color:var(--fg);font:400 14.5px/1.55 'Inter',sans-serif;outline:none;margin-bottom:10px;transition:border-color .14s ease,box-shadow .14s ease}
+input.pv-capture-input{min-height:0;resize:none;padding:10px 13px}
+.pv-capture-input:focus{border-color:color-mix(in srgb,var(--accent) 55%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.pv-capture-actions{display:flex;justify-content:flex-end;gap:6px}
+.pv-capture-actions .btn{padding:7px 15px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--muted);font:600 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .14s ease,color .14s ease}
+.pv-capture-actions .btn:hover{background:var(--hover);color:var(--fg);border-color:transparent;box-shadow:none}
+.pv-capture-actions .btn.primary{color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff 6%),color-mix(in srgb,var(--accent) 78%,#000 4%));box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 35%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent)}
+.pv-capture-actions .btn.primary:hover{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 92%,#fff 6%),color-mix(in srgb,var(--accent) 82%,#000 4%));box-shadow:0 3px 12px color-mix(in srgb,var(--accent) 42%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent);color:#fff}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
 .pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
@@ -24571,6 +24576,7 @@ function clampPreviewPopoverToViewport(){
 function showPopoverCaptureForm(nodeId,kind){
   const node=nodes.find(n=>n.id===nodeId); const pop=previewPopoverEl; if(!node||!pop)return;
   pop.classList.remove('pv-marker-popover');
+  pop.classList.add('pv-popover-capture');
   const label=kind==='edit'?'Edit text':kind==='comment'?'Comment':'Question';
   const placeholder=kind==='edit'?'Node text…':kind==='comment'?'Type your comment…':'Type your question…';
   // Edit prefills with the node's current raw text (so you're revising it in place) — Comment
@@ -24579,17 +24585,24 @@ function showPopoverCaptureForm(nodeId,kind){
   // into what gets saved. Edit uses a plain single-line <input>, not a <textarea> — a node's
   // text is one outline row, and Shift+Enter in a textarea would let a literal newline slip
   // into a field that was never meant to hold one; Comment/Question go into genuinely
-  // multi-line fields (the note body, a Q&A row) so they keep the textarea.
+  // multi-line fields (the note body, a Q&A row) so they keep the textarea, and grow with what
+  // you type instead of sitting in a small fixed box with its own internal scrollbar.
   const initialValue=kind==='edit'?(node.text||''):'';
   const preview=kind==='edit'?'':_nodeCommentPreview(node);
   const fieldHtml=kind==='edit'
     ?`<input type="text" class="pv-capture-input" placeholder="${placeholder}" value="${esc(initialValue)}" />`
-    :`<textarea class="pv-capture-input" placeholder="${placeholder}" rows="2"></textarea>`;
+    :`<textarea class="pv-capture-input" placeholder="${placeholder}" rows="4"></textarea>`;
   pop.innerHTML=`<div class="pv-popover-label">${label}</div>${preview?`<div class="pv-capture-context">${esc(preview)}</div>`:''}${fieldHtml}<div class="pv-capture-actions"><button type="button" class="btn pv-capture-cancel">Cancel</button><button type="button" class="btn primary pv-capture-save">${kind==='edit'?'Save':'Add'}</button></div>`;
   clampPreviewPopoverToViewport();
   const ta=pop.querySelector('.pv-capture-input');
   ta?.focus();
-  if(kind==='edit')ta?.setSelectionRange(ta.value.length,ta.value.length);
+  if(kind==='edit'){
+    ta?.setSelectionRange(ta.value.length,ta.value.length);
+  } else {
+    autoGrowTextarea(ta);
+    clampPreviewPopoverToViewport();
+    ta?.addEventListener('input',()=>autoGrowTextarea(ta));
+  }
   const doSave=()=>{
     const text=kind==='edit'?(ta?.value||''):(ta?.value||'').trim();
     closePreviewPopover();
