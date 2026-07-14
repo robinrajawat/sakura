@@ -6886,7 +6886,7 @@ let diagramBlobWriteFailed=false;
 function warnDiagramBlobWriteFailed(){
   if(diagramBlobWriteFailed)return;
   diagramBlobWriteFailed=true;
-  showToast('Could not save diagram content — this browser\u2019s IndexedDB storage seems unavailable. Diagram metadata is still saving, but drawings themselves may be lost on reload.');
+  showToast('This browser\u2019s IndexedDB storage isn\u2019t syncing diagram content right now. Edits are still being kept in regular storage as a fallback. If a diagram won\u2019t load, use its Retry button rather than drawing over what looks like a blank canvas.');
 }
 function saveToStorage(){
   try{
@@ -7009,8 +7009,8 @@ async function hydrateDiagramBlobsForDoc(id){
   for(const dgMeta of targets){
     if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
     let blob;
-    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); }
-    catch(e){ warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
+    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); dgMeta._hydrationFailed=false; }
+    catch(e){ dgMeta._hydrationFailed=true; warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
     if(currentDocId!==id)return;
     const live=diagrams.find(dg=>dg.id===dgMeta.id); if(!live)continue;
     if(blob){ live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
@@ -7018,6 +7018,21 @@ async function hydrateDiagramBlobsForDoc(id){
     changed=true;
   }
   if(changed&&currentDocId===id){ renderDiagramsList(); render(); }
+}
+// Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc already gave up on it
+// (see _hydrationFailed above) — called from the "Retry" state openDiagramEditor shows instead
+// of silently loading blank content into draw.io. A fresh attempt can succeed even when the
+// original one didn't: idbOpen()'s cached connection promise resets itself on failure, so this
+// is a genuinely new connection attempt, not a repeat of the same doomed one.
+async function retryDiagramHydration(id){
+  const d=diagrams.find(dg=>dg.id===id); if(!d||d._hydrated)return false;
+  try{
+    const blob=await idbGet('diagblob:'+currentDocId+':'+d.id);
+    if(blob){ d.xml=blob.xml||''; d.previewSvg=blob.previewSvg||''; d.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
+    d._hydrated=true; d._hydrationFailed=false;
+    renderDiagramsList(); render();
+    return true;
+  }catch(e){ d._hydrationFailed=true; return false; }
 }
 // === Document tabs ===
 // Each open document keeps its own undo/redo stack, selection, scroll position and search state
@@ -8254,17 +8269,43 @@ function openDiagramEditor(diagramId){
       // hydrateDiagramBlobsForDoc), d.xml right now may still be the blank placeholder it
       // started with — loading that into draw.io would show an empty canvas even though the
       // real content exists, and draw.io's own autosave could then commit that blank state
-      // right over it. Wait briefly for hydration rather than risk that; if it still hasn't
-      // completed after a few seconds (IndexedDB broken/unavailable — warnDiagramBlobWriteFailed
-      // will have already surfaced that separately), proceed anyway with whatever's there
-      // rather than leave the editor stuck on its loading spinner forever.
+      // right over it. Wait briefly for hydration rather than risk that.
+      //
+      // If it's still not hydrated after that wait, there are two different situations, and they
+      // need different handling. "Still pending" (a lot of diagrams queued ahead of it, or a
+      // genuinely slow read) — proceed anyway, same as before, rather than leave the editor stuck
+      // on its loading spinner forever. "Confirmed failed" (_hydrationFailed — the read actually
+      // errored, see hydrateDiagramBlobsForDoc's catch) is different and must NOT silently load
+      // blank content: _hydrated never becomes true after that either, which means saveToStorage
+      // will keep skipping this diagram's content on every future save too — so drawing into what
+      // looks like a normal blank canvas here would have every edit silently discarded, forever,
+      // with no indication anything was wrong. Show an explicit failure state with a retry
+      // instead.
       const startLoad=()=>{ if(!iframe.isConnected)return; iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*'); if(status)status.textContent=''; };
+      const showHydrationFailedState=()=>{
+        if(!iframe.isConnected)return;
+        if(status){ status.textContent='Could not load this diagram'; status.classList.remove('diagram-editor-status-saved'); }
+        wrap.innerHTML='';
+        const box=document.createElement('div');
+        box.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:24px;text-align:center;color:var(--hint);font:500 13px \'Inter\',sans-serif';
+        box.innerHTML='<div style="max-width:380px;line-height:1.5">This diagram\u2019s saved content could not be read from this browser\u2019s storage (IndexedDB). It\u2019s very likely still safely stored \u2014 this looks like a local read problem, not a deletion \u2014 but editing now would risk saving blank content right over it, so nothing has been loaded.</div>';
+        const retryBtn=document.createElement('button'); retryBtn.className='btn primary'; retryBtn.textContent='Retry loading';
+        retryBtn.addEventListener('click',async()=>{
+          retryBtn.disabled=true; retryBtn.textContent='Retrying\u2026';
+          const ok=await retryDiagramHydration(diagramId);
+          if(ok&&_diagramEditorState&&_diagramEditorState.diagramId===diagramId){ openDiagramEditor(diagramId); }
+          else{ retryBtn.disabled=false; retryBtn.textContent='Retry loading'; if(!ok)showToast('Still could not read this diagram \u2014 try reloading the page, or check this browser\u2019s storage settings for this site.'); }
+        });
+        box.appendChild(retryBtn);
+        wrap.appendChild(box);
+      };
       if(d._hydrated){ startLoad(); }
       else{
         const waitStart=Date.now();
         (function pollHydration(){
           if(!iframe.isConnected)return; // editor closed / another diagram opened while waiting
-          if(d._hydrated||Date.now()-waitStart>4000){ startLoad(); return; }
+          if(d._hydrated){ startLoad(); return; }
+          if(Date.now()-waitStart>4000){ if(d._hydrationFailed)showHydrationFailedState(); else startLoad(); return; }
           setTimeout(pollHydration,40);
         })();
       }
@@ -8272,6 +8313,13 @@ function openDiagramEditor(diagramId){
       d.xml=msg.xml||d.xml;
       d.modifiedAt=Date.now();
       d.pageCount=splitMxfilePages(d.xml).length;
+      // A real save event means the user just edited/confirmed this content in a live draw.io
+      // session — that makes it trustworthy regardless of whatever _hydrated said before (same
+      // reasoning createDiagram/addDiagramFromXml use for brand-new diagrams). Belt-and-suspenders:
+      // the gated load path above should mean this never fires while still un-hydrated, but if it
+      // ever did, leaving _hydrated false here would silently block saveToStorage from persisting
+      // this edit at all — exactly the bug this session's fixes were about.
+      d._hydrated=true; d._hydrationFailed=false;
       markDirty(); scheduleAutoSave();
       // Piggyback an SVG export request on every save — this is what feeds the panel's
       // thumbnail and Preview/PDF/PPTX/Word.
