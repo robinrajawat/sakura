@@ -7061,6 +7061,21 @@ function saveToStorage(){
       // exactly the failure mode being chased. The stack trace identifies which call site
       // triggered this specific save (autosave interval, beforeunload, a UI action, etc).
       console.log('[sakura-debug] saveToStorage: WRITING ZERO NODES for currentDocId =',currentDocId,'| dirty =',dirty,'| stack =',new Error().stack);
+      // Safety guard: if the in-memory doc is empty AND was never actually edited this session
+      // (dirty=false — a real "user emptied the doc" always sets dirty first), but storage
+      // already holds a real, non-empty document under this same id, this is almost certainly
+      // the load path failing to reconstruct the document (see loadTabFromStorageObj) and
+      // silently falling back to a blank in-memory tab — NOT the user's intent. Overwriting
+      // real content with that blank fallback is the actual data-loss mechanism; refuse the
+      // write instead and leave the existing storage untouched.
+      if(!dirty){
+        let existingHasContent=false;
+        try{ const raw=localStorage.getItem(docKey(currentDocId)); if(raw){const d=JSON.parse(raw); existingHasContent=Array.isArray(d.nodes)&&d.nodes.length>0;} }catch(e){}
+        if(existingHasContent){
+          console.log('[sakura-debug] saveToStorage: REFUSED — in-memory doc is empty/clean but storage already has real content for',currentDocId,'. This save would have destroyed it; skipping.');
+          return;
+        }
+      }
     } else {
       console.log('[sakura-debug] saveToStorage: writing',nodes.length,'nodes for currentDocId =',currentDocId);
     }
@@ -7284,7 +7299,7 @@ function loadTabFromStorageObj(id){
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
     return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
-  }catch(e){ return null }
+  }catch(e){ console.log('[sakura-debug] loadTabFromStorageObj(',id,') THREW — this is why it silently fell back to null:',e); return null }
 }
 
 function persistOpenTabs(){ try{ localStorage.setItem(OPEN_TABS_KEY, JSON.stringify({tabs:openTabs.map(t=>t.docId), pinned:openTabs.filter(t=>t.pinned).map(t=>t.docId), active:activeTabDocId})) }catch(e){} }
