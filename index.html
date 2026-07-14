@@ -7411,7 +7411,7 @@ function renderTabStrip(){
     });
     row.addEventListener('dragend',()=>{ clearTabDragIndicators(); tabDragState={draggedId:null,targetId:null,side:null} });
     row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-ref-badge" data-tip="Referenced by a meeting or to-do — click to view"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
-    row.querySelector('.doc-tab-title').textContent=title||'Untitled';
+    row.querySelector('.doc-tab-title').textContent=truncateTitle(title||'Untitled',60);
     const mWholeRefs=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled())?meetingRefsForWholeDoc(tab.docId):[];
     const tWholeRefs=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled())?todoRefsForWholeDoc(tab.docId):[];
     const refBadge=row.querySelector('.doc-tab-ref-badge');
@@ -18207,6 +18207,15 @@ function sbRelativeTime(ts){
 }
 
 // --- Render a single doc item ---
+// Hard character cap for displayed titles and their tooltips — belt-and-suspenders alongside
+// the CSS ellipsis truncation already on these rows: a sidebar row's action buttons (rename/
+// duplicate/delete) only reveal on hover and sit after the title in the same flex row, so an
+// extreme title length is exactly the kind of edge case worth guarding against directly rather
+// than trusting layout alone to keep them reachable.
+function truncateTitle(s,max=60){
+  s=String(s||'').trim();
+  return s.length>max ? s.slice(0,max).trimEnd()+'…' : s;
+}
 function makeDocItem(d, allFolders, filterActive){
   const isCurrent = d.id === currentDocId;
   const isMultiSelected = !filterActive && sbSelectedDocIds.has(d.id);
@@ -18232,7 +18241,7 @@ function makeDocItem(d, allFolders, filterActive){
   item.appendChild(docIcon);
 
   const nb = document.createElement('button'); nb.className='sdoc-name-btn';
-  nb.textContent = d.title||'Untitled'; nb.dataset.tip = d.title||'Untitled';
+  nb.textContent = truncateTitle(d.title||'Untitled',60); nb.dataset.tip = truncateTitle(d.title||'Untitled',120);
   nb.addEventListener('keydown',e=>{
     if(e.key==='F2'){ e.preventDefault(); e.stopPropagation(); renameDoc(d.id).then(()=>renderSidebar()); }
   });
@@ -18713,7 +18722,7 @@ function renderSidebarDocs(){
     const icon = document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     folderRow.appendChild(icon);
 
-    const name = document.createElement('span'); name.className='sfolder-name'; name.textContent=folder.name||'Unnamed folder';
+    const name = document.createElement('span'); name.className='sfolder-name'; name.textContent=truncateTitle(folder.name||'Unnamed folder',50); name.dataset.tip=truncateTitle(folder.name||'Unnamed folder',120);
     folderRow.appendChild(name);
 
     const directCount = folderDocs.length;
