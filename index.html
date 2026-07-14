@@ -7008,10 +7008,22 @@ async function hydrateDiagramBlobsForDoc(id){
   let changed=false;
   for(const dgMeta of targets){
     if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
-    let blob;
-    try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); dgMeta._hydrationFailed=false; }
-    catch(e){ dgMeta._hydrationFailed=true; warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
+    // idbOpen()'s single shared connection promise races other startup readers/writers
+    // (mirrorToIndexedDb, initFsBackup) opening the same DB — a failure here is usually that
+    // transient contention resolving itself a moment later, not a persistently broken
+    // IndexedDB (confirmed by how reliably the editor's manual Retry button succeeds on the
+    // very next attempt). Retrying a few times with a short, increasing delay before giving up
+    // means the vast majority of documents hydrate cleanly and silently — someone opening a
+    // diagram right after the app loads should essentially never see the manual-retry state
+    // below; that's now a fallback for genuinely persistent failures, not the common path.
+    let blob,ok=false;
+    for(const delay of [0,150,400]){
+      if(delay)await new Promise(r=>setTimeout(r,delay));
+      try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); ok=true; break; }catch(e){}
+    }
     if(currentDocId!==id)return;
+    if(!ok){ dgMeta._hydrationFailed=true; warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
+    dgMeta._hydrationFailed=false;
     const live=diagrams.find(dg=>dg.id===dgMeta.id); if(!live)continue;
     if(blob){ live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
     live._hydrated=true;
@@ -7019,20 +7031,23 @@ async function hydrateDiagramBlobsForDoc(id){
   }
   if(changed&&currentDocId===id){ renderDiagramsList(); render(); }
 }
-// Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc already gave up on it
-// (see _hydrationFailed above) — called from the "Retry" state openDiagramEditor shows instead
-// of silently loading blank content into draw.io. A fresh attempt can succeed even when the
-// original one didn't: idbOpen()'s cached connection promise resets itself on failure, so this
-// is a genuinely new connection attempt, not a repeat of the same doomed one.
+// Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc's own retries above already
+// gave up on it — called from the "Retry" state openDiagramEditor shows instead of silently
+// loading blank content into draw.io. Still worth one more short-backoff attempt of its own
+// rather than a single shot: by the time someone notices the failure state and clicks Retry,
+// it's often long enough after the original contention that it succeeds immediately anyway.
 async function retryDiagramHydration(id){
   const d=diagrams.find(dg=>dg.id===id); if(!d||d._hydrated)return false;
-  try{
-    const blob=await idbGet('diagblob:'+currentDocId+':'+d.id);
-    if(blob){ d.xml=blob.xml||''; d.previewSvg=blob.previewSvg||''; d.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
-    d._hydrated=true; d._hydrationFailed=false;
-    renderDiagramsList(); render();
-    return true;
-  }catch(e){ d._hydrationFailed=true; return false; }
+  let blob,ok=false;
+  for(const delay of [0,300]){
+    if(delay)await new Promise(r=>setTimeout(r,delay));
+    try{ blob=await idbGet('diagblob:'+currentDocId+':'+d.id); ok=true; break; }catch(e){}
+  }
+  if(!ok){ d._hydrationFailed=true; return false; }
+  if(blob){ d.xml=blob.xml||''; d.previewSvg=blob.previewSvg||''; d.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
+  d._hydrated=true; d._hydrationFailed=false;
+  renderDiagramsList(); render();
+  return true;
 }
 // === Document tabs ===
 // Each open document keeps its own undo/redo stack, selection, scroll position and search state
