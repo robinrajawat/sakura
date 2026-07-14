@@ -2229,6 +2229,18 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-popover-link:last-child{border-bottom:none}
 .pv-popover-link:hover{color:var(--accent)}
+/* Small at-a-glance glyph on any preview/presenter row that's been marked — set via the
+   right-click popover below. Sits at the far right of the row (appended last, after any
+   fold-badge/hidden-content chips which live on contentEl rather than the row itself). */
+.pv-marker-badge{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:8px;width:18px;height:18px;border-radius:5px;font-size:11px;line-height:1;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.pv-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
+.pv-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
+.pv-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.pv-marker-row{display:flex;gap:6px;margin-bottom:10px}
+.pv-marker-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);width:30px;height:30px;border-radius:8px;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s}
+.pv-marker-btn:hover{background:var(--hover)}
+.pv-marker-btn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.pv-popover-sep{height:1px;background:var(--border);margin:2px 0 8px}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
 .pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
@@ -4410,6 +4422,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
 <li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>While actually presenting (not just browsing Preview), right-click any line for a small popover built for capturing live feedback without breaking presenting flow: four quick marks — ✓ Confirmed, ✗ Issue, ⏸ Parked, 🚩 Follow-up — click one to set it, click the same one again to clear it; a small colored glyph then shows on that line for the rest of the session. Below the marks, <strong>Comment…</strong> appends a timestamped line to that node's Note, and <strong>Question…</strong> adds a new Q&amp;A row linked to that node — neither copies the node's own text into what gets saved, only what you actually type; the Q&amp;A row links back via the same mechanism a Scan-created row uses for its own link icon, so nothing about the outline itself gets duplicated. Both open a small themed prompt (not a separate mode) with a one-line preview of which node you clicked, so you can confirm you've got the right one before typing; Escape cancels without saving anything. This popover is presenting-only by design — outside of Presenter mode, right-clicking Preview still gets the browser's own menu</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -6690,7 +6703,7 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now}}
 function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
 function normalizeDecisionLog(dl){
   if(!dl||typeof dl!=='object')return null;
@@ -21702,6 +21715,29 @@ function setPadViewMode(mode){
   if(padViewMode==='decision')renderDecisionLogsList();
   if(padViewMode==='diagrams')renderDiagramsList();
 }
+// Node markers — a quick, at-a-glance status you can drop on any single node without touching
+// its text: Confirmed/Issue/Parked/Follow-up. Distinct from Q&A's follow-up flag (which lives on
+// a question, not a node) and from Decision Log status (proposed/approved/rejected, which only
+// applies to nodes that actually are decisions) — this is for marking any ordinary line during a
+// live walkthrough, most commonly from Presenter mode's right-click popover (see
+// openNodeMarkerPopover) but not exclusive to it.
+const NODE_MARKERS=['confirmed','issue','parked','followup'];
+function nodeMarkerLabel(m){ return ({confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'})[m]||''; }
+function nodeMarkerColor(m){ return ({confirmed:'green',issue:'red',parked:'gray',followup:'orange'})[m]||''; }
+function nodeMarkerGlyph(m){ return ({confirmed:'✓',issue:'✗',parked:'⏸',followup:'🚩'})[m]||''; }
+// Clicking the currently-active marker again clears it — same toggle-off convention as the Q&A
+// follow-up chip — rather than needing a separate "clear" control.
+function setNodeMarker(id,marker){
+  const idx=getIndex(id); if(idx<0)return;
+  const node=nodes[idx];
+  const next=NODE_MARKERS.includes(marker)?marker:'';
+  const resolved=(node.marker===next)?'':next;
+  if(node.marker===resolved)return;
+  pushUndo();
+  node.marker=resolved; node.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  render();
+}
 const DECISION_STATUSES=['proposed','approved','rejected'];
 function findDecisionLog(id){ return decisionLogs.find(dl=>dl.id===id); }
 // The one-per-node rule lives here, in one place, so every path that assigns an anchor
@@ -23878,6 +23914,10 @@ function renderPreviewBody(){
       row.appendChild(txt);
       mainEl=row; contentEl=txt;
     }
+    if(node.marker){
+      const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); mk.textContent=nodeMarkerGlyph(node.marker);
+      mainEl.appendChild(mk);
+    }
     const ownNote=!!(node.note&&node.note.trim());
     // Computed once here (rather than separately down near the inline blocks) so the fold
     // chip and note dot above agree with the actual inline card below about whether there's
@@ -24157,6 +24197,75 @@ function previewOpenBacklinksPopover(triggerEl,blIds){
     linkEl.addEventListener('click',()=>{ const id=Number(linkEl.dataset.jump); closePreviewPopover(); previewScrollToNode(id); });
   });
 }
+// Right-click on any presenter row: quick marks (Confirmed/Issue/Parked/Follow-up, toggle off by
+// clicking the active one again) plus Comment and Question. Built specifically so live feedback
+// during a walkthrough never needs leaving fullscreen or breaking presenting flow — see
+// captureNodeComment/captureNodeQuestion below for what the two text actions actually do.
+function openNodeMarkerPopover(triggerEl,nodeId){
+  const node=nodes.find(n=>n.id===nodeId); if(!node)return;
+  const cur=node.marker||'';
+  const mkBtn=(m,glyph)=>`<button type="button" class="pv-marker-btn${cur===m?' active':''}" data-marker="${m}" data-tip="${nodeMarkerLabel(m)}">${glyph}</button>`;
+  const html=`<div class="pv-popover-label">Mark this line</div>
+    <div class="pv-marker-row">${mkBtn('confirmed','✓')}${mkBtn('issue','✗')}${mkBtn('parked','⏸')}${mkBtn('followup','🚩')}</div>
+    <div class="pv-popover-sep"></div>
+    <div class="pv-popover-link" data-action="comment">💬 Comment…</div>
+    <div class="pv-popover-link" data-action="question">❓ Question…</div>`;
+  openPreviewPopover(triggerEl,html,'pv-marker-popover');
+  previewPopoverEl?.querySelectorAll('.pv-marker-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      setNodeMarker(nodeId,b.dataset.marker);
+      closePreviewPopover();
+      renderPreviewBody();
+    });
+  });
+  previewPopoverEl?.querySelector('[data-action="comment"]')?.addEventListener('click',()=>{ closePreviewPopover(); captureNodeComment(nodeId); });
+  previewPopoverEl?.querySelector('[data-action="question"]')?.addEventListener('click',()=>{ closePreviewPopover(); captureNodeQuestion(nodeId); });
+}
+// A short, non-saved preview of the node's own text in the prompt's body — confirms which line
+// you're actually commenting on without copying that text into anything that gets saved (the
+// point being to capture only what's genuinely new, not duplicate what's already in the outline).
+function _nodeCommentPreview(node){
+  const t=getNodePlainText(node).trim();
+  return t?`On: "${t.length>80?t.slice(0,80)+'…':t}"`:'';
+}
+async function captureNodeComment(nodeId){
+  const node=nodes.find(n=>n.id===nodeId); if(!node)return;
+  const text=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',title:'Add Comment',body:_nodeCommentPreview(node),defaultValue:'',confirmLabel:'Add'});
+  if(text===null)return;
+  const trimmed=text.trim(); if(!trimmed)return;
+  const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  const addition=`[${stamp}] ${trimmed}`;
+  node.note=node.note?(node.note.trim()+'\n'+addition):addition;
+  node.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  showToast('Comment added to node note');
+}
+// Deliberately does NOT copy the node's own text into the question field — only sourceNodeId
+// links back to it (same mechanism Scan-created rows already use for their link icon). Copying
+// the text in would duplicate content that's already in the outline, and several nodes in a
+// typical review outline are themselves already phrased as questions, which would read as an
+// odd near-duplicate sitting right next to the original.
+async function captureNodeQuestion(nodeId){
+  const node=nodes.find(n=>n.id===nodeId); if(!node)return;
+  const text=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',title:'Add Question',body:_nodeCommentPreview(node),defaultValue:'',confirmLabel:'Add'});
+  if(text===null)return;
+  const trimmed=text.trim(); if(!trimmed)return;
+  qaItems.push({id:newQaId(),question:trimmed,answer:'',sourceNodeId:nodeId});
+  markDirty(); scheduleAutoSave();
+  if(padViewMode==='qa')renderQaList();
+  showToast('Question added to Q&A');
+}
+el('preview-body')?.addEventListener('contextmenu',e=>{
+  if(!previewPresenting)return; // this popover is specifically for live-presenting feedback capture — normal (non-presenting) Preview browsing keeps the browser's own right-click menu
+  const target=e.target.closest('[data-pv-node]')||e.target.closest('[id^="pv-anchor-"]');
+  if(!target)return;
+  let nodeId=null;
+  if(target.dataset&&target.dataset.pvNode)nodeId=Number(target.dataset.pvNode);
+  else{ const m=target.id.match(/^pv-anchor-(\d+)$/); if(m)nodeId=Number(m[1]); }
+  if(nodeId==null||!Number.isFinite(nodeId))return;
+  e.preventDefault();
+  openNodeMarkerPopover(target,nodeId);
+});
 let previewTocObserver=null;
 function setupPreviewScrollSpy(){
   if(previewTocObserver){previewTocObserver.disconnect(); previewTocObserver=null;}
