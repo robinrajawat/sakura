@@ -21736,7 +21736,6 @@ function setNodeMarker(id,marker){
   pushUndo();
   node.marker=resolved; node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
-  render();
 }
 const DECISION_STATUSES=['proposed','approved','rejected'];
 function findDecisionLog(id){ return decisionLogs.find(dl=>dl.id===id); }
@@ -24171,15 +24170,21 @@ function closePreviewPopover(){
 }
 function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target))closePreviewPopover(); }
 function previewPopoverEscHandler(e){ if(e.key==='Escape')closePreviewPopover(); }
-function openPreviewPopover(triggerEl,innerHtml,extraClass){
+function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
   closePreviewPopover();
   const pop=document.createElement('div'); pop.className='pv-popover'+(extraClass?' '+extraClass:''); pop.innerHTML=innerHtml;
   document.body.appendChild(pop);
-  const r=triggerEl.getBoundingClientRect();
-  let left=r.left, top=r.bottom+6;
+  // atPoint (actual right-click coordinates) takes priority over triggerEl's own bounding box —
+  // without it, a wide row right-clicked near its far end still opened the popover pinned to the
+  // row's left edge, nowhere near where the click actually happened. triggerEl's rect stays the
+  // fallback for callers (like the backlinks popover) anchoring to a specific small badge rather
+  // than an arbitrary click point on a whole row.
+  let left,top;
+  if(atPoint){ left=atPoint.x; top=atPoint.y+4; }
+  else { const r=triggerEl.getBoundingClientRect(); left=r.left; top=r.bottom+6; }
   const pw=pop.offsetWidth, ph=pop.offsetHeight;
   if(left+pw>window.innerWidth-12)left=window.innerWidth-12-pw;
-  if(top+ph>window.innerHeight-12)top=Math.max(12,r.top-ph-6);
+  if(top+ph>window.innerHeight-12)top=atPoint?Math.max(12,atPoint.y-ph-6):Math.max(12,triggerEl.getBoundingClientRect().top-ph-6);
   pop.style.left=Math.max(12,left)+'px'; pop.style.top=top+'px';
   previewPopoverEl=pop;
   setTimeout(()=>document.addEventListener('click',previewPopoverOutsideHandler,true),0);
@@ -24201,7 +24206,7 @@ function previewOpenBacklinksPopover(triggerEl,blIds){
 // clicking the active one again) plus Comment and Question. Built specifically so live feedback
 // during a walkthrough never needs leaving fullscreen or breaking presenting flow — see
 // captureNodeComment/captureNodeQuestion below for what the two text actions actually do.
-function openNodeMarkerPopover(triggerEl,nodeId){
+function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const cur=node.marker||'';
   const mkBtn=(m,glyph)=>`<button type="button" class="pv-marker-btn${cur===m?' active':''}" data-marker="${m}" data-tip="${nodeMarkerLabel(m)}">${glyph}</button>`;
@@ -24210,7 +24215,7 @@ function openNodeMarkerPopover(triggerEl,nodeId){
     <div class="pv-popover-sep"></div>
     <div class="pv-popover-link" data-action="comment">💬 Comment…</div>
     <div class="pv-popover-link" data-action="question">❓ Question…</div>`;
-  openPreviewPopover(triggerEl,html,'pv-marker-popover');
+  openPreviewPopover(triggerEl,html,'pv-marker-popover',atPoint);
   previewPopoverEl?.querySelectorAll('.pv-marker-btn').forEach(b=>{
     b.addEventListener('click',()=>{
       setNodeMarker(nodeId,b.dataset.marker);
@@ -24264,7 +24269,12 @@ el('preview-body')?.addEventListener('contextmenu',e=>{
   else{ const m=target.id.match(/^pv-anchor-(\d+)$/); if(m)nodeId=Number(m[1]); }
   if(nodeId==null||!Number.isFinite(nodeId))return;
   e.preventDefault();
-  openNodeMarkerPopover(target,nodeId);
+  // #preview-overlay has its own unconditional contextmenu handler (opens the laser-pointer
+  // toggle menu) — without stopping propagation here, that fires too on every right-click inside
+  // it, since #preview-body is a descendant. Both menus opening at once is exactly what looked
+  // like "seeing the right-click context menu as well".
+  e.stopPropagation();
+  openNodeMarkerPopover(target,nodeId,{x:e.clientX,y:e.clientY});
 });
 let previewTocObserver=null;
 function setupPreviewScrollSpy(){
