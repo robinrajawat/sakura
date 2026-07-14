@@ -1754,7 +1754,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #answerer-suggest.open{display:block}
 .answerer-suggest-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .answerer-suggest-item:hover,.answerer-suggest-item.as-active{background:var(--hover);color:var(--accent)}
-#node-qa-suggest{position:fixed;z-index:700;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.08);padding:4px;min-width:190px;max-width:260px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
+#node-qa-suggest{position:fixed;z-index:1200;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.08);padding:4px;min-width:190px;max-width:260px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 #node-qa-suggest.open{display:block}
 .nqa-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
 .nqa-item svg{flex:0 0 auto;color:var(--muted)}
@@ -15500,7 +15500,7 @@ function handleGenericQaKeydown(e,target){
     if(e.key==='ArrowDown'||(horizNav&&e.key==='ArrowRight')){e.preventDefault(); if(cands.length)_gqaActiveIdx=(_gqaActiveIdx+1)%cands.length; renderGenericQuickAssist(); return true}
     if(e.key==='ArrowUp'||(horizNav&&e.key==='ArrowLeft')){e.preventDefault(); if(cands.length)_gqaActiveIdx=(_gqaActiveIdx-1+cands.length)%cands.length; renderGenericQuickAssist(); return true}
     if(e.key==='Enter'||e.key==='Tab'){if(cands.length){e.preventDefault(); commitGenericQuickAssist(cands[_gqaActiveIdx]); return true} closeGenericQuickAssist(); return false}
-    if(e.key==='Escape'){e.preventDefault(); closeGenericQuickAssist(); return true}
+    if(e.key==='Escape'){e.preventDefault(); e.stopPropagation(); closeGenericQuickAssist(); return true}
     if(matchesShortcut(e,'quickAssist')){e.preventDefault(); e.stopPropagation(); closeGenericQuickAssist(); return true}
     closeGenericQuickAssist();
     return false;
@@ -24588,9 +24588,12 @@ function startInlineNodeEdit(nodeId){
       contentEl.innerHTML=originalHtml;
     }
   };
-  // stopPropagation on both keys — without it, Escape bubbles up to the global Presenter
+  // stopPropagation on Enter/Escape — without it, Escape bubbles up to the global Presenter
   // keydown handler and exits Presenter mode entirely instead of just cancelling this edit.
+  // Quick Assist (Ctrl/Cmd+Space) is checked first, same as every other editable field in the
+  // app, so special characters/date-time are available here too.
   input.addEventListener('keydown',e=>{
+    if(handleGenericQaKeydown(e,input))return;
     if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); finish(true); }
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); finish(false); }
   });
@@ -24658,9 +24661,10 @@ function showPopoverCaptureForm(nodeId,kind){
     // close-then-render sequence the marker buttons above already use for exactly this reason.
     renderPreviewBody();
   };
-  // Enter saves (Shift+Enter for a literal newline) — Escape is already handled globally by
-  // openPreviewPopover's own Escape listener.
-  ta?.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSave(); } });
+  // Quick Assist (Ctrl/Cmd+Space) is checked first, same as every other editable field in the
+  // app. Enter saves (Shift+Enter for a literal newline) — Escape is already handled globally
+  // by openPreviewPopover's own Escape listener.
+  ta?.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,ta))return; if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); doSave(); } });
   pop.querySelector('[data-cap-action="save"]')?.addEventListener('click',doSave);
   pop.querySelector('[data-cap-action="cancel"]')?.addEventListener('click',()=>closePreviewPopover());
   pop.querySelector('[data-cap-action="delete"]')?.addEventListener('click',()=>{ deleteNodeNote(nodeId); });
