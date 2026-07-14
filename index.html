@@ -2278,6 +2278,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-inline-code-body{margin:0;padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 12px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;white-space:pre;overflow-x:auto;tab-size:2;color:var(--fg)}
 .pv-inline-code-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-code-body code{font:inherit;white-space:pre}
+.pv-inline-qa-question{font-weight:700;color:var(--fg)}
+.pv-inline-qa-answer{margin-top:3px;color:var(--fg)}
+.pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
+.pv-inline-qa-sep{border:none;border-top:1px solid var(--border);margin:10px 0}
 
 
 @keyframes pvFlash{0%{background:color-mix(in srgb,var(--accent) 20%,transparent)}100%{background:transparent}}
@@ -23841,6 +23845,11 @@ function previewToggleCode(id){
   if(previewOpenCodeIds.has(id))previewOpenCodeIds.delete(id); else previewOpenCodeIds.add(id);
   renderPreviewBody();
 }
+let previewOpenQaIds=new Set();
+function previewToggleQa(id){
+  if(previewOpenQaIds.has(id))previewOpenQaIds.delete(id); else previewOpenQaIds.add(id);
+  renderPreviewBody();
+}
 function previewDetectDecisionLogs(scopedNodes){
   const consumed=new Set(); const groups=[];
   if(!featureDecisionLogEnabled)return{consumed,groups};
@@ -24147,10 +24156,11 @@ function renderPreviewBody(){
       if(padQaTabEnabled){
         const qRefs=qaRefsForNode(node.id);
         if(qRefs.length){
-          const qdot=document.createElement('span'); qdot.className='node-qa-dot'; qdot.style.color='var(--accent)';
-          qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to view':'Linked to a Q&A question — click to view';
+          const isQaOpen=previewOpenQaIds.has(node.id);
+          const qdot=document.createElement('span'); qdot.className='node-qa-dot'+(isQaOpen?' pv-dot-open':''); qdot.style.color='var(--accent)';
+          qdot.dataset.tip=isQaOpen?'Hide question':(qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to show':'Linked to a Q&A question — click to show');
           qdot.innerHTML=qaDotIconSvg(11);
-          qdot.addEventListener('click',e=>{ e.stopPropagation(); jumpToNodeQaRefs(qRefs); });
+          qdot.addEventListener('click',e=>{ e.stopPropagation(); previewToggleQa(node.id); });
           contentEl.appendChild(qdot);
         }
       }
@@ -24241,6 +24251,24 @@ function renderPreviewBody(){
         pre.appendChild(codeEl);
         wrap.appendChild(label); wrap.appendChild(pre);
         slideTarget.appendChild(wrap);
+      }
+      if(padQaTabEnabled&&previewOpenQaIds.has(node.id)){
+        const qRefsInline=qaRefsForNode(node.id);
+        if(qRefsInline.length){
+          const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
+          const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML=qaDotIconSvg(11)+`<span>${qRefsInline.length>1?'Questions':'Question'}</span>`;
+          const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct');
+          qRefsInline.forEach((item,i)=>{
+            if(i>0)inner.appendChild(document.createElement('hr')).className='pv-inline-qa-sep';
+            const qEl=document.createElement('div'); qEl.className='pv-inline-qa-question'; qEl.textContent=item.question||'';
+            inner.appendChild(qEl);
+            const aTrimmed=(item.answer||'').trim();
+            const aEl=document.createElement('div'); aEl.className='pv-inline-qa-answer'+(aTrimmed?'':' pv-inline-qa-unanswered'); aEl.textContent=aTrimmed||'No answer yet';
+            inner.appendChild(aEl);
+          });
+          wrap.appendChild(label); wrap.appendChild(inner);
+          slideTarget.appendChild(wrap);
+        }
       }
     }
   });
@@ -24532,6 +24560,7 @@ function openPreview(){
   else previewCollapsedIds=new Set(nodes.filter((n,i)=>(n.depth||0)===collapseDepth&&nodeHasChildren(i)).map(n=>n.id));
   previewOpenNoteIds=new Set();
   previewOpenCodeIds=new Set();
+  previewOpenQaIds=new Set();
   previewSetLaser(false);
   renderPreviewBody();
   el('preview-overlay')?.classList.add('open');
