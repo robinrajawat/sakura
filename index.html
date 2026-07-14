@@ -490,14 +490,14 @@ body.no-word-wrap .node-row{min-width:max-content}
 .icon-lib-emojis{font-size:14px;letter-spacing:2px;text-align:center}
 #icon-library-close{margin-top:20px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:#fff;font:600 14px 'Inter',sans-serif;cursor:pointer}
 .settings-row-desc a{color:var(--accent)}
-#qa-insert-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
-#qa-insert-overlay.open{opacity:1;pointer-events:all}
-#qa-insert-overlay.closing{opacity:0;pointer-events:none}
-#qa-insert-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:20px 20px 16px;width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
-#qa-insert-overlay.open #qa-insert-modal{transform:translateY(0) scale(1)}
-#qa-insert-overlay.closing #qa-insert-modal{transform:translateY(8px) scale(.97)}
-#qa-insert-modal h2{margin:0 0 4px;font-size:16px;color:var(--fg)}
-#qa-insert-sub{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
+#qa-insert-overlay,#qa-import-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#qa-insert-overlay.open,#qa-import-overlay.open{opacity:1;pointer-events:all}
+#qa-insert-overlay.closing,#qa-import-overlay.closing{opacity:0;pointer-events:none}
+#qa-insert-modal,#qa-import-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:20px 20px 16px;width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#qa-insert-overlay.open #qa-insert-modal,#qa-import-overlay.open #qa-import-modal{transform:translateY(0) scale(1)}
+#qa-insert-overlay.closing #qa-insert-modal,#qa-import-overlay.closing #qa-import-modal{transform:translateY(8px) scale(.97)}
+#qa-insert-modal h2,#qa-import-modal h2{margin:0 0 4px;font-size:16px;color:var(--fg)}
+#qa-insert-sub,#qa-import-sub{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
 #qa-insert-list{display:flex;flex-direction:column;gap:0;max-height:240px;overflow-y:auto;margin-bottom:14px}
 #qa-insert-empty{color:var(--muted);font-size:12px;font-style:italic;padding:4px 0}
 .qa-insert-row{display:flex;align-items:flex-start;gap:7px;padding:4px 6px;border-radius:7px;font-size:12.5px;color:var(--fg);cursor:pointer;line-height:1.35}
@@ -505,8 +505,12 @@ body.no-word-wrap .node-row{min-width:max-content}
 .qa-insert-row-added{opacity:.5;cursor:not-allowed}
 .qa-insert-row-added:hover{background:none}
 .qa-insert-row input{margin-top:3px;flex-shrink:0}
-#qa-insert-actions{display:flex;justify-content:flex-end;gap:8px}
-#qa-insert-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
+.qa-insert-row-answer{display:block;color:var(--muted);font-style:italic;margin-top:1px}
+#qa-insert-actions,#qa-import-actions{display:flex;justify-content:flex-end;gap:8px}
+#qa-insert-actions .btn,#qa-import-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
+#qa-import-textarea{width:100%;box-sizing:border-box;min-height:160px;resize:vertical;margin-bottom:14px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:400 12.5px/1.5 'Inter',sans-serif}
+#qa-import-textarea:focus{outline:none;border-color:var(--accent)}
+#qa-import-textarea::placeholder{color:var(--muted);opacity:.7}
 #why-sakura-brand{display:flex;align-items:center;gap:7px;margin-bottom:16px}
 #why-sakura-brand-icon{font-size:22px;line-height:1}
 #why-sakura-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
@@ -2137,6 +2141,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    so it wins regardless of the .qa-only-btn / .qa-bulk-btn rules' own specificity or order. */
 #presenter-notes-body #qtb-scan,
 #presenter-notes-body #qtb-ai-generate-questions,
+#presenter-notes-body #qtb-qa-import,
 #presenter-notes-body #qtb-search,
 #presenter-notes-body #qa-unlinked,
 #presenter-notes-body #qa-followup-count,
@@ -4358,7 +4363,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — the date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — the date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4947,6 +4952,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span class="note-tb-sep"></span>
     <button class="note-tb-btn" id="ptb-ai-rewrite" data-tip="Rewrite Pad (AI) — rewrites selection or full pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-add" data-tip="Add a blank Q&amp;A row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-import" data-tip="Import Q&amp;A from pasted text"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-scan" data-tip="Scan outline for questions"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6H3"/><path d="M15 12H3"/><path d="M11 18H3"/><circle cx="18" cy="16" r="3"/><path d="m20.5 18.5 2 2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-ai-generate-questions" data-tip="AI: Generate questions — from the selection if you have one, otherwise the whole document"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/><path d="M18 5l.8 1.6L20.4 7.4l-1.6.8L18 10l-.8-1.8-1.6-.8 1.6-.8Z" fill="currentColor" stroke="none"/></svg></button>
     <span class="note-tb-sep qa-only-btn"></span>
@@ -5689,6 +5695,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="qa-insert-actions">
         <button id="qa-insert-cancel" class="btn">Cancel</button>
         <button id="qa-insert-confirm" class="btn primary">Add rows</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="qa-import-overlay" role="dialog" aria-modal="true" aria-labelledby="qa-import-heading">
+    <div id="qa-import-modal">
+      <h2 id="qa-import-heading">Import Q&amp;A</h2>
+      <p id="qa-import-sub">Paste text below — <strong>Q:</strong> / <strong>A:</strong> pairs (this also reads Sakura's own Q&amp;A export format back in), or just a list of questions ending in "?" if there's nothing else to go on.</p>
+      <textarea id="qa-import-textarea" placeholder="Q: What's the rollback plan?&#10;A: Revert the migration and restore from the pre-deploy snapshot.&#10;&#10;Q: Who owns the on-call rotation this week?"></textarea>
+      <div id="qa-import-actions">
+        <button id="qa-import-cancel" class="btn">Cancel</button>
+        <button id="qa-import-continue" class="btn primary">Continue</button>
       </div>
     </div>
   </div>
@@ -21328,10 +21346,11 @@ function getQuestionNodes(){
   return nodes.filter(n=>{ const t=getNodePlainText(n).trim(); return t.length>1 && t.endsWith('?') && !isDecisionLogFieldNode(n) });
 }
 let _qaInsertCloseTimer=null;
-// Shared by the "Scan outline for questions" and "AI: Generate questions" entry points below —
-// same review-before-add modal, same dedup-against-existing-questions logic, same undo-friendly
-// confirm handler. candidates: [{text, nodeId (optional — omitted for AI-generated questions,
-// which aren't anchored to any single existing node), checked (optional, defaults to true)}].
+// Shared by the "Scan outline for questions", "AI: Generate questions", and "Import Q&A" entry
+// points below — same review-before-add modal, same dedup-against-existing-questions logic,
+// same undo-friendly confirm handler. candidates: [{text, nodeId (optional — omitted for
+// AI-generated/imported questions, which aren't anchored to any single existing node), answer
+// (optional — only Import populates this), checked (optional, defaults to true)}].
 function renderQaInsertCandidates(candidates,{heading,sub,emptyMsg}){
   const ov=el('qa-insert-overlay'), list=el('qa-insert-list'); if(!ov||!list)return;
   clearTimeout(_qaInsertCloseTimer);
@@ -21345,13 +21364,16 @@ function renderQaInsertCandidates(candidates,{heading,sub,emptyMsg}){
   } else {
     candidates.forEach(c=>{
       const text=String(c.text||'').trim(); if(!text)return;
+      const answer=String(c.answer||'').trim();
       const alreadyAdded=existingQuestions.has(text.toLowerCase());
       const row=document.createElement('label'); row.className='qa-insert-row'+(alreadyAdded?' qa-insert-row-added':'');
       const checked=alreadyAdded?false:(c.checked===undefined?true:c.checked);
       const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.disabled=alreadyAdded;
       if(c.nodeId!=null)cb.dataset.nodeId=String(c.nodeId);
+      if(answer)cb.dataset.answer=answer;
       const span=document.createElement('span'); span.textContent=text+(alreadyAdded?' — already added':'');
       row.appendChild(cb); row.appendChild(span);
+      if(answer&&!alreadyAdded){ const aSpan=document.createElement('span'); aSpan.className='qa-insert-row-answer'; aSpan.textContent=answer; row.appendChild(aSpan); }
       list.appendChild(row);
     });
   }
@@ -21384,7 +21406,8 @@ function confirmQaInsert(){
   checked.forEach(cb=>{
     const question=cb.nextElementSibling.textContent.trim();
     const sourceNodeId=cb.dataset.nodeId?Number(cb.dataset.nodeId):null;
-    qaItems.push({id:newQaId(),question,answer:'',sourceNodeId});
+    const answer=cb.dataset.answer||'';
+    qaItems.push({id:newQaId(),question,answer,sourceNodeId});
   });
   if(!padEnabled){ showToast('Pad is disabled — Settings → Editing → Pad'); closeQaInsert(); return; }
   if(!padOpen)setPadOpen(true,false);
@@ -21398,8 +21421,71 @@ function confirmQaInsert(){
   });
   closeQaInsert();
 }
+let _qaImportCloseTimer=null;
+function openQaImport(){
+  const ov=el('qa-import-overlay'), ta=el('qa-import-textarea'); if(!ov||!ta)return;
+  clearTimeout(_qaImportCloseTimer);
+  ov.classList.remove('closing');
+  ta.value='';
+  ov.classList.add('open');
+  ta.focus();
+}
+function closeQaImport(){
+  const ov=el('qa-import-overlay'); if(!ov)return;
+  ov.classList.add('closing');
+  clearTimeout(_qaImportCloseTimer);
+  _qaImportCloseTimer=setTimeout(()=>{ ov.classList.remove('open','closing'); },220);
+}
+// Reads a pasted block of Q&A content into {question,answer} pairs. Understands Sakura's own
+// Q&A export format (**Q:** / *A:* pairs, see exportQaText above) so a .md export round-trips
+// straight back in, plus plainer "Q:"/"Question:" and "A:"/"Answer:" markers (with or without
+// markdown emphasis) for content pasted from meeting notes, interview transcripts, etc. A line
+// without a marker is treated as a continuation of whichever field is currently open, so
+// multi-line answers survive the round trip too. If no Q/A markers appear anywhere in the
+// pasted text, falls back to the same convention Scan/AI-generate use: every line ending in
+// "?" becomes a standalone question with no answer.
+function parseQaPasteText(text){
+  if(!text)return [];
+  const lines=String(text).replace(/\r\n?/g,'\n').split('\n');
+  const qRe=/^[\s>]*(?:\*\*|__)?\s*Q(?:uestion)?\s*[:.)]\s*(?:\*\*|__)?\s*(.*)$/i;
+  const aRe=/^[\s>]*(?:\*|_)?\s*A(?:nswer)?\s*[:.)]\s*(?:\*|_)?\s*(.*)$/i;
+  const pairs=[];
+  let cur=null; // {q, a, field}
+  const flush=()=>{
+    if(cur&&cur.q.trim()){
+      const a=cur.a.trim();
+      pairs.push({question:cur.q.trim(),answer:/^no answer provided$/i.test(a)?'':a});
+    }
+    cur=null;
+  };
+  for(const raw of lines){
+    let line=raw.trim(); if(!line)continue;
+    if(/^#+\s*.*—\s*Q&A\s*$/i.test(line))continue; // this format's own export title line
+    const qm=line.match(qRe);
+    if(qm){ flush(); cur={q:qm[1].trim(),a:'',field:'q'}; continue; }
+    const am=line.match(aRe);
+    if(am){ if(!cur)cur={q:'',a:'',field:'a'}; cur.a=(cur.a?cur.a+' ':'')+am[1].trim(); cur.field='a'; continue; }
+    if(cur){ if(cur.field==='a')cur.a+=(cur.a?' ':'')+line; else cur.q+=(cur.q?' ':'')+line; }
+  }
+  flush();
+  if(pairs.length)return pairs;
+  return lines.map(l=>l.trim()).filter(l=>l.length>1&&l.endsWith('?')).map(q=>({question:q,answer:''}));
+}
+function continueQaImport(){
+  const ta=el('qa-import-textarea'); const text=ta?ta.value:'';
+  if(!text.trim()){ showToast('Paste something to import first'); return; }
+  const pairs=parseQaPasteText(text);
+  if(!pairs.length){ showToast('Couldn\u2019t find any questions in that text'); return; }
+  closeQaImport();
+  renderQaInsertCandidates(pairs.map(p=>({text:p.question,answer:p.answer})),{
+    heading:'Import Q&A',
+    sub:`Found ${pairs.length} question${pairs.length===1?'':'s'} — uncheck any you don\u2019t want. Not linked to a specific node.`,
+    emptyMsg:'Couldn\u2019t find any questions in that text.'
+  });
+}
+el('qtb-qa-import')?.addEventListener('mousedown', e=>{ e.preventDefault(); openQaImport(); });
 
-// === Pad flip mode: Notes ↔ Q&A ===
+
 // A body-level class rather than one scoped to #pad-panel — Presenter Notes physically moves
 // #pad-editor/#pad-toolbar/#qa-body out of #pad-panel into #presenter-notes-body, and a
 // panel-scoped selector would stop matching the instant that happens, silently breaking the
@@ -22736,9 +22822,15 @@ el('qa-insert-cancel')?.addEventListener('click',()=>closeQaInsert());
 el('qa-insert-overlay')?.addEventListener('click',e=>{
   if(e.target===el('qa-insert-overlay')) closeQaInsert();
 });
+el('qa-import-continue')?.addEventListener('click',()=>continueQaImport());
+el('qa-import-cancel')?.addEventListener('click',()=>closeQaImport());
+el('qa-import-overlay')?.addEventListener('click',e=>{
+  if(e.target===el('qa-import-overlay')) closeQaImport();
+});
 document.addEventListener('keydown',e=>{
   if(el('why-sakura-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeWhySakura(); } return; }
   if(el('icon-library-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeIconLibrary(); } return; }
+  if(el('qa-import-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaImport(); } return; }
   if(el('qa-insert-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaInsert(); } return; }
   if(el('qa-summary-modal-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaSummaryModal(); } return; }
   if(!el('welcome-overlay')?.classList.contains('open')) return;
