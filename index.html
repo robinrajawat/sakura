@@ -2244,6 +2244,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 
 
 .pv-popover-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pv-popover-head-row .pv-popover-label{margin-bottom:0}
+.pv-inline-qa-line .pv-qm-btn{margin-left:auto;opacity:.5}
+.pv-inline-qa-line .pv-qm-btn:hover{opacity:1}
 .pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-popover-link:last-child{border-bottom:none}
 .pv-popover-link:hover{color:var(--accent)}
@@ -2254,10 +2258,16 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .pv-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .pv-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
-.pv-marker-row{display:flex;gap:6px;margin-bottom:10px}
-.pv-marker-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);width:30px;height:30px;border-radius:8px;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s}
-.pv-marker-btn:hover{background:var(--hover)}
-.pv-marker-btn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.pv-qm-row{display:flex;align-items:center;gap:3px}
+.pv-qm-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s,color .12s}
+.pv-qm-btn:hover{background:var(--hover);color:var(--fg)}
+.pv-qm-mark.active[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green);border-color:color-mix(in srgb,var(--fc-green) 32%,transparent)}
+.pv-qm-mark.active[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red);border-color:color-mix(in srgb,var(--fc-red) 32%,transparent)}
+.pv-qm-mark.active[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange);border-color:color-mix(in srgb,var(--fc-orange) 32%,transparent)}
+.pv-qm-mark.active[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);border-color:color-mix(in srgb,var(--fc-gray) 32%,transparent)}
+.pv-qm-btn.pv-qm-danger:hover{background:color-mix(in srgb,var(--fc-red) 14%,transparent);color:var(--fc-red)}
+.pv-qm-sep{width:1px;align-self:stretch;background:var(--border);margin:0 3px}
+.pv-marker-popover{padding:6px}
 .pv-popover-sep{height:1px;background:var(--border);margin:2px 0 8px}
 .pv-capture-context{font-size:11.5px;color:var(--muted);font-style:italic;margin-bottom:8px;line-height:1.4}
 .pv-capture-input{width:100%;box-sizing:border-box;resize:vertical;min-height:52px;padding:7px 8px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:400 13px 'Inter',sans-serif;outline:none;margin-bottom:8px}
@@ -24423,19 +24433,45 @@ function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
 // to the top of the slide. A floating popover (same pattern as previewOpenBacklinksPopover
 // below) shows the same content without ever touching the slide DOM, so nothing reflows and
 // there's nothing for the scroll reset to disrupt.
+function deleteNodeNote(nodeId){
+  const node=nodes.find(n=>n.id===nodeId); if(!node)return;
+  const snapshot=node.note;
+  node.note='';
+  node.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  closePreviewPopover();
+  renderPreviewBody();
+  showActionToast('Note deleted','Undo',()=>{
+    const n=nodes.find(x=>x.id===nodeId); if(!n)return;
+    n.note=snapshot;
+    markDirty(); scheduleAutoSave();
+    renderPreviewBody();
+  });
+}
 function previewOpenNotePopover(triggerEl,node){
   const split=splitNoteDiagramImages(node.note||'');
-  openPreviewPopover(triggerEl,`<div class="pv-popover-label">Note</div><div class="pv-inline-note-body pv-popover-note">${split.restHtml}</div>`,'pv-popover-wide');
+  const html=`<div class="pv-popover-head-row"><span class="pv-popover-label">Note</span><button type="button" class="pv-qm-btn pv-qm-danger" data-tip="Delete note">${markIconSvg('trash')}</button></div><div class="pv-inline-note-body pv-popover-note">${split.restHtml}</div>`;
+  openPreviewPopover(triggerEl,html,'pv-popover-wide');
+  previewPopoverEl?.querySelector('.pv-qm-danger')?.addEventListener('click',()=>deleteNodeNote(node.id));
 }
 function previewOpenQaPopover(triggerEl,qRefs){
   const rows=qRefs.map(item=>{
     const aTrimmed=(item.answer||'').trim();
     return `<div class="pv-inline-qa-row">
-      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span><div class="pv-inline-qa-question">${esc(item.question||'')}</div></div>
+      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span><div class="pv-inline-qa-question">${esc(item.question||'')}</div><button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${item.id}">${markIconSvg('trash')}</button></div>
       <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span><div class="pv-inline-qa-answer${aTrimmed?'':' pv-inline-qa-unanswered'}">${esc(aTrimmed||'No answer yet')}</div></div>
     </div>`;
   }).join('');
   openPreviewPopover(triggerEl,`<div class="pv-popover-label">${qRefs.length>1?'Questions':'Question'}</div><div class="pv-inline-qa-body pv-popover-note">${rows}</div>`,'pv-popover-wide');
+  previewPopoverEl?.querySelectorAll('.pv-qa-delete-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const id=Number(btn.dataset.qaId);
+      closePreviewPopover();
+      deleteQaRow(id);
+      renderPreviewBody();
+    });
+  });
 }
 function previewOpenBacklinksPopover(triggerEl,blIds){
   const items=blIds.map(id=>{
@@ -24452,17 +24488,28 @@ function previewOpenBacklinksPopover(triggerEl,blIds){
 // clicking the active one again) plus Comment and Question. Built specifically so live feedback
 // during a walkthrough never needs leaving fullscreen or breaking presenting flow — see
 // showPopoverCaptureForm below for what the two text actions actually do.
+// Small stroke-based icon set for the quick-mark popover — matches the 2.2 stroke-width /
+// round-cap style used everywhere else in the app (note-dot, qa-dot, etc.) rather than the
+// emoji glyphs this popover used before.
+function markIconSvg(kind){
+  const paths={
+    confirmed:'<polyline points="20 6 9 17 4 12"/>',
+    issue:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    parked:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>',
+    followup:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+    comment:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    question:'<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+    trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>'
+  };
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths[kind]||''}</svg>`;
+}
 function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const cur=node.marker||'';
-  const mkBtn=(m,glyph)=>`<button type="button" class="pv-marker-btn${cur===m?' active':''}" data-marker="${m}" data-tip="${nodeMarkerLabel(m)}">${glyph}</button>`;
-  const html=`<div class="pv-popover-label">Mark this line</div>
-    <div class="pv-marker-row">${mkBtn('confirmed','✓')}${mkBtn('issue','✗')}${mkBtn('parked','⏸')}${mkBtn('followup','🚩')}</div>
-    <div class="pv-popover-sep"></div>
-    <div class="pv-popover-link" data-action="comment">💬 Comment…</div>
-    <div class="pv-popover-link" data-action="question">❓ Question…</div>`;
+  const mkBtn=(m)=>`<button type="button" class="pv-qm-btn pv-qm-mark${cur===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`;
+  const html=`<div class="pv-qm-row">${mkBtn('confirmed')}${mkBtn('issue')}${mkBtn('parked')}${mkBtn('followup')}<span class="pv-qm-sep"></span><button type="button" class="pv-qm-btn" data-action="comment" data-tip="Comment…">${markIconSvg('comment')}</button><button type="button" class="pv-qm-btn" data-action="question" data-tip="Question…">${markIconSvg('question')}</button></div>`;
   openPreviewPopover(triggerEl,html,'pv-marker-popover',atPoint);
-  previewPopoverEl?.querySelectorAll('.pv-marker-btn').forEach(b=>{
+  previewPopoverEl?.querySelectorAll('.pv-qm-mark').forEach(b=>{
     b.addEventListener('click',()=>{
       setNodeMarker(nodeId,b.dataset.marker);
       closePreviewPopover();
@@ -24497,6 +24544,7 @@ function clampPreviewPopoverToViewport(){
 }
 function showPopoverCaptureForm(nodeId,kind){
   const node=nodes.find(n=>n.id===nodeId); const pop=previewPopoverEl; if(!node||!pop)return;
+  pop.classList.remove('pv-marker-popover');
   const label=kind==='comment'?'Comment':'Question';
   const placeholder=kind==='comment'?'Type your comment…':'Type your question…';
   const preview=_nodeCommentPreview(node);
