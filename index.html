@@ -19514,7 +19514,16 @@ async function promptSessionBackup(){
   if(!sessionHasUnbackedChanges())return;
   sessionBackupPromptShowing=true;
   try{
-    const fsLabel=fsBackupStatus==='connected'?'Back up now':(fsBackupSupported?'Connect auto-backup…':'Connect auto-backup (unsupported here)');
+    // Browsers drop FileSystemHandle write permission across page reloads (see initFsBackup
+    // above) — so 'permission-needed' is the common case right after a refresh, not an edge
+    // case, and it needs its own label/action. Routing it through connectFsBackup() (a full
+    // showSaveFilePicker() re-pick) instead of reconnectFsBackup() (a single permission
+    // re-grant on the *existing* handle, no new file dialog) was why this prompt kept
+    // recurring every session even with a file already connected: the fix path offered here
+    // never actually restored write access, so no automatic backup write ever landed and
+    // LAST_FSBACKUP_KEY stayed stale.
+    const fsNeedsReconnect=fsBackupStatus==='permission-needed'||fsBackupStatus==='handle-lost';
+    const fsLabel=fsBackupStatus==='connected'?'Back up now':(fsNeedsReconnect?'Reconnect auto-backup…':(fsBackupSupported?'Connect auto-backup…':'Connect auto-backup (unsupported here)'));
     const res=await _openModal({
       icon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
       iconClass:'warn',
@@ -19533,6 +19542,7 @@ async function promptSessionBackup(){
     } else if(res.key==='fsbackup'){
       if(!fsBackupSupported){ showToast('Auto-backup to file needs Chrome or Edge'); }
       else if(fsBackupStatus==='connected'){ commitEdit(); saveToStorage(); await mirrorToIndexedDb(); await writeFsBackupNow(); showToast('Backed up'); }
+      else if(fsNeedsReconnect){ await reconnectFsBackup(); }
       else { await connectFsBackup(); }
     } else if(res.key==='disable-session'){
       sessionBackupPromptDismissed=true;
