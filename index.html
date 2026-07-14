@@ -22471,6 +22471,7 @@ async function rewriteDecisionField(key){
 }
 ['context','decision','rationale','alternatives','impact'].forEach(key=>{
   el('decision-rewrite-'+key)?.addEventListener('click',()=>rewriteDecisionField(key));
+  el('decision-'+key)?.addEventListener('keydown',e=>{ handleGenericQaKeydown(e,e.currentTarget); });
 });
 function addQaRow(){
   const item={id:newQaId(),question:'',answer:''};
