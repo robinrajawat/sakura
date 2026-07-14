@@ -6859,7 +6859,18 @@ function ensureDocSystem(){
     }
   }
   let curId=loadCurrentDocId();
-  if(curId&&!list.some(d=>d.id===curId)) curId=null;
+  if(curId&&!list.some(d=>d.id===curId)){
+    // Not present in the index doesn't mean the document is actually gone — the index
+    // (sakura_docs_index_v1) can fall out of sync with the real per-document storage
+    // (sakura_doc_v1_<id>), e.g. after a failed/partial write. Check storage directly
+    // before discarding a document that might still be fully intact; this is the same
+    // desync restoreOpenTabsOnStartup() guards against, just caught one step earlier
+    // here so a stale-index doc never even gets replaced by a different one below.
+    let recovered=null;
+    try{ const raw=localStorage.getItem(docKey(curId)); if(raw){const d=JSON.parse(raw); if(Array.isArray(d.nodes))recovered=d;} }catch(e){}
+    if(recovered){ list=touchDocIndex(curId,recovered.title||'Untitled'); }
+    else { curId=null; }
+  }
   if(!curId&&list.length){
     // No active document recorded. Only fall back to the first document if this looks
     // like a fresh load rather than the user having deliberately closed every tab —
