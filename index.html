@@ -7411,10 +7411,21 @@ function restoreOpenTabsOnStartup(forceActiveId){
   const validIds=new Set(loadActiveDocsIndex().map(d=>d.id));
   let ids=(restoreTabsOnLaunch&&saved&&Array.isArray(saved.tabs)?saved.tabs:[]).filter(id=>validIds.has(id));
   if(!ids.length&&currentDocId) ids=[currentDocId];
+  // currentDocId (sakura_current_doc_v1) is the source of truth for "what the user was actually
+  // working on" — it's written on every switchDoc/edit. The tab-strip list persisted in
+  // OPEN_TABS_KEY is a separate, independently-written localStorage entry, and can itself lag or
+  // fall out of sync (same class of issue as the docs index) — e.g. its `active` pointer stuck on
+  // a different, possibly blank tab, or currentDocId missing from its `tabs` array entirely. Make
+  // sure the real current document is always among the restored tabs, so a stale OPEN_TABS_KEY
+  // can never hide it behind some other tab.
+  if(currentDocId&&!ids.includes(currentDocId)) ids=[...ids,currentDocId];
   const pinnedIds=new Set(restoreTabsOnLaunch&&saved&&Array.isArray(saved.pinned)?saved.pinned:[]);
   openTabs=[];
   ids.forEach(id=>{ const t=loadTabFromStorageObj(id); if(t){ t.pinned=pinnedIds.has(id); openTabs.push(t) } });
-  let activeId=(saved&&saved.active&&validIds.has(saved.active)&&findOpenTab(saved.active))?saved.active:(openTabs[0]?openTabs[0].docId:null);
+  // Active-tab priority: the real current document first (if it actually loaded), then the
+  // persisted `active` pointer (if still valid), then just the first open tab.
+  let activeId=(currentDocId&&findOpenTab(currentDocId))?currentDocId
+    :((saved&&saved.active&&validIds.has(saved.active)&&findOpenTab(saved.active))?saved.active:(openTabs[0]?openTabs[0].docId:null));
   if(!openTabs.length&&currentDocId){
     // The tabs list came back empty — usually because the docs index (sakura_docs_index_v1)
     // is out of sync with the actual document storage (e.g. a failed/partial write). Before
