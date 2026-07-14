@@ -506,6 +506,8 @@ body.no-word-wrap .node-row{min-width:max-content}
 .qa-insert-row-added:hover{background:none}
 .qa-insert-row input{margin-top:3px;flex-shrink:0}
 .qa-insert-row-answer{display:block;color:var(--muted);font-style:italic;margin-top:1px}
+.qa-insert-row-section span:first-of-type{font-weight:700}
+.qa-insert-row-section span:first-of-type::before{content:'Section: ';color:var(--accent);font-weight:700}
 #qa-insert-actions,#qa-import-actions{display:flex;justify-content:flex-end;gap:8px}
 #qa-insert-actions .btn,#qa-import-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
 #qa-import-textarea{width:100%;box-sizing:border-box;min-height:160px;resize:vertical;margin-bottom:14px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:400 12.5px/1.5 'Inter',sans-serif}
@@ -1406,6 +1408,12 @@ body.pad-qa-mode #qa-followup-count{display:flex}
 .qa-followup svg{fill:currentColor;flex-shrink:0}
 .qa-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:18px}
 .qa-answered-wrap{display:inline-flex;align-items:center;gap:6px}
+/* Once a name is typed in, the field is real data and stays visible (base rule above). Until
+   then it's just an unfilled placeholder + a date, which doesn't need to sit on screen for
+   every single answered row — hidden by default, same hover-to-reveal pattern as the follow-up
+   chip just above it, so it's still one hover away when you do want to fill it in. */
+.qa-answered-wrap.qa-answered-wrap-empty{display:none}
+.qa-row:hover .qa-answered-wrap.qa-answered-wrap-empty{display:inline-flex}
 .qa-answered-by{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;outline:none;transition:color .12s,border-color .12s;field-sizing:content;min-width:50px;max-width:220px}
 .qa-answered-by::placeholder{color:var(--hint);opacity:.7}
 .qa-answered-by:hover,.qa-answered-by:focus{color:var(--fg);border-bottom-color:var(--border)}
@@ -1478,6 +1486,12 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 .qa-row-delete{position:absolute;top:1px;right:0;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:5px;opacity:0;pointer-events:none;transition:opacity .12s}
 .qa-row:hover .qa-row-delete{opacity:1;pointer-events:auto}
 .qa-row-delete:hover{background:color-mix(in srgb,var(--sem-alert) 15%,transparent);color:var(--sem-alert)}
+.qa-row.qa-section-row{border-bottom:1.5px solid color-mix(in srgb,var(--accent) 28%,transparent);padding-bottom:6px;margin-top:16px}
+.qa-row.qa-section-row:first-child{margin-top:0}
+.qa-section-content{display:flex;align-items:center}
+.qa-section-title{width:100%;border:none;background:transparent;padding:2px 3px;color:var(--muted);font:700 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em}
+.qa-section-title:focus{outline:none;color:var(--fg)}
+.qa-section-title::placeholder{color:var(--hint);text-transform:none;font-weight:600;letter-spacing:normal;font-size:12px}
 #pad-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
 #pad-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
 .pad-attachment{display:inline-flex;align-items:center;gap:4px;vertical-align:middle;background:var(--hover);border:1px solid var(--border);border-radius:7px;padding:3px 4px 3px 8px;margin:0 2px;font-family:'Inter',sans-serif;max-width:100%}
@@ -2151,6 +2165,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #presenter-notes-body #qtb-sep-bulk,
 #presenter-notes-body #qa-bulk-count,
 #presenter-notes-body #qtb-bulk-rewrite,
+#presenter-notes-body #qtb-bulk-answered-by,
 #presenter-notes-body #qtb-bulk-delete,
 #presenter-notes-body #qtb-export-txt,
 #presenter-notes-body #pad-clear-btn{display:none}
@@ -4364,7 +4379,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>A second floating button sits next to it — a shortcut for Settings → Bars &amp; Menus → Toolbar → "Show toolbar," so it works the same way whether you're in zen mode or not. Click it, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>, to show or hide the toolbar; the choice applies everywhere and is remembered next time</li>
 <li>If you'd rather zen mode hide the toolbar by default, turn "Show toolbar" off before maximizing — everything it holds is still reachable by keyboard shortcut (see the other sections on this page) or by right-clicking a node for the icon row and "More" menu</li>
 <li>The Pad panel has its own floating toggle next to the maximize button, since it stays open across zen mode</li>
-<li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The + button adds one blank row for questions that aren't in the outline at all. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — the date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>The Pad has three sides, switched via tabs in its header (Notepad / Q&amp;A / Decision Log) — same panel, same open/close/position, just a different view. The <strong>Q&amp;A</strong> tab is a structured list: each row is a Question and an Answer (in italics); hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The + button adds one blank row for questions that aren't in the outline at all; right next to it, a second button adds a section/topic header instead — just a title, no question or answer — for grouping related rows together. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to. Sections drag, select, and delete exactly like any other row, don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, italic answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 <li>Settings → Zen mode → "Hide app bar" also hides the very top row (Documents/Templates, search, Settings, Help, Import/Export) while zen — on by default. If Quick Assist is normally docked in the app bar ("Dock in app bar" in Settings → Quick Assist), zen mode relocates it into the status bar for as long as zen mode is on instead, rather than popping the app bar back open every time you invoke it; your "Dock in app bar" preference itself is untouched and Quick Assist returns to the app bar when you exit zen mode. If the app bar is hidden, right-click the editor canvas for a "Show app bar" option (only appears while it's actually hidden), or use the keyboard shortcuts for whatever you need — everything the app bar holds still works that way too</li>
 <li>Settings → Zen mode → "Use browser fullscreen" — on by default — additionally requests the browser's own fullscreen (the same as pressing F11) when you enter zen mode, hiding the browser's tabs and address bar too, not just Sakura's own UI. Exiting fullscreen — <span class="help-kbd">Esc</span>, F11, or the browser's own control — exits zen mode at the same time, so the two never end up out of sync</li>
 </ul>
@@ -4953,6 +4968,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span class="note-tb-sep"></span>
     <button class="note-tb-btn" id="ptb-ai-rewrite" data-tip="Rewrite Pad (AI) — rewrites selection or full pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-add" data-tip="Add a blank Q&amp;A row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-add-section" data-tip="Add a section/topic header"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="6" x2="3" y2="6.01"/><line x1="3" y1="18" x2="14" y2="18"/><path d="M17 15v6M20 18h-6"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-qa-import" data-tip="Import Q&amp;A from pasted text"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-scan" data-tip="Scan outline for questions"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6H3"/><path d="M15 12H3"/><path d="M11 18H3"/><circle cx="18" cy="16" r="3"/><path d="m20.5 18.5 2 2"/></svg></button>
     <button class="note-tb-btn qa-only-btn" id="qtb-ai-generate-questions" data-tip="AI: Generate questions — from the selection if you have one, otherwise the whole document"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/><path d="M18 5l.8 1.6L20.4 7.4l-1.6.8L18 10l-.8-1.8-1.6-.8 1.6-.8Z" fill="currentColor" stroke="none"/></svg></button>
@@ -4967,6 +4983,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span class="note-tb-sep qa-only-btn qa-bulk-btn" id="qtb-sep-bulk"></span>
     <span id="qa-bulk-count" class="qa-only-btn qa-bulk-btn"></span>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-rewrite" data-tip="Rewrite selected rows (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
+    <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-answered-by" data-tip="Set Answered by for selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
     <button class="note-tb-btn qa-only-btn qa-bulk-btn" id="qtb-bulk-delete" data-tip="Delete selected rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <span class="note-tb-sep" id="qtb-sep"></span>
     <button type="button" id="dltb-add" class="note-tb-btn decision-only-btn" data-tip="New decision log"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -13885,13 +13902,21 @@ function docxNextBookmarkId(){return ++_docxBookmarkCounter}
 // a TOC heading entry alongside the paragraphs so "Q&A" is reachable from the table of contents
 // like any other section, not just tacked on invisibly at the end.
 function docxBuildQaSection(items){
-  const valid=(items||[]).filter(it=>(it.question||'').trim());
-  if(!valid.length) return {headingEntry:null, paras:[]};
+  const relevant=(items||[]).filter(it=>qaIsSection(it)?(it.title||'').trim():(it.question||'').trim());
+  if(!relevant.length) return {headingEntry:null, paras:[]};
   const bookmarkId=docxNextBookmarkId();
   const bookmarkName='_Toc_qa_section';
   const headingPara=`<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:bookmarkStart w:id="${bookmarkId}" w:name="${bookmarkName}"/>${docxRun('Q&A',{bold:true})}<w:bookmarkEnd w:id="${bookmarkId}"/></w:p>`;
   const paras=[headingPara];
-  valid.forEach(item=>{
+  relevant.forEach(item=>{
+    // Visual formatting only (Heading2 style, no bookmark/TOC entry of its own) — the manual
+    // TOC this document builds only goes one level deep for Q&A (see headingEntry below), so a
+    // per-section entry there would need real plumbing this doesn't have yet; Word's own
+    // Navigation Pane will still pick these up from the outline level, which is a fine bonus.
+    if(qaIsSection(item)){
+      paras.push(`<w:p><w:pPr><w:pStyle w:val="Heading2"/><w:spacing w:before="200"/></w:pPr>${docxRun(String(item.title||'').trim(),{bold:true})}</w:p>`);
+      return;
+    }
     const q=String(item.question||'').trim();
     const a=String(item.answer||'').trim();
     paras.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:spacing w:before="120" w:after="20"/></w:pPr>${docxRun(q,{bold:true})}</w:p>`);
@@ -21354,7 +21379,9 @@ let _qaInsertCloseTimer=null;
 // points below — same review-before-add modal, same dedup-against-existing-questions logic,
 // same undo-friendly confirm handler. candidates: [{text, nodeId (optional — omitted for
 // AI-generated/imported questions, which aren't anchored to any single existing node), answer
-// (optional — only Import populates this), checked (optional, defaults to true)}].
+// (optional — only Import populates this), isSection (optional — only Import produces these,
+// for a "Section:" marker in pasted text; text is then the section title, not a question),
+// checked (optional, defaults to true)}].
 function renderQaInsertCandidates(candidates,{heading,sub,emptyMsg}){
   const ov=el('qa-insert-overlay'), list=el('qa-insert-list'); if(!ov||!list)return;
   clearTimeout(_qaInsertCloseTimer);
@@ -21369,12 +21396,17 @@ function renderQaInsertCandidates(candidates,{heading,sub,emptyMsg}){
     candidates.forEach(c=>{
       const text=String(c.text||'').trim(); if(!text)return;
       const answer=String(c.answer||'').trim();
-      const alreadyAdded=existingQuestions.has(text.toLowerCase());
-      const row=document.createElement('label'); row.className='qa-insert-row'+(alreadyAdded?' qa-insert-row-added':'');
+      // A section title is never "already in the list" the way a duplicate question is — there's
+      // no equivalent existing-title set to check it against, and importing the same section
+      // name twice is harmless (just two headers with the same text), unlike a duplicated
+      // question which would just be visual clutter with no upside.
+      const alreadyAdded=c.isSection?false:existingQuestions.has(text.toLowerCase());
+      const row=document.createElement('label'); row.className='qa-insert-row'+(alreadyAdded?' qa-insert-row-added':'')+(c.isSection?' qa-insert-row-section':'');
       const checked=alreadyAdded?false:(c.checked===undefined?true:c.checked);
       const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=checked; cb.disabled=alreadyAdded;
       if(c.nodeId!=null)cb.dataset.nodeId=String(c.nodeId);
       if(answer)cb.dataset.answer=answer;
+      if(c.isSection)cb.dataset.isSection='1';
       const span=document.createElement('span'); span.textContent=text+(alreadyAdded?' — already added':'');
       row.appendChild(cb); row.appendChild(span);
       if(answer&&!alreadyAdded){ const aSpan=document.createElement('span'); aSpan.className='qa-insert-row-answer'; aSpan.textContent=answer; row.appendChild(aSpan); }
@@ -21408,17 +21440,21 @@ function confirmQaInsert(){
   if(!checked.length){ showToast('No questions selected'); return; }
   const snapshot=qaItems.slice();
   checked.forEach(cb=>{
-    const question=cb.nextElementSibling.textContent.trim();
+    const text=cb.nextElementSibling.textContent.trim();
+    if(cb.dataset.isSection==='1'){ qaItems.push({id:newQaId(),type:'section',title:text}); return; }
     const sourceNodeId=cb.dataset.nodeId?Number(cb.dataset.nodeId):null;
     const answer=cb.dataset.answer||'';
-    qaItems.push({id:newQaId(),question,answer,sourceNodeId});
+    qaItems.push({id:newQaId(),question:text,answer,sourceNodeId});
   });
   if(!padEnabled){ showToast('Pad is disabled — Settings → Editing → Pad'); closeQaInsert(); return; }
   if(!padOpen)setPadOpen(true,false);
   setPadViewMode('qa');
   renderQaList();
   markDirty(); scheduleAutoSave();
-  showActionToast(`Added ${checked.length} question${checked.length===1?'':'s'}`,'Undo',()=>{
+  const sectionAdds=checked.filter(cb=>cb.dataset.isSection==='1').length;
+  const qaAdds=checked.length-sectionAdds;
+  const parts=[qaAdds?`${qaAdds} question${qaAdds===1?'':'s'}`:null,sectionAdds?`${sectionAdds} section${sectionAdds===1?'':'s'}`:null].filter(Boolean);
+  showActionToast(`Added ${parts.join(' and ')}`,'Undo',()=>{
     qaItems=snapshot;
     renderQaList();
     markDirty(); scheduleAutoSave();
@@ -21453,18 +21489,21 @@ function parseQaPasteText(text){
   const lines=String(text).replace(/\r\n?/g,'\n').split('\n');
   const qRe=/^[\s>]*(?:\*\*|__)?\s*Q(?:uestion)?\s*[:.)]\s*(?:\*\*|__)?\s*(.*)$/i;
   const aRe=/^[\s>]*(?:\*|_)?\s*A(?:nswer)?\s*[:.)]\s*(?:\*|_)?\s*(.*)$/i;
-  const pairs=[];
+  const sRe=/^[\s>]*(?:\*\*|__)?\s*Section(?:\s*\/\s*Topic)?\s*[:.)]\s*(?:\*\*|__)?\s*(.*)$/i;
+  const items=[]; // {type:'qa',question,answer} | {type:'section',title}
   let cur=null; // {q, a, field}
   const flush=()=>{
     if(cur&&cur.q.trim()){
       const a=cur.a.trim();
-      pairs.push({question:cur.q.trim(),answer:/^no answer provided$/i.test(a)?'':a});
+      items.push({type:'qa',question:cur.q.trim(),answer:/^no answer provided$/i.test(a)?'':a});
     }
     cur=null;
   };
   for(const raw of lines){
     let line=raw.trim(); if(!line)continue;
     if(/^#+\s*.*—\s*Q&A\s*$/i.test(line))continue; // this format's own export title line
+    const sm=line.match(sRe);
+    if(sm){ flush(); const t=sm[1].trim(); if(t)items.push({type:'section',title:t}); continue; }
     const qm=line.match(qRe);
     if(qm){ flush(); cur={q:qm[1].trim(),a:'',field:'q'}; continue; }
     const am=line.match(aRe);
@@ -21472,18 +21511,20 @@ function parseQaPasteText(text){
     if(cur){ if(cur.field==='a')cur.a+=(cur.a?' ':'')+line; else cur.q+=(cur.q?' ':'')+line; }
   }
   flush();
-  if(pairs.length)return pairs;
-  return lines.map(l=>l.trim()).filter(l=>l.length>1&&l.endsWith('?')).map(q=>({question:q,answer:''}));
+  if(items.length)return items;
+  return lines.map(l=>l.trim()).filter(l=>l.length>1&&l.endsWith('?')).map(q=>({type:'qa',question:q,answer:''}));
 }
 function continueQaImport(){
   const ta=el('qa-import-textarea'); const text=ta?ta.value:'';
   if(!text.trim()){ showToast('Paste something to import first'); return; }
-  const pairs=parseQaPasteText(text);
-  if(!pairs.length){ showToast('Couldn\u2019t find any questions in that text'); return; }
+  const items=parseQaPasteText(text);
+  if(!items.length){ showToast('Couldn\u2019t find any questions in that text'); return; }
   closeQaImport();
-  renderQaInsertCandidates(pairs.map(p=>({text:p.question,answer:p.answer})),{
+  const qaCount=items.filter(p=>p.type!=='section').length;
+  const sectionCount=items.length-qaCount;
+  renderQaInsertCandidates(items.map(p=>p.type==='section'?{text:p.title,isSection:true}:{text:p.question,answer:p.answer}),{
     heading:'Import Q&A',
-    sub:`Found ${pairs.length} question${pairs.length===1?'':'s'} — uncheck any you don\u2019t want. Not linked to a specific node.`,
+    sub:`Found ${qaCount} question${qaCount===1?'':'s'}${sectionCount?` and ${sectionCount} section${sectionCount===1?'':'s'}`:''} — uncheck any you don\u2019t want. Not linked to a specific node.`,
     emptyMsg:'Couldn\u2019t find any questions in that text.'
   });
 }
@@ -22092,6 +22133,19 @@ function addQaRow(){
   markDirty(); scheduleAutoSave();
   el(`qa-q-${item.id}`)?.focus();
 }
+// Section headers are just another entry in qaItems (type:'section', title only — no
+// question/answer/sourceNodeId) rather than a separate array, so they ride along for free with
+// everything that already treats qaItems as one ordered list: manual drag-reorder, undo-on-delete,
+// export ordering. Everywhere else that filters qaItems on (it.question||'').trim() already
+// naturally skips section rows for free, since they have no question field at all.
+function qaIsSection(it){ return it&&it.type==='section'; }
+function addQaSection(){
+  const item={id:newQaId(),type:'section',title:''};
+  qaItems.push(item);
+  renderQaList();
+  markDirty(); scheduleAutoSave();
+  el(`qa-section-${item.id}`)?.focus();
+}
 // Snapshot-restore rather than reinserting at a saved index — correct regardless of what else
 // changed qaItems between delete and undo (add, reorder, another delete), and identical logic
 // covers both the single-row and bulk-delete cases below.
@@ -22111,6 +22165,7 @@ function deleteQaRow(id){
 }
 function qaMatchesSearch(item,q){
   if(!q)return true;
+  if(qaIsSection(item))return (item.title||'').toLowerCase().includes(q);
   return ((item.question||'')+' '+(item.answer||'')).toLowerCase().includes(q);
 }
 function qaIsUnanswered(item){ return !(item.answer||'').trim(); }
@@ -22192,7 +22247,8 @@ function attachAnswererAutocomplete(inputEl){
 function updateQaAnsweredMeta(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   const hasAnswer=!!(item.answer||'').trim();
-  const wrap=el(`qa-answered-wrap-${id}`); if(wrap)wrap.style.display=hasAnswer?'inline-flex':'none';
+  const wrap=el(`qa-answered-wrap-${id}`);
+  if(wrap){ wrap.style.display=hasAnswer?'inline-flex':'none'; wrap.classList.toggle('qa-answered-wrap-empty',hasAnswer&&!(item.answeredBy||'').trim()); }
   const atSpan=el(`qa-answeredat-${id}`); if(atSpan){ atSpan.textContent=hasAnswer?qaFormatShortDate(item.answeredAt):''; atSpan.dataset.tip=hasAnswer&&item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:''; }
   const byInput=el(`qa-answeredby-${id}`); if(byInput){ byInput.value=hasAnswer?(item.answeredBy||''):''; }
 }
@@ -22220,31 +22276,47 @@ function toggleQaFollowUp(id){
   setQaRowFollowUp(id, item.followUp ? '' : 'follow-up');
   markDirty(); scheduleAutoSave();
 }
-// Shared by rendering, shift-click range selection, and plain-text export so all three agree
-// on which rows are in play — underlying manual order, filtered by search text and whichever
-// of the three view filters (unanswered-only, unlinked-only, follow-up-only) are active. All
-// three can combine.
+// Applies all four Q&A view filters (unanswered/unlinked/follow-up toggles, plus search) in one
+// place — used by rendering, shift-click range selection, and plain-text export so all three
+// agree on what's actually "in view" right now. Section headers themselves are never excluded
+// by the three toggle filters (they have no answer/link/follow-up state to filter on) and are
+// checked against search by title instead of question/answer — but once any filter is active,
+// a header left with nothing under it afterward is dropped too, since an empty group heading at
+// that point is just noise, not useful grouping.
 function qaVisibleItems(){
-  return qaItems.filter(it=>(!qaUnansweredOnly||qaIsUnanswered(it))&&(!qaUnlinkedOnly||qaIsUnlinked(it))&&(!qaFollowUpOnly||qaIsFollowUp(it)));
+  const q=qaSearchQuery.trim().toLowerCase();
+  const passes=it=>qaIsSection(it)
+    ? qaMatchesSearch(it,q)
+    : (!qaUnansweredOnly||qaIsUnanswered(it))&&(!qaUnlinkedOnly||qaIsUnlinked(it))&&(!qaFollowUpOnly||qaIsFollowUp(it))&&qaMatchesSearch(it,q);
+  const filtered=qaItems.filter(passes);
+  if(!qaUnansweredOnly&&!qaUnlinkedOnly&&!qaFollowUpOnly&&!q)return filtered;
+  const out=[]; let pendingSection=null;
+  for(const it of filtered){
+    if(qaIsSection(it)){ pendingSection=it; continue; }
+    if(pendingSection){ out.push(pendingSection); pendingSection=null; }
+    out.push(it);
+  }
+  return out;
 }
 function qaDisplayOrderIds(){
-  const q=qaSearchQuery.trim().toLowerCase();
-  return qaVisibleItems().filter(it=>qaMatchesSearch(it,q)).map(it=>it.id);
+  return qaVisibleItems().map(it=>it.id);
 }
 function buildQaPlainText(){
-  const valid=qaItems.filter(it=>(it.question||'').trim());
-  return valid.map(it=>{
+  const relevant=qaItems.filter(it=>qaIsSection(it)?(it.title||'').trim():(it.question||'').trim());
+  return relevant.map(it=>{
+    if(qaIsSection(it))return `Section: ${String(it.title||'').trim()}`;
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
     return `Q: ${q}\nA: ${a||'No answer provided'}`;
   }).join('\n\n');
 }
 function exportQaText(){
-  if(!qaItems.some(it=>(it.question||'').trim())){ showToast('No Q&A rows to export yet'); return; }
+  if(!qaItems.some(it=>!qaIsSection(it)&&(it.question||'').trim())){ showToast('No Q&A rows to export yet'); return; }
   const title=(getMeta().title||'tree');
-  const valid=qaItems.filter(it=>(it.question||'').trim());
+  const relevant=qaItems.filter(it=>qaIsSection(it)?(it.title||'').trim():(it.question||'').trim());
   let body='###### '+escMd(title)+' — Q&A\n\n';
-  valid.forEach(it=>{
+  relevant.forEach(it=>{
+    if(qaIsSection(it)){ body+='**Section:** '+escMd(String(it.title||'').trim())+'\n\n'; return; }
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
     body+='**Q:** '+escMd(q)+'\n\n';
@@ -22284,6 +22356,36 @@ async function bulkDeleteQaSelected(){
   markDirty(); scheduleAutoSave();
   showActionToast(`${count} Q&A row${count===1?'':'s'} deleted`,'Undo',()=>{
     qaItems=snapshot;
+    renderQaList();
+    markDirty(); scheduleAutoSave();
+  });
+}
+async function bulkSetQaAnsweredBy(){
+  if(!qaSelectedIds.size)return;
+  // Setting who answered only makes sense for rows that actually have an answer — same rule
+  // the per-row field already follows (it's hidden entirely on unanswered rows). Selecting a
+  // mix of answered and unanswered rows applies only to the answered ones rather than refusing
+  // outright, since bulk-selecting "everything in this section" and having some not qualify is
+  // the common case, not an error.
+  const targets=qaItems.filter(it=>qaSelectedIds.has(it.id)&&(it.answer||'').trim());
+  if(!targets.length){ showToast('None of the selected rows have an answer yet'); return; }
+  const skippedCount=qaSelectedIds.size-targets.length;
+  const name=await sakuraPrompt({
+    icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    title:'Set Answered By',
+    body:`Applies to ${targets.length} selected row${targets.length===1?'':'s'}${skippedCount?` (${skippedCount} skipped — no answer yet)`:''}.`,
+    defaultValue:qaRecentAnswerers[0]||'',
+    confirmLabel:'Apply'
+  });
+  if(name===null)return;
+  const trimmed=name.trim();
+  const snapshot=targets.map(it=>({id:it.id,answeredBy:it.answeredBy||''}));
+  targets.forEach(it=>{ it.answeredBy=trimmed; });
+  if(trimmed)qaRecordAnswerer(trimmed);
+  renderQaList();
+  markDirty(); scheduleAutoSave();
+  showActionToast(`Answered by set for ${targets.length} row${targets.length===1?'':'s'}`,'Undo',()=>{
+    snapshot.forEach(s=>{ const it=qaItems.find(x=>x.id===s.id); if(it)it.answeredBy=s.answeredBy; });
     renderQaList();
     markDirty(); scheduleAutoSave();
   });
@@ -22602,10 +22704,11 @@ function resetDiagramTransientState(){
 }
 function updateQaProgress(){
   const progress=el('qa-progress'); if(progress){
-    const answered=qaItems.filter(it=>(it.answer||'').trim()).length;
-    progress.textContent=qaItems.length?`${answered}/${qaItems.length} answered`:'';
-    const unanswered=qaItems.length-answered;
-    progress.disabled=!qaUnansweredOnly&&(qaItems.length===0||unanswered===0);
+    const questionItems=qaItems.filter(it=>!qaIsSection(it));
+    const answered=questionItems.filter(it=>(it.answer||'').trim()).length;
+    progress.textContent=questionItems.length?`${answered}/${questionItems.length} answered`:'';
+    const unanswered=questionItems.length-answered;
+    progress.disabled=!qaUnansweredOnly&&(questionItems.length===0||unanswered===0);
   }
   const linkChip=el('qa-unlinked'); if(linkChip){
     const unlinkedCount=qaItems.filter(qaIsUnlinked).length;
@@ -22670,7 +22773,7 @@ function renderQaList(){
   // the row you're actively editing to jump elsewhere mid-keystroke, since render only runs
   // on structural changes (add/delete/scan/reorder), not on every input event.
   const q=qaSearchQuery.trim().toLowerCase();
-  const displayItems=qaVisibleItems().filter(it=>qaMatchesSearch(it,q));
+  const displayItems=qaVisibleItems();
   const emptyEl=el('qa-empty');
   if(emptyEl){
     const defaultMsg='No Q&A rows yet. Scan the outline for questions ending in "?", or add a blank row.';
@@ -22683,7 +22786,8 @@ function renderQaList(){
   }
   body.classList.toggle('qa-is-empty', displayItems.length===0);
   displayItems.forEach(item=>{
-    const row=document.createElement('div'); row.className='qa-row'+(qaSelectedIds.has(item.id)?' qa-row-selected':''); row.dataset.qaId=String(item.id);
+    const isSection=qaIsSection(item);
+    const row=document.createElement('div'); row.className='qa-row'+(isSection?' qa-section-row':'')+(qaSelectedIds.has(item.id)?' qa-row-selected':''); row.dataset.qaId=String(item.id);
 
     const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='qa-row-select'; selectCb.checked=qaSelectedIds.has(item.id); selectCb.dataset.tip='Select row (Shift-click for range)';
     selectCb.addEventListener('click',e=>{ e.stopPropagation(); toggleQaSelect(item.id,e.shiftKey); });
@@ -22697,6 +22801,22 @@ function renderQaList(){
     row.addEventListener('dragover',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.add('qa-drag-over'); });
     row.addEventListener('dragleave',()=>row.classList.remove('qa-drag-over'));
     row.addEventListener('drop',e=>{ if(!canDrag)return; e.preventDefault(); row.classList.remove('qa-drag-over'); const draggedId=e.dataTransfer.getData('text/plain'); reorderQaRow(draggedId,item.id); });
+
+    // Sections are deliberately a much simpler row than a real Q&A row — a title and nothing
+    // else — reusing the same select/drag/delete machinery above (so reordering, bulk-select,
+    // and bulk-delete all just work on them already) but skipping the whole question/answer/
+    // follow-up/answered-by block entirely, none of which makes sense for a group heading.
+    if(isSection){
+      const content=document.createElement('div'); content.className='qa-row-content qa-section-content';
+      const titleInput=document.createElement('input'); titleInput.type='text'; titleInput.id=`qa-section-${item.id}`; titleInput.className='qa-section-title'; titleInput.placeholder='Section / topic'; titleInput.value=item.title||'';
+      titleInput.addEventListener('input',()=>{ item.title=titleInput.value; markDirty(); scheduleAutoSave(); });
+      content.appendChild(titleInput);
+      const del=document.createElement('button'); del.className='qa-row-delete'; del.dataset.tip='Delete section'; del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+      del.addEventListener('click',()=>deleteQaRow(item.id));
+      row.appendChild(selectCb); row.appendChild(handle); row.appendChild(content); row.appendChild(del);
+      list.appendChild(row);
+      return;
+    }
 
     const content=document.createElement('div'); content.className='qa-row-content';
 
@@ -22741,10 +22861,10 @@ function renderQaList(){
     followUpBtn.addEventListener('click',e=>{ e.stopPropagation(); toggleQaFollowUp(item.id); });
     metaRow.appendChild(followUpBtn);
 
-    const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'; answeredWrap.id=`qa-answered-wrap-${item.id}`; answeredWrap.style.display=(item.answer||'').trim()?'inline-flex':'none';
+    const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'+((item.answer||'').trim()&&!(item.answeredBy||'').trim()?' qa-answered-wrap-empty':''); answeredWrap.id=`qa-answered-wrap-${item.id}`; answeredWrap.style.display=(item.answer||'').trim()?'inline-flex':'none';
     const answeredByInput=document.createElement('input'); answeredByInput.type='text'; answeredByInput.className='qa-answered-by'; answeredByInput.id=`qa-answeredby-${item.id}`; answeredByInput.placeholder='Answered by…'; answeredByInput.autocomplete='off'; answeredByInput.value=item.answeredBy||'';
     answeredByInput.addEventListener('click',e=>e.stopPropagation());
-    answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); });
+    answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); updateQaAnsweredMeta(item.id); });
     attachAnswererAutocomplete(answeredByInput);
     const answeredAtSpan=document.createElement('span'); answeredAtSpan.className='qa-answered-at'; answeredAtSpan.id=`qa-answeredat-${item.id}`; answeredAtSpan.textContent=item.answeredAt?qaFormatShortDate(item.answeredAt):''; answeredAtSpan.dataset.tip=item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:'';
     answeredWrap.appendChild(answeredByInput); answeredWrap.appendChild(answeredAtSpan);
@@ -22791,6 +22911,7 @@ el('icon-library-overlay')?.addEventListener('click',e=>{
 });
 el('qtb-scan')?.addEventListener('mousedown', e=>{ e.preventDefault(); openQaInsert(); });
 el('qtb-add')?.addEventListener('mousedown', e=>{ e.preventDefault(); addQaRow(); });
+el('qtb-add-section')?.addEventListener('mousedown', e=>{ e.preventDefault(); addQaSection(); });
 el('qtb-search')?.addEventListener('mousedown', e=>{ e.preventDefault(); toggleQaSearch(); });
 el('qa-search-input')?.addEventListener('input',e=>{
   qaSearchQuery=e.target.value;
@@ -22806,6 +22927,7 @@ el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exp
 el('qtb-ai-answer-all')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDraftUnansweredAnswers(); });
 el('qtb-qa-summary')?.addEventListener('mousedown', e=>{ e.preventDefault(); generateQaSummary(); });
 el('qtb-bulk-rewrite')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkRewriteQaSelected(); });
+el('qtb-bulk-answered-by')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkSetQaAnsweredBy(); });
 el('qtb-bulk-delete')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDeleteQaSelected(); });
 el('qa-summary-modal-close-btn')?.addEventListener('click', closeQaSummaryModal);
 el('qa-summary-regenerate-btn')?.addEventListener('click', generateQaSummary);
