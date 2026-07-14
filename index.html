@@ -1407,13 +1407,16 @@ body.pad-qa-mode #qa-followup-count{display:flex}
 .qa-followup.set.ai:hover{color:var(--accent)}
 .qa-followup svg{fill:currentColor;flex-shrink:0}
 .qa-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:18px}
-.qa-answered-wrap{display:inline-flex;align-items:center;gap:6px}
-/* Once a name is typed in, the field is real data and stays visible (base rule above). Until
-   then it's just an unfilled placeholder + a date, which doesn't need to sit on screen for
-   every single answered row — hidden by default, same hover-to-reveal pattern as the follow-up
-   chip just above it, so it's still one hover away when you do want to fill it in. */
-.qa-answered-wrap.qa-answered-wrap-empty{display:none}
-.qa-row:hover .qa-answered-wrap.qa-answered-wrap-empty{display:inline-flex}
+.qa-answered-wrap{display:none;align-items:center;gap:6px}
+/* Three states, all class-driven now (deliberately no inline style.display on this element
+   anywhere in JS — an inline style always wins over these rules regardless of specificity,
+   which is exactly what silently defeated an earlier version of this same fix). No answer at
+   all: stays hidden always (base rule above). Has an answer, no name typed in yet: hidden by
+   default, same hover-to-reveal pattern as the follow-up chip just above it. Has an answer and
+   a name: always visible, since that's real data. */
+.qa-answered-wrap.qa-answered-has-answer{display:inline-flex}
+.qa-answered-wrap.qa-answered-has-answer.qa-answered-wrap-empty{display:none}
+.qa-row:hover .qa-answered-wrap.qa-answered-has-answer.qa-answered-wrap-empty{display:inline-flex}
 .qa-answered-by{appearance:none;border:none;border-bottom:1px dashed transparent;background:transparent;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 1px 0;outline:none;transition:color .12s,border-color .12s;field-sizing:content;min-width:50px;max-width:220px}
 .qa-answered-by::placeholder{color:var(--hint);opacity:.7}
 .qa-answered-by:hover,.qa-answered-by:focus{color:var(--fg);border-bottom-color:var(--border)}
@@ -22248,7 +22251,7 @@ function updateQaAnsweredMeta(id){
   const item=qaItems.find(it=>it.id===id); if(!item)return;
   const hasAnswer=!!(item.answer||'').trim();
   const wrap=el(`qa-answered-wrap-${id}`);
-  if(wrap){ wrap.style.display=hasAnswer?'inline-flex':'none'; wrap.classList.toggle('qa-answered-wrap-empty',hasAnswer&&!(item.answeredBy||'').trim()); }
+  if(wrap){ wrap.classList.toggle('qa-answered-has-answer',hasAnswer); wrap.classList.toggle('qa-answered-wrap-empty',hasAnswer&&!(item.answeredBy||'').trim()); }
   const atSpan=el(`qa-answeredat-${id}`); if(atSpan){ atSpan.textContent=hasAnswer?qaFormatShortDate(item.answeredAt):''; atSpan.dataset.tip=hasAnswer&&item.answeredAt?`Answer last updated ${formatTimestamp(item.answeredAt)}`:''; }
   const byInput=el(`qa-answeredby-${id}`); if(byInput){ byInput.value=hasAnswer?(item.answeredBy||''):''; }
 }
@@ -22861,7 +22864,8 @@ function renderQaList(){
     followUpBtn.addEventListener('click',e=>{ e.stopPropagation(); toggleQaFollowUp(item.id); });
     metaRow.appendChild(followUpBtn);
 
-    const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'+((item.answer||'').trim()&&!(item.answeredBy||'').trim()?' qa-answered-wrap-empty':''); answeredWrap.id=`qa-answered-wrap-${item.id}`; answeredWrap.style.display=(item.answer||'').trim()?'inline-flex':'none';
+    const rowHasAnswer=(item.answer||'').trim();
+    const answeredWrap=document.createElement('span'); answeredWrap.className='qa-answered-wrap'+(rowHasAnswer?' qa-answered-has-answer':'')+(rowHasAnswer&&!(item.answeredBy||'').trim()?' qa-answered-wrap-empty':''); answeredWrap.id=`qa-answered-wrap-${item.id}`;
     const answeredByInput=document.createElement('input'); answeredByInput.type='text'; answeredByInput.className='qa-answered-by'; answeredByInput.id=`qa-answeredby-${item.id}`; answeredByInput.placeholder='Answered by…'; answeredByInput.autocomplete='off'; answeredByInput.value=item.answeredBy||'';
     answeredByInput.addEventListener('click',e=>e.stopPropagation());
     answeredByInput.addEventListener('change',()=>{ item.answeredBy=answeredByInput.value.trim(); qaRecordAnswerer(item.answeredBy); markDirty(); scheduleAutoSave(); updateQaAnsweredMeta(item.id); });
