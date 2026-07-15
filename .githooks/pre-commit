@@ -17,4 +17,21 @@ if [ "$author_email" != "$ALLOWED_EMAIL" ]; then
   echo "    git config user.email \"$ALLOWED_EMAIL\""
   exit 1
 fi
+
+# Guards against the exact issue that happened on 2026-07-15: a stray literal
+# "<Title>" in help prose got parsed as a real <title> tag (a RAWTEXT
+# element, same category as <script>), silently truncating/corrupting the
+# main app script. See scripts/validate_html_structure.py for details.
+if git diff --cached --name-only | grep -qx "index.html"; then
+  if command -v python3 >/dev/null 2>&1 && python3 -c "import html5lib" >/dev/null 2>&1; then
+    if ! python3 scripts/validate_html_structure.py; then
+      echo "✖ Commit blocked: index.html failed HTML structure validation (see above)."
+      exit 1
+    fi
+  else
+    echo "⚠ Skipping HTML structure validation: html5lib not installed."
+    echo "  Install with: pip install html5lib --break-system-packages"
+  fi
+fi
+
 exit 0
