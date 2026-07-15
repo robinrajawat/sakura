@@ -2312,6 +2312,16 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    document with many simple notes throughout (e.g. a review Q&A walkthrough). Keeps just a
    thin left rule — enough to mark it as an aside, without boxing it. */
 .pv-inline-note-body.pv-note-plain{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border)}
+/* Full (untruncated) plain-note text shown inline right after the node's own text — see the
+   isPlainNote branch in renderPreviewBody. Note content (whether from saveNodeComment's
+   per-entry markup or freeform typing in the Pad's note editor) is naturally built from block-
+   level <div>/<p> elements; forcing those to display:inline here is what actually lets a note
+   sit on the same line as the node text and wrap normally, rather than each one starting a new
+   line regardless of this container. A middot separates multiple entries since they no longer
+   get their own line to imply separation. */
+.pv-note-inline-full{color:var(--muted);margin-left:6px}
+.pv-note-inline-full>div,.pv-note-inline-full>p{display:inline}
+.pv-note-inline-full>div:not(:first-child)::before,.pv-note-inline-full>p:not(:first-child)::before{content:' · ';color:var(--hint)}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
@@ -24262,6 +24272,16 @@ function renderPreviewBody(){
     // indicator that opens onto an empty card.
     const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
     const noteHasContent = noteSplit ? htmlHasVisibleContent(noteSplit.restHtml) : ownNote;
+    const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
+    // A plain-text note (no image/table/list/heading/code — see noteIsPlainTextOnly) now
+    // renders inline, right after the node's own text, in full — not truncated, not behind a
+    // click — mirroring how the node's own text and a note would sit "together" if you were
+    // just reading the outline. Rich notes keep the click-to-open card below, since a table or
+    // image can't sensibly sit inline with a line of text regardless of node.marker or
+    // anything else. See the contentEl.appendChild(inlineFull) block below and the two guards
+    // (isPlainNote / !isPlainNote) added to the old truncated-preview and open-card blocks so
+    // a plain note's content isn't shown three different ways at once.
+    const isPlainNote = noteHasContent && noteIsPlainTextOnly(noteRestHtml);
     const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
@@ -24297,11 +24317,38 @@ function renderPreviewBody(){
         });
       }
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent){
-        const isOpen=previewOpenNoteIds.has(node.id);
-        const dot=document.createElement('span'); dot.className='node-note-dot'+(isOpen?' pv-dot-open':''); dot.dataset.tip=isOpen?'Hide note':'This node has a note — click to show';
-        dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-        dot.addEventListener('click',e=>{ e.stopPropagation(); if(previewPresenting&&!isOpen){ previewOpenNotePopover(dot,node); } else { previewToggleNote(node.id); } });
-        contentEl.appendChild(dot);
+        if(isPlainNote){
+          // Dot stays as a visible "this node has a note" indicator and jump-to-edit shortcut
+          // — the content itself is already shown in full right after it (see the
+          // pv-note-inline-full append below), so there's nothing left to toggle open/closed.
+          const dot=document.createElement('span'); dot.className='node-note-dot'; dot.dataset.tip='This node has a note — click to edit';
+          dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+          dot.addEventListener('click',e=>{
+            e.stopPropagation();
+            if(previewPresenting){ previewOpenNotePopover(dot,node); }
+            else {
+              // note-panel is z-index:100, the preview overlay is z-index:1050 — opening the
+              // panel without closing Preview first would render it invisibly behind the
+              // overlay. Close Preview, then let positionNodePanel find the row in the
+              // now-rendered editor pane itself rather than passing dot's rect, which belonged
+              // to Preview's completely different layout and would anchor nowhere sensible here.
+              closePreview();
+              setSingleSelection(node.id);
+              render();
+              openNodePanel(node.id);
+            }
+          });
+          contentEl.appendChild(dot);
+          const inlineFull=document.createElement('span'); inlineFull.className='pv-note-inline-full';
+          inlineFull.innerHTML=noteRestHtml;
+          contentEl.appendChild(inlineFull);
+        } else {
+          const isOpen=previewOpenNoteIds.has(node.id);
+          const dot=document.createElement('span'); dot.className='node-note-dot'+(isOpen?' pv-dot-open':''); dot.dataset.tip=isOpen?'Hide note':'This node has a note — click to show';
+          dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+          dot.addEventListener('click',e=>{ e.stopPropagation(); if(previewPresenting&&!isOpen){ previewOpenNotePopover(dot,node); } else { previewToggleNote(node.id); } });
+          contentEl.appendChild(dot);
+        }
       }
       if(!_pvSuppressNoteCodeIndicators&&featureCodeEnabled&&ownCode){
         const isOpen=previewOpenCodeIds.has(node.id);
@@ -24335,10 +24382,11 @@ function renderPreviewBody(){
     // Same inline note preview as the editor tree (see render()) — small italic snippet
     // appended right after the node's own text/icons (same contentEl the note-dot etc. above
     // append into), gated by the same inlineNotePreviewEnabled setting. Skipped when the note
-    // is already shown open via the note-dot (previewOpenNoteIds) to avoid showing the same
-    // content twice, and skipped for folded parents (nothing of the node's own content shows
-    // there either).
-    if(inlineNotePreviewEnabled&&ownNote&&noteHasContent&&!previewOpenNoteIds.has(node.id)&&!(folded&&hasChildren)){
+    // is already shown open via the note-dot (previewOpenNoteIds), for folded parents (nothing
+    // of the node's own content shows there either), and for plain-text notes — those now
+    // always show their full text inline (see the pv-note-inline-full block above), so a
+    // truncated teaser of the exact same content right next to it would just be noise.
+    if(inlineNotePreviewEnabled&&ownNote&&noteHasContent&&!previewOpenNoteIds.has(node.id)&&!(folded&&hasChildren)&&!isPlainNote){
       const npv=document.createElement('span'); npv.className='pv-note-inline-preview';
       npv.textContent=notePreviewPlainText(node.note);
       contentEl.appendChild(npv);
@@ -24412,8 +24460,7 @@ function renderPreviewBody(){
           slideTarget.appendChild(trow);
         }
       }
-      const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
-      if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)){
+      if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
