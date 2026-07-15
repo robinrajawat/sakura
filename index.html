@@ -15074,8 +15074,12 @@ const PPTX_SLIDE_W=13.333, PPTX_SLIDE_H=7.5; // inches — matches pptxgenjs' LA
 function pptxGatherTheme(){
   const cs=getComputedStyle(document.body);
   const hex=(name,fallback)=>{ const v=cs.getPropertyValue(name).trim(); return /^#[0-9a-fA-F]{6}$/.test(v)?v.slice(1).toUpperCase():fallback; };
+  // Same resolver as PDF/Word/generic exports (Settings → Export & print → "Use accent color
+  // in exports") — this used to read --accent straight off computed style like every other
+  // color here, which meant PPTX was the one export format that never respected the setting.
+  const resolvedAccent=resolveExportAccentColor();
   return {
-    accent: hex('--accent','C2553D'),
+    accent: /^#[0-9a-fA-F]{6}$/.test(resolvedAccent)?resolvedAccent.slice(1).toUpperCase():'C2553D',
     bg:     hex('--bg','F8F8F6'),
     fg:     hex('--fg','3D3929'),
     muted:  hex('--muted','73716B'),
