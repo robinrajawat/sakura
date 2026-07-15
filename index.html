@@ -2329,6 +2329,14 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    line regardless of this container. A middot separates multiple entries since they no longer
    get their own line to imply separation. */
 .pv-note-inline-full{color:var(--muted);font-style:italic;margin-left:6px}
+/* Smaller specifically while presenting — Presenter mode's own zoom (body.style.zoom, see
+   setPreviewPresenterZoom) scales everything uniformly including this, so at the default 150%
+   zoom a note sitting right next to the node's own (also zoomed) text read as close to equally
+   prominent. em-based so it stays proportionally smaller relative to whatever line it's on
+   (plain bullet or heading) rather than a fixed px size that would look wrong at some depths. */
+#preview-overlay.pv-presenting .pv-note-inline-full{font-size:0.65em}
+#preview-overlay.pv-presenting .node-note-dot-plain{width:13px;height:13px;font-size:8px}
+#preview-overlay.pv-presenting .node-note-dot-plain svg{width:9px;height:9px}
 .pv-note-inline-full>div,.pv-note-inline-full>p{display:inline}
 .pv-note-inline-full>div:not(:first-child)::before,.pv-note-inline-full>p:not(:first-child)::before{content:' · ';color:var(--hint)}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
