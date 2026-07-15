@@ -15196,6 +15196,29 @@ async function buildPptxPresentation(slidesData){
   function pptxLineHeightIn(fontSizePt, lineSpacingMultiple){
     return fontSizePt*(lineSpacingMultiple||1.25)/72;
   }
+  // Splits a slide's bullet list into pages that actually fit the available body height,
+  // using the same real canvas measurement as the decision-log cards (pptxMeasureWrappedLines)
+  // rather than guessing — a fixed-height textbox with more content than it can show just
+  // clips silently in PowerPoint, which is exactly how nested content went missing before the
+  // per-node-depth fix. Only used for the bullets-only slide case (no decision logs or images
+  // sharing the slide) — that combination's own layout math is a separate, more tangled
+  // problem left alone here.
+  function pptxPaginateBullets(bullets, availH, boxWidthIn, fontSize, lineSpacingMultiple){
+    const pages=[]; let current=[], usedH=0;
+    const paraGapIn=10/72; // paraSpaceAfter:10 in the actual addText call below, points -> inches
+    bullets.forEach(b=>{
+      const indentLevel=Math.max(0,b.indent||0);
+      const indentIn=indentLevel*0.3;
+      const markerIn=0.4; // rough room for the bullet glyph + marker glyph + padding
+      const availW=Math.max(0.5, boxWidthIn-indentIn-markerIn);
+      const lines=pptxMeasureWrappedLines(b.text, availW, fontSize, false);
+      const h=lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
+      if(current.length && usedH+h>availH){ pages.push(current); current=[]; usedH=0; }
+      current.push(b); usedH+=h;
+    });
+    if(current.length) pages.push(current);
+    return pages.length?pages:[[]];
+  }
   // Breaks one decision-log field down into individually-measured rows — a label row, an
   // (optional) inline value row, then one row per list item found by pptxParseRichField's
   // walk of the field's actual <ol>/<li> markup: Rationale/Alternatives/Impact are just as
@@ -15368,25 +15391,51 @@ async function buildPptxPresentation(slidesData){
     const hasImages=sd.images.length>0;
     let cursorY=1.75;
     const bottomLimit=PPTX_SLIDE_H-0.4;
+    const buildBulletTextRuns=(list)=>list.flatMap(b=>{
+      const indentLevel=Math.max(0,b.indent||0);
+      const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
+      const pad='   '.repeat(indentLevel);
+      const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
+      if(b.marker){
+        const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
+        runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
+      }
+      runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
+      return runs;
+    });
 
-    if(bullets.length){
+    if(bullets.length&&!logs.length&&!hasImages){
+      // The common case — a slide that's just a heading plus its bullets, no decision log or
+      // image sharing the space. Paginate for real rather than dumping everything into one
+      // fixed-height textbox and letting PowerPoint clip whatever doesn't fit — exactly how
+      // deeply-nested content could go missing again even after the depth fix, once a slide's
+      // subtree is large enough that its flattened bullet list genuinely doesn't fit one slide.
+      const availH=bottomLimit-cursorY;
+      const pages=pptxPaginateBullets(bullets,availH,PPTX_SLIDE_W-2*MARGIN,18,1.3);
+      slide.addText(buildBulletTextRuns(pages[0]), {
+        x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:availH,
+        fontFace:FONT, fontSize:18, valign:'top', paraSpaceAfter:10, lineSpacingMultiple:1.3
+      });
+      for(let p=1;p<pages.length;p++){
+        const contSlide=pres.addSlide();
+        contSlide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+        contSlide.addText(pptxStripIllegalXmlChars((sd.title||'')+" (cont'd)"), {
+          x:MARGIN, y:0.58, w:PPTX_SLIDE_W-2*MARGIN, h:1.05,
+          fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'
+        });
+        contSlide.addText(buildBulletTextRuns(pages[p]), {
+          x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:availH,
+          fontFace:FONT, fontSize:18, valign:'top', paraSpaceAfter:10, lineSpacingMultiple:1.3
+        });
+      }
+      cursorY=bottomLimit;
+    } else if(bullets.length){
       // Decision-log cards need most of the vertical room when present, so bullets sharing a
       // slide with them get a compact, capped block instead of the full body height they'd get
-      // on a bullets-only slide.
-      const bulletsH=logs.length ? Math.min(1.5, 0.5+bullets.length*0.35) : (hasImages?1.75:(bottomLimit-cursorY));
-      const textRuns=bullets.flatMap(b=>{
-        const indentLevel=Math.max(0,b.indent||0);
-        const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
-        const pad='   '.repeat(indentLevel);
-        const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
-        if(b.marker){
-          const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
-          runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
-        }
-        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
-        return runs;
-      });
-      slide.addText(textRuns, {
+      // on a bullets-only slide. Not paginated — splitting a slide that also has a log card or
+      // images onto multiple slides is a more tangled layout problem left alone here.
+      const bulletsH=logs.length ? Math.min(1.5, 0.5+bullets.length*0.35) : 1.75;
+      slide.addText(buildBulletTextRuns(bullets), {
         x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:bulletsH,
         fontFace:FONT, fontSize:18, valign:'top', paraSpaceAfter:10, lineSpacingMultiple:1.3
       });
