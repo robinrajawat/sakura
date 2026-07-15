@@ -14254,7 +14254,7 @@ function docxZipStore(files){const encoder=new TextEncoder(); const list=files.m
 function docxRun(text,fmt={}){const value=String(text??''); if(!value) return ''; const props=[]; if(fmt.bold)props.push('<w:b/>'); if(fmt.italic)props.push('<w:i/>'); if(fmt.underline)props.push('<w:u w:val="single"/>'); if(fmt.strike)props.push('<w:strike/>'); if(fmt.code){props.push('<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>'); props.push('<w:shd w:val="clear" w:color="auto" w:fill="F3F4F6"/>')} if(fmt.highlight){props.push(`<w:highlight w:val="${fmt.highlight}"/>`)} if(fmt.color)props.push(`<w:color w:val="${fmt.color}"/>`); if(fmt.size)props.push(`<w:sz w:val="${fmt.size}"/><w:szCs w:val="${fmt.size}"/>`); const preserve=/^\s|\s$|\s{2,}|\n/.test(value)?' xml:space="preserve"':''; return `<w:r>${props.length?`<w:rPr>${props.join('')}</w:rPr>`:''}<w:t${preserve}>${docxXmlText(value)}</w:t></w:r>`}
 function docxGetSemantic(text){const t=String(text||'').trim(); if(/^\[.+\]$/.test(t)) return 'section'; if(/^\(.+\)$/.test(t)) return 'note'; if(/^!.+/.test(t)) return 'alert'; if(/^`.+`$/.test(t)) return 'code'; return ''}
 function docxParseInline(text,baseFmt={}){const src=String(text||''); let i=0; let plainBuf=''; let out=''; const flush=()=>{ if(plainBuf){ out+=docxRun(plainBuf,baseFmt); plainBuf='' } }; while(i<src.length){ const ch=src[i]; if(ch==='`'){ const end=src.indexOf('`',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,code:true,color:'4A3A6A'}); i=end+1; continue } } if(ch==='['){ const end=src.indexOf(']',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'7A4A2A'}); i=end+1; continue } } if(ch==='('){ const end=src.indexOf(')',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,italic:true,color:'5C584F'}); i=end+1; continue } } if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){ let end=i+1; while(end<src.length&&!/\s/.test(src[end]))end++; if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'9B2F28'}); i=end; continue } } plainBuf+=ch; i++ } flush(); return out}
-function docxParagraph(text,leftTwips,baseFmt={},semantic='',numberStr='',opts={}){const {headingLevel=0,bookmarkName=''}=opts; const isSectionHeading=headingLevel===7; const pPr=[headingLevel>0&&!isSectionHeading?`<w:pStyle w:val="Heading${headingLevel}"/>`:'<w:pStyle w:val="TreeNode"/>', `<w:ind w:left="${leftTwips}"/>`]; const raw=String(text||''); let runsXml; if(isSectionHeading){pPr.push('<w:spacing w:before="120" w:after="60"/>'); runsXml=docxRun(raw,{...baseFmt,color:'3A52A8'})} else if(headingLevel>0){ runsXml=docxParseInline(raw,baseFmt); } else if(semantic==='section'){pPr.push('<w:spacing w:before="160" w:after="80"/>'); runsXml=docxRun(raw.replace(/^\[|\]$/g,''),{...baseFmt,bold:true,color:'7A4A2A'})} else if(semantic==='note'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^\(|\)$/g,''),{...baseFmt,italic:true,color:'5C584F'})} else if(semantic==='alert'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^!/,''),{...baseFmt,bold:true,color:'9B2F28'})} else if(semantic==='code'){runsXml=docxRun(raw.replace(/^`|`$/g,''),{...baseFmt,code:true,color:'4A3A6A'})} else {runsXml=docxParseInline(raw,baseFmt)} const numRun=numberStr?docxRun(numberStr+' ',{color:'9B9890'}):''; const bookmarkId=bookmarkName?docxNextBookmarkId():0; const bookmarkStart=bookmarkName?`<w:bookmarkStart w:id="${bookmarkId}" w:name="${bookmarkName}"/>`:''; const bookmarkEnd=bookmarkName?`<w:bookmarkEnd w:id="${bookmarkId}"/>`:''; return `<w:p><w:pPr>${pPr.join('')}</w:pPr>${bookmarkStart}${numRun}${runsXml || '<w:r><w:t xml:space="preserve"> </w:t></w:r>'}${bookmarkEnd}</w:p>`}
+function docxParagraph(text,leftTwips,baseFmt={},semantic='',numberStr='',opts={}){const {headingLevel=0,bookmarkName='',markerGlyph='',markerColor=''}=opts; const isSectionHeading=headingLevel===7; const pPr=[headingLevel>0&&!isSectionHeading?`<w:pStyle w:val="Heading${headingLevel}"/>`:'<w:pStyle w:val="TreeNode"/>', `<w:ind w:left="${leftTwips}"/>`]; const raw=String(text||''); let runsXml; if(isSectionHeading){pPr.push('<w:spacing w:before="120" w:after="60"/>'); runsXml=docxRun(raw,{...baseFmt,color:'3A52A8'})} else if(headingLevel>0){ runsXml=docxParseInline(raw,baseFmt); } else if(semantic==='section'){pPr.push('<w:spacing w:before="160" w:after="80"/>'); runsXml=docxRun(raw.replace(/^\[|\]$/g,''),{...baseFmt,bold:true,color:'7A4A2A'})} else if(semantic==='note'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^\(|\)$/g,''),{...baseFmt,italic:true,color:'5C584F'})} else if(semantic==='alert'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^!/,''),{...baseFmt,bold:true,color:'9B2F28'})} else if(semantic==='code'){runsXml=docxRun(raw.replace(/^`|`$/g,''),{...baseFmt,code:true,color:'4A3A6A'})} else {runsXml=docxParseInline(raw,baseFmt)} const numRun=numberStr?docxRun(numberStr+' ',{color:'9B9890'}):''; const markerRun=markerGlyph?docxRun(markerGlyph+' ',{bold:true,color:markerColor||'6F6B63'}):''; const bookmarkId=bookmarkName?docxNextBookmarkId():0; const bookmarkStart=bookmarkName?`<w:bookmarkStart w:id="${bookmarkId}" w:name="${bookmarkName}"/>`:''; const bookmarkEnd=bookmarkName?`<w:bookmarkEnd w:id="${bookmarkId}"/>`:''; return `<w:p><w:pPr>${pPr.join('')}</w:pPr>${bookmarkStart}${markerRun}${numRun}${runsXml || '<w:r><w:t xml:space="preserve"> </w:t></w:r>'}${bookmarkEnd}</w:p>`}
 // Word's <w:highlight> only accepts a fixed enum of named colors — no arbitrary hex — so this
 // maps Sakura's four highlight presets to the closest legal value (pink has no direct
 // equivalent; magenta is the nearest).
@@ -14591,7 +14591,7 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
     if(n.styles?.highlight)fmt.highlight=docxHighlightVal(n.styles.highlight);
     let bookmarkName='';
     if(headingLevel>0){ bookmarkName='_Toc_h'+headingEntries.length; headingEntries.push({level:Math.min(6,headingLevel),text:displayText,bookmark:bookmarkName}); }
-    bodyParas.push(docxParagraph(displayText,left,fmt,semantic,docxNumbers[idx],{headingLevel,bookmarkName}));
+    bodyParas.push(docxParagraph(displayText,left,fmt,semantic,docxNumbers[idx],{headingLevel,bookmarkName,markerGlyph:n.marker?nodeMarkerGlyph(n.marker):'',markerColor:n.marker?docxColorHex(nodeMarkerColor(n.marker)):''}));
     if(n.tags&&n.tags.length){
       bodyParas.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:ind w:left="${left}"/><w:spacing w:before="0" w:after="60"/></w:pPr>${docxRun(n.tags.map(t=>'#'+t).join('  '),{size:18,color:'9B9890'})}</w:p>`);
     }
@@ -15046,7 +15046,7 @@ async function pptxGatherSlidesData(){
       const childNode=nodes[j];
       let childText=String(childNode.text||'').trim();
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
-      if(childText) items.push({type:'bullet', text:childText});
+      if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||''});
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
 
@@ -15337,10 +15337,15 @@ async function buildPptxPresentation(slidesData){
       // slide with them get a compact, capped block instead of the full body height they'd get
       // on a bullets-only slide.
       const bulletsH=logs.length ? Math.min(1.5, 0.5+bullets.length*0.35) : (hasImages?1.75:(bottomLimit-cursorY));
-      const textRuns=bullets.flatMap(b=>[
-        {text:'•  ', options:{color:theme.hint, breakLine:false}},
-        {text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}}
-      ]);
+      const textRuns=bullets.flatMap(b=>{
+        const runs=[{text:'•  ', options:{color:theme.hint, breakLine:false}}];
+        if(b.marker){
+          const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
+          runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
+        }
+        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
+        return runs;
+      });
       slide.addText(textRuns, {
         x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:bulletsH,
         fontFace:FONT, fontSize:18, valign:'top', paraSpaceAfter:10, lineSpacingMultiple:1.3
