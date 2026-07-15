@@ -14625,7 +14625,8 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
   for(let idx=0;idx<scopeForDocx.length;idx++){
     const n=scopeForDocx[idx];
     const left=Math.max(0, Number(n.depth||0))*420;
-    const headingLevel=Number(n.styles?.heading||0);
+    const nDepth=Number(n.depth||0);
+    const headingLevel=Number(n.styles?.heading||(nDepth<=5?(previewHeadingDepthFallback[nDepth]||0):0));
     const isCheckbox=!!n.isCheckbox;
     let displayText=stripSemanticMarkers(n.text||'');
     if(isCheckbox)displayText=(n.checked?'\u2611 ':'\u2610 ')+displayText;
