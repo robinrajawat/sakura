@@ -27263,9 +27263,23 @@ function applyEditorsChoicePreset(silent){
   // same look as Dynalist/Workflowy. Indentation and folding are unaffected either way.
   setHideTreeLines(true,false);
 
-  // Accent color and node text color are left exactly as they are — a density/visibility
-  // preset has no business overriding a person's color choice, so unlike earlier versions
-  // of this preset, neither is touched here.
+  // Theme and accent color: this preset is now a full snapshot of the live setup it was
+  // captured from (2026-07), not just a density/layout preset — an earlier version of this
+  // comment said color was deliberately left alone for exactly that reason, but a full
+  // snapshot was the explicit ask this time, so it's included.
+  setTheme('dark',true);
+  setThemeMode('system',false);
+  setAccentPreset('terracotta',false);
+  setToolbarLabels(false,false);
+  setInlineNotePreviewEnabled(true,false);
+  setExportMenuFoldNoteEnabled(false,false);
+  setSidebarSearchVisible(true,false);
+  setSectionMarkingsEnabled(false,false);
+  setExportUseAccentColor(false,false);
+  lastDecisionAuthor='Robin Rajawat';
+  setAutoRewriteMinWords(3,false);
+  setAutoRewriteBatchCap(12,false);
+  setTypewriterMode(true,false);
 
   // Status bar trimmed to the four items worth always seeing while writing — Words, the
   // current node's Depth, Saved status, and the auto-rewrite indicator — with node count,
@@ -27305,14 +27319,11 @@ function applyEditorsChoicePreset(silent){
   renderContextQuickOrderList();
   if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
 
-  // Node Quick Assist (the Ctrl/Cmd+Space mid-edit menu): icon-only row, trimmed to the
-  // three actions worth a dedicated slot while writing — Note (which now covers Code too,
-  // via its own tab), Tags, Rewrite. The punctuation/symbol inserts (em dash,
-  // en dash, arrow, check mark, cross mark, middle dot, date/time) drop out of this menu
-  // specifically; they're still reachable everywhere else they always were, this only
-  // trims the mid-edit shortcut list.
+  // Node Quick Assist (the Ctrl/Cmd+Space mid-edit menu): icon-only, everything except
+  // em dash and date/time — those two are the only two dropped from the mid-edit shortcut
+  // list; still reachable everywhere else they always were.
   setNqaIconOnly(true,false);
-  nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>['note','tags','ai-rewrite'].includes(a));
+  nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>!['emdash','date-time'].includes(a));
   NODE_QA_ACTION_ORDER.forEach(a=>{ const cb=el('nqaq-'+a); if(cb)cb.checked=nodeQuickAssistActions.includes(a); });
 
   // Presenter mode, tuned for actually presenting rather than the defaults (which favor a
@@ -27327,12 +27338,36 @@ function applyEditorsChoicePreset(silent){
   setPreviewPresenterTimerEnabled(true,false);
   setPreviewPresenterOverviewEnabled(true,false);
   setPreviewPresenterNotesEnabled(true,false);
+  setPreviewBrandingText('SOLAR A/S',false);
   // Presenter Notes floating panel's own toolbar: Bullet list, Timestamp, and AI Rewrite —
   // enough to jot and clean up talking points without the full Pad toolbar crowding a panel
   // that's meant to stay out of the way of the slide behind it.
   presenterNotesHiddenButtons=PAD_TB_BUTTONS.filter(k=>!['ul','timestamp','ai-rewrite'].includes(k));
   refreshPresenterNotesButtonCheckboxes();
   if(el('presenter-notes-panel')?.classList.contains('open'))applyPresenterNotesButtonVisibility();
+
+  // Pad defaults to the Q&A tab, condensed rows, with AI bulk-answer and AI summary off
+  // (both are per-click actions anyway, the always-on affordance wasn't earning its keep).
+  setPadDefaultView('qa',false);
+  setQaCompactRows(true,false);
+  setQaAiBulkAnswerEnabled(false,false);
+  setQaAiSummaryEnabled(false,false);
+
+  // Preview: decision-card summary picks up the three SAP-flavored fields (Rationale,
+  // Alternatives, Impact) alongside the defaults; deeper table-of-contents nesting;
+  // section markers shown even at the top depth; serif body text for a more document-like
+  // read.
+  previewDlFields=DL_FIELDS.map(f=>f.key).filter(k=>['context','decision','rationale','alternatives','impact'].includes(k));
+  applyPreviewDlFieldSettings();
+  setPreviewTocMaxLevel(2,false);
+  setSectionMarkersDepthZero(true,false);
+  setPreviewSerifBody(true,false);
+
+  // App bar: icon-only Export/Import buttons (saves horizontal space once Quick Assist is
+  // also docked here), Print button hidden.
+  setAppbarIconOnlyExportImport(true,false);
+  appbarHiddenButtons=['print'];
+  applyAppbarHiddenButtons();
 
   refreshAllToolbarSummaries();
   savePrefs(); scheduleAutoSave();
