@@ -1065,7 +1065,10 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
   }
 
   /* Fold arrows and "+N hidden" badges are screen affordances, not content */
-  .fold-toggle, .fold-badge, .node-dlog-dot, .node-note-dot, .node-code-dot {
+  .fold-toggle, .fold-badge, .node-dlog-dot, .node-code-dot {
+    display: none !important;
+  }
+  .node-note-dot:not(.node-note-dot-plain) {
     display: none !important;
   }
 
@@ -15069,12 +15072,18 @@ async function pptxGatherSlidesData(){
     // see decisionLogIsLarge.)
     let items=[];
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
+    // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
+    // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
+    // node at that same depth (this subtree is by definition deeper than it already), meaning
+    // there's no risk of double-including content that gets its own separate slide elsewhere.
+    // Previously this stopped at depth+1 only, silently dropping every grandchild and beyond —
+    // real content in any document nested more than one level under a slide heading.
     for(let j=idx+1;j<nodes.length&&nodes[j].depth>node.depth;j++){
-      if(nodes[j].depth!==node.depth+1) continue;
       const childNode=nodes[j];
+      const relDepth=childNode.depth-node.depth; // 1 = direct child, 2 = grandchild, etc.
       let childText=String(childNode.text||'').trim();
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
-      if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||''});
+      if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
 
@@ -15366,7 +15375,10 @@ async function buildPptxPresentation(slidesData){
       // on a bullets-only slide.
       const bulletsH=logs.length ? Math.min(1.5, 0.5+bullets.length*0.35) : (hasImages?1.75:(bottomLimit-cursorY));
       const textRuns=bullets.flatMap(b=>{
-        const runs=[{text:'•  ', options:{color:theme.hint, breakLine:false}}];
+        const indentLevel=Math.max(0,b.indent||0);
+        const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
+        const pad='   '.repeat(indentLevel);
+        const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
         if(b.marker){
           const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
           runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
