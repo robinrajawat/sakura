@@ -15586,6 +15586,7 @@ async function buildPptxPresentation(slidesData){
       });
       for(let p=1;p<pages.length;p++){
         const contSlide=pres.addSlide();
+        contSlide.background={color:theme.bg};
         contSlide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
         contSlide.addText(pptxStripIllegalXmlChars((sd.title||'')+" (cont'd)"), {
           x:MARGIN, y:0.58, w:PPTX_SLIDE_W-2*MARGIN, h:1.05,
@@ -15690,6 +15691,7 @@ async function buildPptxPresentation(slidesData){
       if(pageBlocks.length) pages.push(pageBlocks);
       pages.forEach((page,pi)=>{
         const slide=pres.addSlide();
+        slide.background={color:theme.bg};
         slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
         slide.addText(pi===0?'Q&A':"Q&A (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
         let y=bodyTop;
@@ -15718,6 +15720,7 @@ async function buildPptxPresentation(slidesData){
         if(pageBlocks.length) pages.push(pageBlocks);
         pages.forEach((page,pi)=>{
           const slide=pres.addSlide();
+          slide.background={color:theme.bg};
           slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
           slide.addText(pi===0?'Notepad':"Notepad (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
           let y=bodyTop;
