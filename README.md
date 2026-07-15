@@ -1,6 +1,6 @@
-# Sakura — Outliner & Tree Editor
+# Sakura — Outliner-Centered Personal Productivity Workspace
 
-Sakura is a single-file, browser-based outliner for structuring notes, plans, and documents as a nested tree. It runs entirely client-side — there's no server and no account — and stores its data locally in the browser. Optional AI features (rewrite, outline generation, and similar) are the one exception: those call out to an AI provider using a key you supply yourself.
+Sakura is a single-file, browser-based outliner that's grown into a full personal productivity workspace: notes, plans, and documents live as a nested tree at the center, with meetings, tasks, decisions, and Q&A woven directly into it via backlinks and cross-references rather than bolted on as separate disconnected tools. It runs entirely client-side — there's no server and no account — and stores its data locally in the browser. Optional AI features (rewrite, outline generation, and similar) are the one exception: those call out to an AI provider using a key you supply yourself.
 
 ## Contents
 
@@ -8,9 +8,11 @@ Sakura is a single-file, browser-based outliner for structuring notes, plans, an
 - [Core Editing](#core-editing)
 - [Documents & Tabs](#documents--tabs)
 - [Panels](#panels)
+- [Meeting Notes & To-Dos](#meeting-notes--to-dos)
 - [Tags, Focus & Backlinks](#tags-focus--backlinks)
 - [AI Features](#ai-features)
 - [Quick Assist & Node Quick Assist](#quick-assist--node-quick-assist)
+- [Preview, Presenter Mode & Export](#preview-presenter-mode--export)
 - [Theming & Appearance](#theming--appearance)
 - [Installing as an App (PWA)](#installing-as-an-app-pwa)
 - [Data & Backup](#data--backup)
@@ -31,16 +33,20 @@ Key capabilities:
 - Lightweight semantic styling via plain-text conventions: `[Section]`, `(note)`, `!alert`, and `` `code` ``
 - Fold/unfold subtrees, with a "+N hidden" badge that's clickable to expand
 - `#tags` on nodes, `[[@mention]]` backlinks between nodes, and a "Focus" mode to zoom into one branch
-- Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad, and an app-level To-Dos list
-- Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection — using your own API key with any of six built-in providers or a custom one
-- Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, and settings)
+- Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad (with Notepad, Q&A, and Diagrams tabs)
+- App-level panels shared across your whole workspace, independent of any single document: **Meeting Notes** and **To-Dos** — with action items promotable directly from a meeting into a linked to-do
+- Diagrams — link a draw.io diagram (Pad → Diagrams tab) to any node; embeds as a real picture in Word, PowerPoint, and PDF exports
+- Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection, plus dedicated AI actions inside To-Dos and Q&A — using your own API key with any of six built-in providers or a custom one
+- Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, to-dos, meetings, and settings)
 - In-document search and a global header search across settings, help, documents, and templates
-- Folders and templates in the sidebar, with drag-and-drop filing and nesting
-- Export to Markdown, plain text, DOCX, PNG (tree as image), or clipboard; print support; import from DOCX, OPML, or pasted unstructured text
+- Folders and templates in the sidebar (including built-in packs like Meeting Notes, 1:1, Kickoff, Retrospective), with drag-and-drop filing and nesting
+- **Presenter Mode** — a fullscreen, slide-by-slide presentation of any document, with a laser pointer, blackout, an all-slides grid, a running timer, and a floating notes panel
+- Export to **Word (.docx)**, **PDF**, **PowerPoint (.pptx)**, **Markdown**, plain text, **OPML**, Excel (Decision Log), or clipboard; print support; import from Word, OPML, or pasted unstructured text. Word/PDF/PowerPoint exports carry a real table of contents, an optional cover page, and your chosen accent color (independently toggleable for consistent branding when sharing)
 - Multiple documents open as independent tabs
 - Deep theming: Light/Dark/System/Schedule auto-theme, seven accent colors, five Chrome background presets, and node-text color presets
 - Installable as a desktop/mobile app (PWA) in supporting browsers
 - Two-tier automatic backup (live file backup + a local safety copy), in addition to manual export/import
+- Version History for documents, the To-Dos list, and Meeting Notes — periodic snapshots you can restore from independently of the undo stack
 
 ## Core Editing
 
@@ -70,9 +76,20 @@ Beyond the outline itself, several floating or docked panels attach richer conte
 
 - **Note** — every node can hold a rich-text note (bold/italic/underline/strike, bullet/numbered lists, links, tables, pasted images, AI Rewrite/Summarise). Floating and draggable, with a compact popover view and a full-screen mode. Shows a Backlinks section for any node that `@mentions` it, plus created/last-modified timestamps. Open via toolbar, right-click → More → Note, or `Ctrl/Cmd+Shift+N`.
 - **Code Block** — every node can hold one plain-text code block (language picker: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown), in the same kind of floating, resizable window as Note. Open via toolbar, right-click → More → Code block, or `Ctrl/Cmd+Shift+K`.
-- **Decision Log** — inserts a structured record under a node: a timestamped header (with optional author) plus configurable child prompts for Context, Decision, Rationale, Alternatives, Impact, and Status. Exportable as its own Excel sheet across a document. Insert via the toolbar's Decision Log button or right-click → More → Decision log.
-- **Pad** — one whole-document scratchpad, separate from per-node Notes, with the same rich-text toolbar (minus subtree-summarise, since there's no subtree at the document level). File attachments (button, drag-and-drop, or paste — 5 MB cap per file) insert as a downloadable chip, stored inline in the Pad's own content so they're covered by every existing backup path automatically. Open via the floating panel icon or `Ctrl/Cmd+Shift+P`.
-- **To-Dos** — an app-level task list, not tied to any document or node — one shared list across your whole workspace. Supports priority, status, and due dates (with a Today/Tomorrow/Next week quick-pick popover), links, drag-to-reorder, quick-find, and an overdue-count badge. Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date), and sort by priority, due date, or manual order. Select multiple open tasks to bulk-set priority/status/due date or bulk-complete/delete, each with its own Undo. Three optional AI capabilities (Settings → AI → To-Dos AI, each independently toggleable): extract action items from the current document or selection, break a task into subtasks, and generate a status summary of open tasks — all add directly to the list with Undo. Typing `#tag` or `@name`/`@date`/`@status` directly in a task's text renders it as a colored chip with autocomplete, both when editing an existing task and while typing a new one. A task can either **repeat** (daily, weekdays, or weekly — completing it advances the due date instead of marking it done for good) or hold **sub-tasks** (a nested checklist with an n/m progress badge; the parent completes automatically once every sub-task is checked, and its own checkbox is disabled while sub-tasks exist) — the two are mutually exclusive on the same task. Open via the app bar/status bar button or `Ctrl/Cmd+Shift+U`.
+- **Decision Log** — inserts a structured record under a node: a timestamped header (with optional author) plus configurable child prompts for Context, Decision, Rationale, Alternatives, Impact, and Status. Renders as a bordered, status-colored card in Word/PDF/PowerPoint exports and is separately exportable as its own Excel sheet across a document. Insert via the toolbar's Decision Log button or right-click → More → Decision log.
+- **Pad** — a whole-document workspace, separate from per-node Notes, with three tabs:
+  - **Notepad** — a rich-text scratchpad with the same toolbar Note uses (minus subtree-summarise, since there's no subtree at the document level). File attachments (button, drag-and-drop, or paste — 5 MB cap per file) insert as a downloadable chip, stored inline so they're covered by every existing backup path automatically.
+  - **Q&A** — a running list of question/answer pairs for the document, with AI-assisted answering, bulk answer/group actions, search, and its own PDF export. Individual questions can be linked to a specific node.
+  - **Diagrams** — link a draw.io diagram to any node; it embeds as a real picture in Word, PowerPoint, and PDF exports, and shows inline in Preview.
+
+  Open the Pad via its floating panel icon or `Ctrl/Cmd+Shift+P`.
+
+## Meeting Notes & To-Dos
+
+Two panels live at the app level rather than inside any single document — one shared instance across your whole workspace, opened from the app bar or status bar rather than per-document.
+
+- **Meeting Notes** (`Ctrl/Cmd+Shift+E`) — an app-level meeting log. Add a blank note or start from a built-in template (Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, Retrospective), each pre-filling title/Agenda/Notes and a starter action item where relevant. Each note has a title, date, optional time, attendee chips, rich-text Agenda and Notes fields, action items, and links to specific documents or nodes. An action item's **Promote** button turns it into a real To-Do — the new task's due date comes from the meeting's own date, and a small "from meeting" chip links back to the source note. Export a single note as a PDF; Version History keeps the last 20 snapshots of the whole list.
+- **To-Dos** (`Ctrl/Cmd+Shift+U`) — one shared task list across your whole workspace, not tied to any document or node. Supports priority, status, and due dates (with a Today/Tomorrow/Next week quick-pick popover), links, drag-to-reorder, quick-find, and an overdue-count badge. Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date), and sort by priority, due date, or manual order. Select multiple open tasks to bulk-set priority/status/due date or bulk-complete/delete, each with its own Undo. Three optional AI capabilities (Settings → AI → To-Dos AI, each independently toggleable): extract action items from the current document or selection, break a task into subtasks, and generate a status summary of open tasks — all add directly to the list with Undo. Typing `#tag` or `@name`/`@date`/`@status` directly in a task's text renders it as a colored chip with autocomplete. A task can either **repeat** (daily, weekdays, or weekly — completing it advances the due date instead of marking it done for good) or hold **sub-tasks** (a nested checklist with an n/m progress badge; the parent completes automatically once every sub-task is checked) — the two are mutually exclusive on the same task. Export the whole list as a PDF; Version History keeps the last 20 snapshots.
 
 ## Tags, Focus & Backlinks
 
@@ -97,6 +114,17 @@ AI features are entirely optional and require your own API key for one of the bu
 
 - **Quick Assist** (`Ctrl/Cmd+Space` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, and settings/help topics show up as **Go to** results.
 - **Node Quick Assist** (`Ctrl/Cmd+Space` while actively editing a node) opens a smaller, node-specific menu instead — inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time, or opening Note/Code block/Tags/Decision log — configurable in Settings → Editing.
+
+## Preview, Presenter Mode & Export
+
+- **Preview** — a read-only, formatted render of the current document, reachable from the floating eye-icon button next to zen/Pad/toolbar. Includes a table of contents (headings, section markers, Decision Log entries, and — when present — Notepad and Q&A as their own entries), scroll-spy highlighting, and a progress bar.
+- **Presenter Mode** — opens fullscreen straight from Preview: a decorated title slide, then one section per slide, navigated with arrow keys/space/click. A laser pointer, a full all-slides grid (`G`) for jumping around, a blackout toggle (`B`) to pull attention back to you mid-discussion, a running elapsed timer, and a floating Notepad/Q&A panel (`N`/`Q`) that's the same Pad the document already has. "Presenter slide breaks at" (Settings → Preview) controls which tree depth starts a new slide.
+- **Word export** (`.docx`) — real heading styles, a proper Table of Contents (headings and section markers, with page references — press Ctrl/Cmd+A then F9 after opening to load real page numbers, since Word only caches "1" until fields are recalculated), and Decision Log entries as bordered, status-colored cards. Notes carry their actual formatting (bold/italic/underline/strike/links); images marked "Feature as diagram" and Diagrams-tab pictures embed as real, correctly-scaled pictures.
+- **PDF export** — renders from the same Preview output, so anything visible in Preview (fold state, notes, code blocks, decision cards, the table of contents) carries through as-is. Optional cover page, configurable page margins, and an optional running footer (export date + page number).
+- **PowerPoint export** (`.pptx`) — a genuine, editable slide deck using the same slide breakdown as Presenter Mode: title slide, then one slide per node at that depth with its subtree as nested bullets, plus dedicated Q&A and Notepad slides at the end. A slide whose bullets overflow automatically continues onto a "(cont'd)" slide rather than clipping. Everything — text, bullets, pictures — is a normal native shape, fully editable in PowerPoint, Keynote, or Google Slides.
+- **Branding** (Settings → Preview → Presenter Mode → "Branding") adds a small, consistent attribution mark to the bottom-right of every slide/page across the Presenter bar, PDF, Word, and PowerPoint exports — off by default, with your own company/team name as an optional override for the default "SAKURA" wordmark.
+- Word, PDF, and PowerPoint exports all use your current accent color by default; **Settings → Export & print → "Use accent color in exports"** turns that off in favor of one fixed color across every format, for consistent branding when the document is going to someone else rather than staying on your own screen.
+- Other export formats: Markdown, plain text, OPML, Decision Log as its own Excel sheet, or copy as text/image to the clipboard. Import from Word (heading/list structure converts directly; a heading-less document falls back to AI restructuring), OPML, or pasted unstructured text.
 
 ## Theming & Appearance
 
@@ -150,6 +178,8 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Auto-backup to file | Data | Off (not connected) | Chrome/Edge only; see Data & Backup above |
 | Local safety copy | Data | Always on | Automatic; "Restore" button is the only manual action |
 | Skip folded nodes in exports | Data/Export | On | Collapsed subtrees are omitted from exports unless expanded first |
+| Use accent color in exports | Export & print | On | Off: Word, PDF, PowerPoint, and the Q&A/To-Dos/Meeting Notes exports all use one fixed color instead of your live accent, for consistent branding when sharing |
+| Meeting Notes | Features | On | App-level meeting log; independent of any single document |
 
 ## Keyboard Shortcuts
 
@@ -177,6 +207,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Open/close Note | Ctrl/Cmd+Shift+N |
 | Open/close Code block | Ctrl/Cmd+Shift+K |
 | Open/close To-Dos | Ctrl/Cmd+Shift+U |
+| Open/close Meeting Notes | Ctrl/Cmd+Shift+E |
 | Generate outline (AI) | Ctrl/Cmd+Shift+O |
 | Restructure text (AI) | Ctrl/Cmd+Shift+R |
 | Show/hide toolbar | Ctrl/Cmd+Shift+T |
