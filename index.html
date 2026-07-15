@@ -14501,7 +14501,7 @@ function docxNoteBlocks(html,fmtOverride){
 function docxNoteBlock(html,leftTwips){
   const blocks=docxNoteBlocks(html);
   if(!blocks.length)return '';
-  const paras=[`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="20"/></w:pPr>${docxRun('NOTE',{bold:true,size:14,color:'938F84'})}</w:p>`];
+  const paras=[`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="20"/></w:pPr>${docxRun('💬 NOTE',{bold:true,size:14,color:'938F84'})}</w:p>`];
   blocks.forEach((b,i)=>{
     const prefixRun=b.prefix?docxRun(b.prefix,{italic:true,size:20,color:'938F84'}):'';
     const after=i===blocks.length-1?'80':'20';
