@@ -923,24 +923,16 @@ body.show-toolbar-labels .quick-sep{margin-top:9px}
 .context-label{font:400 13px 'Inter',sans-serif}
 .context-divider{height:1px;background:var(--border);margin:6px 6px}
 .context-group-label{font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:4px 12px 2px;user-select:none}
-/* Quick-action row at the top of the node context menu — the most-used
-   actions as icon buttons, so most right-clicks never need the full list */
-.context-quickbar{display:flex;align-items:center;gap:1px;padding:2px 2px 4px}
-.ctx-marker-row{display:flex;align-items:center;gap:2px;padding:4px 4px 6px;border-bottom:1px solid var(--border);margin-bottom:4px}
-.ctx-marker-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;background:transparent;border-radius:8px;color:var(--muted);cursor:pointer;flex:0 0 auto;transition:background .12s,color .12s}
-.ctx-marker-btn:hover{background:var(--hover);color:var(--fg)}
-.ctx-marker-btn.active[data-marker="confirmed"]{color:var(--fc-green);background:color-mix(in srgb,var(--fc-green) 16%,transparent)}
-.ctx-marker-btn.active[data-marker="issue"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 16%,transparent)}
-.ctx-marker-btn.active[data-marker="parked"]{color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 16%,transparent)}
-.ctx-marker-btn.active[data-marker="followup"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 16%,transparent)}
-.ctx-marker-btn.active[data-marker="na"]{color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 16%,transparent)}
-.context-quick-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;background:transparent;border-radius:8px;color:var(--fg);cursor:pointer;flex:0 0 auto;font-size:16px;line-height:1;transition:background .12s,color .12s}
-.context-quick-btn:hover{background:var(--hover)}
-.context-quick-btn:active{background:var(--sel)}
-.context-quick-btn:disabled{opacity:.4;pointer-events:none}
-.context-quick-btn.danger{color:#dc2626}
-.context-quick-btn.danger:hover{background:color-mix(in srgb,#dc2626 12%,transparent)}
-.context-quick-sep{width:1px;height:18px;background:var(--border);margin:0 4px;flex:0 0 auto}
+/* Quick-action row at the top of the node context menu — markers plus the
+   most-used actions as icon buttons, so most right-clicks never need the
+   full list. Deliberately reuses Presenter's pv-qm-row/pv-qm-btn/pv-qm-mark/
+   pv-qm-sep classes (see openNodeMarkerPopover) instead of a parallel set of
+   near-identical rules, so the two surfaces are pixel-identical by
+   construction rather than by two numbers happening to match. */
+.context-top-row{padding:6px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.context-top-row .pv-qm-btn{font-size:16px;line-height:1}
+.context-top-row .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
+.context-top-row .pv-qm-btn:active{background:var(--sel)}
 .context-more-toggle{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;border:none;background:transparent;color:var(--hint);font:500 11px 'Inter',sans-serif;padding:6px 8px;border-radius:8px;cursor:pointer}
 .context-more-toggle:hover{background:var(--hover);color:var(--fg)}
 .context-more-toggle svg{transition:transform .15s}
@@ -5660,8 +5652,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /main content column -->
   </div><!-- /app-layout -->
   <div id="context-menu" class="context-menu" role="menu" aria-label="Node actions">
-    <div class="ctx-marker-row" id="context-marker-row" role="group" aria-label="Mark node"></div>
-    <div class="context-quickbar" id="context-quickbar" role="group" aria-label="Quick actions"></div>
+    <div class="pv-qm-row context-top-row" id="context-top-row" role="group" aria-label="Mark node and quick actions">
+      <span id="context-marker-row" role="group" aria-label="Mark node" style="display:contents"></span>
+      <span class="pv-qm-sep"></span>
+      <span id="context-quickbar" role="group" aria-label="Quick actions" style="display:contents"></span>
+    </div>
     <button class="context-more-toggle" id="context-more-toggle" type="button" aria-expanded="false" aria-controls="context-more-panel">
       <span>More</span>
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -12336,10 +12331,10 @@ function renderContextQuickbar(){
   let lastGroup=null;
   CTX_ACTION_ORDER.filter(a=>quickSet.has(a)&&ctxActionAllowed(a)).forEach(actionId=>{
     const meta=CTX_ACTION_META[actionId];
-    if(lastGroup!==null&&meta.group!==lastGroup){const sep=document.createElement('span'); sep.className='context-quick-sep'; bar.appendChild(sep)}
+    if(lastGroup!==null&&meta.group!==lastGroup){const sep=document.createElement('span'); sep.className='pv-qm-sep'; bar.appendChild(sep)}
     lastGroup=meta.group;
     const btn=document.createElement('button');
-    btn.type='button'; btn.className='context-quick-btn'+(meta.danger?' danger':''); btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
+    btn.type='button'; btn.className='pv-qm-btn'+(meta.danger?' pv-qm-danger':''); btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
     const label=meta.dynamicLabel?_ctxNoteLabelText():meta.label;
     btn.dataset.tip=label; btn.setAttribute('aria-label',label);
     btn.innerHTML=meta.glyph?esc(meta.glyph):`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
@@ -12407,7 +12402,7 @@ function updateContextMenuState(){const menu=el('context-menu'); if(!menu)return
   // row, since "mark all N selected nodes at once" isn't something either surface offers today.
   const curNode=contextMenuNodeId!==null?nodes.find(n=>n.id===contextMenuNodeId):null;
   const curMarker=curNode?(curNode.marker||''):'';
-  menu.querySelectorAll('.ctx-marker-btn').forEach(b=>{b.classList.toggle('active',!!curMarker&&b.dataset.marker===curMarker)});
+  menu.querySelectorAll('.pv-qm-mark').forEach(b=>{b.classList.toggle('active',!!curMarker&&b.dataset.marker===curMarker)});
 }
 // Builds the small Confirmed/Issue/Parked/Follow-up row pinned to the top of the right-click
 // context menu — the editor-mode equivalent of Presenter's quick-mark popover (openNodeMarkerPopover),
@@ -12420,8 +12415,8 @@ function updateContextMenuState(){const menu=el('context-menu'); if(!menu)return
 // the already-active marker again clears it, same as Presenter.
 function initContextMarkerRow(){
   const row=el('context-marker-row'); if(!row)return;
-  row.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="ctx-marker-btn" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)} — click to toggle">${markIconSvg(m)}</button>`).join('');
-  row.querySelectorAll('.ctx-marker-btn').forEach(btn=>{
+  row.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)} — click to toggle">${markIconSvg(m)}</button>`).join('');
+  row.querySelectorAll('.pv-qm-mark').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
       if(contextMenuNodeId===null)return;
