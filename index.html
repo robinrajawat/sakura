@@ -24715,18 +24715,18 @@ function renderPreviewBody(){
     const summary=stripHtmlToText(dl.decision||dl.context||'');
     return {id:headerNode.id,text:summary||stripSemanticMarkers(getNodePlainText(headerNode)).trim()||'Decision Log',status:decisionStatusLabel(status)};
   });
-  renderPreviewToc(filteredTocEntries,decisionEntries);
+  renderPreviewToc(filteredTocEntries,decisionEntries,!!doc.querySelector('#pv-notepad-section'),!!doc.querySelector('#pv-qa-section'));
   updatePreviewProgress();
   updatePreviewFoldToggleButton();
   if(previewPresenting)applyPresenterState(true,_scrollBeforeRebuild);
 }
-function renderPreviewToc(entries,decisionEntries=[]){
+function renderPreviewToc(entries,decisionEntries=[],showNotepad=false,showQa=false){
   const toc=el('preview-toc'); if(!toc)return;
   toc.innerHTML='';
   const showHeadings=entries.length>=2;
   const showDecisions=decisionEntries.length>0;
-  toc.classList.toggle('pv-toc-hidden-auto',!showHeadings&&!showDecisions);
-  if(!showHeadings&&!showDecisions)return;
+  toc.classList.toggle('pv-toc-hidden-auto',!showHeadings&&!showDecisions&&!showNotepad&&!showQa);
+  if(!showHeadings&&!showDecisions&&!showNotepad&&!showQa)return;
   const headRow=document.createElement('div'); headRow.id='preview-toc-head-row';
   const titleEl=document.createElement('div'); titleEl.id='preview-toc-title'; titleEl.textContent='Contents';
   headRow.appendChild(titleEl);
@@ -24759,7 +24759,30 @@ function renderPreviewToc(entries,decisionEntries=[]){
       toc.appendChild(a);
     });
   }
+  if(showNotepad){
+    const a=document.createElement('a'); a.className='pv-toc-item'; a.href='#pv-notepad-section'; a.textContent='Notepad';
+    a.dataset.tip='Notepad'; a.dataset.target='pv-notepad-section';
+    a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToSectionId('pv-notepad-section'); });
+    toc.appendChild(a);
+  }
+  if(showQa){
+    const a=document.createElement('a'); a.className='pv-toc-item'; a.href='#pv-qa-section'; a.textContent='Q&A';
+    a.dataset.tip='Q&A'; a.dataset.target='pv-qa-section';
+    a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToSectionId('pv-qa-section'); });
+    toc.appendChild(a);
+  }
   setupPreviewScrollSpy();
+}
+// Notepad/Q&A are single standalone sections (id="pv-notepad-section"/"pv-qa-section" directly on
+// the section element), not part of the pv-anchor-<nodeId> addressing previewScrollToNode uses for
+// headings and Decision Log entries — so they get their own lookup-by-literal-id helper instead.
+function previewScrollToSectionId(elId){
+  const target=document.getElementById(elId);
+  if(!target)return;
+  const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+  target.classList.add('pv-flash');
+  setTimeout(()=>target.classList.remove('pv-flash'),900);
 }
 function previewScrollToAnchor(nodeId){ previewScrollToNode(nodeId); }
 function previewScrollToNode(nodeId){
