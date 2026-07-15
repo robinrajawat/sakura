@@ -2543,7 +2543,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    Off-screen at all times except while body.printing-generic is active (set by
    printHtmlAsPdf), same pattern as #preview-overlay's own printing-preview treatment —
    built once here as static CSS rather than injected per-export since, unlike the main
-   document PDF, none of this needs runtime-configurable margins/branding/footer. */
+   document PDF, none of this needs runtime-configurable margins/branding/footer. Uses the
+   same print-safe accent (#a8442e) as exportPreviewAsPdf's own PRINT_LIGHT_VARS, and the
+   same priority colors (#6c9bd1/#d1a23a/#c2553d) the live To-Dos panel uses (.todo-priority),
+   so these read as the same app rather than a generic export bolted on. */
 #gpe-overlay{display:none}
 body.printing-generic > *:not(#gpe-overlay){display:none!important}
 body.printing-generic{background:#fff!important}
@@ -2554,34 +2557,47 @@ body.printing-generic #gpe-overlay{
 @media print{
   @page{margin:20mm}
   #gpe-doc{max-width:100%;padding:0}
-  #gpe-title{font:700 22px 'Inter',sans-serif;color:#1f1c14;margin-bottom:4px}
-  .gpe-meta{font:400 12.5px 'Inter',sans-serif;color:#79756b;margin-bottom:22px}
-  .gpe-section-heading{font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#79756b;margin:22px 0 10px;border-top:1px solid #d6d2c7;padding-top:14px}
-  .gpe-section-heading:first-of-type{border-top:none;padding-top:0;margin-top:0}
-  .gpe-empty{font:400 12.5px 'Inter',sans-serif;font-style:italic;color:#a3a099}
+  #gpe-title{font:700 25px 'Inter',sans-serif;color:#1f1c14;margin-bottom:10px;letter-spacing:-.01em}
+  #gpe-title-rule{width:44px;height:3px;border-radius:2px;background:#a8442e;margin-bottom:16px}
+  .gpe-exported-date{font:400 10.5px 'Inter',sans-serif;color:#a3a099;margin:-10px 0 20px;text-transform:uppercase;letter-spacing:.06em}
+  .gpe-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+  .gpe-chip{display:inline-flex;align-items:center;font:600 10.5px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:#f3f1eb;color:#5c584f;border:1px solid #e3e0d8}
+  .gpe-chip-accent{background:color-mix(in srgb,#a8442e 10%,#fff);color:#a8442e;border-color:color-mix(in srgb,#a8442e 30%,#e3e0d8)}
+  .gpe-chip-high{background:color-mix(in srgb,#c2553d 12%,#fff);color:#c2553d;border-color:color-mix(in srgb,#c2553d 32%,#e3e0d8)}
+  .gpe-chip-med{background:color-mix(in srgb,#d1a23a 14%,#fff);color:#a17422;border-color:color-mix(in srgb,#d1a23a 34%,#e3e0d8)}
+  .gpe-chip-low{background:color-mix(in srgb,#6c9bd1 12%,#fff);color:#4a76ad;border-color:color-mix(in srgb,#6c9bd1 32%,#e3e0d8)}
+  .gpe-section-heading{display:flex;align-items:center;gap:8px;font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#5c584f;margin:26px 0 12px}
+  .gpe-section-heading::before{content:'';width:4px;height:14px;border-radius:2px;background:#a8442e}
+  .gpe-section-heading:first-of-type{margin-top:0}
+  .gpe-empty{font:400 12.5px 'Inter',sans-serif;font-style:italic;color:#a3a099;padding:2px 0 2px 12px}
   /* Task/action-item rows (To-Dos, Meeting Notes action items) */
-  .gpe-task{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font:400 13px 'Inter',sans-serif;color:#1f1c14;break-inside:avoid}
-  .gpe-task-box{flex:0 0 auto;width:14px;height:14px;margin-top:2px;border:1.5px solid #a3a099;border-radius:3px;position:relative}
-  .gpe-task.done .gpe-task-box{background:#79756b;border-color:#79756b}
-  .gpe-task.done .gpe-task-box::after{content:'';position:absolute;left:3px;top:0px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+  .gpe-task{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font:400 13px 'Inter',sans-serif;color:#1f1c14;break-inside:avoid}
+  .gpe-task-box{flex:0 0 auto;width:15px;height:15px;margin-top:1px;border:1.5px solid #c9c6bc;border-radius:4px;position:relative}
+  .gpe-task.done .gpe-task-box{background:#a8442e;border-color:#a8442e}
+  .gpe-task.done .gpe-task-box::after{content:'';position:absolute;left:3px;top:0px;width:5px;height:9px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
   .gpe-task-text{flex:1 1 auto;min-width:0}
   .gpe-task.done .gpe-task-text{color:#a3a099;text-decoration:line-through}
-  .gpe-task-meta{font-size:11px;color:#a3a099;margin-top:2px}
-  .gpe-subtask{margin-left:22px}
+  .gpe-task-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .gpe-subtask{margin-left:25px}
+  .gpe-subtask .gpe-task-box{width:12px;height:12px}
   /* Q&A rows */
-  .gpe-qa-row{padding:10px 0;border-top:1px solid #ece9e2;break-inside:avoid}
+  .gpe-qa-row{display:flex;gap:12px;padding:12px 0;border-top:1px solid #ece9e2;break-inside:avoid}
   .gpe-qa-row:first-child{border-top:none}
-  .gpe-qa-q{font:600 13px 'Inter',sans-serif;color:#1f1c14;margin-bottom:4px}
-  .gpe-qa-a{font:400 13px 'Inter',sans-serif;color:#5c584f}
-  .gpe-qa-a.gpe-empty{color:#a3a099;font-style:italic}
-  .gpe-qa-section-label{font:700 12px 'Inter',sans-serif;color:#2c4a6e;margin-top:14px}
+  .gpe-qa-row::before{content:'';flex:0 0 auto;width:3px;border-radius:2px;background:#e3e0d8;align-self:stretch}
+  .gpe-qa-body{flex:1 1 auto;min-width:0}
+  .gpe-qa-q{font:600 13.5px 'Inter',sans-serif;color:#1f1c14;margin-bottom:5px}
+  .gpe-qa-a{font:400 13px 'Inter',sans-serif;color:#5c584f;line-height:1.5}
+  .gpe-qa-a.gpe-empty{color:#a3a099;font-style:italic;padding:0}
+  .gpe-qa-section-label{font:700 12px 'Inter',sans-serif;color:#a8442e;margin-top:20px;text-transform:uppercase;letter-spacing:.05em}
   /* Meeting Notes single export */
-  .gpe-mtg-field-label{font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#79756b;margin:18px 0 8px}
+  .gpe-mtg-field-label{display:flex;align-items:center;gap:8px;font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#5c584f;margin:22px 0 10px}
+  .gpe-mtg-field-label::before{content:'';width:4px;height:12px;border-radius:2px;background:#a8442e}
   .gpe-mtg-field-label:first-of-type{margin-top:0}
-  .gpe-mtg-body{font:400 13px 'Inter',sans-serif;color:#1f1c14;line-height:1.55}
+  .gpe-mtg-body{font:400 13px 'Inter',sans-serif;color:#1f1c14;line-height:1.6;background:#faf9f6;border:1px solid #ece9e2;border-radius:8px;padding:14px 16px}
   .gpe-mtg-body p{margin:0 0 8px}
+  .gpe-mtg-body p:last-child{margin-bottom:0}
   .gpe-mtg-body ul,.gpe-mtg-body ol{margin:0 0 8px;padding-left:22px}
-  .gpe-mtg-link-row{font:400 13px 'Inter',sans-serif;color:#1f1c14;padding:3px 0}
+  .gpe-mtg-link-row{font:400 13px 'Inter',sans-serif;color:#1f1c14;padding:5px 0 5px 12px;border-left:2px solid #e3e0d8}
 }
 </style>
 <style>
@@ -13689,7 +13705,8 @@ function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
   _genericPrintActive=true;
   const overlay=document.createElement('div');
   overlay.id='gpe-overlay';
-  overlay.innerHTML=`<div id="gpe-doc"><div id="gpe-title">${titleHtml}</div>${bodyHtml}</div>`;
+  const exportedDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  overlay.innerHTML=`<div id="gpe-doc"><div id="gpe-title">${titleHtml}</div><div id="gpe-title-rule"></div><div class="gpe-exported-date">Exported ${exportedDate}</div>${bodyHtml}</div>`;
   document.body.appendChild(overlay);
   document.body.classList.add('printing-generic');
   const originalTitle=document.title;
@@ -23065,7 +23082,7 @@ function exportQaAsPdf(){
     if(qaIsSection(it)){ body+=`<div class="gpe-qa-section-label">${esc(String(it.title||'').trim())}</div>`; return; }
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
-    body+=`<div class="gpe-qa-row"><div class="gpe-qa-q">${esc(q)}</div><div class="gpe-qa-a${a?'':' gpe-empty'}">${a?esc(a):'No answer provided'}</div></div>`;
+    body+=`<div class="gpe-qa-row"><div class="gpe-qa-body"><div class="gpe-qa-q">${esc(q)}</div><div class="gpe-qa-a${a?'':' gpe-empty'}">${a?esc(a):'No answer provided'}</div></div></div>`;
   });
   printHtmlAsPdf(title+' - QA',esc('Q&A — '+title),body);
 }
@@ -31339,13 +31356,13 @@ function _addTagPopoverFromInput(){
   function exportTodosAsPdf(){
     const {open, done}=getVisibleTodos();
     function taskRow(t,isDone){
-      const bits=[];
-      if(t.priority&&t.priority!=='none') bits.push(priorityLabel(t.priority));
-      if(t.status&&t.status!=='none') bits.push(statusLabel(t.status));
-      if(t.dueDate) bits.push('Due '+t.dueDate);
-      if(isDone&&t.completedAt) bits.push('Completed '+new Date(t.completedAt).toLocaleDateString());
-      if(t.link) bits.push(t.link);
-      const metaHtml=bits.length?`<div class="gpe-task-meta">${esc(bits.join(' · '))}</div>`:'';
+      const chips=[];
+      if(t.priority&&t.priority!=='none') chips.push(`<span class="gpe-chip gpe-chip-${t.priority}">${esc(priorityLabel(t.priority))}</span>`);
+      if(t.status&&t.status!=='none') chips.push(`<span class="gpe-chip">${esc(statusLabel(t.status))}</span>`);
+      if(t.dueDate) chips.push(`<span class="gpe-chip">Due ${esc(t.dueDate)}</span>`);
+      if(isDone&&t.completedAt) chips.push(`<span class="gpe-chip">Completed ${esc(new Date(t.completedAt).toLocaleDateString())}</span>`);
+      if(t.link) chips.push(`<span class="gpe-chip">${esc(t.link)}</span>`);
+      const metaHtml=chips.length?`<div class="gpe-task-meta">${chips.join('')}</div>`:'';
       let html=`<div class="gpe-task${isDone?' done':''}"><div class="gpe-task-box"></div><div class="gpe-task-text">${esc(t.text||'')}${metaHtml}</div></div>`;
       (t.subtasks||[]).forEach(s=>{
         html+=`<div class="gpe-task gpe-subtask${s.done?' done':''}"><div class="gpe-task-box"></div><div class="gpe-task-text">${esc(s.text||'')}</div></div>`;
@@ -32144,11 +32161,11 @@ function formatMeetingTimeLabel(time){
 function exportSingleMeetingAsPdf(m){
   if(!m)return;
   let body='';
-  const metaBits=[];
-  if(m.date) metaBits.push(formatMeetingDateLabel(m.date));
-  if(m.time) metaBits.push(formatMeetingTimeLabel(m.time));
-  if(m.attendees&&m.attendees.length) metaBits.push('Attendees: '+m.attendees.join(', '));
-  if(metaBits.length) body+=`<div class="gpe-meta">${esc(metaBits.join('   •   '))}</div>`;
+  const metaChips=[];
+  if(m.date) metaChips.push(`<span class="gpe-chip gpe-chip-accent">${esc(formatMeetingDateLabel(m.date))}</span>`);
+  if(m.time) metaChips.push(`<span class="gpe-chip">${esc(formatMeetingTimeLabel(m.time))}</span>`);
+  if(m.attendees&&m.attendees.length) metaChips.push(`<span class="gpe-chip">${esc(m.attendees.join(', '))}</span>`);
+  if(metaChips.length) body+=`<div class="gpe-meta">${metaChips.join('')}</div>`;
   if(m.agenda&&stripHtmlToText(m.agenda).trim()){
     body+='<div class="gpe-mtg-field-label">Agenda</div>';
     body+=`<div class="gpe-mtg-body">${m.agenda}</div>`;
