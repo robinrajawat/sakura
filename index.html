@@ -1758,6 +1758,8 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .tp-chip-x{font-size:11px;line-height:1;opacity:.6;margin-left:1px}
 .tp-chip.tp-active .tp-chip-x{opacity:.8}
 .node-row.tag-filtered-out{display:none}
+.node-row.marker-filter-context{opacity:.5}
+.node-row.marker-filter-context:hover,.node-row.marker-filter-context.selected,.node-row.marker-filter-context.primary-selection{opacity:.8}
 .bl-link{display:inline;padding:1px 3px;margin:0 -1px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);cursor:pointer;font-weight:500;transition:background .1s}
 .bl-link:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
 .bl-link.bl-unresolved{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);cursor:default;font-weight:400;font-style:italic}
@@ -4357,7 +4359,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Structure</h4>  
 <ul>  
 <li>Right-click a node → a small row of four marker icons (Confirmed, Issue, Parked, Follow-up — see the Markers entry below) sits above everything else, always visible and not part of the customizable menu; below that, a row of icon buttons for the most common actions, defaults are <strong>Zoom in, Note, Tags, Rewrite, Delete</strong>. Click <span class="help-kbd">More</span> for move, sort, rewrite document, and everything else. Customise which buttons appear via Settings → Right-click menu — you can also reset to defaults there. Zoom in is also in the toolbar Fold group and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
-<li><strong>Markers</strong> — four quick marks (✓ Confirmed, ✗ Issue, ⏸ Parked, 🚩 Follow-up) for tracking status on a node, e.g. while reviewing a document. Set from either Presenter mode (click a line, see the Presenter entry above) or the editor's own right-click menu — same four icons, same toggle-to-clear behavior, either place. Once set, a small colored glyph shows on that node in both the editor and Preview/Presenter. In the editor, clicking the glyph filters the whole tree down to just that marker (a filter bar appears with a × to clear it); right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both.</li>
+<li><strong>Markers</strong> — four quick marks (✓ Confirmed, ✗ Issue, ⏸ Parked, 🚩 Follow-up) for tracking status on a node, e.g. while reviewing a document. Set from either Presenter mode (click a line, see the Presenter entry above) or the editor's own right-click menu — same four icons, same toggle-to-clear behavior, either place. Once set, a small colored glyph shows on that node in both the editor and Preview/Presenter. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, sidebar, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme, hide/show toolbar, sidebar, Pad, status bar, or tab bar, hide/show tree lines, "Show app bar" (only appears while zen mode has it hidden), Collapse all / Expand all, and Settings. Sidebar: switch theme, hide sidebar, toggle compact rows, Settings. Status bar: switch theme, hide status bar, Settings. Tab bar: switch theme, new document, close current tab, hide tab bar, Settings. App bar: switch theme, hide/show sidebar or toolbar, and "Declutter app bar" — which hides the title field, sidebar toggle, and the Documents/Templates buttons, but deliberately never hides Settings — hiding it would remove your only way back in. (Quick Assist used to share this exemption when it lived in the app bar too; it's since moved to the status bar, so it isn't part of this menu's options at all anymore.) Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. If you hide Status bar or Tab bar from their own right-click menu, that specific spot disappears with it — but the editor canvas's own right-click menu keeps the same Status bar/Tab bar toggles, so it works as a fallback, in addition to the plain switches under Settings → Bars &amp; Menus. Declutter app bar has no separate switch by design, since Settings (reachable via the button it deliberately never hides) already reverses it in one click</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Open the Note panel on any node to see which nodes link to it. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon (toolbar Insert group) or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -28114,6 +28116,7 @@ function applyTagFilterToPane(pane){
   if(!activeTagFilter&&!activeMarkerFilter){
     if(bar)bar.style.display='none';
     pane.querySelectorAll('.node-row.tag-filtered-out').forEach(r=>r.classList.remove('tag-filtered-out'));
+    pane.querySelectorAll('.node-row.marker-filter-context').forEach(r=>r.classList.remove('marker-filter-context'));
     return;
   }
   // Show filter bar
@@ -28138,13 +28141,48 @@ function applyTagFilterToPane(pane){
       chips.appendChild(btn);
     }
   }
+  // Marker filter: matching only the exact marked row leaves two problems — a marked parent's
+  // unmarked children vanish along with everything else (even though the whole subtree is
+  // usually what the marker was about), and a marked descendant whose ancestors don't match
+  // ends up floating with no visible parent, while the tree-line prefix characters (rendered
+  // from the full, unfiltered nodes array — see buildPrefix) still imply an ancestor is there,
+  // making the indentation look broken. So a match here means: the node itself, everything in
+  // its subtree (downward pass below), and every ancestor back to the root (upward pass below,
+  // dimmed via marker-filter-context so it reads as "here's where it lives" rather than more
+  // matched content). Tag matching stays a plain per-node check — tags are topical labels, not
+  // a status flag where "the whole subtree needs this" is the natural reading.
+  let markerVisible=null,markerContextOnly=null;
+  if(activeMarkerFilter){
+    markerVisible=new Set();
+    let matchDepth=null;
+    nodes.forEach(n=>{
+      if(matchDepth!==null&&n.depth<=matchDepth)matchDepth=null;
+      if(n.marker===activeMarkerFilter){ markerVisible.add(n.id); matchDepth=n.depth; }
+      else if(matchDepth!==null){ markerVisible.add(n.id); }
+    });
+    // Ancestors of a match are added purely to keep the tree-line prefixes from looking broken
+    // (see comment above) — track which ones weren't already visible from the downward pass, so
+    // they can be dimmed as "here's where it lives" context rather than looking like more
+    // matched content.
+    markerContextOnly=new Set();
+    nodes.forEach((n,i)=>{
+      if(n.marker!==activeMarkerFilter)return;
+      let p=getParentIndex(i);
+      while(p>=0){
+        if(!markerVisible.has(nodes[p].id))markerContextOnly.add(nodes[p].id);
+        markerVisible.add(nodes[p].id);
+        p=getParentIndex(p);
+      }
+    });
+  }
   // Hide/show rows
   pane.querySelectorAll('.node-row').forEach(row=>{
     const id=Number(row.dataset.id);
     const node=nodes.find(n=>n.id===id);
     const tagOk=!activeTagFilter||(node&&node.tags&&node.tags.includes(activeTagFilter));
-    const markerOk=!activeMarkerFilter||(node&&node.marker===activeMarkerFilter);
+    const markerOk=!activeMarkerFilter||(markerVisible&&markerVisible.has(id));
     row.classList.toggle('tag-filtered-out',!(tagOk&&markerOk));
+    row.classList.toggle('marker-filter-context',!!(tagOk&&markerOk&&markerContextOnly&&markerContextOnly.has(id)));
   });
 }
 
