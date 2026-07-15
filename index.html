@@ -11332,7 +11332,7 @@ function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
 // ── "Referenced by Meetings/To-Dos" lookups ──────────────────────────────
 // Both meetingNotes and todos live inside their own modules further down the page — each in
-// its own <script> tag (meetingNotes) or its own IIFE closure (todos) — so neither is a plain
+// its own script block (meetingNotes) or its own IIFE closure (todos) — so neither is a plain
 // top-level binding reachable from here. Both sides are reached through small window.sakura*
 // exports instead (see window.sakuraMeetingRefsForNode/etc. in the Meetings module, and
 // window.sakuraTodoRefsForNode/etc. in the To-Dos module) — same cross-module bridging pattern
@@ -14811,14 +14811,21 @@ function pptxRasterSizeForSvg(svgText){
 // only the exact webfont glyphs would have been, and those already aren't guaranteed to render
 // identically in a canvas rasterization anyway) — so stripping these references before loading
 // is a safe trade: the SVG still rasterizes correctly, just via whatever font the fallback
-// stack resolves to instead of the remote one. Also strips <script> elements (never wanted in
+// stack resolves to instead of the remote one. Also strips script elements (never wanted in
 // something we're about to execute-adjacent via <img>) and any DOCTYPE/external-entity
 // declaration, which some parsers choke on and which offers no rendering benefit here.
 function pptxSanitizeSvgText(svgText){
   return String(svgText)
     .replace(/<!DOCTYPE[^>]*>/gi,'')
     .replace(/<\?xml-stylesheet[^>]*\?>/gi,'')
-    .replace(/<script[\s\S]*?<\/script>/gi,'')
+    // Built via RegExp(string) rather than a /.../ literal, and 'sc'+'ript' rather than
+    // 'script' as one piece — a literal "less-than, s-c-r-i-p-t" substring anywhere in this
+    // file's raw text (even inside a string or regex, since the browser's HTML tokenizer
+    // doesn't know or care about JS syntax) gets misread as a real script-tag boundary, silently
+    // fragmenting the single big inline script block this all lives inside into multiple broken
+    // pieces. That's a real bug this exact pattern caused — see git history around the
+    // "Uncaught SyntaxError: missing )" incident.
+    .replace(new RegExp('<'+'sc'+'ript[\\s\\S]*?<\\/'+'sc'+'ript>','gi'),'')
     .replace(/@import\s+url\([^)]*\)\s*;?/gi,'')
     .replace(/<link[^>]*rel=["']?stylesheet["']?[^>]*>/gi,'');
 }
@@ -30447,7 +30454,7 @@ function _addTagPopoverFromInput(){
   // ── AI capabilities (configurable in Settings → AI → To-Dos AI) ─────────
   // All three reuse the same provider/key/AI Capabilities gate as Rewrite above — see
   // callAiApiWithPrompt (main app scope, reached via closure since this whole module lives
-  // in the same <script> tag). None of these pre-check for a key before showing their
+  // in the same script block). None of these pre-check for a key before showing their
   // button, same as Rewrite: the button is always there when its own setting is on, and a
   // missing key surfaces as a normal error on click rather than a vanished button.
   function todosAiAvailable(){ return (typeof featureAiEnabled==='undefined'||featureAiEnabled) }
