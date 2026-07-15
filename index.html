@@ -6196,6 +6196,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-delete" checked /> Delete</label>
         </div>
+        <span class="settings-row-desc" style="margin-top:10px">Drag to set the order these appear in the quick row (only checked actions are listed — check one above to add it here).</span>
+        <div id="ctx-quickbar-order-list" style="display:flex;flex-direction:column;gap:4px;margin-top:6px"></div>
         </div>
       </div>
       <div class="settings-field" id="ctx-hidden-field" style="margin-top:12px">
@@ -12430,13 +12432,69 @@ function setupContextQuickbarSettings(){
     const cb=el('ctxq-'+actionId); if(!cb)return;
     cb.checked=contextQuickActions.includes(actionId);
     cb.addEventListener('change',()=>{
-      const set=new Set(contextQuickActions);
-      if(cb.checked)set.add(actionId); else set.delete(actionId);
-      contextQuickActions=CTX_ACTION_ORDER.filter(a=>set.has(a));
-      savePrefs();
-      // re-render in case the menu is open (harmless no-op otherwise)
-      if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
+      // Preserve the existing custom order for everything that stays checked; a newly
+      // checked action is appended at the end rather than resorted into CTX_ACTION_ORDER's
+      // fixed sequence, so unchecking/rechecking something doesn't silently move it.
+      let next=contextQuickActions.filter(a=>a!==actionId);
+      if(cb.checked)next=[...next,actionId];
+      setContextQuickActions(next);
     });
+  });
+  renderContextQuickOrderList();
+}
+// Single place that owns contextQuickActions mutation: keeps the Menu items checkboxes,
+// the drag-reorder list below them, the live context menu (if open), and persistence all
+// in sync, so nothing that changes membership or order needs to remember all four steps.
+function setContextQuickActions(next,persist=true){
+  const valid=new Set(CTX_ACTION_ORDER); const seen=new Set();
+  contextQuickActions=(Array.isArray(next)?next:[]).filter(a=>valid.has(a)&&!seen.has(a)&&seen.add(a));
+  CTX_ACTION_ORDER.forEach(a=>{ const cb=el('ctxq-'+a); if(cb)cb.checked=contextQuickActions.includes(a); });
+  renderContextQuickOrderList();
+  if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
+  if(persist)savePrefs();
+}
+// Drag-to-reorder list for the quick row's actual display order — the checkbox grid above
+// only controls membership (and, being a static grid, can't express order at all); this is
+// the one place order can be set, independent of CTX_ACTION_ORDER's fixed sequence. Same
+// drag pattern as renderStatusbarOrderList, reused deliberately for a consistent feel.
+function renderContextQuickOrderList(){
+  const wrap=el('ctx-quickbar-order-list'); if(!wrap)return;
+  wrap.innerHTML='';
+  if(!contextQuickActions.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='font:400 12px Inter,sans-serif;color:var(--hint);padding:4px 2px';
+    empty.textContent='Nothing selected yet — check an action above to set its position here.';
+    wrap.appendChild(empty);
+    return;
+  }
+  let dragSrc=null;
+  contextQuickActions.forEach(actionId=>{
+    const meta=CTX_ACTION_META[actionId]; if(!meta)return;
+    const row=document.createElement('div');
+    row.dataset.key=actionId;
+    row.draggable=true;
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);cursor:default;transition:opacity .12s,box-shadow .12s';
+    const handle=document.createElement('span');
+    handle.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>';
+    handle.style.cssText='color:var(--muted);flex-shrink:0;cursor:grab;display:flex;align-items:center';
+    const lbl=document.createElement('span');
+    lbl.style.cssText='font:500 12px Inter,sans-serif;color:var(--fg);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    lbl.textContent=meta.dynamicLabel?'Note…':meta.label;
+    row.appendChild(handle); row.appendChild(lbl);
+    row.addEventListener('dragstart',e=>{dragSrc=row; e.dataTransfer.effectAllowed='move'; row.style.opacity='.4'});
+    row.addEventListener('dragend',()=>{dragSrc=null; wrap.querySelectorAll('[data-key]').forEach(r=>{r.style.opacity=''; r.style.boxShadow=''})});
+    row.addEventListener('dragover',e=>{e.preventDefault(); e.dataTransfer.dropEffect='move'; if(row!==dragSrc)row.style.boxShadow='0 -2px 0 var(--accent)'});
+    row.addEventListener('dragleave',()=>{row.style.boxShadow=''});
+    row.addEventListener('drop',e=>{
+      e.preventDefault(); row.style.boxShadow='';
+      if(!dragSrc||dragSrc===row)return;
+      const si=contextQuickActions.indexOf(dragSrc.dataset.key); const ti=contextQuickActions.indexOf(row.dataset.key);
+      if(si<0||ti<0)return;
+      const next=contextQuickActions.slice();
+      const [moved]=next.splice(si,1); next.splice(ti,0,moved);
+      setContextQuickActions(next);
+    });
+    wrap.appendChild(row);
   });
 }
 
@@ -27181,6 +27239,7 @@ function restoreEditorsChoiceSnapshot(snap){
     if(el('presenter-notes-panel')?.classList.contains('open'))applyPresenterNotesButtonVisibility();
   }
   CTX_ACTION_ORDER.forEach(a=>{ const cb=el('ctxq-'+a); if(cb) cb.checked=contextQuickActions.includes(a); });
+  renderContextQuickOrderList();
   if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
   if(snap.hideTreeLines!==undefined)setHideTreeLines(snap.hideTreeLines,false);
   refreshAllToolbarSummaries();
@@ -27256,6 +27315,7 @@ function applyEditorsChoicePreset(silent){
   contextHiddenActions=CTX_HIDE_KEYS.filter(k=>!editorsChoiceKeep.includes(k));
   applyContextHiddenActions();
   CTX_ACTION_ORDER.forEach(a=>{ const cb=el('ctxq-'+a); if(cb) cb.checked=contextQuickActions.includes(a); });
+  renderContextQuickOrderList();
   if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
 
   // Node Quick Assist (the Ctrl/Cmd+Space mid-edit menu): icon-only row, trimmed to the
