@@ -24739,7 +24739,8 @@ function renderPreviewToc(entries,decisionEntries=[],showNotepad=false,showQa=fa
     entries.forEach(entry=>{
       const a=document.createElement('a');
       a.className='pv-toc-item pv-toc-lvl-'+entry.level;
-      a.href='#pv-anchor-'+entry.id; a.textContent=entry.text;
+      a.href='#pv-anchor-'+entry.id;
+      const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent=entry.text; a.appendChild(label);
       a.dataset.tip=entry.text;
       a.dataset.target='pv-anchor-'+entry.id;
       a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToAnchor(entry.id); });
@@ -24760,14 +24761,16 @@ function renderPreviewToc(entries,decisionEntries=[],showNotepad=false,showQa=fa
     });
   }
   if(showNotepad){
-    const a=document.createElement('a'); a.className='pv-toc-item'; a.href='#pv-notepad-section'; a.textContent='Notepad';
+    const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-notepad-section';
     a.dataset.tip='Notepad'; a.dataset.target='pv-notepad-section';
+    const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Notepad'; a.appendChild(label);
     a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToSectionId('pv-notepad-section'); });
     toc.appendChild(a);
   }
   if(showQa){
-    const a=document.createElement('a'); a.className='pv-toc-item'; a.href='#pv-qa-section'; a.textContent='Q&A';
+    const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-qa-section';
     a.dataset.tip='Q&A'; a.dataset.target='pv-qa-section';
+    const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Q&A'; a.appendChild(label);
     a.addEventListener('click',e=>{ e.preventDefault(); previewScrollToSectionId('pv-qa-section'); });
     toc.appendChild(a);
   }
@@ -25791,6 +25794,21 @@ function exportPreviewAsPdf(onDone){
       }
       body.printing-preview .pv-toc-dlog-item.active{
         background:none !important; box-shadow:none !important; font-weight:400 !important;
+      }
+      /* Page numbers: target-counter() is the only CSS mechanism for "what page is this link's
+         target on" — unlike Word's native PAGEREF field, browser support for it in the print/PDF
+         path is not reliable (still an open Chromium feature request as of this writing). The
+         @supports guard means browsers that don't understand it just keep today's plain,
+         numberless TOC rather than rendering something broken. float:right (not flexbox) so it
+         coexists with white-space:normal above — headings intentionally wrap onto multiple lines
+         in print rather than truncating, and a flex+justify-content layout would fight that. */
+      @supports (content: target-counter(attr(href url), page)) {
+        body.printing-preview .pv-toc-item::after,
+        body.printing-preview .pv-toc-dlog-item::after{
+          content: target-counter(attr(href url), page) !important;
+          float:right !important; margin-left:10px !important;
+          color:#79756b !important; font-size:11px !important;
+        }
       }
       body.printing-preview #preview-body{
         display:block !important; overflow:visible !important;
