@@ -27006,35 +27006,29 @@ function refreshPresenterNotesButtonCheckboxes(){
 }
 PAD_TB_BUTTONS.forEach(key=>{ el('pnbsec-'+key)?.addEventListener('change', e=>setPresenterNotesButtonHidden(key, !e.target.checked)) });
 
-// Per-button visibility within the main quick-bar's Insert group — separate from
-// the whole-group "Sections" toggle above it, so e.g. Note & Checkbox can stay
-// while Decision Log & Tags get hidden, instead of an all-or-nothing group toggle.
-function applyInsertButtonVisibility(){
-  INSERT_TB_BUTTONS.forEach(key=>{
-    const btn=el(INSERT_TB_BTN_ID[key]);
-    if(btn) btn.style.display=insertHiddenButtons.includes(key)?'none':'';
-    const cb=el('itbsec-'+key); if(cb) cb.checked=!insertHiddenButtons.includes(key);
-  });
-}
-function setInsertButtonHidden(key, hidden, persist=true){
-  const set=new Set(insertHiddenButtons);
-  if(hidden) set.add(key); else set.delete(key);
-  insertHiddenButtons=INSERT_TB_BUTTONS.filter(k=>set.has(k));
-  applyInsertButtonVisibility();
-  if(persist){ savePrefs(); scheduleAutoSave(); }
-}
-INSERT_TB_BUTTONS.forEach(key=>{ el('itbsec-'+key)?.addEventListener('change', e=>setInsertButtonHidden(key, !e.target.checked)) });
-
-// Generic per-button visibility group, used for every simple id-mapped toolbar group
-// below (History, Structure, Move, Fold, AI, Delete) — same apply/set/persist shape as
-// applyInsertButtonVisibility above, just parameterized so it isn't repeated six times.
-function createToolbarButtonGroup(buttons, idMap, prefix, getHidden, setHiddenState){
+// Generic per-button visibility group. Originally written just for the six simple
+// id-mapped groups (History, Structure, Move, Fold, AI, Delete); Insert, Format, and
+// Extras used to each hand-roll their own near-identical apply/set/persist trio because
+// their element lookup didn't fit a plain key->id object. Generalized so idMap can be:
+//   - an object of key -> single id string (the original six groups, and Insert)
+//   - an object of key -> array of ids (Extras: one action can map to more than one button)
+//   - a function key => Element|Element[] (Format: bold/italic/etc. share a class+data-attr
+//     instead of individual ids, and highlight/color/heading are wrapper divs)
+// afterApply is an optional extra step to run once after every apply() (Extras needs
+// updateMoreMenuSections() to keep the More-menu section labels/dividers in sync).
+function createToolbarButtonGroup(buttons, idMap, prefix, getHidden, setHiddenState, afterApply){
+  function resolveEls(key){
+    const ref=typeof idMap==='function'?idMap(key):idMap[key];
+    if(!ref)return [];
+    return (Array.isArray(ref)?ref:[ref]).map(x=>typeof x==='string'?el(x):x).filter(Boolean);
+  }
   function apply(){
     buttons.forEach(key=>{
-      const btn=el(idMap[key]);
-      if(btn) btn.style.display=getHidden().includes(key)?'none':'';
-      const cb=el(prefix+key); if(cb) cb.checked=!getHidden().includes(key);
+      const hidden=getHidden().includes(key);
+      resolveEls(key).forEach(btn=>{ btn.style.display=hidden?'none':''; });
+      const cb=el(prefix+key); if(cb) cb.checked=!hidden;
     });
+    if(afterApply)afterApply();
   }
   function setKeyHidden(key,hidden,persist=true){
     const set=new Set(getHidden());
@@ -27052,6 +27046,14 @@ const moveTbGroup=createToolbarButtonGroup(MOVE_TB_BUTTONS,MOVE_TB_BTN_ID,'mvtb-
 const foldTbGroup=createToolbarButtonGroup(FOLD_TB_BUTTONS,FOLD_TB_BTN_ID,'fdtb-',()=>foldHiddenButtons,v=>foldHiddenButtons=v);
 const aiTbGroup=createToolbarButtonGroup(AI_TB_BUTTONS,AI_TB_BTN_ID,'aitb-',()=>aiHiddenButtons,v=>aiHiddenButtons=v);
 const deleteTbGroup=createToolbarButtonGroup(DELETE_TB_BUTTONS,DELETE_TB_BTN_ID,'deltb-',()=>deleteHiddenButtons,v=>deleteHiddenButtons=v);
+const insertTbGroup=createToolbarButtonGroup(INSERT_TB_BUTTONS,INSERT_TB_BTN_ID,'itbsec-',()=>insertHiddenButtons,v=>insertHiddenButtons=v);
+// Thin name-compatible wrappers — every call site elsewhere in the file (boot sequence,
+// preset functions, snapshot restore) still calls applyInsertButtonVisibility() /
+// setInsertButtonHidden() by name, so keep those names working rather than hunting down
+// every reference. The per-key change-listener wiring the old bespoke version did by hand
+// is now handled once, generically, inside createToolbarButtonGroup itself.
+function applyInsertButtonVisibility(){ insertTbGroup.apply(); }
+function setInsertButtonHidden(key,hidden,persist=true){ insertTbGroup.setKeyHidden(key,hidden,persist); }
 
 // Format group needs custom element lookup: bold/italic/underline/strike share the
 // .fmt-btn class with a data-style attribute instead of individual ids, and
@@ -27063,31 +27065,16 @@ function _formatBtnEl(key){
   if(key==='heading') return el('heading-wrap');
   return document.querySelector(`.fmt-btn[data-style="${key}"]`);
 }
-function applyFormatButtonVisibility(){
-  FORMAT_TB_BUTTONS.forEach(key=>{
-    const btn=_formatBtnEl(key);
-    if(btn) btn.style.display=formatHiddenButtons.includes(key)?'none':'';
-    const cb=el('fmtb-'+key); if(cb) cb.checked=!formatHiddenButtons.includes(key);
-  });
-}
-function setFormatButtonHidden(key,hidden,persist=true){
-  const set=new Set(formatHiddenButtons);
-  if(hidden) set.add(key); else set.delete(key);
-  formatHiddenButtons=FORMAT_TB_BUTTONS.filter(k=>set.has(k));
-  applyFormatButtonVisibility();
-  if(persist){ savePrefs(); scheduleAutoSave(); }
-}
-FORMAT_TB_BUTTONS.forEach(key=>{ el('fmtb-'+key)?.addEventListener('change', e=>setFormatButtonHidden(key, !e.target.checked)) });
+const formatTbGroup=createToolbarButtonGroup(FORMAT_TB_BUTTONS,_formatBtnEl,'fmtb-',()=>formatHiddenButtons,v=>formatHiddenButtons=v);
+function applyFormatButtonVisibility(){ formatTbGroup.apply(); }
+function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHidden(key,hidden,persist); }
 
 // Extras group: each key can map to more than one element id (dropdown item +
-// expanded-toolbar button for the same action), so every id in the list is toggled together.
-function applyExtrasButtonVisibility(){
-  EXTRAS_TB_BUTTONS.forEach(key=>{
-    (EXTRAS_TB_BTN_IDS[key]||[]).forEach(id=>{ const btn=el(id); if(btn) btn.style.display=extrasHiddenButtons.includes(key)?'none':''; });
-    const cb=el('extb-'+key); if(cb) cb.checked=!extrasHiddenButtons.includes(key);
-  });
-  updateMoreMenuSections();
-}
+// expanded-toolbar button for the same action), and hiding buttons can leave the More
+// menu's section labels/dividers orphaned — both handled generically now via idMap
+// accepting arrays and the afterApply hook, instead of Extras hand-rolling its own copy.
+const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
+function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
 // The More menu is a fixed 3-block layout (Document / Sort top-level nodes / Clear all), each
 // block hideable button-by-button via Settings. Hiding every button in a block used to leave its
 // group-label heading and dividers behind with nothing underneath - this resolves label and
