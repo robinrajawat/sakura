@@ -996,7 +996,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
        washing out when printing from the dark theme. */
     --bg:#ffffff !important; --tb-bg:#ffffff !important; --border:#d6d2c7 !important;
     --fg:#1f1c14 !important; --muted:#5c584f !important; --hint:#79756b !important;
-    --accent:#a8442e !important; --hover:transparent !important; --sel:transparent !important;
+    --hover:transparent !important; --sel:transparent !important;
     --sel-fg:#1f1c14 !important; --edit-bg:#ffffff !important; --scroll:transparent !important;
     --vert:#999999 !important; --conn:#999999 !important; --chip:#f0eee5 !important;
     --sem-section:#2e429e !important; --sem-alert:#9b2f28 !important; --sem-code:#4a3a6a !important; --sem-quote:#5a5030 !important;
@@ -1078,11 +1078,11 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
     display: none !important;
   }
   .node-cb{border:1.5px solid #888 !important;background:transparent !important}
-  .node-cb.cb-checked{background:#a8442e !important;border-color:#a8442e !important}
+  .node-cb.cb-checked{background:var(--accent) !important;border-color:var(--accent) !important}
   .node-cb.cb-checked::after{border-color:#fff !important}
-  .cb-progress{background:transparent !important;border:1px solid #a8442e !important;color:#a8442e !important}
+  .cb-progress{background:transparent !important;border:1px solid var(--accent) !important;color:var(--accent) !important}
   .node-tag-chip{background:transparent !important;border:1px solid #888 !important;color:#444 !important}
-  .bl-link{background:transparent !important;color:#a8442e !important;font-weight:500 !important}
+  .bl-link{background:transparent !important;color:var(--accent) !important;font-weight:500 !important}
   .bl-link.bl-unresolved{color:#888 !important}
   .node-row.cb-done .node-label{opacity:.45 !important}
   .node-row{break-inside:avoid;page-break-inside:avoid}
@@ -2543,9 +2543,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    Off-screen at all times except while body.printing-generic is active (set by
    printHtmlAsPdf), same pattern as #preview-overlay's own printing-preview treatment —
    built once here as static CSS rather than injected per-export since, unlike the main
-   document PDF, none of this needs runtime-configurable margins/branding/footer. Uses the
-   same print-safe accent (#a8442e) as exportPreviewAsPdf's own PRINT_LIGHT_VARS, and the
-   same priority colors (#6c9bd1/#d1a23a/#c2553d) the live To-Dos panel uses (.todo-priority),
+   document PDF, none of this needs runtime-configurable margins/branding/footer. Accent
+   color uses var(--accent) — inherited from document.body, which always carries the live
+   value via applyAccentColor() regardless of print mode — with #a8442e as a fallback only
+   if that's somehow unset, and the same priority colors (#6c9bd1/#d1a23a/#c2553d) the live To-Dos panel uses (.todo-priority),
    so these read as the same app rather than a generic export bolted on. */
 #gpe-overlay{display:none}
 body.printing-generic > *:not(#gpe-overlay){display:none!important}
@@ -2558,22 +2559,22 @@ body.printing-generic #gpe-overlay{
   @page{margin:20mm}
   #gpe-doc{max-width:100%;padding:0}
   #gpe-title{font:700 25px 'Inter',sans-serif;color:#1f1c14;margin-bottom:10px;letter-spacing:-.01em}
-  #gpe-title-rule{width:44px;height:3px;border-radius:2px;background:#a8442e;margin-bottom:16px}
+  #gpe-title-rule{width:44px;height:3px;border-radius:2px;background:var(--accent,#a8442e);margin-bottom:16px}
   .gpe-exported-date{font:400 10.5px 'Inter',sans-serif;color:#a3a099;margin:-10px 0 20px;text-transform:uppercase;letter-spacing:.06em}
   .gpe-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
   .gpe-chip{display:inline-flex;align-items:center;font:600 10.5px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:#f3f1eb;color:#5c584f;border:1px solid #e3e0d8}
-  .gpe-chip-accent{background:color-mix(in srgb,#a8442e 10%,#fff);color:#a8442e;border-color:color-mix(in srgb,#a8442e 30%,#e3e0d8)}
+  .gpe-chip-accent{background:color-mix(in srgb,var(--accent,#a8442e) 10%,#fff);color:var(--accent,#a8442e);border-color:color-mix(in srgb,var(--accent,#a8442e) 30%,#e3e0d8)}
   .gpe-chip-high{background:color-mix(in srgb,#c2553d 12%,#fff);color:#c2553d;border-color:color-mix(in srgb,#c2553d 32%,#e3e0d8)}
   .gpe-chip-med{background:color-mix(in srgb,#d1a23a 14%,#fff);color:#a17422;border-color:color-mix(in srgb,#d1a23a 34%,#e3e0d8)}
   .gpe-chip-low{background:color-mix(in srgb,#6c9bd1 12%,#fff);color:#4a76ad;border-color:color-mix(in srgb,#6c9bd1 32%,#e3e0d8)}
   .gpe-section-heading{display:flex;align-items:center;gap:8px;font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#5c584f;margin:26px 0 12px}
-  .gpe-section-heading::before{content:'';width:4px;height:14px;border-radius:2px;background:#a8442e}
+  .gpe-section-heading::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--accent,#a8442e)}
   .gpe-section-heading:first-of-type{margin-top:0}
   .gpe-empty{font:400 12.5px 'Inter',sans-serif;font-style:italic;color:#a3a099;padding:2px 0 2px 12px}
   /* Task/action-item rows (To-Dos, Meeting Notes action items) */
   .gpe-task{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font:400 13px 'Inter',sans-serif;color:#1f1c14;break-inside:avoid}
   .gpe-task-box{flex:0 0 auto;width:15px;height:15px;margin-top:1px;border:1.5px solid #c9c6bc;border-radius:4px;position:relative}
-  .gpe-task.done .gpe-task-box{background:#a8442e;border-color:#a8442e}
+  .gpe-task.done .gpe-task-box{background:var(--accent,#a8442e);border-color:var(--accent,#a8442e)}
   .gpe-task.done .gpe-task-box::after{content:'';position:absolute;left:3px;top:0px;width:5px;height:9px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
   .gpe-task-text{flex:1 1 auto;min-width:0}
   .gpe-task.done .gpe-task-text{color:#a3a099;text-decoration:line-through}
@@ -2588,10 +2589,10 @@ body.printing-generic #gpe-overlay{
   .gpe-qa-q{font:600 13.5px 'Inter',sans-serif;color:#1f1c14;margin-bottom:5px}
   .gpe-qa-a{font:400 13px 'Inter',sans-serif;color:#5c584f;line-height:1.5}
   .gpe-qa-a.gpe-empty{color:#a3a099;font-style:italic;padding:0}
-  .gpe-qa-section-label{font:700 12px 'Inter',sans-serif;color:#a8442e;margin-top:20px;text-transform:uppercase;letter-spacing:.05em}
+  .gpe-qa-section-label{font:700 12px 'Inter',sans-serif;color:var(--accent,#a8442e);margin-top:20px;text-transform:uppercase;letter-spacing:.05em}
   /* Meeting Notes single export */
   .gpe-mtg-field-label{display:flex;align-items:center;gap:8px;font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#5c584f;margin:22px 0 10px}
-  .gpe-mtg-field-label::before{content:'';width:4px;height:12px;border-radius:2px;background:#a8442e}
+  .gpe-mtg-field-label::before{content:'';width:4px;height:12px;border-radius:2px;background:var(--accent,#a8442e)}
   .gpe-mtg-field-label:first-of-type{margin-top:0}
   .gpe-mtg-body{font:400 13px 'Inter',sans-serif;color:#1f1c14;line-height:1.6;background:#faf9f6;border:1px solid #ece9e2;border-radius:8px;padding:14px 16px}
   .gpe-mtg-body p{margin:0 0 8px}
@@ -25750,9 +25751,10 @@ function exportPreviewAsPdf(onDone){
   // (note cards, question cards, node text colors, chips, semantic markers) resolves off an
   // already-light computed value rather than depending on the print engine to re-cascade a
   // stylesheet override at print time. Restored in cleanup() below once printing ends.
+  const liveAccent=getComputedStyle(document.body).getPropertyValue('--accent').trim()||'#a8442e';
   const PRINT_LIGHT_VARS={
     '--bg':'#ffffff','--tb-bg':'#ffffff','--border':'#d6d2c7','--fg':'#1f1c14','--node-fg':'#1f1c14',
-    '--muted':'#5c584f','--hint':'#79756b','--accent':'#a8442e','--pv-heading':'#2e429e','--pv-heading-2':'#3d5bc0',
+    '--muted':'#5c584f','--hint':'#79756b','--accent':liveAccent,'--pv-heading':'#2e429e','--pv-heading-2':'#3d5bc0',
     '--hover':'transparent','--sel':'transparent','--sel-fg':'#1f1c14','--edit-bg':'#faf9f5','--canvas-bg':'#ffffff',
     '--scroll':'transparent','--vert':'#999999','--conn':'#999999','--chip':'#f0eee5',
     '--sem-section':'#2e429e','--sem-alert':'#9b2f28','--sem-code':'#4a3a6a','--sem-quote':'#5a5030',
@@ -25830,7 +25832,7 @@ function exportPreviewAsPdf(onDone){
       }
       body.printing-preview #sakura-cover-wordmark{
         font:700 12px 'Inter',sans-serif !important; text-transform:uppercase !important;
-        letter-spacing:.14em !important; color:#a8442e !important; margin-bottom:48px !important;
+        letter-spacing:.14em !important; color:${liveAccent} !important; margin-bottom:48px !important;
       }
       body.printing-preview #sakura-cover-title{
         font:700 30px 'Inter',sans-serif !important; color:#1f1c14 !important;
@@ -25844,7 +25846,7 @@ function exportPreviewAsPdf(onDone){
       }
       body.printing-preview #sakura-cover-rule{
         width:48px !important; height:3px !important; margin:28px 0 !important;
-        background:#a8442e !important; border-radius:2px !important;
+        background:${liveAccent} !important; border-radius:2px !important;
       }
       body.printing-preview.has-cover-page #pv-doc-meta{ display:none !important; }
       body.printing-preview #preview-toc-head-row{
@@ -25912,7 +25914,7 @@ function exportPreviewAsPdf(onDone){
         padding:28px 40px !important;
         --bg:#ffffff; --border:#d6d2c7; --fg:#1f1c14; --muted:#5c584f;
         --node-fg:${(NODE_FONT_COLOR_PRESETS[nodeFontColorPreset]||NODE_FONT_COLOR_PRESETS.default).light};
-        --hint:#79756b; --accent:#a8442e; --edit-bg:#f9f9f7;
+        --hint:#79756b; --accent:${liveAccent}; --edit-bg:#f9f9f7;
         --pv-heading:#2c4a6e; --pv-heading-2:#4a6f9e;
         --fc-red:#a8362a; --fc-orange:#a85f1a; --fc-green:#226b41;
         --fc-blue:#22529e; --fc-purple:#69359a; --fc-gray:#5c584f;
