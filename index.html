@@ -2312,6 +2312,16 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    document with many simple notes throughout (e.g. a review Q&A walkthrough). Keeps just a
    thin left rule — enough to mark it as an aside, without boxing it. */
 .pv-inline-note-body.pv-note-plain{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border)}
+/* Label + note body flow on the same line for a plain-text note, instead of the label sitting
+   on its own row above — "NOTE" reads as a small inline prefix, with the actual content
+   (timestamp + text, wrapping naturally if long) following right after it. Only used for
+   plain-text notes: rich content (images/tables/lists) keeps the label on its own line above
+   the full card, since block-level content can't sensibly flow inline with a label anyway. */
+.pv-inline-block-flow{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:8px;row-gap:2px}
+.pv-inline-label-inline{margin-bottom:0;flex:0 0 auto;white-space:nowrap}
+.pv-inline-block-flow .pv-inline-note-body.pv-note-plain{flex:1 1 240px;min-width:0;padding-left:0;border-left:none}
+.note-comment-entry+.note-comment-sep{margin:0 2px}
+.note-comment-sep{color:var(--hint);opacity:.6}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
@@ -24414,9 +24424,10 @@ function renderPreviewBody(){
       }
       const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
       if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)){
-        const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
+        const isPlainNote=noteIsPlainTextOnly(noteRestHtml);
+        const wrap=document.createElement('div'); wrap.className='pv-inline-block'+(isPlainNote?' pv-inline-block-flow':''); wrap.style.paddingLeft=inlinePad;
+        const label=document.createElement(isPlainNote?'span':'div'); label.className='pv-inline-label'+(isPlainNote?' pv-inline-label-inline':''); label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(isPlainNote?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
@@ -24809,8 +24820,13 @@ function saveNodeComment(nodeId,text){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const trimmed=text.trim(); if(!trimmed)return;
   const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  const addition=`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span><br>${esc(trimmed)}</div>`;
-  node.note=node.note?(node.note.trim()+addition):addition;
+  // <span>, not <div> — plain-text notes now render inline (label + content flowing on the same
+  // line, see the pv-inline-block-flow layout in renderPreviewBody), and a block-level <div>
+  // per entry would force its own line regardless of that flex layout. No <br> between the
+  // stamp and the text either, for the same reason — they're meant to read as one continuous
+  // line, wrapping naturally only if genuinely too long for the row.
+  const addition=`<span class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span> ${esc(trimmed)}</span>`;
+  node.note=node.note?(node.note.trim()+' <span class="note-comment-sep">·</span> '+addition):addition;
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   showToast('Comment added to node note');
