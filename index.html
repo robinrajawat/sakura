@@ -1687,8 +1687,8 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
    </> badge overlaid when the node also has a non-empty code block — so one dot signals
    both "has a note" and "has code", instead of two separate dots side by side. */
 .node-note-dot{position:relative}
-.node-note-inline-preview{flex:0 1 auto;min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;font-size:0.76em;color:var(--muted);opacity:.8;margin-left:8px}
-.pv-note-inline-preview{display:inline-block;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;font-style:italic;font-size:0.76em;color:var(--muted);opacity:.75;margin-left:8px}
+.node-note-inline-preview{flex:0 1 auto;min-width:0;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;font-size:0.76em;color:var(--muted);opacity:.8;margin-left:8px}
+.pv-note-inline-preview{display:inline-block;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;font-style:italic;font-size:0.76em;color:var(--muted);opacity:.75;margin-left:8px}
 .node-code-badge{position:absolute;right:-3px;bottom:-3px;display:inline-flex;align-items:center;justify-content:center;width:9px;height:9px;border-radius:3px;background:var(--accent);color:var(--bg)}
 .node-code-badge svg{width:6px;height:6px}
 .node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;transition:opacity .12s}
@@ -10210,10 +10210,16 @@ function stripHtmlToText(html){
 // between — fine for search indexing, but a Note's timestamp span followed by a <br> then the
 // note text (see saveNodeComment's addition markup) ends up glued together with no space at all.
 // This inserts a space at exactly those block-ish boundaries before stripping, so multiple
-// comments/timestamps in one note read as separate words in the inline preview.
+// comments/timestamps in one note read as separate words. It also drops .note-comment-stamp
+// entirely — in a truncated one-line preview there's no room to spare, and "JUL 15, 2:30 PM"
+// eating a third of the available characters before any actual note content shows is a worse
+// trade than just not showing it here (the real note, with timestamps, is still one click away).
 function notePreviewPlainText(html){
   if(!html)return '';
-  return stripHtmlToText(String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,' $& '));
+  const tmp=document.createElement('div');
+  tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,' $& ');
+  tmp.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
+  return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
 }
 function getDocNodesForSearch(docId,indexEntry){
   if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
