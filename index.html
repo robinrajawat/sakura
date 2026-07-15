@@ -15072,6 +15072,10 @@ async function pptxGatherSlidesData(){
     // see decisionLogIsLarge.)
     let items=[];
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
+    if(nodeContentExportEnabled&&node.note&&node.note.trim()){
+      const noteText=stripHtmlToText(splitNoteDiagramImages(node.note).restHtml).trim();
+      if(noteText) items.push({type:'note', text:noteText, indent:0});
+    }
     // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
     // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
     // node at that same depth (this subtree is by definition deeper than it already), meaning
@@ -15084,6 +15088,10 @@ async function pptxGatherSlidesData(){
       let childText=String(childNode.text||'').trim();
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
+      if(nodeContentExportEnabled&&childNode.note&&childNode.note.trim()){
+        const noteText=stripHtmlToText(splitNoteDiagramImages(childNode.note).restHtml).trim();
+        if(noteText) items.push({type:'note', text:noteText, indent:relDepth-1});
+      }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
 
@@ -15386,13 +15394,20 @@ async function buildPptxPresentation(slidesData){
       fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'
     });
 
-    const bullets=(sd.items||[]).filter(it=>it.type==='bullet');
+    const bullets=(sd.items||[]).filter(it=>it.type==='bullet'||it.type==='note');
     const logs=(sd.items||[]).filter(it=>it.type==='decisionLog');
     const hasImages=sd.images.length>0;
     let cursorY=1.75;
     const bottomLimit=PPTX_SLIDE_H-0.4;
     const buildBulletTextRuns=(list)=>list.flatMap(b=>{
       const indentLevel=Math.max(0,b.indent||0);
+      if(b.type==='note'){
+        const pad='   '.repeat(indentLevel);
+        return [
+          {text:pad+'💬  ', options:{color:theme.hint, breakLine:false, italic:true}},
+          {text:pptxStripIllegalXmlChars(b.text), options:{color:theme.muted, italic:true, breakLine:true}}
+        ];
+      }
       const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
       const pad='   '.repeat(indentLevel);
       const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
@@ -15486,6 +15501,83 @@ async function buildPptxPresentation(slidesData){
       });
     }
   });
+
+  // --- Q&A section — mirrors docxBuildQaSection's content, paginated across as many slides as
+  // needed using the same real-measurement approach as the bullet pagination above. A section
+  // header and a Q+A pair are each measured as one unit that stays together across a page break
+  // (a question separated from its own answer by a slide boundary reads badly) unless that unit
+  // alone is taller than a full page, in which case it just runs onto its own slide anyway.
+  if(qaExportEnabled){
+    const relevantQa=(qaItems||[]).filter(it=>qaIsSection(it)?(it.title||'').trim():(it.question||'').trim());
+    if(relevantQa.length){
+      const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, qFS=16, aFS=14, secFS=20;
+      const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
+      const blocks=relevantQa.map(item=>{
+        if(qaIsSection(item)){
+          const title=String(item.title||'').trim();
+          const lines=pptxMeasureWrappedLines(title,boxW,secFS,true);
+          const h=lines*pptxLineHeightIn(secFS,1.25)+0.15;
+          return {h, render:(slide,y)=>{ slide.addText(pptxStripIllegalXmlChars(title),{x:MARGIN,y,w:boxW,h:lines*pptxLineHeightIn(secFS,1.25),fontFace:FONT,fontSize:secFS,bold:true,color:theme.heading,valign:'top'}); return h; }};
+        }
+        const q=String(item.question||'').trim();
+        const hasA=!!String(item.answer||'').trim();
+        const a=hasA?String(item.answer).trim():'No answer provided';
+        const qLines=pptxMeasureWrappedLines(q,boxW,qFS,true);
+        const aLines=pptxMeasureWrappedLines(a,boxW,aFS,false);
+        const qH=qLines*pptxLineHeightIn(qFS,1.25), aH=aLines*pptxLineHeightIn(aFS,1.25);
+        const h=qH+aH+0.18;
+        return {h, render:(slide,y)=>{
+          slide.addText(pptxStripIllegalXmlChars(q),{x:MARGIN,y,w:boxW,h:qH,fontFace:FONT,fontSize:qFS,bold:true,color:theme.fg,valign:'top'});
+          slide.addText(pptxStripIllegalXmlChars(a),{x:MARGIN,y:y+qH+0.04,w:boxW,h:aH,fontFace:FONT,fontSize:aFS,italic:!hasA,color:hasA?theme.muted:theme.hint,valign:'top'});
+          return h;
+        }};
+      });
+      let pageBlocks=[],usedH=0; const pages=[];
+      blocks.forEach(b=>{ if(pageBlocks.length&&usedH+b.h>availH){ pages.push(pageBlocks); pageBlocks=[]; usedH=0; } pageBlocks.push(b); usedH+=b.h; });
+      if(pageBlocks.length) pages.push(pageBlocks);
+      pages.forEach((page,pi)=>{
+        const slide=pres.addSlide();
+        slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+        slide.addText(pi===0?'Q&A':"Q&A (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
+        let y=bodyTop;
+        page.forEach(b=>{ y+=b.render(slide,y); });
+      });
+    }
+  }
+
+  // --- Notepad section — mirrors docxBuildNotepadSection's intent, but text-only: lists/tables
+  // get flattened to plain paragraphs rather than kept as real list/table structures the way
+  // Word's version preserves them (docxNoteBlocks does real HTML→OOXML conversion; pptxgenjs
+  // text runs don't have an equivalent to lean on here without a lot more plumbing). Paragraphs
+  // are split on block-level boundaries, then paginated the same way as Q&A above.
+  if(padNotepadExportEnabled){
+    const padHtml=cleanEditorHtml(el('pad-editor'));
+    if(htmlHasVisibleContent(padHtml)){
+      const withBreaks=String(padHtml).replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
+      const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
+      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+      if(paras.length){
+        const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
+        const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
+        const blocks=paras.map(p=>{ const lines=pptxMeasureWrappedLines(p,boxW,fs,false); return {h:lines*pptxLineHeightIn(fs,1.3)+0.12, text:p, lines}; });
+        let pageBlocks=[],usedH=0; const pages=[];
+        blocks.forEach(b=>{ if(pageBlocks.length&&usedH+b.h>availH){ pages.push(pageBlocks); pageBlocks=[]; usedH=0; } pageBlocks.push(b); usedH+=b.h; });
+        if(pageBlocks.length) pages.push(pageBlocks);
+        pages.forEach((page,pi)=>{
+          const slide=pres.addSlide();
+          slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+          slide.addText(pi===0?'Notepad':"Notepad (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
+          let y=bodyTop;
+          page.forEach(b=>{
+            const h=b.lines*pptxLineHeightIn(fs,1.3);
+            slide.addText(pptxStripIllegalXmlChars(b.text), {x:MARGIN, y, w:boxW, h, fontFace:FONT, fontSize:fs, color:theme.fg, valign:'top', lineSpacingMultiple:1.3});
+            y+=h+0.12;
+          });
+        });
+      }
+    }
+  }
+
   return pres;
 }
 async function exportPptx(){
