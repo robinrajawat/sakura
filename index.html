@@ -12324,7 +12324,26 @@ const CTX_GROUP_ORDER=['insert','structure','ai','notes','delete']; // order for
 
 function _ctxNoteLabelText(){const idx=getIndex(contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); const hasCode=!!(n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()); return (hasNote||hasCode)?'Edit note…':'Add note…'}
 
-function renderContextQuickbar(){
+// Builds the entire merged top row of the context menu in one pass: the fixed
+// Confirmed/Issue/Parked/Follow-up marker strip (mirrors Presenter's quick-mark
+// popover, see openNodeMarkerPopover) followed by the user-configurable quick
+// actions (Settings → Right-click menu). Markers are deliberately NOT part of
+// CTX_ACTION_ORDER/contextQuickActions — a fixed 5-icon strip is compact enough
+// to always show, and threading it through the configurable-quickbar machinery
+// built for a variable-length, user-orderable list would be a lot of plumbing
+// for one fixed row. Re-rendering markers on every open (rather than building
+// them once at boot) costs nothing at 5 buttons and means this one function is
+// the single place that knows how to paint the row — marker clicks are handled
+// by the same delegated listener as quick-action clicks (see the context-menu
+// click handler), so there's no separate listener-attachment step to keep in
+// sync with the rebuild.
+function renderContextTopRow(){
+  const markerRow=el('context-marker-row');
+  if(markerRow){
+    const curNode=contextMenuNodeId!==null?nodes.find(n=>n.id===contextMenuNodeId):null;
+    const curMarker=curNode?(curNode.marker||''):'';
+    markerRow.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark${curMarker===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`).join('');
+  }
   const bar=el('context-quickbar'); if(!bar)return;
   bar.innerHTML='';
   const quickSet=new Set(contextQuickActions);
@@ -12397,38 +12416,12 @@ function renderContextMorePanel(){
 
 function hideContextMenu(){const menu=el('context-menu'); if(!menu)return; menu.classList.remove('open'); menu.style.left=''; menu.style.top=''; contextMenuNodeId=null}
 function updateContextMenuState(){const menu=el('context-menu'); if(!menu)return; const roots=selectAllMode?[]:getSelectionRootIndexes(); const hasSelection=selectAllMode?false:(roots.length>0); const singleRootIdx=roots.length===1?roots[0]:null; const atTreeTop=singleRootIdx===0; const atTreeBottom=singleRootIdx!==null&&getSubtreeEnd(singleRootIdx)>=nodes.length; const set=(action,enabled)=>{const btn=menu.querySelector(`[data-action="${action}"]`); if(btn){btn.disabled=!enabled; btn.style.opacity=enabled?'1':'.45'; btn.style.pointerEvents=enabled?'auto':'none'}}; set('child',selectedId!==null&&!selectAllMode); set('above',selectedId!==null&&!selectAllMode); set('below',selectedId!==null&&!selectAllMode); set('duplicate',hasSelection); set('focus',selectedId!==null&&!selectAllMode&&multiSelectedIds.length<=1); set('tags',selectedId!==null&&!selectAllMode); set('up',roots.length===1&&!atTreeTop); set('down',roots.length===1&&!atTreeBottom); set('delete',hasSelection||selectAllMode); const canSort=singleRootIdx!==null&&nodeHasChildren(singleRootIdx); set('sort-az',canSort); set('sort-za',canSort); set('sort-depth',canSort); const sortLabel=el('context-sort-label'); if(sortLabel)sortLabel.style.display=canSort?'':'none';
-  // Marker row reflects whichever node the menu was actually opened on (contextMenuNodeId),
-  // not the broader multi-selection — mirrors the presenter popover's own single-node marker
-  // row, since "mark all N selected nodes at once" isn't something either surface offers today.
-  const curNode=contextMenuNodeId!==null?nodes.find(n=>n.id===contextMenuNodeId):null;
-  const curMarker=curNode?(curNode.marker||''):'';
-  menu.querySelectorAll('.pv-qm-mark').forEach(b=>{b.classList.toggle('active',!!curMarker&&b.dataset.marker===curMarker)});
-}
-// Builds the small Confirmed/Issue/Parked/Follow-up row pinned to the top of the right-click
-// context menu — the editor-mode equivalent of Presenter's quick-mark popover (openNodeMarkerPopover),
-// so a marker can be set/cleared without ever entering Presenter mode. Deliberately NOT part of
-// the CTX_ACTION_ORDER/quickbar system the rest of this menu uses (Settings → Right-click menu
-// customization) — a fixed 4-icon strip is compact enough to always show, and threading it
-// through that whole customizable-quickbar machinery would be a lot of plumbing for one row.
-// Reuses markIconSvg/nodeMarkerLabel/nodeMarkerColor from the presenter popover code for the
-// exact same icons and labels in both places. setNodeMarker itself already toggles — clicking
-// the already-active marker again clears it, same as Presenter.
-function initContextMarkerRow(){
-  const row=el('context-marker-row'); if(!row)return;
-  row.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`).join('');
-  row.querySelectorAll('.pv-qm-mark').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      if(contextMenuNodeId===null)return;
-      setNodeMarker(contextMenuNodeId,btn.dataset.marker);
-      hideContextMenu();
-      render();
-    });
-  });
+  // Marker active-state is set by renderContextTopRow when it builds the buttons (every
+  // call site here calls that first) — nothing marker-related left to do in this function.
 }
 let _ctxLastX=0,_ctxLastY=0;
 function _clampContextMenuPosition(x,y){const menu=el('context-menu'); if(!menu)return; const rect=menu.getBoundingClientRect(); const maxX=window.innerWidth-rect.width-8; const maxY=window.innerHeight-rect.height-8; menu.style.left=Math.max(8,Math.min(x,maxX))+'px'; menu.style.top=Math.max(8,Math.min(y,maxY))+'px'}
-function showContextMenu(x,y,id){if(id!==null&&id!==undefined){contextMenuNodeId=id; setSingleSelection(id); render()} const menu=el('context-menu'); if(!menu)return; renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState(); _ctxLastX=x; _ctxLastY=y; const moreToggle=el('context-more-toggle'); const morePanel=el('context-more-panel'); if(moreToggle){moreToggle.classList.remove('expanded'); moreToggle.setAttribute('aria-expanded','false')} if(morePanel)morePanel.classList.remove('open'); menu.style.left='-9999px'; menu.style.top='-9999px'; menu.classList.add('open'); _clampContextMenuPosition(x,y)}
+function showContextMenu(x,y,id){if(id!==null&&id!==undefined){contextMenuNodeId=id; setSingleSelection(id); render()} const menu=el('context-menu'); if(!menu)return; renderContextTopRow(); renderContextMorePanel(); updateContextMenuState(); _ctxLastX=x; _ctxLastY=y; const moreToggle=el('context-more-toggle'); const morePanel=el('context-more-panel'); if(moreToggle){moreToggle.classList.remove('expanded'); moreToggle.setAttribute('aria-expanded','false')} if(morePanel)morePanel.classList.remove('open'); menu.style.left='-9999px'; menu.style.top='-9999px'; menu.classList.add('open'); _clampContextMenuPosition(x,y)}
 el('context-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); const toggle=el('context-more-toggle'); const panel=el('context-more-panel'); if(!toggle||!panel)return; const open=!panel.classList.contains('open'); panel.classList.toggle('open',open); toggle.classList.toggle('expanded',open); toggle.setAttribute('aria-expanded',String(open)); _clampContextMenuPosition(_ctxLastX,_ctxLastY)});
 
 // Settings: which actions appear in the quick row
@@ -12442,7 +12435,7 @@ function setupContextQuickbarSettings(){
       contextQuickActions=CTX_ACTION_ORDER.filter(a=>set.has(a));
       savePrefs();
       // re-render in case the menu is open (harmless no-op otherwise)
-      if(el('context-menu')?.classList.contains('open')){renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState()}
+      if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
     });
   });
 }
@@ -16197,7 +16190,11 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='toggle-checked'){if(multiSelectedIds.length>1)toggleCheckboxMulti(); else{const _ri2=getIndex(_ctxNodeId); if(_ri2>=0&&isCheckboxNode(nodes[_ri2]))toggleCheckbox(_ctxNodeId);} return}
   if(action==='delete'){const ok=await confirmDeleteIfNeeded(); if(!ok)return; deleteSelected(); focusPane(); return}
 }
-el('context-menu').addEventListener('click',async e=>{const btn=e.target.closest('[data-action]'); if(!btn)return; const action=btn.dataset.action; const _ctxNodeId=contextMenuNodeId??selectedId; const _ctxAnchor=(action==='note'||action==='tags')?{left:_ctxLastX,right:_ctxLastX,top:_ctxLastY,bottom:_ctxLastY,height:0,width:0}:undefined; hideContextMenu(); await runQuickAction(action,_ctxNodeId,_ctxAnchor);});
+el('context-menu').addEventListener('click',async e=>{
+  const markBtn=e.target.closest('.pv-qm-mark');
+  if(markBtn){ e.stopPropagation(); if(contextMenuNodeId!==null){setNodeMarker(contextMenuNodeId,markBtn.dataset.marker); hideContextMenu(); render();} return; }
+  const btn=e.target.closest('[data-action]'); if(!btn)return; const action=btn.dataset.action; const _ctxNodeId=contextMenuNodeId??selectedId; const _ctxAnchor=(action==='note'||action==='tags')?{left:_ctxLastX,right:_ctxLastX,top:_ctxLastY,bottom:_ctxLastY,height:0,width:0}:undefined; hideContextMenu(); await runQuickAction(action,_ctxNodeId,_ctxAnchor);
+});
 el('search-close').addEventListener('click',closeSearch);
 el('search-prev').addEventListener('click',()=>jumpSearch(-1));
 el('search-next').addEventListener('click',()=>jumpSearch(1));
@@ -18493,7 +18490,7 @@ document.addEventListener('visibilitychange',()=>{
 
 let zenMode=false;
 let _zenAutoHidToolbar=false; let _zenAutoHidPad=false; let _zenAutoHidSidebar=false;
-loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); initContextMarkerRow(); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setBoldKeyLabels(boldKeyLabels,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
+loadPrefs(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setScheduleHours(scheduleDarkStart,scheduleLightStart,false); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogLabelBold(decisionLogLabelBold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setBoldKeyLabels(boldKeyLabels,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowQueued(autoRewriteChipShowQueued,false); setAutoRewriteChipShowCountdown(autoRewriteChipShowCountdown,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search, templates === */
@@ -27065,7 +27062,7 @@ EXTRAS_TB_BUTTONS.forEach(key=>{ el('extb-'+key)?.addEventListener('change', e=>
 
 // Right-click menu: full removal (both quick row and More), separate from the
 // quick-row-vs-More placement grid above. ctxActionAllowed() (near CTX_ACTION_ORDER)
-// checks this array too, so hidden actions vanish from both renderContextQuickbar and
+// checks this array too, so hidden actions vanish from both renderContextTopRow and
 // renderContextMorePanel automatically — no need to duplicate the filtering here.
 function applyContextHiddenActions(){
   CTX_HIDE_KEYS.forEach(key=>{
@@ -27094,7 +27091,7 @@ function setContextActionHidden(key,hidden,persist=true){
   contextHiddenActions=CTX_HIDE_KEYS.filter(k=>set.has(k));
   applyContextHiddenActions();
   if(persist) savePrefs();
-  if(el('context-menu')?.classList.contains('open')){renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState()}
+  if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
 }
 CTX_HIDE_KEYS.forEach(key=>{ el('ctxh-'+key)?.addEventListener('change', e=>setContextActionHidden(key, !e.target.checked)) });
 
@@ -27184,7 +27181,7 @@ function restoreEditorsChoiceSnapshot(snap){
     if(el('presenter-notes-panel')?.classList.contains('open'))applyPresenterNotesButtonVisibility();
   }
   CTX_ACTION_ORDER.forEach(a=>{ const cb=el('ctxq-'+a); if(cb) cb.checked=contextQuickActions.includes(a); });
-  if(el('context-menu')?.classList.contains('open')){renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState()}
+  if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
   if(snap.hideTreeLines!==undefined)setHideTreeLines(snap.hideTreeLines,false);
   refreshAllToolbarSummaries();
   savePrefs(); scheduleAutoSave();
@@ -27259,7 +27256,7 @@ function applyEditorsChoicePreset(silent){
   contextHiddenActions=CTX_HIDE_KEYS.filter(k=>!editorsChoiceKeep.includes(k));
   applyContextHiddenActions();
   CTX_ACTION_ORDER.forEach(a=>{ const cb=el('ctxq-'+a); if(cb) cb.checked=contextQuickActions.includes(a); });
-  if(el('context-menu')?.classList.contains('open')){renderContextQuickbar(); renderContextMorePanel(); updateContextMenuState()}
+  if(el('context-menu')?.classList.contains('open')){renderContextTopRow(); renderContextMorePanel(); updateContextMenuState()}
 
   // Node Quick Assist (the Ctrl/Cmd+Space mid-edit menu): icon-only row, trimmed to the
   // three actions worth a dedicated slot while writing — Note (which now covers Code too,
