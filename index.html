@@ -2539,6 +2539,50 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #pad-editor::-webkit-scrollbar-thumb,#note-editor::-webkit-scrollbar-thumb,#code-editor-wrap::-webkit-scrollbar-thumb,#qa-body::-webkit-scrollbar-thumb,#decision-body::-webkit-scrollbar-thumb,
 #code-editor::-webkit-scrollbar-thumb,#code-view::-webkit-scrollbar-thumb,.pv-inline-code-body::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--edit-bg);background-clip:padding-box}
+/* ── Generic PDF export overlay (Q&A / To-Dos / Meeting Notes standalone exports) ──────────
+   Off-screen at all times except while body.printing-generic is active (set by
+   printHtmlAsPdf), same pattern as #preview-overlay's own printing-preview treatment —
+   built once here as static CSS rather than injected per-export since, unlike the main
+   document PDF, none of this needs runtime-configurable margins/branding/footer. */
+#gpe-overlay{display:none}
+body.printing-generic > *:not(#gpe-overlay){display:none!important}
+body.printing-generic{background:#fff!important}
+body.printing-generic #gpe-overlay{
+  display:block!important; position:static!important; background:#fff; color:#1f1c14;
+  font-family:'Inter',Helvetica,Arial,sans-serif;
+}
+@media print{
+  @page{margin:20mm}
+  #gpe-doc{max-width:100%;padding:0}
+  #gpe-title{font:700 22px 'Inter',sans-serif;color:#1f1c14;margin-bottom:4px}
+  .gpe-meta{font:400 12.5px 'Inter',sans-serif;color:#79756b;margin-bottom:22px}
+  .gpe-section-heading{font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#79756b;margin:22px 0 10px;border-top:1px solid #d6d2c7;padding-top:14px}
+  .gpe-section-heading:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  .gpe-empty{font:400 12.5px 'Inter',sans-serif;font-style:italic;color:#a3a099}
+  /* Task/action-item rows (To-Dos, Meeting Notes action items) */
+  .gpe-task{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font:400 13px 'Inter',sans-serif;color:#1f1c14;break-inside:avoid}
+  .gpe-task-box{flex:0 0 auto;width:14px;height:14px;margin-top:2px;border:1.5px solid #a3a099;border-radius:3px;position:relative}
+  .gpe-task.done .gpe-task-box{background:#79756b;border-color:#79756b}
+  .gpe-task.done .gpe-task-box::after{content:'';position:absolute;left:3px;top:0px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+  .gpe-task-text{flex:1 1 auto;min-width:0}
+  .gpe-task.done .gpe-task-text{color:#a3a099;text-decoration:line-through}
+  .gpe-task-meta{font-size:11px;color:#a3a099;margin-top:2px}
+  .gpe-subtask{margin-left:22px}
+  /* Q&A rows */
+  .gpe-qa-row{padding:10px 0;border-top:1px solid #ece9e2;break-inside:avoid}
+  .gpe-qa-row:first-child{border-top:none}
+  .gpe-qa-q{font:600 13px 'Inter',sans-serif;color:#1f1c14;margin-bottom:4px}
+  .gpe-qa-a{font:400 13px 'Inter',sans-serif;color:#5c584f}
+  .gpe-qa-a.gpe-empty{color:#a3a099;font-style:italic}
+  .gpe-qa-section-label{font:700 12px 'Inter',sans-serif;color:#2c4a6e;margin-top:14px}
+  /* Meeting Notes single export */
+  .gpe-mtg-field-label{font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#79756b;margin:18px 0 8px}
+  .gpe-mtg-field-label:first-of-type{margin-top:0}
+  .gpe-mtg-body{font:400 13px 'Inter',sans-serif;color:#1f1c14;line-height:1.55}
+  .gpe-mtg-body p{margin:0 0 8px}
+  .gpe-mtg-body ul,.gpe-mtg-body ol{margin:0 0 8px;padding-left:22px}
+  .gpe-mtg-link-row{font:400 13px 'Inter',sans-serif;color:#1f1c14;padding:3px 0}
+}
 </style>
 <style>
 /* === Todos panel === */
@@ -4706,7 +4750,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>An app-level task list — not tied to any document, node, or Pad. One shared list across your whole workspace</li>
 <li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">U</span>; the same shortcut closes it again</li>
-<li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen); the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> button next to it exports the whole list as plain text</li>
+<li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen); the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> button next to it exports the whole list as a PDF</li>
 <li>Type a task and press Enter (or use the + button) to add it — the box grows as you type so long tasks stay readable. Shift+Enter inserts a line break instead of adding the task, both here and while editing an existing task's text</li>
 <li>The clock icon next to Export opens <strong>Version History</strong> for the whole list — same idea as a document's Version History, kept separately since To-Dos isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first, so restoring is never itself destructive) — keeps the last 20 versions, app-wide</li>
 <li>Checking a task off moves it straight to <strong>Completed</strong>, most-recently-finished first; unchecking sends it back to <strong>Open</strong></li>
@@ -4738,7 +4782,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Each note has a title, date, and an optional time of day (shown on the row next to the date, e.g. "2:30 PM") — just a quick time reference, not a full scheduling system, so there's no separate end time or duration to fill in. Below that: attendee chips (type a name, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add one; <span class="help-kbd">Backspace</span> on an empty field removes the last), an Agenda field and a Notes field (both light rich text — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to each field's label; <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, with their own undo/redo, plus a small AI-rewrite icon that appears on hover next to each field's label). Highlight any text in either field and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight (a yellow inline highlight, click again on already-highlighted text to remove it), Link, and Rewrite (AI, rewrites just the highlighted phrase); Link and Rewrite have no other way in from these two fields' own fixed toolbar. Settings → Editing → "Selection formatting popover" turns this off if it's not wanted. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> in the title, attendees, Agenda, Notes, or any action item field opens a small character-insert menu (em dash, en dash, arrow, check mark, cross mark, middle dot, date/time) — the same mini menu Node Quick Assist uses elsewhere, restricted to what makes sense outside outline editing. Below the fields sits a list of action items</li>
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
-<li>Export a single meeting note as formatted text (download icon on hover, next to trash) — a .md file using Markdown syntax (headings, **bold**, *italic*, ~~strikethrough~~, bullets, links) carried over from what you typed, not flattened to bare plain text. The title and section labels (Agenda, Notes, Action Items, Linked Nodes) use the smallest Markdown heading level (H6 — "Subsection" in Windows 11 Notepad's own heading dropdown), so they still read as real headings rather than plain body text, without the oversized look a top-level heading gets in Notepad's formatted view. Genuine headings you actually typed inside Agenda/Notes are kept as real Markdown headings too, nudged down toward that same small end of the scale rather than reproduced at their original (often much larger) level. Windows 11's modern Notepad and other Markdown-aware apps render this as real formatting — Notepad specifically only keeps that rendering on save if the file is named .md, so that's the extension used here rather than .txt. Action items come through as a checklist (completed ones struck through), and linked nodes/documents as a plain list. To-Dos' own list export and Q&amp;A's own export use the same approach</li>
+<li>Export a single meeting note as a PDF (download icon on hover, next to trash) — title, date/time/attendees, Agenda and Notes with their real formatting (bold, italic, lists, links), Action Items as a checklist (completed ones struck through), and Linked Nodes as a plain list. To-Dos' own list export and Q&amp;A's own export produce a PDF the same way</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
 <li>The clock icon in the panel header opens <strong>Version history</strong> for the whole list — same idea as To-Dos' own, kept separately since Meeting Notes isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
 <li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
@@ -5141,7 +5185,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="diagram-bulk-count" class="diagrams-only-btn diagram-bulk-btn"></span>
     <button class="note-tb-btn diagrams-only-btn diagram-bulk-btn" id="dtb-bulk-delete" data-tip="Delete selected diagrams"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as formatted text (.md)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
   </div>
   <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links, attach files."></div>
   <div id="qa-body">
@@ -5222,7 +5266,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="todos-panel-title">To-Dos</span>
     <button id="todos-extract-btn" data-tip="Extract action items from document (AI)" aria-label="Extract action items from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/><path d="M9 20h6"/><path d="M10 20v-3"/><path d="M14 20v-3"/></svg></button>
     <button id="todos-summary-btn" data-tip="Status summary (AI)" aria-label="Generate status summary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
-    <button id="todos-export-btn" data-tip="Export list as formatted text (.md)" aria-label="Export list as formatted text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button id="todos-export-btn" data-tip="Export list as PDF" aria-label="Export list as PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
     <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -13630,6 +13674,45 @@ function mdBlocksFromHtml(html,headingOffset){
 }
 function downloadMd(filename,content){
   downloadBlob(filename,'text/markdown;charset=utf-8',content);
+}
+// ── Generic PDF export for standalone panels (Q&A, To-Dos, Meeting Notes) ─────────────────
+// Same underlying technique as exportPreviewAsPdf (window.print() against a purpose-built,
+// print-only overlay), just generalized: any caller hands in a title + body HTML string and
+// gets a properly paginated, light-themed PDF via the browser's native print-to-PDF, without
+// needing its own bespoke overlay/cleanup wiring. Kept deliberately simpler than
+// exportPreviewAsPdf (no cover page, no branding, no configurable margin) since none of these
+// three panels have asked for that yet — can grow into sharing more of exportPreviewAsPdf's
+// machinery later if that changes.
+let _genericPrintActive=false;
+function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
+  if(_genericPrintActive)return; // re-entrancy guard — a second export mid-print would corrupt the first's overlay
+  _genericPrintActive=true;
+  const overlay=document.createElement('div');
+  overlay.id='gpe-overlay';
+  overlay.innerHTML=`<div id="gpe-doc"><div id="gpe-title">${titleHtml}</div>${bodyHtml}</div>`;
+  document.body.appendChild(overlay);
+  document.body.classList.add('printing-generic');
+  const originalTitle=document.title;
+  document.title=String(filenameTitle||'Sakura').replace(/[\\/:*?"<>|]+/g,'_');
+  let cleanupDone=false;
+  const cleanup=()=>{
+    if(cleanupDone)return; cleanupDone=true;
+    _genericPrintActive=false;
+    document.body.classList.remove('printing-generic');
+    document.title=originalTitle;
+    overlay.remove();
+    window.removeEventListener('afterprint',cleanup);
+    mq?.removeEventListener?.('change',mqHandler);
+    if(typeof onDone==='function')onDone();
+  };
+  window.addEventListener('afterprint',cleanup);
+  // Same double-signal + timeout-fallback redundancy as exportPreviewAsPdf's cleanup — see its
+  // own comment for why matchMedia backs up afterprint rather than relying on either alone.
+  const mq=window.matchMedia?window.matchMedia('print'):null;
+  const mqHandler=e=>{ if(!e.matches) cleanup(); };
+  mq?.addEventListener?.('change',mqHandler);
+  setTimeout(cleanup,15000);
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
 }
 // ── Reverse of mdBlocksFromHtml, above — used so AI rewrite of rich-text fields (Meeting
 // Agenda/Notes, Pad Notepad, Node Note) can round-trip through Markdown instead of flattening
@@ -22100,10 +22183,10 @@ function closeQaImport(){
   clearTimeout(_qaImportCloseTimer);
   _qaImportCloseTimer=setTimeout(()=>{ ov.classList.remove('open','closing'); },220);
 }
-// Reads a pasted block of Q&A content into {question,answer} pairs. Understands Sakura's own
-// Q&A export format (**Q:** / *A:* pairs, see exportQaText above) so a .md export round-trips
-// straight back in, plus plainer "Q:"/"Question:" and "A:"/"Answer:" markers (with or without
-// markdown emphasis) for content pasted from meeting notes, interview transcripts, etc. A line
+// Reads a pasted block of Q&A content into {question,answer} pairs. Understands the
+// **Q:** / *A:* convention (still common in content pasted from elsewhere — emails, docs,
+// meeting notes, interview transcripts), plus plainer "Q:"/"Question:" and "A:"/"Answer:"
+// markers (with or without markdown emphasis). A line
 // without a marker is treated as a continuation of whichever field is currently open, so
 // multi-line answers survive the round trip too. If no Q/A markers appear anywhere in the
 // pasted text, falls back to the same convention Scan/AI-generate use: every line ending in
@@ -22970,19 +23053,18 @@ function buildQaPlainText(){
     return `Q: ${q}\nA: ${a||'No answer provided'}`;
   }).join('\n\n');
 }
-function exportQaText(){
+function exportQaAsPdf(){
   if(!qaItems.some(it=>!qaIsSection(it)&&(it.question||'').trim())){ showToast('No Q&A rows to export yet'); return; }
-  const title=(getMeta().title||'tree');
+  const title=(getMeta().title||'Tree');
   const relevant=qaItems.filter(it=>qaIsSection(it)?(it.title||'').trim():(it.question||'').trim());
-  let body='###### '+escMd(title)+' — Q&A\n\n';
+  let body='';
   relevant.forEach(it=>{
-    if(qaIsSection(it)){ body+='**Section:** '+escMd(String(it.title||'').trim())+'\n\n'; return; }
+    if(qaIsSection(it)){ body+=`<div class="gpe-qa-section-label">${esc(String(it.title||'').trim())}</div>`; return; }
     const q=String(it.question||'').trim();
     const a=String(it.answer||'').trim();
-    body+='**Q:** '+escMd(q)+'\n\n';
-    body+='*A:* '+(a?escMd(a):'No answer provided')+'\n\n';
+    body+=`<div class="gpe-qa-row"><div class="gpe-qa-q">${esc(q)}</div><div class="gpe-qa-a${a?'':' gpe-empty'}">${a?esc(a):'No answer provided'}</div></div>`;
   });
-  downloadMd(rtfSafeFilename(title+' - QA')+'.md', body);
+  printHtmlAsPdf(title+' - QA',esc('Q&A — '+title),body);
 }
 function toggleQaSelect(id,shiftKey){
   if(shiftKey && qaSelectionAnchorId!=null && qaSelectionAnchorId!==id){
@@ -23659,7 +23741,7 @@ el('qa-search-clear')?.addEventListener('click',()=>{ const inp=el('qa-search-in
 el('qa-progress')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-progress')?.disabled)return; setQaUnansweredOnly(!qaUnansweredOnly); });
 el('qa-unlinked')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-unlinked')?.disabled)return; setQaUnlinkedOnly(!qaUnlinkedOnly); });
 el('qa-followup-count')?.addEventListener('mousedown', e=>{ e.preventDefault(); if(el('qa-followup-count')?.disabled)return; setQaFollowUpOnly(!qaFollowUpOnly); });
-el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exportQaText(); });
+el('qtb-export-txt')?.addEventListener('mousedown', e=>{ e.preventDefault(); exportQaAsPdf(); });
 el('qtb-ai-answer-all')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkDraftUnansweredAnswers(); });
 el('qtb-qa-summary')?.addEventListener('mousedown', e=>{ e.preventDefault(); generateQaSummary(); });
 el('qtb-bulk-rewrite')?.addEventListener('mousedown', e=>{ e.preventDefault(); bulkRewriteQaSelected(); });
@@ -31266,32 +31348,27 @@ function _addTagPopoverFromInput(){
   };
 
   // ── Plain text export — the To-Dos list only, nothing else in the app ───
-  function exportTodosAsText(){
+  function exportTodosAsPdf(){
     const {open, done}=getVisibleTodos();
-    let body='###### To-Dos\n\n';
-    function taskLine(t,isDone){
-      const box=isDone?'\u2611':'\u2610';
+    function taskRow(t,isDone){
       const bits=[];
       if(t.priority&&t.priority!=='none') bits.push(priorityLabel(t.priority));
       if(t.status&&t.status!=='none') bits.push(statusLabel(t.status));
       if(t.dueDate) bits.push('Due '+t.dueDate);
       if(isDone&&t.completedAt) bits.push('Completed '+new Date(t.completedAt).toLocaleDateString());
       if(t.link) bits.push(t.link);
-      const text=escMd(t.text||'');
-      body+='- '+box+' '+(isDone?'~~'+text+'~~':text)+(bits.length?'  *('+escMd(bits.join(', '))+')*':'')+'\n';
+      const metaHtml=bits.length?`<div class="gpe-task-meta">${esc(bits.join(' · '))}</div>`:'';
+      let html=`<div class="gpe-task${isDone?' done':''}"><div class="gpe-task-box"></div><div class="gpe-task-text">${esc(t.text||'')}${metaHtml}</div></div>`;
       (t.subtasks||[]).forEach(s=>{
-        const sbox=s.done?'\u2611':'\u2610';
-        const stext=escMd(s.text||'');
-        body+='  - '+sbox+' '+(s.done?'~~'+stext+'~~':stext)+'\n';
+        html+=`<div class="gpe-task gpe-subtask${s.done?' done':''}"><div class="gpe-task-box"></div><div class="gpe-task-text">${esc(s.text||'')}</div></div>`;
       });
+      return html;
     }
-    body+='###### Open ('+open.length+')\n\n';
-    if(!open.length) body+='*(none)*\n\n';
-    open.forEach(t=>taskLine(t,false));
-    body+='\n###### Completed ('+done.length+')\n\n';
-    if(!done.length) body+='*(none)*\n\n';
-    done.forEach(t=>taskLine(t,true));
-    downloadMd('To-Dos.md', body);
+    let body=`<div class="gpe-section-heading">Open (${open.length})</div>`;
+    body+=open.length?open.map(t=>taskRow(t,false)).join(''):'<div class="gpe-empty">(none)</div>';
+    body+=`<div class="gpe-section-heading">Completed (${done.length})</div>`;
+    body+=done.length?done.map(t=>taskRow(t,true)).join(''):'<div class="gpe-empty">(none)</div>';
+    printHtmlAsPdf('To-Dos','To-Dos',body);
     showTodosToast('To-Dos exported');
   }
 
@@ -31444,7 +31521,7 @@ function _addTagPopoverFromInput(){
       openMenu?.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.focus();
     }
   });
-  document.getElementById('todos-export-btn')?.addEventListener('click', exportTodosAsText);
+  document.getElementById('todos-export-btn')?.addEventListener('click', exportTodosAsPdf);
   document.getElementById('todos-history-btn')?.addEventListener('click', openTodosHistory);
   document.getElementById('todos-history-close-x')?.addEventListener('click', closeTodosHistory);
   document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
@@ -32076,40 +32153,37 @@ function formatMeetingTimeLabel(time){
 // lists/links, via the shared Markdown library — see mdBlocksFromHtml), and action items as a
 // checklist with completed ones struck through. Windows 11's modern Notepad (and any Markdown
 // viewer) renders that syntax as real formatting; elsewhere it still reads cleanly as plain text.
-function exportSingleMeetingAsText(m){
+function exportSingleMeetingAsPdf(m){
   if(!m)return;
-  let body='###### '+escMd(m.title||'Untitled meeting')+'\n\n';
+  let body='';
   const metaBits=[];
   if(m.date) metaBits.push(formatMeetingDateLabel(m.date));
   if(m.time) metaBits.push(formatMeetingTimeLabel(m.time));
   if(m.attendees&&m.attendees.length) metaBits.push('Attendees: '+m.attendees.join(', '));
-  if(metaBits.length) body+='*'+escMd(metaBits.join('   •   '))+'*\n\n';
+  if(metaBits.length) body+=`<div class="gpe-meta">${esc(metaBits.join('   •   '))}</div>`;
   if(m.agenda&&stripHtmlToText(m.agenda).trim()){
-    body+='###### Agenda\n\n';
-    body+=mdBlocksFromHtml(m.agenda,4)+'\n';
+    body+='<div class="gpe-mtg-field-label">Agenda</div>';
+    body+=`<div class="gpe-mtg-body">${m.agenda}</div>`;
   }
   if(m.body&&stripHtmlToText(m.body).trim()){
-    body+='###### Notes\n\n';
-    body+=mdBlocksFromHtml(m.body,4)+'\n';
+    body+='<div class="gpe-mtg-field-label">Notes</div>';
+    body+=`<div class="gpe-mtg-body">${m.body}</div>`;
   }
   if(m.actionItems&&m.actionItems.length){
-    body+='###### Action Items\n\n';
+    body+='<div class="gpe-mtg-field-label">Action Items</div>';
     m.actionItems.forEach(it=>{
-      const box=it.done?'\u2611':'\u2610';
-      const text=escMd(it.text||'');
-      body+='- '+box+' '+(it.done?'~~'+text+'~~':text)+'\n';
+      body+=`<div class="gpe-task${it.done?' done':''}"><div class="gpe-task-box"></div><div class="gpe-task-text">${esc(it.text||'')}</div></div>`;
     });
-    body+='\n';
   }
   if(m.links&&m.links.length){
-    body+='###### Linked Nodes\n\n';
+    body+='<div class="gpe-mtg-field-label">Linked Nodes</div>';
     m.links.forEach(link=>{
       const info=meetingLinkResolve(link);
       const label=info.missing?'(missing)':(link.nodeId==null?(info.docTitle||'Untitled'):(info.text||'(untitled node)'));
-      body+='- '+escMd(label)+'\n';
+      body+=`<div class="gpe-mtg-link-row">${esc(label)}</div>`;
     });
   }
-  downloadMd(rtfSafeFilename(m.title||'Untitled meeting')+'.md', body);
+  printHtmlAsPdf(m.title||'Untitled meeting',esc(m.title||'Untitled meeting'),body);
   showMeetingsToast('Meeting exported');
 }
 function toggleMeetingExpanded(id){
@@ -32267,9 +32341,9 @@ function buildMeetingRowSummary(m){
   const snippetText=meetingRowSnippet(m);
   if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='meeting-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
   summary.appendChild(dateEl); summary.appendChild(content);
-  const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as formatted text (.md)';
+  const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as PDF';
   exportBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  exportBtn.addEventListener('click',e=>{ e.stopPropagation(); exportSingleMeetingAsText(m); });
+  exportBtn.addEventListener('click',e=>{ e.stopPropagation(); exportSingleMeetingAsPdf(m); });
   summary.appendChild(exportBtn);
   const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='meeting-row-delete'; delBtn.dataset.tip='Delete meeting note';
   delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
