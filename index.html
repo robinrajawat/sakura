@@ -14688,6 +14688,7 @@ function docxBuildCoverPage(title,author){
 }
 function docxBuildToc(headingEntries){
   if(!headingEntries.length)return '';
+  const pageBreakBefore='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
   const title=`<w:p><w:pPr><w:pStyle w:val="TocHeading"/></w:pPr>${docxRun('Contents',{})}</w:p>`;
   const begin=`<w:p><w:pPr><w:spacing w:after="40"/></w:pPr><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-6" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`;
   const entries=headingEntries.map(h=>{
@@ -14695,8 +14696,8 @@ function docxBuildToc(headingEntries){
     return `<w:p><w:pPr><w:tabs><w:tab w:val="right" w:leader="dot" w:pos="9350"/></w:tabs><w:spacing w:after="40"/><w:ind w:left="${indent}"/></w:pPr><w:hyperlink w:anchor="${h.bookmark}"><w:r><w:rPr><w:color w:val="1F2937"/><w:sz w:val="21"/></w:rPr><w:t xml:space="preserve">${docxXmlText(h.text)}</w:t></w:r><w:r><w:tab/></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF ${h.bookmark} \\h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:hyperlink></w:p>`;
   }).join('');
   const end=`<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
-  const spacer='<w:p><w:pPr><w:spacing w:after="160"/></w:pPr></w:p>';
-  return title+begin+entries+end+spacer;
+  const pageBreakAfter='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  return pageBreakBefore+title+begin+entries+end+pageBreakAfter;
 }
 async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); _docxBookmarkCounter=0; _docxExtraRels=[]; _docxRelIdCounter=100; _docxMediaFiles=[]; _docxImageExtsUsed=new Set(); const paras=[]; if(coverPageEnabled)paras.push(docxBuildCoverPage(rawTitle,rawAuthor)); paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:'C96442'})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
   const scopeForDocx=getScopedNodes(true,foldOverride||previewCollapsedIds);
@@ -14717,8 +14718,10 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
     const fmt={bold:!!n.styles?.bold,italic:!!n.styles?.italic,underline:!!n.styles?.underline,strike:!!n.styles?.strike};
     if(n.styles?.color)fmt.color=docxColorHex(n.styles.color);
     if(n.styles?.highlight)fmt.highlight=docxHighlightVal(n.styles.highlight);
+    const isSectionNode=nodeIsSection(n);
     let bookmarkName='';
     if(headingLevel>0){ bookmarkName='_Toc_h'+headingEntries.length; headingEntries.push({level:Math.min(6,headingLevel),text:displayText,bookmark:bookmarkName}); }
+    else if(isSectionNode){ bookmarkName='_Toc_h'+headingEntries.length; headingEntries.push({level:1,text:displayText,bookmark:bookmarkName}); }
     bodyParas.push(docxParagraph(displayText,left,fmt,semantic,docxNumbers[idx],{headingLevel,bookmarkName,markerGlyph:n.marker?nodeMarkerGlyph(n.marker):'',markerColor:n.marker?docxColorHex(nodeMarkerColor(n.marker)):''}));
     if(n.tags&&n.tags.length){
       bodyParas.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:ind w:left="${left}"/><w:spacing w:before="0" w:after="60"/></w:pPr>${docxRun(n.tags.map(t=>'#'+t).join('  '),{size:18,color:'9B9890'})}</w:p>`);
@@ -25877,21 +25880,6 @@ function exportPreviewAsPdf(onDone){
       }
       body.printing-preview .pv-toc-dlog-item.active{
         background:none !important; box-shadow:none !important; font-weight:400 !important;
-      }
-      /* Page numbers: target-counter() is the only CSS mechanism for "what page is this link's
-         target on" — unlike Word's native PAGEREF field, browser support for it in the print/PDF
-         path is not reliable (still an open Chromium feature request as of this writing). The
-         @supports guard means browsers that don't understand it just keep today's plain,
-         numberless TOC rather than rendering something broken. float:right (not flexbox) so it
-         coexists with white-space:normal above — headings intentionally wrap onto multiple lines
-         in print rather than truncating, and a flex+justify-content layout would fight that. */
-      @supports (content: target-counter(attr(href url), page)) {
-        body.printing-preview .pv-toc-item::after,
-        body.printing-preview .pv-toc-dlog-item::after{
-          content: target-counter(attr(href url), page) !important;
-          float:right !important; margin-left:10px !important;
-          color:#79756b !important; font-size:11px !important;
-        }
       }
       body.printing-preview #preview-body{
         display:block !important; overflow:visible !important;
