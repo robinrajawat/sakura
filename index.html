@@ -25789,6 +25789,16 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview #pv-doc-header { margin-bottom:24px !important; }
       body.printing-preview .pv-tag-chip-static { background:transparent !important; border:1px solid #aaa !important; color:#555 !important; }
       body.printing-preview .pv-dlog { break-inside:avoid; page-break-inside:avoid; }
+      /* Same reasoning as Presenter mode's #preview-overlay.pv-presenting .pv-note-inline-full
+         rule (commit 4fa12c1): without this, a plain-text note sitting right next to a node's
+         own text reads as close to equally prominent, undermining the point of it being a
+         small secondary annotation. em-based so it stays proportionally smaller relative to
+         whatever line it's on (plain bullet or heading) rather than a fixed px size that would
+         look wrong at some depths. Icon shrunk to match for the same reason the presenter rule
+         shrinks it — the SVG's own width/height attributes don't respond to the container alone. */
+      body.printing-preview .pv-note-inline-full{ font-size:0.65em !important; }
+      body.printing-preview .node-note-dot-plain{ width:13px !important; height:13px !important; font-size:8px !important; }
+      body.printing-preview .node-note-dot-plain svg{ width:9px !important; height:9px !important; }
     }
   `;
   document.head.appendChild(style);
