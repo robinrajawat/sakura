@@ -15319,23 +15319,48 @@ async function buildPptxPresentation(slidesData){
   pres.company='Sakura';
 
   const MARGIN=0.6; // inches
-  const FONT='Inter'; // same face Presenter mode uses; PowerPoint substitutes a default if not installed
+  const FONT='Calibri'; // NOT 'Inter' — see pptxMeasureWrappedLines's comment for why
+
+  // Layout for a Note's own card (see pptxRenderNoteCard) — a real filled/bordered box with a
+  // colored left strip, replacing the old bare-accent-bar treatment that made a note read as
+  // just another flat line rather than a distinct block. NOTE_CARD_TEXT_INSET is the strip's
+  // width plus the small gap between it and where the text actually starts; pptxItemHeight and
+  // pptxRenderNoteCard both derive the text area's width from pptxNoteCardTextWidth rather than
+  // each recomputing it, so they can't drift apart the way separate copies of this kind of
+  // arithmetic have before.
+  const NOTE_CARD_STRIP_W=0.05, NOTE_CARD_TEXT_INSET=0.18, NOTE_CARD_RIGHT_PAD=0.14,
+        NOTE_CARD_PAD_TOP=0.12, NOTE_CARD_PAD_BOTTOM=0.12, NOTE_CARD_BOTTOM_MARGIN=0.08;
+  function pptxNoteCardTextWidth(boxW,indentLevel){
+    return Math.max(0.5, boxW-indentLevel*0.3-NOTE_CARD_TEXT_INSET-NOTE_CARD_RIGHT_PAD);
+  }
 
   // pptxgenjs/PowerPoint don't report back how many lines a string actually wraps to at a given
   // box width and font size, so this measures it for real instead of guessing via a fixed
   // chars-per-line ratio — a ratio badly underestimates line count for text with a lot of
   // capitals/wide characters (acronyms, abbreviations — exactly what technical decision-log
   // content tends to be full of), which is what let long field values still overlap the next
-  // field after the first height-estimation pass. Uses the actual 'Inter' web font already
-  // loaded for the app UI, via an offscreen canvas — real glyph metrics, not an approximation.
+  // field after the first height-estimation pass.
+  //
+  // Measures against Calibri, not 'Inter' (the app's own UI font) — this was the actual root
+  // cause behind every wrapped-line-count-too-low overlap bug so far, not the run-splitting
+  // logic those earlier fixes went after. Inter is a web font loaded only via this page's own
+  // CSS; it's essentially never installed as a real system/Office font, so however carefully
+  // this function measured Inter's specific glyph widths, PowerPoint would silently substitute
+  // a different font to actually display the file — measuring one font perfectly and rendering
+  // a differently-shaped one is why boxes kept coming out too short no matter how the text
+  // inside them was split. Calibri is Office's own default body font: likely already installed
+  // both here (so the canvas measurement reflects real glyph widths) and in whatever opens the
+  // exported file (so there's no substitution at all) — closing the gap instead of estimating
+  // around it. A small multiplier still pads the result for the remaining case (Calibri itself
+  // missing, e.g. Linux without Office's fonts installed) where some substitution is unavoidable.
   let _pptxMeasureCtx=null;
   function pptxMeasureWrappedLines(text, boxWidthIn, fontSizePt, bold){
     const s=String(text||'');
     if(!s) return 1;
     if(!_pptxMeasureCtx) _pptxMeasureCtx=document.createElement('canvas').getContext('2d');
     const ctx=_pptxMeasureCtx;
-    ctx.font=(bold?'700 ':'400 ')+fontSizePt+'pt Inter, sans-serif';
-    const boxWidthPx=Math.max(1, boxWidthIn*96); // canvas measureText works in CSS px; 96px/in
+    ctx.font=(bold?'700 ':'400 ')+fontSizePt+'pt Calibri, Carlito, Arial, sans-serif';
+    const boxWidthPx=Math.max(1, boxWidthIn*96*0.94); // canvas measureText works in CSS px; 96px/in; ~6% width buffer for residual font-substitution risk
     let totalLines=0;
     s.split('\n').forEach(paragraph=>{
       const words=paragraph.split(/\s+/).filter(Boolean);
@@ -15389,15 +15414,23 @@ async function buildPptxPresentation(slidesData){
   }
   // Per-item height: sums each segment's own wrapped-line count at its own font size (rather
   // than measuring one combined string at one assumed size, which is what under-counted before).
-  // Notes still get a small safety margin — real PowerPoint font substitution can still nudge
-  // wrapping — but there's much less to get wrong now that no single line mixes font sizes.
+  // Notes get their own formula since they render as a padded card (see pptxRenderNoteCard) —
+  // the text area is narrower than the card's full width (room for the left strip), and the
+  // returned height includes the card's real top/bottom padding plus a small bottom margin, not
+  // just the bare text height, so the cursor advances by exactly what actually gets drawn.
   function pptxItemHeight(item,boxWidthIn,fontSize,lineSpacingMultiple){
     const indentLevel=Math.max(0,item.indent||0);
-    const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
     const segments=pptxItemContentSegments(item,fontSize);
+    if(item.type==='note'){
+      const textW=pptxNoteCardTextWidth(boxWidthIn,indentLevel);
+      let totalLines=0;
+      segments.forEach(seg=>{ totalLines+=pptxMeasureWrappedLines(seg.text,textW,seg.fontSize,false); });
+      const contentH=Math.ceil(totalLines*1.08)*pptxLineHeightIn(fontSize,lineSpacingMultiple);
+      return contentH+NOTE_CARD_PAD_TOP+NOTE_CARD_PAD_BOTTOM+NOTE_CARD_BOTTOM_MARGIN;
+    }
+    const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
     let totalLines=0;
     segments.forEach(seg=>{ totalLines+=pptxMeasureWrappedLines(seg.text,availW,seg.fontSize,false); });
-    if(item.type==='note') totalLines=Math.ceil(totalLines*1.08);
     return totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
   }
   // Splits a slide's bullet list into pages that actually fit the available body height,
@@ -15632,17 +15665,35 @@ async function buildPptxPresentation(slidesData){
       }
       return runs;
     });
-    // Mirrors .pv-inline-note-body's border-left:3px solid var(--hint) and .sem-quote's
-    // border-left:2px solid var(--sem-quote) — Presenter/Preview's "marker-line" treatment
-    // for note blocks and quoted/attributed text. A merged multi-item textbox has no
-    // per-run border or background of its own (pptxgenjs text runs are color/style only),
-    // so a note or quote item gets pulled out of the shared textbox into its own positioned
-    // box with a thin accent rect beside it — same pattern as addDecisionLogCard's status bar.
+    // Quote-bearing bullets keep the lighter bare-accent-bar treatment — matches .sem-quote's
+    // own border-left-only styling (no fill), appropriate for a short attributed aside riding
+    // along with a bullet's own text. Notes get a heavier, fully bordered/filled card instead
+    // (see pptxRenderNoteCard) — matching .pv-inline-note-body, which actually has a background
+    // and border, not just a line — since a note is its own standalone block of content, not a
+    // aside tacked onto another line.
     const pptxItemAccentColor=item=>{
-      if(item.type==='note')return theme.hint;
       if(item.type==='bullet'&&pptxItemContentSegments(item,18).some(seg=>seg.kind==='quote'))return theme.semQuote;
       return null;
     };
+    // A note's real card: filled background, thin border, a colored left strip, and actual
+    // inset padding around the text — replacing the old bare-accent-bar treatment that made a
+    // note read as just another flat line with no visual separation from whatever came before
+    // or after it. pptxItemHeight already returns this card's full outer height (content +
+    // padding + a small bottom margin) for the exact same item/width, so the box drawn here and
+    // the cursor advance the caller does afterward can't disagree about how tall it is.
+    function pptxRenderNoteCard(targetSlide,item,x,y,w,fontSize,lineSpacingMultiple){
+      const indentLevel=Math.max(0,item.indent||0);
+      const boxX=x+indentLevel*0.3, boxW=w-indentLevel*0.3;
+      const totalH=pptxItemHeight(item,w,fontSize,lineSpacingMultiple);
+      const boxH=totalH-NOTE_CARD_BOTTOM_MARGIN;
+      const contentH=boxH-NOTE_CARD_PAD_TOP-NOTE_CARD_PAD_BOTTOM;
+      targetSlide.addShape('roundRect', {x:boxX, y, w:boxW, h:boxH, rectRadius:0.06, fill:{color:theme.editBg}, line:{color:theme.border, width:0.75}});
+      targetSlide.addShape('roundRect', {x:boxX+0.035, y:y+0.05, w:NOTE_CARD_STRIP_W, h:Math.max(0.05,boxH-0.1), rectRadius:0.015, fill:{color:theme.hint}, line:{type:'none'}});
+      const textX=boxX+NOTE_CARD_TEXT_INSET;
+      const textW=pptxNoteCardTextWidth(w,indentLevel);
+      targetSlide.addText(buildBulletTextRuns([item]), {x:textX, y:y+NOTE_CARD_PAD_TOP, w:textW, h:contentH, fontFace:FONT, fontSize, valign:'top', lineSpacingMultiple});
+      return totalH;
+    }
     function pptxRenderBulletBlock(targetSlide,items,x,y,w,fontSize,lineSpacingMultiple){
       let cy=y, batch=[];
       const flushBatch=()=>{
@@ -15652,12 +15703,17 @@ async function buildPptxPresentation(slidesData){
         cy+=h; batch=[];
       };
       items.forEach(item=>{
+        if(item.type==='note'){
+          flushBatch();
+          cy+=pptxRenderNoteCard(targetSlide,item,x,cy,w,fontSize,lineSpacingMultiple);
+          return;
+        }
         const accentColor=pptxItemAccentColor(item);
         if(!accentColor){ batch.push(item); return; }
         flushBatch();
         const h=pptxItemHeight(item,w,fontSize,lineSpacingMultiple);
-        targetSlide.addShape('rect', {x, y:cy+0.03, w:0.03, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
-        targetSlide.addText(buildBulletTextRuns([item]), {x:x+0.1, y:cy, w:w-0.1, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+        targetSlide.addShape('rect', {x, y:cy+0.03, w:0.045, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
+        targetSlide.addText(buildBulletTextRuns([item]), {x:x+0.14, y:cy, w:w-0.14, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
         cy+=h;
       });
       flushBatch();
