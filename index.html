@@ -10244,35 +10244,6 @@ function noteBlockLines(html){
   const text=(tmp.textContent||tmp.innerText||'');
   return text.split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
 }
-// Same source HTML as noteBlockLines, but keeps each saveNodeComment entry grouped with its own
-// timestamp instead of flattening the whole note to one line per paragraph — PPTX's NOTE block
-// (see pptxGatherSlidesData/buildBulletTextRuns) renders one bordered box per node.note field,
-// matching Presenter's single pv-inline-note-body card, rather than noteBlockLines' one-box-per-
-// paragraph explosion. Returns [{stamp, lines:[...]}], where an entry with no
-// .note-comment-stamp (manually typed in the Pad rather than captured via Presenter's "Note…"
-// popover) gets stamp:''. A note with no .note-comment-entry wrappers at all (entirely
-// hand-typed, no captures ever made) comes back as a single unstamped entry holding every line.
-function noteEntriesForExport(html){
-  if(!html)return [];
-  const marker='\uE000';
-  const tmp=document.createElement('div');
-  tmp.innerHTML=String(html);
-  const entryEls=Array.from(tmp.querySelectorAll('.note-comment-entry'));
-  const linesFrom=el=>{
-    const clone=el.cloneNode(true);
-    clone.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
-    clone.innerHTML=clone.innerHTML.replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
-    return (clone.textContent||clone.innerText||'').split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
-  };
-  if(entryEls.length){
-    return entryEls.map(entry=>({
-      stamp:(entry.querySelector('.note-comment-stamp')?.textContent||'').trim(),
-      lines:linesFrom(entry)
-    })).filter(e=>e.lines.length);
-  }
-  const lines=linesFrom(tmp);
-  return lines.length?[{stamp:'', lines}]:[];
-}
 function getDocNodesForSearch(docId,indexEntry){
   if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
   const openTab=findOpenTab(docId);
@@ -15253,8 +15224,8 @@ async function pptxGatherSlidesData(){
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
     const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
     if(ownNoteSplit){
-      const ownEntries=noteEntriesForExport(ownNoteSplit.restHtml);
-      if(ownEntries.length) items.push({type:'note', entries:ownEntries, indent:0});
+      const ownLines=noteBlockLines(ownNoteSplit.restHtml);
+      if(ownLines.length) items.push({type:'note', lines:ownLines, indent:0});
     }
     // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
     // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
@@ -15269,8 +15240,8 @@ async function pptxGatherSlidesData(){
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
       if(nodeContentExportEnabled&&childNode.note&&childNode.note.trim()){
-        const childEntries=noteEntriesForExport(splitNoteDiagramImages(childNode.note).restHtml);
-        if(childEntries.length) items.push({type:'note', entries:childEntries, indent:relDepth-1});
+        const childLines=noteBlockLines(splitNoteDiagramImages(childNode.note).restHtml);
+        if(childLines.length) items.push({type:'note', lines:childLines, indent:relDepth-1});
       }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
@@ -15383,6 +15354,51 @@ async function buildPptxPresentation(slidesData){
   function pptxLineHeightIn(fontSizePt, lineSpacingMultiple){
     return fontSizePt*(lineSpacingMultiple||1.25)/72;
   }
+  // Single source of truth for what text actually appears in a bullet/note item, in render
+  // order, with the font size each piece uses — pptxItemHeight, pptxPaginateBullets, and
+  // buildBulletTextRuns all derive from this instead of each re-deriving their own text/size
+  // split. That drift (two code paths computing slightly different things from the same item)
+  // is exactly what caused a note's measured height to fall short of what PowerPoint actually
+  // drew, silently overlapping the next item on the slide.
+  //
+  // Notes are now plain, timestamp-free lines (noteBlockLines strips each entry's
+  // .note-comment-stamp) — Word's own NoteBlock treatment, not Presenter's timestamped
+  // pv-inline-note-body card. A '>' quote/attribution (see .sem-quote / parseStyledText)
+  // still gets its own smaller italic run, but on its own line rather than sharing a wrapped
+  // line with the bullet's main text, so every segment here has one single, unambiguous font
+  // size to measure at.
+  function pptxItemContentSegments(item, baseFontSize){
+    if(item.type==='note'){
+      return [
+        {kind:'label', text:'NOTE', fontSize:11},
+        ...(item.lines||[]).map(line=>({kind:'note', text:line, fontSize:baseFontSize}))
+      ];
+    }
+    const s=String(item.text||'');
+    const qIdx=(()=>{ for(let i=0;i<s.length;i++){ if(s[i]==='>'&&(i===0||/\s/.test(s[i-1])))return i; } return -1; })();
+    if(qIdx>=0){
+      const qMain=s.slice(0,qIdx).trimEnd();
+      const qQuote=s.slice(qIdx+1).trimStart();
+      const out=[];
+      if(qMain) out.push({kind:'main', text:qMain, fontSize:baseFontSize});
+      out.push({kind:'quote', text:qQuote, fontSize:Math.round(baseFontSize*8/9)});
+      return out;
+    }
+    return [{kind:'main', text:s, fontSize:baseFontSize}];
+  }
+  // Per-item height: sums each segment's own wrapped-line count at its own font size (rather
+  // than measuring one combined string at one assumed size, which is what under-counted before).
+  // Notes still get a small safety margin — real PowerPoint font substitution can still nudge
+  // wrapping — but there's much less to get wrong now that no single line mixes font sizes.
+  function pptxItemHeight(item,boxWidthIn,fontSize,lineSpacingMultiple){
+    const indentLevel=Math.max(0,item.indent||0);
+    const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
+    const segments=pptxItemContentSegments(item,fontSize);
+    let totalLines=0;
+    segments.forEach(seg=>{ totalLines+=pptxMeasureWrappedLines(seg.text,availW,seg.fontSize,false); });
+    if(item.type==='note') totalLines=Math.ceil(totalLines*1.08);
+    return totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
+  }
   // Splits a slide's bullet list into pages that actually fit the available body height,
   // using the same real canvas measurement as the decision-log cards (pptxMeasureWrappedLines)
   // rather than guessing — a fixed-height textbox with more content than it can show just
@@ -15392,24 +15408,8 @@ async function buildPptxPresentation(slidesData){
   // problem left alone here.
   function pptxPaginateBullets(bullets, availH, boxWidthIn, fontSize, lineSpacingMultiple){
     const pages=[]; let current=[], usedH=0;
-    const paraGapIn=10/72; // paraSpaceAfter:10 in the actual addText call below, points -> inches
     bullets.forEach(b=>{
-      const indentLevel=Math.max(0,b.indent||0);
-      const indentIn=indentLevel*0.3;
-      const markerIn=0.4; // rough room for the bullet glyph + marker glyph + padding
-      const availW=Math.max(0.5, boxWidthIn-indentIn-markerIn);
-      let h;
-      if(b.type==='note'){
-        let totalLines=1;
-        (b.entries||[]).forEach(entry=>{
-          if(entry.stamp) totalLines+=1;
-          entry.lines.forEach(line=>{ totalLines+=pptxMeasureWrappedLines(line,availW,fontSize,false); });
-        });
-        h=Math.ceil(totalLines*1.15)*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
-      } else {
-        const lines=pptxMeasureWrappedLines(b.text, availW, fontSize, false);
-        h=lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
-      }
+      const h=pptxItemHeight(b,boxWidthIn,fontSize,lineSpacingMultiple);
       if(current.length && usedH+h>availH){ pages.push(current); current=[]; usedH=0; }
       current.push(b); usedH+=h;
     });
@@ -15592,45 +15592,34 @@ async function buildPptxPresentation(slidesData){
     const bottomLimit=PPTX_SLIDE_H-0.4;
     const buildBulletTextRuns=(list)=>list.flatMap(b=>{
       const indentLevel=Math.max(0,b.indent||0);
+      const pad='   '.repeat(indentLevel);
+      const segments=pptxItemContentSegments(b,18);
       if(b.type==='note'){
-        const pad='   '.repeat(indentLevel);
-        // One grouped block per node.note field (see noteEntriesForExport) — a single "NOTE"
-        // label, then each saveNodeComment entry: its timestamp on its own line, followed by
-        // its text line(s), entries stacked below each other. The timestamp gets its own line
-        // rather than sharing one with the entry's text (unlike Presenter's pv-inline-note-body,
-        // which does share the line) specifically so pptxBulletItemHeight below can measure
-        // every line at one uniform font size — mixing a 10pt bold timestamp and default-size
-        // italic body text into a single wrapped-line measurement previously under-predicted
-        // how many lines PowerPoint actually needed, and the note silently overlapped whatever
-        // came after it on the slide.
-        const runs=[{text:pad+'NOTE', options:{color:theme.hint, breakLine:true, italic:true, fontSize:11, bold:true}}];
-        (b.entries||[]).forEach(entry=>{
-          if(entry.stamp) runs.push({text:entry.stamp, options:{color:theme.hint, breakLine:true, fontSize:10, bold:true}});
-          entry.lines.forEach(line=>{
-            runs.push({text:pptxStripIllegalXmlChars(line), options:{color:theme.muted, italic:true, breakLine:true}});
-          });
-        });
-        return runs;
+        // Plain, timestamp-free paragraph — matches Word's own NoteBlock treatment (a "NOTE"
+        // label once, then the note's lines below it) rather than trying to reproduce
+        // Presenter's per-entry timestamped card, which mixed a 10pt bold stamp with
+        // default-size italic body text on one wrapped line and under-predicted the box
+        // height it needed (see pptxItemContentSegments's comment).
+        return segments.map(seg=>seg.kind==='label'
+          ? {text:pad+seg.text, options:{color:theme.hint, breakLine:true, italic:true, fontSize:seg.fontSize, bold:true}}
+          : {text:pptxStripIllegalXmlChars(seg.text), options:{color:theme.muted, italic:true, breakLine:true}});
       }
       const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
-      const pad='   '.repeat(indentLevel);
       const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
       // Same quote/citation convention as the editor and Preview/Presenter (see .sem-quote /
       // parseStyledText): a '>' at the very start of the text, or preceded by whitespace
-      // anywhere in it, starts an attributed/quoted run that extends to the end — not just a
-      // leading '>', which is all the old regex (/^>\s*(.*)$/) caught. A node like "Eligibility
-      // Check >Morten: ..." has its own label before the quote marker, and previously fell
-      // through to plain text with the literal '>' character still showing since the match was
-      // anchored to the whole string's start.
-      const qIdx=(()=>{ const s=String(b.text||''); for(let i=0;i<s.length;i++){ if(s[i]==='>'&&(i===0||/\s/.test(s[i-1])))return i; } return -1; })();
-      if(qIdx>=0){
-        const qMain=String(b.text||'').slice(0,qIdx).trimEnd();
-        const qQuote=String(b.text||'').slice(qIdx+1).trimStart();
-        if(qMain) runs.push({text:pptxStripIllegalXmlChars(qMain)+' ', options:{color:theme.fg, breakLine:false}});
-        runs.push({text:pptxStripIllegalXmlChars(qQuote), options:{color:theme.semQuote, italic:true, fontSize:16, breakLine:!b.marker}});
-      } else {
-        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:!b.marker}});
-      }
+      // anywhere in it, starts an attributed/quoted run that extends to the end. The quoted
+      // portion now always starts its own line rather than continuing the main text's wrapped
+      // line — mixing two font sizes (the main text's and the quote's smaller one) in a single
+      // wrapped-line measurement is exactly the class of bug notes just had, so quotes get the
+      // same one-size-per-line treatment.
+      segments.forEach((seg,i)=>{
+        const isLast=i===segments.length-1;
+        const opts={breakLine:isLast?!b.marker:true};
+        if(seg.kind==='quote'){ opts.color=theme.semQuote; opts.italic=true; opts.fontSize=seg.fontSize; }
+        else { opts.color=theme.fg; }
+        runs.push({text:pptxStripIllegalXmlChars(seg.text), options:opts});
+      });
       // Trails the bullet's own text/quote rather than leading it — matches Presenter's
       // pv-marker-badge, which is appended after contentEl (the node's rendered text), not
       // prepended before it (see the renderPreviewBody bullet-row block).
@@ -15640,28 +15629,6 @@ async function buildPptxPresentation(slidesData){
       }
       return runs;
     });
-
-    // Per-item height, using the same wrap-width budget pptxPaginateBullets already uses
-    // (indent reserve + bullet/marker-glyph reserve) so heights line up with how the text
-    // actually wraps once rendered.
-    const pptxBulletItemHeight=(item,boxWidthIn,fontSize,lineSpacingMultiple)=>{
-      const indentLevel=Math.max(0,item.indent||0);
-      const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
-      if(item.type==='note'){
-        let totalLines=1; // the "NOTE" label's own line
-        (item.entries||[]).forEach(entry=>{
-          if(entry.stamp) totalLines+=1; // timestamp now always its own line — see buildBulletTextRuns
-          entry.lines.forEach(line=>{ totalLines+=pptxMeasureWrappedLines(line,availW,fontSize,false); });
-        });
-        // +15% safety margin: canvas-measured wrap counts have occasionally under-predicted
-        // what PowerPoint's own renderer needs (font substitution, subpixel rounding), and an
-        // undershoot here means the note box silently overlaps whatever comes after it on the
-        // slide — worse than a little extra blank space below a note that overshoots instead.
-        return Math.ceil(totalLines*1.15)*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
-      }
-      const lines=pptxMeasureWrappedLines(item.text,availW,fontSize,false);
-      return lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
-    };
     // Mirrors .pv-inline-note-body's border-left:3px solid var(--hint) and .sem-quote's
     // border-left:2px solid var(--sem-quote) — Presenter/Preview's "marker-line" treatment
     // for note blocks and quoted/attributed text. A merged multi-item textbox has no
@@ -15680,7 +15647,7 @@ async function buildPptxPresentation(slidesData){
       let cy=y, batch=[];
       const flushBatch=()=>{
         if(!batch.length)return;
-        const h=batch.reduce((s,it)=>s+pptxBulletItemHeight(it,w,fontSize,lineSpacingMultiple),0);
+        const h=batch.reduce((s,it)=>s+pptxItemHeight(it,w,fontSize,lineSpacingMultiple),0);
         targetSlide.addText(buildBulletTextRuns(batch), {x, y:cy, w, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
         cy+=h; batch=[];
       };
@@ -15688,7 +15655,7 @@ async function buildPptxPresentation(slidesData){
         const accentColor=pptxItemAccentColor(item);
         if(!accentColor){ batch.push(item); return; }
         flushBatch();
-        const h=pptxBulletItemHeight(item,w,fontSize,lineSpacingMultiple);
+        const h=pptxItemHeight(item,w,fontSize,lineSpacingMultiple);
         targetSlide.addShape('rect', {x, y:cy+0.03, w:0.03, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
         targetSlide.addText(buildBulletTextRuns([item]), {x:x+0.1, y:cy, w:w-0.1, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
         cy+=h;
