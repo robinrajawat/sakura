@@ -2345,6 +2345,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    would look wrong at some depths. Presenter mode's own zoom (body.style.zoom, see
    setPreviewPresenterZoom) then scales this along with everything else, same as before. */
 .pv-note-inline-full{color:var(--muted);font-style:italic;margin-left:6px;font-size:0.8em}
+.node-note-dot-plain{width:13px;height:13px;font-size:8px}
+.node-note-dot-plain svg{width:9px;height:9px}
 .pv-note-inline-full>div,.pv-note-inline-full>p{display:inline}
 .pv-note-inline-full>div:not(:first-child)::before,.pv-note-inline-full>p:not(:first-child)::before{content:' · ';color:var(--hint)}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
@@ -24863,11 +24865,31 @@ function renderPreviewBody(){
         });
       }
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&isPlainNote){
-        // Content is already shown in full right here (see pv-note-inline-full below), and
-        // non-plain notes now render their own always-visible pv-inline-block further down —
-        // neither case has an open/closed state left to indicate or toggle, so the row-level
-        // dot that used to sit here (for both branches) was pure redundancy next to content
-        // that's already fully visible. Removed rather than kept as a decorative marker.
+        // Content is shown in full right after this dot (see pv-note-inline-full below) — no
+        // open/closed state to toggle, but the dot itself is still a useful, unobtrusive
+        // click-to-edit shortcut right next to the inline text (or, while presenting, opens a
+        // popover so clicking doesn't drop the presenter out of Presenter mode). Non-plain
+        // notes don't get one — those render their own always-visible pv-inline-block further
+        // down with its own "Note" label, so a second marker right here would be redundant in
+        // a way this single-line case isn't.
+        const dot=document.createElement('span'); dot.className='node-note-dot node-note-dot-plain'; dot.dataset.tip='This node has a note — click to edit';
+        dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+        dot.addEventListener('click',e=>{
+          e.stopPropagation();
+          if(previewPresenting){ previewOpenNotePopover(dot,node); }
+          else {
+            // note-panel is z-index:100, the preview overlay is z-index:1050 — opening the
+            // panel without closing Preview first would render it invisibly behind the
+            // overlay. Close Preview, then let positionNodePanel find the row in the
+            // now-rendered editor pane itself rather than passing dot's rect, which belonged
+            // to Preview's completely different layout and would anchor nowhere sensible here.
+            closePreview();
+            setSingleSelection(node.id);
+            render();
+            openNodePanel(node.id);
+          }
+        });
+        contentEl.appendChild(dot);
         const inlineFull=document.createElement('span'); inlineFull.className='pv-note-inline-full';
         inlineFull.innerHTML=noteRestHtml;
         contentEl.appendChild(inlineFull);
@@ -26293,6 +26315,8 @@ function exportPreviewAsPdf(onDone){
          look wrong at some depths. Icon shrunk to match for the same reason the presenter rule
          shrinks it — the SVG's own width/height attributes don't respond to the container alone. */
       body.printing-preview .pv-note-inline-full{ font-size:0.65em !important; }
+      body.printing-preview .node-note-dot-plain{ width:13px !important; height:13px !important; font-size:8px !important; }
+      body.printing-preview .node-note-dot-plain svg{ width:9px !important; height:9px !important; }
     }
   `;
   document.head.appendChild(style);
