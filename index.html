@@ -15402,11 +15402,10 @@ async function buildPptxPresentation(slidesData){
       if(b.type==='note'){
         let totalLines=1;
         (b.entries||[]).forEach(entry=>{
-          const first=(entry.stamp?entry.stamp+'  ':'')+(entry.lines[0]||'');
-          totalLines+=pptxMeasureWrappedLines(first,availW,fontSize,false);
-          for(let i=1;i<entry.lines.length;i++) totalLines+=pptxMeasureWrappedLines(entry.lines[i],availW,fontSize,false);
+          if(entry.stamp) totalLines+=1;
+          entry.lines.forEach(line=>{ totalLines+=pptxMeasureWrappedLines(line,availW,fontSize,false); });
         });
-        h=totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
+        h=Math.ceil(totalLines*1.15)*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
       } else {
         const lines=pptxMeasureWrappedLines(b.text, availW, fontSize, false);
         h=lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
@@ -15596,14 +15595,17 @@ async function buildPptxPresentation(slidesData){
       if(b.type==='note'){
         const pad='   '.repeat(indentLevel);
         // One grouped block per node.note field (see noteEntriesForExport) — a single "NOTE"
-        // label, then each saveNodeComment entry with its own timestamp inline before its text
-        // (stamp and text share a line, same as saveNodeComment's own markup), entries stacked
-        // below each other. Replaces the old one-item-per-paragraph-line approach, which gave
-        // every line its own bordered box via pptxItemAccentColor below — this way there's
-        // exactly one box per note, matching the single card Presenter and PDF both show.
+        // label, then each saveNodeComment entry: its timestamp on its own line, followed by
+        // its text line(s), entries stacked below each other. The timestamp gets its own line
+        // rather than sharing one with the entry's text (unlike Presenter's pv-inline-note-body,
+        // which does share the line) specifically so pptxBulletItemHeight below can measure
+        // every line at one uniform font size — mixing a 10pt bold timestamp and default-size
+        // italic body text into a single wrapped-line measurement previously under-predicted
+        // how many lines PowerPoint actually needed, and the note silently overlapped whatever
+        // came after it on the slide.
         const runs=[{text:pad+'NOTE', options:{color:theme.hint, breakLine:true, italic:true, fontSize:11, bold:true}}];
         (b.entries||[]).forEach(entry=>{
-          if(entry.stamp) runs.push({text:entry.stamp+'  ', options:{color:theme.hint, breakLine:false, fontSize:10, bold:true}});
+          if(entry.stamp) runs.push({text:entry.stamp, options:{color:theme.hint, breakLine:true, fontSize:10, bold:true}});
           entry.lines.forEach(line=>{
             runs.push({text:pptxStripIllegalXmlChars(line), options:{color:theme.muted, italic:true, breakLine:true}});
           });
@@ -15648,11 +15650,14 @@ async function buildPptxPresentation(slidesData){
       if(item.type==='note'){
         let totalLines=1; // the "NOTE" label's own line
         (item.entries||[]).forEach(entry=>{
-          const first=(entry.stamp?entry.stamp+'  ':'')+(entry.lines[0]||'');
-          totalLines+=pptxMeasureWrappedLines(first,availW,fontSize,false);
-          for(let i=1;i<entry.lines.length;i++) totalLines+=pptxMeasureWrappedLines(entry.lines[i],availW,fontSize,false);
+          if(entry.stamp) totalLines+=1; // timestamp now always its own line — see buildBulletTextRuns
+          entry.lines.forEach(line=>{ totalLines+=pptxMeasureWrappedLines(line,availW,fontSize,false); });
         });
-        return totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
+        // +15% safety margin: canvas-measured wrap counts have occasionally under-predicted
+        // what PowerPoint's own renderer needs (font substitution, subpixel rounding), and an
+        // undershoot here means the note box silently overlaps whatever comes after it on the
+        // slide — worse than a little extra blank space below a note that overshoots instead.
+        return Math.ceil(totalLines*1.15)*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
       }
       const lines=pptxMeasureWrappedLines(item.text,availW,fontSize,false);
       return lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
