@@ -25997,7 +25997,7 @@ function broadcastPresenterState(){
   if(isAudienceWindow)return;
   const ch=ensurePresenterChannel(); if(!ch)return;
   const slideEl=document.querySelector('#preview-body .pv-slide.pv-slide-active');
-  ch.postMessage({type:'state',html:slideEl?slideEl.innerHTML:'',blank:presenterBlanked,theme:currentTheme,zoomPct:previewPresenterZoom,laserOn:previewLaserOn,laserX:_lastLaserX,laserY:_lastLaserY,serifBody:previewSerifBody,sepiaTheme:previewSepiaTheme});
+  ch.postMessage({type:'state',html:slideEl?slideEl.innerHTML:'',blank:presenterBlanked,theme:currentTheme,zoomPct:(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom,laserOn:previewLaserOn,laserX:_lastLaserX,laserY:_lastLaserY,serifBody:previewSerifBody,sepiaTheme:previewSepiaTheme});
 }
 function broadcastLaser(on,x,y){
   if(isAudienceWindow)return;
@@ -26075,7 +26075,12 @@ function onPresenterChannelMessage(ev){
     // but it means resizing the audience window independently of the presenter window will
     // drift the dot; not solved here.
     let dot=el('pv-audience-laser-dot');
-    if(!dot){ dot=document.createElement('div'); dot.id='pv-audience-laser-dot'; dot.style.cssText='position:fixed;z-index:30;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)'; document.body.appendChild(dot); }
+    if(!dot){ dot=document.createElement('div'); dot.id='pv-audience-laser-dot'; dot.style.cssText='position:fixed;z-index:30;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)';
+      // Must be a descendant of #pv-audience-shell, not a direct child of <body> — body's
+      // pv-audience-mode CSS force-hides every *direct* child except the shell itself
+      // (display:none!important), which would silently swallow the dot if appended to body.
+      const shell=el('pv-audience-shell'); (shell||document.body).appendChild(dot);
+    }
     dot.style.display=msg.on?'block':'none';
     if(msg.on){ dot.style.left=msg.x+'px'; dot.style.top=msg.y+'px'; }
   }else if(msg.type==='close'){
@@ -27403,6 +27408,7 @@ function applyPresenterZoom(){
   if(!previewActive){ body.style.zoom=''; return; }
   const effective=(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom;
   body.style.zoom=Math.abs(effective-1)>0.001?String(effective):'';
+  if(audienceWin&&!audienceWin.closed)broadcastPresenterState();
 }
 el('preview-presenter-zoom')?.addEventListener('input',e=>setPreviewPresenterZoom(e.target.value));
 // Ctrl+scroll or a trackpad pinch — browsers translate pinch gestures into wheel events with
