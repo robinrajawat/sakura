@@ -10244,6 +10244,35 @@ function noteBlockLines(html){
   const text=(tmp.textContent||tmp.innerText||'');
   return text.split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
 }
+// Same source HTML as noteBlockLines, but keeps each saveNodeComment entry grouped with its own
+// timestamp instead of flattening the whole note to one line per paragraph — PPTX's NOTE block
+// (see pptxGatherSlidesData/buildBulletTextRuns) renders one bordered box per node.note field,
+// matching Presenter's single pv-inline-note-body card, rather than noteBlockLines' one-box-per-
+// paragraph explosion. Returns [{stamp, lines:[...]}], where an entry with no
+// .note-comment-stamp (manually typed in the Pad rather than captured via Presenter's "Note…"
+// popover) gets stamp:''. A note with no .note-comment-entry wrappers at all (entirely
+// hand-typed, no captures ever made) comes back as a single unstamped entry holding every line.
+function noteEntriesForExport(html){
+  if(!html)return [];
+  const marker='\uE000';
+  const tmp=document.createElement('div');
+  tmp.innerHTML=String(html);
+  const entryEls=Array.from(tmp.querySelectorAll('.note-comment-entry'));
+  const linesFrom=el=>{
+    const clone=el.cloneNode(true);
+    clone.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
+    clone.innerHTML=clone.innerHTML.replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
+    return (clone.textContent||clone.innerText||'').split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+  };
+  if(entryEls.length){
+    return entryEls.map(entry=>({
+      stamp:(entry.querySelector('.note-comment-stamp')?.textContent||'').trim(),
+      lines:linesFrom(entry)
+    })).filter(e=>e.lines.length);
+  }
+  const lines=linesFrom(tmp);
+  return lines.length?[{stamp:'', lines}]:[];
+}
 function getDocNodesForSearch(docId,indexEntry){
   if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
   const openTab=findOpenTab(docId);
@@ -15224,7 +15253,8 @@ async function pptxGatherSlidesData(){
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
     const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
     if(ownNoteSplit){
-      noteBlockLines(ownNoteSplit.restHtml).forEach((line,i)=>items.push({type:'note', text:line, indent:0, noteFirst:i===0}));
+      const ownEntries=noteEntriesForExport(ownNoteSplit.restHtml);
+      if(ownEntries.length) items.push({type:'note', entries:ownEntries, indent:0});
     }
     // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
     // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
@@ -15239,7 +15269,8 @@ async function pptxGatherSlidesData(){
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
       if(nodeContentExportEnabled&&childNode.note&&childNode.note.trim()){
-        noteBlockLines(splitNoteDiagramImages(childNode.note).restHtml).forEach((line,i)=>items.push({type:'note', text:line, indent:relDepth-1, noteFirst:i===0}));
+        const childEntries=noteEntriesForExport(splitNoteDiagramImages(childNode.note).restHtml);
+        if(childEntries.length) items.push({type:'note', entries:childEntries, indent:relDepth-1});
       }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
@@ -15367,8 +15398,19 @@ async function buildPptxPresentation(slidesData){
       const indentIn=indentLevel*0.3;
       const markerIn=0.4; // rough room for the bullet glyph + marker glyph + padding
       const availW=Math.max(0.5, boxWidthIn-indentIn-markerIn);
-      const lines=pptxMeasureWrappedLines(b.text, availW, fontSize, false);
-      const h=lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
+      let h;
+      if(b.type==='note'){
+        let totalLines=1;
+        (b.entries||[]).forEach(entry=>{
+          const first=(entry.stamp?entry.stamp+'  ':'')+(entry.lines[0]||'');
+          totalLines+=pptxMeasureWrappedLines(first,availW,fontSize,false);
+          for(let i=1;i<entry.lines.length;i++) totalLines+=pptxMeasureWrappedLines(entry.lines[i],availW,fontSize,false);
+        });
+        h=totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
+      } else {
+        const lines=pptxMeasureWrappedLines(b.text, availW, fontSize, false);
+        h=lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+paraGapIn;
+      }
       if(current.length && usedH+h>availH){ pages.push(current); current=[]; usedH=0; }
       current.push(b); usedH+=h;
     });
@@ -15553,25 +15595,24 @@ async function buildPptxPresentation(slidesData){
       const indentLevel=Math.max(0,b.indent||0);
       if(b.type==='note'){
         const pad='   '.repeat(indentLevel);
-        // NOTE label only on the first line of a group (see noteFirst, set in
-        // pptxGatherSlidesData) — repeating an icon before every single line of a multi-line
-        // note read as visual clutter; a plain text label once, matching Word's docxNoteBlock
-        // treatment, groups the lines instead without needing an icon at all (PowerPoint's own
-        // text-run model has no equivalent to Word's inline drawings, so a real icon here isn't
-        // an option regardless — see docxNoteIconRun's comment for the Word side of this).
-        const label=b.noteFirst?'NOTE  ':'      ';
-        return [
-          {text:pad+label, options:{color:theme.hint, breakLine:false, italic:true, fontSize:11, bold:true}},
-          {text:pptxStripIllegalXmlChars(b.text), options:{color:theme.muted, italic:true, breakLine:true}}
-        ];
+        // One grouped block per node.note field (see noteEntriesForExport) — a single "NOTE"
+        // label, then each saveNodeComment entry with its own timestamp inline before its text
+        // (stamp and text share a line, same as saveNodeComment's own markup), entries stacked
+        // below each other. Replaces the old one-item-per-paragraph-line approach, which gave
+        // every line its own bordered box via pptxItemAccentColor below — this way there's
+        // exactly one box per note, matching the single card Presenter and PDF both show.
+        const runs=[{text:pad+'NOTE', options:{color:theme.hint, breakLine:true, italic:true, fontSize:11, bold:true}}];
+        (b.entries||[]).forEach(entry=>{
+          if(entry.stamp) runs.push({text:entry.stamp+'  ', options:{color:theme.hint, breakLine:false, fontSize:10, bold:true}});
+          entry.lines.forEach(line=>{
+            runs.push({text:pptxStripIllegalXmlChars(line), options:{color:theme.muted, italic:true, breakLine:true}});
+          });
+        });
+        return runs;
       }
       const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
       const pad='   '.repeat(indentLevel);
       const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
-      if(b.marker){
-        const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
-        runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
-      }
       // Same quote/citation convention as the editor and Preview/Presenter (see .sem-quote /
       // parseStyledText): a '>' at the very start of the text, or preceded by whitespace
       // anywhere in it, starts an attributed/quoted run that extends to the end — not just a
@@ -15584,9 +15625,16 @@ async function buildPptxPresentation(slidesData){
         const qMain=String(b.text||'').slice(0,qIdx).trimEnd();
         const qQuote=String(b.text||'').slice(qIdx+1).trimStart();
         if(qMain) runs.push({text:pptxStripIllegalXmlChars(qMain)+' ', options:{color:theme.fg, breakLine:false}});
-        runs.push({text:pptxStripIllegalXmlChars(qQuote), options:{color:theme.semQuote, italic:true, fontSize:16, breakLine:true}});
+        runs.push({text:pptxStripIllegalXmlChars(qQuote), options:{color:theme.semQuote, italic:true, fontSize:16, breakLine:!b.marker}});
       } else {
-        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
+        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:!b.marker}});
+      }
+      // Trails the bullet's own text/quote rather than leading it — matches Presenter's
+      // pv-marker-badge, which is appended after contentEl (the node's rendered text), not
+      // prepended before it (see the renderPreviewBody bullet-row block).
+      if(b.marker){
+        const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
+        runs.push({text:'  '+nodeMarkerGlyph(b.marker), options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:true}});
       }
       return runs;
     });
@@ -15597,6 +15645,15 @@ async function buildPptxPresentation(slidesData){
     const pptxBulletItemHeight=(item,boxWidthIn,fontSize,lineSpacingMultiple)=>{
       const indentLevel=Math.max(0,item.indent||0);
       const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
+      if(item.type==='note'){
+        let totalLines=1; // the "NOTE" label's own line
+        (item.entries||[]).forEach(entry=>{
+          const first=(entry.stamp?entry.stamp+'  ':'')+(entry.lines[0]||'');
+          totalLines+=pptxMeasureWrappedLines(first,availW,fontSize,false);
+          for(let i=1;i<entry.lines.length;i++) totalLines+=pptxMeasureWrappedLines(entry.lines[i],availW,fontSize,false);
+        });
+        return totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
+      }
       const lines=pptxMeasureWrappedLines(item.text,availW,fontSize,false);
       return lines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
     };
