@@ -400,7 +400,7 @@ body.no-word-wrap .node-row{min-width:max-content}
 .heading-option-clear{font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);margin-top:3px;padding-top:7px;border-radius:0 0 6px 6px}
 .heading-option.heading-option-active.heading-option-h1,.heading-option.heading-option-active.heading-option-h2,.heading-option.heading-option-active.heading-option-h3,.heading-option.heading-option-active.heading-option-h4,.heading-option.heading-option-active.heading-option-h5,.heading-option.heading-option-active.heading-option-h6,.heading-option.heading-option-active.heading-option-h7{color:var(--sel-fg)}
 #fc-color-bar,#hl-color-bar{transition:fill .12s}
-.sem-chip{display:inline;color:var(--sem-section);font-weight:400;vertical-align:baseline}.sem-meta{display:inline;color:var(--muted);font-style:italic}.sem-alert-inline{display:inline;color:var(--sem-alert);font-weight:400}.sem-code-inline{display:inline;font-family:'Fira Code',Consolas,'Courier New',monospace;color:var(--sem-code)}.sem-quote{display:inline;color:var(--sem-quote);font-style:italic;opacity:.88}.sem-key{display:inline;font-weight:600}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
+.sem-chip{display:inline;color:var(--sem-section);font-weight:400;vertical-align:baseline}.sem-meta{display:inline;color:var(--muted);font-style:italic}.sem-alert-inline{display:inline;color:var(--sem-alert);font-weight:400}.sem-code-inline{display:inline;font-family:'Fira Code',Consolas,'Courier New',monospace;color:var(--sem-code)}.sem-quote{display:inline;color:var(--sem-quote);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;margin-left:1px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}.sem-key{display:inline;font-weight:600}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
 #app-icon svg{display:block;width:20px;height:20px}
 .node-row.is-section{margin-top:4px;position:relative}.node-row.is-section::before{content:'';position:absolute;left:1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:color-mix(in srgb,var(--accent) 55%,transparent)}body.hide-section-markings .node-row.is-section::before{display:none}.node-emoji-icon{display:inline-flex;width:1.05em;height:1.05em;margin-right:.32em;vertical-align:-0.18em;color:inherit}.node-emoji-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 #statusbar{border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));font-size:12px;font-family:'Inter',sans-serif} #status-left{display:flex;gap:10px;align-items:center;min-width:0}#status-right{display:flex;gap:10px;align-items:center;justify-content:flex-end;min-width:0}.status-chip{padding:2px 8px;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));border-radius:999px;background:transparent;transition:background .12s,border-color .12s}.status-chip-icon{display:inline-flex;align-items:center;gap:4px}.status-chip-icon svg{flex-shrink:0}.status-divider{opacity:.4}.status-passive{padding:2px 0}.status-strong{color:var(--fg)}.status-author-empty{color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));font-style:italic}#sb-author:hover{color:var(--accent)}
@@ -4325,7 +4325,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><span class="sem-example">!Text</span> → <span class="sem-alert-inline">alert</span> — red warning</li>
 <li><span class="sem-example">`Text`</span> → <span class="sem-code-inline">code</span> — inline code</li>
 <li><span class="sem-example">SAP Note 123456</span> → <span class="sem-sap-note">SAP Note 123456</span> — auto-linked to me.sap.com, opens in a new tab. Also recognizes "OSS Note", case-insensitive. No markup to type — just write it naturally</li>
-<li><span class="sem-example">&gt;Text</span> → <span class="sem-quote" style="display:inline;color:var(--sem-quote,#6b6240);font-style:italic;opacity:.88">quoted or attributed content</span> — starts the node with <span class="help-kbd">&gt;</span>; hides the &gt; in view mode. Use for direct quotes, attributed statements, or cited requirements</li>
+<li><span class="sem-example">&gt;Text</span> → <span class="sem-quote" style="display:inline;color:var(--sem-quote,#6b6240);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote,#6b6240) 45%,transparent)">quoted or attributed content</span> — starts the node with <span class="help-kbd">&gt;</span>; hides the &gt; in view mode. Renders smaller and left-bordered rather than full body size, in the editor, Preview, Presenter, PDF, and Word/PowerPoint exports alike. Use for direct quotes, attributed statements, or cited requirements</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list. Open the Note panel on the target node to see all backlinks pointing to it</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
 <li>Tag icon in toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
@@ -5978,6 +5978,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-below" /> Insert below</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-duplicate" /> Duplicate</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-focus" checked /> Zoom in on branch</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-slide-divider" /> Slide divider</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-up" /> Move up</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-down" /> Move down</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-ai-rewrite" checked /> Rewrite node</label>
@@ -6007,6 +6008,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-below" checked /> Insert below</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-duplicate" checked /> Duplicate</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-focus" checked /> Zoom in on branch</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-slide-divider" checked /> Slide divider</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-up" checked /> Move up</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-down" checked /> Move down</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-ai-rewrite" checked /> Rewrite node</label>
@@ -13251,18 +13253,18 @@ function measureTreeImage(scopeNodes,rebaseDepth=false){
     const prefixWidth=Math.ceil(ctx.measureText(prefixText).width);
     let x=0;
     const measuredSegments=segments.map(seg=>{
-      let family=fontFamily, weight=node.styles.bold?'700':'400', italic=node.styles.italic, fill=baseColor, bg=null;
+      let family=fontFamily, weight=node.styles.bold?'700':'400', italic=node.styles.italic, fill=baseColor, bg=null, segFontSize=fontSize;
       if(seg.type==='code'){family=monoFamily; fill=soften(colors.semCode,colors.muted); bg=colors.codeBg}
       else if(seg.type==='section'){fill=soften(colors.semSection,colors.muted)}
       else if(seg.type==='note'){italic=true; fill=soften(colors.fg,colors.muted)}
       else if(seg.type==='alert'){weight='700'; fill=soften(colors.semAlert,colors.muted)}
-      else if(seg.type==='quote'){italic=true; fill=soften(colors.semQuote||colors.muted,colors.muted)}
+      else if(seg.type==='quote'){italic=true; fill=soften(colors.semQuote||colors.muted,colors.muted); segFontSize=Math.round(fontSize*0.88)}
       else if(seg.type==='link'){fill=soften(colors.accent||colors.semSection,colors.muted)}
       else family=fontFamily;
-      ctx.font=`${italic?'italic ':''}${weight} ${fontSize}px ${family}`;
+      ctx.font=`${italic?'italic ':''}${weight} ${segFontSize}px ${family}`;
       const width=Math.ceil(ctx.measureText(seg.text).width);
       x+=width+(bg?8:0);
-      return {...seg,width,family,weight,italic,fill,bg}
+      return {...seg,width,family,weight,italic,fill,bg,fontSize:segFontSize}
     });
     const rowWidth=prefixWidth+x;
     if(rowWidth>maxWidth)maxWidth=rowWidth;
@@ -13298,7 +13300,8 @@ function renderTreeImageBlob(scopeNodes,rebaseDepth=false,scale=2){
           ctx.fillStyle=row.highlightBg; roundedRect(ctx,x-3,boxY,textWidth+6,boxH,4); ctx.fill();
         }
         row.segments.forEach(seg=>{
-          ctx.font=`${seg.italic?'italic ':''}${seg.weight} ${m.fontSize}px ${seg.family}`;
+          const segFS=seg.fontSize||m.fontSize;
+          ctx.font=`${seg.italic?'italic ':''}${seg.weight} ${segFS}px ${seg.family}`;
           if(seg.bg){
             const boxW=seg.width+8, boxY=y-m.fontSize+2, boxH=m.fontSize+4;
             ctx.fillStyle=seg.bg; roundedRect(ctx,x,boxY,boxW,boxH,4); ctx.fill();
@@ -14235,9 +14238,9 @@ function docxCrc32(bytes){let c=~0; for(let i=0;i<bytes.length;i++){c^=bytes[i];
 function docxDosDateTime(date=new Date()){const year=Math.max(1980,date.getFullYear()); const dosTime=((date.getHours()&31)<<11)|((date.getMinutes()&63)<<5)|((Math.floor(date.getSeconds()/2))&31); const dosDate=(((year-1980)&127)<<9)|(((date.getMonth()+1)&15)<<5)|(date.getDate()&31); return {dosTime,dosDate}}
 function docxZipStore(files){const encoder=new TextEncoder(); const list=files.map(f=>{const data=f.data instanceof Uint8Array?f.data:encoder.encode(String(f.data)); const nameBytes=encoder.encode(f.name); return {...f,data,nameBytes,crc:docxCrc32(data),size:data.length}}); let localSize=0, centralSize=0; list.forEach(f=>{localSize+=30+f.nameBytes.length+f.size; centralSize+=46+f.nameBytes.length}); const out=new Uint8Array(localSize+centralSize+22); const view=new DataView(out.buffer); let offset=0; const central=[]; const {dosTime,dosDate}=docxDosDateTime(); const writeBytes=arr=>{out.set(arr,offset); offset+=arr.length}; const u16=v=>{view.setUint16(offset,v,true); offset+=2}; const u32=v=>{view.setUint32(offset,v>>>0,true); offset+=4}; list.forEach(f=>{const localOffset=offset; u32(0x04034b50); u16(20); u16(0); u16(0); u16(dosTime); u16(dosDate); u32(f.crc); u32(f.size); u32(f.size); u16(f.nameBytes.length); u16(0); writeBytes(f.nameBytes); writeBytes(f.data); central.push({f,localOffset})}); const centralOffset=offset; central.forEach(({f,localOffset})=>{u32(0x02014b50); u16(20); u16(20); u16(0); u16(0); u16(dosTime); u16(dosDate); u32(f.crc); u32(f.size); u32(f.size); u16(f.nameBytes.length); u16(0); u16(0); u16(0); u16(0); u32(0); u32(localOffset); writeBytes(f.nameBytes)}); const centralLength=offset-centralOffset; u32(0x06054b50); u16(0); u16(0); u16(list.length); u16(list.length); u32(centralLength); u32(centralOffset); u16(0); return out}
 function docxRun(text,fmt={}){const value=String(text??''); if(!value) return ''; const props=[]; if(fmt.bold)props.push('<w:b/>'); if(fmt.italic)props.push('<w:i/>'); if(fmt.underline)props.push('<w:u w:val="single"/>'); if(fmt.strike)props.push('<w:strike/>'); if(fmt.code){props.push('<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>'); props.push('<w:shd w:val="clear" w:color="auto" w:fill="F3F4F6"/>')} if(fmt.highlight){props.push(`<w:highlight w:val="${fmt.highlight}"/>`)} if(fmt.color)props.push(`<w:color w:val="${fmt.color}"/>`); if(fmt.size)props.push(`<w:sz w:val="${fmt.size}"/><w:szCs w:val="${fmt.size}"/>`); const preserve=/^\s|\s$|\s{2,}|\n/.test(value)?' xml:space="preserve"':''; return `<w:r>${props.length?`<w:rPr>${props.join('')}</w:rPr>`:''}<w:t${preserve}>${docxXmlText(value)}</w:t></w:r>`}
-function docxGetSemantic(text){const t=String(text||'').trim(); if(/^\[.+\]$/.test(t)) return 'section'; if(/^\(.+\)$/.test(t)) return 'note'; if(/^!.+/.test(t)) return 'alert'; if(/^`.+`$/.test(t)) return 'code'; return ''}
-function docxParseInline(text,baseFmt={}){const src=String(text||''); let i=0; let plainBuf=''; let out=''; const flush=()=>{ if(plainBuf){ out+=docxRun(plainBuf,baseFmt); plainBuf='' } }; while(i<src.length){ const ch=src[i]; if(ch==='`'){ const end=src.indexOf('`',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,code:true,color:'4A3A6A'}); i=end+1; continue } } if(ch==='['){ const end=src.indexOf(']',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'7A4A2A'}); i=end+1; continue } } if(ch==='('){ const end=src.indexOf(')',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,italic:true,color:'5C584F'}); i=end+1; continue } } if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){ let end=i+1; while(end<src.length&&!/\s/.test(src[end]))end++; if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'9B2F28'}); i=end; continue } } plainBuf+=ch; i++ } flush(); return out}
-function docxParagraph(text,leftTwips,baseFmt={},semantic='',numberStr='',opts={}){const {headingLevel=0,bookmarkName='',markerGlyph='',markerColor=''}=opts; const isSectionHeading=headingLevel===7; const pPr=[headingLevel>0&&!isSectionHeading?`<w:pStyle w:val="Heading${headingLevel}"/>`:'<w:pStyle w:val="TreeNode"/>', `<w:ind w:left="${leftTwips}"/>`]; const raw=String(text||''); let runsXml; if(isSectionHeading){pPr.push('<w:spacing w:before="120" w:after="60"/>'); runsXml=docxRun(raw,{...baseFmt,color:'3A52A8'})} else if(headingLevel>0){ runsXml=docxParseInline(raw,baseFmt); } else if(semantic==='section'){pPr.push('<w:spacing w:before="160" w:after="80"/>'); runsXml=docxRun(raw.replace(/^\[|\]$/g,''),{...baseFmt,bold:true,color:'7A4A2A'})} else if(semantic==='note'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^\(|\)$/g,''),{...baseFmt,italic:true,color:'5C584F'})} else if(semantic==='alert'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^!/,''),{...baseFmt,bold:true,color:'9B2F28'})} else if(semantic==='code'){runsXml=docxRun(raw.replace(/^`|`$/g,''),{...baseFmt,code:true,color:'4A3A6A'})} else {runsXml=docxParseInline(raw,baseFmt)} const numRun=numberStr?docxRun(numberStr+' ',{color:'9B9890'}):''; const markerRun=markerGlyph?docxRun(markerGlyph+' ',{bold:true,color:markerColor||'6F6B63'}):''; const bookmarkId=bookmarkName?docxNextBookmarkId():0; const bookmarkStart=bookmarkName?`<w:bookmarkStart w:id="${bookmarkId}" w:name="${bookmarkName}"/>`:''; const bookmarkEnd=bookmarkName?`<w:bookmarkEnd w:id="${bookmarkId}"/>`:''; return `<w:p><w:pPr>${pPr.join('')}</w:pPr>${bookmarkStart}${markerRun}${numRun}${runsXml || '<w:r><w:t xml:space="preserve"> </w:t></w:r>'}${bookmarkEnd}</w:p>`}
+function docxGetSemantic(text){const t=String(text||'').trim(); if(/^\[.+\]$/.test(t)) return 'section'; if(/^\(.+\)$/.test(t)) return 'note'; if(/^!.+/.test(t)) return 'alert'; if(/^`.+`$/.test(t)) return 'code'; if(/^>.+/.test(t)) return 'quote'; return ''}
+function docxParseInline(text,baseFmt={}){const src=String(text||''); let i=0; let plainBuf=''; let out=''; const flush=()=>{ if(plainBuf){ out+=docxRun(plainBuf,baseFmt); plainBuf='' } }; while(i<src.length){ const ch=src[i]; if(ch==='`'){ const end=src.indexOf('`',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,code:true,color:'4A3A6A'}); i=end+1; continue } } if(ch==='['){ const end=src.indexOf(']',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'7A4A2A'}); i=end+1; continue } } if(ch==='('){ const end=src.indexOf(')',i+1); if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,italic:true,color:'5C584F'}); i=end+1; continue } } if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){ let end=i+1; while(end<src.length&&!/\s/.test(src[end]))end++; if(end>i+1){ flush(); out+=docxRun(src.slice(i+1,end),{...baseFmt,color:'9B2F28'}); i=end; continue } } if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){ flush(); out+=docxRun(src.slice(i+1).trimStart(),{...baseFmt,italic:true,color:'6B6240',size:20}); i=src.length; continue } plainBuf+=ch; i++ } flush(); return out}
+function docxParagraph(text,leftTwips,baseFmt={},semantic='',numberStr='',opts={}){const {headingLevel=0,bookmarkName='',markerGlyph='',markerColor=''}=opts; const isSectionHeading=headingLevel===7; const pPr=[headingLevel>0&&!isSectionHeading?`<w:pStyle w:val="Heading${headingLevel}"/>`:'<w:pStyle w:val="TreeNode"/>', `<w:ind w:left="${leftTwips}"/>`]; const raw=String(text||''); let runsXml; if(isSectionHeading){pPr.push('<w:spacing w:before="120" w:after="60"/>'); runsXml=docxRun(raw,{...baseFmt,color:'3A52A8'})} else if(headingLevel>0){ runsXml=docxParseInline(raw,baseFmt); } else if(semantic==='section'){pPr.push('<w:spacing w:before="160" w:after="80"/>'); runsXml=docxRun(raw.replace(/^\[|\]$/g,''),{...baseFmt,bold:true,color:'7A4A2A'})} else if(semantic==='note'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^\(|\)$/g,''),{...baseFmt,italic:true,color:'5C584F'})} else if(semantic==='alert'){pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^!/,''),{...baseFmt,bold:true,color:'9B2F28'})} else if(semantic==='code'){runsXml=docxRun(raw.replace(/^`|`$/g,''),{...baseFmt,code:true,color:'4A3A6A'})} else if(semantic==='quote'){pPr.push('<w:pBdr><w:left w:val="single" w:sz="12" w:space="8" w:color="6B6240"/></w:pBdr>'); pPr.push('<w:spacing w:before="40" w:after="40"/>'); runsXml=docxRun(raw.replace(/^>/,'').trim(),{...baseFmt,italic:true,color:'6B6240',size:20})} else {runsXml=docxParseInline(raw,baseFmt)} const numRun=numberStr?docxRun(numberStr+' ',{color:'9B9890'}):''; const markerRun=markerGlyph?docxRun(markerGlyph+' ',{bold:true,color:markerColor||'6F6B63'}):''; const bookmarkId=bookmarkName?docxNextBookmarkId():0; const bookmarkStart=bookmarkName?`<w:bookmarkStart w:id="${bookmarkId}" w:name="${bookmarkName}"/>`:''; const bookmarkEnd=bookmarkName?`<w:bookmarkEnd w:id="${bookmarkId}"/>`:''; return `<w:p><w:pPr>${pPr.join('')}</w:pPr>${bookmarkStart}${markerRun}${numRun}${runsXml || '<w:r><w:t xml:space="preserve"> </w:t></w:r>'}${bookmarkEnd}</w:p>`}
 // Word's <w:highlight> only accepts a fixed enum of named colors — no arbitrary hex — so this
 // maps Sakura's four highlight presets to the closest legal value (pink has no direct
 // equivalent; magenta is the nearest).
@@ -14907,6 +14910,7 @@ function pptxGatherTheme(){
     muted:  hex('--muted','73716B'),
     hint:   hex('--hint','71716B'),
     heading:hex('--pv-heading','2C4A6E'),
+    semQuote:hex('--sem-quote','6B6240'),
     border: hex('--border','E3E0D8'),
     editBg: hex('--edit-bg','FFFFFF'),
     fcRed:    hex('--fc-red','C0392B'),
@@ -15417,7 +15421,16 @@ async function buildPptxPresentation(slidesData){
         const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
         runs.push({text:nodeMarkerGlyph(b.marker)+'  ', options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:false}});
       }
-      runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
+      // A node whose text starts with "> " is the same quote/citation convention as the
+      // editor and Preview/Presenter (see .sem-quote) — stripped of its leading marker and
+      // rendered smaller, italic, and in the quote color instead of dumping the raw ">"
+      // character as plain body text.
+      const quoteMatch=String(b.text||'').match(/^>\s*(.*)$/s);
+      if(quoteMatch){
+        runs.push({text:pptxStripIllegalXmlChars(quoteMatch[1]), options:{color:theme.semQuote, italic:true, fontSize:16, breakLine:true}});
+      } else {
+        runs.push({text:pptxStripIllegalXmlChars(b.text), options:{color:theme.fg, breakLine:true}});
+      }
       return runs;
     });
 
@@ -24418,19 +24431,27 @@ function renderPreviewBody(){
   let currentSlideWrap=null;
   let skipDepth=null;
   let lastHeadingLevel=null;
+  // Set right after a slide-divider node is placed on its own slide — makes sure whatever
+  // comes next (even if it doesn't itself land on a previewSlideDepth boundary) starts a
+  // fresh slide too, rather than being appended below the divider's big centered title.
+  // Without this, a divider node's own children (or the next sibling, if the divider has
+  // none) would render directly underneath it on the same slide instead of getting the
+  // clean "title slide, then the next slide" split a divider is meant to give.
+  let forceNextSlideBreak=false;
   const HEADING_GAP_LOOSE={1:'26px',2:'20px',3:'16px',4:'13px',5:'11px',6:'9px',7:'9px'};
   const HEADING_GAP_TIGHT={1:'12px',2:'10px',3:'8px',4:'6px',5:'5px',6:'4px',7:'4px'};
   nodes.forEach((node,idx)=>{
     if(skipDepth!==null){ if(node.depth>skipDepth){return;} else {skipDepth=null;} }
     if(consumed.has(idx)&&!groupByHeader.has(idx))return;
 
-    if(node.slideDivider||(node.depth||0)===previewSlideDepth){
+    if(node.slideDivider||(node.depth||0)===previewSlideDepth||forceNextSlideBreak){
       currentSlideWrap=document.createElement('div');
       currentSlideWrap.className='pv-slide'+(node.slideDivider?' pv-divider-slide':'');
       currentSlideWrap.dataset.slideIndex=String(previewSlideList.length);
       doc.appendChild(currentSlideWrap);
       const rawLabel=stripSemanticMarkers(String(node.text||'').trim().replace(/^\[|\]$/g,'')).trim();
       previewSlideList.push({nodeId:node.id,label:rawLabel||'Untitled'});
+      forceNextSlideBreak=false;
     }
     const slideTarget=currentSlideWrap||doc;
 
@@ -24451,6 +24472,7 @@ function renderPreviewBody(){
       drow.appendChild(dtitle);
       mainEl=drow; contentEl=dtitle;
       lastHeadingLevel=null;
+      forceNextSlideBreak=true;
       tocEntries.push({id:node.id,text:stripSemanticMarkers(node.text||'').trim()||'Untitled',level:1,kind:'divider'});
     } else if(isSection){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-1'; hrow.id='pv-anchor-'+node.id;
