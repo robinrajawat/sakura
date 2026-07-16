@@ -3453,23 +3453,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list-row" id="word-wrap-row"><div class="settings-row-text"><span class="settings-switch-text">Word wrap</span><span class="settings-row-desc">Wrap long lines in the editor. Turn off to scroll horizontally instead</span></div><button id="word-wrap-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Word wrap"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Customize toolbar buttons</span><span class="settings-row-desc" id="toolbar-buttons-summary-desc">All buttons are shown</span></div><button class="btn" id="toolbar-buttons-open-btn">Open…</button></div>
             </div>
-            <div class="settings-field" id="editor-floating-buttons-field">
-              <button type="button" class="settings-collapsible-header" id="editor-floating-buttons-header" aria-expanded="false" aria-controls="editor-floating-buttons-body">
-                <span class="settings-collapsible-title">Floating editor buttons</span>
-                <span class="settings-collapsible-summary" id="editor-floating-buttons-summary"></span>
-                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="settings-collapsible-body" id="editor-floating-buttons-body">
-                <span class="settings-row-desc">Hide any of the small buttons bottom-right of the editor (Zen, Pad, Toolbar, Preview) you don't use — the keyboard shortcut and the feature itself keep working either way, this only hides the button. For Pad, turning the whole feature off in Settings → Features hides their button too, regardless of this setting.</span>
-                <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="efbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="efbsec-none-btn">Hide all</button></div>
-                <div class="settings-grid" id="editor-floating-buttons-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="efbsec-zen" checked /> Zen mode</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="efbsec-pad" checked /> Pad</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="efbsec-toolbar" checked /> Toolbar</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="efbsec-preview" checked /> Preview</label>
-              </div>
-              </div>
-            </div>
           </div>
           <div class="settings-section" data-cat="panels" id="settings-section-pad">
             <div class="settings-section-title">Pad</div>
@@ -3511,15 +3494,12 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for Q&amp;A</span><span class="settings-row-desc">Draft answer, Bulk-draft unanswered, and Q&amp;A summary live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="qa-ai-settings-jump-btn">Open in AI settings</button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Compact Q&amp;A rows</span><span class="settings-row-desc">Tighter spacing between separate Q&amp;A rows, similar to the To-Dos panel's compact row spacing. Doesn't affect line spacing within a single question or answer — that stays comfortable to read either way.</span></div><button id="qa-compact-rows-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Compact Q&amp;A rows"></button></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">Same idea as the To-Dos panel's Row actions setting. "On hover" keeps rows compact — the select checkbox, drag handle, rewrite sparkles, link, and delete button collapse to zero width at rest so the row uses the full width, and expand only when you point at it. "Always visible" reserves that space permanently instead — less compact, but nothing moves or hides.</span></div><select id="qa-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
               </div>
             </div>
             <div class="settings-subsection" id="settings-subsection-decisionlog">
               <div class="settings-subsection-title">Decision Log</div>
               <div class="settings-list">
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Ask who decided</span><span class="settings-row-desc">Prompt for a name each time you insert a decision log — the prompt defaults to Default author if one is set. Off: skips the prompt and uses Default author automatically instead of leaving it blank. Timestamp is always added automatically either way</span></div><button id="decisionlog-ask-author-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Ask who decided"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Split large ones onto their own slide</span><span class="settings-row-desc">In Presenter and PPTX, a decision log with a lot of filled-in content gets a dedicated slide instead of being squeezed under the node's own bullets. Off: always inline, right after the node, however long it is.</span></div><button id="decisionlog-split-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Split large decision logs onto their own slide"></button></div>
-                <div class="settings-list-row" id="decisionlog-split-threshold-row"><div class="settings-row-text"><span class="settings-switch-text">Split threshold</span><span class="settings-row-desc">Combined characters across the fields shown (see Decision card fields in Settings → Preview) before a decision log gets its own slide instead of staying inline</span></div><input id="decisionlog-split-threshold-input" type="number" min="50" max="2000" step="10" value="200" class="meta-input" style="width:72px;text-align:center" /></div>
               </div>
               <div class="settings-field" id="decisionlog-fields-field">
                 <button type="button" class="settings-collapsible-header" id="decisionlog-fields-header" aria-expanded="false" aria-controls="decisionlog-fields-body">
@@ -3853,32 +3833,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-section-title">Quick Assist</div>
             <div class="settings-list">
               <div class="settings-list-row" id="global-search-bar-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist search box</span><span class="settings-row-desc">Show the search / Quick Assist box, currently docked in <span id="qa-location-desc-inline">the status bar</span> (Ctrl/Cmd+Space opens and focuses it regardless; Quick Assist can also hide it via a command like "hide search bar" — this switch is the reliable way to bring it back)</span></div><button id="global-search-bar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Quick Assist search box"></button></div>
-              <div class="settings-list-row" id="qa-icon-only-row"><div class="settings-row-text"><span class="settings-switch-text">Icon only</span><span class="settings-row-desc">Collapse the Quick Assist box down to just its icon when idle, to save status bar space. Click the icon, or use Ctrl/Cmd+Space as usual, to expand it to the full input — it collapses back down the same way it already closes (Escape, clicking elsewhere, or running a command). Has no effect if the search box above is hidden entirely, and only applies while Quick Assist is docked in the status bar — it's a no-op while "Dock in app bar" above is on.</span></div><button id="qa-icon-only-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Collapse Quick Assist to icon only when idle"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Show search results</span><span class="settings-row-desc">Below command matches, also show matching documents, notes, tags, and other content. Turn off to keep Quick Assist to commands only.</span></div><button id="qa-search-enabled-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show search results in Quick Assist"></button></div>
-            </div>
-            <div class="settings-field" id="qa-search-categories-field">
-              <button type="button" class="settings-collapsible-header" id="qa-search-categories-header" aria-expanded="false" aria-controls="qa-search-categories-body">
-                <span class="settings-collapsible-title">Categories to search</span>
-                <span class="settings-collapsible-summary" id="qa-search-categories-summary"></span>
-                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="settings-collapsible-body" id="qa-search-categories-body">
-                <span class="settings-row-desc">Pick which kinds of content and settings show up as "Go to" results in Quick Assist</span>
-                <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="qacatsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="qacatsec-none-btn">Hide all</button></div>
-                <div class="settings-grid" id="qa-search-categories-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-documents" checked /> Documents</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-folders" checked /> Folders</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-templates" checked /> Templates</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-in-documents" checked /> In documents</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-notes" checked /> Notes</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-code" checked /> Code</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-tags" checked /> Tags</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-pad" checked /> Pad</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-settings" checked /> Settings</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-features" checked /> Features</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="qacatsec-help" checked /> Help</label>
-              </div>
-              </div>
             </div>
           </div>
           <div class="settings-section" data-cat="data">
@@ -4132,7 +4086,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="settings-section" data-cat="ai" id="settings-section-ai-qa">
             <div class="settings-section-title">Q&amp;A AI</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Draft answer</span><span class="settings-row-desc">When a Q&amp;A row's answer is empty, its Rewrite sparkle drafts one instead of doing nothing — using the question plus any outline content nested under its source node as context. The same button keeps rewriting non-empty answers either way; this only covers the empty case.</span></div><button id="qa-ai-answer-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Draft answer"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Generate questions</span><span class="settings-row-desc">Adds a button in the Q&amp;A toolbar that reads the document and suggests relevant questions worth asking about it — not just nodes that already end in "?" (that's the separate Scan button). Uses whatever's selected in the outline as its scope (a single node's whole section, or exactly the nodes in a multi-select) — with nothing selected, it reads the whole document. Opens the same review checklist as Scan, so nothing is added until you confirm.</span></div><button id="qa-ai-generate-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Generate questions"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Group into sections</span><span class="settings-row-desc">Adds a button in the Q&amp;A toolbar that reads every question in the list and organizes them into a small number of named sections by topic, using the section-header rows already available from the + menu. Replaces any existing section groupings with a fresh one built from scratch, rather than layering on top of them — every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change. Undo restores the previous arrangement in one step.</span></div><button id="qa-ai-group-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Group into sections"></button></div>
             </div>
@@ -9825,7 +9778,7 @@ document.getElementById('qa-ai-settings-jump-btn')?.addEventListener('click',()=
   document.querySelector('.settings-rail-btn[data-cat="ai"]')?.click();
   requestAnimationFrame(()=>{ document.getElementById('settings-section-ai-qa')?.scrollIntoView({behavior:'smooth',block:'start'}); });
 });
-const CONDITIONAL_SETTINGS_FIELDS={'qa-search-categories-field':()=>qaSearchResultsEnabled,'editor-reading-width-field':()=>editorReadingWidthEnabled,'decisionlog-split-threshold-row':()=>decisionLogSplitToSlide,'hover-toolbar-actions-field':()=>hoverToolbarEnabled};
+const CONDITIONAL_SETTINGS_FIELDS={'hover-toolbar-actions-field':()=>hoverToolbarEnabled};
 function reapplyConditionalSettingsFieldVisibility(){Object.entries(CONDITIONAL_SETTINGS_FIELDS).forEach(([id,shouldShow])=>{const fieldEl=el(id); if(fieldEl)fieldEl.style.display=shouldShow()?'':'none'})}
 applySettingsCategory('general');
 applyHelpCategory('overview');
@@ -11149,8 +11102,6 @@ function setQaSearchCategoryHidden(key,hidden,persist=true){
 QA_SEARCH_CATEGORIES.forEach(c=>{ el('qacatsec-'+c.key)?.addEventListener('change', e=>setQaSearchCategoryHidden(c.key, !e.target.checked)) });
 el('qacatsec-all-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('qacatsec-',QA_SEARCH_CATEGORIES.map(c=>c.key),true)});
 el('qacatsec-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetCheckboxGrid('qacatsec-',QA_SEARCH_CATEGORIES.map(c=>c.key),false)});
-el('qa-search-enabled-toggle')?.addEventListener('click',()=>setQaSearchResultsEnabled(!qaSearchResultsEnabled));
-el('qa-search-enabled-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaSearchResultsEnabled(!qaSearchResultsEnabled);}});
 el('qa-hint-cheatsheet-btn')?.addEventListener('click',()=>{ setQaOpen(false); document.getElementById('cheatsheet-open-btn')?.click(); });
 // Hint phrases were previously decorative text only — clicking one now fills the search box
 // with it and shows real results immediately, the same as typing it, so "Try things like…"
@@ -15990,9 +15941,7 @@ el('toolbar-labels-toggle').addEventListener('click',()=>{if(!toolbarVisible)ret
 el('word-wrap-toggle').addEventListener('click',()=>setWordWrap(!wordWrapEnabled)); el('word-wrap-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setWordWrap(!wordWrapEnabled);}});
 el('confirm-delete-toggle').addEventListener('click',()=>setConfirmBeforeDelete(!confirmBeforeDelete)); el('confirm-delete-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setConfirmBeforeDelete(!confirmBeforeDelete);}});
 
-el('decisionlog-ask-author-toggle')?.addEventListener('click',()=>setDecisionLogAskAuthor(!decisionLogAskAuthor)); el('decisionlog-ask-author-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setDecisionLogAskAuthor(!decisionLogAskAuthor);}});
 el('decisionlog-split-toggle')?.addEventListener('click',()=>setDecisionLogSplitToSlide(!decisionLogSplitToSlide)); el('decisionlog-split-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setDecisionLogSplitToSlide(!decisionLogSplitToSlide);}});
-el('decisionlog-split-threshold-input')?.addEventListener('change',e=>setDecisionLogSplitThreshold(e.target.value));
 el('compact-rows-toggle').addEventListener('click',()=>setCompactRows(!compactRows)); el('compact-rows-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setCompactRows(!compactRows);}});
 el('inline-note-preview-toggle')?.addEventListener('click',()=>setInlineNotePreviewEnabled(!inlineNotePreviewEnabled)); el('inline-note-preview-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setInlineNotePreviewEnabled(!inlineNotePreviewEnabled);}});
 el('svg-section-icons-toggle')?.addEventListener('click',()=>setSvgSectionIconsEnabled(!svgSectionIconsEnabled)); el('svg-section-icons-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSvgSectionIconsEnabled(!svgSectionIconsEnabled);}});
@@ -16004,8 +15953,6 @@ el('export-menu-fold-note-enabled-toggle')?.addEventListener('click',()=>setExpo
 el('cover-page-toggle')?.addEventListener('click',()=>setCoverPageEnabled(!coverPageEnabled)); el('cover-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setCoverPageEnabled(!coverPageEnabled);}});
 el('export-accent-toggle')?.addEventListener('click',()=>setExportUseAccentColor(!exportUseAccentColor)); el('export-accent-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setExportUseAccentColor(!exportUseAccentColor);}});
 el('global-search-bar-toggle').addEventListener('click',()=>setGlobalSearchVisible(!globalSearchVisible)); el('global-search-bar-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setGlobalSearchVisible(!globalSearchVisible);}});
-el('qa-icon-only-toggle')?.addEventListener('click',()=>setQaIconOnly(!qaIconOnly));
-el('qa-icon-only-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaIconOnly(!qaIconOnly);}});
 el('nqa-icon-row-toggle')?.addEventListener('click',()=>setNqaIconOnly(!nqaIconOnly));
 el('nqa-icon-row-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setNqaIconOnly(!nqaIconOnly);}});
 el('statusbar-visible-toggle')?.addEventListener('click',()=>setStatusbarVisible(!statusbarVisible)); el('statusbar-visible-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setStatusbarVisible(!statusbarVisible);}});
@@ -26508,7 +26455,6 @@ function setQaRowActionsMode(mode, persist=true){
   const sel=el('qa-actions-mode-select'); if(sel) sel.value=qaRowActionsMode;
   if(persist){ savePrefs(); scheduleAutoSave(); }
 }
-el('qa-actions-mode-select')?.addEventListener('change',e=>setQaRowActionsMode(e.target.value));
 
 // Q&A AI feature toggles — gate the draft-answer behavior and the two AI toolbar buttons
 // independently, same granularity as the To-Dos AI settings (Extract/Subtask/Summary).
@@ -26517,8 +26463,6 @@ function setQaAiAnswerEnabled(on, persist=true){
   const toggle=el('qa-ai-answer-toggle'); if(toggle){ toggle.classList.toggle('on', qaAiAnswerEnabled); toggle.setAttribute('aria-checked', String(qaAiAnswerEnabled)); }
   if(persist){ savePrefs(); scheduleAutoSave(); }
 }
-el('qa-ai-answer-toggle')?.addEventListener('click',()=>setQaAiAnswerEnabled(!qaAiAnswerEnabled));
-el('qa-ai-answer-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaAiAnswerEnabled(!qaAiAnswerEnabled);}});
 function setQaAiBulkAnswerEnabled(on, persist=true){
   qaAiBulkAnswerEnabled=!!on;
   const toggle=el('qa-ai-bulk-answer-toggle'); if(toggle){ toggle.classList.toggle('on', qaAiBulkAnswerEnabled); toggle.setAttribute('aria-checked', String(qaAiBulkAnswerEnabled)); }
