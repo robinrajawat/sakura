@@ -6102,7 +6102,7 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 // a saved value isn't immediately overwritten by this line's own default when script
 // execution reaches it — that ordering bug was the actual cause of Presenter settings
 // reverting to defaults on every reload despite saving correctly.
-let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewBrandingText=''; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true;
+let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewInteractiveZoom=1; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewBrandingText=''; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true;
 const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
 const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','pptx','opml','decision-log-xlsx'];
 const INSERT_TB_BUTTONS=['smart-paste','date-time','note','checkbox','tags'];
@@ -25589,6 +25589,7 @@ function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open')
 function openPreview(){
   commitEdit();
   previewActive=true;
+  previewInteractiveZoom=1;
   if(previewAlwaysExpand) previewCollapsedIds=new Set();
   else previewCollapsedIds=new Set(nodes.filter((n,i)=>(n.depth||0)===0&&nodeHasChildren(i)).map(n=>n.id));
   previewOpenNoteIds=new Set();
@@ -25596,6 +25597,7 @@ function openPreview(){
   previewOpenQaIds=new Set();
   previewSetLaser(false);
   renderPreviewBody();
+  applyPresenterZoom();
   el('preview-overlay')?.classList.add('open');
   if(previewAutoPresenter){ previewSlideIndex=0; enterPresenterMode(); }
 }
@@ -27205,12 +27207,38 @@ function setPreviewPresenterZoom(val,persist=true){
 // Uses the CSS `zoom` property rather than transform:scale() — zoom actually reflows layout
 // at the new size (so surrounding padding/centering stay correct and nothing overflows or
 // needs manual re-centering), where transform just visually stretches the box in place.
-// Only takes effect while actually presenting; the regular scrolling Preview is unaffected.
+// Combines two independent zoom levels: previewPresenterZoom is the fixed preset from Settings
+// (only applied while actually presenting, same as before), and previewInteractiveZoom is a
+// live multiplier on top of whichever baseline is active — see the Ctrl+scroll/pinch wheel
+// handler below (PREVIEW_ZOOM_MIN/MAX) — so Preview behaves like PowerPoint's own canvas zoom:
+// a baseline size, adjustable further at any time, in both regular Preview browsing and while
+// presenting, not just the latter.
 function applyPresenterZoom(){
   const body=el('preview-body'); if(!body) return;
-  body.style.zoom = previewPresenting ? String(previewPresenterZoom) : '';
+  if(!previewActive){ body.style.zoom=''; return; }
+  const effective=(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom;
+  body.style.zoom=Math.abs(effective-1)>0.001?String(effective):'';
 }
 el('preview-presenter-zoom')?.addEventListener('input',e=>setPreviewPresenterZoom(e.target.value));
+// Ctrl+scroll or a trackpad pinch — browsers translate pinch gestures into wheel events with
+// ctrlKey set to true automatically (the same mechanism pages use to block/allow native
+// browser zoom), so this one handler covers both input methods without separate touch/pointer
+// tracking. Mirrors PowerPoint's own canvas zoom: hover anywhere over the slide and zoom,
+// applying to the whole preview body — text, images, diagrams, everything — rather than one
+// image at a time. preventDefault stops the browser's own page-zoom from also firing.
+const PREVIEW_ZOOM_MIN=0.5, PREVIEW_ZOOM_MAX=3;
+let previewZoomRafId=null;
+function requestPreviewZoomFrame(){
+  if(previewZoomRafId!=null)return;
+  previewZoomRafId=requestAnimationFrame(()=>{ previewZoomRafId=null; applyPresenterZoom(); });
+}
+el('preview-overlay')?.addEventListener('wheel',e=>{
+  if(!e.ctrlKey||!previewActive)return;
+  e.preventDefault();
+  const factor=Math.exp(-e.deltaY*0.01);
+  previewInteractiveZoom=Math.min(PREVIEW_ZOOM_MAX,Math.max(PREVIEW_ZOOM_MIN,previewInteractiveZoom*factor));
+  requestPreviewZoomFrame();
+},{passive:false});
 function setPreviewAutoLaser(on,persist=true){
   previewAutoLaser=!!on;
   const toggle=el('preview-auto-laser-toggle');
