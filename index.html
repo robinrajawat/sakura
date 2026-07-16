@@ -290,7 +290,7 @@ body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-
 body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog .node-dlog-dot,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
 body.feature-off-padnotepad #pad-tab-notes,body.feature-off-padnotepad #presenter-notes-tab-notes{display:none!important}
 body.feature-off-padqa #pad-tab-qa,body.feature-off-padqa #presenter-notes-tab-qa{display:none!important}
-body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
+body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .node-diagram-dot,body.feature-off-paddiagrams #presenter-whiteboard-btn,body.feature-off-paddiagrams #preview-ctx-whiteboard-item{display:none!important}
 body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
 body.feature-off-backlinks #bl-panel,body.feature-off-backlinks #note-panel-bl-badge{display:none!important}
@@ -2683,7 +2683,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 /* Full-screen diagram editor — deliberately never a small/normal state (see the Note/Code
    panel discussion this was split off from): draw.io's own UI needs real room to be usable at
    all, and diagram editing is never a quick aside the way a short note is. */
-#diagram-editor-overlay{display:none;position:fixed;inset:0;z-index:900;background:var(--bg);flex-direction:column}
+#diagram-editor-overlay{display:none;position:fixed;inset:0;z-index:1060;background:var(--bg);flex-direction:column}
 #diagram-editor-overlay.open{display:flex}
 #diagram-editor-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--tb-bg)}
 #diagram-editor-title-input{flex:0 1 320px;min-width:120px;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
@@ -2727,6 +2727,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-row-status[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .diagram-row-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
 .diagram-row-warn-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:4px;padding:1px 6px;cursor:help}
+.diagram-row-whiteboard-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:4px;padding:1px 6px;cursor:help}
 .diagram-row-warn-chip.diagram-row-fix-chip{cursor:pointer}
 .diagram-row-warn-chip.diagram-row-fix-chip:hover{background:color-mix(in srgb,var(--fc-orange) 26%,transparent);text-decoration:underline}
 .diagram-row-note-input{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:400 11px 'Inter',sans-serif;font-style:italic;padding:2px 4px;border-radius:4px;outline:none;margin-top:2px;width:100%;box-sizing:border-box;transition:background .12s,border-color .12s,color .12s}
@@ -5697,6 +5698,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="presenter-next-btn" data-tip="Next (→)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       <button type="button" id="presenter-notes-btn" data-tip="Notepad (N) · Q&amp;A (Q)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       <button type="button" id="presenter-overview-btn" data-tip="All slides (G)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+      <button type="button" id="presenter-whiteboard-btn" data-tip="Whiteboard — sketch or brainstorm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
@@ -5707,7 +5709,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-blank-overlay"></div>
     <div id="presenter-progress-bar"><div id="presenter-progress-fill"></div></div>
-    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
+    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-whiteboard-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span>Whiteboard</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
   <div id="toast"></div>
@@ -8144,6 +8146,7 @@ function diagramIsOrphaned(d){
   return d.anchorNodeId!=null && !nodes.some(n=>n.id===d.anchorNodeId);
 }
 function diagramNeedsAttention(d){
+  if(d.isWhiteboard)return false;
   return d.anchorNodeId==null || diagramIsOrphaned(d);
 }
 // Toolbar-level "quick summary" chip — a glanceable count of the document's diagrams plus
@@ -8187,6 +8190,11 @@ function getDiagramDisplayList(){
   } else if(diagramSortMode==='modified'){
     list.sort((a,b)=>(b.modifiedAt||0)-(a.modifiedAt||0));
   }
+  // The whiteboard is a fixed reference point, not part of the outline-driven ordering the rest
+  // of the list follows — pin it first regardless of sort mode or manual drag order, so it's
+  // always exactly where you expect it while presenting.
+  const wbIdx=list.findIndex(d=>d.isWhiteboard);
+  if(wbIdx>0){ const [wb]=list.splice(wbIdx,1); list.unshift(wb); }
   return list;
 }
 function diagramCanReorder(){
@@ -8313,8 +8321,8 @@ function renderDiagramsList(){
     dragHandle.innerHTML='<svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg>';
     dragHandle.addEventListener('mousedown',e=>e.stopPropagation());
     dragHandle.addEventListener('click',e=>e.stopPropagation());
-    dragHandle.style.visibility=canDrag?'visible':'hidden';
-    row.draggable=canDrag;
+    dragHandle.style.visibility=(canDrag&&!d.isWhiteboard)?'visible':'hidden';
+    row.draggable=canDrag&&!d.isWhiteboard;
     row.addEventListener('dragstart',e=>{
       if(!canDrag||e.target.closest('.diagram-row-note-input')||e.target.closest('.diagram-row-title-input')||e.target.closest('.diagram-row-status')||e.target.closest('.diagram-row-anchor-btn')||e.target.closest('.diagram-row-dup')||e.target.closest('.diagram-row-delete')||e.target.closest('.diagram-row-select')){e.preventDefault(); return;}
       e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(d.id)); row.classList.add('diagram-row-dragging');
@@ -8371,7 +8379,12 @@ function renderDiagramsList(){
     statusChip.dataset.tip='Click to change status';
     statusChip.addEventListener('click',e=>{ e.stopPropagation(); cycleDiagramStatus(d); renderDiagramsList(); });
     metaRow.appendChild(statusChip);
-    if(d.anchorNodeId==null){
+    if(d.isWhiteboard){
+      const wbChip=document.createElement('span'); wbChip.className='diagram-row-whiteboard-chip';
+      wbChip.textContent='Whiteboard';
+      wbChip.dataset.tip="Your persistent scratch space for this document — not tied to any node, reachable from the Whiteboard button while presenting (and its right-click menu). Deliberately unlinked, not a warning.";
+      metaRow.appendChild(wbChip);
+    } else if(d.anchorNodeId==null){
       const unlinkedChip=document.createElement('span'); unlinkedChip.className='diagram-row-warn-chip';
       unlinkedChip.textContent='Unlinked';
       unlinkedChip.dataset.tip="Not linked to a node — won't appear in Preview, PDF, Word, or PowerPoint until you link it (the anchor button in the full-screen editor).";
@@ -8401,6 +8414,9 @@ function renderDiagramsList(){
     }
     info.appendChild(metaRow);
     const anchorBtn=document.createElement('button'); anchorBtn.className='diagram-row-anchor diagram-row-anchor-btn'; anchorBtn.type='button';
+    if(d.isWhiteboard){
+      anchorBtn.style.display='none';
+    } else {
     const anchorLabel=diagramAnchorLabel(d);
     anchorBtn.textContent=anchorLabel;
     anchorBtn.title=anchorLabel;
@@ -8410,6 +8426,7 @@ function renderDiagramsList(){
       if(_diagramAnchorOpen&&_diagramAnchorTarget===d){ closeDiagramAnchorSuggest(); return; }
       renderDiagramAnchorSuggest('',d,anchorBtn);
     });
+    }
     info.appendChild(anchorBtn);
     const noteInput=document.createElement('input'); noteInput.type='text'; noteInput.className='diagram-row-note-input';
     noteInput.value=d.note||''; noteInput.placeholder='+ Note to yourself'; noteInput.maxLength=200; noteInput.spellcheck=false;
@@ -8456,6 +8473,23 @@ function createDiagram(){
   sakuraLog('commit','createDiagram',{id:d.id,anchorNodeId:d.anchorNodeId});
   openDiagramEditor(d.id);
   setTimeout(()=>{ const ti=el('diagram-editor-title-input'); if(ti){ ti.focus(); ti.select(); } },60);
+}
+// The whiteboard is one persistent, never-linked diagram per document — same underlying data
+// model and draw.io editor as any other diagram (autosaves the same way, same manual-save-then-
+// confirm-close behavior), just pinned to the top of the Diagrams list (see
+// getDiagramDisplayList) and reachable directly from Presenter mode without browsing that list.
+// Created once on first use; every call after that reopens the same one.
+function openOrCreateWhiteboard(){
+  if(!padDiagramsTabEnabled){ showToast('Diagrams is off — turn it back on in Settings → Features → Pad Panel'); return; }
+  ensureDocumentForEditing();
+  let wb=diagrams.find(d=>d.isWhiteboard);
+  if(!wb){
+    wb={id:newDiagramId(),title:'Whiteboard',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,status:'draft',note:'',anchorNodeId:null,isWhiteboard:true,createdAt:Date.now(),modifiedAt:Date.now(),_hydrated:true};
+    diagrams.push(wb);
+    markDirty(); scheduleAutoSave();
+    sakuraLog('commit','createWhiteboard',{id:wb.id});
+  }
+  openDiagramEditor(wb.id);
 }
 // Pure data clone — copies the already-exported XML/SVG strings, never talks to the live
 // draw.io editor, so unlike the reverted multi-page export attempt this can't corrupt anything.
@@ -25935,6 +25969,7 @@ function togglePresenterOverview(){
   else openPresenterOverview();
 }
 el('presenter-overview-btn')?.addEventListener('click',togglePresenterOverview);
+el('presenter-whiteboard-btn')?.addEventListener('click',openOrCreateWhiteboard);
 
 // Blank screen — press B to black out the slide and pull attention back to you mid-discussion,
 // press again (or navigate) to resume exactly where you were; the slide state underneath is
@@ -26805,9 +26840,10 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
   // These three only make sense while actually presenting (not just browsing Preview) — this
   // same contextmenu handler serves both, since right-click-for-laser/zoom works in either.
   // Each also respects its own Settings toggle, same as the corresponding presenter-bar button.
-  const overviewItem=el('preview-ctx-overview-item'), notesItem=el('preview-ctx-notes-item');
+  const overviewItem=el('preview-ctx-overview-item'), notesItem=el('preview-ctx-notes-item'), whiteboardItem=el('preview-ctx-whiteboard-item');
   if(overviewItem)overviewItem.style.display=(previewPresenting&&previewPresenterOverviewEnabled)?'':'none';
   if(notesItem)notesItem.style.display=(previewPresenting&&previewPresenterNotesEnabled)?'':'none';
+  if(whiteboardItem)whiteboardItem.style.display=(previewPresenting&&padDiagramsTabEnabled)?'':'none';
   ['preview-ctx-presenting-divider','preview-ctx-exit-item'].forEach(id=>{
     const item=el(id); if(item)item.style.display=previewPresenting?'':'none';
   });
@@ -26820,6 +26856,7 @@ el('preview-reset-zoom-item')?.addEventListener('click',()=>{ resetPreviewZoom()
 el('preview-laser-toggle')?.addEventListener('click',()=>{ previewSetLaser(!previewLaserOn); closePreviewCtxMenu(); });
 el('preview-ctx-overview-item')?.addEventListener('click',()=>{ togglePresenterOverview(); closePreviewCtxMenu(); });
 el('preview-ctx-notes-item')?.addEventListener('click',()=>{ togglePresenterNotes(); closePreviewCtxMenu(); });
+el('preview-ctx-whiteboard-item')?.addEventListener('click',()=>{ openOrCreateWhiteboard(); closePreviewCtxMenu(); });
 el('preview-ctx-exit-item')?.addEventListener('click',()=>{ if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} closePreviewCtxMenu(); });
 document.addEventListener('click',e=>{ if(previewActive&&!e.target.closest('#preview-ctx-menu'))closePreviewCtxMenu(); });
 el('preview-overlay')?.addEventListener('mousemove',e=>{
