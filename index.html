@@ -2126,6 +2126,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:160px}
 #preview-ctx-menu.open{display:block}
 .pv-ctx-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
+.pv-ctx-divider{height:1px;background:var(--border);margin:4px 2px}
 .pv-ctx-item:hover{background:var(--hover)}
 .pv-ctx-dot{width:9px;height:9px;border-radius:50%;background:#e0312f;flex-shrink:0;box-shadow:0 0 5px rgba(224,49,47,.7)}
 .pv-ctx-icon{display:flex;align-items:center;justify-content:center;width:9px;flex-shrink:0;color:var(--muted)}
@@ -5704,7 +5705,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-blank-overlay"></div>
     <div id="presenter-progress-bar"><div id="presenter-progress-fill"></div></div>
-    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div></div>
+    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
   <div id="toast"></div>
@@ -26797,6 +26798,15 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
   // alone couldn't reliably do this.
   const resetZoomItem=el('preview-reset-zoom-item');
   if(resetZoomItem) resetZoomItem.style.display=Math.abs(previewInteractiveZoom-1)>0.001?'':'none';
+  // These three only make sense while actually presenting (not just browsing Preview) — this
+  // same contextmenu handler serves both, since right-click-for-laser/zoom works in either.
+  // Each also respects its own Settings toggle, same as the corresponding presenter-bar button.
+  const overviewItem=el('preview-ctx-overview-item'), notesItem=el('preview-ctx-notes-item');
+  if(overviewItem)overviewItem.style.display=(previewPresenting&&previewPresenterOverviewEnabled)?'':'none';
+  if(notesItem)notesItem.style.display=(previewPresenting&&previewPresenterNotesEnabled)?'':'none';
+  ['preview-ctx-presenting-divider','preview-ctx-exit-item'].forEach(id=>{
+    const item=el(id); if(item)item.style.display=previewPresenting?'':'none';
+  });
   menu.classList.add('open');
   const mw=menu.offsetWidth||160, mh=menu.offsetHeight||40;
   menu.style.left=Math.min(e.clientX,window.innerWidth-mw-8)+'px';
@@ -26804,6 +26814,9 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
 });
 el('preview-reset-zoom-item')?.addEventListener('click',()=>{ resetPreviewZoom(); closePreviewCtxMenu(); });
 el('preview-laser-toggle')?.addEventListener('click',()=>{ previewSetLaser(!previewLaserOn); closePreviewCtxMenu(); });
+el('preview-ctx-overview-item')?.addEventListener('click',()=>{ togglePresenterOverview(); closePreviewCtxMenu(); });
+el('preview-ctx-notes-item')?.addEventListener('click',()=>{ togglePresenterNotes(); closePreviewCtxMenu(); });
+el('preview-ctx-exit-item')?.addEventListener('click',()=>{ if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} closePreviewCtxMenu(); });
 document.addEventListener('click',e=>{ if(previewActive&&!e.target.closest('#preview-ctx-menu'))closePreviewCtxMenu(); });
 el('preview-overlay')?.addEventListener('mousemove',e=>{
   if(!previewLaserOn)return;
