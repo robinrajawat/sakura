@@ -2178,7 +2178,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    side, so a stale/different document never leaks into what the audience sees. */
 body.pv-audience-mode>*{display:none!important}
 body.pv-audience-mode #pv-audience-shell{display:flex!important}
-#pv-audience-shell{position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:flex-start;padding:60px 0 60px;overflow-y:auto;z-index:1}
+#pv-audience-shell{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:flex-start;padding:60px 0 60px;overflow-y:auto;z-index:1}
 #pv-audience-slide{max-width:min(860px,90%);width:100%}
 #pv-audience-blank{display:none;position:fixed;inset:0;z-index:20;background:#000}
 #pv-audience-blank.on{display:block}
@@ -25740,6 +25740,7 @@ function previewSetLaser(on){
 function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open'); }
 function openPreview(){
   commitEdit();
+  console.log('[sakura:dualscreen] openPreview() — isAudienceWindow:',isAudienceWindow,'body classes:',document.body.className);
   previewActive=true;
   previewInteractiveZoom=1;
   if(previewAlwaysExpand) previewCollapsedIds=new Set();
@@ -25969,12 +25970,14 @@ let presenterChannel=null;
 function secondScreenAvailable(){ try{ return !!(window.screen && window.screen.isExtended); }catch(e){ return false; } }
 function updateDualScreenButtonVisibility(){
   const btn=el('presenter-dualscreen-btn'); if(!btn)return;
-  btn.style.display=(previewDualScreenEnabled && secondScreenAvailable() && !isAudienceWindow)?'inline-flex':'none';
+  const show=(previewDualScreenEnabled && secondScreenAvailable() && !isAudienceWindow);
+  console.log('[sakura:dualscreen] updateDualScreenButtonVisibility — enabled:',previewDualScreenEnabled,'secondScreenAvailable:',secondScreenAvailable(),'isAudienceWindow:',isAudienceWindow,'=> show:',show);
+  btn.style.display=show?'inline-flex':'none';
 }
 function ensurePresenterChannel(){
   if(presenterChannel)return presenterChannel;
-  try{ presenterChannel=new BroadcastChannel('sakura-presenter-sync'); presenterChannel.onmessage=onPresenterChannelMessage; }
-  catch(e){ presenterChannel=null; }
+  try{ presenterChannel=new BroadcastChannel('sakura-presenter-sync'); presenterChannel.onmessage=onPresenterChannelMessage; console.log('[sakura:dualscreen] BroadcastChannel created (isAudienceWindow:',isAudienceWindow,')'); }
+  catch(e){ presenterChannel=null; console.warn('[sakura:dualscreen] BroadcastChannel unavailable:',e); }
   return presenterChannel;
 }
 // Sent on every slide change, blank toggle, and whenever the audience window announces itself
@@ -25997,26 +26000,33 @@ function broadcastAudienceClose(){
   ch.postMessage({type:'close'});
 }
 async function openAudienceWindow(){
+  console.log('[sakura:dualscreen] openAudienceWindow() called. secondScreenAvailable:',secondScreenAvailable());
   if(!secondScreenAvailable()){ showToast('No second screen detected'); return; }
-  if(audienceWin&&!audienceWin.closed){ audienceWin.focus(); return; }
+  if(audienceWin&&!audienceWin.closed){ console.log('[sakura:dualscreen] audience window already open, focusing it'); audienceWin.focus(); return; }
   let features='popup=1,width=1280,height=800';
   try{
     if(window.getScreenDetails){
       const details=await window.getScreenDetails();
       const target=details.screens.find(s=>s!==details.currentScreen)||details.screens[1];
       if(target)features=`popup=1,left=${target.availLeft},top=${target.availTop},width=${target.availWidth},height=${target.availHeight}`;
+      console.log('[sakura:dualscreen] getScreenDetails ok, positioning features:',features);
+    }else{
+      console.log('[sakura:dualscreen] getScreenDetails unsupported, opening undocked popup');
     }
-  }catch(e){ /* permission denied/unsupported — still opens, just not auto-positioned; drag it onto the second monitor and fullscreen it (F11) once */ }
+  }catch(e){ console.warn('[sakura:dualscreen] getScreenDetails failed/denied, opening undocked popup:',e); }
   const url=new URL(location.href); url.searchParams.delete('presenter-audience');
+  console.log('[sakura:dualscreen] window.open url:',url.toString(),'features:',features);
   audienceWin=window.open(url.toString(),'sakura-audience',features);
-  if(!audienceWin){ showToast('Pop-up blocked — allow pop-ups for the second screen'); return; }
+  if(!audienceWin){ console.warn('[sakura:dualscreen] window.open returned null — popup blocked'); showToast('Pop-up blocked — allow pop-ups for the second screen'); return; }
+  console.log('[sakura:dualscreen] audience window opened, name:',audienceWin.name);
   el('presenter-dualscreen-btn')?.classList.add('active');
   const poll=setInterval(()=>{
-    if(!audienceWin||audienceWin.closed){ clearInterval(poll); audienceWin=null; el('presenter-dualscreen-btn')?.classList.remove('active'); }
+    if(!audienceWin||audienceWin.closed){ console.log('[sakura:dualscreen] audience window closed (detected by poll)'); clearInterval(poll); audienceWin=null; el('presenter-dualscreen-btn')?.classList.remove('active'); }
   },1000);
   setTimeout(broadcastPresenterState,600);
 }
 function closeAudienceWindow(){
+  console.log('[sakura:dualscreen] closeAudienceWindow() called, had open window:',!!(audienceWin&&!audienceWin.closed));
   if(audienceWin&&!audienceWin.closed){ broadcastAudienceClose(); audienceWin.close(); }
   audienceWin=null;
   el('presenter-dualscreen-btn')?.classList.remove('active');
@@ -26027,6 +26037,7 @@ el('presenter-dualscreen-btn')?.addEventListener('click',toggleAudienceWindow);
 // whatever the presenter window last broadcast. No app state, no localStorage document read.
 function onPresenterChannelMessage(ev){
   const msg=ev.data||{};
+  console.log('[sakura:dualscreen] channel message received:',msg.type,'(isAudienceWindow:',isAudienceWindow,')',msg);
   if(!isAudienceWindow){
     // Main/presenter side: the only inbound message it cares about is an audience window
     // announcing itself (freshly opened, or refreshed) — respond with current state so it
@@ -34294,7 +34305,9 @@ if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetin
     // *main* app window into an audience window too the next time it launched. window.name is
     // set by window.open()'s target-name argument and isn't part of what PWA relaunch restores,
     // so a normal app launch is never mistaken for this.
-    if(window.name!=='sakura-audience')return;
+    console.log('[sakura:dualscreen] boot check — window.name:',JSON.stringify(window.name));
+    if(window.name!=='sakura-audience'){ console.log('[sakura:dualscreen] not an audience window, normal boot continues'); return; }
+    console.log('[sakura:dualscreen] window.name matched — switching this window into audience mode');
     isAudienceWindow=true;
     document.body.classList.add('pv-audience-mode');
     document.title='Sakura — Audience view';
