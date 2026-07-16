@@ -15220,7 +15220,7 @@ async function pptxGatherSlidesData(){
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
     const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
     if(ownNoteSplit){
-      noteBlockLines(ownNoteSplit.restHtml).forEach(line=>items.push({type:'note', text:line, indent:0}));
+      noteBlockLines(ownNoteSplit.restHtml).forEach((line,i)=>items.push({type:'note', text:line, indent:0, noteFirst:i===0}));
     }
     // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
     // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
@@ -15235,7 +15235,7 @@ async function pptxGatherSlidesData(){
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
       if(nodeContentExportEnabled&&childNode.note&&childNode.note.trim()){
-        noteBlockLines(splitNoteDiagramImages(childNode.note).restHtml).forEach(line=>items.push({type:'note', text:line, indent:relDepth-1}));
+        noteBlockLines(splitNoteDiagramImages(childNode.note).restHtml).forEach((line,i)=>items.push({type:'note', text:line, indent:relDepth-1, noteFirst:i===0}));
       }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
@@ -15549,8 +15549,15 @@ async function buildPptxPresentation(slidesData){
       const indentLevel=Math.max(0,b.indent||0);
       if(b.type==='note'){
         const pad='   '.repeat(indentLevel);
+        // NOTE label only on the first line of a group (see noteFirst, set in
+        // pptxGatherSlidesData) — repeating an icon before every single line of a multi-line
+        // note read as visual clutter; a plain text label once, matching Word's docxNoteBlock
+        // treatment, groups the lines instead without needing an icon at all (PowerPoint's own
+        // text-run model has no equivalent to Word's inline drawings, so a real icon here isn't
+        // an option regardless — see docxNoteIconRun's comment for the Word side of this).
+        const label=b.noteFirst?'NOTE  ':'      ';
         return [
-          {text:pad+'💬  ', options:{color:theme.hint, breakLine:false, italic:true}},
+          {text:pad+label, options:{color:theme.hint, breakLine:false, italic:true, fontSize:11, bold:true}},
           {text:pptxStripIllegalXmlChars(b.text), options:{color:theme.muted, italic:true, breakLine:true}}
         ];
       }
