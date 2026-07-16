@@ -3638,6 +3638,12 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
           <div class="settings-section" data-cat="toolbar">
             <div class="settings-section-title">Zen mode</div>
+            <div class="settings-grid-actions" style="margin-bottom:8px">
+              <button type="button" class="settings-mini-link" id="zen-preset-minimal-btn">Minimal (hide everything)</button>
+              <button type="button" class="settings-mini-link" id="zen-preset-writing-btn">Writing (default)</button>
+              <button type="button" class="settings-mini-link" id="zen-preset-fullscreen-btn">Fullscreen only</button>
+            </div>
+            <span class="settings-row-desc" style="margin-bottom:8px;display:block">Each button sets all 7 options below at once — pick whichever's closest, then fine-tune individual items if needed.</span>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Hide toolbar by default</span><span class="settings-row-desc">Automatically hide the toolbar when entering zen mode. If you show it again manually while zen, it stays shown until you exit</span></div><button id="zen-hide-toolbar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Hide toolbar by default in zen mode"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Hide Pad by default</span><span class="settings-row-desc">Automatically close the Pad panel when entering zen mode, and restore it on exit if it was open before</span></div><button id="zen-hide-pad-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Hide Pad by default in zen mode"></button></div>
@@ -27115,6 +27121,18 @@ el('zen-fullscreen-toggle')?.addEventListener('click',()=>setZenUseFullscreen(!z
 el('zen-hide-sidebar-toggle')?.addEventListener('click',()=>setZenHideSidebar(!zenHideSidebar));
 el('zen-hide-statusbar-toggle')?.addEventListener('click',()=>setZenHideStatusbar(!zenHideStatusbar));
 el('zen-hide-tabbar-toggle')?.addEventListener('click',()=>setZenHideTabbar(!zenHideTabbar));
+// Three quick presets over the same 7 individual toggles above — nobody picks 7 independent
+// booleans for what's really one choice ("how minimal do I want zen mode"), so these cover
+// the common cases in one click; the toggles stay right below for anyone who wants a custom mix.
+function applyZenPreset(toolbar,pad,appbar,fullscreen,sidebar,statusbar,tabbar){
+  setZenHideToolbar(toolbar,false); setZenHidePad(pad,false); setZenHideAppbar(appbar,false);
+  setZenUseFullscreen(fullscreen,false); setZenHideSidebar(sidebar,false);
+  setZenHideStatusbar(statusbar,false); setZenHideTabbar(tabbar,false);
+  savePrefs(); scheduleAutoSave();
+}
+el('zen-preset-minimal-btn')?.addEventListener('click',()=>applyZenPreset(true,true,true,true,true,true,true));
+el('zen-preset-writing-btn')?.addEventListener('click',()=>applyZenPreset(false,false,true,true,true,false,false));
+el('zen-preset-fullscreen-btn')?.addEventListener('click',()=>applyZenPreset(false,false,false,true,false,false,false));
 
 // "Editor's choice" preset: one click configures the toolbar, right-click menu, hover
 // toolbar, and accent/text color to a curated, writing-focused set. Reuses the exact same
