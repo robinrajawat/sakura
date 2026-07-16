@@ -8779,6 +8779,7 @@ function setDiagramAnchor(d,nodeId){
   if(_diagramEditorState&&_diagramEditorState.diagramId===d.id)updateDiagramEditorAnchorLabel(d);
   closeDiagramAnchorSuggest();
   renderDiagramsList();
+  render();
 }
 el('diagram-editor-anchor-btn')?.addEventListener('click',e=>{
   e.stopPropagation();
@@ -29575,6 +29576,7 @@ function _addTagPopoverFromInput(){
     if(t.nodeRef){ t.link=null; t.linkLabel=null; }
     saveTodos();
     renderTodos();
+    if(typeof render==='function')render();
   }
   function clearTodoAttachment(id){
     const t=todos.find(x=>x.id===id);
@@ -29582,6 +29584,7 @@ function _addTagPopoverFromInput(){
     t.link=null; t.linkLabel=null; t.nodeRef=null;
     saveTodos();
     renderTodos();
+    if(typeof render==='function')render();
   }
   // Looks up a nodeRef's live text/doc title without switching tabs or disturbing editor state —
   // same "prefer in-memory, fall back to storage" approach getDocNodesForSearch uses elsewhere.
@@ -33197,6 +33200,7 @@ function renderMeetingLinks(m){
       e.stopPropagation();
       m.links.splice(idx,1); m.modifiedAt=Date.now(); saveMeetingNotes();
       renderMeetingLinks(m);
+      render();
     });
     chip.appendChild(removeBtn);
     wrap.appendChild(chip);
