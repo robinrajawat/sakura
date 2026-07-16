@@ -1608,9 +1608,14 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
-#diagram-lightbox{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.88);cursor:zoom-out;flex-direction:column;align-items:center;justify-content:center;padding:40px}
+#diagram-lightbox{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.88);cursor:zoom-out;flex-direction:column;align-items:center;justify-content:center;padding:40px;overflow:hidden}
 #diagram-lightbox.open{display:flex}
 #diagram-lightbox img{max-width:100%;max-height:calc(100vh - 120px);object-fit:contain;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#diagram-lightbox-img{touch-action:none;transform-origin:center center;will-change:transform}
+#diagram-lightbox.dz-zoomed{cursor:default}
+#diagram-lightbox-zoom-hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);color:#e8e6e0;opacity:.6;font:500 11px 'Inter',sans-serif;letter-spacing:.02em;pointer-events:none;transition:opacity .3s ease}
+#diagram-lightbox-zoom-hint.hint-hidden{opacity:0}
+#preview-overlay.laser-active #diagram-lightbox-zoom-hint{display:none}
 #diagram-lightbox figcaption{color:#e8e6e0;font:500 13px 'Inter',sans-serif;margin-top:14px;text-align:center;max-width:800px}
 #diagram-lightbox-close{position:fixed;top:20px;right:24px;background:none;border:none;color:#e8e6e0;cursor:pointer;padding:8px;opacity:.8}
 #diagram-lightbox-close:hover{opacity:1}
@@ -5616,7 +5621,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
-    <div id="diagram-lightbox" role="dialog" aria-label="Enlarged diagram"><button type="button" id="diagram-lightbox-close" aria-label="Close"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><img id="diagram-lightbox-img" src="" alt="" /><figcaption id="diagram-lightbox-caption"></figcaption></div>
+    <div id="diagram-lightbox" role="dialog" aria-label="Enlarged diagram"><button type="button" id="diagram-lightbox-close" aria-label="Close"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><img id="diagram-lightbox-img" src="" alt="" /><figcaption id="diagram-lightbox-caption"></figcaption><div id="diagram-lightbox-zoom-hint">Scroll or pinch to zoom · drag to pan · double-click to reset</div></div>
     <div id="presenter-notes-panel" role="complementary" aria-label="Presenter notes">
       <div id="presenter-notes-header" data-tip="Drag to move"><span id="presenter-notes-title">Notepad</span><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
       <div id="presenter-notes-body"></div>
@@ -25278,18 +25283,103 @@ function updatePresenterTimerDisplay(){
 }
 
 // Click-to-zoom for featured diagrams — architecture diagrams tend to have fine text that's
-// unreadable at the slide's fixed max-height, so this is a plain, full-viewport image view,
-// no pan/zoom controls beyond the browser's own — click the image, click anywhere (or the ✕,
-// or Escape) to close.
+// unreadable at the slide's fixed max-height. Beyond the initial fit-to-viewport view, the
+// image itself supports scroll/pinch zoom (cursor- or touch-anchored) and drag-to-pan once
+// zoomed in, plus double-click/double-tap to toggle a 2.5x zoom at that point. Background
+// click, the ✕, or Escape still close it; clicking the image itself only closes while it's
+// at 1x (zoomed-in clicks are reserved for panning, not dismissal).
+let dzScale=1,dzX=0,dzY=0,dzDragging=false,dzDragStartX=0,dzDragStartY=0,dzDragOrigX=0,dzDragOrigY=0,dzJustDragged=false,dzHintTimer=null;
+const dzPointers=new Map();
+let dzPinchStartDist=0,dzPinchStartScale=1;
+function resetDiagramZoom(){ dzScale=1; dzX=0; dzY=0; dzPointers.clear(); dzDragging=false; applyDiagramZoomTransform(); }
+function clampDiagramPan(){
+  const img=el('diagram-lightbox-img'); if(!img)return;
+  if(dzScale<=1.001){ dzX=0; dzY=0; return; }
+  const scaledW=img.offsetWidth*dzScale, scaledH=img.offsetHeight*dzScale;
+  const maxX=Math.max(0,(scaledW-window.innerWidth)/2), maxY=Math.max(0,(scaledH-window.innerHeight)/2);
+  dzX=Math.min(maxX,Math.max(-maxX,dzX)); dzY=Math.min(maxY,Math.max(-maxY,dzY));
+}
+function applyDiagramZoomTransform(){
+  const img=el('diagram-lightbox-img'); if(!img)return;
+  clampDiagramPan();
+  img.style.transform=dzScale===1?'':`translate(${dzX}px,${dzY}px) scale(${dzScale})`;
+  const box=el('diagram-lightbox'); if(!box)return;
+  box.classList.toggle('dz-zoomed',dzScale>1.001);
+  const laserOn=el('preview-overlay')?.classList.contains('laser-active');
+  if(!laserOn) img.style.cursor=dzScale>1.001?(dzDragging?'grabbing':'grab'):'zoom-in';
+}
+function showDiagramZoomHint(){
+  const hint=el('diagram-lightbox-zoom-hint'); if(!hint)return;
+  hint.classList.remove('hint-hidden'); clearTimeout(dzHintTimer);
+  dzHintTimer=setTimeout(()=>hint.classList.add('hint-hidden'),3000);
+}
+function hideDiagramZoomHintNow(){ clearTimeout(dzHintTimer); el('diagram-lightbox-zoom-hint')?.classList.add('hint-hidden'); }
+function diagramZoomAt(clientX,clientY,newScale){
+  newScale=Math.min(6,Math.max(1,newScale));
+  const px=clientX-window.innerWidth/2, py=clientY-window.innerHeight/2;
+  const ratio=newScale/dzScale;
+  dzX=px-(px-dzX)*ratio; dzY=py-(py-dzY)*ratio; dzScale=newScale;
+  if(dzScale<=1.001){ dzScale=1; dzX=0; dzY=0; }
+  applyDiagramZoomTransform();
+}
 function openDiagramLightbox(src,alt){
   const box=el('diagram-lightbox'); if(!box)return;
   const img=el('diagram-lightbox-img'); const cap=el('diagram-lightbox-caption');
   if(img){ img.src=src; img.alt=alt||'Diagram'; }
   if(cap){ cap.textContent=alt||''; cap.style.display=alt?'block':'none'; }
+  resetDiagramZoom();
   box.classList.add('open');
+  showDiagramZoomHint();
 }
-function closeDiagramLightbox(){ el('diagram-lightbox')?.classList.remove('open'); }
-el('diagram-lightbox')?.addEventListener('click',e=>{ if(e.target.id!=='diagram-lightbox-img') closeDiagramLightbox(); });
+function closeDiagramLightbox(){ el('diagram-lightbox')?.classList.remove('open'); resetDiagramZoom(); clearTimeout(dzHintTimer); }
+el('diagram-lightbox')?.addEventListener('wheel',e=>{
+  if(!el('diagram-lightbox')?.classList.contains('open'))return;
+  e.preventDefault();
+  hideDiagramZoomHintNow();
+  diagramZoomAt(e.clientX,e.clientY,dzScale*Math.exp(-e.deltaY*0.0018));
+},{passive:false});
+el('diagram-lightbox-img')?.addEventListener('dblclick',e=>{
+  e.preventDefault(); e.stopPropagation();
+  hideDiagramZoomHintNow();
+  diagramZoomAt(e.clientX,e.clientY,dzScale>1?1:2.5);
+});
+el('diagram-lightbox-img')?.addEventListener('pointerdown',e=>{
+  const img=el('diagram-lightbox-img'); if(!img)return;
+  hideDiagramZoomHintNow();
+  dzPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(dzPointers.size===1&&dzScale>1){
+    dzDragging=true; dzDragStartX=e.clientX; dzDragStartY=e.clientY; dzDragOrigX=dzX; dzDragOrigY=dzY;
+    img.setPointerCapture(e.pointerId); applyDiagramZoomTransform();
+  } else if(dzPointers.size===2){
+    dzDragging=false;
+    const pts=[...dzPointers.values()];
+    dzPinchStartDist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1;
+    dzPinchStartScale=dzScale;
+  }
+});
+el('diagram-lightbox-img')?.addEventListener('pointermove',e=>{
+  if(!dzPointers.has(e.pointerId))return;
+  dzPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(dzPointers.size===2){
+    const pts=[...dzPointers.values()];
+    const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1;
+    const center={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+    diagramZoomAt(center.x,center.y,dzPinchStartScale*(dist/dzPinchStartDist));
+    return;
+  }
+  if(dzDragging){
+    dzX=dzDragOrigX+(e.clientX-dzDragStartX); dzY=dzDragOrigY+(e.clientY-dzDragStartY);
+    applyDiagramZoomTransform();
+  }
+});
+function diagramLightboxPointerEnd(e){
+  dzPointers.delete(e.pointerId);
+  if(dzDragging){ dzDragging=false; dzJustDragged=true; setTimeout(()=>{dzJustDragged=false;},0); applyDiagramZoomTransform(); }
+}
+el('diagram-lightbox-img')?.addEventListener('pointerup',diagramLightboxPointerEnd);
+el('diagram-lightbox-img')?.addEventListener('pointercancel',diagramLightboxPointerEnd);
+el('diagram-lightbox-img')?.addEventListener('click',e=>{ if(dzJustDragged||dzScale>1) e.stopPropagation(); });
+el('diagram-lightbox')?.addEventListener('click',e=>{ if(dzJustDragged)return; if(e.target.id!=='diagram-lightbox-img') closeDiagramLightbox(); });
 el('diagram-lightbox-close')?.addEventListener('click',closeDiagramLightbox);
 // Slide overview grid — a label-based grid (not visual thumbnails; rendering a live screenshot
 // of each slide would need drawing every one to a canvas, a lot of machinery for what's really
