@@ -3891,7 +3891,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-section-title">Trash</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep deleted documents &amp; templates for</span><span class="settings-row-desc">Deleted documents and templates both go to the same Trash, not gone for good. After this long they're purged automatically — pick "Forever" to only ever remove them by emptying Trash yourself.</span></div><select id="trash-retention-select" class="select" style="width:auto"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">Forever (manual only)</option></select></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Trash in search</span><span class="settings-row-desc">Quick Assist's search results (Ctrl/Cmd+Space) normally only look at active documents and templates. Turn this on to also surface matches sitting in Trash, clearly marked as such.</span></div><button id="search-includes-trash-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Include Trash in search"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Empty Trash</span><span class="settings-row-desc" id="sb-trash-settings-status">Permanently deletes every document and template currently in Trash. This cannot be undone.</span></div><button id="sb-empty-trash-btn" class="btn data-io-btn">Empty…</button></div>
             </div>
           </div>
@@ -15911,7 +15910,6 @@ el('inline-note-preview-toggle')?.addEventListener('click',()=>setInlineNotePrev
 el('svg-section-icons-toggle')?.addEventListener('click',()=>setSvgSectionIconsEnabled(!svgSectionIconsEnabled)); el('svg-section-icons-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSvgSectionIconsEnabled(!svgSectionIconsEnabled);}});
 el('hide-tree-lines-toggle')?.addEventListener('click',()=>setHideTreeLines(!hideTreeLines)); el('hide-tree-lines-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setHideTreeLines(!hideTreeLines);}});
 el('node-timestamp-hover-toggle')?.addEventListener('click',()=>setNodeTimestampHoverEnabled(!nodeTimestampHoverEnabled)); el('node-timestamp-hover-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setNodeTimestampHoverEnabled(!nodeTimestampHoverEnabled);}});
-el('restore-tabs-toggle').addEventListener('click',()=>setRestoreTabsOnLaunch(!restoreTabsOnLaunch)); el('restore-tabs-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setRestoreTabsOnLaunch(!restoreTabsOnLaunch);}});
 el('skip-folded-exports-toggle').addEventListener('click',()=>setSkipFoldedInExports(!skipFoldedInExports)); el('skip-folded-exports-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSkipFoldedInExports(!skipFoldedInExports);}});
 el('export-menu-fold-note-enabled-toggle')?.addEventListener('click',()=>setExportMenuFoldNoteEnabled(!exportMenuFoldNoteEnabled));
 el('cover-page-toggle')?.addEventListener('click',()=>setCoverPageEnabled(!coverPageEnabled)); el('cover-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setCoverPageEnabled(!coverPageEnabled);}});
@@ -18271,6 +18269,71 @@ document.addEventListener('visibilitychange',()=>{
 
 let zenMode=false;
 let _zenAutoHidToolbar=false; let _zenAutoHidPad=false; let _zenAutoHidSidebar=false;
+// Moved here (from much later in the file) so these are initialized before the boot
+// sequence below calls applyFormatButtonVisibility()/applyExtrasButtonVisibility() --
+// they used to be declared after the point they're first used, which is a real bug
+// (temporal dead zone: 'Cannot access before initialization') caught by actually
+// running the app rather than just checking syntax.
+function createToolbarButtonGroup(buttons, idMap, prefix, getHidden, setHiddenState, afterApply){
+  function resolveEls(key){
+    const ref=typeof idMap==='function'?idMap(key):idMap[key];
+    if(!ref)return [];
+    return (Array.isArray(ref)?ref:[ref]).map(x=>typeof x==='string'?el(x):x).filter(Boolean);
+  }
+  function apply(){
+    buttons.forEach(key=>{
+      const hidden=getHidden().includes(key);
+      resolveEls(key).forEach(btn=>{ btn.style.display=hidden?'none':''; });
+      const cb=el(prefix+key); if(cb) cb.checked=!hidden;
+    });
+    if(afterApply)afterApply();
+  }
+  function setKeyHidden(key,hidden,persist=true){
+    const set=new Set(getHidden());
+    if(hidden) set.add(key); else set.delete(key);
+    setHiddenState(buttons.filter(k=>set.has(k)));
+    apply();
+    if(persist){ savePrefs(); scheduleAutoSave(); }
+  }
+  buttons.forEach(key=>{ el(prefix+key)?.addEventListener('change', e=>setKeyHidden(key, !e.target.checked)) });
+  return {apply, setKeyHidden};
+}
+const historyTbGroup=createToolbarButtonGroup(HISTORY_TB_BUTTONS,HISTORY_TB_BTN_ID,'hitb-',()=>historyHiddenButtons,v=>historyHiddenButtons=v);
+const structureTbGroup=createToolbarButtonGroup(STRUCTURE_TB_BUTTONS,STRUCTURE_TB_BTN_ID,'sttb-',()=>structureHiddenButtons,v=>structureHiddenButtons=v);
+const moveTbGroup=createToolbarButtonGroup(MOVE_TB_BUTTONS,MOVE_TB_BTN_ID,'mvtb-',()=>moveHiddenButtons,v=>moveHiddenButtons=v);
+const foldTbGroup=createToolbarButtonGroup(FOLD_TB_BUTTONS,FOLD_TB_BTN_ID,'fdtb-',()=>foldHiddenButtons,v=>foldHiddenButtons=v);
+const aiTbGroup=createToolbarButtonGroup(AI_TB_BUTTONS,AI_TB_BTN_ID,'aitb-',()=>aiHiddenButtons,v=>aiHiddenButtons=v);
+const deleteTbGroup=createToolbarButtonGroup(DELETE_TB_BUTTONS,DELETE_TB_BTN_ID,'deltb-',()=>deleteHiddenButtons,v=>deleteHiddenButtons=v);
+const insertTbGroup=createToolbarButtonGroup(INSERT_TB_BUTTONS,INSERT_TB_BTN_ID,'itbsec-',()=>insertHiddenButtons,v=>insertHiddenButtons=v);
+// Thin name-compatible wrappers — every call site elsewhere in the file (boot sequence,
+// preset functions, snapshot restore) still calls applyInsertButtonVisibility() /
+// setInsertButtonHidden() by name, so keep those names working rather than hunting down
+// every reference. The per-key change-listener wiring the old bespoke version did by hand
+// is now handled once, generically, inside createToolbarButtonGroup itself.
+function applyInsertButtonVisibility(){ insertTbGroup.apply(); }
+function setInsertButtonHidden(key,hidden,persist=true){ insertTbGroup.setKeyHidden(key,hidden,persist); }
+
+// Format group needs custom element lookup: bold/italic/underline/strike share the
+// .fmt-btn class with a data-style attribute instead of individual ids, and
+// highlight/color are each a wrapper div (swatch button + color picker) rather than
+// a single button, so the whole wrapper is hidden as one unit.
+function _formatBtnEl(key){
+  if(key==='highlight') return el('hl-wrap');
+  if(key==='color') return el('fc-wrap');
+  if(key==='heading') return el('heading-wrap');
+  return document.querySelector(`.fmt-btn[data-style="${key}"]`);
+}
+const formatTbGroup=createToolbarButtonGroup(FORMAT_TB_BUTTONS,_formatBtnEl,'fmtb-',()=>formatHiddenButtons,v=>formatHiddenButtons=v);
+function applyFormatButtonVisibility(){ formatTbGroup.apply(); }
+function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHidden(key,hidden,persist); }
+
+// Extras group: each key can map to more than one element id (dropdown item +
+// expanded-toolbar button for the same action), and hiding buttons can leave the More
+// menu's section labels/dividers orphaned — both handled generically now via idMap
+// accepting arrays and the afterApply hook, instead of Extras hand-rolling its own copy.
+const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
+function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
+
 loadPrefs(); loadRecentAnswerers(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
 
 /* === Sidebar === */
@@ -19926,7 +19989,6 @@ el('cross-tab-dismiss-btn')?.addEventListener('click',()=>hideCrossTabWarning())
 el('backup-reminder-days-select')?.addEventListener('change',e=>setBackupReminderDays(e.target.value));
 el('session-backup-mode-select')?.addEventListener('change',e=>setSessionBackupPromptMode(e.target.value));
 el('trash-retention-select')?.addEventListener('change',e=>setTrashRetentionDays(e.target.value));
-el('search-includes-trash-toggle')?.addEventListener('click',()=>setSearchIncludesTrash(!searchIncludesTrash)); el('search-includes-trash-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSearchIncludesTrash(!searchIncludesTrash);}});
 el('sb-empty-trash-btn')?.addEventListener('click',()=>emptyTrash());
 el('sb-backup-reminder-chip')?.addEventListener('click',()=>{
   el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open');
@@ -26734,65 +26796,6 @@ PAD_TB_BUTTONS.forEach(key=>{ el('pnbsec-'+key)?.addEventListener('change', e=>s
 //     instead of individual ids, and highlight/color/heading are wrapper divs)
 // afterApply is an optional extra step to run once after every apply() (Extras needs
 // updateMoreMenuSections() to keep the More-menu section labels/dividers in sync).
-function createToolbarButtonGroup(buttons, idMap, prefix, getHidden, setHiddenState, afterApply){
-  function resolveEls(key){
-    const ref=typeof idMap==='function'?idMap(key):idMap[key];
-    if(!ref)return [];
-    return (Array.isArray(ref)?ref:[ref]).map(x=>typeof x==='string'?el(x):x).filter(Boolean);
-  }
-  function apply(){
-    buttons.forEach(key=>{
-      const hidden=getHidden().includes(key);
-      resolveEls(key).forEach(btn=>{ btn.style.display=hidden?'none':''; });
-      const cb=el(prefix+key); if(cb) cb.checked=!hidden;
-    });
-    if(afterApply)afterApply();
-  }
-  function setKeyHidden(key,hidden,persist=true){
-    const set=new Set(getHidden());
-    if(hidden) set.add(key); else set.delete(key);
-    setHiddenState(buttons.filter(k=>set.has(k)));
-    apply();
-    if(persist){ savePrefs(); scheduleAutoSave(); }
-  }
-  buttons.forEach(key=>{ el(prefix+key)?.addEventListener('change', e=>setKeyHidden(key, !e.target.checked)) });
-  return {apply, setKeyHidden};
-}
-const historyTbGroup=createToolbarButtonGroup(HISTORY_TB_BUTTONS,HISTORY_TB_BTN_ID,'hitb-',()=>historyHiddenButtons,v=>historyHiddenButtons=v);
-const structureTbGroup=createToolbarButtonGroup(STRUCTURE_TB_BUTTONS,STRUCTURE_TB_BTN_ID,'sttb-',()=>structureHiddenButtons,v=>structureHiddenButtons=v);
-const moveTbGroup=createToolbarButtonGroup(MOVE_TB_BUTTONS,MOVE_TB_BTN_ID,'mvtb-',()=>moveHiddenButtons,v=>moveHiddenButtons=v);
-const foldTbGroup=createToolbarButtonGroup(FOLD_TB_BUTTONS,FOLD_TB_BTN_ID,'fdtb-',()=>foldHiddenButtons,v=>foldHiddenButtons=v);
-const aiTbGroup=createToolbarButtonGroup(AI_TB_BUTTONS,AI_TB_BTN_ID,'aitb-',()=>aiHiddenButtons,v=>aiHiddenButtons=v);
-const deleteTbGroup=createToolbarButtonGroup(DELETE_TB_BUTTONS,DELETE_TB_BTN_ID,'deltb-',()=>deleteHiddenButtons,v=>deleteHiddenButtons=v);
-const insertTbGroup=createToolbarButtonGroup(INSERT_TB_BUTTONS,INSERT_TB_BTN_ID,'itbsec-',()=>insertHiddenButtons,v=>insertHiddenButtons=v);
-// Thin name-compatible wrappers — every call site elsewhere in the file (boot sequence,
-// preset functions, snapshot restore) still calls applyInsertButtonVisibility() /
-// setInsertButtonHidden() by name, so keep those names working rather than hunting down
-// every reference. The per-key change-listener wiring the old bespoke version did by hand
-// is now handled once, generically, inside createToolbarButtonGroup itself.
-function applyInsertButtonVisibility(){ insertTbGroup.apply(); }
-function setInsertButtonHidden(key,hidden,persist=true){ insertTbGroup.setKeyHidden(key,hidden,persist); }
-
-// Format group needs custom element lookup: bold/italic/underline/strike share the
-// .fmt-btn class with a data-style attribute instead of individual ids, and
-// highlight/color are each a wrapper div (swatch button + color picker) rather than
-// a single button, so the whole wrapper is hidden as one unit.
-function _formatBtnEl(key){
-  if(key==='highlight') return el('hl-wrap');
-  if(key==='color') return el('fc-wrap');
-  if(key==='heading') return el('heading-wrap');
-  return document.querySelector(`.fmt-btn[data-style="${key}"]`);
-}
-const formatTbGroup=createToolbarButtonGroup(FORMAT_TB_BUTTONS,_formatBtnEl,'fmtb-',()=>formatHiddenButtons,v=>formatHiddenButtons=v);
-function applyFormatButtonVisibility(){ formatTbGroup.apply(); }
-function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHidden(key,hidden,persist); }
-
-// Extras group: each key can map to more than one element id (dropdown item +
-// expanded-toolbar button for the same action), and hiding buttons can leave the More
-// menu's section labels/dividers orphaned — both handled generically now via idMap
-// accepting arrays and the afterApply hook, instead of Extras hand-rolling its own copy.
-const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
-function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
 // The More menu is a fixed 3-block layout (Document / Sort top-level nodes / Clear all), each
 // block hideable button-by-button via Settings. Hiding every button in a block used to leave its
 // group-label heading and dividers behind with nothing underneath - this resolves label and
