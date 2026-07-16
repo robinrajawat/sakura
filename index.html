@@ -288,8 +288,8 @@ body.feature-off-note #qb-note,body.feature-off-note #itbsec-note,body.feature-o
 body.feature-off-codeblock #npanel-tab-code,body.feature-off-codeblock .node-code-badge{display:none!important}
 body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-summarise),body.feature-off-ai #ntb-ai-rewrite,body.feature-off-ai #ntb-ai-summarise,body.feature-off-ai #ptb-ai-rewrite{display:none!important}
 body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog .node-dlog-dot,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
-body.feature-off-padnotepad #pad-tab-notes{display:none!important}
-body.feature-off-padqa #pad-tab-qa{display:none!important}
+body.feature-off-padnotepad #pad-tab-notes,body.feature-off-padnotepad #presenter-notes-tab-notes{display:none!important}
+body.feature-off-padqa #pad-tab-qa,body.feature-off-padqa #presenter-notes-tab-qa{display:none!important}
 body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
 body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
@@ -2210,6 +2210,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #presenter-notes-header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);flex:0 0 auto;cursor:move}
 #presenter-notes-header>span:first-child{font:600 12.5px 'Inter',sans-serif;color:var(--fg);pointer-events:none}
 #presenter-notes-hint{flex:1;font:400 10.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+#presenter-notes-tabs{display:flex;gap:12px;flex:0 0 auto;pointer-events:auto}
+.pn-tab{font-size:11.5px;padding:2px 1px 4px;margin-bottom:-6px}
 #presenter-notes-close-btn{appearance:none;border:none;background:transparent;color:var(--muted);cursor:pointer;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;flex:0 0 auto}
 #presenter-notes-close-btn:hover{background:var(--hover);color:var(--fg)}
 #presenter-notes-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;position:relative}
@@ -5699,7 +5701,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
     <div id="presenter-notes-panel" role="complementary" aria-label="Presenter notes">
-      <div id="presenter-notes-header" data-tip="Drag to move"><span id="presenter-notes-title">Notepad</span><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
+      <div id="presenter-notes-header" data-tip="Drag to move"><div id="presenter-notes-tabs"><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-notes" data-mode="notes" role="tab" aria-selected="true">Notes</button><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-qa" data-mode="qa" role="tab" aria-selected="false">Q&amp;A</button></div><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
       <div id="presenter-notes-body"></div>
       <div id="presenter-notes-resize-handle" data-tip="Drag to resize · double-click to reset position &amp; size"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="21" y1="9" x2="9" y2="21"/><line x1="21" y1="15" x2="15" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg></div>
     </div>
@@ -26005,6 +26007,8 @@ function openPresenterNotesInMode(mode){
 }
 el('presenter-notes-btn')?.addEventListener('click',()=>openPresenterNotesInMode('notes'));
 el('presenter-notes-close-btn')?.addEventListener('click',closePresenterNotes);
+el('presenter-notes-tab-notes')?.addEventListener('click',()=>setPadViewMode('notes'));
+el('presenter-notes-tab-qa')?.addEventListener('click',()=>setPadViewMode('qa'));
 
 // Presenter Notes panel: draggable (via header) and resizable (via corner grip), same idea
 // as the Pad's own width-drag handle, but for both axes plus position since this one floats
@@ -26044,11 +26048,11 @@ window.addEventListener('resize',()=>{ if(presenterNotesPos)applyPresenterNotesP
   function ensurePos(){ if(presenterNotesPos)return; const r=panel.getBoundingClientRect(); presenterNotesPos={left:r.left,top:r.top,width:r.width,height:r.height}; }
   let dragging=false, dStartX=0, dStartY=0, dLeft=0, dTop=0;
   header.addEventListener('mousedown',e=>{
-    if(e.target.closest('#presenter-notes-close-btn'))return;
+    if(e.target.closest('#presenter-notes-close-btn,#presenter-notes-tabs'))return;
     ensurePos(); dragging=true; dStartX=e.clientX; dStartY=e.clientY; dLeft=presenterNotesPos.left; dTop=presenterNotesPos.top;
     panel.classList.add('pn-dragging'); document.body.style.userSelect='none'; e.preventDefault();
   });
-  header.addEventListener('dblclick',e=>{ if(e.target.closest('#presenter-notes-close-btn'))return; resetPresenterNotesPos(); });
+  header.addEventListener('dblclick',e=>{ if(e.target.closest('#presenter-notes-close-btn,#presenter-notes-tabs'))return; resetPresenterNotesPos(); });
   let resizing=false, rStartX=0, rStartY=0, rW=0, rH=0;
   handle.addEventListener('mousedown',e=>{
     ensurePos(); resizing=true; rStartX=e.clientX; rStartY=e.clientY; rW=presenterNotesPos.width; rH=presenterNotesPos.height;
