@@ -9490,7 +9490,7 @@ function applyFeatureVisibility(){
   if(!(el('settings-search')?.value||'').trim()){
     Object.keys(FEATURE_SELF_TOGGLE_IDS).forEach(key=>{
       const flag=FEATURE_FLAGS[key]; const on=flag?flag.get():true;
-      FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{const sec=el(id); if(sec)hideSectionExceptToggle(sec,el(FEATURE_SELF_TOGGLE_IDS[key]),on);});
+      FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{const sec=el(id); if(sec)hideSectionExceptToggle(sec,el(FEATURE_SELF_TOGGLE_IDS[key]),on,false);});
     });
   }
   try{const _np=el('note-panel'); if(backlinksEnabled&&_np&&_np.classList.contains('open')&&notePanelNodeId!==null){renderBacklinkPanel(notePanelNodeId)}}catch(e){}
@@ -9500,9 +9500,9 @@ function applyFeatureVisibility(){
 // Code/AI/Pad/Quick Assist/To-Dos, whose switches live on the separate Features overview page.
 // Hiding the whole section for these four would hide the only way back to turning it on again.
 const FEATURE_SELF_TOGGLE_IDS={focus:'feat-focus-toggle',hovertoolbar:'feat-hovertoolbar-toggle',nodeqa:'feat-nodeqa-toggle'};
-function hideSectionExceptToggle(sec,toggleBtn,on){
+function hideSectionExceptToggle(sec,toggleBtn,on,touchSectionDisplay=true){
   const toggleRow=toggleBtn?toggleBtn.closest('.settings-list-row'):null;
-  if(!toggleRow){ sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1'; return; }
+  if(!toggleRow){ if(touchSectionDisplay){sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1';} return; }
   const toggleParent=toggleRow.parentElement;
   Array.from(sec.children).forEach(child=>{
     if(child.classList.contains('settings-section-title'))return;
@@ -9515,7 +9515,7 @@ function hideSectionExceptToggle(sec,toggleBtn,on){
     }
     child.style.display=on?'':'none';
   });
-  sec.style.display=''; sec.dataset.featureHidden='';
+  if(touchSectionDisplay){ sec.style.display=''; sec.dataset.featureHidden=''; }
 }
 function filterSettingsByFeatures(){
   Object.keys(FEATURE_SETTINGS_SECTIONS).forEach(key=>{
