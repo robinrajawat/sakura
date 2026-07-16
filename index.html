@@ -25288,21 +25288,44 @@ function updatePresenterTimerDisplay(){
 // zoomed in, plus double-click/double-tap to toggle a 2.5x zoom at that point. Background
 // click, the ✕, or Escape still close it; clicking the image itself only closes while it's
 // at 1x (zoomed-in clicks are reserved for panning, not dismissal).
-let dzScale=1,dzX=0,dzY=0,dzDragging=false,dzDragStartX=0,dzDragStartY=0,dzDragOrigX=0,dzDragOrigY=0,dzJustDragged=false,dzHintTimer=null;
+//
+// IMPORTANT: zoom level is applied by resizing the image's real layout box (width/height),
+// never by a CSS transform: scale(). A transform-scale is compositor-only — the browser
+// paints the element once at its laid-out size into a GPU texture, and scale() just stretches
+// that cached texture, which pixelates regardless of whether the source is vector (SVG) or
+// raster. Setting real width/height forces an actual re-layout and repaint at the target
+// resolution: crisp at any zoom for SVG sources, and properly resampled up to the source's
+// native resolution for raster ones (past that, it's a real, physical pixel ceiling, not a
+// rendering bug). transform is used only for translate() — pan position, which doesn't need
+// re-rendering to stay sharp, so it stays cheap and smooth.
+let dzScale=1,dzX=0,dzY=0,dzBaseW=0,dzBaseH=0,dzDragging=false,dzDragStartX=0,dzDragStartY=0,dzDragOrigX=0,dzDragOrigY=0,dzJustDragged=false,dzHintTimer=null,dzRafId=null,dzLoadedSrc=null;
 const dzPointers=new Map();
 let dzPinchStartDist=0,dzPinchStartScale=1;
-function resetDiagramZoom(){ dzScale=1; dzX=0; dzY=0; dzPointers.clear(); dzDragging=false; applyDiagramZoomTransform(); }
+function resetDiagramZoom(){ if(dzRafId!=null){cancelAnimationFrame(dzRafId); dzRafId=null;} dzScale=1; dzX=0; dzY=0; dzPointers.clear(); dzDragging=false; applyDiagramZoomTransform(); }
+// Continuous gestures (wheel ticks, active pinch/drag) call this instead of applying the DOM
+// update directly — collapses any number of events firing within the same frame down to a
+// single layout/paint, since each update forces a real reflow (see the block comment above).
+function requestDiagramZoomFrame(){
+  if(dzRafId!=null)return;
+  dzRafId=requestAnimationFrame(()=>{ dzRafId=null; applyDiagramZoomTransform(); });
+}
 function clampDiagramPan(){
-  const img=el('diagram-lightbox-img'); if(!img)return;
-  if(dzScale<=1.001){ dzX=0; dzY=0; return; }
-  const scaledW=img.offsetWidth*dzScale, scaledH=img.offsetHeight*dzScale;
+  if(dzScale<=1.001||!dzBaseW||!dzBaseH){ dzX=0; dzY=0; return; }
+  const scaledW=dzBaseW*dzScale, scaledH=dzBaseH*dzScale;
   const maxX=Math.max(0,(scaledW-window.innerWidth)/2), maxY=Math.max(0,(scaledH-window.innerHeight)/2);
   dzX=Math.min(maxX,Math.max(-maxX,dzX)); dzY=Math.min(maxY,Math.max(-maxY,dzY));
 }
 function applyDiagramZoomTransform(){
   const img=el('diagram-lightbox-img'); if(!img)return;
   clampDiagramPan();
-  img.style.transform=dzScale===1?'':`translate(${dzX}px,${dzY}px) scale(${dzScale})`;
+  if(dzScale===1||!dzBaseW||!dzBaseH){
+    img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight='';
+    img.style.transform='';
+  } else {
+    img.style.maxWidth='none'; img.style.maxHeight='none';
+    img.style.width=(dzBaseW*dzScale)+'px'; img.style.height=(dzBaseH*dzScale)+'px';
+    img.style.transform=`translate(${dzX}px,${dzY}px)`;
+  }
   const box=el('diagram-lightbox'); if(!box)return;
   box.classList.toggle('dz-zoomed',dzScale>1.001);
   const laserOn=el('preview-overlay')?.classList.contains('laser-active');
@@ -25315,17 +25338,38 @@ function showDiagramZoomHint(){
 }
 function hideDiagramZoomHintNow(){ clearTimeout(dzHintTimer); el('diagram-lightbox-zoom-hint')?.classList.add('hint-hidden'); }
 function diagramZoomAt(clientX,clientY,newScale){
+  if(!dzBaseW||!dzBaseH)return;
   newScale=Math.min(6,Math.max(1,newScale));
   const px=clientX-window.innerWidth/2, py=clientY-window.innerHeight/2;
   const ratio=newScale/dzScale;
   dzX=px-(px-dzX)*ratio; dzY=py-(py-dzY)*ratio; dzScale=newScale;
   if(dzScale<=1.001){ dzScale=1; dzX=0; dzY=0; }
-  applyDiagramZoomTransform();
+  requestDiagramZoomFrame();
 }
+// Invalidate the cached base size if the viewport changes — the fit-to-viewport measurement
+// (max-height: calc(100vh - 120px)) depends on it, so a resize (or rotate) could make a stale
+// cached size wrong. Cheap to just re-measure next time the lightbox opens.
+window.addEventListener('resize',()=>{ dzBaseW=0; dzBaseH=0; dzLoadedSrc=null; });
 function openDiagramLightbox(src,alt){
   const box=el('diagram-lightbox'); if(!box)return;
   const img=el('diagram-lightbox-img'); const cap=el('diagram-lightbox-caption');
-  if(img){ img.src=src; img.alt=alt||'Diagram'; }
+  if(img){
+    // Reopening the same diagram that's already loaded and measured skips the reload entirely
+    // — avoids the brief blank/flash of tearing down and re-decoding an identical image.
+    if(dzLoadedSrc===src&&img.complete&&dzBaseW&&dzBaseH){
+      img.alt=alt||'Diagram';
+    } else {
+      dzBaseW=0; dzBaseH=0; dzLoadedSrc=src;
+      img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight=''; img.style.transform='';
+      img.removeAttribute('src');
+      // Measured after the box is open (so the stylesheet's fit-to-viewport max-width/max-height
+      // is already in effect) — this becomes the scale-1 baseline that zoom multiplies against.
+      const measure=()=>{ dzBaseW=img.offsetWidth; dzBaseH=img.offsetHeight; };
+      img.onload=measure; img.onerror=measure;
+      img.src=src; img.alt=alt||'Diagram';
+      if(img.complete) measure();
+    }
+  }
   if(cap){ cap.textContent=alt||''; cap.style.display=alt?'block':'none'; }
   resetDiagramZoom();
   box.classList.add('open');
@@ -25369,7 +25413,7 @@ el('diagram-lightbox-img')?.addEventListener('pointermove',e=>{
   }
   if(dzDragging){
     dzX=dzDragOrigX+(e.clientX-dzDragStartX); dzY=dzDragOrigY+(e.clientY-dzDragStartY);
-    applyDiagramZoomTransform();
+    requestDiagramZoomFrame();
   }
 });
 function diagramLightboxPointerEnd(e){
