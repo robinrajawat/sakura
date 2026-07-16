@@ -14428,6 +14428,7 @@ function docxBuildNotepadSection(html){
 // external hyperlinks) — reset per export since ids must be unique within one document.xml.rels.
 // Starts well above the fixed rId1-rId3 range so there's no risk of collision.
 let _docxExtraRels=[]; let _docxRelIdCounter=100; let _docxMediaFiles=[]; let _docxImageExtsUsed=new Set();
+let _docxNoteIconRelId=undefined; let _docxIconPlacementCounter=0;
 function docxAddRel(type,target,targetMode){
   const id='rId'+(++_docxRelIdCounter);
   _docxExtraRels.push({id,type,target,targetMode});
@@ -14473,6 +14474,43 @@ function docxTableFromElement(table,availWidthTwips){
     return `<w:tr>${cellsXml}</w:tr>`;
   }).join('');
   return `<w:tbl><w:tblPr><w:tblW w:w="${availWidthTwips}" w:type="dxa"/><w:tblLook w:val="04A0" w:firstRow="1" w:noHBand="0" w:noVBand="1"/>${borderXml}</w:tblPr><w:tblGrid>${gridCols}</w:tblGrid>${rowsXml}</w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="120"/></w:pPr></w:p>`;
+}
+// Same chat-bubble path used for the note indicator throughout the app (see the node-note-dot
+// SVG in render()/renderPreviewBody) — rasterized once per export via the same SVG->PNG
+// pipeline diagram images already go through (pptxDataUrlToBytes + pptxEnsureCompatibleImage),
+// so the Word doc's note marker is the actual app icon rather than an emoji standing in for it.
+const DOCX_NOTE_ICON_SVG='<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#938F84" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+// Registers one image's bytes as a word/media part + relationship and returns just the
+// relationship id — unlike docxImageDrawingXml/docxEmbedDiagramImage this doesn't also build
+// placement XML, since an icon reused across many notes needs one registration but a fresh
+// wp:docPr id (see docxInlineIconXml) at each place it's actually dropped into a paragraph.
+async function docxRegisterIconImage(svgText){
+  const dataUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svgText)));
+  const decoded=await pptxDataUrlToBytes(dataUrl);
+  if(!decoded)return null;
+  const {result:safe}=await pptxEnsureCompatibleImage(decoded.bytes,decoded.mime);
+  if(!safe)return null;
+  const ext=safe.mime==='image/jpeg'?'jpeg':(safe.mime==='image/gif'?'gif':'png');
+  const mediaName=`image${_docxMediaFiles.length+1}.${ext}`;
+  _docxMediaFiles.push({name:'word/media/'+mediaName,data:safe.bytes});
+  _docxImageExtsUsed.add(ext);
+  return docxAddRel('http://schemas.openxmlformats.org/officeDocument/2006/relationships/image','media/'+mediaName);
+}
+// A single <w:r><w:drawing> run (no wrapping <w:p>) sized to sit inline before text in the same
+// paragraph — small distR gap so it doesn't crowd straight into the label text that follows.
+function docxInlineIconXml(relId,sizePx){
+  const EMU_PER_PX=9525, cx=Math.round(sizePx*EMU_PER_PX);
+  const id=++_docxIconPlacementCounter;
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="25400"><wp:extent cx="${cx}" cy="${cx}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${id}" name="Icon ${id}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="Icon ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cx}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+// Lazily registers DOCX_NOTE_ICON_SVG the first time any note needs it this export, then reuses
+// that same relationship for every subsequent note — one tiny media part in the .docx no matter
+// how many notes reference it, rather than a duplicate image per occurrence. Falls back to no
+// icon (caller still shows the "NOTE" text label on its own) if rasterizing ever fails.
+async function docxNoteIconRun(){
+  if(_docxNoteIconRelId===undefined) _docxNoteIconRelId=await docxRegisterIconImage(DOCX_NOTE_ICON_SVG);
+  if(!_docxNoteIconRelId)return '';
+  return docxInlineIconXml(_docxNoteIconRelId,11);
 }
 async function docxEmbedDiagramImage(src,alt,maxWidthEmu){
   const decoded=await pptxDataUrlToBytes(src);
@@ -14570,10 +14608,11 @@ function docxNoteBlocks(html,fmtOverride){
   if(!sawBlock){ const runs=docxNoteInlineRuns(tmp,baseFmt); if(runs)out.push({runs,prefix:''}); }
   return out;
 }
-function docxNoteBlock(html,leftTwips){
+async function docxNoteBlock(html,leftTwips){
   const blocks=docxNoteBlocks(html);
   if(!blocks.length)return '';
-  const paras=[`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="20"/></w:pPr>${docxRun('💬 NOTE',{bold:true,size:14,color:'938F84'})}</w:p>`];
+  const iconRun=await docxNoteIconRun();
+  const paras=[`<w:p><w:pPr><w:pStyle w:val="NoteBlock"/><w:ind w:left="${leftTwips+120}"/><w:spacing w:after="20"/></w:pPr>${iconRun}${docxRun(iconRun?' NOTE':'💬 NOTE',{bold:true,size:14,color:'938F84'})}</w:p>`];
   blocks.forEach((b,i)=>{
     const prefixRun=b.prefix?docxRun(b.prefix,{italic:true,size:20,color:'938F84'}):'';
     const after=i===blocks.length-1?'80':'20';
@@ -14684,7 +14723,7 @@ function docxBuildToc(headingEntries){
   const pageBreakAfter='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
   return title+hint+begin+entries+end+pageBreakAfter;
 }
-async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); const docxAccentHex=docxLiveAccentHex(); _docxBookmarkCounter=0; _docxExtraRels=[]; _docxRelIdCounter=100; _docxMediaFiles=[]; _docxImageExtsUsed=new Set(); const paras=[]; if(coverPageEnabled)paras.push(docxBuildCoverPage(rawTitle,rawAuthor)); paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:docxAccentHex})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
+async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); const docxAccentHex=docxLiveAccentHex(); _docxBookmarkCounter=0; _docxExtraRels=[]; _docxRelIdCounter=100; _docxMediaFiles=[]; _docxImageExtsUsed=new Set(); _docxNoteIconRelId=undefined; _docxIconPlacementCounter=0; const paras=[]; if(coverPageEnabled)paras.push(docxBuildCoverPage(rawTitle,rawAuthor)); paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:docxAccentHex})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
   const scopeForDocx=getScopedNodes(true,foldOverride||previewCollapsedIds);
   const docxNumbers=computeOutlineNumbers(scopeForDocx);
   const {consumed:dlConsumed,groups:dlGroups}=(typeof previewDetectDecisionLogs==='function')?previewDetectDecisionLogs(scopeForDocx):{consumed:new Set(),groups:[]};
@@ -14713,7 +14752,7 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
     }
     if(nodeContentExportEnabled&&n.note&&n.note.trim()){
       const split=splitNoteDiagramImages(n.note);
-      const nb=docxNoteBlock(split.restHtml,left); if(nb)bodyParas.push(nb);
+      const nb=await docxNoteBlock(split.restHtml,left); if(nb)bodyParas.push(nb);
       if(split.diagrams.length){
         const maxWidthEmu=Math.max(2743200, Math.round((9746-Math.min(left,4000))*635));
         for(const d of split.diagrams){
