@@ -2166,33 +2166,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-presenter-bar button:hover{background:var(--hover)}
 #preview-presenter-bar button:disabled{opacity:.35;cursor:default}
 #preview-presenter-bar button:disabled:hover{background:transparent}
-#preview-presenter-bar button.active{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));color:var(--accent)}
-#presenter-dualscreen-btn{display:none}
 #presenter-exit-btn{margin-left:6px}
-/* Audience window — a second, undecorated instance of this same page, identified by its
-   window.name ('sakura-audience', set via window.open's target argument) rather than a URL
-   flag. It never boots the normal editor UI; instead body.pv-audience-mode
-   (set by the bootstrap at the very end of the script, once the DOM it needs already exists)
-   hides everything and shows only #pv-audience-shell, kept in sync with the presenter window
-   purely via BroadcastChannel — no shared app state, no localStorage document read on this
-   side, so a stale/different document never leaks into what the audience sees. */
-body.pv-audience-mode>*{display:none!important}
-body.pv-audience-mode #pv-audience-shell{display:flex!important}
-#pv-audience-shell{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:flex-start;padding:60px 0 60px;overflow-y:auto;z-index:1}
-/* Mirrors the equivalent #preview-overlay.pv-theme-sepia / .pv-serif-body rules for the real
-   Preview/Presenter view — can't reuse those selectors directly since #preview-overlay is a
-   real, distinct element already present (hidden) in this same document; the audience shell
-   is a separate container that needs its own copies of the same declarations. */
-#pv-audience-shell.pv-theme-sepia{--bg:#faf5e9;--edit-bg:#fefcf6;--fg:#544632;--node-fg:#544632;--muted:#a2937a;--hint:#b0a189;--border:#f0e8d4;--hover:#f5efdf;--accent:#b0703a}
-#pv-audience-slide{max-width:min(860px,90%);width:100%;font-family:'Inter',sans-serif;color:var(--node-fg);padding:0 48px 0 24px;box-sizing:border-box}
-#pv-audience-slide .pv-heading-1,#pv-audience-slide .pv-heading-2{font-size:1.5em}
-#pv-audience-slide .pv-title-slide{display:flex;flex-direction:column;justify-content:flex-start;padding-top:18vh}
-#pv-audience-slide .pv-divider-slide{display:flex;flex-direction:column;justify-content:flex-start;padding-top:18vh}
-#pv-audience-slide .pv-divider-slide .pv-divider-row{margin:0}
-#pv-audience-slide .pv-divider-slide .pv-divider-title{font-size:2.6em;max-width:800px}
-#pv-audience-blank{display:none;position:fixed;inset:0;z-index:20;background:#000}
-#pv-audience-blank.on{display:block}
-#pv-audience-waiting{color:var(--hint);font:500 13px 'Inter',sans-serif;margin-top:18vh;text-align:center}
 #presenter-slide-label{font:600 12.5px 'Inter',sans-serif;color:var(--fg);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #presenter-slide-counter{font:500 11.5px 'Inter',sans-serif;color:var(--muted);min-width:48px;text-align:center}
 #presenter-timer{position:absolute;right:60px;top:50%;transform:translateY(-50%);font:500 11.5px 'Inter',sans-serif;color:var(--hint);font-variant-numeric:tabular-nums}
@@ -3210,7 +3184,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js"></script>
 </head>
 <body class="theme-light">
-  <div id="pv-audience-shell"><div id="pv-audience-slide"><div id="pv-audience-waiting">Waiting for the presenter… (press F for fullscreen)</div></div><div id="pv-audience-blank"></div></div>
   <script>
   // Prevents the flash you're seeing: without this, the browser paints the whole page using
   // the hardcoded 'theme-light' class above — before the ~10k-line main script even starts,
@@ -3772,7 +3745,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Presenter zoom</span><span class="settings-row-desc">Scales slide content while presenting — separate from the regular editor's text size. Defaults to 150%, since actual slide content (as opposed to a document you're reading up close) generally reads better larger from across a room.</span></div><div class="slider-control"><input id="preview-presenter-zoom" class="settings-slider" type="range" min="1" max="2" step="0.1" value="1.5" aria-label="Presenter zoom" /><span id="preview-presenter-zoom-value" class="settings-slider-value">150%</span></div></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-enable laser pointer</span><span class="settings-row-desc">Turn the laser pointer on automatically when entering Presenter mode, and off when you exit.</span></div><button id="preview-auto-laser-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Auto-enable laser pointer in presenter mode"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open Preview straight into Presenter mode</span><span class="settings-row-desc">Skip the regular scrolling Preview entirely — opening Preview goes directly to the title slide, fullscreen. Esc then takes you all the way back to the editor in one press instead of dropping to the regular Preview first.</span></div><button id="preview-auto-presenter-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open Preview straight into Presenter mode"></button></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Dual-screen presenting</span><span class="settings-row-desc">When this device reports a second display, adds a monitor icon to the presenter bar that opens a clean, audience-only slide view on that second screen — this window stays your presenter console with notes, timer, laser, and controls, none of which the audience sees. The button only appears when a second screen is actually detected, so on a single-monitor laptop Presenter mode behaves exactly as before with nothing extra to notice. Chromium browsers (Chrome, Edge) only.</span></div><button id="preview-dualscreen-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Dual-screen presenting"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Branding</span><span class="settings-row-desc">Shows a small letter-spaced mark in the presenter bar while presenting, on the cover page of PDF and Word exports, and in the bottom-right corner of every page/slide of exported PDF, PowerPoint, and Word files. Reads "SAKURA" by default, or your own text below. Off by default — and off means off everywhere this applies, including the cover page.</span></div><button id="preview-presenter-branding-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show branding"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Branding text</span><span class="settings-row-desc">Replaces "SAKURA" in the mark above with your own company or team name. Leave blank to use the default. Only shown when Branding (above) is on.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="SAKURA" style="width:160px;text-align:left" /></div>
               </div>
@@ -5690,7 +5662,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="presenter-next-btn" data-tip="Next (→)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       <button type="button" id="presenter-notes-btn" data-tip="Notepad (N) · Q&amp;A (Q)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       <button type="button" id="presenter-overview-btn" data-tip="All slides (G)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
-      <button type="button" id="presenter-dualscreen-btn" data-tip="Open audience view on second screen"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="1.5"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
@@ -6120,12 +6091,7 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 // a saved value isn't immediately overwritten by this line's own default when script
 // execution reaches it — that ordering bug was the actual cause of Presenter settings
 // reverting to defaults on every reload despite saving correctly.
-let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewInteractiveZoom=1; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewBrandingText=''; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true; let previewDualScreenEnabled=true;
-// Set true only in an audience window (window.name==='sakura-audience') by the bootstrap at
-// the very end of the script; declared here (not there) so every function above that reads it
-// during
-// normal presenter-window use never hits it in temporal-dead-zone.
-let isAudienceWindow=false;
+let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewInteractiveZoom=1; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewBrandingText=''; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true;
 const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
 const EXPORT_TB_BUTTONS=['clipboard','image','md','txt','docx','pdf','pptx','opml','decision-log-xlsx'];
 const INSERT_TB_BUTTONS=['smart-paste','date-time','note','checkbox','tags'];
@@ -9451,7 +9417,7 @@ function openTemplatesMenu(){
 }
 function savePrefs(){
   try{
-    const payload={theme:currentTheme,currentFont,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,spellcheckEnabled,compactRows,inlineNotePreviewEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,accentIntensity,accentCustomColor,chromePreset,skipFoldedInExports,exportMenuFoldNoteEnabled,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,decisionLogAskAuthor,decisionLogColors,lastDecisionAuthor,decisionLogHiddenFields,decisionLogSplitToSlide,decisionLogSplitThreshold,decisionLogInPad,contextQuickActions,hoverToolbarEnabled,selectionFmtPopoverEnabled,hoverToolbarActions,padEnabled,padNotepadTabEnabled,padQaTabEnabled,padDiagramsTabEnabled,padMatchEditorBg,padHiddenButtons,presenterNotesHiddenButtons,exportHiddenButtons,insertHiddenButtons,noteHiddenButtons,noteMatchEditorBg,codeMatchEditorBg,padDefaultView,qaCompactRows,qaRowActionsMode,qaAiAnswerEnabled,qaAiBulkAnswerEnabled,qaAiSummaryEnabled,qaAiGenerateEnabled,qaAiGroupEnabled,previewDlFields,previewAlwaysExpand,previewTocOpen,previewHeadingDepthFallback,previewTocMaxLevel,previewTocIncludeSections,sectionMarkersDepthZero,previewReadingWidth,previewSepiaTheme,previewSerifBody,previewPdfMargin,previewSlideDepth,previewPresenterZoom,previewAutoLaser,previewUseFullscreen,previewAutoPresenter,previewPresenterBranding,previewBrandingText,previewPresenterTimerEnabled,previewPresenterOverviewEnabled,previewPresenterNotesEnabled,previewDualScreenEnabled,backupReminderDays,defaultAuthorName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureDecisionLogEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,hideTreeLines,depthGuideLines,sectionMarkingsEnabled,svgSectionIconsEnabled,qaExportEnabled,padNotepadExportEnabled,decisionLogExportEnabled,nodeContentExportEnabled,diagramExportEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,previewPdfFooterEnabled,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,contextHiddenActions,zenHideToolbar,zenHidePad,zenHideAppbar,zenUseFullscreen,zenHideSidebar,zenHideStatusbar,zenHideTabbar,nodeFontColorPreset,nodeDepthFadeEnabled,statusbarVisible,tabbarVisible,appbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,sessionBackupPromptMode,autoRewriteChipShowQueued,debugLoggingEnabled,typewriterModeEnabled};
+    const payload={theme:currentTheme,currentFont,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,spellcheckEnabled,compactRows,inlineNotePreviewEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,accentIntensity,accentCustomColor,chromePreset,skipFoldedInExports,exportMenuFoldNoteEnabled,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,decisionLogAskAuthor,decisionLogColors,lastDecisionAuthor,decisionLogHiddenFields,decisionLogSplitToSlide,decisionLogSplitThreshold,decisionLogInPad,contextQuickActions,hoverToolbarEnabled,selectionFmtPopoverEnabled,hoverToolbarActions,padEnabled,padNotepadTabEnabled,padQaTabEnabled,padDiagramsTabEnabled,padMatchEditorBg,padHiddenButtons,presenterNotesHiddenButtons,exportHiddenButtons,insertHiddenButtons,noteHiddenButtons,noteMatchEditorBg,codeMatchEditorBg,padDefaultView,qaCompactRows,qaRowActionsMode,qaAiAnswerEnabled,qaAiBulkAnswerEnabled,qaAiSummaryEnabled,qaAiGenerateEnabled,qaAiGroupEnabled,previewDlFields,previewAlwaysExpand,previewTocOpen,previewHeadingDepthFallback,previewTocMaxLevel,previewTocIncludeSections,sectionMarkersDepthZero,previewReadingWidth,previewSepiaTheme,previewSerifBody,previewPdfMargin,previewSlideDepth,previewPresenterZoom,previewAutoLaser,previewUseFullscreen,previewAutoPresenter,previewPresenterBranding,previewBrandingText,previewPresenterTimerEnabled,previewPresenterOverviewEnabled,previewPresenterNotesEnabled,backupReminderDays,defaultAuthorName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureDecisionLogEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,hideTreeLines,depthGuideLines,sectionMarkingsEnabled,svgSectionIconsEnabled,qaExportEnabled,padNotepadExportEnabled,decisionLogExportEnabled,nodeContentExportEnabled,diagramExportEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,previewPdfFooterEnabled,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,contextHiddenActions,zenHideToolbar,zenHidePad,zenHideAppbar,zenUseFullscreen,zenHideSidebar,zenHideStatusbar,zenHideTabbar,nodeFontColorPreset,nodeDepthFadeEnabled,statusbarVisible,tabbarVisible,appbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,sessionBackupPromptMode,autoRewriteChipShowQueued,debugLoggingEnabled,typewriterModeEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -9473,7 +9439,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; currentFont=['mono','sans'].includes(d.currentFont)?d.currentFont:'sans'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; inlineNotePreviewEnabled=!!d.inlineNotePreviewEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'teal'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; exportMenuFoldNoteEnabled=d.exportMenuFoldNoteEnabled===undefined?true:!!d.exportMenuFoldNoteEnabled; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; decisionLogSplitToSlide=d.decisionLogSplitToSlide===undefined?true:!!d.decisionLogSplitToSlide; decisionLogSplitThreshold=Number.isFinite(Number(d.decisionLogSplitThreshold))?Math.max(50,Math.min(2000,Math.round(Number(d.decisionLogSplitThreshold)))):200; decisionLogInPad=d.decisionLogInPad===undefined?true:!!d.decisionLogInPad; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padNotepadTabEnabled=d.padNotepadTabEnabled===undefined?true:!!d.padNotepadTabEnabled; padQaTabEnabled=d.padQaTabEnabled===undefined?true:!!d.padQaTabEnabled; padDiagramsTabEnabled=d.padDiagramsTabEnabled===undefined?true:!!d.padDiagramsTabEnabled; if(!padNotepadTabEnabled&&!padQaTabEnabled&&d.featureDecisionLogEnabled===false){padNotepadTabEnabled=true} padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','image','md','txt','opml','decision-log-xlsx']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; padDefaultView=['notes','qa','decision','diagrams'].includes(d.padDefaultView)?d.padDefaultView:(d.padDefaultQa?'qa':'notes'); qaCompactRows=!!d.qaCompactRows; qaRowActionsMode=d.qaRowActionsMode==='fixed'?'fixed':'hover'; qaAiAnswerEnabled=d.qaAiAnswerEnabled===undefined?true:!!d.qaAiAnswerEnabled; qaAiBulkAnswerEnabled=d.qaAiBulkAnswerEnabled===undefined?false:!!d.qaAiBulkAnswerEnabled; qaAiSummaryEnabled=d.qaAiSummaryEnabled===undefined?false:!!d.qaAiSummaryEnabled; qaAiGenerateEnabled=d.qaAiGenerateEnabled===undefined?true:!!d.qaAiGenerateEnabled; qaAiGroupEnabled=d.qaAiGroupEnabled===undefined?true:!!d.qaAiGroupEnabled; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision','rationale','alternatives','impact']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):2; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=d.previewSerifBody===undefined?true:!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=d.previewUseFullscreen===undefined?true:!!d.previewUseFullscreen; previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; previewDualScreenEnabled=d.previewDualScreenEnabled===undefined?true:!!d.previewDualScreenEnabled; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=d.nqaIconOnly===undefined?true:!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','date-time','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; depthGuideLines=!!d.depthGuideLines; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; qaExportEnabled=d.qaExportEnabled===undefined?true:!!d.qaExportEnabled; padNotepadExportEnabled=d.padNotepadExportEnabled===undefined?true:!!d.padNotepadExportEnabled; decisionLogExportEnabled=d.decisionLogExportEnabled===undefined?true:!!d.decisionLogExportEnabled; nodeContentExportEnabled=d.nodeContentExportEnabled===undefined?true:!!d.nodeContentExportEnabled; diagramExportEnabled=d.diagramExportEnabled===undefined?true:!!d.diagramExportEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; previewPdfFooterEnabled=d.previewPdfFooterEnabled===undefined?true:!!d.previewPdfFooterEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):[]; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=autoRewriteChipShowQueued; debugLoggingEnabled=!!d.debugLoggingEnabled; typewriterModeEnabled=!!d.typewriterModeEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e)}}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; currentFont=['mono','sans'].includes(d.currentFont)?d.currentFont:'sans'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; inlineNotePreviewEnabled=!!d.inlineNotePreviewEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'teal'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; exportMenuFoldNoteEnabled=d.exportMenuFoldNoteEnabled===undefined?true:!!d.exportMenuFoldNoteEnabled; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; decisionLogSplitToSlide=d.decisionLogSplitToSlide===undefined?true:!!d.decisionLogSplitToSlide; decisionLogSplitThreshold=Number.isFinite(Number(d.decisionLogSplitThreshold))?Math.max(50,Math.min(2000,Math.round(Number(d.decisionLogSplitThreshold)))):200; decisionLogInPad=d.decisionLogInPad===undefined?true:!!d.decisionLogInPad; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padNotepadTabEnabled=d.padNotepadTabEnabled===undefined?true:!!d.padNotepadTabEnabled; padQaTabEnabled=d.padQaTabEnabled===undefined?true:!!d.padQaTabEnabled; padDiagramsTabEnabled=d.padDiagramsTabEnabled===undefined?true:!!d.padDiagramsTabEnabled; if(!padNotepadTabEnabled&&!padQaTabEnabled&&d.featureDecisionLogEnabled===false){padNotepadTabEnabled=true} padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','image','md','txt','opml','decision-log-xlsx']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; padDefaultView=['notes','qa','decision','diagrams'].includes(d.padDefaultView)?d.padDefaultView:(d.padDefaultQa?'qa':'notes'); qaCompactRows=!!d.qaCompactRows; qaRowActionsMode=d.qaRowActionsMode==='fixed'?'fixed':'hover'; qaAiAnswerEnabled=d.qaAiAnswerEnabled===undefined?true:!!d.qaAiAnswerEnabled; qaAiBulkAnswerEnabled=d.qaAiBulkAnswerEnabled===undefined?false:!!d.qaAiBulkAnswerEnabled; qaAiSummaryEnabled=d.qaAiSummaryEnabled===undefined?false:!!d.qaAiSummaryEnabled; qaAiGenerateEnabled=d.qaAiGenerateEnabled===undefined?true:!!d.qaAiGenerateEnabled; qaAiGroupEnabled=d.qaAiGroupEnabled===undefined?true:!!d.qaAiGroupEnabled; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision','rationale','alternatives','impact']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):2; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=d.previewSerifBody===undefined?true:!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=d.previewUseFullscreen===undefined?true:!!d.previewUseFullscreen; previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=d.nqaIconOnly===undefined?true:!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','date-time','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; depthGuideLines=!!d.depthGuideLines; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; qaExportEnabled=d.qaExportEnabled===undefined?true:!!d.qaExportEnabled; padNotepadExportEnabled=d.padNotepadExportEnabled===undefined?true:!!d.padNotepadExportEnabled; decisionLogExportEnabled=d.decisionLogExportEnabled===undefined?true:!!d.decisionLogExportEnabled; nodeContentExportEnabled=d.nodeContentExportEnabled===undefined?true:!!d.nodeContentExportEnabled; diagramExportEnabled=d.diagramExportEnabled===undefined?true:!!d.diagramExportEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; previewPdfFooterEnabled=d.previewPdfFooterEnabled===undefined?true:!!d.previewPdfFooterEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):[]; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=autoRewriteChipShowQueued; debugLoggingEnabled=!!d.debugLoggingEnabled; typewriterModeEnabled=!!d.typewriterModeEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e)}}
 function updateToolbarSubControls(){[el('toolbar-labels-row'),el('expanded-toolbar-row'),el('toolbar-sections-field')].forEach(row=>{if(row)row.classList.toggle('is-disabled',!toolbarVisible)})}
 function setToolbarVisible(on,persist=true){toolbarVisible=!!on; document.body.classList.toggle('toolbar-hidden',!toolbarVisible); const toggle=el('toolbar-visible-toggle'); if(toggle){toggle.classList.toggle('on',toolbarVisible); toggle.setAttribute('aria-checked',String(toolbarVisible))} const fbtn=el('editor-toolbar-toggle'); if(fbtn){fbtn.classList.toggle('is-active',toolbarVisible); fbtn.setAttribute('aria-pressed',String(toolbarVisible)); fbtn.dataset.tip=(toolbarVisible?'Hide toolbar':'Show toolbar')+' (Ctrl/Cmd+Shift+T)'} updateToolbarSubControls(); if(persist){savePrefs(); scheduleAutoSave()}}
 function setExpandedToolbar(on,persist=true){expandedToolbar=!!on; document.body.classList.toggle('expanded-toolbar',expandedToolbar); const toggle=el('expanded-toolbar-toggle'); if(toggle){toggle.classList.toggle('on',expandedToolbar); toggle.setAttribute('aria-checked',String(expandedToolbar))} if(persist){savePrefs(); scheduleAutoSave()}}
@@ -25738,19 +25704,16 @@ function updatePreviewFoldToggleButton(){
   btn.dataset.tip=anyCollapsed?'Expand all':'Collapse all';
 }
 let previewLaserOn=false;
-let _lastLaserX=0,_lastLaserY=0;
 function previewSetLaser(on){
   previewLaserOn=on;
   const overlay=el('preview-overlay'), dot=el('preview-laser-dot');
   if(overlay){ overlay.style.cursor=on?'none':''; overlay.classList.toggle('laser-active',on); }
   dot?.classList.toggle('on',on);
   el('preview-laser-toggle')?.classList.toggle('active',on);
-  if(audienceWin&&!audienceWin.closed)broadcastLaser(on,_lastLaserX,_lastLaserY);
 }
 function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open'); }
 function openPreview(){
   commitEdit();
-  console.log('[sakura:dualscreen] openPreview() — isAudienceWindow:',isAudienceWindow,'body classes:',document.body.className);
   previewActive=true;
   previewInteractiveZoom=1;
   if(previewAlwaysExpand) previewCollapsedIds=new Set();
@@ -25803,7 +25766,6 @@ function enterPresenterMode(){
   if(previewUseFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
   if(previewAutoLaser)previewSetLaser(true);
   if(previewPresenterTimerEnabled)startPresenterTimer();
-  updateDualScreenButtonVisibility();
   applyPresenterState();
 }
 function exitPresenterMode(){
@@ -25816,7 +25778,6 @@ function exitPresenterMode(){
   setPresenterBlank(false);
   closePresenterOverview();
   closePresenterNotes();
-  closeAudienceWindow();
   if(document.fullscreenElement){ try{ document.exitFullscreen?.(); }catch(e){} }
 }
 function applyPresenterState(preserveScroll,scrollValue){
@@ -25833,7 +25794,6 @@ function applyPresenterState(preserveScroll,scrollValue){
   const counterEl=el('presenter-slide-counter'); if(counterEl)counterEl.textContent=(previewSlideIndex+1)+' / '+previewSlides.length;
   const prevBtn=el('presenter-prev-btn'); if(prevBtn)prevBtn.disabled=previewSlideIndex<=0;
   const nextBtn=el('presenter-next-btn'); if(nextBtn)nextBtn.disabled=previewSlideIndex>=previewSlides.length-1;
-  if(audienceWin&&!audienceWin.closed)requestAnimationFrame(broadcastPresenterState);
 }
 function presenterGoTo(i){ previewSlideIndex=Math.max(0,Math.min(previewSlides.length-1,i)); applyPresenterState(); if(el('presenter-overview-grid')?.classList.contains('open'))closePresenterOverview(); }
 function presenterNext(){ if(previewSlideIndex<previewSlides.length-1)presenterGoTo(previewSlideIndex+1); }
@@ -25914,7 +25874,6 @@ let presenterBlanked=false;
 function setPresenterBlank(on){
   presenterBlanked=!!on;
   el('presenter-blank-overlay')?.classList.toggle('on',presenterBlanked);
-  if(audienceWin&&!audienceWin.closed)broadcastPresenterState();
 }
 function togglePresenterBlank(){ setPresenterBlank(!presenterBlanked); }
 
@@ -25962,130 +25921,6 @@ function closePresenterNotes(){
   _presenterNotesTbOrigParent=null; _presenterNotesTbOrigNext=null;
   _presenterNotesQaOrigParent=null; _presenterNotesQaOrigNext=null;
   if(toolbar)applyPadToolbarButtonVisibility();
-}
-
-// === Dual-screen presenting ===
-// A second, undecorated window opened onto whatever display this device reports as extra,
-// showing only the current slide (plus blank/laser) — never the notes, timer, or controls
-// that stay in this window. The two windows share nothing but a BroadcastChannel: the
-// audience window boots as an otherwise-ordinary load of this same page (see the
-// window.name-based bootstrap at the very end of the script) and only ever displays what
-// it's told over the channel, so it can't accidentally diverge onto a different document.
-// screen.isExtended is a plain boolean (Chromium only, no permission prompt) — good enough to
-// decide whether the button should even appear; the richer Window Management API
-// (getScreenDetails, used below to actually position the window) does need a permission
-// grant, requested lazily on first click rather than on page load.
-let audienceWin=null;
-let presenterChannel=null;
-function secondScreenAvailable(){ try{ return !!(window.screen && window.screen.isExtended); }catch(e){ return false; } }
-function updateDualScreenButtonVisibility(){
-  const btn=el('presenter-dualscreen-btn'); if(!btn)return;
-  const show=(previewDualScreenEnabled && secondScreenAvailable() && !isAudienceWindow);
-  console.log('[sakura:dualscreen] updateDualScreenButtonVisibility — enabled:',previewDualScreenEnabled,'secondScreenAvailable:',secondScreenAvailable(),'isAudienceWindow:',isAudienceWindow,'=> show:',show);
-  btn.style.display=show?'inline-flex':'none';
-}
-function ensurePresenterChannel(){
-  if(presenterChannel)return presenterChannel;
-  try{ presenterChannel=new BroadcastChannel('sakura-presenter-sync'); presenterChannel.onmessage=onPresenterChannelMessage; console.log('[sakura:dualscreen] BroadcastChannel created (isAudienceWindow:',isAudienceWindow,')'); }
-  catch(e){ presenterChannel=null; console.warn('[sakura:dualscreen] BroadcastChannel unavailable:',e); }
-  return presenterChannel;
-}
-// Sent on every slide change, blank toggle, and whenever the audience window announces itself
-// (so a window opened mid-presentation, or refreshed, catches up immediately instead of
-// sitting on its default "waiting" message until the next navigation).
-function broadcastPresenterState(){
-  if(isAudienceWindow)return;
-  const ch=ensurePresenterChannel(); if(!ch)return;
-  const slideEl=document.querySelector('#preview-body .pv-slide.pv-slide-active');
-  ch.postMessage({type:'state',html:slideEl?slideEl.innerHTML:'',blank:presenterBlanked,theme:currentTheme,zoomPct:(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom,laserOn:previewLaserOn,laserX:_lastLaserX,laserY:_lastLaserY,serifBody:previewSerifBody,sepiaTheme:previewSepiaTheme});
-}
-function broadcastLaser(on,x,y){
-  if(isAudienceWindow)return;
-  const ch=ensurePresenterChannel(); if(!ch)return;
-  ch.postMessage({type:'laser',on,x,y});
-}
-function broadcastAudienceClose(){
-  if(isAudienceWindow)return;
-  const ch=ensurePresenterChannel(); if(!ch)return;
-  ch.postMessage({type:'close'});
-}
-async function openAudienceWindow(){
-  console.log('[sakura:dualscreen] openAudienceWindow() called. secondScreenAvailable:',secondScreenAvailable());
-  if(!secondScreenAvailable()){ showToast('No second screen detected'); return; }
-  if(audienceWin&&!audienceWin.closed){ console.log('[sakura:dualscreen] audience window already open, focusing it'); audienceWin.focus(); return; }
-  let features='popup=1,width=1280,height=800';
-  try{
-    if(window.getScreenDetails){
-      const details=await window.getScreenDetails();
-      const target=details.screens.find(s=>s!==details.currentScreen)||details.screens[1];
-      if(target)features=`popup=1,left=${target.availLeft},top=${target.availTop},width=${target.availWidth},height=${target.availHeight}`;
-      console.log('[sakura:dualscreen] getScreenDetails ok, positioning features:',features);
-    }else{
-      console.log('[sakura:dualscreen] getScreenDetails unsupported, opening undocked popup');
-    }
-  }catch(e){ console.warn('[sakura:dualscreen] getScreenDetails failed/denied, opening undocked popup:',e); }
-  const url=new URL(location.href); url.searchParams.delete('presenter-audience');
-  console.log('[sakura:dualscreen] window.open url:',url.toString(),'features:',features);
-  audienceWin=window.open(url.toString(),'sakura-audience',features);
-  if(!audienceWin){ console.warn('[sakura:dualscreen] window.open returned null — popup blocked'); showToast('Pop-up blocked — allow pop-ups for the second screen'); return; }
-  console.log('[sakura:dualscreen] audience window opened, name:',audienceWin.name);
-  el('presenter-dualscreen-btn')?.classList.add('active');
-  const poll=setInterval(()=>{
-    if(!audienceWin||audienceWin.closed){ console.log('[sakura:dualscreen] audience window closed (detected by poll)'); clearInterval(poll); audienceWin=null; el('presenter-dualscreen-btn')?.classList.remove('active'); }
-  },1000);
-  setTimeout(broadcastPresenterState,600);
-}
-function closeAudienceWindow(){
-  console.log('[sakura:dualscreen] closeAudienceWindow() called, had open window:',!!(audienceWin&&!audienceWin.closed));
-  if(audienceWin&&!audienceWin.closed){ broadcastAudienceClose(); audienceWin.close(); }
-  audienceWin=null;
-  el('presenter-dualscreen-btn')?.classList.remove('active');
-}
-function toggleAudienceWindow(){ if(audienceWin&&!audienceWin.closed)closeAudienceWindow(); else openAudienceWindow(); }
-el('presenter-dualscreen-btn')?.addEventListener('click',toggleAudienceWindow);
-// Receiver side — only ever runs in the audience window (isAudienceWindow===true), rendering
-// whatever the presenter window last broadcast. No app state, no localStorage document read.
-function onPresenterChannelMessage(ev){
-  const msg=ev.data||{};
-  console.log('[sakura:dualscreen] channel message received:',msg.type,'(isAudienceWindow:',isAudienceWindow,')',msg);
-  if(!isAudienceWindow){
-    // Main/presenter side: the only inbound message it cares about is an audience window
-    // announcing itself (freshly opened, or refreshed) — respond with current state so it
-    // doesn't sit on the default "waiting" placeholder until the next slide change.
-    if(msg.type==='announce')broadcastPresenterState();
-    return;
-  }
-  if(msg.type==='state'){
-    const slide=el('pv-audience-slide'); if(slide && typeof msg.html==='string' && msg.html)slide.innerHTML=msg.html;
-    el('pv-audience-blank')?.classList.toggle('on',!!msg.blank);
-    if(msg.theme==='light'||msg.theme==='dark'){
-      document.body.classList.remove('theme-light','theme-dark');
-      document.body.classList.add('theme-'+msg.theme);
-    }
-    document.body.style.zoom=msg.zoomPct?String(msg.zoomPct):'';
-    el('pv-audience-shell')?.classList.toggle('pv-serif-body',!!msg.serifBody);
-    el('pv-audience-shell')?.classList.toggle('pv-theme-sepia',!!msg.sepiaTheme);
-    // Covers the "laser was already on before this window connected" case — otherwise the
-    // dot would stay invisible until the presenter's next mousemove tick.
-    if('laserOn' in msg)onPresenterChannelMessage({data:{type:'laser',on:msg.laserOn,x:msg.laserX,y:msg.laserY}});
-  }else if(msg.type==='laser'){
-    // Kept deliberately simple: a fixed dot following broadcast coordinates 1:1. Coordinates
-    // are the presenter window's own client position, not remapped to this window's size —
-    // fine in practice since both windows show the same slide at the same presenter zoom,
-    // but it means resizing the audience window independently of the presenter window will
-    // drift the dot; not solved here.
-    let dot=el('pv-audience-laser-dot');
-    if(!dot){ dot=document.createElement('div'); dot.id='pv-audience-laser-dot'; dot.style.cssText='position:fixed;z-index:30;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)';
-      // Must be a descendant of #pv-audience-shell, not a direct child of <body> — body's
-      // pv-audience-mode CSS force-hides every *direct* child except the shell itself
-      // (display:none!important), which would silently swallow the dot if appended to body.
-      const shell=el('pv-audience-shell'); (shell||document.body).appendChild(dot);
-    }
-    dot.style.display=msg.on?'block':'none';
-    if(msg.on){ dot.style.left=msg.x+'px'; dot.style.top=msg.y+'px'; }
-  }else if(msg.type==='close'){
-    window.close();
-  }
 }
 function togglePresenterNotes(){
   if(el('presenter-notes-panel')?.classList.contains('open'))closePresenterNotes();
@@ -26908,8 +26743,6 @@ el('preview-overlay')?.addEventListener('mousemove',e=>{
   if(!previewLaserOn)return;
   const dot=el('preview-laser-dot'); if(!dot)return;
   dot.style.left=e.clientX+'px'; dot.style.top=e.clientY+'px';
-  _lastLaserX=e.clientX; _lastLaserY=e.clientY;
-  if(audienceWin&&!audienceWin.closed)broadcastLaser(true,e.clientX,e.clientY);
 });
 
 
@@ -27408,7 +27241,6 @@ function applyPresenterZoom(){
   if(!previewActive){ body.style.zoom=''; return; }
   const effective=(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom;
   body.style.zoom=Math.abs(effective-1)>0.001?String(effective):'';
-  if(audienceWin&&!audienceWin.closed)broadcastPresenterState();
 }
 el('preview-presenter-zoom')?.addEventListener('input',e=>setPreviewPresenterZoom(e.target.value));
 // Ctrl+scroll or a trackpad pinch — browsers translate pinch gestures into wheel events with
@@ -27512,15 +27344,6 @@ function setPreviewPresenterNotesEnabled(on,persist=true){
   if(!previewPresenterNotesEnabled)closePresenterNotes();
   if(persist){savePrefs()}
 }
-function setPreviewDualScreenEnabled(on,persist=true){
-  previewDualScreenEnabled=!!on;
-  const toggle=el('preview-dualscreen-toggle');
-  if(toggle){toggle.classList.toggle('on',previewDualScreenEnabled); toggle.setAttribute('aria-checked',String(previewDualScreenEnabled))}
-  if(!previewDualScreenEnabled)closeAudienceWindow();
-  updateDualScreenButtonVisibility();
-  if(persist){savePrefs()}
-}
-el('preview-dualscreen-toggle')?.addEventListener('click',()=>setPreviewDualScreenEnabled(!previewDualScreenEnabled));
 
 // Per-button toolbar customization, mirroring the main quick-bar's Sections grid
 function applyPadToolbarButtonVisibility(){
@@ -28990,7 +28813,6 @@ setPreviewBrandingText(previewBrandingText, false);
 setPreviewPresenterTimerEnabled(previewPresenterTimerEnabled, false);
 setPreviewPresenterOverviewEnabled(previewPresenterOverviewEnabled, false);
 setPreviewPresenterNotesEnabled(previewPresenterNotesEnabled, false);
-setPreviewDualScreenEnabled(previewDualScreenEnabled, false);
 setPadOpen(padOpen, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
@@ -34308,41 +34130,5 @@ window.collectMeetingMatches=function(q){
 // exists, correct that one row instead of waiting for something unrelated to happen to
 // refresh it later.
 if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetingsFeatureEnabled);
-
-// === Audience window bootstrap ===
-// Runs last, after the normal app has already finished booting behind the scenes — cheaper
-// to let that happen than to thread an early-exit through the entire startup sequence, and
-// harmless since none of it stays visible: everything except #pv-audience-shell is hidden by
-// body.pv-audience-mode's CSS the moment this runs. Nothing here reads `nodes`, `currentDocId`,
-// or any other document state — nothing this window shows comes from a locally-loaded
-// document, only from BroadcastChannel messages sent by the presenter window.
-(function initAudienceWindowIfNeeded(){
-  try{
-    // Deliberately NOT a URL query param — installed PWAs on several platforms remember the
-    // last URL a window showed and reopen to it on relaunch, which would permanently turn the
-    // *main* app window into an audience window too the next time it launched. window.name is
-    // set by window.open()'s target-name argument and isn't part of what PWA relaunch restores,
-    // so a normal app launch is never mistaken for this.
-    console.log('[sakura:dualscreen] boot check — window.name:',JSON.stringify(window.name));
-    if(window.name!=='sakura-audience'){ console.log('[sakura:dualscreen] not an audience window, normal boot continues'); return; }
-    console.log('[sakura:dualscreen] window.name matched — switching this window into audience mode');
-    isAudienceWindow=true;
-    document.body.classList.add('pv-audience-mode');
-    document.title='Sakura — Audience view';
-    // Browsers require fullscreen to be requested from a direct user gesture *in this
-    // window*; a page-load script doesn't count, so the auto-attempt below will silently
-    // fail in most browsers (still worth trying — harmless if it does work). The F keydown
-    // listener is the real fallback: a keypress inside this window is a genuine gesture.
-    if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
-    window.addEventListener('keydown',e=>{
-      if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{}); }
-    });
-    ensurePresenterChannel();
-    // Tell the presenter window a fresh audience window is up (covers "opened mid-talk" and
-    // "audience window got refreshed") so it can push current state right away instead of
-    // this window sitting on "Waiting for the presenter…" until the next slide change.
-    presenterChannel?.postMessage({type:'announce'});
-  }catch(e){ console.warn('[sakura] audience window bootstrap failed:',e); }
-})();
 </script>
 </body></html>
