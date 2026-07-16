@@ -2169,8 +2169,9 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-presenter-bar button.active{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:color-mix(in srgb,var(--accent) 38%,var(--border));color:var(--accent)}
 #presenter-dualscreen-btn{display:none}
 #presenter-exit-btn{margin-left:6px}
-/* Audience window — a second, undecorated instance of this same page opened with
-   ?presenter-audience=1. It never boots the normal editor UI; instead body.pv-audience-mode
+/* Audience window — a second, undecorated instance of this same page, identified by its
+   window.name ('sakura-audience', set via window.open's target argument) rather than a URL
+   flag. It never boots the normal editor UI; instead body.pv-audience-mode
    (set by the bootstrap at the very end of the script, once the DOM it needs already exists)
    hides everything and shows only #pv-audience-shell, kept in sync with the presenter window
    purely via BroadcastChannel — no shared app state, no localStorage document read on this
@@ -6110,8 +6111,9 @@ const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let
 // execution reaches it — that ordering bug was the actual cause of Presenter settings
 // reverting to defaults on every reload despite saving correctly.
 let previewSlideDepth=0; let previewPresenterZoom=1.5; let previewInteractiveZoom=1; let previewAutoLaser=false; let previewUseFullscreen=true; let previewAutoPresenter=false; let previewPresenterBranding=false; let previewBrandingText=''; let previewPresenterTimerEnabled=true; let previewPresenterOverviewEnabled=true; let previewPresenterNotesEnabled=true; let previewDualScreenEnabled=true;
-// Set true only in an audience window (?presenter-audience=1) by the bootstrap at the very
-// end of the script; declared here (not there) so every function above that reads it during
+// Set true only in an audience window (window.name==='sakura-audience') by the bootstrap at
+// the very end of the script; declared here (not there) so every function above that reads it
+// during
 // normal presenter-window use never hits it in temporal-dead-zone.
 let isAudienceWindow=false;
 const PAD_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','attach','timestamp','ai-rewrite'];
@@ -25956,7 +25958,7 @@ function closePresenterNotes(){
 // showing only the current slide (plus blank/laser) — never the notes, timer, or controls
 // that stay in this window. The two windows share nothing but a BroadcastChannel: the
 // audience window boots as an otherwise-ordinary load of this same page (see the
-// ?presenter-audience=1 bootstrap at the very end of the script) and only ever displays what
+// window.name-based bootstrap at the very end of the script) and only ever displays what
 // it's told over the channel, so it can't accidentally diverge onto a different document.
 // screen.isExtended is a plain boolean (Chromium only, no permission prompt) — good enough to
 // decide whether the button should even appear; the richer Window Management API
@@ -26005,7 +26007,7 @@ async function openAudienceWindow(){
       if(target)features=`popup=1,left=${target.availLeft},top=${target.availTop},width=${target.availWidth},height=${target.availHeight}`;
     }
   }catch(e){ /* permission denied/unsupported — still opens, just not auto-positioned; drag it onto the second monitor and fullscreen it (F11) once */ }
-  const url=new URL(location.href); url.searchParams.set('presenter-audience','1');
+  const url=new URL(location.href); url.searchParams.delete('presenter-audience');
   audienceWin=window.open(url.toString(),'sakura-audience',features);
   if(!audienceWin){ showToast('Pop-up blocked — allow pop-ups for the second screen'); return; }
   el('presenter-dualscreen-btn')?.classList.add('active');
@@ -34287,7 +34289,12 @@ if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetin
 // document, only from BroadcastChannel messages sent by the presenter window.
 (function initAudienceWindowIfNeeded(){
   try{
-    if(new URLSearchParams(location.search).get('presenter-audience')!=='1')return;
+    // Deliberately NOT a URL query param — installed PWAs on several platforms remember the
+    // last URL a window showed and reopen to it on relaunch, which would permanently turn the
+    // *main* app window into an audience window too the next time it launched. window.name is
+    // set by window.open()'s target-name argument and isn't part of what PWA relaunch restores,
+    // so a normal app launch is never mistaken for this.
+    if(window.name!=='sakura-audience')return;
     isAudienceWindow=true;
     document.body.classList.add('pv-audience-mode');
     document.title='Sakura — Audience view';
