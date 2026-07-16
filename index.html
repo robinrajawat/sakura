@@ -13048,8 +13048,12 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         }
         // Small italic preview of this node's Note, appended right after its own note dot above —
         // lbl's flex:1/flex-basis:0 already pushes every later sibling to the row's right edge,
-        // truncated to one line via CSS rather than needing a whole second row underneath.
-        if(inlineNotePreviewEnabled&&node.note&&node.note.trim()){
+        // truncated to one line via CSS rather than needing a whole second row underneath. Only
+        // for single-line plain notes (see noteIsPlainTextOnly/noteIsSingleLine, same split
+        // Presenter mode uses) — a multi-line or rich note gets just the dot above, same as
+        // Presenter/exports now do, rather than a teaser that flattens several distinct lines
+        // or an image/table into one run-on snippet.
+        if(inlineNotePreviewEnabled&&node.note&&node.note.trim()&&noteIsPlainTextOnly(node.note)&&noteIsSingleLine(node.note)){
           const npv=document.createElement('span'); npv.className='node-note-inline-preview';
           npv.textContent=notePreviewPlainText(node.note);
           row.appendChild(npv);
@@ -24887,10 +24891,26 @@ function renderPreviewBody(){
           inlineFull.innerHTML=noteRestHtml;
           contentEl.appendChild(inlineFull);
         } else {
-          const isOpen=previewOpenNoteIds.has(node.id);
-          const dot=document.createElement('span'); dot.className='node-note-dot'+(isOpen?' pv-dot-open':''); dot.dataset.tip=isOpen?'Hide note':'This node has a note — click to show';
+          // Content now always renders as its own block below (see the pv-inline-block append
+          // further down, gated the same !_pvSuppressNoteCodeIndicators&&noteHasContent&&
+          // !isPlainNote condition this dot uses) rather than needing a click to reveal — a
+          // multi-line or rich note is important enough to just show, same reasoning as
+          // isPlainNote's always-inline text above. The dot is just a "this node has a note"
+          // indicator plus a jump-to-edit shortcut now (or, while presenting, a popover — see
+          // previewOpenNotePopover — so clicking doesn't drop the presenter out of Presenter
+          // mode the way closePreview() below would).
+          const dot=document.createElement('span'); dot.className='node-note-dot'; dot.dataset.tip='This node has a note — click to edit';
           dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-          dot.addEventListener('click',e=>{ e.stopPropagation(); if(previewPresenting&&!isOpen){ previewOpenNotePopover(dot,node); } else { previewToggleNote(node.id); } });
+          dot.addEventListener('click',e=>{
+            e.stopPropagation();
+            if(previewPresenting){ previewOpenNotePopover(dot,node); }
+            else {
+              closePreview();
+              setSingleSelection(node.id);
+              render();
+              openNodePanel(node.id);
+            }
+          });
           contentEl.appendChild(dot);
         }
       }
@@ -24923,18 +24943,10 @@ function renderPreviewBody(){
         }
       }
     }
-    // Same inline note preview as the editor tree (see render()) — small italic snippet
-    // appended right after the node's own text/icons (same contentEl the note-dot etc. above
-    // append into), gated by the same inlineNotePreviewEnabled setting. Skipped when the note
-    // is already shown open via the note-dot (previewOpenNoteIds), for folded parents (nothing
-    // of the node's own content shows there either), and for plain-text notes — those now
-    // always show their full text inline (see the pv-note-inline-full block above), so a
-    // truncated teaser of the exact same content right next to it would just be noise.
-    if(inlineNotePreviewEnabled&&ownNote&&noteHasContent&&!previewOpenNoteIds.has(node.id)&&!(folded&&hasChildren)&&!isPlainNote){
-      const npv=document.createElement('span'); npv.className='pv-note-inline-preview';
-      npv.textContent=notePreviewPlainText(node.note);
-      contentEl.appendChild(npv);
-    }
+    // Non-plain notes (multi-line or with rich content) no longer get a truncated teaser here —
+    // they now always render their full pv-inline-block right below (see that block further
+    // down), so a truncated snippet of the same content right next to it would just be noise.
+    // Plain single-line notes already show their full text inline via pv-note-inline-full above.
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       const inlinePad=((Math.min(depth,7)-1)*18)+'px';
@@ -25004,7 +25016,7 @@ function renderPreviewBody(){
           slideTarget.appendChild(trow);
         }
       }
-      if(featureNoteEnabled&&noteHasContent&&previewOpenNoteIds.has(node.id)&&!isPlainNote){
+      if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
