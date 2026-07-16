@@ -1245,9 +1245,6 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #sidebar-toggle:hover{color:var(--fg);background:var(--hover)}
 #sidebar-toggle svg{display:block}
 #sidebar-toggle.is-collapsed{background:var(--hover)}
-#sidebar-reveal-btn{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--hint);opacity:.7;transition:color .12s,background .12s,opacity .12s;flex-shrink:0}
-#sidebar-reveal-btn:hover{color:var(--accent);background:var(--hover);opacity:1}
-#sidebar-reveal-btn svg{display:block}
 /* Hide old docs/templates toolbar dropdowns */
 .docs-wrap{display:none !important}
 /* Adjust editor wrap */
@@ -3266,9 +3263,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </button>
       <div id="header-meta">
         <input id="header-title" class="meta-inline" type="text" placeholder="Title" aria-label="Title" />
-        <button type="button" id="sidebar-reveal-btn" data-tip="Reveal this document in the sidebar" aria-label="Reveal in sidebar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><circle cx="12" cy="13.3" r="1.6" fill="currentColor" stroke="none"/></svg>
-        </button>
         <div class="todo-dd-wrap" id="doc-status-wrap">
           <button type="button" class="doc-status-chip unset" id="doc-status-chip" data-tip="Document status" aria-haspopup="true" aria-expanded="false">No status</button>
           <div class="todo-dd-menu" id="doc-status-menu" role="menu">
@@ -3892,6 +3886,27 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div class="settings-list" id="cloud-drive-autosync-row" style="margin-top:10px;display:none"><div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-sync on edit</span><span class="settings-row-desc">Pushes to Drive automatically ~1.2s after edits settle, same timing as Auto-backup to file and Gist auto-sync. Only active while connected this session — Drive's sign-in token isn't kept across reloads, so this turns itself off (with a one-time notice, not a nag) whenever the session connection is gone, and you'll need to reconnect and re-enable it next time.</span></div><button id="cloud-drive-autosync-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Auto-sync to Drive on edit"></button></div></div>
               </div>
             </div>
+            <div class="settings-field" id="outlook-cal-field">
+              <button type="button" class="settings-collapsible-header" id="outlook-cal-header" aria-expanded="false" aria-controls="outlook-cal-body">
+                <span class="settings-collapsible-title">Outlook Calendar</span>
+                <span class="settings-collapsible-summary" id="outlook-cal-summary"></span>
+                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="settings-collapsible-body" id="outlook-cal-body">
+                <span class="settings-row-desc">Lets Meeting Notes → "Import from Outlook" pull events straight from your calendar (title, date, time, location, attendees) instead of typing them in by hand. Read-only — nothing is ever written back to your calendar. Needs a free app registration from <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener" style="color:var(--accent)">Azure Portal</a> (Single-page application platform), with <code id="outlook-cal-origin-hint"></code> added as a redirect URI and <code>Calendars.Read</code> delegated permission granted.</span>
+                <div class="settings-grid" id="outlook-cal-grid" style="margin-top:8px">
+                  <div class="settings-field">
+                    <label for="outlook-cal-clientid-input">Application (client) ID</label>
+                    <div style="display:flex;gap:6px;width:100%">
+                      <input id="outlook-cal-clientid-input" type="text" class="meta-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" />
+                      <button class="btn" id="outlook-cal-clientid-save-btn" style="flex-shrink:0">Save</button>
+                    </div>
+                    <span class="muted-help" style="margin-top:0" id="outlook-cal-status">Not connected.</span>
+                  </div>
+                </div>
+                <div class="settings-grid-actions" style="margin-top:10px"><button id="outlook-cal-connect-btn" class="btn data-io-btn backup-btn">Connect…</button><button id="outlook-cal-disconnect-btn" class="btn data-io-btn" style="display:none">Disconnect</button></div>
+              </div>
+            </div>
           </div>
           <div class="settings-section" data-cat="data" id="settings-section-trash">
             <div class="settings-section-title">Trash</div>
@@ -4489,6 +4504,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Settings → Data → Undo last restore → appears only after you've used Restore (from a backup file, the Local safety copy, or a Backup history entry above) — a snapshot of whatever was in the app right before that restore, in case the file you picked turns out to have been the wrong one. One level deep: it holds only what was there before your most recent restore, not a full history of every restore you've ever done</li>
 <li>Settings → Data → Secure Storage → optional, encrypts AI provider keys and the GitHub Gist token at rest (AES-GCM, passphrase-derived key) instead of storing them as plain text — in this browser and in local backup files. The passphrase itself is never stored anywhere; unlocking derives the key fresh each time, and it only lives in memory for that session — reload the page and you'll need to unlock again to use AI features or Gist auto-sync. There's no recovery if you forget it. Turning it off writes everything back as plain text. Once it's set up, a status-bar chip shows the current Locked/Unlocked state and toggles it in one click — no need to open Settings each session; right-click the chip to jump to the full Secure Storage controls instead. Hide it like any other status-bar item in Settings → Statusbar items if you don't want it there. Unlocking also automatically resumes anything that was paused waiting on it — Auto-rewrite on commit and Gist auto-sync each pick back up on their own the moment you unlock, with no need to redo whatever triggered them originally</li>
 <li>Settings → Data → Cloud Backup → optional, pushes the same full backup as "Backup all data" to GitHub Gist or Google Drive instead of a local file, so you can pull it down again from a different browser or computer. GitHub Gist needs a Personal Access Token with the <span class="help-kbd">gist</span> scope, pasted into Settings — stored in this browser only, the same as an AI provider key (and covered by Secure Storage above, if that's turned on). Google Drive needs your own free OAuth Client ID from Google Cloud Console; the app only ever sees files it created itself, not the rest of your Drive, and the sign-in token lives in memory only — you reconnect each session, nothing Google-related is written to disk. Both providers find your existing backup automatically by name/description on Save and Load, so there's no ID to copy between browsers by hand. Both are manual push/pull by default — Save fully overwrites the cloud copy with what's here, Load fully overwrites what's here with the cloud copy, no merging either direction. Both also offer "Auto-sync on edit" (off by default) — pushes automatically ~1.2s after edits settle, same timing as Auto-backup to file. Gist's auto-sync persists across reloads (the token is saved) and additionally detects conflicts: if the Gist changed elsewhere since your last Save/Load here, auto-push pauses itself and shows a conflict notice rather than silently overwriting the newer version — resolve it with a manual Save or Load. Drive's auto-sync is session-only, since Drive's sign-in token isn't kept across reloads — it turns itself off with a one-time notice (not a nag) whenever the session connection is gone, and needs reconnecting and re-enabling next time; it has no conflict detection of its own, so treat it as a convenience rather than a safety net if you also edit from Drive on another device. Gist's auto-sync also pauses (with a one-time toast, not a nag on every edit) if the token itself can't be read because Secure Storage is locked — nothing is lost in the meantime since local saves and the safety copy never depend on the vault, and the paused push resumes and sends on its own the moment you unlock, no extra edit needed to retrigger it. Neither AI provider keys nor the Gist token — encrypted or not — are ever included in what gets uploaded to Gist or Drive; only your documents are</li>
+<li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting</li>
 <li>Settings → Data → Backup / Restore → still the way to move data between files, browsers, or computers, or to take a one-off manual backup; the sidebar footer has Backup/Restore shortcuts too, so you don't need to open Settings just for that. The header's Export ▾ and Import ▾ buttons are for the current document only (Markdown, Word, OPML, etc.) — Backup/Restore cover all your data</li>
 <li>Settings → Data → "Warn if this session isn't backed up" → offers Export or Connect auto-backup if you've made changes this session but neither has run yet. Three modes: <strong>Strict</strong> shows the browser's own "leave site?" prompt when you try to close the tab, then this dialog if you cancel it — a real last-chance gate, at the cost of that generic browser popup (its wording is fixed by the browser, not by Sakura). <strong>Passive</strong> skips the browser prompt entirely and shows only this dialog, the next time you switch away from or close the tab — quieter, but a direct close with no prior tab-switch gets no warning at all. <strong>Off</strong> disables both; the status-bar "⚠ Back up your data" chip (from the reminder setting above) is your only remaining signal</li>
 <li>Recommended: export before switching to a new version of this file, then import right after opening it</li>
@@ -4703,6 +4719,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <div class="sb-section-hdr">
           <span class="sb-section-label">Documents</span>
           <div class="sb-section-actions">
+            <button class="sb-icon-btn" id="sb-locate-doc-btn" data-tip="Locate the open document">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><circle cx="12" cy="13.3" r="1.6" fill="currentColor" stroke="none"/></svg>
+            </button>
             <button class="sb-icon-btn" id="sb-toggle-search-btn" data-tip="Show filter box" aria-pressed="false" aria-label="Toggle sidebar filter box">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
@@ -5197,6 +5216,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="meetings-toolbar-row">
     <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="meetings-template-btn" data-tip="New from template" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></button>
+    <button type="button" id="meetings-outlook-import-btn" data-tip="Import from Outlook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="8 15 11 18 16 12"/></svg></button>
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <span id="meetings-count-label"></span>
   </div>
@@ -5338,6 +5358,23 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
         <button type="button" class="btn" id="qa-summary-regenerate-btn">Regenerate</button>
         <button type="button" class="btn primary" id="qa-summary-copy-btn">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="outlook-import-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Import from Outlook">
+  <div class="app-modal" style="width:min(520px,94vw)">
+    <div class="app-modal-head">
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Import from Outlook</h2><div class="cs-sub" id="outlook-import-sub">Events from the next couple of weeks (and the last few days)</div></div>
+      <button class="app-modal-close-btn" id="outlook-import-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div class="app-modal-body">
+      <div id="outlook-import-list" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+      <div id="outlook-import-empty" style="display:none;font:400 13px 'Inter',sans-serif;color:var(--hint);padding:24px 0;text-align:center">No events found in this window.</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" id="outlook-import-cancel-btn">Cancel</button>
+        <button type="button" class="btn primary" id="outlook-import-confirm-btn">Import selected</button>
       </div>
     </div>
   </div>
@@ -19506,7 +19543,7 @@ el('sb-templates-menu-btn').addEventListener('click',e=>{
   ]);
 });
 el('sidebar-toggle').addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
-el('sidebar-reveal-btn')?.addEventListener('click',()=>{ if(currentDocId!==null)revealDocInSidebar(currentDocId); else showToast('No document open'); });
+el('sb-locate-doc-btn')?.addEventListener('click',()=>{ if(currentDocId!==null)revealDocInSidebar(currentDocId); else showToast('No document open'); });
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+M)':'Maximize editor (hide sidebar & chrome) (Ctrl/Cmd+Shift+M)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   // Apply per-panel zen defaults on entry, and restore on exit — but only restore a
   // panel if it's still in the auto-hidden state; if the person manually re-showed it
@@ -20192,6 +20229,7 @@ async function importAllDataFromPayload(payload,opts={}){
 }
 el('sb-export-all-btn')?.addEventListener('click',()=>exportAllData());
 const CLOUD_BACKUP_KEY='sakura_cloud_backup_v1';
+const OUTLOOK_CAL_KEY='sakura_outlook_cal_v1';
 // Keys that must NEVER leave this browser via a cloud upload: AI provider API keys, and the
 // cloud backup blob itself (which holds the GitHub PAT). buildFullBackupPayload() dumps the
 // entire localStorage verbatim for LOCAL export/backup, which is correct there — the file
@@ -20502,6 +20540,169 @@ async function loadBackupFromDrive(){
   }catch(e){ showToast('Could not load backup from Google Drive'); }
   finally{ if(btn){btn.disabled=false; btn.textContent='Load from Drive…'} }
 }
+
+// === Outlook Calendar import (read-only) ===
+// Same "bring your own OAuth Client ID" shape as Google Drive above — no backend, the app
+// only ever talks to Microsoft Graph directly from the browser. Uses Microsoft's own MSAL.js
+// (loaded on demand, same pattern as Google's GIS script for Drive) rather than a manual
+// OAuth redirect flow, since MSAL already handles the popup/token/refresh mechanics safely.
+// Scope is Calendars.Read only — this never writes to or modifies the calendar, it only reads
+// events in to pre-fill a meeting note. The access token lives in memory for this session
+// only, same as Drive's — reload the page and you reconnect.
+function loadOutlookCalPrefsRaw(){ try{ return JSON.parse(localStorage.getItem(OUTLOOK_CAL_KEY)||'{}') }catch(e){ return {} } }
+function saveOutlookCalPrefs(patch){ try{ const d=loadOutlookCalPrefsRaw(); Object.assign(d,patch); localStorage.setItem(OUTLOOK_CAL_KEY,JSON.stringify(d)) }catch(e){} }
+let outlookAccessToken=null; // in-memory only — never persisted, re-requested each session
+let outlookMsalApp=null;
+let outlookImportEvents=[];
+const outlookImportSelected=new Set();
+function loadMsalScript(){
+  return new Promise((resolve,reject)=>{
+    if(window.msal?.PublicClientApplication){ resolve(); return; }
+    const s=document.createElement('script');
+    s.src='https://alcdn.msauth.net/browser/3.13.0/js/msal-browser.min.js'; s.async=true; s.defer=true;
+    s.onload=()=>resolve(); s.onerror=()=>reject(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+}
+function updateOutlookCalStatus(){
+  const d=loadOutlookCalPrefsRaw();
+  const clientInput=el('outlook-cal-clientid-input'); if(clientInput&&!clientInput.value)clientInput.value=d.clientId||'';
+  const statusEl=el('outlook-cal-status'); const summaryEl=el('outlook-cal-summary');
+  const connected=!!outlookAccessToken;
+  const text=connected?'Connected for this session.':(d.clientId?'Client ID saved — not connected yet.':'Not connected.');
+  if(statusEl)statusEl.textContent=text;
+  if(summaryEl)summaryEl.textContent=connected?'Connected':'';
+  const connectBtn=el('outlook-cal-connect-btn'); if(connectBtn){connectBtn.textContent=connected?'Reconnect…':'Connect…'; connectBtn.style.display=''}
+  el('outlook-cal-disconnect-btn')?.style.setProperty('display',connected?'':'none');
+}
+const outlookCalOriginHint=el('outlook-cal-origin-hint'); if(outlookCalOriginHint)outlookCalOriginHint.textContent=location.origin+location.pathname;
+el('outlook-cal-clientid-save-btn')?.addEventListener('click',()=>{
+  const val=String(el('outlook-cal-clientid-input')?.value||'').trim();
+  saveOutlookCalPrefs({clientId:val});
+  outlookAccessToken=null; outlookMsalApp=null;
+  updateOutlookCalStatus();
+  showToast(val?'Client ID saved':'Client ID cleared');
+});
+el('outlook-cal-disconnect-btn')?.addEventListener('click',()=>{ outlookAccessToken=null; outlookMsalApp=null; updateOutlookCalStatus(); showToast('Disconnected from Outlook Calendar'); });
+async function connectOutlookCalendar(){
+  const d=loadOutlookCalPrefsRaw();
+  if(!d.clientId){ showToast('Save an Outlook Client ID first (Settings → Data → Outlook Calendar)'); return false; }
+  const btn=el('outlook-cal-connect-btn'); if(btn){btn.disabled=true; btn.textContent='Connecting…'}
+  try{
+    await loadMsalScript();
+    if(!outlookMsalApp){
+      outlookMsalApp=new msal.PublicClientApplication({
+        auth:{clientId:d.clientId, authority:'https://login.microsoftonline.com/common', redirectUri:location.origin+location.pathname}
+      });
+      await outlookMsalApp.initialize();
+    }
+    const res=await outlookMsalApp.loginPopup({scopes:['Calendars.Read']});
+    outlookAccessToken=res.accessToken;
+    updateOutlookCalStatus();
+    showToast('Connected to Outlook Calendar');
+    return true;
+  }catch(e){ showToast('Microsoft sign-in failed or was cancelled'); return false; }
+  finally{ if(btn){btn.disabled=false; updateOutlookCalStatus()} }
+}
+async function outlookApiFetch(url,opts={}){
+  return fetch(url,{...opts,headers:{'Authorization':'Bearer '+outlookAccessToken,'Prefer':'outlook.timezone="'+(Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC')+'"',...(opts.headers||{})}});
+}
+// Fetches events in a fixed window (a few days back, a couple weeks ahead) via calendarview
+// rather than the plain /events list — calendarview expands recurring series into their
+// actual occurrences in that range, which is what a "what's coming up" import picker needs;
+// /events would return just the one recurring master with no usable per-occurrence date/time.
+async function fetchOutlookEvents(){
+  const now=new Date();
+  const start=new Date(now.getTime()-3*86400000);
+  const end=new Date(now.getTime()+14*86400000);
+  const url='https://graph.microsoft.com/v1.0/me/calendarview?startDateTime='+encodeURIComponent(start.toISOString())+'&endDateTime='+encodeURIComponent(end.toISOString())+'&$orderby=start/dateTime&$top=50&$select=id,subject,start,end,location,attendees,organizer,isCancelled';
+  const res=await outlookApiFetch(url);
+  if(!res.ok){
+    if(res.status===401){ outlookAccessToken=null; updateOutlookCalStatus(); }
+    throw new Error('Outlook request failed ('+res.status+')');
+  }
+  const data=await res.json();
+  return (data.value||[]).filter(e=>!e.isCancelled);
+}
+function openOutlookImportModal(){
+  (async()=>{
+    let hasToken=!!outlookAccessToken;
+    if(!hasToken) hasToken=await connectOutlookCalendar();
+    if(!hasToken) return;
+    const listEl=el('outlook-import-list'); const emptyEl=el('outlook-import-empty');
+    if(listEl)listEl.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--hint);font:400 12.5px Inter,sans-serif">Loading events…</div>';
+    el('outlook-import-modal-overlay')?.classList.add('open');
+    try{
+      outlookImportEvents=await fetchOutlookEvents();
+    }catch(e){
+      showToast('Could not load events from Outlook');
+      el('outlook-import-modal-overlay')?.classList.remove('open');
+      return;
+    }
+    outlookImportSelected.clear();
+    const alreadyImportedIds=new Set(meetingNotes.map(m=>m.outlookEventId).filter(Boolean));
+    outlookImportEvents.forEach(e=>{ if(!alreadyImportedIds.has(e.id))outlookImportSelected.add(e.id); });
+    renderOutlookImportList(alreadyImportedIds);
+    if(emptyEl)emptyEl.style.display=outlookImportEvents.length?'none':'';
+  })();
+}
+function renderOutlookImportList(alreadyImportedIds){
+  const listEl=el('outlook-import-list'); if(!listEl)return;
+  listEl.innerHTML='';
+  outlookImportEvents.forEach(e=>{
+    const already=alreadyImportedIds.has(e.id);
+    const row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-radius:6px;cursor:'+(already?'default':'pointer');
+    row.addEventListener('mouseenter',()=>{ if(!already)row.style.background='var(--hover)' });
+    row.addEventListener('mouseleave',()=>{ row.style.background='' });
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=outlookImportSelected.has(e.id)&&!already; cb.disabled=already;
+    cb.style.marginTop='3px';
+    cb.addEventListener('change',()=>{ if(cb.checked)outlookImportSelected.add(e.id); else outlookImportSelected.delete(e.id); });
+    const info=document.createElement('div'); info.style.cssText='flex:1;min-width:0';
+    const dateStr=e.start?.dateTime?new Date(e.start.dateTime).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
+    const timeStr=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}):'';
+    const title=document.createElement('div'); title.style.cssText='font:500 13px Inter,sans-serif;color:'+(already?'var(--hint)':'var(--fg)');
+    title.textContent=e.subject||'(No title)';
+    const meta=document.createElement('div'); meta.style.cssText='font:400 11.5px Inter,sans-serif;color:var(--hint);margin-top:2px';
+    const metaParts=[dateStr+(timeStr?' · '+timeStr:'')];
+    if(e.location?.displayName)metaParts.push(e.location.displayName);
+    if(Array.isArray(e.attendees)&&e.attendees.length)metaParts.push(e.attendees.length+' attendee'+(e.attendees.length===1?'':'s'));
+    if(already)metaParts.push('Already imported');
+    meta.textContent=metaParts.join(' · ');
+    info.appendChild(title); info.appendChild(meta);
+    row.appendChild(cb); row.appendChild(info);
+    listEl.appendChild(row);
+  });
+}
+function closeOutlookImportModal(){ el('outlook-import-modal-overlay')?.classList.remove('open'); }
+el('outlook-import-modal-close-btn')?.addEventListener('click',closeOutlookImportModal);
+el('outlook-import-cancel-btn')?.addEventListener('click',closeOutlookImportModal);
+el('outlook-import-modal-overlay')?.addEventListener('click',e=>{ if(e.target.id==='outlook-import-modal-overlay')closeOutlookImportModal(); });
+el('outlook-import-confirm-btn')?.addEventListener('click',()=>{
+  const toImport=outlookImportEvents.filter(e=>outlookImportSelected.has(e.id));
+  if(!toImport.length){ closeOutlookImportModal(); return; }
+  toImport.forEach(e=>{
+    const now=Date.now();
+    const startIso=e.start?.dateTime||''; const dt=startIso?new Date(startIso):null;
+    const date=dt?dt.toISOString().slice(0,10):'';
+    const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
+    const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
+    let agenda='';
+    if(e.location?.displayName)agenda=sakuraSanitizeRichHtml('<p>📍 '+esc(e.location.displayName)+'</p>');
+    const m=normalizeMeetingNote({
+      id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
+      outlookEventId:e.id, createdAt:now, modifiedAt:now
+    });
+    meetingNotes.push(m);
+  });
+  saveMeetingNotes();
+  renderMeetingsList();
+  closeOutlookImportModal();
+  showToast('Imported '+toImport.length+' meeting'+(toImport.length===1?'':'s')+' from Outlook');
+});
+el('meetings-outlook-import-btn')?.addEventListener('click',openOutlookImportModal);
+updateOutlookCalStatus();
+
 el('vault-setup-btn')?.addEventListener('click',()=>setupVaultPassphrase());
 el('vault-unlock-btn')?.addEventListener('click',()=>unlockVault());
 el('vault-lock-btn')?.addEventListener('click',()=>lockVault());
@@ -27692,7 +27893,7 @@ function setupSettingsCollapsible(headerId,bodyId){
     header.setAttribute('aria-expanded',String(open));
   });
 }
-['toolbar-sections','history-buttons','structure-buttons','move-buttons','format-buttons','fold-buttons','insert-buttons','ai-buttons','delete-buttons','extras-buttons','pad-toolbar-buttons','presenter-notes-buttons','note-toolbar-buttons','export-menu-buttons','ctx-quickbar','ctx-hidden','decisionlog-fields','preview-dlfields','hover-toolbar-actions','statusbar-items','statusbar-order','appbar-items','cloud-gist','cloud-drive','fs-backup-history'].forEach(id=>setupSettingsCollapsible(id+'-header',id+'-body'));
+['toolbar-sections','history-buttons','structure-buttons','move-buttons','format-buttons','fold-buttons','insert-buttons','ai-buttons','delete-buttons','extras-buttons','pad-toolbar-buttons','presenter-notes-buttons','note-toolbar-buttons','export-menu-buttons','ctx-quickbar','ctx-hidden','decisionlog-fields','preview-dlfields','hover-toolbar-actions','statusbar-items','statusbar-order','appbar-items','cloud-gist','cloud-drive','outlook-cal','fs-backup-history'].forEach(id=>setupSettingsCollapsible(id+'-header',id+'-body'));
 function updateToolbarCustomizationSummary(summaryId,gridId){
   const grid=el(gridId), summary=el(summaryId); if(!grid||!summary)return;
   const boxes=[...grid.querySelectorAll('input[type="checkbox"]')];
@@ -32063,6 +32264,7 @@ function normalizeMeetingNote(m){
     body:(m&&typeof m.body==='string')?m.body:'',
     actionItems:(m&&Array.isArray(m.actionItems))?m.actionItems.map(normalizeMeetingActionItem):[],
     links:(m&&Array.isArray(m.links))?m.links.map(normalizeMeetingLink).filter(Boolean):[],
+    outlookEventId:(m&&typeof m.outlookEventId==='string')?m.outlookEventId:'',
     createdAt:(m&&Number.isFinite(m.createdAt))?m.createdAt:now,
     modifiedAt:(m&&Number.isFinite(m.modifiedAt))?m.modifiedAt:now
   };
