@@ -680,10 +680,10 @@ body.toolbar-hidden #quick-bar{display:none}
 .settings-grid-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
 .settings-mini-link{appearance:none;border:none;background:none;padding:0;font:500 11px 'Inter',sans-serif;color:var(--accent);cursor:pointer}
 .settings-mini-link:hover{text-decoration:underline}
-.settings-collapsible-header{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;gap:10px;padding:0;margin:0;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:4px}
+.settings-collapsible-header{appearance:none;border:none;background:none;width:100%;display:flex;align-items:center;gap:14px;padding:0;margin:0;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:4px}
 .settings-collapsible-header:hover .settings-collapsible-title{text-decoration:underline}
 .settings-collapsible-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.settings-collapsible-summary{margin-left:auto;font:500 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:2px 8px;border-radius:999px;flex:0 1 auto;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-collapsible-summary{margin-left:auto;font:500 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:3px 9px;border-radius:999px;flex:0 1 auto;min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .settings-collapsible-chevron{flex:0 0 auto;color:var(--hint);transition:transform .15s}
 .settings-collapsible-header.open .settings-collapsible-chevron{transform:rotate(180deg)}
 .settings-collapsible-body{display:none;margin-top:8px}
@@ -3919,7 +3919,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Debug Log</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Enable debug logging</span><span class="settings-row-desc">Keeps a rolling log (last 500 entries, in memory only) of save, restore, and panel events — meant for tracking down exactly what happened around an issue like data not saving. Never includes your actual note/task/document text, only metadata like node IDs, lengths, and which action ran.</span></div><button id="debug-log-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Enable debug logging"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Enable debug logging</span><span class="settings-row-desc">Uncaught errors are always recorded in the background, whether this is on or off — so if something seems wrong, turning this on afterward still shows what already happened this session, nothing's lost. This toggle controls the more detailed breadcrumb trail (save, restore, panel, and AI events) and whether the log below is shown. Rolling log, last 500 entries, in memory only. Never includes your actual note/task/document text, only metadata like node IDs, lengths, and which action ran.</span></div><button id="debug-log-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Enable debug logging"></button></div>
             </div>
             <div class="settings-field" id="debug-log-field" style="display:none">
               <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="debug-log-copy-btn">Copy log</button><button type="button" class="settings-mini-link" id="debug-log-clear-btn">Clear log</button></div>
@@ -6133,14 +6133,35 @@ const AI_PREFS_KEY='sakura_ai_prefs_v1';
 let debugLoggingEnabled=false;
 let _debugLogBuffer=[];
 const DEBUG_LOG_MAX=500;
-function sakuraLog(category,msg,data){
-  if(!debugLoggingEnabled)return;
+function _debugLogPush(category,msg,data){
   const entry={t:Date.now(),category,msg,data};
   _debugLogBuffer.push(entry);
   if(_debugLogBuffer.length>DEBUG_LOG_MAX)_debugLogBuffer.shift();
-  if(data!==undefined)console.log(`[Sakura:${category}] ${msg}`,data); else console.log(`[Sakura:${category}] ${msg}`);
   if(el('debug-log-field')?.style.display!=='none')renderDebugLogView();
+  return entry;
 }
+function sakuraLog(category,msg,data){
+  if(!debugLoggingEnabled)return;
+  _debugLogPush(category,msg,data);
+  if(data!==undefined)console.log(`[Sakura:${category}] ${msg}`,data); else console.log(`[Sakura:${category}] ${msg}`);
+}
+// Unlike sakuraLog (opt-in breadcrumbs for save/restore/panel/ai flow, gated behind the
+// toggle so normal use isn't spammed), uncaught errors are rare enough and important enough
+// to always capture — the toggle only controls whether the log VIEWER is shown, not whether
+// crashes get recorded. This is what actually makes "Enable debug logging" useful for tracing
+// an issue after the fact: turn it on once something seems wrong, and any error that already
+// happened this session is already in the buffer, not lost.
+function sakuraLogError(source,msg,data){
+  _debugLogPush('error',msg,data);
+  console.error(`[Sakura:error:${source}]`,msg,data||'');
+}
+window.addEventListener('error',e=>{
+  sakuraLogError('window',e.message,{filename:e.filename,line:e.lineno,col:e.colno,stack:e.error?.stack});
+});
+window.addEventListener('unhandledrejection',e=>{
+  const reason=e.reason;
+  sakuraLogError('promise',reason?.message||String(reason),{stack:reason?.stack});
+});
 function _debugLogFormatEntry(e){
   const time=new Date(e.t).toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const dataStr=e.data!==undefined?' '+(typeof e.data==='object'?JSON.stringify(e.data):String(e.data)):'';
