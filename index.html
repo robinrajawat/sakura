@@ -2140,7 +2140,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-serif-body .pv-text,.pv-serif-body .pv-dlog-field-value,.pv-serif-body .pv-dlog-value,.pv-serif-body .pv-inline-note-body{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
 #preview-overlay.pv-theme-sepia{--bg:#faf5e9;--edit-bg:#fefcf6;--fg:#544632;--node-fg:#544632;--muted:#a2937a;--hint:#b0a189;--border:#f0e8d4;--hover:#f5efdf;--accent:#b0703a}
 #preview-overlay.pv-presenting .pv-slide{display:none}
-#preview-overlay.pv-presenting .pv-slide.pv-slide-active{display:block}
+#preview-overlay.pv-presenting .pv-slide.pv-slide-active{display:block;opacity:1;transition:opacity .18s ease}
+/* Applied briefly on navigation only (see applyPresenterState) — not on every re-render, since
+   an unrelated edit while presenting (a mark, a note) re-renders the same slide too and
+   shouldn't re-flash it. */
+#preview-overlay.pv-presenting .pv-slide.pv-slide-active.pv-slide-entering{opacity:0}
 #preview-overlay.pv-presenting #preview-body{display:flex;align-items:flex-start;justify-content:center;padding:60px 0 100px;cursor:pointer}
 /* #preview-body's own cursor:pointer above is more specific than the cursor:none
    previewSetLaser() sets inline on #preview-overlay itself, so it was winning and showing
@@ -2151,7 +2155,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-overlay.pv-presenting #pv-doc-header{display:none}
 #preview-overlay.pv-presenting #pv-qa-section{display:none}
 #preview-overlay.pv-presenting #preview-doc{max-width:min(860px,90%)}
-#preview-overlay.pv-presenting .pv-heading-1,#preview-overlay.pv-presenting .pv-heading-2{font-size:1.5em}
+#preview-overlay.pv-presenting .pv-heading-1,#preview-overlay.pv-presenting .pv-heading-2{font-size:1.5em;font-weight:600}
+#preview-overlay.pv-presenting .pv-heading-3{font-weight:600}
 .pv-title-slide{display:none}
 #preview-overlay.pv-presenting .pv-title-slide.pv-slide-active{display:flex;flex-direction:column;justify-content:flex-start;padding-top:18vh}
 .pv-title-slide-accent{width:52px;height:5px;border-radius:3px;background:var(--accent);margin-bottom:32px}
@@ -2192,6 +2197,12 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .presenter-overview-label{font:600 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 #presenter-blank-overlay{display:none;position:fixed;inset:0;z-index:1104;background:#000}
 #presenter-blank-overlay.on{display:block}
+/* Thin deck-progress indicator across the very top of the screen — a quieter, always-visible
+   complement to the "3 / 12" text counter in the presenter bar, so the audience can gauge
+   pacing at a glance without reading numbers. */
+#presenter-progress-bar{display:none;position:fixed;top:0;left:0;right:0;height:3px;background:var(--border);z-index:1101}
+#preview-overlay.pv-presenting #presenter-progress-bar{display:block}
+#presenter-progress-fill{height:100%;background:var(--accent);width:0%;transition:width .25s ease}
 #presenter-notes-panel{display:none;flex-direction:column;position:fixed;right:24px;bottom:76px;top:76px;width:340px;z-index:1103;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,.22);overflow:hidden}
 #presenter-notes-panel.open{display:flex}
 #presenter-notes-panel.pn-dragging,#presenter-notes-panel.pn-resizing{border-color:var(--accent)}
@@ -2271,6 +2282,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-cb.pv-cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
 .pv-row.pv-cb-done .pv-text{opacity:.45}
 .pv-text{flex:1;min-width:0;font-size:14.5px;line-height:1.55;padding:1px 0;word-break:break-word}.pv-text.pv-d2{color:color-mix(in srgb,var(--fg) 72%,var(--muted))}.pv-text.pv-d3{color:color-mix(in srgb,var(--fg) 50%,var(--muted))}
+/* Depth already reads via color dimming everywhere (see .pv-d2/.pv-d3/.pv-deep above); while
+   presenting, from across a room, a size step-down reads as hierarchy far faster than color
+   alone — so add that on top, presenting-only, rather than changing the regular reading-Preview
+   scale everyone's used to. */
+#preview-overlay.pv-presenting .pv-text.pv-d2{font-size:13.5px}
+#preview-overlay.pv-presenting .pv-text.pv-d3{font-size:12.5px}
+#preview-overlay.pv-presenting .pv-text.pv-deep{font-size:12px}
 .pv-text.pv-deep{color:var(--muted)}
 .pv-tag-chip-static{cursor:default}
 .pv-backlink-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px;transition:opacity .12s,background .12s;color:var(--accent)}
@@ -5685,6 +5703,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="presenter-notes-resize-handle" data-tip="Drag to resize · double-click to reset position &amp; size"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="21" y1="9" x2="9" y2="21"/><line x1="21" y1="15" x2="15" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg></div>
     </div>
     <div id="presenter-blank-overlay"></div>
+    <div id="presenter-progress-bar"><div id="presenter-progress-fill"></div></div>
     <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
@@ -25770,6 +25789,7 @@ function enterPresenterMode(){
   if(!previewSlides.length){ showToast('Nothing to present'); return; }
   previewPresenting=true;
   _presenterEscZoomReset=false;
+  _lastAppliedSlideIndex=-1;
   previewSlideIndex=Math.min(previewSlideIndex,previewSlides.length-1);
   applyPresenterZoom();
   // Presenting is popover-only by design (see previewOpenNotePopover/previewOpenQaPopover) —
@@ -25810,20 +25830,36 @@ function exitPresenterMode(){
   closePresenterNotes();
   if(document.fullscreenElement){ try{ document.exitFullscreen?.(); }catch(e){} }
 }
+let _lastAppliedSlideIndex=-1;
 function applyPresenterState(preserveScroll,scrollValue){
   if(!previewSlides.length){ exitPresenterMode(); return; }
   if(previewSlideIndex>previewSlides.length-1)previewSlideIndex=previewSlides.length-1;
   if(previewSlideIndex<0)previewSlideIndex=0;
   const body=el('preview-body');
+  let activeSlideEl=null;
   body?.querySelectorAll('.pv-slide').forEach(s=>{
-    s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex);
+    const isActive=Number(s.dataset.slideIndex)===previewSlideIndex;
+    s.classList.toggle('pv-slide-active',isActive);
+    if(isActive)activeSlideEl=s;
   });
+  // Fade in only on an actual slide change (navigation) — a full re-render can also land here
+  // after an unrelated edit (a mark, a note, typing) while staying on the same slide, and that
+  // shouldn't visibly flash every keystroke. body.replaceChildren() in renderPreviewBody()
+  // rebuilds every .pv-slide fresh each time regardless, so this can't rely on the element
+  // instance being the same one from last time — only on whether the index itself moved.
+  if(activeSlideEl&&previewSlideIndex!==_lastAppliedSlideIndex){
+    activeSlideEl.classList.add('pv-slide-entering');
+    void activeSlideEl.offsetWidth;
+    requestAnimationFrame(()=>activeSlideEl.classList.remove('pv-slide-entering'));
+  }
+  _lastAppliedSlideIndex=previewSlideIndex;
   requestAnimationFrame(()=>{ if(body)body.scrollTop=preserveScroll?(scrollValue||0):0; });
   const slide=previewSlides[previewSlideIndex];
   const labelEl=el('presenter-slide-label'); if(labelEl)labelEl.textContent=slide?slide.label:'';
   const counterEl=el('presenter-slide-counter'); if(counterEl)counterEl.textContent=(previewSlideIndex+1)+' / '+previewSlides.length;
   const prevBtn=el('presenter-prev-btn'); if(prevBtn)prevBtn.disabled=previewSlideIndex<=0;
   const nextBtn=el('presenter-next-btn'); if(nextBtn)nextBtn.disabled=previewSlideIndex>=previewSlides.length-1;
+  const fill=el('presenter-progress-fill'); if(fill)fill.style.width=(((previewSlideIndex+1)/previewSlides.length)*100)+'%';
 }
 function presenterGoTo(i){ previewSlideIndex=Math.max(0,Math.min(previewSlides.length-1,i)); applyPresenterState(); if(el('presenter-overview-grid')?.classList.contains('open'))closePresenterOverview(); }
 function presenterNext(){ if(previewSlideIndex<previewSlides.length-1)presenterGoTo(previewSlideIndex+1); }
