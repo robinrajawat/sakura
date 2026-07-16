@@ -225,6 +225,15 @@ body{padding-top:env(titlebar-area-height,40px)}
 .toolbar-group{display:inline-flex;align-items:center;gap:6px;padding-right:10px;margin-right:2px;border-right:1px solid var(--border)} .toolbar-group:last-of-type{border-right:none;padding-right:0;margin-right:0}
 .spacer{flex:1}
 .btn,.select,.meta-input{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:transparent;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));padding:4px 8px;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;line-height:1.2;transition:border-color .12s,color .12s,background .12s,box-shadow .12s}
+/* Masks API-key/token fields visually without ever using type="password" — Chrome's
+   password-manager save-prompt heuristic (and its "keep the last text field as username"
+   guess) is keyed specifically on input[type=password] existing anywhere on the page, with
+   no <form> required to trigger it. Chromium/WebKit support -webkit-text-security for this;
+   Firefox doesn't have an equivalent, so the field falls back to plain text there — a real
+   trade-off, but the field was never actually more secure than that (it's stored the same
+   way either way, this only affects the on-screen glyphs), and it's strictly better than a
+   browser occasionally offering to save random outline text as your AI provider's password. */
+.key-masked{-webkit-text-security:disc;text-security:disc}
 .select option{background-color:var(--edit-bg);color:var(--fg)}
 .btn{cursor:pointer}.btn:hover,.select:hover,.meta-input:hover{border-color:var(--accent);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)} .btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);box-shadow:0 1px 2px rgba(0,0,0,.08), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)}.btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%);box-shadow:0 2px 6px rgba(0,0,0,.12), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)} .btn.toggle-on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #import-toggle,#export-toggle{display:inline-flex;align-items:center;gap:5px}
@@ -779,12 +788,10 @@ body.toolbar-hidden #quick-bar{display:none}
 .doc-tab .doc-tab-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
 .doc-tab .doc-tab-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto;opacity:0;transition:opacity .15s}
 .doc-tab.is-dirty .doc-tab-dirty{opacity:1}
-.doc-tab .doc-tab-ref-badge{display:none;align-items:center;justify-content:center;color:var(--accent);flex:0 0 auto;cursor:pointer;opacity:.75}
-.doc-tab .doc-tab-ref-badge:hover{opacity:1}
 .doc-tab .doc-tab-close{flex:0 0 auto;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--muted);font-size:13px;line-height:1}
 .doc-tab .doc-tab-close:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
 .doc-tab.pinned{max-width:34px;min-width:34px;padding:6px 0 7px;justify-content:center;gap:0}
-.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close,.doc-tab.pinned .doc-tab-ref-badge{display:none}
+.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close{display:none}
 .doc-tab.pinned .doc-tab-pin-icon{display:flex;color:var(--muted)}
 .doc-tab.pinned.active .doc-tab-pin-icon{color:var(--accent)}
 .doc-tab.pinned .doc-tab-dirty{position:absolute;top:4px;right:4px}
@@ -1238,6 +1245,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #sidebar-toggle:hover{color:var(--fg);background:var(--hover)}
 #sidebar-toggle svg{display:block}
 #sidebar-toggle.is-collapsed{background:var(--hover)}
+#sidebar-reveal-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:7px;cursor:pointer;color:var(--muted);transition:color .12s,background .12s;flex-shrink:0}
+#sidebar-reveal-btn:hover{color:var(--fg);background:var(--hover)}
+#sidebar-reveal-btn svg{display:block}
 /* Hide old docs/templates toolbar dropdowns */
 .docs-wrap{display:none !important}
 /* Adjust editor wrap */
@@ -2253,7 +2263,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
 .pv-divider-row{display:flex;align-items:center;gap:10px;margin:22px 0}
 .pv-divider-title{font:700 1.6em/1.3 'Inter',sans-serif;color:var(--fg)}
-#preview-overlay.pv-presenting .pv-divider-slide.pv-slide-active{display:flex;flex-direction:column;justify-content:center;padding-top:0}
+#preview-overlay.pv-presenting .pv-divider-slide.pv-slide-active{display:flex;flex-direction:column;justify-content:center;padding-top:0;min-height:calc(100vh - 160px)}
 #preview-overlay.pv-presenting .pv-divider-slide .pv-divider-row{margin:0}
 #preview-overlay.pv-presenting .pv-divider-slide .pv-divider-title{font-size:2.6em;max-width:800px}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
@@ -2686,6 +2696,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .doc-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .doc-status-chip[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .doc-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+#doc-ref-chip{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);display:inline-flex;align-items:center}
+#doc-ref-chip:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}
 #diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
 #diagram-editor-note-input:hover{background:var(--hover)}
 #diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
@@ -3252,6 +3264,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button id="sidebar-toggle" data-tip="Toggle sidebar" aria-label="Toggle sidebar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
       </button>
+      <button id="sidebar-reveal-btn" data-tip="Reveal this document in the sidebar" aria-label="Reveal in sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
       <div id="header-meta">
         <input id="header-title" class="meta-inline" type="text" placeholder="Title" aria-label="Title" />
         <div class="todo-dd-wrap" id="doc-status-wrap">
@@ -3264,6 +3279,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <button type="button" class="todo-dd-item" data-value="rejected" role="menuitemradio" aria-checked="false">Rejected<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
           </div>
         </div>
+        <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a meeting or to-do — click to view">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span id="doc-ref-chip-text"></span>
+        </button>
       </div>
     </div>
     <div id="header-actions">
@@ -3840,7 +3858,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                   <div class="settings-field">
                     <label for="cloud-gist-token-input">Access token</label>
                     <div style="display:flex;gap:6px;width:100%">
-                      <input id="cloud-gist-token-input" type="password" class="meta-input" placeholder="ghp_…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" />
+                      <input id="cloud-gist-token-input" type="text" class="meta-input key-masked" placeholder="ghp_…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
                       <button class="btn" id="cloud-gist-token-show-btn" type="button" data-tip="Show token" style="flex-shrink:0;width:30px;padding:0;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                       <button class="btn" id="cloud-gist-token-save-btn" style="flex-shrink:0">Save</button>
                     </div>
@@ -3956,7 +3974,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px">
                 <span class="settings-switch-text" style="width:100%">API Key</span>
                 <div style="display:flex;gap:6px;width:100%">
-                  <input id="ai-api-key-input" type="password" class="meta-input" placeholder="Paste key here…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" />
+                  <input id="ai-api-key-input" type="text" class="meta-input key-masked" placeholder="Paste key here…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
                   <button class="btn" id="ai-api-key-show-btn" type="button" data-tip="Show key" style="flex-shrink:0;width:30px;padding:0;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                   <button class="btn" id="ai-api-key-test-btn" style="flex-shrink:0">Test</button>
                   <button class="btn" id="ai-api-key-save-btn" style="flex-shrink:0">Save</button>
@@ -4516,7 +4534,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>The tab shows every decision log in the document as a folded row (status pill inline next to the linked node, a one-line snippet of Context or Decision, author/date) — click a row to expand it in place and edit the full card; click it again, or another row, to collapse it. Only one is expanded at a time. Drag the handle that appears on hover to reorder rows manually — same interaction as To-Dos, Diagrams, and Q&amp;A's own row reordering; it's disabled while the "N open" or author filter is narrowing the list, since a filtered view's row order doesn't map cleanly back onto the full list</li>
 <li><strong>One decision log per node</strong> — the node picker (click the linked-node line inside an expanded card) greys out and explains any node that already has one. Pick "Not linked to a node" to clear the link, freeing that node up</li>
 <li>A small accent-colored dot appears next to a node with a linked decision log — click it to jump straight to the Decision Log tab with that entry expanded. The same icon appears next to a folded node's "+N hidden" badge when a decision log is linked somewhere inside its collapsed subtree</li>
-<li>A node referenced by a Meeting Notes link or a To-Do's link shows its own small dot too — a calendar icon for meetings, a checklist icon for to-dos — click to jump straight there, or to a small list if more than one links to that same node. Same folded-branch propagation as the decision log dot above. If a meeting or to-do links to the whole document rather than one specific node, look for a small document-shaped badge on that document's tab in the tab strip instead — click it the same way</li>
+<li>A node referenced by a Meeting Notes link or a To-Do's link shows its own small dot too — a calendar icon for meetings, a checklist icon for to-dos — click to jump straight there, or to a small list if more than one links to that same node. Same folded-branch propagation as the decision log dot above. If a meeting or to-do links to the whole document rather than one specific node, look for a small document-shaped chip next to the title, right by the document status chip — click it the same way. Only shows for the document you currently have open</li>
 <li>Delete a decision log from its row (trash icon on hover) — asks for confirmation first (Settings → Editing → "Confirm before delete", same setting used for nodes, Q&amp;A rows, and diagrams), then removes it. Undo with the toast's own Undo button. Deleting doesn't touch the linked node itself</li>
 <li>Each field supports light rich text — type "1. " or "- " at the start of a line for a real list, <span class="help-kbd">Ctrl/Cmd+B</span>/<span class="help-kbd">Ctrl/Cmd+I</span> for bold/italic, no toolbar needed — plus a small AI-rewrite icon that appears on hover</li>
 <li>Settings → Panels → Pad → Decision Log: "Ask who decided" prompts for a name each time a new one's created (on by default; the timestamp is always added regardless). "Color field labels" colors the Context/Decision/Rationale/etc. labels — in the editor and in the Decision Log card in Preview — so each field reads at a glance; "Bold field labels" additionally bolds them. Status is separate and always shows as a colored pill either way, since that's a status indicator rather than a fillable field. "Fields to include" hides whichever of the five fields you never fill in, right in the card. "Split large ones onto their own slide" (Presenter/PPTX) gives a decision log with a lot of content its own slide instead of squeezing it under the node's bullets, past a configurable character threshold</li>
@@ -7351,27 +7369,32 @@ function renderTabStrip(){
       tabDragState={draggedId:null,targetId:null,side:null};
     });
     row.addEventListener('dragend',()=>{ clearTabDragIndicators(); tabDragState={draggedId:null,targetId:null,side:null} });
-    row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-ref-badge" data-tip="Referenced by a meeting or to-do — click to view"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
+    row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
     row.querySelector('.doc-tab-title').textContent=truncateTitle(title||'Untitled',60);
-    const mWholeRefs=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled())?meetingRefsForWholeDoc(tab.docId):[];
-    const tWholeRefs=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled())?todoRefsForWholeDoc(tab.docId):[];
-    const refBadge=row.querySelector('.doc-tab-ref-badge');
-    if(refBadge){
-      if(!tab.pinned&&(mWholeRefs.length||tWholeRefs.length)){
-        refBadge.style.display='inline-flex';
-        const parts=[]; if(mWholeRefs.length)parts.push(mWholeRefs.length+' meeting'+(mWholeRefs.length===1?'':'s')); if(tWholeRefs.length)parts.push(tWholeRefs.length+' to-do'+(tWholeRefs.length===1?'':'s'));
-        refBadge.dataset.tip='Referenced by '+parts.join(' and ')+' — click to view';
-        refBadge.addEventListener('click',e=>{ e.stopPropagation(); openRefJumpPopover(refBadge, mWholeRefs, tWholeRefs, 'References the whole document'); });
-      } else {
-        refBadge.style.display='none';
-      }
-    }
     row.addEventListener('click',e=>{ if(e.target.closest('.doc-tab-close'))return; if(!isActive)switchDoc(tab.docId) });
     row.addEventListener('dblclick',e=>{ if(e.target.closest('.doc-tab-close'))return; e.preventDefault(); renameDoc(tab.docId) });
     row.querySelector('.doc-tab-close').addEventListener('click',e=>{ e.stopPropagation(); closeTab(tab.docId) });
     row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docTabContextItems(tab)); });
     strip.appendChild(row);
   });
+  updateHeaderRefChip();
+}
+// Moved out of the tab strip and into the title area (next to the document-status chip) —
+// a small badge buried in a background tab was easy to miss, and only ever meant anything
+// for the currently-open document anyway (you can't act on it without switching to that tab
+// first). Only reflects the active document now; a document referenced by a meeting or to-do
+// while its tab sits in the background no longer shows any indicator until you switch to it.
+function updateHeaderRefChip(){
+  const chip=el('doc-ref-chip'); if(!chip)return;
+  if(currentDocId===null){ chip.style.display='none'; return; }
+  const mRefs=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled())?meetingRefsForWholeDoc(currentDocId):[];
+  const tRefs=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled())?todoRefsForWholeDoc(currentDocId):[];
+  if(!mRefs.length&&!tRefs.length){ chip.style.display='none'; return; }
+  chip.style.display='inline-flex';
+  const parts=[]; if(mRefs.length)parts.push(mRefs.length+' meeting'+(mRefs.length===1?'':'s')); if(tRefs.length)parts.push(tRefs.length+' to-do'+(tRefs.length===1?'':'s'));
+  const textEl=el('doc-ref-chip-text'); if(textEl)textEl.textContent=parts.join(' · ');
+  chip.dataset.tip='Referenced by '+parts.join(' and ')+' — click to view';
+  chip.onclick=()=>openRefJumpPopover(chip, mRefs, tRefs, 'References the whole document');
 }
 
 function docTabContextItems(tab){
@@ -11280,7 +11303,7 @@ function openRefJumpPopover(anchorEl, meetingRefs, todoRefs, title){
   _refJumpOpen=true;
 }
 document.addEventListener('mousedown',e=>{
-  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('.doc-tab-ref-badge'))closeRefJumpPopover();
+  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
 },true);
 // A single match jumps straight there (no extra click through a one-item popover); more than
 // one opens the popover, since there's no longer a single unambiguous target to jump to.
@@ -11490,11 +11513,16 @@ async function sakuraPrompt({icon,title,body,defaultValue='',confirmLabel='Renam
 }
 async function sakuraPasswordPrompt({icon,title,body,confirmLabel='OK',cancelLabel='Cancel'}){
   const input=el('sakura-modal-input');
-  if(input)input.type='password';
+  // CSS-masked rather than type="password" — a real password-type input appearing on the
+  // page, followed shortly by an AI fetch() call once unlocked, is exactly the pattern that
+  // triggers Chrome's save-password heuristic (no <form> required), which then misattributes
+  // whatever text field was last edited — e.g. the node being rewritten — as the "username."
+  // Masking visually via CSS instead means no input[type=password] element ever exists here.
+  if(input)input.classList.add('key-masked');
   try{
     return await sakuraPrompt({icon,title,body,confirmLabel,cancelLabel});
   }finally{
-    if(input)input.type='text';
+    if(input)input.classList.remove('key-masked');
   }
 }
 async function sakuraTextareaPrompt({icon,title,body,defaultValue='',textareaLabel='',textareaPlaceholder='',confirmLabel='Generate',cancelLabel='Cancel'}){
@@ -12063,7 +12091,7 @@ const CTX_ACTION_META={
   up:{label:'Move up',glyph:'↑',group:'structure'},
   down:{label:'Move down',glyph:'↓',group:'structure'},
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
-  'slide-divider':{label:'Mark as slide divider',dynamicLabel:true,svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>',group:'structure'},
+  'slide-divider':{label:'Mark as slide divider',dynamicLabel:true,staticLabel:'Slide divider',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>',group:'structure'},
   'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   'ai-rewrite-all':{label:'Rewrite document',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   'ai-icon':{label:'Suggest icon',svg:'<circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/>',group:'ai'},
@@ -12257,7 +12285,7 @@ function renderContextQuickOrderList(){
     handle.style.cssText='color:var(--muted);flex-shrink:0;cursor:grab;display:flex;align-items:center';
     const lbl=document.createElement('span');
     lbl.style.cssText='font:500 12px Inter,sans-serif;color:var(--fg);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    lbl.textContent=meta.dynamicLabel?'Note…':meta.label;
+    lbl.textContent=meta.dynamicLabel?(meta.staticLabel||meta.label):meta.label;
     row.appendChild(handle); row.appendChild(lbl);
     row.addEventListener('dragstart',e=>{dragSrc=row; e.dataTransfer.effectAllowed='move'; row.style.opacity='.4'});
     row.addEventListener('dragend',()=>{dragSrc=null; wrap.querySelectorAll('[data-key]').forEach(r=>{r.style.opacity=''; r.style.boxShadow=''})});
@@ -18250,8 +18278,8 @@ const EYE_OFF_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" 
 function setupPasswordShowToggle(inputId,btnId){
   const input=el(inputId), btn=el(btnId); if(!input||!btn)return;
   btn.addEventListener('click',()=>{
-    const showing=input.type==='text';
-    input.type=showing?'password':'text';
+    const showing=!input.classList.contains('key-masked');
+    input.classList.toggle('key-masked',showing);
     btn.innerHTML=showing?EYE_ICON:EYE_OFF_ICON;
     btn.dataset.tip=showing?'Show':'Hide';
   });
@@ -18567,6 +18595,7 @@ function makeDocItem(d, allFolders, filterActive){
   const isCurrent = d.id === currentDocId;
   const isMultiSelected = !filterActive && sbSelectedDocIds.has(d.id);
   const item = document.createElement('div'); item.className='sdoc-item'+(isCurrent?' active':'')+(isMultiSelected?' sb-multi-selected':'');
+  item.dataset.docId=String(d.id);
   item.draggable = true;
   item.addEventListener('dragstart',e=>{
     e.dataTransfer.effectAllowed='move';
@@ -19398,6 +19427,32 @@ function revealFolderInSidebar(id){
     setTimeout(()=>{row.style.background=prev},900);
   },30);
 }
+// Reveals a specific (non-trashed) document's own row in the sidebar — opens the sidebar if
+// collapsed, clears any active filter that would otherwise hide the row, walks up and opens
+// every ancestor folder the document is nested in (same idea as revealFolderInSidebar, just
+// starting from the doc's folder rather than a folder id), then scrolls to and briefly
+// highlights it. This is what "open the current document in the sidebar" needs — the
+// document might be several folders deep and none of them expanded.
+function revealDocInSidebar(id){
+  if(id===null||id===undefined)return;
+  if(!sidebarOpen)setSidebarOpen(true);
+  if(sbSearchQuery){
+    sbSearchQuery=''; const inp=el('sidebar-search'); if(inp)inp.value=''; el('sidebar-search-clear')?.classList.remove('visible');
+  }
+  const folders=loadFolders();
+  const folderMap=loadDocFolderMap();
+  let cur=folders.find(f=>f.id===folderMap[id]);
+  while(cur){ if(cur.open===false)cur.open=true; cur=folders.find(f=>f.id===cur.parentId); }
+  saveFolders(folders);
+  renderSidebar();
+  setTimeout(()=>{
+    const row=document.querySelector(`.sdoc-item[data-doc-id="${id}"]`);
+    if(!row)return;
+    try{ row.scrollIntoView({block:'center',behavior:'smooth'}) }catch(e){}
+    row.style.transition='background .2s'; const prev=row.style.background; row.style.background='var(--sel)';
+    setTimeout(()=>{row.style.background=prev},900);
+  },30);
+}
 // Template folders are single-level (no parentId/nesting), so this only needs to open
 // the one folder itself before scrolling.
 function revealTplFolderInSidebar(id){
@@ -19451,6 +19506,7 @@ el('sb-templates-menu-btn').addEventListener('click',e=>{
   ]);
 });
 el('sidebar-toggle').addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
+el('sidebar-reveal-btn')?.addEventListener('click',()=>{ if(currentDocId!==null)revealDocInSidebar(currentDocId); else showToast('No document open'); });
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+M)':'Maximize editor (hide sidebar & chrome) (Ctrl/Cmd+Shift+M)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   // Apply per-panel zen defaults on entry, and restore on exit — but only restore a
   // panel if it's still in the auto-hidden state; if the person manually re-showed it
