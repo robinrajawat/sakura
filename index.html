@@ -15341,18 +15341,20 @@ async function buildPptxPresentation(slidesData){
   // content tends to be full of), which is what let long field values still overlap the next
   // field after the first height-estimation pass.
   //
-  // Measures against Calibri, not 'Inter' (the app's own UI font) — this was the actual root
-  // cause behind every wrapped-line-count-too-low overlap bug so far, not the run-splitting
-  // logic those earlier fixes went after. Inter is a web font loaded only via this page's own
-  // CSS; it's essentially never installed as a real system/Office font, so however carefully
-  // this function measured Inter's specific glyph widths, PowerPoint would silently substitute
-  // a different font to actually display the file — measuring one font perfectly and rendering
-  // a differently-shaped one is why boxes kept coming out too short no matter how the text
-  // inside them was split. Calibri is Office's own default body font: likely already installed
-  // both here (so the canvas measurement reflects real glyph widths) and in whatever opens the
-  // exported file (so there's no substitution at all) — closing the gap instead of estimating
-  // around it. A small multiplier still pads the result for the remaining case (Calibri itself
-  // missing, e.g. Linux without Office's fonts installed) where some substitution is unavoidable.
+  // Measures against Calibri, not 'Inter' (the app's own UI font) — Inter is a web font loaded
+  // only via this page's own CSS, essentially never installed as a real system/Office font, so
+  // however carefully this function measured Inter's glyph widths, PowerPoint would silently
+  // substitute a different font to actually display the file. Calibri is Office's own default
+  // body font, so it's a much better bet — but this switch alone still wasn't enough: a real
+  // PowerPoint test after making it still showed text wrapping to more lines than predicted
+  // here. Rather than continue guessing at exactly which font resolves in some specific
+  // PowerPoint/Google Slides/LibreOffice install (unverifiable from this environment — this
+  // sandbox itself only has Carlito, Calibri's metric-compatible stand-in, not real Calibri),
+  // boxWidthPx below is deliberately shrunk by a large, fixed margin so the measurement stays
+  // an under-estimate of available width — and therefore an over-estimate of lines needed —
+  // across a wide range of substitute fonts, not just the one this function asks for. Trades
+  // some blank space at the end of a box for actually not overlapping the next thing on the
+  // slide, which is the one property that matters most here.
   let _pptxMeasureCtx=null;
   function pptxMeasureWrappedLines(text, boxWidthIn, fontSizePt, bold){
     const s=String(text||'');
@@ -15360,7 +15362,7 @@ async function buildPptxPresentation(slidesData){
     if(!_pptxMeasureCtx) _pptxMeasureCtx=document.createElement('canvas').getContext('2d');
     const ctx=_pptxMeasureCtx;
     ctx.font=(bold?'700 ':'400 ')+fontSizePt+'pt Calibri, Carlito, Arial, sans-serif';
-    const boxWidthPx=Math.max(1, boxWidthIn*96*0.94); // canvas measureText works in CSS px; 96px/in; ~6% width buffer for residual font-substitution risk
+    const boxWidthPx=Math.max(1, boxWidthIn*96*0.76); // canvas measureText works in CSS px; 96px/in; ~24% width buffer, deliberately large — see comment above
     let totalLines=0;
     s.split('\n').forEach(paragraph=>{
       const words=paragraph.split(/\s+/).filter(Boolean);
@@ -15425,7 +15427,7 @@ async function buildPptxPresentation(slidesData){
       const textW=pptxNoteCardTextWidth(boxWidthIn,indentLevel);
       let totalLines=0;
       segments.forEach(seg=>{ totalLines+=pptxMeasureWrappedLines(seg.text,textW,seg.fontSize,false); });
-      const contentH=Math.ceil(totalLines*1.08)*pptxLineHeightIn(fontSize,lineSpacingMultiple);
+      const contentH=totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple);
       return contentH+NOTE_CARD_PAD_TOP+NOTE_CARD_PAD_BOTTOM+NOTE_CARD_BOTTOM_MARGIN;
     }
     const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
