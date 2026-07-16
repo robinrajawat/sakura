@@ -2179,7 +2179,17 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 body.pv-audience-mode>*{display:none!important}
 body.pv-audience-mode #pv-audience-shell{display:flex!important}
 #pv-audience-shell{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:flex-start;padding:60px 0 60px;overflow-y:auto;z-index:1}
-#pv-audience-slide{max-width:min(860px,90%);width:100%}
+/* Mirrors the equivalent #preview-overlay.pv-theme-sepia / .pv-serif-body rules for the real
+   Preview/Presenter view — can't reuse those selectors directly since #preview-overlay is a
+   real, distinct element already present (hidden) in this same document; the audience shell
+   is a separate container that needs its own copies of the same declarations. */
+#pv-audience-shell.pv-theme-sepia{--bg:#faf5e9;--edit-bg:#fefcf6;--fg:#544632;--node-fg:#544632;--muted:#a2937a;--hint:#b0a189;--border:#f0e8d4;--hover:#f5efdf;--accent:#b0703a}
+#pv-audience-slide{max-width:min(860px,90%);width:100%;font-family:'Inter',sans-serif;color:var(--node-fg);padding:0 48px 0 24px;box-sizing:border-box}
+#pv-audience-slide .pv-heading-1,#pv-audience-slide .pv-heading-2{font-size:1.5em}
+#pv-audience-slide .pv-title-slide{display:flex;flex-direction:column;justify-content:flex-start;padding-top:18vh}
+#pv-audience-slide .pv-divider-slide{display:flex;flex-direction:column;justify-content:flex-start;padding-top:18vh}
+#pv-audience-slide .pv-divider-slide .pv-divider-row{margin:0}
+#pv-audience-slide .pv-divider-slide .pv-divider-title{font-size:2.6em;max-width:800px}
 #pv-audience-blank{display:none;position:fixed;inset:0;z-index:20;background:#000}
 #pv-audience-blank.on{display:block}
 #pv-audience-waiting{color:var(--hint);font:500 13px 'Inter',sans-serif;margin-top:18vh;text-align:center}
@@ -25987,7 +25997,7 @@ function broadcastPresenterState(){
   if(isAudienceWindow)return;
   const ch=ensurePresenterChannel(); if(!ch)return;
   const slideEl=document.querySelector('#preview-body .pv-slide.pv-slide-active');
-  ch.postMessage({type:'state',html:slideEl?slideEl.innerHTML:'',blank:presenterBlanked,theme:currentTheme,zoomPct:previewPresenterZoom,laserOn:previewLaserOn,laserX:_lastLaserX,laserY:_lastLaserY});
+  ch.postMessage({type:'state',html:slideEl?slideEl.innerHTML:'',blank:presenterBlanked,theme:currentTheme,zoomPct:previewPresenterZoom,laserOn:previewLaserOn,laserX:_lastLaserX,laserY:_lastLaserY,serifBody:previewSerifBody,sepiaTheme:previewSepiaTheme});
 }
 function broadcastLaser(on,x,y){
   if(isAudienceWindow)return;
@@ -26053,6 +26063,8 @@ function onPresenterChannelMessage(ev){
       document.body.classList.add('theme-'+msg.theme);
     }
     document.body.style.zoom=msg.zoomPct?String(msg.zoomPct):'';
+    el('pv-audience-shell')?.classList.toggle('pv-serif-body',!!msg.serifBody);
+    el('pv-audience-shell')?.classList.toggle('pv-theme-sepia',!!msg.sepiaTheme);
     // Covers the "laser was already on before this window connected" case — otherwise the
     // dot would stay invisible until the presenter's next mousemove tick.
     if('laserOn' in msg)onPresenterChannelMessage({data:{type:'laser',on:msg.laserOn,x:msg.laserX,y:msg.laserY}});
