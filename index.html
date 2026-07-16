@@ -10233,6 +10233,24 @@ function notePreviewPlainText(html){
   tmp.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
   return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
 }
+// Splits a note's HTML into one plain-text line per block-level entry — each saveNodeComment
+// <div class="note-comment-entry">, each <p>/<li>, or each manual line break — rather than
+// collapsing everything into one run-on line the way stripHtmlToText does. PPTX's slide bullets
+// have no equivalent to Word's per-block NoteBlock paragraphs (see docxNoteBlocks) or Presenter's
+// pv-inline-note-body, so without this a multi-entry note became a single wall-of-text bullet
+// with entries glued together (worse still, with no separator at all between them, unlike
+// notePreviewPlainText's ' · ' — that function keeps everything on one line by design, this one
+// doesn't). Used by pptxGatherSlidesData to emit one 'note' item per line instead of one item
+// for the whole note.
+function noteBlockLines(html){
+  if(!html)return [];
+  const marker='\u0000SAKURA_LINE\u0000';
+  const tmp=document.createElement('div');
+  tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
+  tmp.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
+  const text=(tmp.textContent||tmp.innerText||'');
+  return text.split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+}
 function getDocNodesForSearch(docId,indexEntry){
   if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
   const openTab=findOpenTab(docId);
@@ -15174,8 +15192,7 @@ async function pptxGatherSlidesData(){
     if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)&&!decisionLogIsLarge(decisionLogForNode(node.id))) items.push(pptxParseDecisionLogFields(node));
     const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
     if(ownNoteSplit){
-      const noteText=stripHtmlToText(ownNoteSplit.restHtml).trim();
-      if(noteText) items.push({type:'note', text:noteText, indent:0});
+      noteBlockLines(ownNoteSplit.restHtml).forEach(line=>items.push({type:'note', text:line, indent:0}));
     }
     // Every descendant down to the next slide boundary, not just direct children — previewSlideDepth
     // is a single fixed depth, so nothing inside this loop's range can be another slide-boundary
@@ -15190,8 +15207,7 @@ async function pptxGatherSlidesData(){
       if(childText&&childNode.isCheckbox) childText=(childNode.checked?'\u2611 ':'\u2610 ')+childText;
       if(childText) items.push({type:'bullet', text:childText, marker:childNode.marker||'', indent:relDepth-1});
       if(nodeContentExportEnabled&&childNode.note&&childNode.note.trim()){
-        const noteText=stripHtmlToText(splitNoteDiagramImages(childNode.note).restHtml).trim();
-        if(noteText) items.push({type:'note', text:noteText, indent:relDepth-1});
+        noteBlockLines(splitNoteDiagramImages(childNode.note).restHtml).forEach(line=>items.push({type:'note', text:line, indent:relDepth-1}));
       }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(childNode.id)&&!decisionLogIsLarge(decisionLogForNode(childNode.id))) items.push(pptxParseDecisionLogFields(childNode));
     }
