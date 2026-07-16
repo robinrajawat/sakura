@@ -1604,28 +1604,13 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-editor img.sakura-diagram-img{outline:2px solid var(--accent);outline-offset:2px}
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
-.pv-diagram-img{max-width:100%;max-height:70vh;display:block;margin:0 auto;cursor:zoom-in}
-#preview-overlay.laser-active .pv-diagram-img,
-#preview-overlay.laser-active #diagram-lightbox,
-#preview-overlay.laser-active #diagram-lightbox-img,
-#preview-overlay.laser-active #diagram-lightbox-close{cursor:none}
+.pv-diagram-img{max-width:100%;max-height:70vh;display:block;margin:0 auto}
 .pv-diagram-row-multi .pv-diagram-img{max-height:42vh}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
-#diagram-lightbox{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.88);cursor:zoom-out;flex-direction:column;align-items:center;justify-content:center;padding:40px;overflow:hidden}
-#diagram-lightbox.open{display:flex}
-#diagram-lightbox img{max-width:100%;max-height:calc(100vh - 120px);object-fit:contain;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-#diagram-lightbox-img{touch-action:none;transform-origin:center center;will-change:transform}
-#diagram-lightbox.dz-zoomed{cursor:default}
-#diagram-lightbox-zoom-hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);color:#e8e6e0;opacity:.6;font:500 11px 'Inter',sans-serif;letter-spacing:.02em;pointer-events:none;transition:opacity .3s ease}
-#diagram-lightbox-zoom-hint.hint-hidden{opacity:0}
-#preview-overlay.laser-active #diagram-lightbox-zoom-hint{display:none}
-#diagram-lightbox figcaption{color:#e8e6e0;font:500 13px 'Inter',sans-serif;margin-top:14px;text-align:center;max-width:800px}
-#diagram-lightbox-close{position:fixed;top:20px;right:24px;background:none;border:none;color:#e8e6e0;cursor:pointer;padding:8px;opacity:.8}
-#diagram-lightbox-close:hover{opacity:1}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -5675,7 +5660,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
-    <div id="diagram-lightbox" role="dialog" aria-label="Enlarged diagram"><button type="button" id="diagram-lightbox-close" aria-label="Close"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><img id="diagram-lightbox-img" src="" alt="" /><figcaption id="diagram-lightbox-caption"></figcaption><div id="diagram-lightbox-zoom-hint">Scroll or pinch to zoom · drag to pan · double-click to reset</div></div>
     <div id="presenter-notes-panel" role="complementary" aria-label="Presenter notes">
       <div id="presenter-notes-header" data-tip="Drag to move"><span id="presenter-notes-title">Notepad</span><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
       <div id="presenter-notes-body"></div>
@@ -10244,7 +10228,12 @@ function notePreviewPlainText(html){
 // for the whole note.
 function noteBlockLines(html){
   if(!html)return [];
-  const marker='\u0000SAKURA_LINE\u0000';
+  // U+0000 (NUL) is specially mangled by HTML parsing — the browser replaces/strips it when
+  // set via innerHTML, so a NUL-wrapped marker here never survived the round-trip below and
+  // its literal text leaked straight into exported notes instead of splitting invisibly (see
+  // the incident this comment replaces). U+E000 is Private Use Area — never appears in real
+  // content and HTML parsing leaves it untouched.
+  const marker='\uE000';
   const tmp=document.createElement('div');
   tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
   tmp.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
@@ -16967,7 +16956,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&el('diagram-lightbox')?.classList.contains('open')){e.preventDefault(); closeDiagramLightbox(); return;} if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); openPresenterNotesInMode('notes'); return} if(e.key==='q'||e.key==='Q'){e.preventDefault(); openPresenterNotesInMode('qa'); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(previewActive){if(previewPresenting){if(e.key==='Escape'){e.preventDefault(); if(el('presenter-overview-grid')?.classList.contains('open')){closePresenterOverview(); return} if(el('presenter-notes-panel')?.classList.contains('open')){closePresenterNotes(); return} if(presenterBlanked){setPresenterBlank(false); return} if(Math.abs(previewInteractiveZoom-1)>0.001){resetPreviewZoom(); return} if(previewAutoPresenter){closePreview();}else{exitPresenterMode();} return} if(isControlTarget(e.target))return; if(e.key==='g'||e.key==='G'){e.preventDefault(); togglePresenterOverview(); return} if(e.key==='b'||e.key==='B'){e.preventDefault(); togglePresenterBlank(); return} if(e.key==='n'||e.key==='N'){e.preventDefault(); openPresenterNotesInMode('notes'); return} if(e.key==='q'||e.key==='Q'){e.preventDefault(); openPresenterNotesInMode('qa'); return} if(el('presenter-overview-grid')?.classList.contains('open'))return; if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault(); presenterNext(); return} if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault(); presenterPrev(); return} if(e.key==='Home'){e.preventDefault(); presenterGoTo(0); return} if(e.key==='End'){e.preventDefault(); presenterGoTo(previewSlides.length-1); return} return} if(e.key==='Escape'){e.preventDefault(); if(Math.abs(previewInteractiveZoom-1)>0.001){resetPreviewZoom(); return} closePreview(); return} if(matchesShortcut(e,'togglePreview')){e.preventDefault(); closePreview();} return} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); hideHoverRailNow(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleToolbar')) { e.preventDefault(); fireShortcut('toggleToolbar'); return; } if (matchesShortcut(e,'toggleAppbar')) { e.preventDefault(); fireShortcut('toggleAppbar'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if (matchesShortcut(e,'togglePreview')) { e.preventDefault(); fireShortcut('togglePreview'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if (matchesShortcut(e,'toggleTreeLines')) { e.preventDefault(); fireShortcut('toggleTreeLines'); return; } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } if (matchesShortcut(e,'copyAsImage')) { e.preventDefault(); fireShortcut('copyAsImage'); return; } if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} ensureSelection(); const idx=getIndex(selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId)} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId)} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,false); setTimeout(()=>{const input=getEditingInput(); if(input){input.value=e.key; input.dispatchEvent(new Event('input')); setInputCaret(input,1)}},0)}});
 // --- AI Rewrite ---
 function loadAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); const validIds=getAllAiProviders().map(p=>p.id); if(d.provider&&validIds.includes(d.provider))aiProvider=d.provider; if(d.modelByProvider&&typeof d.modelByProvider==='object')aiModelByProvider={...d.modelByProvider}; if(d.model&&typeof d.model==='string')aiModel=d.model; if(aiModelByProvider[aiProvider])aiModel=aiModelByProvider[aiProvider]; if(d.prompt&&typeof d.prompt==='string')aiRewritePrompt=d.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions()}catch(e){}}
 function saveAiPrefs(){try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); d.provider=aiProvider; d.model=aiModel; aiModelByProvider[aiProvider]=aiModel; d.modelByProvider=aiModelByProvider; d.prompt=aiRewritePrompt; localStorage.setItem(AI_PREFS_KEY,JSON.stringify(d))}catch(e){}}
@@ -25007,8 +24996,7 @@ function renderPreviewBody(){
         const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
         noteSplit.diagrams.forEach(d=>{
           const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
-          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram'; img.dataset.tip='Click to enlarge';
-          img.addEventListener('click',()=>openDiagramLightbox(d.src,d.alt));
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram';
           fig.appendChild(img);
           if(d.alt){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.alt; fig.appendChild(cap); }
           row.appendChild(fig);
@@ -25017,8 +25005,8 @@ function renderPreviewBody(){
       }
       // Document-level diagrams (see the Diagrams tab in Pad) anchored to this node — the newer,
       // preferred workflow: a real draw.io editor rather than a static image pasted into the
-      // note. Same visual row/figure/lightbox treatment as the note-embedded path above, since
-      // to a reader there's no meaningful difference in how either should look.
+      // note. Same visual row/figure treatment as the note-embedded path above, since to a
+      // reader there's no meaningful difference in how either should look.
       const anchoredDiagrams=diagrams.filter(d=>d.anchorNodeId===node.id&&(d.previewSvg||(Array.isArray(d.pageSvgs)&&d.pageSvgs.length)));
       if(anchoredDiagrams.length){
         const allPages=anchoredDiagrams.flatMap(d=>diagramDisplayPages(d));
@@ -25026,8 +25014,7 @@ function renderPreviewBody(){
         const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
         allPages.forEach(p=>{
           const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
-          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=p.svg; img.alt=p.caption||'Diagram'; img.dataset.tip='Click to enlarge';
-          img.addEventListener('click',()=>openDiagramLightbox(p.svg,p.caption));
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=p.svg; img.alt=p.caption||'Diagram';
           fig.appendChild(img);
           if(p.caption){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=p.caption; fig.appendChild(cap); }
           row.appendChild(fig);
@@ -25693,149 +25680,7 @@ function updatePresenterTimerDisplay(){
   const el2=el('presenter-timer'); if(el2)el2.textContent=text;
 }
 
-// Click-to-zoom for featured diagrams — architecture diagrams tend to have fine text that's
-// unreadable at the slide's fixed max-height. Beyond the initial fit-to-viewport view, the
-// image itself supports scroll/pinch zoom (cursor- or touch-anchored) and drag-to-pan once
-// zoomed in, plus double-click/double-tap to toggle a 2.5x zoom at that point. Background
-// click, the ✕, or Escape still close it; clicking the image itself only closes while it's
-// at 1x (zoomed-in clicks are reserved for panning, not dismissal).
-//
-// IMPORTANT: zoom level is applied by resizing the image's real layout box (width/height),
-// never by a CSS transform: scale(). A transform-scale is compositor-only — the browser
-// paints the element once at its laid-out size into a GPU texture, and scale() just stretches
-// that cached texture, which pixelates regardless of whether the source is vector (SVG) or
-// raster. Setting real width/height forces an actual re-layout and repaint at the target
-// resolution: crisp at any zoom for SVG sources, and properly resampled up to the source's
-// native resolution for raster ones (past that, it's a real, physical pixel ceiling, not a
-// rendering bug). transform is used only for translate() — pan position, which doesn't need
-// re-rendering to stay sharp, so it stays cheap and smooth.
-let dzScale=1,dzX=0,dzY=0,dzBaseW=0,dzBaseH=0,dzDragging=false,dzDragStartX=0,dzDragStartY=0,dzDragOrigX=0,dzDragOrigY=0,dzJustDragged=false,dzHintTimer=null,dzRafId=null,dzLoadedSrc=null;
-const dzPointers=new Map();
-let dzPinchStartDist=0,dzPinchStartScale=1;
-function resetDiagramZoom(){ if(dzRafId!=null){cancelAnimationFrame(dzRafId); dzRafId=null;} dzScale=1; dzX=0; dzY=0; dzPointers.clear(); dzDragging=false; applyDiagramZoomTransform(); }
-// Continuous gestures (wheel ticks, active pinch/drag) call this instead of applying the DOM
-// update directly — collapses any number of events firing within the same frame down to a
-// single layout/paint, since each update forces a real reflow (see the block comment above).
-function requestDiagramZoomFrame(){
-  if(dzRafId!=null)return;
-  dzRafId=requestAnimationFrame(()=>{ dzRafId=null; applyDiagramZoomTransform(); });
-}
-function clampDiagramPan(){
-  if(dzScale<=1.001||!dzBaseW||!dzBaseH){ dzX=0; dzY=0; return; }
-  const scaledW=dzBaseW*dzScale, scaledH=dzBaseH*dzScale;
-  const maxX=Math.max(0,(scaledW-window.innerWidth)/2), maxY=Math.max(0,(scaledH-window.innerHeight)/2);
-  dzX=Math.min(maxX,Math.max(-maxX,dzX)); dzY=Math.min(maxY,Math.max(-maxY,dzY));
-}
-function applyDiagramZoomTransform(){
-  const img=el('diagram-lightbox-img'); if(!img)return;
-  clampDiagramPan();
-  if(dzScale===1||!dzBaseW||!dzBaseH){
-    img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight='';
-    img.style.transform='';
-  } else {
-    img.style.maxWidth='none'; img.style.maxHeight='none';
-    img.style.width=(dzBaseW*dzScale)+'px'; img.style.height=(dzBaseH*dzScale)+'px';
-    img.style.transform=`translate(${dzX}px,${dzY}px)`;
-  }
-  const box=el('diagram-lightbox'); if(!box)return;
-  box.classList.toggle('dz-zoomed',dzScale>1.001);
-  const laserOn=el('preview-overlay')?.classList.contains('laser-active');
-  if(!laserOn) img.style.cursor=dzScale>1.001?(dzDragging?'grabbing':'grab'):'zoom-in';
-}
-function showDiagramZoomHint(){
-  const hint=el('diagram-lightbox-zoom-hint'); if(!hint)return;
-  hint.classList.remove('hint-hidden'); clearTimeout(dzHintTimer);
-  dzHintTimer=setTimeout(()=>hint.classList.add('hint-hidden'),3000);
-}
-function hideDiagramZoomHintNow(){ clearTimeout(dzHintTimer); el('diagram-lightbox-zoom-hint')?.classList.add('hint-hidden'); }
-function diagramZoomAt(clientX,clientY,newScale){
-  if(!dzBaseW||!dzBaseH)return;
-  newScale=Math.min(6,Math.max(1,newScale));
-  const px=clientX-window.innerWidth/2, py=clientY-window.innerHeight/2;
-  const ratio=newScale/dzScale;
-  dzX=px-(px-dzX)*ratio; dzY=py-(py-dzY)*ratio; dzScale=newScale;
-  if(dzScale<=1.001){ dzScale=1; dzX=0; dzY=0; }
-  requestDiagramZoomFrame();
-}
-// Invalidate the cached base size if the viewport changes — the fit-to-viewport measurement
-// (max-height: calc(100vh - 120px)) depends on it, so a resize (or rotate) could make a stale
-// cached size wrong. Cheap to just re-measure next time the lightbox opens.
-window.addEventListener('resize',()=>{ dzBaseW=0; dzBaseH=0; dzLoadedSrc=null; });
-function openDiagramLightbox(src,alt){
-  const box=el('diagram-lightbox'); if(!box)return;
-  const img=el('diagram-lightbox-img'); const cap=el('diagram-lightbox-caption');
-  if(img){
-    // Reopening the same diagram that's already loaded and measured skips the reload entirely
-    // — avoids the brief blank/flash of tearing down and re-decoding an identical image.
-    if(dzLoadedSrc===src&&img.complete&&dzBaseW&&dzBaseH){
-      img.alt=alt||'Diagram';
-    } else {
-      dzBaseW=0; dzBaseH=0; dzLoadedSrc=src;
-      img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight=''; img.style.transform='';
-      img.removeAttribute('src');
-      // Measured after the box is open (so the stylesheet's fit-to-viewport max-width/max-height
-      // is already in effect) — this becomes the scale-1 baseline that zoom multiplies against.
-      const measure=()=>{ dzBaseW=img.offsetWidth; dzBaseH=img.offsetHeight; };
-      img.onload=measure; img.onerror=measure;
-      img.src=src; img.alt=alt||'Diagram';
-      if(img.complete) measure();
-    }
-  }
-  if(cap){ cap.textContent=alt||''; cap.style.display=alt?'block':'none'; }
-  resetDiagramZoom();
-  box.classList.add('open');
-  showDiagramZoomHint();
-}
-function closeDiagramLightbox(){ el('diagram-lightbox')?.classList.remove('open'); resetDiagramZoom(); clearTimeout(dzHintTimer); }
-el('diagram-lightbox')?.addEventListener('wheel',e=>{
-  if(!el('diagram-lightbox')?.classList.contains('open'))return;
-  e.preventDefault();
-  hideDiagramZoomHintNow();
-  diagramZoomAt(e.clientX,e.clientY,dzScale*Math.exp(-e.deltaY*0.0018));
-},{passive:false});
-el('diagram-lightbox-img')?.addEventListener('dblclick',e=>{
-  e.preventDefault(); e.stopPropagation();
-  hideDiagramZoomHintNow();
-  diagramZoomAt(e.clientX,e.clientY,dzScale>1?1:2.5);
-});
-el('diagram-lightbox-img')?.addEventListener('pointerdown',e=>{
-  const img=el('diagram-lightbox-img'); if(!img)return;
-  hideDiagramZoomHintNow();
-  dzPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(dzPointers.size===1&&dzScale>1){
-    dzDragging=true; dzDragStartX=e.clientX; dzDragStartY=e.clientY; dzDragOrigX=dzX; dzDragOrigY=dzY;
-    img.setPointerCapture(e.pointerId); applyDiagramZoomTransform();
-  } else if(dzPointers.size===2){
-    dzDragging=false;
-    const pts=[...dzPointers.values()];
-    dzPinchStartDist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1;
-    dzPinchStartScale=dzScale;
-  }
-});
-el('diagram-lightbox-img')?.addEventListener('pointermove',e=>{
-  if(!dzPointers.has(e.pointerId))return;
-  dzPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(dzPointers.size===2){
-    const pts=[...dzPointers.values()];
-    const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1;
-    const center={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
-    diagramZoomAt(center.x,center.y,dzPinchStartScale*(dist/dzPinchStartDist));
-    return;
-  }
-  if(dzDragging){
-    dzX=dzDragOrigX+(e.clientX-dzDragStartX); dzY=dzDragOrigY+(e.clientY-dzDragStartY);
-    requestDiagramZoomFrame();
-  }
-});
-function diagramLightboxPointerEnd(e){
-  dzPointers.delete(e.pointerId);
-  if(dzDragging){ dzDragging=false; dzJustDragged=true; setTimeout(()=>{dzJustDragged=false;},0); applyDiagramZoomTransform(); }
-}
-el('diagram-lightbox-img')?.addEventListener('pointerup',diagramLightboxPointerEnd);
-el('diagram-lightbox-img')?.addEventListener('pointercancel',diagramLightboxPointerEnd);
-el('diagram-lightbox-img')?.addEventListener('click',e=>{ if(dzJustDragged||dzScale>1) e.stopPropagation(); });
-el('diagram-lightbox')?.addEventListener('click',e=>{ if(dzJustDragged)return; if(e.target.id!=='diagram-lightbox-img') closeDiagramLightbox(); });
-el('diagram-lightbox-close')?.addEventListener('click',closeDiagramLightbox);
+// Diagram/image click-to-enlarge lightbox removed — superseded by whole-canvas Ctrl+scroll/pinch zoom (see previewInteractiveZoom above).
 // Slide overview grid — a label-based grid (not visual thumbnails; rendering a live screenshot
 // of each slide would need drawing every one to a canvas, a lot of machinery for what's really
 // just a faster way to jump around during Q&A) showing every slide's number and label, click one
@@ -27239,6 +27084,7 @@ el('preview-overlay')?.addEventListener('wheel',e=>{
   previewInteractiveZoom=Math.min(PREVIEW_ZOOM_MAX,Math.max(PREVIEW_ZOOM_MIN,previewInteractiveZoom*factor));
   requestPreviewZoomFrame();
 },{passive:false});
+function resetPreviewZoom(){ previewInteractiveZoom=1; applyPresenterZoom(); }
 function setPreviewAutoLaser(on,persist=true){
   previewAutoLaser=!!on;
   const toggle=el('preview-auto-laser-toggle');
