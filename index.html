@@ -192,7 +192,7 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
 .code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
 #demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body
+#diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body,#mindmap-node-anchor-suggest,#mindmap-tab-body
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Fira Code',Consolas,'Courier New',monospace}
@@ -2161,6 +2161,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-add-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .mm-node:hover .mm-add-btn,.mm-node.mm-selected .mm-add-btn{display:flex}
 .mm-fold-btn{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--tb-bg);border:1.5px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font:600 9.5px 'Inter',sans-serif;line-height:1;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.mm-link-badge{position:absolute;top:-6px;left:-6px;width:14px;height:14px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 .mm-fold-btn:hover{border-color:var(--accent);color:var(--accent)}
 #mindmap-empty-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:11.5px;color:var(--muted);background:var(--tb-bg);border:1px solid var(--border);border-radius:999px;padding:4px 12px;pointer-events:none}
 #mindmap-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:170px}
@@ -2872,8 +2873,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
-#diagram-anchor-suggest,#decision-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
-#diagram-anchor-suggest.open,#decision-anchor-suggest.open{display:flex}
+#diagram-anchor-suggest,#decision-anchor-suggest,#mindmap-node-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
+#diagram-anchor-suggest.open,#decision-anchor-suggest.open,#mindmap-node-anchor-suggest.open{display:flex}
 .anchor-suggest-search{flex:0 0 auto;width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);border-radius:6px;padding:5px 8px;font:400 12px 'Inter',sans-serif;margin-bottom:4px}
 .anchor-suggest-search:focus{outline:none;border-color:var(--accent)}
 .anchor-suggest-results{flex:1 1 auto;overflow-y:auto;min-height:0}
@@ -4803,22 +4804,23 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="help-section" data-cat="panels" id="help-section-mindmap">
 <h4>Mind Map</h4>
 <ul>
-<li>An app-level freeform brainstorming canvas — one shared canvas across your whole workspace, not tied to any document (same as Meeting Notes and To-Dos). Open it from its button at the end of the status bar, with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">X</span>, or — while presenting — the Mind Map button in the presenter bar, its right-click menu entry, or the <span class="help-kbd">M</span> key; all open the same canvas and the same shortcut/Esc closes it again</li>
-<li>Starts genuinely blank — no forced starting node. Double-click empty canvas to drop a new idea; any idea with no parent is a <strong>root</strong>, shown in slightly bolder text, and there's no limit on how many roots a map has — it's a forest of independent trees, not one privileged "center" everything must connect back to. Double-click any node (or select it and press <span class="help-kbd">Tab</span>) to add a connected branch; <span class="help-kbd">Enter</span> adds a sibling next to the selected node — for a root, that's another independent root nearby. Double-click a node's own text, or select it and use the right-click menu, to rename it</li>
+<li>Freeform brainstorming canvases, one per document — like Diagrams, a document can hold any number of named maps, listed in the Pad's <strong>Mind Map</strong> tab, each opening full-screen when clicked. A small + in that tab's toolbar creates a new one; rename a map by clicking its title there or in the open canvas's own header</li>
+<li>A map starts genuinely blank — no forced starting node. Double-click empty canvas to drop a new idea; any idea with no parent is a <strong>root</strong>, shown in slightly bolder text, and there's no limit on how many roots a map has — it's a forest of independent trees, not one privileged "center" everything must connect back to. Double-click any node (or select it and press <span class="help-kbd">Tab</span>) to add a connected branch; <span class="help-kbd">Enter</span> adds a sibling next to the selected node — for a root, that's another independent root nearby. Double-click a node's own text, or select it and use the right-click menu, to rename it</li>
 <li>Drag a node to reposition it — while dragging, it snaps to line up its center with any other node's, showing a dashed guide line, the same idea as alignment guides in most design tools. Drag empty canvas to pan; scroll (or the −/100%/+ controls) to zoom. Click selects a node; <span class="help-kbd">Ctrl/Cmd</span>+click toggles a node in or out of the selection without starting a drag, and <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">A</span> selects everything. Dragging any node that's part of a multi-selection moves the whole selection together. <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes the selected node(s) and everything branching from them, confirming first if there's more than one idea involved — any node, including a root, can be deleted this way</li>
 <li>Each root's children get their own color, automatically cycled and inherited by everything under them — so every tree on the canvas gets its own palette, not just one. Right-click any node (or a multi-selection) for a color row to set the color by hand — recoloring cascades to the whole subtree, and a multi-selection recolors every selected branch at once</li>
 <li>Any node with children shows a small fold badge — click it to collapse the branch (shows a hidden-idea count) or expand it again; also available as "Collapse/Expand branch" in the right-click menu. <strong>Expand all</strong> / <strong>Collapse all</strong> (next to Tidy up) do the same for the whole map in one click. This is purely a view state, like the outline's own fold: it doesn't undo, and Generate Outline still walks the full tree regardless of what's currently collapsed</li>
 <li>Double-click a connector line (or right-click it) to add a short label to it — e.g. "if approved" on the line between two ideas. Leave the text blank to remove the label again</li>
 <li>Beyond the tree itself, two ideas that aren't parent/child can be cross-linked: Ctrl/Cmd+click to select exactly two nodes, then right-click either one and choose "Connect these two." The link is drawn as a dashed line (to tell it apart from the tree's branch lines) and can take its own label the same way; right-click it for "Edit label" or "Remove connection"</li>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> undoes the last add, delete, rename, drag, recolor, connect, or Tidy up / Load from document; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">Z</span> (or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span>) redoes it — its own undo history, separate from any document's</li>
-<li>The <strong>Tidy up</strong> button (next to Reset view) recomputes a clean left-to-right tree layout in one click — every root gets its own row, stacked top to bottom, each generation a step further right, siblings stacked so they can't overlap — useful after a lot of freeform dragging leaves things tangled</li>
-<li><strong>Load from document</strong> converts an existing document's outline into a mind map: each top-level section in the document becomes its own independent root — a single-root document just means one root, a multi-section document means several equal trees, same as building them by hand. Replaces the current canvas, confirming first if there's real content on it, and auto-tidies the result</li>
-<li><strong>Clear canvas</strong> resets back to a genuinely blank canvas — confirms first if there's real content, and is itself undoable</li>
-<li>The <strong>Export</strong> button (next to Load) opens a menu with three ways to get the map back out:</li>
+<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> undoes the last add, delete, rename, drag, recolor, connect, link, or Tidy up; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">Z</span> (or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span>) redoes it — its own undo history, separate from the document's</li>
+<li>The <strong>Tidy up</strong> button (next to Reset view) recomputes a clean auto-layout in one click, remembering whichever style this map last used. Its small caret opens a picker for the three styles: <strong>Horizontal</strong> (the default — every root gets its own row, each generation a step further right), <strong>Vertical</strong> (same idea rotated — generations step downward instead), and <strong>Radial</strong> (each root's tree radiates outward from a center point, generations forming rings further out — reads better for a handful of branches off one core idea than a hierarchical process). Freeform dragging always stays available regardless of which layout Tidy last applied</li>
+<li>Any idea can be linked to a specific node in this same document's outline: right-click it and choose "Link to document node…" to search and pick one, or "Add idea from document…" (also in the canvas toolbar and on right-click over empty canvas) to create a brand-new idea already seeded with a document node's text and pre-linked in one step — picking the same document node twice makes two separate linked ideas rather than reusing one, if that's what you want. A linked idea shows a small connector badge in its corner; right-click it for "Jump to document node" (closes the map, selects and flashes that node in the outline) or "Unlink from document." The outline side shows the same link the other way too — a small dot appears on any node referenced by one or more mind map ideas, next to its note/diagram/decision-log dots if it has those; click it to jump into the right map (or pick from a short list if more than one idea references it)</li>
+<li><strong>Clear canvas</strong> resets the currently open map back to genuinely blank — confirms first if there's real content, and is itself undoable</li>
+<li>The <strong>Export</strong> button opens a menu with three ways to get a map back out:</li>
 <li><strong>Export as image</strong> saves a PNG of the whole map (fit to its content, not just what's currently on screen) — reads the actual rendered colors straight off the canvas, so it always matches your current theme and any manual recoloring, and respects whatever's currently collapsed</li>
-<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline below. It's a direct, deterministic conversion of the map's own layout and colors (root nodes keep their accent tint unless manually recolored) and connector labels — no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed. Needs the Diagrams feature on (Settings → Features → Pad Panel)</li>
+<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline below. It's a direct, deterministic conversion of the map's own layout and colors (root nodes keep their accent tint unless manually recolored) and connector labels — no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed. Needs the Diagrams feature on (Settings → Pad Panel)</li>
 <li><strong>Generate Outline</strong> walks the whole map depth-first and creates a brand-new document from it — the document you're currently in (if any) is never touched or replaced</li>
-<li>Settings → Features → Mind Map turns the whole thing off: hides the status bar button, the Presenter mode button and right-click entry, and the <span class="help-kbd">Ctrl/Cmd+Shift+X</span>/<span class="help-kbd">M</span> shortcuts. The canvas itself is preserved and comes back exactly as it was when re-enabled</li>
+<li>Presenter mode's <span class="help-kbd">M</span> key (and its right-click menu entry) opens a persistent <strong>Scratchpad</strong> map instead of the named list above — one per document, created the first time it's used and reopened every time after, the same "always the same one, deliberately unlinked" role Whiteboard plays for sketching. It shows in the Mind Map tab's list too, pinned first with a Scratchpad badge, so anything jotted there mid-talk isn't lost or hard to find afterward</li>
+<li>Settings → Pad Panel → Mind Map turns the whole tab off: hides it from Pad, the Presenter mode Scratchpad button and right-click entry, and every node's link dots and badges. Every map is preserved and comes back exactly as it was when re-enabled</li>
 </ul>
 </div>
           <div class="help-section" data-cat="features" id="help-section-features">
@@ -5912,6 +5914,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <span id="mindmap-head-divider"></span>
       <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
       <span id="mindmap-head-divider2"></span>
+      <button type="button" id="mindmap-add-from-doc-btn" data-tip="Add idea from document node"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/><path d="M4 4l3 3M20 4l-3 3" stroke-width="1.6" opacity=".55"/></svg></button>
       <button type="button" id="mindmap-export-menu-btn" data-tip="Export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="15"/></svg></button>
       <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
@@ -5924,6 +5927,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="mindmap-export-menu"></div>
     <div id="mindmap-layout-menu"></div>
     <div id="mindmap-edge-popover"></div>
+    <div id="mindmap-node-anchor-suggest"><input type="text" id="mindmap-node-anchor-search" class="anchor-suggest-search" placeholder="Search document nodes…" autocomplete="off" spellcheck="false" /><div id="mindmap-node-anchor-results" class="anchor-suggest-results"></div></div>
     <div id="mindmap-ctx-menu"></div>
   </div>
   <div id="toast"></div>
@@ -11616,6 +11620,20 @@ function qaRefsForNode(nodeId){
   if(nodeId==null)return [];
   return qaItems.filter(it=>it.sourceNodeId===nodeId);
 }
+// Per-node mind map links point the other way (canvas node -> doc node), so surfacing this on
+// the doc side means scanning every map in the document rather than reading one stored field —
+// same shape as meeting/todo refs, which are also stored on the referencing side, not the node.
+function mindMapNodeRefsForNode(nodeId){
+  if(nodeId==null||!Array.isArray(mindMaps))return [];
+  const out=[];
+  mindMaps.forEach(m=>{
+    (m.nodes||[]).forEach(n=>{ if(n.docNodeId===nodeId)out.push({mapId:m.id,mapTitle:m.title||'Untitled map',mindNodeId:n.id,text:n.text||''}); });
+  });
+  return out;
+}
+function mindmapDotIconSvg(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg>`;
+}
 function qaDotIconSvg(size){
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
 }
@@ -11627,6 +11645,9 @@ function subtreeHasTodoRef(idx){
 }
 function subtreeHasQaRef(idx){
   const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(qaRefsForNode(nodes[i].id).length)return true} return false;
+}
+function subtreeHasMindMapRef(idx){
+  const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(mindMapNodeRefsForNode(nodes[i].id).length)return true} return false;
 }
 function meetingDotIconSvg(size){
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
@@ -11664,7 +11685,7 @@ function openRefJumpPopover(anchorEl, meetingRefs, todoRefs, title){
   _refJumpOpen=true;
 }
 document.addEventListener('mousedown',e=>{
-  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
+  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('.node-mindmap-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
 },true);
 // A single match jumps straight there (no extra click through a one-item popover); more than
 // one opens the popover, since there's no longer a single unambiguous target to jump to.
@@ -11677,6 +11698,32 @@ function jumpToNodeTodoRefs(anchorEl, refs){
   if(!refs.length)return;
   if(refs.length===1){ if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(refs[0].id); return; }
   openRefJumpPopover(anchorEl, [], refs, refs.length+' to-dos reference this node');
+}
+// Mind map refs share the ref-jump-popover element/styling with meeting and to-do refs, but
+// build their own list (rather than extending openRefJumpPopover's meeting/todo-only signature)
+// since the jump action here — open a specific map, then pan/flash a specific canvas node — has
+// no equivalent in that function.
+function openMindMapRefJumpPopover(anchorEl,refs){
+  const pop=el('ref-jump-popover'); const list=el('ref-jump-popover-list'); const titleEl=el('ref-jump-popover-title');
+  if(!pop||!list||!anchorEl)return;
+  if(titleEl)titleEl.textContent=refs.length+' mind map ideas reference this node';
+  list.innerHTML='';
+  refs.forEach(r=>{
+    const item=document.createElement('div'); item.className='ref-jump-item';
+    item.innerHTML=mindmapDotIconSvg(12)+`<span>${esc((r.text||'').trim()||'(untitled idea)')} — ${esc(r.mapTitle)}</span>`;
+    item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); openMindMapOverlay(r.mapId); setTimeout(()=>mmCenterOnNode(r.mindNodeId),60); });
+    list.appendChild(item);
+  });
+  const r=anchorEl.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _refJumpOpen=true;
+}
+function jumpToNodeMindMapRefs(anchorEl,refs){
+  if(!refs.length)return;
+  if(refs.length===1){ openMindMapOverlay(refs[0].mapId); setTimeout(()=>mmCenterOnNode(refs[0].mindNodeId),60); return; }
+  openMindMapRefJumpPopover(anchorEl,refs);
 }
 function jumpToNodeQaRefs(refs){
   if(!refs.length)return;
@@ -13342,7 +13389,7 @@ function handleAtInput(inputEl, nodeId) {
 
 function render(){ensureSelection(); pruneCollapsedIds(); pruneFocus(); autoSyncTitleFromFirstNode(); if(typeof hideHoverRailNow==='function')hideHoverRailNow();
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?(nodes[focusIdx].depth+1):0; const focusEnd=focusActive?getSubtreeEnd(focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Tab</kbd> after adding a sibling, or just start typing below this node, to add one.</div>'; pane.appendChild(empty);} else if(!nodes.length){const empty=document.createElement('div'); empty.className='empty-state doc-empty'; const hasTemplates=loadTemplatesIndex().length>0||hasCustomDefaultTemplate(); const hint=hasTemplates?'Load a <a href="#" style="color:var(--accent);text-decoration:none" id="es-load-tpl">template</a>, paste a tree, or just start typing.':'Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — paste a tree, or load a template.'; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">Nothing here yet</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${hint}</div><div class="empty-state-actions"><button class="btn primary" id="es-new-doc-btn">New document</button>${hasTemplates?'<button class="btn" id="es-browse-tpl-btn">Browse templates</button>':''}<button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const tplLink=document.getElementById('es-load-tpl'); if(tplLink)tplLink.addEventListener('click',e=>{e.preventDefault(); loadTemplateById('__default__')}); const newDocBtn=document.getElementById('es-new-doc-btn'); if(newDocBtn)newDocBtn.addEventListener('click',()=>createDoc()); const browseTplBtn=document.getElementById('es-browse-tpl-btn'); if(browseTplBtn)browseTplBtn.addEventListener('click',()=>revealTemplatesInSidebar());
-const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.textContent=nodeMarkerGlyph(node.marker); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.slideDivider){const sdot=document.createElement('span'); sdot.className='node-slide-divider-badge'; sdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>'; sdot.dataset.tip='Slide divider — forces a new slide here in Presenter mode regardless of depth. Right-click to remove.'; sdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault();}); sdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); toggleSlideDivider(node.id);}); row.appendChild(sdot)} if(decisionLogInPad&&decisionLogForNode(node.id)){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} const dl=decisionLogForNode(node.id); if(!dl)return; setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList()}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} {const mFeatureOn=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled()); const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const mRefs=mFeatureOn?meetingRefsForNode(node.id):[]; if(mRefs.length){const mdot=document.createElement('span'); mdot.className='node-note-dot node-meeting-dot'; mdot.innerHTML=meetingDotIconSvg(11); mdot.dataset.tip=mRefs.length>1?'Referenced by '+mRefs.length+' meetings — click to view':'Referenced by meeting: '+esc(mRefs[0].title||'Untitled meeting'); mdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMeetingRefs(mdot,mRefs)}); row.appendChild(mdot)} const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=padQaTabEnabled?qaRefsForNode(node.id):[]; if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to view':'Linked to a Q&A question — click to view'; qdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeQaRefs(qRefs)}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren&&subtreeHasMeetingRef(idx)){ const msub=document.createElement('span'); msub.className='node-dlog-dot node-meeting-dot'; msub.innerHTML=meetingDotIconSvg(11); msub.dataset.tip='This collapsed branch is referenced by a meeting'; row.appendChild(msub) } if(folded&&hasChildren&&subtreeHasTodoRef(idx)){ const tsub=document.createElement('span'); tsub.className='node-dlog-dot node-todo-dot'; tsub.innerHTML=todoDotIconSvg(11); tsub.dataset.tip='This collapsed branch is referenced by a to-do'; row.appendChild(tsub) } if(folded&&hasChildren&&padQaTabEnabled&&subtreeHasQaRef(idx)){ const qsub=document.createElement('span'); qsub.className='node-dlog-dot node-qa-dot'; qsub.innerHTML=qaDotIconSvg(11); qsub.dataset.tip='This collapsed branch has a linked Q&A question'; row.appendChild(qsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.textContent=nodeMarkerGlyph(node.marker); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.slideDivider){const sdot=document.createElement('span'); sdot.className='node-slide-divider-badge'; sdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>'; sdot.dataset.tip='Slide divider — forces a new slide here in Presenter mode regardless of depth. Right-click to remove.'; sdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault();}); sdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); toggleSlideDivider(node.id);}); row.appendChild(sdot)} if(decisionLogInPad&&decisionLogForNode(node.id)){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} const dl=decisionLogForNode(node.id); if(!dl)return; setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList()}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} {const mFeatureOn=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled()); const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const mRefs=mFeatureOn?meetingRefsForNode(node.id):[]; if(mRefs.length){const mdot=document.createElement('span'); mdot.className='node-note-dot node-meeting-dot'; mdot.innerHTML=meetingDotIconSvg(11); mdot.dataset.tip=mRefs.length>1?'Referenced by '+mRefs.length+' meetings — click to view':'Referenced by meeting: '+esc(mRefs[0].title||'Untitled meeting'); mdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMeetingRefs(mdot,mRefs)}); row.appendChild(mdot)} const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=padQaTabEnabled?qaRefsForNode(node.id):[]; if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to view':'Linked to a Q&A question — click to view'; qdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeQaRefs(qRefs)}); row.appendChild(qdot)} const mmRefs=padMindmapTabEnabled?mindMapNodeRefsForNode(node.id):[]; if(mmRefs.length){const mmdot=document.createElement('span'); mmdot.className='node-note-dot node-mindmap-dot'; mmdot.innerHTML=mindmapDotIconSvg(11); mmdot.dataset.tip=mmRefs.length>1?'Referenced by '+mmRefs.length+' mind map ideas — click to view':'Referenced by a mind map idea: '+esc((mmRefs[0].text||'').trim()||'(untitled idea)'); mmdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMindMapRefs(mmdot,mmRefs)}); row.appendChild(mmdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren&&subtreeHasMeetingRef(idx)){ const msub=document.createElement('span'); msub.className='node-dlog-dot node-meeting-dot'; msub.innerHTML=meetingDotIconSvg(11); msub.dataset.tip='This collapsed branch is referenced by a meeting'; row.appendChild(msub) } if(folded&&hasChildren&&subtreeHasTodoRef(idx)){ const tsub=document.createElement('span'); tsub.className='node-dlog-dot node-todo-dot'; tsub.innerHTML=todoDotIconSvg(11); tsub.dataset.tip='This collapsed branch is referenced by a to-do'; row.appendChild(tsub) } if(folded&&hasChildren&&padQaTabEnabled&&subtreeHasQaRef(idx)){ const qsub=document.createElement('span'); qsub.className='node-dlog-dot node-qa-dot'; qsub.innerHTML=qaDotIconSvg(11); qsub.dataset.tip='This collapsed branch has a linked Q&A question'; row.appendChild(qsub) } if(folded&&hasChildren&&padMindmapTabEnabled&&subtreeHasMindMapRef(idx)){ const mmsub=document.createElement('span'); mmsub.className='node-dlog-dot node-mindmap-dot'; mmsub.innerHTML=mindmapDotIconSvg(11); mmsub.dataset.tip='This collapsed branch is referenced by a mind map idea'; row.appendChild(mmsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated decision-log/diagram/meeting/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -35073,6 +35120,7 @@ function mmOpenNodeContextMenu(e,id){
   const node=findMindNode(id);
   const hasParent=node&&node.parentId!=null;
   const hasKids=mindMapChildren(id).length>0;
+  const isLinked=node&&node.docNodeId!=null&&nodes.some(n=>n.id===node.docNodeId);
   const colorRow=`<div class="mm-ctx-color-row">${MM_BRANCH_COLORS.map(c=>`<span class="mm-ctx-color-dot" data-color="${c}" style="background:var(--fc-${c})"></span>`).join('')}</div>`;
   menu.innerHTML=`<div class="mm-ctx-item" data-act="child">Add branch</div>`+
     `<div class="mm-ctx-item" data-act="sibling">Add sibling</div>`+
@@ -35080,6 +35128,8 @@ function mmOpenNodeContextMenu(e,id){
     `<div class="mm-ctx-item" data-act="edit">Rename</div>`+
     (hasParent?`<div class="mm-ctx-item" data-act="edge-label">${node&&node.edgeLabel?'Edit connector label':'Add connector label'}</div>`:'')+
     `<div class="mm-ctx-divider"></div>${colorRow}`+
+    `<div class="mm-ctx-divider"></div>`+
+    (isLinked?`<div class="mm-ctx-item" data-act="jump-doc">Jump to document node</div><div class="mm-ctx-item" data-act="link-doc">Change document link…</div><div class="mm-ctx-item" data-act="unlink-doc">Unlink from document</div>`:`<div class="mm-ctx-item" data-act="link-doc">Link to document node…</div>`)+
     `<div class="mm-ctx-divider"></div>`+
     `<div class="mm-ctx-item mm-ctx-danger" data-act="delete">Delete</div>`;
   mmCtxMenuNodeId=id; mmCtxMenuPoint=null; mmCtxMenuBulk=false;
@@ -35092,7 +35142,7 @@ function mmOpenCanvasContextMenu(e){
   const x=(e.clientX-rect.left-mindMapPan.x)/mindMapZoom;
   const y=(e.clientY-rect.top-mindMapPan.y)/mindMapZoom;
   const menu=el('mindmap-ctx-menu'); if(!menu)return;
-  menu.innerHTML=`<div class="mm-ctx-item" data-act="add-here">Add idea here</div>`;
+  menu.innerHTML=`<div class="mm-ctx-item" data-act="add-here">Add idea here</div><div class="mm-ctx-item" data-act="add-from-doc">Add idea from document…</div>`;
   mmCtxMenuNodeId=null; mmCtxMenuPoint={x,y}; mmCtxMenuBulk=false;
   mmPositionContextMenu(menu,e.clientX,e.clientY);
 }
@@ -35118,6 +35168,16 @@ function mmHandleContextMenuClick(e){
   else if(act==='edit-link'&&linkId!=null) mmEditLinkLabel(linkId,pos.x,pos.y);
   else if(act==='remove-link'&&linkId!=null) mmRemoveLink(linkId);
   else if(act==='delete'&&nodeId!=null){ mmSetSelection([nodeId],nodeId); mmDeleteSelected(); }
+  else if(act==='link-doc'&&nodeId!=null){ openMindMapLinkPicker(nodeId,{x:e.clientX,y:e.clientY}); }
+  else if(act==='unlink-doc'&&nodeId!=null){ setMindMapNodeLink(nodeId,null); }
+  else if(act==='jump-doc'&&nodeId!=null){
+    const n=findMindNode(nodeId);
+    if(n&&n.docNodeId!=null&&nodes.some(dn=>dn.id===n.docNodeId)){
+      closeMindMapOverlay();
+      setSingleSelection(n.docNodeId); flashNode(n.docNodeId); render(); scrollToNode(n.docNodeId);
+    } else showToast('The linked document node no longer exists');
+  }
+  else if(act==='add-from-doc'&&point){ openMindMapAddFromDocPicker(point,{x:e.clientX,y:e.clientY}); }
   else if(act==='add-here'&&point){
     ensureMindMap();
     const pre=mmSnapshot();
@@ -35568,6 +35628,105 @@ function mmToggleLayoutMenu(){
   mmCloseExportMenu();
   mmOpenLayoutMenu();
 }
+// ── Per-node linking to the document outline ────────────────────────────────
+// Each mind map node can optionally carry docNodeId, pointing at a node in this
+// same document's outline (mind maps are per-document now, so cross-document
+// links aren't meaningful). One picker popover serves two directions: 'link'
+// attaches an existing canvas node to a chosen outline node; 'add' creates a
+// brand-new canvas node seeded from a chosen outline node's text, pre-linked.
+// Reuses getDiagramAnchorCandidates verbatim — it only reads the current
+// document's `nodes`, nothing diagram-specific.
+let _mmAnchorOpen=false;
+let _mmAnchorMode=null;
+let _mmAnchorTargetId=null;
+let _mmAnchorAddPos=null;
+let _mmAnchorScreenPos=null;
+function renderMindMapAnchorSuggest(query,isFilterUpdate){
+  const pop=el('mindmap-node-anchor-suggest'); if(!pop)return;
+  const results=el('mindmap-node-anchor-results'); if(!results)return;
+  const candidates=getDiagramAnchorCandidates(query);
+  results.innerHTML='';
+  if(_mmAnchorMode==='link'){
+    const noneItem=document.createElement('div');
+    noneItem.className='diagram-anchor-item diagram-anchor-item-none';
+    noneItem.textContent='Not linked to a node';
+    noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setMindMapNodeLink(_mmAnchorTargetId,null); closeMindMapAnchorSuggest(); });
+    results.appendChild(noneItem);
+  }
+  if(!candidates.length){
+    const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching nodes';
+    results.appendChild(empty);
+  }
+  candidates.forEach(n=>{
+    const item=document.createElement('div');
+    item.className='diagram-anchor-item';
+    item.style.paddingLeft=(8+Math.min(n.depth,6)*10)+'px';
+    item.textContent=n.text;
+    item.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      if(_mmAnchorMode==='link')setMindMapNodeLink(_mmAnchorTargetId,n.id);
+      else if(_mmAnchorMode==='add')createMindMapNodeFromDoc(n.id,n.text,_mmAnchorAddPos);
+      closeMindMapAnchorSuggest();
+    });
+    results.appendChild(item);
+  });
+  if(!isFilterUpdate){
+    const search=el('mindmap-node-anchor-search'); if(search)search.value=query||'';
+    const p=_mmAnchorScreenPos||{x:100,y:100};
+    pop.style.left=Math.max(8,Math.min(p.x,window.innerWidth-330))+'px';
+    pop.style.top=Math.max(8,Math.min(p.y+6,window.innerHeight-330))+'px';
+    pop.classList.add('open');
+    _mmAnchorOpen=true;
+    setTimeout(()=>{ el('mindmap-node-anchor-search')?.focus(); },30);
+  }
+}
+function openMindMapLinkPicker(nodeId,screenPos){
+  _mmAnchorMode='link'; _mmAnchorTargetId=nodeId; _mmAnchorAddPos=null; _mmAnchorScreenPos=screenPos;
+  renderMindMapAnchorSuggest('');
+}
+function openMindMapAddFromDocPicker(canvasPos,screenPos){
+  _mmAnchorMode='add'; _mmAnchorTargetId=null; _mmAnchorAddPos=canvasPos; _mmAnchorScreenPos=screenPos;
+  renderMindMapAnchorSuggest('');
+}
+function closeMindMapAnchorSuggest(){
+  el('mindmap-node-anchor-suggest')?.classList.remove('open');
+  _mmAnchorOpen=false; _mmAnchorMode=null; _mmAnchorTargetId=null; _mmAnchorAddPos=null; _mmAnchorScreenPos=null;
+}
+el('mindmap-node-anchor-search')?.addEventListener('input',e=>{ renderMindMapAnchorSuggest(e.target.value,true); });
+el('mindmap-node-anchor-search')?.addEventListener('mousedown',e=>e.stopPropagation());
+el('mindmap-node-anchor-search')?.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Escape'){ e.preventDefault(); closeMindMapAnchorSuggest(); } });
+function setMindMapNodeLink(mindNodeId,docNodeId){
+  const n=findMindNode(mindNodeId); if(!n)return;
+  const pre=mmSnapshot();
+  n.docNodeId=docNodeId;
+  mmPushUndo(pre);
+  renderMindMap();
+  saveMindMap();
+  render();
+}
+function createMindMapNodeFromDoc(docNodeId,text,pos){
+  ensureMindMap();
+  const pre=mmSnapshot();
+  const p=pos||{x:0,y:0};
+  const node={id:mmNewId(),x:p.x,y:p.y,text:(text||'').trim(),parentId:null,color:null,docNodeId};
+  mindMap.nodes.push(node);
+  mmPushUndo(pre);
+  mmSetSelection([node.id],node.id);
+  mmPopNodeId=node.id;
+  renderMindMap();
+  saveMindMap();
+  render();
+}
+// Pans/zooms the canvas so a given node is centered, and gives it the same one-shot
+// pop-flash new nodes get (mmPopNodeId, consumed and cleared inside renderMindMap).
+function mmCenterOnNode(id){
+  const wrap=el('mindmap-canvas-wrap'); const node=findMindNode(id); if(!wrap||!node)return;
+  const rect=wrap.getBoundingClientRect();
+  mindMapPan={x:rect.width/2-node.x*mindMapZoom,y:rect.height/2-node.y*mindMapZoom};
+  mmAnimateCanvasTransform();
+  mmPopNodeId=id;
+  renderMindMap();
+}
 // Shared by tree edges and freeform links: draws the visible curve plus an invisible wider
 // hit-path (paths are thin, so a raw click target on the visible stroke alone is too small)
 // and, if a label is set, a small pill at the curve's midpoint. #mindmap-lines itself has
@@ -35770,6 +35929,13 @@ function renderMindMap(){
       const label=document.createElement('span');
       label.textContent=n.text||'';
       div.appendChild(label);
+      if(n.docNodeId!=null){
+        const linkBadge=document.createElement('span');
+        linkBadge.className='mm-link-badge';
+        linkBadge.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+        linkBadge.title='Linked to a document node — right-click for options';
+        div.appendChild(linkBadge);
+      }
       if(n.id===mindMapSelectedId&&mindMapSelectedIds.size===1){
         const addBtn=document.createElement('span');
         addBtn.className='mm-add-btn'; addBtn.textContent='+'; addBtn.title='Add branch';
@@ -36060,6 +36226,12 @@ el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
 el('mindmap-tidy-btn')?.addEventListener('click',mmTidyUp);
+el('mindmap-add-from-doc-btn')?.addEventListener('click',e=>{
+  const wrap=el('mindmap-canvas-wrap'); const rect=wrap?wrap.getBoundingClientRect():{width:600,height:400,left:0,top:0};
+  const canvasPos={x:(rect.width/2-mindMapPan.x)/mindMapZoom,y:(rect.height/2-mindMapPan.y)/mindMapZoom};
+  const btnRect=e.currentTarget.getBoundingClientRect();
+  openMindMapAddFromDocPicker(canvasPos,{x:btnRect.left,y:btnRect.bottom});
+});
 el('mindmap-layout-menu-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleLayoutMenu(); });
 el('mindmap-layout-menu')?.addEventListener('click',e=>{
   const item=e.target.closest('.mm-layout-item'); if(!item)return;
@@ -36091,6 +36263,8 @@ document.addEventListener('mousedown',e=>{
   if(exportMenu&&exportMenu.classList.contains('open')&&!exportMenu.contains(e.target)&&!e.target.closest('#mindmap-export-menu-btn'))mmCloseExportMenu();
   const layoutMenu=el('mindmap-layout-menu');
   if(layoutMenu&&layoutMenu.classList.contains('open')&&!layoutMenu.contains(e.target)&&!e.target.closest('#mindmap-layout-menu-btn'))mmCloseLayoutMenu();
+  const anchorSuggest=el('mindmap-node-anchor-suggest');
+  if(anchorSuggest&&anchorSuggest.classList.contains('open')&&!anchorSuggest.contains(e.target)&&!e.target.closest('#mindmap-add-from-doc-btn'))closeMindMapAnchorSuggest();
   const edgePop=el('mindmap-edge-popover');
   if(edgePop&&edgePop.classList.contains('open')&&!edgePop.contains(e.target))mmCloseEdgePopover(true);
 });
@@ -36099,7 +36273,7 @@ document.addEventListener('keydown',e=>{
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
   if(e.target&&e.target.id==='mindmap-head-title-text')return;
-  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } if(el('mindmap-layout-menu')?.classList.contains('open')){ mmCloseLayoutMenu(); return; } closeMindMapOverlay(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } if(el('mindmap-layout-menu')?.classList.contains('open')){ mmCloseLayoutMenu(); return; } if(el('mindmap-node-anchor-suggest')?.classList.contains('open')){ closeMindMapAnchorSuggest(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
   if((e.key==='a'||e.key==='A')&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); if(mindMap){ mmSetSelection(mindMap.nodes.map(n=>n.id),mindMapSelectedId); renderMindMap(); } return; }
