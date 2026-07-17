@@ -15506,6 +15506,26 @@ async function buildPptxPresentation(slidesData){
     segments.forEach(seg=>{ totalLines+=pptxMeasureWrappedLines(seg.text,availW,seg.fontSize,false); });
     return totalLines*pptxLineHeightIn(fontSize,lineSpacingMultiple)+10/72;
   }
+  // Where the accent bar for a quote-bearing item should actually run: only alongside the
+  // quoted/attributed line(s), not the plain main-text line(s) that can come before it on the
+  // same item (an item like "Eligibility Check: ... > Morten: ..." renders as two separate
+  // wrapped lines within one box — see pptxItemContentSegments — and the bar should only mark
+  // the second one). Walks the exact same segments/measurement pptxItemHeight already does, so
+  // the two can't drift apart, and returns an offset+height in inches relative to the item's
+  // own top rather than trying to re-derive it from pptxItemHeight's single combined total.
+  function pptxItemQuoteBarSpan(item,boxWidthIn,fontSize,lineSpacingMultiple){
+    const indentLevel=Math.max(0,item.indent||0);
+    const availW=Math.max(0.5, boxWidthIn-indentLevel*0.3-0.4);
+    const segments=pptxItemContentSegments(item,fontSize);
+    const lineH=pptxLineHeightIn(fontSize,lineSpacingMultiple);
+    let linesBefore=0, quoteLines=0, reachedQuote=false;
+    segments.forEach(seg=>{
+      const n=pptxMeasureWrappedLines(seg.text,availW,seg.fontSize,false);
+      if(seg.kind==='quote'){ quoteLines+=n; reachedQuote=true; }
+      else if(!reachedQuote){ linesBefore+=n; }
+    });
+    return {offsetY:linesBefore*lineH, barH:quoteLines*lineH};
+  }
   // Splits a slide's bullet list into pages that actually fit the available body height,
   // using the same real canvas measurement as the decision-log cards (pptxMeasureWrappedLines)
   // rather than guessing — a fixed-height textbox with more content than it can show just
@@ -15697,8 +15717,8 @@ async function buildPptxPresentation(slidesData){
     const hasImages=sd.images.length>0;
     let cursorY=1.75;
     const bottomLimit=PPTX_SLIDE_H-0.4;
-    const buildBulletTextRuns=(list)=>list.flatMap(b=>{
-      const segments=pptxItemContentSegments(b,18);
+    const buildBulletTextRuns=(list,segmentFilter)=>list.flatMap(b=>{
+      const allSegments=pptxItemContentSegments(b,18);
       if(b.type==='note'){
         // Plain, timestamp-free paragraph — matches Word's own NoteBlock treatment (a "NOTE"
         // label once, then the note's lines below it) rather than trying to reproduce
@@ -15707,10 +15727,18 @@ async function buildPptxPresentation(slidesData){
         // height it needed (see pptxItemContentSegments's comment). The label itself still
         // matches Presenter's own .pv-inline-label treatment — bold uppercase with a little
         // letter-spacing, not italic — since that part carries no measurement risk.
-        return segments.map(seg=>seg.kind==='label'
+        return allSegments.map(seg=>seg.kind==='label'
           ? {text:seg.text, options:{color:theme.hint, breakLine:true, fontSize:seg.fontSize, bold:true, charSpacing:1}}
           : {text:pptxStripIllegalXmlChars(seg.text), options:{color:theme.muted, italic:true, breakLine:true}});
       }
+      // segmentFilter splits a quote-bearing item's runs into two independent calls — one for
+      // its plain main-text segment(s), one for its quote segment(s) — so pptxRenderBulletBlock
+      // can put each in its own separately-positioned box (see there for why: a single shared
+      // box would leave the accent bar's 0.14in reservation shifting the *plain* line right too,
+      // even though no bar is ever drawn next to it). Omit entirely (undefined) for the common,
+      // non-quote-bearing case, where everything renders in one box as before.
+      const segments=segmentFilter?allSegments.filter(s=>segmentFilter==='quote'?s.kind==='quote':s.kind!=='quote'):allSegments;
+      const includeBulletPrefix=segmentFilter!=='quote';
       const indentLevel=Math.max(0,b.indent||0);
       const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
       // No leading space-characters for indent here anymore — see pptxRenderBulletBlock, which
@@ -15720,7 +15748,7 @@ async function buildPptxPresentation(slidesData){
       // wide as however 1-6 space characters happen to render in whatever font PowerPoint
       // substitutes) was exactly the class of measurement/render mismatch that let text overlap
       // the next item — real coordinates don't have that ambiguity.
-      const runs=[{text:bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
+      const runs=includeBulletPrefix?[{text:bulletChar+'  ', options:{color:theme.hint, breakLine:false}}]:[];
       // Same quote/citation convention as the editor and Preview/Presenter (see .sem-quote /
       // parseStyledText): a '>' at the very start of the text, or preceded by whitespace
       // anywhere in it, starts an attributed/quoted run that extends to the end. The quoted
@@ -15728,9 +15756,10 @@ async function buildPptxPresentation(slidesData){
       // line — mixing two font sizes (the main text's and the quote's smaller one) in a single
       // wrapped-line measurement is exactly the class of bug notes just had, so quotes get the
       // same one-size-per-line treatment.
+      const includeMarker=segmentFilter?(segmentFilter==='quote'?allSegments.some(s=>s.kind==='quote'):!allSegments.some(s=>s.kind==='quote')):true;
       segments.forEach((seg,i)=>{
         const isLast=i===segments.length-1;
-        const opts={breakLine:isLast?!b.marker:true};
+        const opts={breakLine:isLast?!(includeMarker&&b.marker):true};
         if(seg.kind==='quote'){ opts.color=theme.semQuote; opts.italic=true; opts.fontSize=seg.fontSize; }
         else { opts.color=theme.fg; }
         runs.push({text:pptxStripIllegalXmlChars(seg.text), options:opts});
@@ -15738,7 +15767,7 @@ async function buildPptxPresentation(slidesData){
       // Trails the bullet's own text/quote rather than leading it — matches Presenter's
       // pv-marker-badge, which is appended after contentEl (the node's rendered text), not
       // prepended before it (see the renderPreviewBody bullet-row block).
-      if(b.marker){
+      if(includeMarker&&b.marker){
         const markerColorKey='fc'+nodeMarkerColor(b.marker)[0].toUpperCase()+nodeMarkerColor(b.marker).slice(1);
         runs.push({text:'  '+nodeMarkerGlyph(b.marker), options:{color:theme[markerColorKey]||theme.hint, bold:true, breakLine:true}});
       }
@@ -15797,17 +15826,29 @@ async function buildPptxPresentation(slidesData){
         const itemX=x+indentLevel*INDENT_STEP;
         const itemW=Math.max(0.5, w-indentLevel*INDENT_STEP-0.4);
         const accentColor=pptxItemAccentColor(item);
-        // Quote items lose an extra 0.14in of box width to the accent bar drawn beside them
-        // (see below) — measured here against that same narrower width, not the plain itemW,
-        // so the two can't disagree the way pptxRenderBulletBlock's old shared-batch box and
-        // its per-item height estimate used to.
-        const h=pptxItemHeight(item,accentColor?w-0.14:w,fontSize,lineSpacingMultiple);
         if(accentColor){
-          targetSlide.addShape('rect', {x:itemX, y:cy+0.03, w:0.045, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
-          targetSlide.addText(buildBulletTextRuns([item]), {x:itemX+0.14, y:cy, w:Math.max(0.5,itemW-0.14), h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
-        } else {
-          targetSlide.addText(buildBulletTextRuns([item]), {x:itemX, y:cy, w:itemW, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+          const hasMain=pptxItemContentSegments(item,fontSize).some(s=>s.kind==='main');
+          const span=pptxItemQuoteBarSpan(item,w-0.14,fontSize,lineSpacingMultiple);
+          if(hasMain){
+            // Two boxes instead of one: the plain main-text line(s) at the item's normal
+            // position with no bar, then the quoted line(s) below it, shifted right with the
+            // accent bar beside just that part. A single shared box would need the same 0.14in
+            // reservation for the bar's width on *every* line it contains, including the plain
+            // one that never actually gets a bar next to it — visible as an unexplained gap.
+            targetSlide.addText(buildBulletTextRuns([item],'main'), {x:itemX, y:cy, w:itemW, h:span.offsetY, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+            targetSlide.addShape('rect', {x:itemX, y:cy+span.offsetY+0.03, w:0.045, h:Math.max(0.05,span.barH-0.06), fill:{color:accentColor}, line:{type:'none'}});
+            targetSlide.addText(buildBulletTextRuns([item],'quote'), {x:itemX+0.14, y:cy+span.offsetY, w:Math.max(0.5,itemW-0.14), h:span.barH, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+          } else {
+            // Quote-only item (the '>' is at the very start, nothing before it) — the whole
+            // box is the quote, so one shifted, barred box like before is already correct.
+            targetSlide.addShape('rect', {x:itemX, y:cy+span.offsetY+0.03, w:0.045, h:Math.max(0.05,span.barH-0.06), fill:{color:accentColor}, line:{type:'none'}});
+            targetSlide.addText(buildBulletTextRuns([item]), {x:itemX+0.14, y:cy, w:Math.max(0.5,itemW-0.14), h:span.offsetY+span.barH, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+          }
+          cy+=span.offsetY+span.barH+10/72;
+          return;
         }
+        const h=pptxItemHeight(item,w,fontSize,lineSpacingMultiple);
+        targetSlide.addText(buildBulletTextRuns([item]), {x:itemX, y:cy, w:itemW, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
         cy+=h;
       });
       return cy-y;
