@@ -1969,8 +1969,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-tb-sep{width:1px;height:16px;background:var(--border);margin:0 4px;flex-shrink:0}
 #demo-editor-row{flex:1;display:flex;min-height:0;overflow:hidden}
 #demo-editor{flex:1;min-width:0;padding:14px 20px;overflow:auto;position:relative}
-.demo-node{display:flex;align-items:center;min-height:25px;padding:2px 6px;border-radius:5px;font:400 13px 'Fira Code',Consolas,monospace;color:var(--fg);white-space:nowrap}
-.demo-row-dot{display:inline-flex;width:14px;justify-content:center;color:var(--muted);font-size:14px;user-select:none;line-height:1}
+.demo-node{display:flex;align-items:center;min-height:25px;padding:2px 6px;border-radius:5px;font:400 13.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
+.demo-row-dot{display:inline-flex;width:14px;justify-content:center;color:var(--muted);font-size:15px;user-select:none;line-height:1}
 .demo-node-text{position:relative}
 .demo-node.demo-selected{background:var(--sel)}
 .demo-node.demo-bold .demo-node-text{font-weight:700}
@@ -2032,7 +2032,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-caption{flex:0 0 auto;padding:10px 18px;border-top:1px solid var(--border);font:500 12px 'Inter',sans-serif;color:var(--muted);min-height:18px;display:flex;align-items:center;gap:8px;transition:opacity .2s ease}
 #demo-caption .demo-caption-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:demo-pulse 1.2s ease-in-out infinite}
 @keyframes demo-pulse{0%,100%{opacity:.4}50%{opacity:1}}
-#demo-cursor{position:fixed;top:0;left:0;width:20px;height:20px;color:var(--accent);pointer-events:none;z-index:1101;transition:top .5s cubic-bezier(.22,.8,.34,1),left .5s cubic-bezier(.22,.8,.34,1);filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+#demo-cursor{position:fixed;top:0;left:0;width:20px;height:20px;color:var(--accent);pointer-events:none;z-index:1101;opacity:1;transition:top .5s cubic-bezier(.22,.8,.34,1),left .5s cubic-bezier(.22,.8,.34,1),opacity .3s ease;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+#demo-overlay:has(#demo-splash.demo-shown) #demo-cursor,
+#demo-overlay:has(#demo-closing.demo-shown) #demo-cursor,
+#demo-overlay:has(#demo-features.demo-shown) #demo-cursor{opacity:0}
 #demo-cursor.demo-press svg{transform:scale(.82)}
 #demo-cursor svg{transition:transform .12s ease}
 /* Demo: fake preview panel inside demo-main */
@@ -25207,7 +25210,7 @@ async function demoMoveCursorTo(target,opts){
   const rect=demoRectFor(target); if(!rect)return;
   cursor.style.left=(rect.left+rect.width/2+(opts?.dx||0))+'px';
   cursor.style.top=(rect.top+rect.height/2+(opts?.dy||0))+'px';
-  await demoSleep(560);
+  await demoSleep(opts?.moveMs??560);
 }
 async function demoPressEffect(target){
   const cursor=el('demo-cursor'); const elm=typeof target==='string'?document.querySelector(target):target;
@@ -25220,6 +25223,8 @@ async function demoPressEffect(target){
 async function demoClick(target,opts){ await demoMoveCursorTo(target,opts); if(demoAbort)return; await demoPressEffect(target); }
 async function demoTypeInto(targetEl,text,opts){
   if(!targetEl)return;
+  if(!opts?.skipCursorMove) await demoMoveCursorTo(targetEl,{moveMs:opts?.moveMs??380});
+  if(demoAbort)return;
   const speed=opts?.speed||32;
   targetEl.innerHTML='';
   const textNode=document.createTextNode(''); const caret=document.createElement('span'); caret.className='demo-caret';
