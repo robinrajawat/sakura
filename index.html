@@ -1981,6 +1981,35 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-note-dot.demo-shown{opacity:1}
 #demo-note-popover{position:absolute;width:210px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:10px 12px;z-index:5;opacity:0;transform:scale(.95);transform-origin:top left;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
 #demo-note-popover.demo-shown{opacity:1;transform:scale(1)}
+#demo-decision-popover{position:absolute;width:250px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--fc-gray);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:11px 13px;z-index:5;opacity:0;transform:scale(.95);transform-origin:top left;pointer-events:none;transition:opacity .18s ease,transform .18s ease,border-left-color .3s}
+#demo-decision-popover.demo-shown{opacity:1;transform:scale(1)}
+#demo-decision-popover.demo-decision-approved{border-left-color:var(--fc-green)}
+#demo-decision-pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#demo-decision-pop-title{display:inline-flex;align-items:center;gap:6px;font:700 11px 'Inter',sans-serif;color:var(--fg)}
+#demo-decision-pop-status{font:600 10px 'Inter',sans-serif;color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 14%,transparent);border-radius:999px;padding:2px 8px;transition:color .3s,background .3s}
+#demo-decision-popover.demo-decision-approved #demo-decision-pop-status{color:var(--fc-green);background:color-mix(in srgb,var(--fc-green) 14%,transparent)}
+.demo-decision-field{margin-bottom:7px}
+.demo-decision-field-label{display:block;font:600 10px 'Inter',sans-serif;margin-bottom:2px}
+.demo-decision-field-body{font:400 12px 'Inter',sans-serif;color:var(--fg);line-height:1.4;min-height:15px}
+#demo-decision-pop-meta{font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
+#demo-mindmap-panel{display:none;position:absolute;inset:0;z-index:10;background:var(--bg);flex-direction:column}
+#demo-mindmap-panel.demo-shown{display:flex}
+#demo-mindmap-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--border);flex:0 0 auto}
+#demo-mindmap-head-title{display:inline-flex;align-items:center;gap:8px;font:700 13px 'Inter',sans-serif;color:var(--fg)}
+#demo-mindmap-close-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:13px;width:26px;height:26px;border-radius:7px;cursor:default;display:inline-flex;align-items:center;justify-content:center}
+#demo-mindmap-body{position:relative;flex:1;overflow:hidden;background:var(--edit-bg)}
+#demo-mindmap-lines{position:absolute;inset:0;width:100%;height:100%}
+.demo-mm-line{stroke:var(--accent);stroke-width:.35;opacity:0;transition:opacity .3s}
+.demo-mm-line.demo-mm-line-visible{opacity:.55}
+.demo-mm-line-dashed{stroke-dasharray:2 2;stroke:var(--muted)}
+.demo-mm-node{position:absolute;transform:translate(-50%,-50%) scale(.85);padding:7px 12px;border-radius:12px;background:var(--tb-bg);border:1.5px solid var(--border);font:500 11.5px 'Inter',sans-serif;color:var(--fg);opacity:0;transition:opacity .25s,transform .25s;white-space:nowrap}
+.demo-mm-node.demo-mm-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.demo-mm-root{font-weight:700;border-color:var(--accent)}
+#demo-mm-root{left:17%;top:45%}
+#demo-mm-c1{left:38%;top:18%}
+#demo-mm-c2{left:38%;top:47%}
+#demo-mm-c3{left:38%;top:76%}
+.demo-mm-link-badge{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
 .demo-popover-head{font:700 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px}
 .demo-popover-body{font:400 12.5px 'Inter',sans-serif;color:var(--fg);min-height:18px;line-height:1.4}
 #demo-export-menu{position:absolute;top:8px;right:8px;width:160px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:6px;z-index:5;opacity:0;transform:scale(.95);transform-origin:top right;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
@@ -5797,6 +5826,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="demo-editor">
               <div id="demo-tree"></div>
               <div id="demo-note-popover"><div class="demo-popover-head">Note</div><div class="demo-popover-body"></div></div>
+              <div id="demo-decision-popover">
+                <div id="demo-decision-pop-head"><span id="demo-decision-pop-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Decision Log</span><span id="demo-decision-pop-status">Proposed</span></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-blue)">Context</span><div class="demo-decision-field-body" id="demo-decision-context"></div></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-red)">Decision</span><div class="demo-decision-field-body" id="demo-decision-decision"></div></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-purple)">Rationale</span><div class="demo-decision-field-body" id="demo-decision-rationale"></div></div>
+                <div id="demo-decision-pop-meta">— Maya</div>
+              </div>
               <div id="demo-export-menu"></div>
             </div>
             <div id="demo-pad">
@@ -5838,6 +5874,25 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <span id="demo-presenter-counter">3 / 3</span>
             </div>
             <div id="demo-laser-dot"></div>
+          </div>
+          <!-- Mind Map — per-document, opened from the Pad tab; simplified as a small brainstorm canvas -->
+          <div id="demo-mindmap-panel">
+            <div id="demo-mindmap-head">
+              <div id="demo-mindmap-head-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg><span>Mind Map</span></div>
+              <button type="button" id="demo-mindmap-close-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+            </div>
+            <div id="demo-mindmap-body">
+              <svg id="demo-mindmap-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line id="demo-mm-line-1" class="demo-mm-line" x1="17" y1="45" x2="38" y2="18"/>
+                <line id="demo-mm-line-2" class="demo-mm-line" x1="17" y1="45" x2="38" y2="47"/>
+                <line id="demo-mm-line-3" class="demo-mm-line" x1="17" y1="45" x2="38" y2="76"/>
+                <line id="demo-mm-line-cross" class="demo-mm-line demo-mm-line-dashed" x1="46" y1="21" x2="46" y2="73"/>
+              </svg>
+              <div id="demo-mm-root" class="demo-mm-node demo-mm-root"><span>Launch ideas</span></div>
+              <div id="demo-mm-c1" class="demo-mm-node"><span>Paid social push</span></div>
+              <div id="demo-mm-c2" class="demo-mm-node"><span>Influencer partnerships</span></div>
+              <div id="demo-mm-c3" class="demo-mm-node"><span>Press embargo date</span><span class="demo-mm-link-badge"></span></div>
+            </div>
           </div>
           <!-- Meeting Notes — a workspace-level panel, not tied to this one document -->
           <div id="demo-meeting-panel">
@@ -6028,7 +6083,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
           <div class="why-row-text">
             <span class="why-row-label">It grows into a full workspace, not just a tree</span>
-            <span class="why-row-desc">Attach a decision log, a Q&amp;A list, or a real embedded diagram to any node. Present the whole outline fullscreen with a laser pointer, a running timer, and a whiteboard for sketching mid-talk. Track meetings and to-dos alongside it. All still the same outline underneath — nothing here is a separate app bolted on.</span>
+            <span class="why-row-desc">Attach a decision log, a Q&amp;A list, or a real embedded diagram to any node — or step outside the tree entirely into a Mind Map for freeform brainstorming. Present the whole outline fullscreen with a laser pointer, a running timer, and a whiteboard for sketching mid-talk. Track meetings and to-dos alongside it. All still the same outline underneath — nothing here is a separate app bolted on.</span>
           </div>
         </div>
       </div>
@@ -22781,7 +22836,7 @@ const TOUR_STEPS=[
   {target:'#ag-ai',placement:'bottom',title:'AI features',bodyHtml:'<p>Generate a whole outline from a prompt, expand a node into a subtree, summarise a selection into a parent, rewrite a node, or suggest tags and an icon — all powered by your choice of AI provider, with automatic fallback if one fails.</p><p>Configure providers and keys in Settings.</p>'},
   {target:'#editor-controls-group',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, open the <strong>pad</strong>, or <strong>maximize</strong> to hide the sidebar and chrome — Esc brings it all back.</p>'},
   {target:'#editor-preview-toggle',placement:'left',title:'Preview & Presenter mode',bodyHtml:'<p>A clean, read-only render of the outline — foldable, with a table of contents. From there, one click goes fullscreen into <strong>Presenter mode</strong>: slide-by-slide, laser pointer, a running timer, and a Whiteboard for sketching mid-talk.</p>'},
-  {target:'#pad-panel',placement:'left',title:'Pad panel',bodyHtml:'<p>A whole-document workspace, separate from per-node notes — four tabs: a rich-text <strong>Notepad</strong>, a <strong>Q&amp;A</strong> list for open questions, a <strong>Decision Log</strong> view, and <strong>Diagrams</strong> — a real embedded draw.io editor, including one persistent <strong>Whiteboard</strong> for freeform sketching.</p>',setup:()=>{ if(padEnabled&&!padOpen)setPadOpen(true,false); },teardown:()=>{ if(padEnabled&&padOpen)setPadOpen(false,false); }},
+  {target:'#pad-panel',placement:'left',title:'Pad panel',bodyHtml:'<p>A whole-document workspace, separate from per-node notes — five tabs: a rich-text <strong>Notepad</strong>, a <strong>Q&amp;A</strong> list for open questions, a <strong>Decision Log</strong> view, <strong>Diagrams</strong> — a real embedded draw.io editor, including one persistent <strong>Whiteboard</strong> for freeform sketching — and <strong>Mind Map</strong>, any number of freeform brainstorming canvases for this document.</p>',setup:()=>{ if(padEnabled&&!padOpen)setPadOpen(true,false); },teardown:()=>{ if(padEnabled&&padOpen)setPadOpen(false,false); }},
   {target:'#status-util-group',placement:'top',title:'Meeting Notes & To-Dos',bodyHtml:'<p>Two workspace-wide panels, not tied to any single document — <strong>Meeting Notes</strong> for agendas and minutes, <strong>To-Dos</strong> for tasks — both can reference nodes anywhere across your documents.</p>'},
   {target:'#settings-toggle',placement:'bottom',title:'Settings',bodyHtml:'<p>Theme, accent color, toolbar layout, and a lot more. Everything is stored locally in this browser.</p>'},
   {target:'#help-toggle',placement:'bottom',title:'Help',bodyHtml:'<p>Every shortcut and feature, in detail. Come back here anytime to replay this tour.</p>'},
@@ -24880,6 +24935,10 @@ function demoShowPreviewPanel(){ el('demo-preview-panel')?.classList.add('demo-s
 function demoHidePreviewPanel(){ el('demo-preview-panel')?.classList.remove('demo-shown'); el('demo-preview-panel')?.classList.remove('demo-presenting'); }
 function demoEnterPresenter(){ el('demo-preview-panel')?.classList.add('demo-presenting'); }
 function demoExitPresenter(){ el('demo-preview-panel')?.classList.remove('demo-presenting'); demoHideLaser(); }
+function demoShowMindMap(){ el('demo-mindmap-panel')?.classList.add('demo-shown'); }
+function demoHideMindMap(){ el('demo-mindmap-panel')?.classList.remove('demo-shown'); }
+async function demoMmPop(id){ el(id)?.classList.add('demo-mm-visible'); await demoSleep(220); }
+async function demoMmLine(id){ el(id)?.classList.add('demo-mm-line-visible'); await demoSleep(180); }
 // Positioned in plain percentages, not pixel math — #demo-laser-dot sits inside
 // #demo-preview-panel, which fills #demo-main exactly (inset:0), so a % of its own box lines
 // up with a % of the visible slide without needing getBoundingClientRect.
@@ -24984,7 +25043,7 @@ async function runDemoScript(){
   await demoSleep(200); if(!live())return;
 
   /* 1 — New document */
-  demoCaption('Creating a new document…'); demoSetProgress(1/11);
+  demoCaption('Creating a new document…'); demoSetProgress(1/12);
   demoAddSidebarDoc('Meeting notes',false);
   await demoSleep(200); if(!live())return;
   const newDocRow=demoAddSidebarDoc('Product launch plan',true);
@@ -24992,7 +25051,7 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(500); if(!live())return;
 
   /* 2 — Build outline */
-  demoCaption('Building the outline — Enter for siblings, Tab to indent…'); demoSetProgress(2/11);
+  demoCaption('Building the outline — Enter for siblings, Tab to indent…'); demoSetProgress(2/12);
   const tree=el('demo-tree');
   const root=await demoAddNode(tree,0,'Launch checklist'); demoSelectNode(root,tree);
   await demoSleep(240); if(!live())return;
@@ -25010,7 +25069,7 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(550); if(!live())return;
 
   /* 3 — AI rewrite */
-  demoCaption('Asking AI to refine a node…'); demoSetProgress(3/11);
+  demoCaption('Asking AI to refine a node…'); demoSetProgress(3/12);
   demoSelectNode(landing,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.ai);
   const landingText=landing.querySelector('.demo-node-text');
@@ -25021,7 +25080,7 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(600); if(!live())return;
 
   /* 4 — Note */
-  demoCaption('Adding a private note to a node…'); demoSetProgress(4/11);
+  demoCaption('Adding a private note to a node…'); demoSetProgress(4/12);
   demoSelectNode(social,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.note);
   demoShowPopover('demo-note-popover',social);
@@ -25032,35 +25091,25 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(500); if(!live())return;
 
   /* 5 — Decision log */
-  demoCaption('Logging a decision…'); demoSetProgress(5/11);
+  demoCaption('Logging a decision…'); demoSetProgress(5/12);
   demoSelectNode(stripe,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.decision);
-  const stripeDepth=demoNodeList[demoNodeRows.indexOf(stripe)].depth;
-  const dlFieldsDefault=['Context: What prompted this decision?','Decision: What was decided?','Rationale: Why was this option chosen?','Alternatives: What other options were considered?','Impact: What systems or people are affected?','Status: Proposed'];
-  const dlHeaderText='Decision Log · '+formatNow()+' · by Maya';
-  let dlCursor=stripe; const dlRows=[];
-  const dlHeaderRow=demoInsertRowAfter(tree,dlCursor,stripeDepth+1); dlCursor=dlHeaderRow;
-  dlHeaderRow.querySelector('.demo-node-text').innerHTML=demoStyledLabelHtml(dlHeaderText);
-  dlHeaderRow.style.opacity='0'; dlRows.push(dlHeaderRow);
-  dlFieldsDefault.forEach(t=>{
-    const r=demoInsertRowAfter(tree,dlCursor,stripeDepth+2); dlCursor=r;
-    r.querySelector('.demo-node-text').innerHTML=demoStyledLabelHtml(t);
-    r.style.opacity='0'; dlRows.push(r);
-  });
-  if(!live())return;
-  for(const r of dlRows){ if(!live())return; r.style.transition='opacity .22s ease'; requestAnimationFrame(()=>{r.style.opacity='1';}); await demoSleep(70); }
+  demoShowPopover('demo-decision-popover',stripe);
+  await demoTypeInto(el('demo-decision-context'),'Payment integration needs a provider by end of week');
   await demoSleep(350); if(!live())return;
-  const decisionRow=dlRows[2];
-  demoSelectNode(decisionRow,tree); decisionRow.scrollIntoView({block:'nearest'});
-  await demoSleep(280); if(!live())return;
-  const decisionTextEl=decisionRow.querySelector('.demo-node-text');
-  await demoTypeInto(decisionTextEl,'Decision: Use Stripe over Braintree — lower fees, better docs');
-  if(!live())return;
-  decisionTextEl.innerHTML=demoStyledLabelHtml(decisionTextEl.textContent);
-  await demoSleep(750); if(!live())return;
+  await demoTypeInto(el('demo-decision-decision'),'Use Stripe over Braintree');
+  await demoSleep(350); if(!live())return;
+  await demoTypeInto(el('demo-decision-rationale'),'Lower fees, better docs, faster integration');
+  await demoSleep(500); if(!live())return;
+  el('demo-decision-popover')?.classList.add('demo-decision-approved');
+  const statusEl=el('demo-decision-pop-status'); if(statusEl)statusEl.textContent='Approved';
+  await demoSleep(700); if(!live())return;
+  demoHidePopover('demo-decision-popover');
+  stripe.querySelector('.demo-note-dot')?.classList.add('demo-shown');
+  if(!live())return; await demoSleep(400); if(!live())return;
 
   /* 6 — Pad: Notepad, Q&A, Diagrams/Whiteboard */
-  demoCaption('The Pad — Notepad, Q&A, and Diagrams, all per document…'); demoSetProgress(6/11);
+  demoCaption('The Pad — Notepad, Q&A, and Diagrams, all per document…'); demoSetProgress(6/12);
   await demoClick(demoToolbarBtns.pad); demoSetPadOpen(true);
   const padLabel=el('demo-pad-label'), padBody=el('demo-pad-body');
   await demoSleep(350); if(!live())return;
@@ -25090,8 +25139,22 @@ async function runDemoScript(){
   demoSetPadOpen(false);
   if(!live())return; await demoSleep(400); if(!live())return;
 
-  /* 7 — Preview & Presenter mode */
-  demoCaption('Previewing the outline, then presenting it fullscreen…'); demoSetProgress(7/11);
+  /* 7 — Mind Map */
+  demoCaption('Mind Map — a freeform brainstorming canvas, right in the Pad…'); demoSetProgress(7/12);
+  demoShowMindMap();
+  await demoSleep(300); if(!live())return;
+  await demoMmPop('demo-mm-root');
+  await demoMmLine('demo-mm-line-1'); await demoMmPop('demo-mm-c1');
+  await demoMmLine('demo-mm-line-2'); await demoMmPop('demo-mm-c2');
+  await demoMmLine('demo-mm-line-3'); await demoMmPop('demo-mm-c3');
+  await demoSleep(400); if(!live())return;
+  await demoMmLine('demo-mm-line-cross');
+  await demoSleep(900); if(!live())return;
+  demoHideMindMap();
+  if(!live())return; await demoSleep(300); if(!live())return;
+
+  /* 8 — Preview & Presenter mode */
+  demoCaption('Previewing the outline, then presenting it fullscreen…'); demoSetProgress(8/12);
   await demoClick(demoToolbarBtns.preview);
   demoShowPreviewPanel();
   await demoSleep(500); if(!live())return;
@@ -25111,8 +25174,8 @@ async function runDemoScript(){
   demoHidePreviewPanel();
   if(!live())return; await demoSleep(400); if(!live())return;
 
-  /* 8 — Meeting Notes */
-  demoCaption('Meeting Notes — a workspace-wide panel, not tied to one document…'); demoSetProgress(8/11);
+  /* 9 — Meeting Notes */
+  demoCaption('Meeting Notes — a workspace-wide panel, not tied to one document…'); demoSetProgress(9/12);
   await demoShowMeetingPanel('Confirm launch date with leadership','');
   await demoSleep(600); if(!live())return;
   await demoShowMeetingPanel('Confirm launch date with leadership','Review budget for paid social');
@@ -25120,8 +25183,8 @@ async function runDemoScript(){
   await demoHideMeetingPanel();
   if(!live())return; await demoSleep(300); if(!live())return;
 
-  /* 9 — To-Dos */
-  demoCaption('To-Dos — track tasks across every document…'); demoSetProgress(9/11);
+  /* 10 — To-Dos */
+  demoCaption('To-Dos — track tasks across every document…'); demoSetProgress(10/12);
   await demoShowTodosPanel('Finish payment integration','Draft launch email');
   await demoSleep(700); if(!live())return;
   demoCheckTodo('demo-todo-row1');
@@ -25129,8 +25192,8 @@ async function runDemoScript(){
   await demoHideTodosPanel();
   if(!live())return; await demoSleep(300); if(!live())return;
 
-  /* 10 — Export */
-  demoCaption('Exporting the finished outline…'); demoSetProgress(10/11);
+  /* 11 — Export */
+  demoCaption('Exporting the finished outline…'); demoSetProgress(11/12);
   await demoClick(demoToolbarBtns.exportBtn);
   const menu=el('demo-export-menu');
   menu.innerHTML='<div class="demo-menu-item">Markdown (.md)</div><div class="demo-menu-item">Word (.docx)</div><div class="demo-menu-item">Tree (.txt)</div>';
@@ -25143,7 +25206,7 @@ async function runDemoScript(){
   showToast('Exported product-launch-plan.docx');
   await demoSleep(900); if(!live())return;
 
-  /* 11 — Closing philosophy slide */
+  /* 12 — Closing philosophy slide */
   demoCaption(''); demoSetProgress(1);
   await demoShowClosing(); if(!live())return;
   await demoSleep(3200); if(!live())return;
@@ -25161,16 +25224,17 @@ function setDemoPauseBtnState(){
 function toggleDemoPause(){ demoPaused=!demoPaused; setDemoPauseBtnState(); }
 const DEMO_CHAPTERS=[
   {frac:0,label:'Intro'},
-  {frac:1/11,label:'New document'},
-  {frac:2/11,label:'Build the outline'},
-  {frac:3/11,label:'AI rewrite'},
-  {frac:4/11,label:'Add a note'},
-  {frac:5/11,label:'Log a decision'},
-  {frac:6/11,label:'Pad — Q&A & Diagrams'},
-  {frac:7/11,label:'Preview & Presenter mode'},
-  {frac:8/11,label:'Meeting Notes'},
-  {frac:9/11,label:'To-Dos'},
-  {frac:10/11,label:'Export'},
+  {frac:1/12,label:'New document'},
+  {frac:2/12,label:'Build the outline'},
+  {frac:3/12,label:'AI rewrite'},
+  {frac:4/12,label:'Add a note'},
+  {frac:5/12,label:'Log a decision'},
+  {frac:6/12,label:'Pad — Q&A & Diagrams'},
+  {frac:7/12,label:'Mind Map'},
+  {frac:8/12,label:'Preview & Presenter mode'},
+  {frac:9/12,label:'Meeting Notes'},
+  {frac:10/12,label:'To-Dos'},
+  {frac:11/12,label:'Export'},
   {frac:1,label:'Closing'}
 ];
 const DEMO_FRACS=DEMO_CHAPTERS.map(c=>c.frac);
