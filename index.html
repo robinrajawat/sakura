@@ -2175,6 +2175,14 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-load-item:hover{background:var(--hover)}
 .mm-load-empty{padding:12px 10px;font:400 12px/1.4 'Inter',sans-serif;color:var(--muted);text-align:center}
 #mindmap-export-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:200px}
+#mindmap-layout-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:170px}
+#mindmap-layout-menu.open{display:block}
+#mindmap-layout-menu-btn{width:16px!important;margin-left:-4px}
+.mm-layout-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font:500 12.5px 'Inter',sans-serif;color:var(--fg)}
+.mm-layout-item:hover{background:var(--hover)}
+.mm-layout-item.selected{color:var(--accent)}
+.mm-layout-item svg{flex-shrink:0;color:var(--muted)}
+.mm-layout-item.selected svg{color:var(--accent)}
 #mindmap-export-menu.open{display:block}
 .mm-export-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;cursor:pointer;font:400 12.5px/1.4 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
 .mm-export-item svg{flex-shrink:0;color:var(--muted)}
@@ -5868,7 +5876,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="presenter-overview-btn" data-tip="All slides (G)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
       <button type="button" id="presenter-notes-btn" data-tip="Notepad (N) · Q&amp;A (Q)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       <button type="button" id="presenter-whiteboard-btn" data-tip="Whiteboard (W) — sketch or brainstorm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-      <button type="button" id="presenter-mindmap-btn" data-tip="Mind Map (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2.2"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M6.2 12h3.6M9.8 12 17 5M9.8 12h7.2M9.8 12 17 19"/></svg></button>
+      <button type="button" id="presenter-mindmap-btn" data-tip="Mind Map (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg></button>
       <button type="button" id="presenter-exit-btn" data-tip="Exit presenter mode (Esc)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
@@ -5879,12 +5887,12 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-blank-overlay"></div>
     <div id="presenter-progress-bar"><div id="presenter-progress-fill"></div></div>
-    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-whiteboard-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span>Whiteboard</span></div><div class="pv-ctx-item" id="preview-ctx-mindmap-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2.2"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M6.2 12h3.6M9.8 12 17 5M9.8 12h7.2M9.8 12 17 19"/></svg></span><span>Mind Map</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
+    <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-whiteboard-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span>Whiteboard</span></div><div class="pv-ctx-item" id="preview-ctx-mindmap-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg></span><span>Mind Map</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
   <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
     <div id="mindmap-head">
-      <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2.2"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M6.2 12h3.6M9.8 12 17 5M9.8 12h7.2M9.8 12 17 19"/></svg><span id="mindmap-head-title-text">Mind Map</span></div>
+      <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg><span id="mindmap-head-title-text">Mind Map</span></div>
       <span id="mindmap-node-count"></span>
       <div id="mindmap-zoom-group">
         <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -5892,6 +5900,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
         <button type="button" id="mindmap-tidy-btn" data-tip="Tidy up — auto-arrange all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><circle cx="19" cy="6" r="1.8"/><circle cx="19" cy="18" r="1.8"/><circle cx="5" cy="6" r="1.8"/><circle cx="5" cy="18" r="1.8"/><path d="M14 12h3M7 12h3M12 10V8M12 16v-2"/></svg></button>
+        <button type="button" id="mindmap-layout-menu-btn" data-tip="Choose layout"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <button type="button" id="mindmap-fold-toggle-btn" data-tip="Collapse/expand all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
       </div>
       <span id="mindmap-head-divider"></span>
@@ -5907,6 +5916,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
     <div id="mindmap-export-menu"></div>
+    <div id="mindmap-layout-menu"></div>
     <div id="mindmap-edge-popover"></div>
     <div id="mindmap-ctx-menu"></div>
   </div>
@@ -34748,7 +34758,7 @@ function renderMindMapsList(){
   getMindMapDisplayList().forEach(m=>{
     const row=document.createElement('div'); row.className='mindmap-row'; row.dataset.mapId=String(m.id);
     const icon=document.createElement('div'); icon.className='mindmap-row-icon';
-    icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2.2"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M6.2 12h3.6M9.8 12 17 5M9.8 12h7.2M9.8 12 17 19"/></svg>';
+    icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg>';
     row.appendChild(icon);
     const info=document.createElement('div'); info.className='mindmap-row-info';
     const titleEl=document.createElement('div'); titleEl.className='mindmap-row-title'; titleEl.textContent=m.title||'Untitled map';
@@ -34789,12 +34799,12 @@ function mmSyncActiveIntoArray(){
   if(!mindMap||mindMapActiveId==null)return;
   const idx=mindMaps.findIndex(m=>m.id===mindMapActiveId);
   const meta=idx>=0?mindMaps[idx]:{id:mindMapActiveId,title:'Untitled',isScratchpad:false,anchorNodeId:null,createdAt:Date.now()};
-  const synced={...meta,id:mindMapActiveId,nextId:mindMap.nextId,nextLinkId:mindMap.nextLinkId,nodes:mindMap.nodes,links:mindMap.links,pan:mindMapPan,zoom:mindMapZoom,modifiedAt:Date.now()};
+  const synced={...meta,id:mindMapActiveId,nextId:mindMap.nextId,nextLinkId:mindMap.nextLinkId,nodes:mindMap.nodes,links:mindMap.links,pan:mindMapPan,zoom:mindMapZoom,layoutMode:mindMap.layoutMode,modifiedAt:Date.now()};
   if(idx>=0)mindMaps[idx]=synced; else mindMaps.push(synced);
 }
 function createMindMap(title,opts){
   opts=opts||{};
-  const m={id:newMindMapId(),title:title||'Untitled map',isScratchpad:!!opts.isScratchpad,anchorNodeId:opts.anchorNodeId??null,nextId:1,nextLinkId:1,nodes:[],links:[],pan:{x:0,y:0},zoom:1,createdAt:Date.now(),modifiedAt:Date.now()};
+  const m={id:newMindMapId(),title:title||'Untitled map',isScratchpad:!!opts.isScratchpad,anchorNodeId:opts.anchorNodeId??null,nextId:1,nextLinkId:1,nodes:[],links:[],pan:{x:0,y:0},zoom:1,layoutMode:'horizontal',createdAt:Date.now(),modifiedAt:Date.now()};
   mindMaps.push(m);
   return m;
 }
@@ -34880,9 +34890,10 @@ function ensureMindMap(){
     if(!Array.isArray(mindMap.links))mindMap.links=[];
     if(!Number.isFinite(mindMap.nextLinkId))mindMap.nextLinkId=1;
     if(!Number.isFinite(mindMap.nextId))mindMap.nextId=1;
+    if(!MM_LAYOUT_MODES.includes(mindMap.layoutMode))mindMap.layoutMode='horizontal';
     return;
   }
-  mindMap={nextId:1,nextLinkId:1,nodes:[],links:[]};
+  mindMap={nextId:1,nextLinkId:1,nodes:[],links:[],layoutMode:'horizontal'};
 }
 function mmNewId(){ if(!mindMap)ensureMindMap(); return mindMap.nextId++; }
 function findMindNode(id){ return mindMap?mindMap.nodes.find(n=>n.id===id):undefined; }
@@ -35349,11 +35360,12 @@ function mmNodeWidthPx(id){
   const raw=Math.min(text.length,charsPerLine)*7.3+26;
   return Math.max(44,Math.min(220,raw));
 }
-function mmSubtreeExtent(id){
+function mmSubtreeExtent(id,sizeFn){
+  sizeFn=sizeFn||mmNodeHeightPx;
   const kids=mindMapChildren(id);
-  const own=mmNodeHeightPx(id);
+  const own=sizeFn(id);
   if(!kids.length)return own;
-  const total=kids.reduce((sum,k)=>sum+mmSubtreeExtent(k.id),0)+MM_Y_GAP*(kids.length-1);
+  const total=kids.reduce((sum,k)=>sum+mmSubtreeExtent(k.id,sizeFn),0)+MM_Y_GAP*(kids.length-1);
   return Math.max(total,own);
 }
 function mmLayoutHorizontalNode(id,depth,bandTop,ox,oy){
@@ -35369,10 +35381,68 @@ function mmLayoutHorizontalNode(id,depth,bandTop,ox,oy){
     cursor+=mmSubtreeExtent(k.id)+MM_Y_GAP;
   });
 }
+// Same recursion as horizontal, axes swapped: depth drives y instead of x, sibling spread
+// drives x instead of y — and the spread measurement switches to node width (mmNodeWidthPx)
+// since siblings now sit side by side, not stacked, so width is what actually needs the gap.
+function mmLayoutVerticalNode(id,depth,bandLeft,ox,oy){
+  const node=findMindNode(id); if(!node)return;
+  const bandWidth=mmSubtreeExtent(id,mmNodeWidthPx);
+  node.y=oy+depth*MM_X_STEP; node.x=ox+bandLeft+bandWidth/2;
+  const kids=mindMapChildren(id);
+  if(!kids.length)return;
+  const childrenTotal=kids.reduce((sum,k)=>sum+mmSubtreeExtent(k.id,mmNodeWidthPx),0)+MM_Y_GAP*(kids.length-1);
+  let cursor=bandLeft+(bandWidth-childrenTotal)/2;
+  kids.forEach(k=>{
+    mmLayoutVerticalNode(k.id,depth+1,cursor,ox,oy);
+    cursor+=mmSubtreeExtent(k.id,mmNodeWidthPx)+MM_Y_GAP;
+  });
+}
+// Radial: each root gets a full 360° circle around its own center — angle allocation is
+// proportional to leaf count (mmLeafWeight), not pixel size, since angular slices don't have
+// a native "width" the way horizontal/vertical bands do. Depth drives radius outward. Multiple
+// roots get their own non-overlapping circle, placed left to right by that tree's own max
+// depth (its radius), same stacking spirit as horizontal's row-per-root.
+const MM_RADIAL_STEP=170;
+function mmLeafWeight(id){
+  const kids=mindMapChildren(id);
+  if(!kids.length)return 1;
+  return kids.reduce((s,k)=>s+mmLeafWeight(k.id),0);
+}
+function mmTreeMaxDepth(id,depth){
+  const kids=mindMapChildren(id);
+  if(!kids.length)return depth;
+  return Math.max(...kids.map(k=>mmTreeMaxDepth(k.id,depth+1)));
+}
+function mmLayoutRadialNode(id,angleStart,angleEnd,depth,cx,cy){
+  const node=findMindNode(id); if(!node)return;
+  const angle=(angleStart+angleEnd)/2;
+  const radius=depth*MM_RADIAL_STEP;
+  node.x=cx+radius*Math.cos(angle); node.y=cy+radius*Math.sin(angle);
+  const kids=mindMapChildren(id);
+  if(!kids.length)return;
+  const totalWeight=kids.reduce((s,k)=>s+mmLeafWeight(k.id),0);
+  let cursor=angleStart;
+  kids.forEach(k=>{
+    const share=(angleEnd-angleStart)*(mmLeafWeight(k.id)/totalWeight);
+    mmLayoutRadialNode(k.id,cursor,cursor+share,depth+1,cx,cy);
+    cursor+=share;
+  });
+}
+function mmComputeRadialLayout(){
+  if(!mindMap||!mindMap.nodes.length)return;
+  const roots=mindMap.nodes.filter(n=>n.parentId==null).sort((a,b)=>a.id-b.id);
+  let xCursor=0;
+  roots.forEach(r=>{
+    const treeRadius=Math.max(mmTreeMaxDepth(r.id,0),1)*MM_RADIAL_STEP;
+    const cx=xCursor+treeRadius, cy=treeRadius;
+    mmLayoutRadialNode(r.id,0,Math.PI*2,0,cx,cy);
+    xCursor+=treeRadius*2+80;
+  });
+}
 // Every root node (no parent) gets its own row, stacked top to bottom, each growing
 // left-to-right from x=0 — no privileged "center" tree with lesser "floaters" beneath it,
 // just a forest of equal trees.
-function mmComputeTidyLayout(){
+function mmComputeHorizontalLayout(){
   if(!mindMap||!mindMap.nodes.length)return;
   const roots=mindMap.nodes.filter(n=>n.parentId==null).sort((a,b)=>a.id-b.id);
   let yCursor=0;
@@ -35381,10 +35451,31 @@ function mmComputeTidyLayout(){
     yCursor+=mmSubtreeExtent(r.id)+50;
   });
 }
-function mmTidyUp(){
+function mmComputeVerticalLayout(){
+  if(!mindMap||!mindMap.nodes.length)return;
+  const roots=mindMap.nodes.filter(n=>n.parentId==null).sort((a,b)=>a.id-b.id);
+  let xCursor=0;
+  roots.forEach(r=>{
+    mmLayoutVerticalNode(r.id,0,xCursor,0,0);
+    xCursor+=mmSubtreeExtent(r.id,mmNodeWidthPx)+50;
+  });
+}
+const MM_LAYOUT_MODES=['horizontal','vertical','radial'];
+// Dispatches to whichever algorithm the current map remembers (mindMap.layoutMode),
+// or an explicit override when the person picks a different one from the Tidy menu —
+// in which case the choice is remembered on the map going forward too.
+function mmComputeTidyLayout(mode){
+  if(!mindMap||!mindMap.nodes.length)return;
+  const resolved=MM_LAYOUT_MODES.includes(mode)?mode:(MM_LAYOUT_MODES.includes(mindMap.layoutMode)?mindMap.layoutMode:'horizontal');
+  mindMap.layoutMode=resolved;
+  if(resolved==='vertical')mmComputeVerticalLayout();
+  else if(resolved==='radial')mmComputeRadialLayout();
+  else mmComputeHorizontalLayout();
+}
+function mmTidyUp(mode){
   if(!mindMap||!mindMap.nodes.length)return;
   const pre=mmSnapshot();
-  mmComputeTidyLayout();
+  mmComputeTidyLayout(mode);
   mmPushUndo(pre);
   mmResetView();
   saveMindMap();
@@ -35427,7 +35518,34 @@ function mmOpenExportMenu(){
 }
 function mmToggleExportMenu(){
   if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; }
+  mmCloseLayoutMenu();
   mmOpenExportMenu();
+}
+function mmCloseLayoutMenu(){ el('mindmap-layout-menu')?.classList.remove('open'); }
+const MM_LAYOUT_LABELS={horizontal:'Horizontal',vertical:'Vertical',radial:'Radial'};
+const MM_LAYOUT_ICONS={
+  horizontal:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="1.8"/><circle cx="14" cy="6" r="1.8"/><circle cx="14" cy="18" r="1.8"/><path d="M5.6 11 12.4 7M5.6 13 12.4 17"/></svg>',
+  vertical:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.8"/><circle cx="6" cy="14" r="1.8"/><circle cx="18" cy="14" r="1.8"/><path d="M11 5.6 7 12.4M13 5.6 17 12.4"/></svg>',
+  radial:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.4"/><circle cx="15" cy="6.3" r="1.4"/><circle cx="9" cy="6.3" r="1.4"/><circle cx="6" cy="12" r="1.4"/><path d="M12 12 16.3 12M12 12 14 7.3M12 12 10 7.3M12 12 7.7 12"/></svg>'
+};
+function mmOpenLayoutMenu(){
+  const menu=el('mindmap-layout-menu'); if(!menu)return;
+  const current=MM_LAYOUT_MODES.includes(mindMap?.layoutMode)?mindMap.layoutMode:'horizontal';
+  menu.innerHTML=MM_LAYOUT_MODES.map(mode=>
+    `<div class="mm-layout-item${mode===current?' selected':''}" data-mode="${mode}">${MM_LAYOUT_ICONS[mode]}<span>${MM_LAYOUT_LABELS[mode]}</span></div>`
+  ).join('');
+  menu.classList.add('open');
+  const btn=el('mindmap-layout-menu-btn');
+  if(btn){
+    const rect=btn.getBoundingClientRect();
+    menu.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-190))+'px';
+    menu.style.top=(rect.bottom+6)+'px';
+  }
+}
+function mmToggleLayoutMenu(){
+  if(el('mindmap-layout-menu')?.classList.contains('open')){ mmCloseLayoutMenu(); return; }
+  mmCloseExportMenu();
+  mmOpenLayoutMenu();
 }
 // Shared by tree edges and freeform links: draws the visible curve plus an invisible wider
 // hit-path (paths are thin, so a raw click target on the visible stroke alone is too small)
@@ -35878,7 +35996,7 @@ function openMindMapOverlay(mapId){
     const found=findMindMap(mapId);
     if(!found)return;
     mindMapActiveId=mapId;
-    mindMap={nextId:found.nextId,nextLinkId:found.nextLinkId,nodes:found.nodes,links:found.links};
+    mindMap={nextId:found.nextId,nextLinkId:found.nextLinkId,nodes:found.nodes,links:found.links,layoutMode:MM_LAYOUT_MODES.includes(found.layoutMode)?found.layoutMode:'horizontal'};
     mindMapPan=found.pan||{x:0,y:0};
     mindMapZoom=found.zoom||1;
   } else if(mindMapActiveId==null){
@@ -35908,6 +36026,12 @@ el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
 el('mindmap-tidy-btn')?.addEventListener('click',mmTidyUp);
+el('mindmap-layout-menu-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleLayoutMenu(); });
+el('mindmap-layout-menu')?.addEventListener('click',e=>{
+  const item=e.target.closest('.mm-layout-item'); if(!item)return;
+  mmCloseLayoutMenu();
+  mmTidyUp(item.dataset.mode);
+});
 el('mindmap-fold-toggle-btn')?.addEventListener('click',mmToggleAllCollapsed);
 el('mindmap-export-menu-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleExportMenu(); });
 el('mindmap-export-menu')?.addEventListener('click',e=>{
@@ -35931,6 +36055,8 @@ document.addEventListener('mousedown',e=>{
   if(menu&&menu.classList.contains('open')&&!menu.contains(e.target))mmCloseContextMenu();
   const exportMenu=el('mindmap-export-menu');
   if(exportMenu&&exportMenu.classList.contains('open')&&!exportMenu.contains(e.target)&&!e.target.closest('#mindmap-export-menu-btn'))mmCloseExportMenu();
+  const layoutMenu=el('mindmap-layout-menu');
+  if(layoutMenu&&layoutMenu.classList.contains('open')&&!layoutMenu.contains(e.target)&&!e.target.closest('#mindmap-layout-menu-btn'))mmCloseLayoutMenu();
   const edgePop=el('mindmap-edge-popover');
   if(edgePop&&edgePop.classList.contains('open')&&!edgePop.contains(e.target))mmCloseEdgePopover(true);
 });
@@ -35938,7 +36064,7 @@ document.addEventListener('keydown',e=>{
   if(!mindMapOpen)return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
-  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } closeMindMapOverlay(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } if(el('mindmap-layout-menu')?.classList.contains('open')){ mmCloseLayoutMenu(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
   if((e.key==='a'||e.key==='A')&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); if(mindMap){ mmSetSelection(mindMap.nodes.map(n=>n.id),mindMapSelectedId); renderMindMap(); } return; }
