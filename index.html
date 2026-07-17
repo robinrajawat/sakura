@@ -5467,7 +5467,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="meetings-template-btn" data-tip="New from template" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></button>
     <button type="button" id="meetings-outlook-import-btn" data-tip="Import from Outlook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="8 15 11 18 16 12"/></svg></button>
-    <button type="button" id="meetings-ics-import-btn" data-tip="Import from .ics file — no Azure app registration needed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg></button>
+    <button type="button" id="meetings-ics-import-btn" data-tip="Import from .ics file"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg></button>
     <input type="file" id="meetings-ics-file-input" accept=".ics,text/calendar" style="display:none" />
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <span id="meetings-count-label"></span>
@@ -21387,7 +21387,7 @@ async function fetchOutlookEvents(){
   const now=new Date();
   const start=new Date(now.getTime()-3*86400000);
   const end=new Date(now.getTime()+14*86400000);
-  const url='https://graph.microsoft.com/v1.0/me/calendarview?startDateTime='+encodeURIComponent(start.toISOString())+'&endDateTime='+encodeURIComponent(end.toISOString())+'&$orderby=start/dateTime&$top=50&$select=id,subject,start,end,location,attendees,organizer,isCancelled';
+  const url='https://graph.microsoft.com/v1.0/me/calendarview?startDateTime='+encodeURIComponent(start.toISOString())+'&endDateTime='+encodeURIComponent(end.toISOString())+'&$orderby=start/dateTime&$top=50&$select=id,subject,start,end,location,attendees,organizer,isCancelled,body';
   const res=await outlookApiFetch(url);
   if(!res.ok){
     if(res.status===401){ outlookAccessToken=null; updateOutlookCalStatus(); }
@@ -21460,7 +21460,9 @@ el('outlook-import-confirm-btn')?.addEventListener('click',()=>{
     const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
     const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
     let agenda='';
-    if(e.location?.displayName)agenda=sakuraSanitizeRichHtml('<p>📍 '+esc(e.location.displayName)+'</p>');
+    if(e.body?.content){
+      agenda=e.body.contentType==='html'?sakuraSanitizeRichHtml(e.body.content):sakuraSanitizeRichHtml('<p>'+esc(e.body.content).replace(/\n/g,'<br>')+'</p>');
+    }
     const m=normalizeMeetingNote({
       id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
       outlookEventId:e.id, createdAt:now, modifiedAt:now
@@ -21526,10 +21528,15 @@ function parseIcsFile(text){
     const name=left.split(';')[0].toUpperCase();
     if(name==='UID')cur.uid=value;
     else if(name==='SUMMARY')cur.summary=unescapeIcsText(value);
+    else if(name==='DESCRIPTION')cur.description=unescapeIcsText(value);
     else if(name==='LOCATION')cur.location=unescapeIcsText(value);
     else if(name==='DTSTART')cur.dtstart=value;
     else if(name==='DTEND')cur.dtend=value;
     else if(name==='ATTENDEE'){
+      // Rooms and other bookable resources (projectors, equipment) show up as their own
+      // ATTENDEE line with CUTYPE=RESOURCE — that's the room, not a person, so it's excluded
+      // from the attendee list rather than showing up as an extra name alongside real invitees.
+      if(/CUTYPE=RESOURCE/i.test(left))continue;
       cur.attendees=cur.attendees||[];
       const cnMatch=left.match(/CN=([^;]+)/i);
       cur.attendees.push(cnMatch?cnMatch[1]:value.replace(/^mailto:/i,''));
@@ -21543,6 +21550,7 @@ function parseIcsFile(text){
       subject:e.summary||'',
       start:start?{dateTime:start.toISOString()}:null,
       location:e.location?{displayName:e.location}:null,
+      description:e.description||'',
       attendees:(e.attendees||[]).map(name=>({emailAddress:{name}})),
       recurring:!!e.recurring
     };
@@ -21602,7 +21610,7 @@ el('ics-import-confirm-btn')?.addEventListener('click',()=>{
     const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
     const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
     let agenda='';
-    if(e.location?.displayName)agenda=sakuraSanitizeRichHtml('<p>📍 '+esc(e.location.displayName)+'</p>');
+    if(e.description)agenda=sakuraSanitizeRichHtml('<p>'+esc(e.description).replace(/\n/g,'<br>')+'</p>');
     const m=normalizeMeetingNote({
       id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
       icsUid:e.id, createdAt:now, modifiedAt:now
