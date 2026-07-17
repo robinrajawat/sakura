@@ -13479,7 +13479,26 @@ async function smartPasteFromClipboard(){
 }
 el('qb-smart-paste').addEventListener('click',()=>{smartPasteFromClipboard()});
 function applyFoldFilter(list,foldOverride){const foldSet=foldOverride||(skipFoldedInExports?collapsedIds:null); if(!foldSet||!foldSet.size)return list; const out=[]; let skipDepth=null; list.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(node); const hasKids=idx+1<list.length && list[idx+1].depth>node.depth; if(foldSet.has(node.id)&&hasKids) skipDepth=node.depth }); return out}
-function getScopedNodes(forceFull=false,foldOverride){let base; if(forceFull||selectAllMode||!multiSelectedIds.length){base=nodes.slice()} else {const idSet=new Set(multiSelectedIds); base=nodes.filter(n=>idSet.has(n.id))} return applyFoldFilter(base,foldOverride)}
+// forceFull or Select All -> the whole document. Otherwise scope to the current selection's
+// subtree(s): a genuine multi-select uses exactly those rows' own subtrees; a single selected
+// node uses that node's whole subtree (selecting one row means "this section", not "just this
+// one line with nothing under it"); nothing selected falls back to the whole document.
+function getScopedNodes(forceFull=false,foldOverride){
+  let base;
+  if(forceFull||selectAllMode){
+    base=nodes.slice();
+  } else {
+    const roots=getSelectionRootIndexes();
+    if(!roots.length){
+      base=nodes.slice();
+    } else {
+      const idSet=new Set();
+      roots.forEach(idx=>{ const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)idSet.add(nodes[i].id); });
+      base=nodes.filter(n=>idSet.has(n.id));
+    }
+  }
+  return applyFoldFilter(base,foldOverride);
+}
 function setSkipFoldedInExports(on,persist=true){skipFoldedInExports=!!on; const toggle=el('skip-folded-exports-toggle'); if(toggle){toggle.classList.toggle('on',skipFoldedInExports); toggle.setAttribute('aria-checked',String(skipFoldedInExports))} if(persist){savePrefs(); scheduleAutoSave()} updateExportMenuFoldNote()}
 function setExportMenuFoldNoteEnabled(on,persist=true){exportMenuFoldNoteEnabled=!!on; const toggle=el('export-menu-fold-note-enabled-toggle'); if(toggle){toggle.classList.toggle('on',exportMenuFoldNoteEnabled); toggle.setAttribute('aria-checked',String(exportMenuFoldNoteEnabled))} if(persist){savePrefs(); scheduleAutoSave()} updateExportMenuFoldNote()}
 function updateExportMenuFoldNote(){const wrap=el('export-menu-fold-note'); const txt=el('export-menu-fold-note-text'); const icon=wrap?.querySelector('.efn-icon'); if(!wrap||!txt)return; if(!exportMenuFoldNoteEnabled||!collapsedIds.size){wrap.classList.remove('show'); return} if(icon)icon.classList.toggle('efn-ok',!skipFoldedInExports); txt.innerHTML=skipFoldedInExports?'Skips folded sections (except PDF/PPT/Word — see Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Include them</button>':'Includes folded sections (PDF/PPT/Word always follow Preview). <button type="button" class="efn-link" id="export-menu-fold-note-link">Skip them</button>'; wrap.classList.add('show'); const link=el('export-menu-fold-note-link'); if(link)link.addEventListener('click',e=>{e.stopPropagation(); setSkipFoldedInExports(!skipFoldedInExports)})}
@@ -13693,7 +13712,7 @@ function downloadFileBlob(filename,blob){
 async function exportTreeAsImage(forceFull=false){
   const scopeNodes=getScopedNodes(forceFull);
   if(!scopeNodes.length){showToast('Nothing to export'); return}
-  const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0;
+  const useRebase=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length;
   try{
     const blob=await renderTreeImageBlob(scopeNodes,useRebase,2);
     const canCopy=!!(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write);
@@ -14028,7 +14047,7 @@ function extractSakuraClipPayload(html){
   }catch(e){}
   return null;
 }
-async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const useRebase=!forceFull&&!selectAllMode&&multiSelectedIds.length>0; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dlCount=clipPayload?clipPayload.extras.filter(x=>x.dl).length:0; const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const extrasLabel=(dlCount||dgCount)?` (incl. ${[dlCount?`${dlCount} decision log${dlCount===1?'':'s'}`:'',dgCount?`${dgCount} diagram${dgCount===1?'':'s'}`:''].filter(Boolean).join(', ')})`:''; const toastLabel=(forceFull||selectAllMode||!multiSelectedIds.length?'Tree copied':`Copied ${scopeNodes.length} selected node${scopeNodes.length===1?'':'s'}`)+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
+async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dlCount=clipPayload?clipPayload.extras.filter(x=>x.dl).length:0; const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const extrasLabel=(dlCount||dgCount)?` (incl. ${[dlCount?`${dlCount} decision log${dlCount===1?'':'s'}`:'',dgCount?`${dgCount} diagram${dgCount===1?'':'s'}`:''].filter(Boolean).join(', ')})`:''; const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false))}
 function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.txt`,'text/plain;charset=utf-8',serializeTreeText(getScopedNodes(true),false))}
 // === OPML ===
