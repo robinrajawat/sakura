@@ -2131,8 +2131,6 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #mindmap-head button:hover{background:var(--hover)}
 #mindmap-zoom-group button:hover{background:var(--bg)}
 #mindmap-clear-btn:hover{background:color-mix(in srgb, var(--fc-red) 14%, transparent);color:var(--fc-red)}
-#mindmap-head button#mindmap-generate-btn{color:var(--accent)}
-#mindmap-head button#mindmap-generate-btn:hover{background:color-mix(in srgb,var(--accent) 16%, transparent)}
 #mindmap-close-btn{color:var(--muted)}
 #mindmap-close-btn:hover{color:var(--fg)}
 #mindmap-canvas-wrap{position:relative;flex:1;overflow:hidden;background:var(--edit-bg);cursor:grab}
@@ -2180,6 +2178,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-load-item{padding:8px 9px;border-radius:6px;cursor:pointer;font:400 12.5px/1.4 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
 .mm-load-item:hover{background:var(--hover)}
 .mm-load-empty{padding:12px 10px;font:400 12px/1.4 'Inter',sans-serif;color:var(--muted);text-align:center}
+#mindmap-export-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:200px}
+#mindmap-export-menu.open{display:block}
+.mm-export-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;cursor:pointer;font:400 12.5px/1.4 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
+.mm-export-item svg{flex-shrink:0;color:var(--muted)}
+.mm-export-item:hover{background:var(--hover)}
 #mindmap-edge-popover{display:none;position:fixed;z-index:1103;background:var(--bg);border:1px solid var(--border);border-radius:8px;box-shadow:0 10px 22px rgba(0,0,0,.2);padding:4px}
 #mindmap-edge-popover.open{display:block}
 #mindmap-edge-popover-input{width:190px;box-sizing:border-box;padding:6px 9px;border-radius:6px;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:400 12.5px/1.4 'Inter',sans-serif;outline:none}
@@ -4786,9 +4789,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>The <strong>Tidy up</strong> button (next to Reset view) recomputes a clean left-to-right tree layout in one click — every root gets its own row, stacked top to bottom, each generation a step further right, siblings stacked so they can't overlap — useful after a lot of freeform dragging leaves things tangled</li>
 <li><strong>Load from document</strong> converts an existing document's outline into a mind map: each top-level section in the document becomes its own independent root — a single-root document just means one root, a multi-section document means several equal trees, same as building them by hand. Replaces the current canvas, confirming first if there's real content on it, and auto-tidies the result</li>
 <li><strong>Clear canvas</strong> resets back to a genuinely blank canvas — confirms first if there's real content, and is itself undoable</li>
-<li><strong>Generate Outline</strong> walks the whole map depth-first and creates a brand-new document from it — the document you're currently in (if any) is never touched or replaced</li>
+<li>The <strong>Export</strong> button (next to Load) opens a menu with three ways to get the map back out:</li>
 <li><strong>Export as image</strong> saves a PNG of the whole map (fit to its content, not just what's currently on screen) — reads the actual rendered colors straight off the canvas, so it always matches your current theme and any manual recoloring, and respects whatever's currently collapsed</li>
-<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline. It's a direct, deterministic conversion of the map's own layout, colors, and connector labels (no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed). Needs the Diagrams feature on (Settings → Features → Pad Panel)</li>
+<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline below. It's a direct, deterministic conversion of the map's own layout and colors (root nodes keep their accent tint unless manually recolored) and connector labels — no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed. Needs the Diagrams feature on (Settings → Features → Pad Panel)</li>
+<li><strong>Generate Outline</strong> walks the whole map depth-first and creates a brand-new document from it — the document you're currently in (if any) is never touched or replaced</li>
 <li>Settings → Features → Mind Map turns the whole thing off: hides the status bar button, the Presenter mode button and right-click entry, and the <span class="help-kbd">Ctrl/Cmd+Shift+X</span>/<span class="help-kbd">M</span> shortcuts. The canvas itself is preserved and comes back exactly as it was when re-enabled</li>
 </ul>
 </div>
@@ -5878,9 +5882,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
       <span id="mindmap-head-divider2"></span>
       <button type="button" id="mindmap-load-btn" data-tip="Load from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-      <button type="button" id="mindmap-export-image-btn" data-tip="Export as PNG image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
-      <button type="button" id="mindmap-export-diagram-btn" data-tip="Export to Diagrams — adds a draw.io diagram using the mind map's own layout and colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg></button>
-      <button type="button" id="mindmap-generate-btn" data-tip="Generate Outline — create a new document from this mind map"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12.5" x2="15" y2="12.5"/><line x1="9" y1="16" x2="15" y2="16"/></svg></button>
+      <button type="button" id="mindmap-export-menu-btn" data-tip="Export"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="15"/></svg><span>Export</span></button>
       <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div id="mindmap-canvas-wrap">
@@ -5890,6 +5892,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
     <div id="mindmap-load-menu"></div>
+    <div id="mindmap-export-menu"></div>
     <div id="mindmap-edge-popover"></div>
     <div id="mindmap-ctx-menu"></div>
   </div>
@@ -35307,6 +35310,7 @@ function mmRenderLoadList(query){
 function mmOpenLoadMenu(){
   if(mindMapEditingId!=null)mmCommitEdit();
   mmCloseContextMenu();
+  mmCloseExportMenu();
   const menu=el('mindmap-load-menu'); if(!menu)return;
   menu.innerHTML=`<input type="text" id="mindmap-load-search" placeholder="Search documents…" autocomplete="off" spellcheck="false"><div id="mindmap-load-list"></div>`;
   mmRenderLoadList('');
@@ -35330,6 +35334,25 @@ function mmOpenLoadMenu(){
 function mmToggleLoadMenu(){
   if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; }
   mmOpenLoadMenu();
+}
+function mmCloseExportMenu(){ el('mindmap-export-menu')?.classList.remove('open'); }
+function mmOpenExportMenu(){
+  const menu=el('mindmap-export-menu'); if(!menu)return;
+  menu.innerHTML=`<div class="mm-export-item" data-act="image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Export as image (PNG)</span></div>`+
+    `<div class="mm-export-item" data-act="diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg><span>Export to Diagrams</span></div>`+
+    `<div class="mm-export-item" data-act="outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12.5" x2="15" y2="12.5"/><line x1="9" y1="16" x2="15" y2="16"/></svg><span>Generate Outline</span></div>`;
+  menu.classList.add('open');
+  const btn=el('mindmap-export-menu-btn');
+  if(btn){
+    const rect=btn.getBoundingClientRect();
+    menu.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-220))+'px';
+    menu.style.top=(rect.bottom+6)+'px';
+  }
+}
+function mmToggleExportMenu(){
+  if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; }
+  mmCloseLoadMenu();
+  mmOpenExportMenu();
 }
 async function mmLoadFromDocument(docId){
   mmCloseLoadMenu();
@@ -35740,6 +35763,13 @@ async function mmExportImage(){
 // and the app controls every byte of the XML it writes. Reuses the mind map's own colors
 // (root nodes get an accent-tinted box unless manually recolored, matching their on-canvas
 // look) rather than remapping to the semantic buckets the outline-based prompt uses.
+function mmBlendHex(hex,bgHex,pct){
+  const toRgb=s=>{ s=s.replace('#',''); if(s.length===3)s=s.split('').map(c=>c+c).join(''); return [parseInt(s.slice(0,2),16),parseInt(s.slice(2,4),16),parseInt(s.slice(4,6),16)]; };
+  const [r1,g1,b1]=toRgb(hex), [r2,g2,b2]=toRgb(bgHex);
+  const mix=(a,b)=>Math.round(a*pct+b*(1-pct));
+  const toHex=n=>Math.max(0,Math.min(255,n)).toString(16).padStart(2,'0');
+  return '#'+toHex(mix(r1,r2))+toHex(mix(g1,g2))+toHex(mix(b1,b2));
+}
 function mmBuildDrawioXml(){
   const bounds=mmVisibleBounds(); if(!bounds)return null;
   const {visible,minX,minY}=bounds;
@@ -35760,7 +35790,10 @@ function mmBuildDrawioXml(){
     const w=mmNodeWidthPx(n.id), h=mmNodeHeightPx(n.id);
     const x=Math.round(n.x-w/2+ox), y=Math.round(n.y-h/2+oy);
     const isRoot=n.parentId==null;
-    const fill=n.color?branchHex[n.color]:bg;
+    // Same look as the canvas: a light tint of the branch color for the fill, the full
+    // saturated color reserved for the border — a solid fill in draw.io reads much louder
+    // than the ~13% color-mix() tint the app itself uses.
+    const fill=n.color?mmBlendHex(branchHex[n.color],bg,0.15):bg;
     const stroke=n.color?branchHex[n.color]:(isRoot?accent:border);
     const style=`rounded=1;arcSize=18;whiteSpace=wrap;html=1;fontSize=12;fontStyle=${isRoot?1:0};align=center;verticalAlign=middle;fillColor=${fill};strokeColor=${stroke};fontColor=${fg};strokeWidth=${isRoot?2:1.5};`;
     cells+=`<mxCell id="${cellId(n.id)}" value="${mmEscXml(n.text||'')}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${Math.round(w)}" height="${Math.round(h)}" as="geometry"/></mxCell>`;
@@ -35803,6 +35836,7 @@ function closeMindMapOverlay(){
   if(mindMapEditingId!=null)mmCommitEdit();
   mmCloseContextMenu();
   mmCloseLoadMenu();
+  mmCloseExportMenu();
   mmCloseEdgePopover(true);
   mindMapOpen=false; mmSetSelection([],null); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.remove('open');
@@ -35811,9 +35845,6 @@ function closeMindMapOverlay(){
 function toggleMindMapOverlay(){ if(mindMapOpen)closeMindMapOverlay(); else openMindMapOverlay(); }
 el('mindmap-toggle')?.addEventListener('click',toggleMindMapOverlay);
 el('mindmap-close-btn')?.addEventListener('click',closeMindMapOverlay);
-el('mindmap-generate-btn')?.addEventListener('click',generateOutlineFromMindMap);
-el('mindmap-export-image-btn')?.addEventListener('click',mmExportImage);
-el('mindmap-export-diagram-btn')?.addEventListener('click',mmExportToDiagram);
 el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
@@ -35823,6 +35854,15 @@ el('mindmap-load-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmTog
 el('mindmap-load-menu')?.addEventListener('click',e=>{
   const item=e.target.closest('.mm-load-item'); if(!item)return;
   const docId=item.dataset.docId; if(docId)mmLoadFromDocument(docId);
+});
+el('mindmap-export-menu-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleExportMenu(); });
+el('mindmap-export-menu')?.addEventListener('click',e=>{
+  const item=e.target.closest('.mm-export-item'); if(!item)return;
+  mmCloseExportMenu();
+  const act=item.dataset.act;
+  if(act==='image')mmExportImage();
+  else if(act==='diagram')mmExportToDiagram();
+  else if(act==='outline')generateOutlineFromMindMap();
 });
 el('mindmap-clear-btn')?.addEventListener('click',mmClearCanvas);
 el('mindmap-canvas-wrap')?.addEventListener('pointerdown',mmCanvasPointerDown);
@@ -35837,6 +35877,8 @@ document.addEventListener('mousedown',e=>{
   if(menu&&menu.classList.contains('open')&&!menu.contains(e.target))mmCloseContextMenu();
   const loadMenu=el('mindmap-load-menu');
   if(loadMenu&&loadMenu.classList.contains('open')&&!loadMenu.contains(e.target)&&!e.target.closest('#mindmap-load-btn'))mmCloseLoadMenu();
+  const exportMenu=el('mindmap-export-menu');
+  if(exportMenu&&exportMenu.classList.contains('open')&&!exportMenu.contains(e.target)&&!e.target.closest('#mindmap-export-menu-btn'))mmCloseExportMenu();
   const edgePop=el('mindmap-edge-popover');
   if(edgePop&&edgePop.classList.contains('open')&&!edgePop.contains(e.target))mmCloseEdgePopover(true);
 });
@@ -35844,7 +35886,7 @@ document.addEventListener('keydown',e=>{
   if(!mindMapOpen)return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
-  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; } closeMindMapOverlay(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
   if((e.key==='a'||e.key==='A')&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); if(mindMap){ mmSetSelection(mindMap.nodes.map(n=>n.id),mindMapSelectedId); renderMindMap(); } return; }
