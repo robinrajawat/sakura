@@ -4476,6 +4476,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Open the Note panel on any node to see which nodes link to it. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon (toolbar Insert group) or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
 <li><strong>Checkboxes</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg></span> toolbar button (Insert group) to toggle a node as a checkbox. Or type <span class="help-kbd">[ ]</span> / <span class="help-kbd">[x]</span> at the start of a node while editing — it auto-converts on commit. Click the box to check/uncheck. Parent checkbox nodes with checkbox children show a <span style="display:inline-flex;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px">2/5</span> progress badge; checking all children auto-checks the parent. Checked nodes fade. Multi-select supported</li>
+<li><strong>Heading shortcut</strong> — type <span class="help-kbd">#</span> through <span class="help-kbd">######</span> (1 to 6 of them) followed by a space at the very start of a node, then finish editing — same auto-convert-on-commit as checkboxes above, and sets the node's real heading level (the same field the Heading toolbar button sets), stripping the markdown prefix. Caps at H6, matching the toolbar's own options — <span class="help-kbd">#Text</span> with no space, or seven or more <span class="help-kbd">#</span>, doesn't convert</li>
 <li><span class="cs-inline-icon" style="font-size:14px;width:auto">⤴</span> → insert above</li>
 <li><span class="cs-inline-icon" style="font-size:14px;width:auto">＋</span> → add child</li>
 <li><span class="help-kbd">Tab</span> / <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> → indent / outdent</li>
@@ -12514,7 +12515,7 @@ el('editor-pane')?.addEventListener('keyup',e=>{
 
 function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; setSingleSelection(id); pushUndo(); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 function setInputCaret(input,pos=-1){if(!input)return; const len=input.value.length; const p=pos<0?len:Math.min(Math.max(pos,0),len); try{input.setSelectionRange(p,p)}catch(e){}}
-function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const changed=idx>=0&&input&&nodes[idx].text!==input.value; if(changed){nodes[idx].text=input.value; markDirty()} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
+function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const changed=idx>=0&&input&&nodes[idx].text!==input.value; if(changed){nodes[idx].text=input.value; markDirty()} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
 function cancelEdit(){editingId=null; render()}
 function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(idx); const block=nodes.slice(idx,end); if(direction<0){ if(idx===0)return; pushUndo(); const myDepth=nodes[idx].depth; let targetStart=idx-1; while(targetStart>0 && nodes[targetStart].depth>myDepth) targetStart--; nodes.splice(idx, end-idx); nodes.splice(targetStart,0,...block); selectedId=block[0].id } else { if(end>=nodes.length)return; pushUndo(); let nextEnd=getSubtreeEnd(end); nodes.splice(idx, end-idx); const insertAt=nextEnd-(end-idx); nodes.splice(insertAt,0,...block); selectedId=block[0].id } rebuildParentIds(); markDirty(); render(); showToast(direction<0?'Moved up':'Moved down') }
 function clearDragIndicators(){document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child,.node-row.dragging').forEach(row=>row.classList.remove('drag-over-above','drag-over-below','drag-over-child','dragging')); el('editor-pane').classList.remove('drag-over-end')}
@@ -13225,6 +13226,18 @@ function autoConvertCheckboxSyntax(id){
   const text=nodes[idx].text||'';
   const m=text.match(/^\[( |x)\]\s?(.*)$/i);
   if(m){nodes[idx].isCheckbox=true; nodes[idx].checked=(m[1].toLowerCase()==='x'); nodes[idx].text=m[2]; markDirty();}
+}
+// Same on-commit auto-convert precedent as checkboxes above — # through ###### at the very
+// start of a node, followed by a space, sets that node's real heading level (styles.heading,
+// the same field the Heading toolbar button sets) and strips the markdown prefix from the
+// text. Deliberately capped at 6 (matching the toolbar's own H1-H6 options) rather than
+// reaching level 7 ("Section") — that level has its own separate [Text] bracket convention
+// already, and folding # into it would make one visual result reachable two unrelated ways.
+function autoConvertHeadingSyntax(id){
+  const idx=getIndex(id); if(idx<0)return;
+  const text=nodes[idx].text||'';
+  const m=text.match(/^(#{1,6})\s+(.*)$/);
+  if(m){nodes[idx].styles.heading=m[1].length; nodes[idx].text=m[2]; markDirty();}
 }
 
 
