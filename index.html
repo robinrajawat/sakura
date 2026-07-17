@@ -1988,6 +1988,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-pad-ai-btn{display:inline-flex;color:var(--accent);opacity:.7;transition:opacity .15s}
 #demo-pad-ai-btn.demo-pressed{opacity:1}
 #demo-pad-body{flex:1;padding:10px 12px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;overflow:auto;white-space:pre-wrap}
+.demo-qa-row{white-space:normal}
+.demo-qa-q{font-weight:600;color:var(--fg);margin-bottom:6px}
+.demo-qa-a{padding-left:10px;border-left:2px solid var(--accent);color:var(--muted);min-height:16px}
+.demo-diagram-card{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);margin-bottom:7px;white-space:normal}
+.demo-diagram-thumb{width:26px;height:26px;border-radius:6px;background:var(--hover);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:0 0 auto}
+.demo-diagram-whiteboard{color:var(--accent)}
+.demo-diagram-title{font:600 12px 'Inter',sans-serif;color:var(--fg)}
 #demo-caption{flex:0 0 auto;padding:10px 18px;border-top:1px solid var(--border);font:500 12px 'Inter',sans-serif;color:var(--muted);min-height:18px;display:flex;align-items:center;gap:8px;transition:opacity .2s ease}
 #demo-caption .demo-caption-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:demo-pulse 1.2s ease-in-out infinite}
 @keyframes demo-pulse{0%,100%{opacity:.4}50%{opacity:1}}
@@ -2015,6 +2022,33 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-pv-dlog{margin:4px 0 12px;padding:11px 14px;border-radius:9px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--accent);font:400 13px 'Inter',sans-serif;color:var(--fg)}
 .demo-pv-dlog-label{font-weight:700;color:var(--fc-red)}
 .demo-pv-dlog-meta{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
+/* Demo: presenter mode — an overlay state on the same fake preview panel, since Presenter mode
+   in the real app is reached from Preview and shows the same document, just fullscreen and one
+   section at a time. Isolates the pre-tagged .demo-slide-2 group (Engineering) as the one
+   visible "slide" rather than building a second full render of the document. */
+#demo-presenter-bar{display:none;position:absolute;left:0;right:0;bottom:0;height:38px;align-items:center;justify-content:center;gap:14px;background:color-mix(in srgb,var(--bg) 90%,#000 10%);border-top:1px solid var(--border);font:600 11.5px 'Inter',sans-serif;color:var(--fg);z-index:2}
+#demo-preview-panel.demo-presenting #demo-presenter-bar{display:flex}
+#demo-preview-panel.demo-presenting #demo-preview-head{display:none}
+#demo-preview-panel.demo-presenting #demo-preview-body{padding:70px 60px 90px;display:flex;flex-direction:column;justify-content:center;height:100%;box-sizing:border-box}
+#demo-preview-panel.demo-presenting #demo-preview-body>*{display:none}
+#demo-preview-panel.demo-presenting #demo-preview-body>.demo-slide-2{display:block}
+#demo-preview-panel.demo-presenting .demo-pv-h1{font-size:20px}
+#demo-presenter-counter{color:var(--muted);font-weight:400}
+#demo-laser-dot{display:none;position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);z-index:3;pointer-events:none;box-shadow:0 0 5px 1px rgba(224,49,47,.6);transition:left .6s ease,top .6s ease}
+#demo-laser-dot.demo-shown{display:block}
+/* Demo: Meeting Notes and To-Dos — small floating cards representing the two workspace-level
+   panels (not tied to any one document), same visual language as demo-note-popover. */
+#demo-meeting-panel,#demo-todos-panel{display:none;position:absolute;right:16px;bottom:16px;z-index:15;width:250px;background:var(--edit-bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 32px rgba(0,0,0,.18);padding:10px 12px;opacity:0;transform:translateY(8px);transition:opacity .22s,transform .22s}
+#demo-meeting-panel.demo-shown,#demo-todos-panel.demo-shown{display:block}
+#demo-meeting-panel.demo-visible,#demo-todos-panel.demo-visible{opacity:1;transform:translateY(0)}
+#demo-meeting-head,#demo-todos-head{display:flex;align-items:center;gap:6px;font:700 11.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.demo-meeting-row{display:flex;align-items:flex-start;gap:7px;font:400 12px 'Inter',sans-serif;color:var(--fg);line-height:1.4;padding:3px 0;min-height:16px}
+.demo-meeting-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:0 0 auto;margin-top:6px}
+.demo-todo-row{display:flex;align-items:center;gap:7px;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:3px 0;min-height:16px}
+.demo-todo-cb{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg);transition:background .18s,border-color .18s}
+.demo-todo-cb.demo-checked{background:var(--accent);border-color:var(--accent)}
+.demo-todo-cb.demo-checked::after{content:'✓'}
+.demo-todo-row.demo-done span:last-child{text-decoration:line-through;color:var(--muted)}
 /* Demo: opening splash card */
 #demo-splash{display:none;position:absolute;inset:0;z-index:20;align-items:center;justify-content:center;border-radius:0;opacity:0;overflow:hidden;transition:opacity .5s ease;background:radial-gradient(circle at 50% 38%, color-mix(in srgb,var(--accent) 10%,var(--bg)) 0%, var(--bg) 62%)}
 #demo-splash.demo-shown{display:flex}
@@ -5606,7 +5640,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div id="demo-export-menu"></div>
             </div>
             <div id="demo-pad">
-              <div id="demo-pad-head"><span>Pad</span><span id="demo-pad-ai-btn"></span></div>
+              <div id="demo-pad-head"><span id="demo-pad-label">Notepad</span><span id="demo-pad-ai-btn"></span></div>
               <div id="demo-pad-body"></div>
             </div>
           </div>
@@ -5629,13 +5663,33 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 Need 3 variants — square, story, banner
               </div>
               <div class="demo-pv-row"><span class="demo-pv-bullet">•</span><span>Design social graphics</span></div>
-              <div class="demo-pv-h1">Engineering</div>
-              <div class="demo-pv-dlog">
+              <div class="demo-pv-h1 demo-slide-2">Engineering</div>
+              <div class="demo-pv-dlog demo-slide-2">
                 <div><span class="demo-pv-dlog-label">Decision:</span> Use Stripe over Braintree — lower fees, better docs</div>
                 <div class="demo-pv-dlog-meta">— Maya</div>
               </div>
-              <div class="demo-pv-row"><span class="demo-pv-bullet">•</span><span>QA regression pass</span></div>
+              <div class="demo-pv-row demo-slide-2"><span class="demo-pv-bullet">•</span><span>QA regression pass</span></div>
             </div>
+            <!-- Presenter mode overlay — shown by toggling .demo-presenting on demo-preview-panel;
+                 reuses the same static preview content behind it (fullscreen slide-by-slide is
+                 the same document, just one section at a time with the chrome hidden). -->
+            <div id="demo-presenter-bar">
+              <span id="demo-presenter-label">Engineering</span>
+              <span id="demo-presenter-counter">2 / 3</span>
+            </div>
+            <div id="demo-laser-dot"></div>
+          </div>
+          <!-- Meeting Notes — a workspace-level panel, not tied to this one document -->
+          <div id="demo-meeting-panel">
+            <div id="demo-meeting-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Launch kickoff — Mar 3</span></div>
+            <div class="demo-meeting-row"><span class="demo-meeting-dot"></span><span id="demo-meeting-row1"></span></div>
+            <div class="demo-meeting-row"><span class="demo-meeting-dot"></span><span id="demo-meeting-row2"></span></div>
+          </div>
+          <!-- To-Dos — also workspace-level, can reference nodes across documents -->
+          <div id="demo-todos-panel">
+            <div id="demo-todos-head"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></div>
+            <div class="demo-todo-row" id="demo-todo-row1"><span class="demo-todo-cb"></span><span></span></div>
+            <div class="demo-todo-row" id="demo-todo-row2"><span class="demo-todo-cb"></span><span></span></div>
           </div>
           <!-- Opening splash -->
           <div id="demo-splash">
@@ -24513,7 +24567,43 @@ async function demoHideClosing(){
   c.classList.remove('demo-visible'); await demoSleep(420); c.classList.remove('demo-shown');
 }
 function demoShowPreviewPanel(){ el('demo-preview-panel')?.classList.add('demo-shown'); }
-function demoHidePreviewPanel(){ el('demo-preview-panel')?.classList.remove('demo-shown'); }
+function demoHidePreviewPanel(){ el('demo-preview-panel')?.classList.remove('demo-shown'); el('demo-preview-panel')?.classList.remove('demo-presenting'); }
+function demoEnterPresenter(){ el('demo-preview-panel')?.classList.add('demo-presenting'); }
+function demoExitPresenter(){ el('demo-preview-panel')?.classList.remove('demo-presenting'); demoHideLaser(); }
+// Positioned in plain percentages, not pixel math — #demo-laser-dot sits inside
+// #demo-preview-panel, which fills #demo-main exactly (inset:0), so a % of its own box lines
+// up with a % of the visible slide without needing getBoundingClientRect.
+function demoMoveLaser(xPct,yPct){
+  const dot=el('demo-laser-dot'); if(!dot)return;
+  dot.classList.add('demo-shown');
+  dot.style.left=xPct+'%'; dot.style.top=yPct+'%';
+}
+function demoHideLaser(){ el('demo-laser-dot')?.classList.remove('demo-shown'); }
+async function demoShowMeetingPanel(row1,row2){
+  const p=el('demo-meeting-panel'); if(!p)return;
+  const r1=el('demo-meeting-row1'), r2=el('demo-meeting-row2');
+  if(r1)r1.textContent=row1; if(r2)r2.textContent=row2;
+  p.classList.add('demo-shown'); await demoSleep(30); p.classList.add('demo-visible');
+}
+async function demoHideMeetingPanel(){
+  const p=el('demo-meeting-panel'); if(!p)return;
+  p.classList.remove('demo-visible'); await demoSleep(240); p.classList.remove('demo-shown');
+}
+async function demoShowTodosPanel(row1,row2){
+  const p=el('demo-todos-panel'); if(!p)return;
+  el('demo-todo-row1')?.querySelector('span:last-child')?.replaceChildren(document.createTextNode(row1));
+  el('demo-todo-row2')?.querySelector('span:last-child')?.replaceChildren(document.createTextNode(row2));
+  p.classList.add('demo-shown'); await demoSleep(30); p.classList.add('demo-visible');
+}
+function demoCheckTodo(rowId){
+  const row=el(rowId); if(!row)return;
+  row.querySelector('.demo-todo-cb')?.classList.add('demo-checked');
+  row.classList.add('demo-done');
+}
+async function demoHideTodosPanel(){
+  const p=el('demo-todos-panel'); if(!p)return;
+  p.classList.remove('demo-visible'); await demoSleep(240); p.classList.remove('demo-shown');
+}
 function demoShowPopover(popId,nearRow){
   const pop=el(popId), editor=el('demo-editor'); if(!pop||!editor||!nearRow)return;
   const stageRect=editor.getBoundingClientRect(), rowRect=nearRow.getBoundingClientRect();
@@ -24556,10 +24646,15 @@ function demoResetStage(){
   el('demo-pad-body').textContent=''; el('demo-export-menu').innerHTML='';
   demoNodeList=[]; demoNodeRows=[];
   el('demo-pad-ai-btn').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
+  const _padLabel=el('demo-pad-label'); if(_padLabel)_padLabel.textContent='Notepad';
   demoSetPadOpen(false); demoSetZen(false); demoHidePopover('demo-note-popover'); demoHidePopover('demo-export-menu');
   const _splash=el('demo-splash'); if(_splash){_splash.classList.remove('demo-shown','demo-visible');}
   const _closing=el('demo-closing'); if(_closing){_closing.classList.remove('demo-shown','demo-visible');}
-  const _pvp=el('demo-preview-panel'); if(_pvp){_pvp.classList.remove('demo-shown');}
+  const _pvp=el('demo-preview-panel'); if(_pvp){_pvp.classList.remove('demo-shown','demo-presenting');}
+  demoHideLaser();
+  const _meet=el('demo-meeting-panel'); if(_meet)_meet.classList.remove('demo-shown','demo-visible');
+  const _todos=el('demo-todos-panel'); if(_todos)_todos.classList.remove('demo-shown','demo-visible');
+  ['demo-todo-row1','demo-todo-row2'].forEach(id=>{ const row=el(id); if(row){ row.classList.remove('demo-done'); row.querySelector('.demo-todo-cb')?.classList.remove('demo-checked'); } });
   demoSetProgress(0); demoCaption('');
   demoToolbarBtns=demoBuildToolbar();
   const stage=el('demo-stage'), cursor=el('demo-cursor');
@@ -24579,7 +24674,7 @@ async function runDemoScript(){
   await demoSleep(200); if(!live())return;
 
   /* 1 — New document */
-  demoCaption('Creating a new document…'); demoSetProgress(1/12);
+  demoCaption('Creating a new document…'); demoSetProgress(1/11);
   demoAddSidebarDoc('Meeting notes',false);
   await demoSleep(200); if(!live())return;
   const newDocRow=demoAddSidebarDoc('Product launch plan',true);
@@ -24587,7 +24682,7 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(500); if(!live())return;
 
   /* 2 — Build outline */
-  demoCaption('Building the outline — Enter for siblings, Tab to indent…'); demoSetProgress(2/12);
+  demoCaption('Building the outline — Enter for siblings, Tab to indent…'); demoSetProgress(2/11);
   const tree=el('demo-tree');
   const root=await demoAddNode(tree,0,'Launch checklist'); demoSelectNode(root,tree);
   await demoSleep(240); if(!live())return;
@@ -24604,16 +24699,8 @@ async function runDemoScript(){
   await demoAddNode(tree,1,'QA regression pass');
   if(!live())return; await demoSleep(550); if(!live())return;
 
-  /* 3 — Format */
-  demoCaption('Formatting with the toolbar…'); demoSetProgress(3/12);
-  demoSelectNode(marketing,tree); await demoSleep(150); if(!live())return;
-  await demoClick(demoToolbarBtns.bold); marketing.classList.add('demo-bold');
-  await demoSleep(260); if(!live())return;
-  await demoClick(demoToolbarBtns.highlight); marketing.classList.add('demo-highlight');
-  if(!live())return; await demoSleep(650); if(!live())return;
-
-  /* 4 — AI rewrite */
-  demoCaption('Asking AI to refine a node…'); demoSetProgress(4/12);
+  /* 3 — AI rewrite */
+  demoCaption('Asking AI to refine a node…'); demoSetProgress(3/11);
   demoSelectNode(landing,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.ai);
   const landingText=landing.querySelector('.demo-node-text');
@@ -24623,8 +24710,8 @@ async function runDemoScript(){
   await demoTypeInto(landingText,'Write & review landing page copy with marketing');
   if(!live())return; await demoSleep(600); if(!live())return;
 
-  /* 5 — Note */
-  demoCaption('Adding a private note to a node…'); demoSetProgress(5/12);
+  /* 4 — Note */
+  demoCaption('Adding a private note to a node…'); demoSetProgress(4/11);
   demoSelectNode(social,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.note);
   demoShowPopover('demo-note-popover',social);
@@ -24634,8 +24721,8 @@ async function runDemoScript(){
   social.querySelector('.demo-note-dot').classList.add('demo-shown');
   if(!live())return; await demoSleep(500); if(!live())return;
 
-  /* 6 — Decision log */
-  demoCaption('Logging a decision…'); demoSetProgress(6/12);
+  /* 5 — Decision log */
+  demoCaption('Logging a decision…'); demoSetProgress(5/11);
   demoSelectNode(stripe,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.decision);
   const stripeDepth=demoNodeList[demoNodeRows.indexOf(stripe)].depth;
@@ -24662,43 +24749,78 @@ async function runDemoScript(){
   decisionTextEl.innerHTML=demoStyledLabelHtml(decisionTextEl.textContent);
   await demoSleep(750); if(!live())return;
 
-  /* 7 — Pad */
-  demoCaption('Jotting a freeform note in the Pad…'); demoSetProgress(7/12);
+  /* 6 — Pad: Notepad, Q&A, Diagrams/Whiteboard */
+  demoCaption('The Pad — Notepad, Q&A, and Diagrams, all per document…'); demoSetProgress(6/11);
   await demoClick(demoToolbarBtns.pad); demoSetPadOpen(true);
+  const padLabel=el('demo-pad-label'), padBody=el('demo-pad-body');
   await demoSleep(350); if(!live())return;
-  await demoTypeInto(el('demo-pad-body'),"Don't forget: send the launch invite list to PR by Friday.");
+  await demoTypeInto(padBody,"Don't forget: send the launch invite list to PR by Friday.");
   await demoSleep(450); if(!live())return;
   await demoClick('#demo-pad-ai-btn');
   await demoSleep(550); if(!live())return;
-  await demoTypeInto(el('demo-pad-body'),'Reminder: share the launch invite list with PR — due Friday.');
-  await demoSleep(650); if(!live())return;
+  await demoTypeInto(padBody,'Reminder: share the launch invite list with PR — due Friday.');
+  await demoSleep(700); if(!live())return;
+  // Switch to Q&A
+  if(padLabel)padLabel.textContent='Q&A';
+  padBody.style.transition='opacity .18s'; padBody.style.opacity='0';
+  await demoSleep(180); if(!live())return;
+  padBody.innerHTML='<div class="demo-qa-row"><div class="demo-qa-q">Do we need legal sign-off before the invite list goes out?</div><div class="demo-qa-a"></div></div>';
+  padBody.style.opacity='1';
+  await demoSleep(300); if(!live())return;
+  await demoTypeInto(padBody.querySelector('.demo-qa-a'),'Yes — Priya reviewing by Wednesday.');
+  await demoSleep(700); if(!live())return;
+  // Switch to Diagrams (including the Whiteboard)
+  if(padLabel)padLabel.textContent='Diagrams';
+  padBody.style.opacity='0';
+  await demoSleep(180); if(!live())return;
+  padBody.innerHTML='<div class="demo-diagram-card"><div class="demo-diagram-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg></div><div class="demo-diagram-title">Launch timeline.drawio</div></div><div class="demo-diagram-card"><div class="demo-diagram-thumb demo-diagram-whiteboard"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></div><div class="demo-diagram-title">Whiteboard</div></div>';
+  padBody.style.opacity='1';
+  await demoSleep(900); if(!live())return;
+  if(padLabel)padLabel.textContent='Notepad';
   demoSetPadOpen(false);
   if(!live())return; await demoSleep(400); if(!live())return;
 
-  /* 8 — Zen mode */
-  demoCaption('Maximizing for focus…'); demoSetProgress(8/12);
-  await demoClick(demoToolbarBtns.zen); demoSetZen(true);
-  await demoSleep(1400); if(!live())return;
-  demoSetZen(false);
-  if(!live())return; await demoSleep(450); if(!live())return;
-
-  /* 9 — Preview */
-  demoCaption('Previewing the outline — read-only, foldable, presentation-ready…'); demoSetProgress(9/12);
+  /* 7 — Preview & Presenter mode */
+  demoCaption('Previewing the outline, then presenting it fullscreen…'); demoSetProgress(7/11);
   await demoClick(demoToolbarBtns.preview);
   demoShowPreviewPanel();
   await demoSleep(500); if(!live())return;
-  /* Scroll the preview body down a little to show the decision log card */
   const pvBody=el('demo-preview-body');
   if(pvBody){ pvBody.style.transition='scroll-behavior auto'; pvBody.scrollTop=60; }
-  await demoSleep(1000); if(!live())return;
-  /* Hover the Markdown export button to show it's live */
+  await demoSleep(900); if(!live())return;
+  demoEnterPresenter();
+  await demoSleep(500); if(!live())return;
+  demoMoveLaser(46,58);
+  await demoSleep(700); if(!live())return;
+  demoMoveLaser(58,68);
+  await demoSleep(900); if(!live())return;
+  demoExitPresenter();
+  await demoSleep(300); if(!live())return;
   await demoClick('#demo-preview-md-btn');
   await demoSleep(350); if(!live())return;
   demoHidePreviewPanel();
   if(!live())return; await demoSleep(400); if(!live())return;
 
+  /* 8 — Meeting Notes */
+  demoCaption('Meeting Notes — a workspace-wide panel, not tied to one document…'); demoSetProgress(8/11);
+  await demoShowMeetingPanel('Confirm launch date with leadership','');
+  await demoSleep(600); if(!live())return;
+  await demoShowMeetingPanel('Confirm launch date with leadership','Review budget for paid social');
+  await demoSleep(1300); if(!live())return;
+  await demoHideMeetingPanel();
+  if(!live())return; await demoSleep(300); if(!live())return;
+
+  /* 9 — To-Dos */
+  demoCaption('To-Dos — track tasks across every document…'); demoSetProgress(9/11);
+  await demoShowTodosPanel('Finish payment integration','Draft launch email');
+  await demoSleep(700); if(!live())return;
+  demoCheckTodo('demo-todo-row1');
+  await demoSleep(900); if(!live())return;
+  await demoHideTodosPanel();
+  if(!live())return; await demoSleep(300); if(!live())return;
+
   /* 10 — Export */
-  demoCaption('Exporting the finished outline…'); demoSetProgress(10/12);
+  demoCaption('Exporting the finished outline…'); demoSetProgress(10/11);
   await demoClick(demoToolbarBtns.exportBtn);
   const menu=el('demo-export-menu');
   menu.innerHTML='<div class="demo-menu-item">Markdown (.md)</div><div class="demo-menu-item">Word (.docx)</div><div class="demo-menu-item">Tree (.txt)</div>';
@@ -24729,16 +24851,16 @@ function setDemoPauseBtnState(){
 function toggleDemoPause(){ demoPaused=!demoPaused; setDemoPauseBtnState(); }
 const DEMO_CHAPTERS=[
   {frac:0,label:'Intro'},
-  {frac:1/12,label:'New document'},
-  {frac:2/12,label:'Build the outline'},
-  {frac:3/12,label:'Format with the toolbar'},
-  {frac:4/12,label:'AI rewrite'},
-  {frac:5/12,label:'Add a note'},
-  {frac:6/12,label:'Log a decision'},
-  {frac:7/12,label:'Pad'},
-  {frac:8/12,label:'Zen mode'},
-  {frac:9/12,label:'Preview'},
-  {frac:10/12,label:'Export'},
+  {frac:1/11,label:'New document'},
+  {frac:2/11,label:'Build the outline'},
+  {frac:3/11,label:'AI rewrite'},
+  {frac:4/11,label:'Add a note'},
+  {frac:5/11,label:'Log a decision'},
+  {frac:6/11,label:'Pad — Q&A & Diagrams'},
+  {frac:7/11,label:'Preview & Presenter mode'},
+  {frac:8/11,label:'Meeting Notes'},
+  {frac:9/11,label:'To-Dos'},
+  {frac:10/11,label:'Export'},
   {frac:1,label:'Closing'}
 ];
 const DEMO_FRACS=DEMO_CHAPTERS.map(c=>c.frac);
