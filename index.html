@@ -1492,7 +1492,7 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 .qa-row.qa-dragging{opacity:.4}
 .qa-row.qa-drag-over{border-top:2px solid var(--accent)}
 .qa-field-wrap{position:relative;display:flex;align-items:flex-start;gap:3px}
-.qa-field-wrap:has(textarea.qa-field-a){border-left:2px solid var(--accent);padding-left:7px;margin-left:1px}
+.qa-field-wrap:has(textarea.qa-field-a:not(:placeholder-shown)){border-left:2px solid var(--accent);padding-left:7px;margin-left:1px}
 .qa-field-wrap textarea{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;background:transparent;padding:2px 3px 2px 3px;color:var(--fg);font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.45;transition:padding-right .16s ease}
 .qa-field-wrap:hover textarea,.qa-field-wrap:focus-within textarea{padding-right:18px}
 .qa-field-wrap:hover textarea.qa-field-q,.qa-field-wrap:focus-within textarea.qa-field-q{padding-right:36px}
@@ -2626,7 +2626,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-inline-qa-tag-q{background:color-mix(in srgb, var(--accent) 16%, transparent);color:var(--accent)}
 .pv-inline-qa-tag-a{background:var(--chip);color:var(--muted)}
 .pv-inline-qa-question{font-weight:600;color:var(--fg)}
-.pv-inline-qa-answer{color:var(--fg);border-left:2px solid var(--accent);padding-left:8px;margin-top:2px}
+.pv-inline-qa-answer{color:var(--fg);margin-top:2px}
+.pv-inline-qa-answer:not(.pv-inline-qa-unanswered){border-left:2px solid var(--accent);padding-left:8px}
 .pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
 
 
@@ -14997,7 +14998,7 @@ function docxBuildQaSection(items){
     const a=String(item.answer||'').trim();
     paras.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:spacing w:before="120" w:after="20"/></w:pPr>${docxRun(q,{bold:true})}</w:p>`);
     paras.push(a
-      ? `<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:spacing w:after="60"/></w:pPr>${docxRun(a,{color:'5C584F'})}</w:p>`
+      ? `<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:pBdr><w:left w:val="single" w:sz="12" w:space="8" w:color="${docxLiveAccentHex()}"/></w:pBdr><w:ind w:left="120"/><w:spacing w:after="60"/></w:pPr>${docxRun(a,{color:'5C584F'})}</w:p>`
       : `<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:spacing w:after="60"/></w:pPr>${docxRun('No answer provided',{italic:true,color:'A3A099'})}</w:p>`);
   });
   return {headingEntry:{level:1,text:'Q&A',bookmark:bookmarkName}, paras};
