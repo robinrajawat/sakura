@@ -1979,19 +1979,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 @keyframes demo-blink{50%{opacity:0}}
 .demo-note-dot{display:inline-flex;margin-left:6px;color:var(--accent);opacity:0;transition:opacity .2s}
 .demo-note-dot.demo-shown{opacity:1}
+.demo-decision-dot{display:inline-flex;margin-left:6px;color:var(--accent);opacity:0;transition:opacity .2s}
+.demo-decision-dot.demo-shown{opacity:1}
 #demo-note-popover{position:absolute;width:210px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:10px 12px;z-index:5;opacity:0;transform:scale(.95);transform-origin:top left;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
 #demo-note-popover.demo-shown{opacity:1;transform:scale(1)}
-#demo-decision-popover{position:absolute;width:250px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--fc-gray);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:11px 13px;z-index:5;opacity:0;transform:scale(.95);transform-origin:top left;pointer-events:none;transition:opacity .18s ease,transform .18s ease,border-left-color .3s}
-#demo-decision-popover.demo-shown{opacity:1;transform:scale(1)}
-#demo-decision-popover.demo-decision-approved{border-left-color:var(--fc-green)}
-#demo-decision-pop-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-#demo-decision-pop-title{display:inline-flex;align-items:center;gap:6px;font:700 11px 'Inter',sans-serif;color:var(--fg)}
-#demo-decision-pop-status{font:600 10px 'Inter',sans-serif;color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 14%,transparent);border-radius:999px;padding:2px 8px;transition:color .3s,background .3s}
-#demo-decision-popover.demo-decision-approved #demo-decision-pop-status{color:var(--fc-green);background:color-mix(in srgb,var(--fc-green) 14%,transparent)}
-.demo-decision-field{margin-bottom:7px}
-.demo-decision-field-label{display:block;font:600 10px 'Inter',sans-serif;margin-bottom:2px}
-.demo-decision-field-body{font:400 12px 'Inter',sans-serif;color:var(--fg);line-height:1.4;min-height:15px}
-#demo-decision-pop-meta{font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
 #demo-mindmap-panel{display:none;position:absolute;inset:0;z-index:10;background:var(--bg);flex-direction:column}
 #demo-mindmap-panel.demo-shown{display:flex}
 #demo-mindmap-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--border);flex:0 0 auto}
@@ -2016,8 +2007,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-export-menu.demo-shown{opacity:1;transform:scale(1)}
 .demo-menu-item{padding:7px 9px;border-radius:6px;font:400 12px 'Inter',sans-serif;color:var(--fg)}
 .demo-menu-item.demo-pressed{background:var(--hover)}
-#demo-pad{width:0;flex:0 0 auto;border-left:1px solid var(--border);background:var(--edit-bg);display:flex;flex-direction:column;overflow:hidden;transition:width .28s ease}
-#demo-pad.demo-open{width:200px}
+#demo-pad{width:0;flex:0 0 auto;border-left:1px solid var(--border);background:var(--edit-bg);display:flex;flex-direction:column;overflow:hidden;transition:width .28s ease;position:relative}
+#demo-pad.demo-open{width:238px}
 #demo-pad-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;font:700 11px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);flex-shrink:0;white-space:nowrap}
 #demo-pad-ai-btn{display:inline-flex;color:var(--accent);opacity:.7;transition:opacity .15s}
 #demo-pad-ai-btn.demo-pressed{opacity:1}
@@ -2029,6 +2020,21 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-diagram-thumb{width:26px;height:26px;border-radius:6px;background:var(--hover);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:0 0 auto}
 .demo-diagram-whiteboard{color:var(--accent)}
 .demo-diagram-title{font:600 12px 'Inter',sans-serif;color:var(--fg)}
+/* Decision Log lives in its own Pad tab (like Notepad/Q&A/Diagrams), not as a popover pinned to
+   a node — matches the real feature exactly (a linked record, not inline node content). Sits in
+   #demo-pad-body like every other tab; shown/hidden by the same generic tab-swap the Pad already
+   uses elsewhere, no separate positioning system needed. */
+#demo-pad-decision{white-space:normal;display:none;flex:1;padding:10px 12px;overflow:auto}
+#demo-pad.demo-pad-decision-mode #demo-pad-body{display:none}
+#demo-pad.demo-pad-decision-mode #demo-pad-decision{display:block}
+#demo-pad-decision-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+#demo-pad-decision-title{display:inline-flex;align-items:center;gap:6px;font:700 11px 'Inter',sans-serif;color:var(--fg)}
+#demo-pad-decision-status{font:600 10px 'Inter',sans-serif;color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 14%,transparent);border-radius:999px;padding:2px 8px;transition:color .3s,background .3s}
+#demo-pad-decision.demo-decision-approved #demo-pad-decision-status{color:var(--fc-green);background:color-mix(in srgb,var(--fc-green) 14%,transparent)}
+.demo-decision-field{margin-bottom:8px}
+.demo-decision-field-label{display:block;font:600 10px 'Inter',sans-serif;margin-bottom:2px}
+.demo-decision-field-body{font:400 12px 'Inter',sans-serif;color:var(--fg);line-height:1.4;min-height:15px}
+#demo-pad-decision-meta{font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
 #demo-caption{flex:0 0 auto;padding:10px 18px;border-top:1px solid var(--border);font:500 12px 'Inter',sans-serif;color:var(--muted);min-height:18px;display:flex;align-items:center;gap:8px;transition:opacity .2s ease}
 #demo-caption .demo-caption-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:demo-pulse 1.2s ease-in-out infinite}
 @keyframes demo-pulse{0%,100%{opacity:.4}50%{opacity:1}}
@@ -2061,14 +2067,17 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-pv-dlog-meta{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
 /* Demo: presenter mode — an overlay state on the same fake preview panel, since Presenter mode
    in the real app is reached from Preview and shows the same document, just fullscreen and one
-   section at a time. Isolates the pre-tagged .demo-slide-2 group (Engineering) as the one
-   visible "slide" rather than building a second full render of the document. */
+   top-level section at a time. #demo-preview-body's data-slide attribute (set by demoGotoSlide)
+   picks which .demo-slide-N group is the visible "slide" — a real step-by-step advance through
+   Marketing / Engineering / Legal, not a single static reveal. */
 #demo-presenter-bar{display:none;position:absolute;left:0;right:0;bottom:0;height:38px;align-items:center;justify-content:center;gap:14px;background:color-mix(in srgb,var(--bg) 90%,#000 10%);border-top:1px solid var(--border);font:600 11.5px 'Inter',sans-serif;color:var(--fg);z-index:2}
 #demo-preview-panel.demo-presenting #demo-presenter-bar{display:flex}
 #demo-preview-panel.demo-presenting #demo-preview-head{display:none}
 #demo-preview-panel.demo-presenting #demo-preview-body{padding:70px 60px 90px;display:flex;flex-direction:column;justify-content:center;height:100%;box-sizing:border-box}
 #demo-preview-panel.demo-presenting #demo-preview-body>*{display:none}
-#demo-preview-panel.demo-presenting #demo-preview-body>.demo-slide-2{display:block}
+#demo-preview-panel.demo-presenting #demo-preview-body[data-slide="1"]>.demo-slide-1{display:block}
+#demo-preview-panel.demo-presenting #demo-preview-body[data-slide="2"]>.demo-slide-2{display:block}
+#demo-preview-panel.demo-presenting #demo-preview-body[data-slide="3"]>.demo-slide-3{display:block}
 #demo-preview-panel.demo-presenting .demo-pv-h1{font-size:20px}
 #demo-presenter-counter{color:var(--muted);font-weight:400}
 #demo-laser-dot{display:none;position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);z-index:3;pointer-events:none;box-shadow:0 0 5px 1px rgba(224,49,47,.6);transition:left .6s ease,top .6s ease}
@@ -5867,18 +5876,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="demo-editor">
               <div id="demo-tree"></div>
               <div id="demo-note-popover"><div class="demo-popover-head">Note</div><div class="demo-popover-body"></div></div>
-              <div id="demo-decision-popover">
-                <div id="demo-decision-pop-head"><span id="demo-decision-pop-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Decision Log</span><span id="demo-decision-pop-status">Proposed</span></div>
-                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-blue)">Context</span><div class="demo-decision-field-body" id="demo-decision-context"></div></div>
-                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-red)">Decision</span><div class="demo-decision-field-body" id="demo-decision-decision"></div></div>
-                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-purple)">Rationale</span><div class="demo-decision-field-body" id="demo-decision-rationale"></div></div>
-                <div id="demo-decision-pop-meta">— Maya</div>
-              </div>
               <div id="demo-export-menu"></div>
             </div>
             <div id="demo-pad">
               <div id="demo-pad-head"><span id="demo-pad-label">Notepad</span><span id="demo-pad-ai-btn"></span></div>
               <div id="demo-pad-body"></div>
+              <!-- Decision Log — a real Pad tab (like Notepad/Q&A/Diagrams), a linked record rather
+                   than something pinned to the node itself. Sibling to demo-pad-body; the two swap
+                   visibility together so the rest of the Pad's tab-switching logic doesn't change. -->
+              <div id="demo-pad-decision">
+                <div id="demo-pad-decision-head"><span id="demo-pad-decision-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Decision Log</span><span id="demo-pad-decision-status">Proposed</span></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-blue)">Context</span><div class="demo-decision-field-body" id="demo-decision-context"></div></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-red)">Decision</span><div class="demo-decision-field-body" id="demo-decision-decision"></div></div>
+                <div class="demo-decision-field"><span class="demo-decision-field-label" style="color:var(--fc-purple)">Rationale</span><div class="demo-decision-field-body" id="demo-decision-rationale"></div></div>
+                <div id="demo-pad-decision-meta">— Maya</div>
+              </div>
             </div>
           </div>
           <!-- Fake Preview panel shown during demo -->
@@ -5891,24 +5903,34 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <button type="button" id="demo-preview-close-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
               </div>
             </div>
-            <div id="demo-preview-body">
+            <div id="demo-preview-body" data-slide="1">
               <div class="demo-pv-h0">Launch checklist</div>
-              <div class="demo-pv-h1">Marketing</div>
-              <div class="demo-pv-row"><span class="demo-pv-bullet">•</span><span>Write &amp; review landing page copy with marketing</span></div>
-              <div class="demo-pv-row"><span class="demo-pv-bullet">•</span><span>Design social graphics</span></div>
+              <div class="demo-pv-h1 demo-slide-1">Marketing</div>
+              <div class="demo-pv-row demo-slide-1"><span class="demo-pv-bullet">•</span><span>Write &amp; review landing page copy with marketing</span></div>
+              <div class="demo-pv-row demo-slide-1"><span class="demo-pv-bullet">•</span><span>Design social graphics</span></div>
+              <div class="demo-pv-note-card demo-slide-1">
+                <div class="demo-pv-note-head"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Note</div>
+                Need 3 variants — square, story, banner
+              </div>
+              <div class="demo-pv-row demo-slide-1"><span class="demo-pv-bullet">•</span><span>Schedule press embargo</span></div>
               <div class="demo-pv-h1 demo-slide-2">Engineering</div>
+              <div class="demo-pv-row demo-slide-2"><span class="demo-pv-bullet">•</span><span>Finish payment integration</span></div>
               <div class="demo-pv-dlog demo-slide-2">
                 <div><span class="demo-pv-dlog-label">Decision:</span> Use Stripe over Braintree — lower fees, better docs</div>
                 <div class="demo-pv-dlog-meta">— Maya</div>
               </div>
               <div class="demo-pv-row demo-slide-2"><span class="demo-pv-bullet">•</span><span>QA regression pass</span></div>
+              <div class="demo-pv-row demo-slide-2"><span class="demo-pv-bullet">•</span><span>Deploy to staging</span></div>
+              <div class="demo-pv-h1 demo-slide-3">Legal</div>
+              <div class="demo-pv-row demo-slide-3"><span class="demo-pv-bullet">•</span><span>Review terms of service updates</span></div>
+              <div class="demo-pv-row demo-slide-3"><span class="demo-pv-bullet">•</span><span>Confirm data processing agreement</span></div>
             </div>
             <!-- Presenter mode overlay — shown by toggling .demo-presenting on demo-preview-panel;
-                 reuses the same static preview content behind it (fullscreen slide-by-slide is
-                 the same document, just one section at a time with the chrome hidden). -->
+                 reuses the same content behind it, stepping through it one top-level section
+                 (one .demo-slide-N group) at a time via demoGotoSlide(). -->
             <div id="demo-presenter-bar">
-              <span id="demo-presenter-label">Engineering</span>
-              <span id="demo-presenter-counter">3 / 3</span>
+              <span id="demo-presenter-label">Marketing</span>
+              <span id="demo-presenter-counter">1 / 3</span>
             </div>
             <div id="demo-laser-dot"></div>
           </div>
@@ -5980,8 +6002,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div id="demo-features-grid">
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Meeting Notes</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></div>
-                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Private Notes</span></div>
-                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Q&amp;A</span></div>
+                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.3" y2="15.3"/></svg><span>Search everything</span></div>
+                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.5 2A4 4 0 0 0 6.5 19z"/><polyline points="9.5 14.5 12 12 14.5 14.5"/><line x1="12" y1="12" x2="12" y2="19.5"/></svg><span>Cloud Backup</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span>Templates</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export to Word, PDF, Markdown</span></div>
               </div>
@@ -25251,6 +25273,9 @@ function demoMakeNodeRow(){
   const dot=document.createElement('span'); dot.className='demo-note-dot';
   dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
   row.appendChild(dot);
+  const ddot=document.createElement('span'); ddot.className='demo-decision-dot';
+  ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+  row.appendChild(ddot);
   return row;
 }
 // Dynalist/Workflowy-style plain indentation (see Settings -> Layout -> "Hide tree lines") —
@@ -25324,6 +25349,20 @@ function demoShowPreviewPanel(){ el('demo-preview-panel')?.classList.add('demo-s
 function demoHidePreviewPanel(){ el('demo-preview-panel')?.classList.remove('demo-shown'); el('demo-preview-panel')?.classList.remove('demo-presenting'); }
 function demoEnterPresenter(){ el('demo-preview-panel')?.classList.add('demo-presenting'); }
 function demoExitPresenter(){ el('demo-preview-panel')?.classList.remove('demo-presenting'); demoHideLaser(); }
+const DEMO_SLIDE_LABELS=['Marketing','Engineering','Legal'];
+function demoGotoSlide(n){
+  const body=el('demo-preview-body'); if(body)body.dataset.slide=String(n);
+  const label=el('demo-presenter-label'); if(label)label.textContent=DEMO_SLIDE_LABELS[n-1]||'';
+  const counter=el('demo-presenter-counter'); if(counter)counter.textContent=n+' / '+DEMO_SLIDE_LABELS.length;
+}
+async function demoPadShowDecision(){
+  const pad=el('demo-pad'); if(!pad)return;
+  pad.classList.add('demo-pad-decision-mode');
+  const label=el('demo-pad-label'); if(label)label.textContent='Decision Log';
+}
+function demoPadHideDecision(){
+  el('demo-pad')?.classList.remove('demo-pad-decision-mode');
+}
 function demoShowMindMap(){ el('demo-mindmap-panel')?.classList.add('demo-shown'); }
 function demoHideMindMap(){ el('demo-mindmap-panel')?.classList.remove('demo-shown'); }
 async function demoMmPop(id){ el(id)?.classList.add('demo-mm-visible'); await demoSleep(220); }
@@ -25405,6 +25444,11 @@ function demoResetStage(){
   demoNodeList=[]; demoNodeRows=[];
   el('demo-pad-ai-btn').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
   const _padLabel=el('demo-pad-label'); if(_padLabel)_padLabel.textContent='Notepad';
+  demoPadHideDecision();
+  const _dstatus=el('demo-pad-decision-status'); if(_dstatus)_dstatus.textContent='Proposed';
+  el('demo-pad-decision')?.classList.remove('demo-decision-approved');
+  ['demo-decision-context','demo-decision-decision','demo-decision-rationale'].forEach(id=>{ const f=el(id); if(f)f.textContent=''; });
+  demoGotoSlide(1);
   demoSetPadOpen(false); demoSetZen(false); demoHidePopover('demo-note-popover'); demoHidePopover('demo-export-menu');
   const _splash=el('demo-splash'); if(_splash){_splash.classList.remove('demo-shown','demo-visible');}
   const _closing=el('demo-closing'); if(_closing){_closing.classList.remove('demo-shown','demo-visible');}
@@ -25433,7 +25477,7 @@ async function runDemoScript(){
   await demoSleep(200); if(!live())return;
 
   /* 1 — New document. Maya opens a fresh page for Thursday's launch. */
-  demoCaption("Maya opens a fresh page for Thursday's launch…"); demoSetProgress(1/8);
+  demoCaption("Maya opens a fresh page for Thursday's launch…"); demoSetProgress(1/9);
   demoAddSidebarDoc('Q3 roadmap',false);
   await demoSleep(200); if(!live())return;
   demoAddSidebarDoc('Product launch plan',true);
@@ -25441,7 +25485,7 @@ async function runDemoScript(){
   if(!live())return; await demoSleep(550); if(!live())return;
 
   /* 2 — Mind Map first: get every idea out before organizing anything. */
-  demoCaption('First, she gets every idea out — no structure yet, just capture…'); demoSetProgress(2/8);
+  demoCaption('First, she gets every idea out — no structure yet, just capture…'); demoSetProgress(2/9);
   demoShowMindMap();
   await demoSleep(350); if(!live())return;
   await demoMmPop('demo-mm-root');
@@ -25454,26 +25498,36 @@ async function runDemoScript(){
   demoHideMindMap();
   if(!live())return; await demoSleep(350); if(!live())return;
 
-  /* 3 — Build outline: the good ideas become a real, structured plan. */
-  demoCaption('Then she shapes the good ideas into a real plan…'); demoSetProgress(3/8);
+  /* 3 — Build outline: the good ideas become a real, structured plan across three branches. */
+  demoCaption('Then she shapes the good ideas into a real plan…'); demoSetProgress(3/9);
   const tree=el('demo-tree');
   const root=await demoAddNode(tree,0,'Launch checklist'); demoSelectNode(root,tree);
-  await demoSleep(240); if(!live())return;
+  await demoSleep(220); if(!live())return;
   const marketing=await demoAddNode(tree,0,'Marketing'); demoSelectNode(marketing,tree);
-  await demoSleep(200); if(!live())return;
+  await demoSleep(180); if(!live())return;
   const landing=await demoAddNode(tree,1,'Write landing page copy'); demoSelectNode(landing,tree);
-  await demoSleep(200); if(!live())return;
+  await demoSleep(180); if(!live())return;
   const social=await demoAddNode(tree,1,'Design social graphics'); demoSelectNode(social,tree);
-  await demoSleep(240); if(!live())return;
+  await demoSleep(180); if(!live())return;
+  await demoAddNode(tree,1,'Schedule press embargo');
+  if(!live())return; await demoSleep(220); if(!live())return;
   const eng=await demoAddNode(tree,0,'Engineering'); demoSelectNode(eng,tree);
-  await demoSleep(200); if(!live())return;
+  await demoSleep(180); if(!live())return;
   const stripe=await demoAddNode(tree,1,'Finish payment integration'); demoSelectNode(stripe,tree);
-  await demoSleep(200); if(!live())return;
+  await demoSleep(180); if(!live())return;
   await demoAddNode(tree,1,'QA regression pass');
+  if(!live())return; await demoSleep(180); if(!live())return;
+  await demoAddNode(tree,1,'Deploy to staging');
+  if(!live())return; await demoSleep(220); if(!live())return;
+  const legal=await demoAddNode(tree,0,'Legal'); demoSelectNode(legal,tree);
+  await demoSleep(180); if(!live())return;
+  await demoAddNode(tree,1,'Review terms of service updates');
+  if(!live())return; await demoSleep(180); if(!live())return;
+  await demoAddNode(tree,1,'Confirm data processing agreement');
   if(!live())return; await demoSleep(600); if(!live())return;
 
-  /* 4 — AI rewrite: a vague line becomes something the team can actually act on. */
-  demoCaption('One task reads vague — she tightens it with a click…'); demoSetProgress(4/8);
+  /* 4 — AI rewrite: a vague task line becomes something the team can actually act on. */
+  demoCaption('One task reads vague — she tightens it with a click…'); demoSetProgress(4/9);
   demoSelectNode(landing,tree); await demoSleep(150); if(!live())return;
   await demoClick(demoToolbarBtns.ai);
   const landingText=landing.querySelector('.demo-node-text');
@@ -25481,53 +25535,97 @@ async function runDemoScript(){
   await demoSleep(750); if(!live())return;
   landingText.style.opacity='1';
   await demoTypeInto(landingText,'Write & review landing page copy with marketing');
-  if(!live())return; await demoSleep(650); if(!live())return;
+  if(!live())return; await demoSleep(600); if(!live())return;
 
-  /* 5 — Decision log: a fast call gets a paper trail, right where the work lives. */
-  demoCaption('A fast decision needs a paper trail — she logs it right on the node…'); demoSetProgress(5/8);
-  demoSelectNode(stripe,tree); await demoSleep(150); if(!live())return;
-  await demoClick(demoToolbarBtns.decision);
-  demoShowPopover('demo-decision-popover',stripe);
-  await demoTypeInto(el('demo-decision-context'),'Payment integration needs a provider by end of week');
-  await demoSleep(350); if(!live())return;
-  await demoTypeInto(el('demo-decision-decision'),'Use Stripe over Braintree');
-  await demoSleep(350); if(!live())return;
-  await demoTypeInto(el('demo-decision-rationale'),'Lower fees, better docs, faster integration');
-  await demoSleep(550); if(!live())return;
-  el('demo-decision-popover')?.classList.add('demo-decision-approved');
-  const statusEl=el('demo-decision-pop-status'); if(statusEl)statusEl.textContent='Approved';
-  await demoSleep(750); if(!live())return;
-  demoHidePopover('demo-decision-popover');
-  stripe.querySelector('.demo-note-dot')?.classList.add('demo-shown');
+  /* 5 — A private note, right on the node it's about. */
+  demoCaption('A quick note stays attached to the exact task it concerns…'); demoSetProgress(5/9);
+  demoSelectNode(social,tree); await demoSleep(150); if(!live())return;
+  await demoClick(demoToolbarBtns.note);
+  demoShowPopover('demo-note-popover',social);
+  await demoTypeInto(document.querySelector('#demo-note-popover .demo-popover-body'),'Need 3 variants — square, story, banner');
+  await demoSleep(650); if(!live())return;
+  demoHidePopover('demo-note-popover');
+  social.querySelector('.demo-note-dot')?.classList.add('demo-shown');
   if(!live())return; await demoSleep(450); if(!live())return;
 
-  /* 6 — Preview & Presenter: the same document, reviewed then presented, no separate deck. */
-  demoCaption('The plan is ready — she reviews it, then presents it from the same document…'); demoSetProgress(6/8);
+  /* 6 — The Pad: Decision Log (a real linked record, not a popover pinned to the node),
+     then Notepad, Q&A, and Diagrams — the same panel holds all of it. */
+  demoCaption('A fast decision needs a paper trail — she logs it as a linked record…'); demoSetProgress(6/9);
+  demoSelectNode(stripe,tree); await demoSleep(150); if(!live())return;
+  await demoClick(demoToolbarBtns.pad); demoSetPadOpen(true);
+  await demoSleep(300); if(!live())return;
+  await demoClick(demoToolbarBtns.decision);
+  await demoPadShowDecision();
+  await demoSleep(250); if(!live())return;
+  await demoTypeInto(el('demo-decision-context'),'Payment integration needs a provider by end of week');
+  await demoSleep(300); if(!live())return;
+  await demoTypeInto(el('demo-decision-decision'),'Use Stripe over Braintree');
+  await demoSleep(300); if(!live())return;
+  await demoTypeInto(el('demo-decision-rationale'),'Lower fees, better docs, faster integration');
+  await demoSleep(500); if(!live())return;
+  el('demo-pad-decision')?.classList.add('demo-decision-approved');
+  const statusEl=el('demo-pad-decision-status'); if(statusEl)statusEl.textContent='Approved';
+  await demoSleep(650); if(!live())return;
+  stripe.querySelector('.demo-decision-dot')?.classList.add('demo-shown');
+  await demoSleep(500); if(!live())return;
+  demoCaption('The same panel holds Notepad, Q&A, and Diagrams too…');
+  demoPadHideDecision();
+  const padLabel=el('demo-pad-label'), padBody=el('demo-pad-body');
+  await demoSleep(250); if(!live())return;
+  await demoTypeInto(padBody,"Don't forget: send the launch invite list to PR by Friday.");
+  await demoSleep(650); if(!live())return;
+  if(padLabel)padLabel.textContent='Q&A';
+  padBody.style.transition='opacity .18s'; padBody.style.opacity='0';
+  await demoSleep(180); if(!live())return;
+  padBody.innerHTML='<div class="demo-qa-row"><div class="demo-qa-q">Do we need legal sign-off before the invite list goes out?</div><div class="demo-qa-a"></div></div>';
+  padBody.style.opacity='1';
+  await demoSleep(300); if(!live())return;
+  await demoTypeInto(padBody.querySelector('.demo-qa-a'),'Yes — Priya reviewing by Wednesday.');
+  await demoSleep(650); if(!live())return;
+  if(padLabel)padLabel.textContent='Diagrams';
+  padBody.style.opacity='0';
+  await demoSleep(180); if(!live())return;
+  padBody.innerHTML='<div class="demo-diagram-card"><div class="demo-diagram-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg></div><div class="demo-diagram-title">Launch timeline.drawio</div></div><div class="demo-diagram-card"><div class="demo-diagram-thumb demo-diagram-whiteboard"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></div><div class="demo-diagram-title">Whiteboard</div></div>';
+  padBody.style.opacity='1';
+  await demoSleep(800); if(!live())return;
+  if(padLabel)padLabel.textContent='Notepad';
+  demoSetPadOpen(false);
+  if(!live())return; await demoSleep(400); if(!live())return;
+
+  /* 7 — Preview & Presenter: the same document, reviewed then presented, one section at a time. */
+  demoCaption('The plan is ready — she reviews it, then presents it section by section…'); demoSetProgress(7/9);
   await demoClick(demoToolbarBtns.preview);
   demoShowPreviewPanel();
   await demoSleep(500); if(!live())return;
   const pvBody=el('demo-preview-body');
-  if(pvBody){ pvBody.style.transition='scroll-behavior auto'; pvBody.scrollTop=60; }
-  await demoSleep(950); if(!live())return;
+  if(pvBody){ pvBody.style.transition='scroll-behavior auto'; pvBody.scrollTop=0; }
+  await demoSleep(700); if(!live())return;
   demoEnterPresenter();
+  demoGotoSlide(1);
   await demoSleep(550); if(!live())return;
-  demoMoveLaser(46,58);
+  demoMoveLaser(30,52);
   await demoSleep(750); if(!live())return;
-  demoMoveLaser(58,68);
-  await demoSleep(950); if(!live())return;
+  demoGotoSlide(2);
+  demoMoveLaser(50,50);
+  await demoSleep(850); if(!live())return;
+  demoMoveLaser(38,64);
+  await demoSleep(750); if(!live())return;
+  demoGotoSlide(3);
+  demoMoveLaser(50,50);
+  await demoSleep(850); if(!live())return;
   demoExitPresenter();
   await demoSleep(350); if(!live())return;
   demoHidePreviewPanel();
   if(!live())return; await demoSleep(400); if(!live())return;
 
-  /* 7 — "More inside Sakura": a quiet feature slide, not a live tour of every panel. */
-  demoCaption(''); demoSetProgress(7/8);
+  /* 8 — "More inside Sakura": a quiet feature slide for what wasn't shown live. */
+  demoCaption(''); demoSetProgress(8/9);
   await demoShowFeatures(); if(!live())return;
   await demoSleep(2800); if(!live())return;
   await demoHideFeatures(); if(!live())return;
   await demoSleep(250); if(!live())return;
 
-  /* 8 — Closing philosophy slide */
+  /* 9 — Closing philosophy slide */
   demoCaption(''); demoSetProgress(1);
   await demoShowClosing(); if(!live())return;
   await demoSleep(3200); if(!live())return;
@@ -25545,13 +25643,14 @@ function setDemoPauseBtnState(){
 function toggleDemoPause(){ demoPaused=!demoPaused; setDemoPauseBtnState(); }
 const DEMO_CHAPTERS=[
   {frac:0,label:'Intro'},
-  {frac:1/8,label:'New document'},
-  {frac:2/8,label:'Mind Map — brainstorm'},
-  {frac:3/8,label:'Build the outline'},
-  {frac:4/8,label:'AI rewrite'},
-  {frac:5/8,label:'Log a decision'},
-  {frac:6/8,label:'Preview & Presenter mode'},
-  {frac:7/8,label:'More inside Sakura'},
+  {frac:1/9,label:'New document'},
+  {frac:2/9,label:'Mind Map — brainstorm'},
+  {frac:3/9,label:'Build the outline'},
+  {frac:4/9,label:'AI rewrite'},
+  {frac:5/9,label:'Add a note'},
+  {frac:6/9,label:'Pad — Decision Log, Q&A & Diagrams'},
+  {frac:7/9,label:'Preview & Presenter mode'},
+  {frac:8/9,label:'More inside Sakura'},
   {frac:1,label:'Closing'}
 ];
 const DEMO_FRACS=DEMO_CHAPTERS.map(c=>c.frac);
