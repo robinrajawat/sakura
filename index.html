@@ -14186,9 +14186,22 @@ async function generateDiagramFromAi(foldOverride){
   const originalLabel=btn?btn.textContent:'';
   if(btn){ btn.disabled=true; btn.textContent='Generating…'; }
   try{
-    const reply=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,AI_DIAGRAM_SYSTEM_PROMPT,prompt,8192,provider.id);
-    const result=extractDrawioXml(reply);
-    if(!result.ok){ showAiErrorModal(provider.label||'AI', new Error(result.error)); return; }
+    let reply=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,AI_DIAGRAM_SYSTEM_PROMPT,prompt,8192,provider.id);
+    let result=extractDrawioXml(reply);
+    // One automatic self-correction pass. Smaller/free-tier models don't reliably get strict XML
+    // escaping right on the first try, especially the HTML-inside-an-XML-attribute label format
+    // this prompt asks for — a real capability gap versus whatever frontier model this same
+    // prompt usually gets pasted into by hand. Feeding the exact parser error back and asking for
+    // a corrected full rewrite fixes most of these without a manual retry.
+    if(!result.ok){
+      if(btn)btn.textContent='Fixing invalid XML…';
+      const repairPrompt=`The draw.io XML you returned is not well-formed: ${result.error}\n\nHere is what you returned:\n${reply}\n\nReturn a corrected, complete, valid version of the SAME diagram — same content, same styling — fixing only the XML error. Return only the raw corrected XML, nothing else.`;
+      try{
+        reply=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,AI_DIAGRAM_SYSTEM_PROMPT,repairPrompt,8192,provider.id);
+        result=extractDrawioXml(reply);
+      }catch(e){}
+    }
+    if(!result.ok){ showAiErrorModal(provider.label||'AI', new Error(result.error+' Retried once automatically and it still failed — more likely with smaller/free models on larger diagrams. Trying a different provider/model in Settings → AI Rewrite, or \u201cCopy the same prompt instead\u201d below with a stronger assistant, tends to help.')); return; }
     el('sakura-modal-overlay')?.classList.remove('open');
     addDiagramFromXml(result.xml);
   }catch(e){
@@ -14238,6 +14251,13 @@ function showDiagramPromptModal(promptText){
 // broken one. This is deliberately a paste-box rather than a clipboard-read:
 // pasting into a textarea always works without a permissions prompt, whereas
 // navigator.clipboard.read() can be blocked depending on context.
+function tryParseXml(text){
+  let doc;
+  try{ doc=new DOMParser().parseFromString(text,'application/xml'); }
+  catch(e){ return null; }
+  if(!doc||doc.querySelector('parsererror'))return null;
+  return doc;
+}
 function extractDrawioXml(raw){
   let text=String(raw||'').replace(/^\uFEFF/,'').trim();
   if(!text)return {ok:false,error:'Paste the AI\u2019s response first.'};
@@ -14262,10 +14282,16 @@ function extractDrawioXml(raw){
   }
   text=text.trim();
   if(!text.startsWith('<'))return {ok:false,error:'That doesn\u2019t look like XML \u2014 make sure you copied the AI\u2019s full reply, not just a description of it.'};
-  let xmlDoc;
-  try{ xmlDoc=new DOMParser().parseFromString(text,'application/xml'); }
-  catch(e){ return {ok:false,error:'Could not parse as XML: '+e.message}; }
-  if(!xmlDoc||xmlDoc.querySelector('parsererror')){
+  let xmlDoc=tryParseXml(text);
+  if(!xmlDoc){
+    // The single most common way a model breaks otherwise-valid XML: typing "Config & Setup"
+    // instead of "Config &amp; Setup". Only reached when the raw text failed to parse, so this
+    // can't accidentally double-escape an already-correct &amp;.
+    const repaired=text.replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g,'&amp;');
+    if(repaired!==text)xmlDoc=tryParseXml(repaired);
+    if(xmlDoc)text=repaired;
+  }
+  if(!xmlDoc){
     return {ok:false,error:'The XML is malformed \u2014 check nothing got cut off when copying, and that there\u2019s no leftover text before or after it.'};
   }
   const rootElTag=xmlDoc.documentElement&&xmlDoc.documentElement.tagName;
