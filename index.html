@@ -35131,10 +35131,17 @@ function mmCloseContextMenu(){
   el('mindmap-ctx-menu')?.classList.remove('open');
   mmCtxMenuNodeId=null; mmCtxMenuPoint=null; mmCtxMenuBulk=false; mmCtxMenuLinkId=null; mmCtxMenuPos=null;
 }
+// Measures the menu's real rendered box rather than estimating height from item count — the
+// estimate used to only count .mm-ctx-item rows, which drifted further off with every
+// non-.mm-ctx-item addition (the color row, marker row, extra dividers) until the menu could
+// render taller than the estimate accounted for and run off the bottom of the screen. Hidden
+// off-screen first so the (correctly-positioned) menu is what actually becomes visible, rather
+// than a visible flash at the wrong spot followed by a jump.
 function mmPositionContextMenu(menu,clientX,clientY){
   mmCtxMenuPos={x:clientX,y:clientY};
+  menu.style.left='-9999px'; menu.style.top='-9999px';
   menu.classList.add('open');
-  const mw=190, mh=menu.querySelectorAll('.mm-ctx-item').length*30+16;
+  const mw=menu.offsetWidth||190, mh=menu.offsetHeight||120;
   let x=clientX, y=clientY;
   if(x+mw>window.innerWidth)x=window.innerWidth-mw-8;
   if(y+mh>window.innerHeight)y=window.innerHeight-mh-8;
