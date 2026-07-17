@@ -2153,6 +2153,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-node .mm-edit{width:100%;min-width:60px;background:transparent;border:none;outline:none;color:inherit;font:inherit;font-weight:inherit;text-align:center;resize:none;overflow:hidden}
 .mm-add-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .mm-node:hover .mm-add-btn,.mm-node.mm-selected .mm-add-btn{display:flex}
+.mm-fold-btn{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--tb-bg);border:1.5px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font:600 9.5px 'Inter',sans-serif;line-height:1;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.mm-fold-btn:hover{border-color:var(--accent);color:var(--accent)}
 #mindmap-empty-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:11.5px;color:var(--muted);background:var(--tb-bg);border:1px solid var(--border);border-radius:999px;padding:4px 12px;pointer-events:none}
 #mindmap-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:170px}
 #mindmap-ctx-menu.open{display:block}
@@ -2161,6 +2163,14 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-ctx-item.mm-ctx-danger{color:var(--fc-red)}
 .mm-ctx-item.mm-ctx-danger:hover{background:color-mix(in srgb, var(--fc-red) 15%, transparent)}
 .mm-ctx-divider{height:1px;background:var(--border);margin:4px 2px}
+.mm-ctx-color-row{display:flex;align-items:center;gap:7px;padding:6px 9px 5px}
+.mm-ctx-color-dot{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-sizing:content-box}
+.mm-ctx-color-dot:hover{border-color:var(--fg)}
+#mindmap-load-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:220px;max-width:300px;max-height:340px;overflow-y:auto}
+#mindmap-load-menu.open{display:block}
+.mm-load-item{padding:7px 9px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-load-item:hover{background:var(--hover)}
+.mm-load-empty{padding:12px 10px;font:400 12px 'Inter',sans-serif;color:var(--muted);text-align:center}
 #preview-head{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--border);flex:0 0 auto}
 #preview-head-title{font:700 14px 'Inter',sans-serif;color:var(--fg)}
 #preview-head-actions{display:flex;align-items:center;gap:8px}
@@ -5825,8 +5835,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <span id="mindmap-zoom-label">100%</span>
         <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+        <button type="button" id="mindmap-tidy-btn" data-tip="Tidy up — auto-arrange all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><circle cx="19" cy="6" r="1.8"/><circle cx="19" cy="18" r="1.8"/><circle cx="5" cy="6" r="1.8"/><circle cx="5" cy="18" r="1.8"/><path d="M14 12h3M7 12h3M12 10V8M12 16v-2"/></svg></button>
       </div>
       <span id="mindmap-head-divider"></span>
+      <button type="button" id="mindmap-load-btn" data-tip="Load from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
       <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
       <button type="button" id="mindmap-generate-btn" data-tip="Create a new outline document from this mind map">Generate Outline</button>
       <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -5837,6 +5849,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
     </div>
+    <div id="mindmap-load-menu"></div>
     <div id="mindmap-ctx-menu"></div>
   </div>
   <div id="toast"></div>
@@ -34583,7 +34596,7 @@ function loadMindMap(){
     const parsed=JSON.parse(raw);
     if(parsed&&Array.isArray(parsed.nodes)&&parsed.nodes.length){
       mindMap={centralId:Number.isFinite(parsed.centralId)?parsed.centralId:parsed.nodes[0].id, nextId:Number.isFinite(parsed.nextId)?parsed.nextId:(Math.max(...parsed.nodes.map(n=>n.id))+1),
-        nodes:parsed.nodes.filter(n=>n&&Number.isFinite(n.id)).map(n=>({id:n.id,x:Number.isFinite(n.x)?n.x:0,y:Number.isFinite(n.y)?n.y:0,text:typeof n.text==='string'?n.text:'',parentId:(n.parentId===null||n.parentId===undefined)?null:n.parentId,color:typeof n.color==='string'?n.color:null}))};
+        nodes:parsed.nodes.filter(n=>n&&Number.isFinite(n.id)).map(n=>({id:n.id,x:Number.isFinite(n.x)?n.x:0,y:Number.isFinite(n.y)?n.y:0,text:typeof n.text==='string'?n.text:'',parentId:(n.parentId===null||n.parentId===undefined)?null:n.parentId,color:typeof n.color==='string'?n.color:null,collapsed:!!n.collapsed}))};
     }
   }catch(e){ mindMap=null; }
 }
@@ -34758,10 +34771,15 @@ function mmOpenNodeContextMenu(e,id){
   e.preventDefault(); e.stopPropagation();
   mmSelect(id);
   const menu=el('mindmap-ctx-menu'); if(!menu)return;
+  const node=findMindNode(id);
   const isCentral=mindMap&&id===mindMap.centralId;
+  const hasKids=mindMapChildren(id).length>0;
+  const colorRow=isCentral?'':`<div class="mm-ctx-color-row">${MM_BRANCH_COLORS.map(c=>`<span class="mm-ctx-color-dot" data-color="${c}" style="background:var(--fc-${c})"></span>`).join('')}</div>`;
   menu.innerHTML=`<div class="mm-ctx-item" data-act="child">Add branch</div>`+
     (isCentral?'':'<div class="mm-ctx-item" data-act="sibling">Add sibling</div>')+
+    (hasKids?`<div class="mm-ctx-item" data-act="toggle-fold">${node&&node.collapsed?'Expand branch':'Collapse branch'}</div>`:'')+
     `<div class="mm-ctx-item" data-act="edit">Rename</div>`+
+    (colorRow?`<div class="mm-ctx-divider"></div>${colorRow}`:'')+
     `<div class="mm-ctx-divider"></div>`+
     `<div class="mm-ctx-item mm-ctx-danger" data-act="delete"${isCentral?' style="opacity:.4;pointer-events:none"':''}>Delete${isCentral?' (central idea)':''}</div>`;
   mmCtxMenuNodeId=id; mmCtxMenuPoint=null;
@@ -34779,12 +34797,20 @@ function mmOpenCanvasContextMenu(e){
   mmPositionContextMenu(menu,e.clientX,e.clientY);
 }
 function mmHandleContextMenuClick(e){
+  const colorDot=e.target.closest('.mm-ctx-color-dot');
+  if(colorDot){
+    const nodeId=mmCtxMenuNodeId;
+    mmCloseContextMenu();
+    if(nodeId!=null)mmSetNodeColor(nodeId,colorDot.dataset.color);
+    return;
+  }
   const item=e.target.closest('.mm-ctx-item'); if(!item)return;
   const act=item.dataset.act;
   const nodeId=mmCtxMenuNodeId, point=mmCtxMenuPoint;
   mmCloseContextMenu();
   if(act==='child'&&nodeId!=null) mmAddChild(nodeId);
   else if(act==='sibling'&&nodeId!=null) mmAddSibling(nodeId);
+  else if(act==='toggle-fold'&&nodeId!=null) mmToggleCollapse(nodeId);
   else if(act==='edit'&&nodeId!=null) mmStartEdit(nodeId);
   else if(act==='delete'&&nodeId!=null){ mindMapSelectedId=nodeId; mmDeleteSelected(); }
   else if(act==='add-here'&&point){
@@ -34916,6 +34942,142 @@ async function mmClearCanvas(){
   mmResetView();
   saveMindMap();
 }
+function mmIsHidden(id){
+  const n=findMindNode(id);
+  if(!n||n.parentId==null)return false;
+  let p=findMindNode(n.parentId);
+  while(p){
+    if(p.collapsed)return true;
+    p=p.parentId!=null?findMindNode(p.parentId):null;
+  }
+  return false;
+}
+function mmToggleCollapse(id){
+  const node=findMindNode(id); if(!node)return;
+  node.collapsed=!node.collapsed;
+  if(node.collapsed&&mindMapSelectedId!=null&&mmIsHidden(mindMapSelectedId))mindMapSelectedId=id;
+  renderMindMap();
+  saveMindMap();
+}
+function mmSetNodeColor(nodeId,color){
+  const node=findMindNode(nodeId); if(!node||node.id===mindMap.centralId)return;
+  const pre=mmSnapshot();
+  mmSubtreeIds(nodeId).forEach(id=>{ const n=findMindNode(id); if(n)n.color=color; });
+  mmPushUndo(pre);
+  renderMindMap();
+  saveMindMap();
+}
+// Recomputes every node's position via a radial layout, keyed off the actual parent/child
+// structure — pure function, no snapshot/save/render side effects (mmTidyUp and
+// mmLoadFromDocument each wrap it with their own undo/save so a load doesn't push two
+// separate undo steps).
+function mmComputeTidyLayout(){
+  if(!mindMap||!mindMap.nodes.length)return;
+  const RADIUS_STEP=190;
+  const layoutBranch=(nodeId,angle,arc,depth,ox,oy)=>{
+    const node=findMindNode(nodeId); if(!node)return;
+    const r=RADIUS_STEP*depth;
+    node.x=ox+Math.cos(angle)*r; node.y=oy+Math.sin(angle)*r;
+    const kids=mindMapChildren(nodeId).map(k=>k.id);
+    if(!kids.length)return;
+    const span=Math.min(arc,2*Math.PI);
+    const start=angle-span/2;
+    kids.forEach((kid,i)=>{
+      const a=kids.length===1?angle:start+span*(i+0.5)/kids.length;
+      layoutBranch(kid,a,Math.max(span/kids.length*1.6,Math.PI/8),depth+1,ox,oy);
+    });
+  };
+  const central=findMindNode(mindMap.centralId);
+  if(central){ central.x=0; central.y=0; }
+  const topKids=central?mindMapChildren(central.id).map(k=>k.id):[];
+  topKids.forEach((kid,i)=>{
+    const a=(i/Math.max(topKids.length,1))*2*Math.PI;
+    layoutBranch(kid,a,(2*Math.PI)/Math.max(topKids.length,1),1,0,0);
+  });
+  const floaters=mindMap.nodes.filter(n=>n.parentId==null&&(!central||n.id!==central.id)).sort((a,b)=>a.id-b.id);
+  floaters.forEach((f,i)=>{
+    const fx=(i-(floaters.length-1)/2)*220;
+    const fy=RADIUS_STEP*(topKids.length?2.6:0);
+    f.x=fx; f.y=fy;
+    const kids=mindMapChildren(f.id).map(k=>k.id);
+    kids.forEach((kid,j)=>{
+      const a=-Math.PI/2+(kids.length<=1?0:(j/(kids.length-1)-0.5)*1.4);
+      layoutBranch(kid,a,0.9,1,fx,fy);
+    });
+  });
+}
+function mmTidyUp(){
+  if(!mindMap||!mindMap.nodes.length)return;
+  const pre=mmSnapshot();
+  mmComputeTidyLayout();
+  mmPushUndo(pre);
+  mmResetView();
+  saveMindMap();
+}
+// Converts an outline document's flat {id,text,depth,parentId} node array into a mind-map
+// tree. A single depth-0 node becomes the central idea directly; multiple depth-0 sections
+// (or none) get a synthesized central idea from the document title, with each section as
+// its own branch. Positions are left at the origin — the caller runs mmComputeTidyLayout()
+// to lay the result out, so a fresh id space (starting at 1) is all this needs to build.
+function mmConvertOutlineToMap(outlineNodes,docTitle){
+  const depthZero=outlineNodes.filter(n=>(n.depth||0)===0);
+  let nextId=1;
+  const newNodes=[];
+  const centralId=nextId++;
+  let centralOutlineId=null, centralText=(docTitle||'Untitled').trim()||'Untitled';
+  if(depthZero.length===1){
+    centralOutlineId=depthZero[0].id;
+    centralText=(depthZero[0].text||'').trim()||centralText;
+  }
+  newNodes.push({id:centralId,x:0,y:0,text:centralText,parentId:null,color:null,collapsed:false});
+  const topLevelSource=depthZero.length===1?outlineNodes.filter(n=>n.parentId===centralOutlineId):depthZero;
+  const palette=['blue','green','orange','purple','red','gray'];
+  const walk=(outlineNode,mindParentId,color)=>{
+    const mid=nextId++;
+    newNodes.push({id:mid,x:0,y:0,text:(outlineNode.text||'').trim(),parentId:mindParentId,color,collapsed:false});
+    outlineNodes.filter(n=>n.parentId===outlineNode.id).forEach(k=>walk(k,mid,color));
+  };
+  topLevelSource.forEach((n,i)=>walk(n,centralId,palette[i%palette.length]));
+  return {centralId,nextId,nodes:newNodes};
+}
+function mmCloseLoadMenu(){ el('mindmap-load-menu')?.classList.remove('open'); }
+function mmOpenLoadMenu(){
+  if(mindMapEditingId!=null)mmCommitEdit();
+  mmCloseContextMenu();
+  const menu=el('mindmap-load-menu'); if(!menu)return;
+  const list=loadDocsIndex().slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  menu.innerHTML=list.length?list.map(d=>`<div class="mm-load-item" data-doc-id="${esc(d.id)}">${esc(d.title||'Untitled')}</div>`).join(''):'<div class="mm-load-empty">No documents yet</div>';
+  menu.classList.add('open');
+  const btn=el('mindmap-load-btn');
+  if(btn){
+    const rect=btn.getBoundingClientRect();
+    menu.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-300))+'px';
+    menu.style.top=(rect.bottom+6)+'px';
+  }
+}
+function mmToggleLoadMenu(){
+  if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; }
+  mmOpenLoadMenu();
+}
+async function mmLoadFromDocument(docId){
+  mmCloseLoadMenu();
+  const tab=typeof loadTabFromStorageObj==='function'?loadTabFromStorageObj(docId):null;
+  if(!tab||!Array.isArray(tab.nodes)||!tab.nodes.length){ showToast('That document has no content to load'); return; }
+  ensureMindMap();
+  const hasContent=mindMap.nodes.length>1||(mindMap.nodes[0].text||'').trim()!=='Central Idea';
+  if(hasContent){
+    const ok=await sakuraConfirm({title:'Replace Mind Map?',body:'Loading this document replaces everything currently on the canvas. Ctrl/Cmd+Z right after undoes this.',confirmLabel:'Replace',confirmCls:'danger',cancelLabel:'Cancel'});
+    if(!ok)return;
+  }
+  const pre=mmSnapshot();
+  mindMap=mmConvertOutlineToMap(tab.nodes,tab.title||'Untitled');
+  mmComputeTidyLayout();
+  mmPushUndo(pre);
+  mindMapSelectedId=mindMap.centralId;
+  mmResetView();
+  saveMindMap();
+  showToast('Loaded into Mind Map');
+}
 function renderMindMap(){
   const canvas=el('mindmap-canvas'), svg=el('mindmap-lines'), wrap=el('mindmap-canvas-wrap');
   if(!canvas||!svg||!wrap)return;
@@ -34928,6 +35090,7 @@ function renderMindMap(){
   if(emptyHint)emptyHint.style.display='none';
   mindMap.nodes.forEach(n=>{
     if(n.parentId==null)return;
+    if(mmIsHidden(n.id))return;
     const p=findMindNode(n.parentId); if(!p)return;
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
     const dx=(n.x-p.x)*0.5;
@@ -34936,6 +35099,7 @@ function renderMindMap(){
     svg.appendChild(path);
   });
   mindMap.nodes.forEach(n=>{
+    if(mmIsHidden(n.id))return;
     const div=document.createElement('div');
     div.className='mm-node'+(n.id===mindMap.centralId?' mm-central':'')+(n.id===mindMapSelectedId?' mm-selected':'');
     if(n.color)div.dataset.branch=n.color;
@@ -34960,6 +35124,16 @@ function renderMindMap(){
         addBtn.addEventListener('pointerdown',e=>e.stopPropagation());
         addBtn.addEventListener('click',e=>{ e.stopPropagation(); mmAddChild(n.id); });
         div.appendChild(addBtn);
+      }
+      const kidCount=mindMapChildren(n.id).length;
+      if(kidCount){
+        const fold=document.createElement('span');
+        fold.className='mm-fold-btn';
+        fold.textContent=n.collapsed?String(mmSubtreeIds(n.id).length-1):'−';
+        fold.title=n.collapsed?'Expand branch':'Collapse branch';
+        fold.addEventListener('pointerdown',e=>e.stopPropagation());
+        fold.addEventListener('click',e=>{ e.stopPropagation(); mmToggleCollapse(n.id); });
+        div.appendChild(fold);
       }
       div.addEventListener('pointerdown',e=>mmNodePointerDown(e,n.id));
       div.addEventListener('dblclick',e=>{ e.stopPropagation(); mmSelect(n.id); mmStartEdit(n.id); });
@@ -34996,6 +35170,7 @@ function closeMindMapOverlay(){
   if(!mindMapOpen)return;
   if(mindMapEditingId!=null)mmCommitEdit();
   mmCloseContextMenu();
+  mmCloseLoadMenu();
   mindMapOpen=false; mindMapSelectedId=null; mindMapEditingId=null;
   el('mindmap-overlay')?.classList.remove('open');
   focusPane();
@@ -35007,6 +35182,12 @@ el('mindmap-generate-btn')?.addEventListener('click',generateOutlineFromMindMap)
 el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
+el('mindmap-tidy-btn')?.addEventListener('click',mmTidyUp);
+el('mindmap-load-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleLoadMenu(); });
+el('mindmap-load-menu')?.addEventListener('click',e=>{
+  const item=e.target.closest('.mm-load-item'); if(!item)return;
+  const docId=item.dataset.docId; if(docId)mmLoadFromDocument(docId);
+});
 el('mindmap-clear-btn')?.addEventListener('click',mmClearCanvas);
 el('mindmap-canvas-wrap')?.addEventListener('pointerdown',mmCanvasPointerDown);
 el('mindmap-canvas-wrap')?.addEventListener('dblclick',mmCanvasDblClick);
@@ -35018,12 +35199,14 @@ document.addEventListener('mousedown',e=>{
   if(!mindMapOpen)return;
   const menu=el('mindmap-ctx-menu');
   if(menu&&menu.classList.contains('open')&&!menu.contains(e.target))mmCloseContextMenu();
+  const loadMenu=el('mindmap-load-menu');
+  if(loadMenu&&loadMenu.classList.contains('open')&&!loadMenu.contains(e.target)&&!e.target.closest('#mindmap-load-btn'))mmCloseLoadMenu();
 });
 document.addEventListener('keydown',e=>{
   if(!mindMapOpen)return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
-  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } closeMindMapOverlay(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
   if(e.key==='Delete'||e.key==='Backspace'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmDeleteSelected(); } return; }
