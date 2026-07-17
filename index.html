@@ -34687,18 +34687,10 @@ function mindMapChildren(id){ return mindMap.nodes.filter(n=>n.parentId===id).so
 function mmPlaceChildPosition(parent){
   const kids=mindMapChildren(parent.id);
   const idx=kids.length;
-  if(parent.id===mindMap.centralId){
-    const total=Math.max(idx+1,6);
-    const angle=(idx/total)*2*Math.PI-Math.PI/2;
-    return {x:parent.x+Math.cos(angle)*220, y:parent.y+Math.sin(angle)*220};
-  }
-  const grand=parent.parentId!=null?findMindNode(parent.parentId):null;
-  const baseAngle=grand?Math.atan2(parent.y-grand.y,parent.x-grand.x):0;
-  const spread=Math.PI/5;
   const step=Math.ceil((idx+1)/2);
   const sign=idx%2===0?1:-1;
-  const angle=baseAngle+sign*step*spread*0.5;
-  return {x:parent.x+Math.cos(angle)*150, y:parent.y+Math.sin(angle)*150};
+  const offset=idx===0?0:sign*step*70;
+  return {x:parent.x+260, y:parent.y+offset};
 }
 function mmBranchColorFor(parent){ return parent.id===mindMap.centralId?mmNextBranchColor():(parent.color||'gray'); }
 function mmAutosizeTextarea(ta){ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
@@ -34946,15 +34938,18 @@ function mmWheel(e){
   renderMindMap();
 }
 function mmResetView(){
-  mindMapZoom=1;
   const wrap=el('mindmap-canvas-wrap');
-  if(wrap&&mindMap&&mindMap.nodes.length){
-    const rect=wrap.getBoundingClientRect();
-    const central=findMindNode(mindMap.centralId)||mindMap.nodes[0];
-    mindMapPan={x:rect.width/2-central.x,y:rect.height/2-central.y};
-  } else {
-    mindMapPan={x:0,y:0};
-  }
+  if(!wrap||!mindMap||!mindMap.nodes.length){ mindMapZoom=1; mindMapPan={x:0,y:0}; renderMindMap(); return; }
+  const rect=wrap.getBoundingClientRect();
+  const xs=mindMap.nodes.map(n=>n.x), ys=mindMap.nodes.map(n=>n.y);
+  const minX=Math.min(...xs)-140, maxX=Math.max(...xs)+140;
+  const minY=Math.min(...ys)-60, maxY=Math.max(...ys)+60;
+  const w=Math.max(1,maxX-minX), h=Math.max(1,maxY-minY);
+  const pad=40;
+  const fitZoom=Math.min((rect.width-pad*2)/w,(rect.height-pad*2)/h);
+  mindMapZoom=Math.min(2.2,Math.max(0.25,Math.min(1,fitZoom)));
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  mindMapPan={x:rect.width/2-cx*mindMapZoom,y:rect.height/2-cy*mindMapZoom};
   renderMindMap();
 }
 async function mmClearCanvas(){
@@ -35003,52 +34998,54 @@ function mmSetNodeColor(nodeId,color){
 // mmLoadFromDocument each wrap it with their own undo/save so a load doesn't push two
 // separate undo steps).
 //
-// Weighted radial tree: each node is given an angular slice of its parent's own slice,
-// sized proportionally to mmNodeArcWeight() (roughly "how much room this subtree needs" —
-// leaf count, inflated for long leaf text) rather than an equal share. Children's slices are
-// an exact partition of the parent's slice (they sum to exactly the parent's span, never
-// more), so sibling subtrees can't angularly overlap each other by construction — the only
-// remaining overlap risk is radial (a ring too close to the one inside it), which the
-// generous per-depth radius growth below is sized to avoid for normal box sizes.
-function mmNodeArcWeight(id){
+// Horizontal tree: depth maps to x (root at x=0, each generation X_STEP further right),
+// and each node is vertically centered on its own subtree's allocated vertical band. A
+// node's band height is the sum of its children's band heights (each child gets at least
+// enough room for its own box, inflated for long wrapped text) — the classic bottom-up
+// "give each subtree the vertical room it needs, then center the parent on it" tree layout.
+// Sibling subtrees can't vertically overlap by construction, since each child's band starts
+// exactly where the previous one's ends (plus a fixed gap) — no trigonometry, no angular
+// slicing, and it reads left-to-right the same way the generated outline reads top-to-bottom.
+const MM_X_STEP=260, MM_Y_GAP=18;
+function mmNodeHeightPx(id){
+  const n=findMindNode(id);
+  const text=((n&&n.text)||'').trim();
+  const charsPerLine=26;
+  const lines=Math.max(1,Math.ceil(text.length/charsPerLine));
+  return 34+lines*16;
+}
+function mmSubtreeExtent(id){
   const kids=mindMapChildren(id);
-  if(!kids.length){
-    const n=findMindNode(id);
-    const len=(n&&n.text)?n.text.trim().length:8;
-    return Math.max(1,len/22);
-  }
-  return kids.reduce((sum,k)=>sum+mmNodeArcWeight(k.id),0);
+  const own=mmNodeHeightPx(id);
+  if(!kids.length)return own;
+  const total=kids.reduce((sum,k)=>sum+mmSubtreeExtent(k.id),0)+MM_Y_GAP*(kids.length-1);
+  return Math.max(total,own);
+}
+function mmLayoutHorizontalNode(id,depth,bandTop,ox,oy){
+  const node=findMindNode(id); if(!node)return;
+  const bandHeight=mmSubtreeExtent(id);
+  node.x=ox+depth*MM_X_STEP; node.y=oy+bandTop+bandHeight/2;
+  const kids=mindMapChildren(id);
+  if(!kids.length)return;
+  const childrenTotal=kids.reduce((sum,k)=>sum+mmSubtreeExtent(k.id),0)+MM_Y_GAP*(kids.length-1);
+  let cursor=bandTop+(bandHeight-childrenTotal)/2;
+  kids.forEach(k=>{
+    mmLayoutHorizontalNode(k.id,depth+1,cursor,ox,oy);
+    cursor+=mmSubtreeExtent(k.id)+MM_Y_GAP;
+  });
 }
 function mmComputeTidyLayout(){
   if(!mindMap||!mindMap.nodes.length)return;
-  const BASE_RADIUS=260, RADIUS_GROWTH=210;
-  const radiusForDepth=(depth)=>BASE_RADIUS+(depth-1)*RADIUS_GROWTH;
-  const layoutChildren=(parentId,angleStart,angleEnd,depth,ox,oy)=>{
-    const kids=mindMapChildren(parentId);
-    if(!kids.length)return;
-    const weights=kids.map(k=>mmNodeArcWeight(k.id));
-    const totalWeight=weights.reduce((a,b)=>a+b,0)||kids.length;
-    const span=angleEnd-angleStart;
-    let cursor=angleStart;
-    kids.forEach((kid,i)=>{
-      const slice=span*(weights[i]/totalWeight);
-      const mid=cursor+slice/2;
-      const r=radiusForDepth(depth);
-      const node=findMindNode(kid.id);
-      if(node){ node.x=ox+Math.cos(mid)*r; node.y=oy+Math.sin(mid)*r; }
-      layoutChildren(kid.id,cursor,cursor+slice,depth+1,ox,oy);
-      cursor+=slice;
-    });
-  };
   const central=findMindNode(mindMap.centralId);
-  if(central){ central.x=0; central.y=0; layoutChildren(central.id,0,2*Math.PI,1,0,0); }
+  let yCursor=0;
+  if(central){
+    mmLayoutHorizontalNode(central.id,0,0,0,0);
+    yCursor=mmSubtreeExtent(central.id)+60;
+  }
   const floaters=mindMap.nodes.filter(n=>n.parentId==null&&(!central||n.id!==central.id)).sort((a,b)=>a.id-b.id);
-  const topKidCount=central?mindMapChildren(central.id).length:0;
-  floaters.forEach((f,i)=>{
-    const fx=(i-(floaters.length-1)/2)*280;
-    const fy=radiusForDepth(3)*(topKidCount?1:0);
-    f.x=fx; f.y=fy;
-    layoutChildren(f.id,-Math.PI/2-0.6,-Math.PI/2+0.6,1,fx,fy);
+  floaters.forEach(f=>{
+    mmLayoutHorizontalNode(f.id,0,yCursor,0,0);
+    yCursor+=mmSubtreeExtent(f.id)+40;
   });
 }
 function mmTidyUp(){
