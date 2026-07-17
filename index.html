@@ -4720,7 +4720,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Settings → Data → Undo last restore → appears only after you've used Restore (from a backup file, the Local safety copy, or a Backup history entry above) — a snapshot of whatever was in the app right before that restore, in case the file you picked turns out to have been the wrong one. One level deep: it holds only what was there before your most recent restore, not a full history of every restore you've ever done</li>
 <li>Settings → Data → Secure Storage → optional, encrypts AI provider keys and the GitHub Gist token at rest (AES-GCM, passphrase-derived key) instead of storing them as plain text — in this browser and in local backup files. The passphrase itself is never stored anywhere; unlocking derives the key fresh each time, and it only lives in memory for that session — reload the page and you'll need to unlock again to use AI features or Gist auto-sync. There's no recovery if you forget it. Turning it off writes everything back as plain text. Once it's set up, a status-bar chip shows the current Locked/Unlocked state and toggles it in one click — no need to open Settings each session; right-click the chip to jump to the full Secure Storage controls instead. Hide it like any other status-bar item in Settings → Statusbar items if you don't want it there. Unlocking also automatically resumes anything that was paused waiting on it — Auto-rewrite on commit and Gist auto-sync each pick back up on their own the moment you unlock, with no need to redo whatever triggered them originally</li>
 <li>Settings → Data → Cloud Backup → optional, pushes the same full backup as "Backup all data" to GitHub Gist or Google Drive instead of a local file, so you can pull it down again from a different browser or computer. GitHub Gist needs a Personal Access Token with the <span class="help-kbd">gist</span> scope, pasted into Settings — stored in this browser only, the same as an AI provider key (and covered by Secure Storage above, if that's turned on). Google Drive needs your own free OAuth Client ID from Google Cloud Console; the app only ever sees files it created itself, not the rest of your Drive, and the sign-in token lives in memory only — you reconnect each session, nothing Google-related is written to disk. Both providers find your existing backup automatically by name/description on Save and Load, so there's no ID to copy between browsers by hand. Both are manual push/pull by default — Save fully overwrites the cloud copy with what's here, Load fully overwrites what's here with the cloud copy, no merging either direction. Both also offer "Auto-sync on edit" (off by default) — pushes automatically ~1.2s after edits settle, same timing as Auto-backup to file. Gist's auto-sync persists across reloads (the token is saved) and additionally detects conflicts: if the Gist changed elsewhere since your last Save/Load here, auto-push pauses itself and shows a conflict notice rather than silently overwriting the newer version — resolve it with a manual Save or Load. Drive's auto-sync is session-only, since Drive's sign-in token isn't kept across reloads — it turns itself off with a one-time notice (not a nag) whenever the session connection is gone, and needs reconnecting and re-enabling next time; it has no conflict detection of its own, so treat it as a convenience rather than a safety net if you also edit from Drive on another device. Gist's auto-sync also pauses (with a one-time toast, not a nag on every edit) if the token itself can't be read because Secure Storage is locked — nothing is lost in the meantime since local saves and the safety copy never depend on the vault, and the paused push resumes and sends on its own the moment you unlock, no extra edit needed to retrigger it. Neither AI provider keys nor the Gist token — encrypted or not — are ever included in what gets uploaded to Gist or Drive; only your documents are</li>
-<li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting. The document icon next to it, <strong>Import from .ics file</strong>, needs none of that setup — pick any .ics file (exported or shared from Outlook, Google Calendar, Apple Calendar, or elsewhere) and it's parsed entirely in the browser, no sign-in or network call at all. Same checklist, same pre-filled fields, same already-imported dedup, matched by the file's own event UID instead of a Graph API event ID. One real gap: a recurring event (one with an RRULE) imports as just its one base occurrence, not expanded into every future instance the way the Outlook API import does — the picker flags any recurring event so that's never a silent surprise</li>
+<li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting. The document icon next to it, <strong>Import from .ics file</strong>, needs none of that setup — pick any .ics file (exported or shared from Outlook, Google Calendar, Apple Calendar, or elsewhere) and it's parsed entirely in the browser, no sign-in or network call at all. Same checklist, same pre-filled fields, same already-imported dedup, matched by the file's own event UID instead of a Graph API event ID. One real gap: an event whose recurrence is more than a simple daily or weekly pattern (monthly, yearly, or anything with a by-month-day/by-position rule) imports as just its one base occurrence, not expanded into every future instance the way the Outlook API import does — the picker flags any such event so that's never a silent surprise. Plain daily/weekly recurrences (including "every N days/weeks" and "every Mon/Wed/Fri") are expanded into their real upcoming occurrences, up to about six months out</li>
 <li>Settings → Data → Backup / Restore → still the way to move data between files, browsers, or computers, or to take a one-off manual backup; the sidebar footer has Backup/Restore shortcuts too, so you don't need to open Settings just for that. The header's Export ▾ and Import ▾ buttons are for the current document only (Markdown, Word, OPML, etc.) — Backup/Restore cover all your data</li>
 <li>Settings → Data → "Warn if this session isn't backed up" → offers Export or Connect auto-backup if you've made changes this session but neither has run yet. Three modes: <strong>Strict</strong> shows the browser's own "leave site?" prompt when you try to close the tab, then this dialog if you cancel it — a real last-chance gate, at the cost of that generic browser popup (its wording is fixed by the browser, not by Sakura). <strong>Passive</strong> skips the browser prompt entirely and shows only this dialog, the next time you switch away from or close the tab — quieter, but a direct close with no prior tab-switch gets no warning at all. <strong>Off</strong> disables both; the status-bar "⚠ Back up your data" chip (from the reminder setting above) is your only remaining signal</li>
 <li>Recommended: export before switching to a new version of this file, then import right after opening it</li>
@@ -21551,11 +21551,65 @@ function parseIcsDate(val){
   if(z)return new Date(Date.UTC(Number(y),Number(mo)-1,Number(d),Number(h),Number(mi),Number(s)));
   return new Date(Number(y),Number(mo)-1,Number(d),Number(h),Number(mi),Number(s));
 }
-// Recurring events (RRULE present) are imported as their one base occurrence, not expanded
-// into every real future instance the way Outlook's own Graph API import does — proper RRULE
-// expansion (weekly/monthly rules, exceptions, until-dates) is real complexity for a feature
-// whose whole point is avoiding heavyweight setup. Flagged in the picker list so it's not a
-// silent gap; picking one still gets you a real meeting note for that occurrence.
+function startOfIcsDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+// Only handles the everyday recurrence shapes: FREQ=DAILY or WEEKLY, optional INTERVAL,
+// optional COUNT or UNTIL, optional BYDAY (weekly only, e.g. "every Mon/Wed/Fri"). Anything
+// else — MONTHLY, YEARLY, BYMONTHDAY, BYSETPOS, BYMONTH, BYYEARDAY, BYWEEKNO — returns null so
+// the caller falls back to importing just the one base occurrence, same as before. This covers
+// the common "daily standup" / "every week on Tue" case, not the full RFC5545 recurrence grammar.
+function parseIcsRRule(v){
+  const parts={};
+  String(v||'').split(';').forEach(p=>{ const eq=p.indexOf('='); if(eq>0)parts[p.slice(0,eq).toUpperCase()]=p.slice(eq+1); });
+  const freq=parts.FREQ;
+  if(freq!=='DAILY'&&freq!=='WEEKLY')return null;
+  if(parts.BYMONTHDAY||parts.BYSETPOS||parts.BYMONTH||parts.BYYEARDAY||parts.BYWEEKNO)return null;
+  const interval=parts.INTERVAL?parseInt(parts.INTERVAL,10):1;
+  if(!Number.isFinite(interval)||interval<1)return null;
+  let count=null,until=null;
+  if(parts.COUNT){ count=parseInt(parts.COUNT,10); if(!Number.isFinite(count)||count<1)return null; }
+  if(parts.UNTIL){ until=parseIcsDate(parts.UNTIL); if(!until)return null; }
+  let byday=null;
+  if(freq==='WEEKLY'&&parts.BYDAY){
+    const map={SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+    byday=parts.BYDAY.split(',').map(d=>map[d.trim().toUpperCase()]).filter(n=>n!==undefined);
+    if(!byday.length)byday=null;
+  }
+  return {freq,interval,count,until,byday};
+}
+// Walks day-by-day from dtstart (bounded by windowEnd/until/a hard ten-year safety cap, whichever
+// comes first) collecting the dates that satisfy the rule, skipping anything in exSet (a Set of
+// 'YYYY-MM-DD' strings — EXDATEs and dates already covered by a separate exception VEVENT for the
+// same series). Simple and a little wasteful compared to jumping straight to the next matching
+// date, but this only ever runs over a few hundred days at most, and it's a lot easier to trust.
+function expandIcsRecurrence(dtstart,rule,exSet,windowStart,windowEnd,maxOccurrences){
+  const dayMs=86400000;
+  const results=[];
+  const allowedDows=(rule.freq==='WEEKLY'&&rule.byday)?new Set(rule.byday):new Set([dtstart.getDay()]);
+  const baseWeekStart=startOfIcsDay(dtstart); baseWeekStart.setDate(baseWeekStart.getDate()-baseWeekStart.getDay());
+  const hardStop=new Date(Math.min(windowEnd.getTime(),rule.until?rule.until.getTime():windowEnd.getTime()));
+  let cursor=startOfIcsDay(dtstart);
+  let occurrenceCount=0, daysWalked=0;
+  while(cursor<=hardStop&&results.length<maxOccurrences&&daysWalked<3660){
+    daysWalked++;
+    let matches=false;
+    if(rule.freq==='DAILY'){
+      const diffDays=Math.round((cursor-startOfIcsDay(dtstart))/dayMs);
+      matches=diffDays>=0&&diffDays%rule.interval===0;
+    } else if(allowedDows.has(cursor.getDay())){
+      const cursorWeekStart=new Date(cursor); cursorWeekStart.setDate(cursorWeekStart.getDate()-cursorWeekStart.getDay());
+      const weekDiff=Math.round((cursorWeekStart-baseWeekStart)/(7*dayMs));
+      matches=weekDiff>=0&&weekDiff%rule.interval===0&&cursor>=startOfIcsDay(dtstart);
+    }
+    if(matches){
+      occurrenceCount++;
+      if(rule.count!=null&&occurrenceCount>rule.count)break;
+      const occ=new Date(cursor); occ.setHours(dtstart.getHours(),dtstart.getMinutes(),dtstart.getSeconds(),0);
+      if(occ>=windowStart&&occ<=windowEnd&&!exSet.has(occ.toISOString().slice(0,10)))results.push(occ);
+    }
+    cursor=new Date(cursor.getTime()+dayMs);
+  }
+  return results;
+}
 function parseIcsFile(text){
   const lines=unfoldIcsLines(text);
   const rawEvents=[]; let cur=null;
@@ -21579,6 +21633,12 @@ function parseIcsFile(text){
       const cnMatch=left.match(/CN=([^;]+)/i);
       cur.organizer=cnMatch?unescapeIcsText(cnMatch[1]):value.replace(/^mailto:/i,'');
     }
+    else if(name==='STATUS')cur.status=value.trim().toUpperCase();
+    else if(name==='RECURRENCE-ID')cur.recurrenceId=value;
+    else if(name==='EXDATE'){
+      cur.exdates=cur.exdates||[];
+      value.split(',').forEach(v=>{ if(v.trim())cur.exdates.push(v.trim()); });
+    }
     else if(name==='ATTENDEE'){
       // Rooms and other bookable resources (projectors, equipment) show up as their own
       // ATTENDEE line with CUTYPE=RESOURCE — that's the room, not a person, so it's excluded
@@ -21590,22 +21650,57 @@ function parseIcsFile(text){
       const cnMatch=left.match(/CN=([^;]+)/i);
       cur.attendees.push(cnMatch?cnMatch[1]:value.replace(/^mailto:/i,''));
     }
-    else if(name==='RRULE')cur.recurring=true;
+    else if(name==='RRULE')cur.rrule=value;
   }
-  return rawEvents.map((e,i)=>{
+  // Drop cancelled events outright (STATUS:CANCELLED) — Outlook's own calendarview import
+  // already excludes these via isCancelled; the .ics path had no equivalent check before.
+  const liveEvents=rawEvents.filter(e=>e.status!=='CANCELLED');
+  // A UID can appear more than once: one "master" VEVENT carrying the RRULE, plus zero or more
+  // separate VEVENTs with a RECURRENCE-ID that override one specific occurrence (rescheduled,
+  // retitled, etc — exactly like the sample invite this feature was built against). Those
+  // exception dates need to come out of the master's generated series, or the same meeting would
+  // show up twice — once expanded, once as its real, already-correct standalone entry.
+  const exceptionDatesByUid={};
+  liveEvents.forEach(e=>{
+    if(e.uid&&e.recurrenceId){
+      const d=parseIcsDate(e.recurrenceId);
+      if(d){ (exceptionDatesByUid[e.uid]=exceptionDatesByUid[e.uid]||new Set()).add(d.toISOString().slice(0,10)); }
+    }
+  });
+  const windowStart=new Date(Date.now()-7*86400000);
+  const windowEnd=new Date(Date.now()+180*86400000);
+  const MAX_OCCURRENCES=30;
+  const out=[];
+  liveEvents.forEach((e,i)=>{
     const start=parseIcsDate(e.dtstart);
-    return {
-      id:e.uid||('ics-'+i+'-'+(e.dtstart||'')),
+    if(!start)return;
+    const base={
       subject:e.summary||'',
-      start:start?{dateTime:start.toISOString()}:null,
       location:e.location?{displayName:e.location}:null,
       description:e.description||'',
       descriptionHtml:e.altDescHtml||'',
       organizer:e.organizer||'',
-      attendees:(e.attendees||[]).map(name=>({emailAddress:{name}})),
-      recurring:!!e.recurring
+      attendees:(e.attendees||[]).map(name=>({emailAddress:{name}}))
     };
-  }).filter(e=>e.start);
+    if(e.rrule&&!e.recurrenceId){
+      const rule=parseIcsRRule(e.rrule);
+      if(rule){
+        const exSet=new Set(exceptionDatesByUid[e.uid]||[]);
+        (e.exdates||[]).forEach(v=>{ const d=parseIcsDate(v); if(d)exSet.add(d.toISOString().slice(0,10)); });
+        const occurrences=expandIcsRecurrence(start,rule,exSet,windowStart,windowEnd,MAX_OCCURRENCES);
+        occurrences.forEach(occ=>{
+          out.push({...base, id:(e.uid||('ics-'+i))+'@'+occ.toISOString().slice(0,10), start:{dateTime:occ.toISOString()}, recurring:false, seriesOccurrence:true});
+        });
+        return;
+      }
+      // RRULE present but not one of the simple shapes we handle — fall back to the one base
+      // occurrence, flagged in the picker so it's not a silent gap, same as before this feature.
+      out.push({...base, id:e.uid||('ics-'+i+'-'+(e.dtstart||'')), start:{dateTime:start.toISOString()}, recurring:true});
+      return;
+    }
+    out.push({...base, id:e.uid||('ics-'+i+'-'+(e.dtstart||'')), start:{dateTime:start.toISOString()}, recurring:false});
+  });
+  return out;
 }
 let icsImportEvents=[];
 const icsImportSelected=new Set();
@@ -21640,6 +21735,7 @@ function renderIcsImportList(alreadyImportedIds){
     if(e.location?.displayName)metaParts.push(e.location.displayName);
     if(Array.isArray(e.attendees)&&e.attendees.length)metaParts.push(e.attendees.length+' attendee'+(e.attendees.length===1?'':'s'));
     if(e.recurring)metaParts.push('Recurring — first occurrence only');
+    else if(e.seriesOccurrence)metaParts.push('Recurring');
     if(already)metaParts.push('Already imported');
     meta.textContent=metaParts.join(' · ');
     info.appendChild(title); info.appendChild(meta);
