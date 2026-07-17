@@ -2189,6 +2189,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-ctx-color-row{display:flex;align-items:center;gap:7px;padding:6px 9px 5px}
 .mm-ctx-color-dot{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;box-sizing:content-box}
 .mm-ctx-color-dot:hover{border-color:var(--fg)}
+.mm-ctx-marker-row{display:flex;align-items:center;gap:4px;padding:6px 9px 5px}
+.mm-ctx-marker-dot{width:22px;height:22px;border-radius:7px;cursor:pointer;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;background:var(--hover)}
+.mm-ctx-marker-dot:hover{border-color:var(--accent)}
+.mm-ctx-marker-dot.mm-marker-active{border-color:var(--fg)}
+.mm-marker-badge{position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;background:var(--tb-bg);border:1px solid var(--border)}
 .mm-load-group-label{font:600 10.5px/1.4 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:7px 9px 3px;flex-shrink:0}
 .mm-load-item{padding:8px 9px;border-radius:6px;cursor:pointer;font:400 12.5px/1.4 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
 .mm-load-item:hover{background:var(--hover)}
@@ -4826,6 +4831,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Any node with children shows a small fold badge — click it to collapse the branch (shows a hidden-idea count) or expand it again; also available as "Collapse/Expand branch" in the right-click menu. <strong>Expand all</strong> / <strong>Collapse all</strong> (next to Tidy up) do the same for the whole map in one click. This is purely a view state, like the outline's own fold: it doesn't undo, and Generate Outline still walks the full tree regardless of what's currently collapsed</li>
 <li>Double-click a connector line (or right-click it) to add a short label to it — e.g. "if approved" on the line between two ideas. Leave the text blank to remove the label again</li>
 <li>Any idea can carry a short note, separate from its own text — right-click it and choose "Add note…" (or "Edit note" if it already has one); a small note badge appears in its corner, click it to view or edit without going through the right-click menu, and "Remove note" clears it</li>
+<li>The same Confirmed / Issue / Parked / Follow-up markers the outline uses are available here too — right-click an idea for the marker row, click one to apply it (click the same one again to clear it), shown as a small glyph badge on the node. Unlike the outline, clicking a marker badge here doesn't filter the canvas — a spatial, searchable canvas doesn't need that the way a long flat list does</li>
 <li>The search icon (or <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">F</span> while a map is open) finds ideas by their text — matches are highlighted on the canvas rather than filtered into a list, since seeing a match in the context of its branch is more useful here than a flat result list would be. <span class="help-kbd">Enter</span> / <span class="help-kbd">Shift</span>+<span class="help-kbd">Enter</span> (or the arrows next to the search box) step through matches, panning and briefly flashing each one in turn</li>
 <li>Beyond the tree itself, two ideas that aren't parent/child can be cross-linked: Ctrl/Cmd+click to select exactly two nodes, then right-click either one and choose "Connect these two." The link is drawn as a dashed line (to tell it apart from the tree's branch lines) and can take its own label the same way; right-click it for "Edit label" or "Remove connection"</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> undoes the last add, delete, rename, drag, recolor, connect, link, or Tidy up; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">Z</span> (or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span>) redoes it — its own undo history, separate from the document's</li>
@@ -35152,6 +35158,7 @@ function mmOpenNodeContextMenu(e,id){
     `<div class="mm-ctx-item" data-act="note">${node&&node.note?'Edit note':'Add note…'}</div>`+
     (node&&node.note?`<div class="mm-ctx-item" data-act="remove-note">Remove note</div>`:'')+
     `<div class="mm-ctx-divider"></div>${colorRow}`+
+    `<div class="mm-ctx-marker-row">${NODE_MARKERS.map(m=>`<span class="mm-ctx-marker-dot${node&&node.marker===m?' mm-marker-active':''}" data-marker="${m}" title="${nodeMarkerLabel(m)}">${nodeMarkerGlyph(m)}</span>`).join('')}</div>`+
     `<div class="mm-ctx-divider"></div>`+
     (isLinked?`<div class="mm-ctx-item" data-act="jump-doc">Jump to document node</div><div class="mm-ctx-item" data-act="link-doc">Change document link…</div><div class="mm-ctx-item" data-act="unlink-doc">Unlink from document</div>`:`<div class="mm-ctx-item" data-act="link-doc">Link to document node…</div>`)+
     `<div class="mm-ctx-divider"></div>`+
@@ -35176,6 +35183,13 @@ function mmHandleContextMenuClick(e){
     const color=colorDot.dataset.color, bulk=mmCtxMenuBulk, nodeId=mmCtxMenuNodeId;
     mmCloseContextMenu();
     if(bulk)mmSetSelectionColor(color); else if(nodeId!=null)mmSetNodeColor(nodeId,color);
+    return;
+  }
+  const markerDot=e.target.closest('.mm-ctx-marker-dot');
+  if(markerDot){
+    const marker=markerDot.dataset.marker, nodeId=mmCtxMenuNodeId;
+    mmCloseContextMenu();
+    if(nodeId!=null)mmSetNodeMarker(nodeId,marker);
     return;
   }
   const item=e.target.closest('.mm-ctx-item'); if(!item)return;
@@ -35723,6 +35737,22 @@ function closeMindMapAnchorSuggest(){
 el('mindmap-node-anchor-search')?.addEventListener('input',e=>{ renderMindMapAnchorSuggest(e.target.value,true); });
 el('mindmap-node-anchor-search')?.addEventListener('mousedown',e=>e.stopPropagation());
 el('mindmap-node-anchor-search')?.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Escape'){ e.preventDefault(); closeMindMapAnchorSuggest(); } });
+// Same toggle-off-on-repeat-click convention as the outline's own node markers — clicking the
+// currently-active one again clears it, rather than needing a separate "clear" control. No
+// filter-by-marker on the canvas (unlike the outline's marker badges) — a spatial canvas is
+// already browsable and searchable, so a filter would add a mode to keep track of for less
+// benefit than it gives the outline's flat list.
+function mmSetNodeMarker(nodeId,marker){
+  const n=findMindNode(nodeId); if(!n)return;
+  const next=NODE_MARKERS.includes(marker)?marker:'';
+  const resolved=(n.marker===next)?'':next;
+  if(n.marker===resolved)return;
+  const pre=mmSnapshot();
+  n.marker=resolved;
+  mmPushUndo(pre);
+  renderMindMap();
+  saveMindMap();
+}
 function setMindMapNodeLink(mindNodeId,docNodeId){
   const n=findMindNode(mindNodeId); if(!n)return;
   const pre=mmSnapshot();
@@ -36081,6 +36111,14 @@ function renderMindMap(){
         noteBadge.addEventListener('pointerdown',e=>e.stopPropagation());
         noteBadge.addEventListener('click',e=>{ e.stopPropagation(); mmEditNodeNote(n.id,e.clientX,e.clientY); });
         div.appendChild(noteBadge);
+      }
+      if(n.marker){
+        const markerBadge=document.createElement('span');
+        markerBadge.className='mm-marker-badge';
+        markerBadge.style.color=`var(--fc-${nodeMarkerColor(n.marker)})`;
+        markerBadge.textContent=nodeMarkerGlyph(n.marker);
+        markerBadge.title=nodeMarkerLabel(n.marker);
+        div.appendChild(markerBadge);
       }
       if(n.id===mindMapSelectedId&&mindMapSelectedIds.size===1){
         const addBtn=document.createElement('span');
