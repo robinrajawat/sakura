@@ -15698,8 +15698,6 @@ async function buildPptxPresentation(slidesData){
     let cursorY=1.75;
     const bottomLimit=PPTX_SLIDE_H-0.4;
     const buildBulletTextRuns=(list)=>list.flatMap(b=>{
-      const indentLevel=Math.max(0,b.indent||0);
-      const pad='   '.repeat(indentLevel);
       const segments=pptxItemContentSegments(b,18);
       if(b.type==='note'){
         // Plain, timestamp-free paragraph — matches Word's own NoteBlock treatment (a "NOTE"
@@ -15710,11 +15708,19 @@ async function buildPptxPresentation(slidesData){
         // matches Presenter's own .pv-inline-label treatment — bold uppercase with a little
         // letter-spacing, not italic — since that part carries no measurement risk.
         return segments.map(seg=>seg.kind==='label'
-          ? {text:pad+seg.text, options:{color:theme.hint, breakLine:true, fontSize:seg.fontSize, bold:true, charSpacing:1}}
+          ? {text:seg.text, options:{color:theme.hint, breakLine:true, fontSize:seg.fontSize, bold:true, charSpacing:1}}
           : {text:pptxStripIllegalXmlChars(seg.text), options:{color:theme.muted, italic:true, breakLine:true}});
       }
+      const indentLevel=Math.max(0,b.indent||0);
       const bulletChar=indentLevel===0?'•':(indentLevel===1?'◦':'▪');
-      const runs=[{text:pad+bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
+      // No leading space-characters for indent here anymore — see pptxRenderBulletBlock, which
+      // now positions each item's own box at x + indentLevel*INDENT_STEP instead. Simulating
+      // indent with literal spaces measured one way (pptxItemHeight, against a narrowed width)
+      // but rendered a different way (a full-width shared box, actual on-screen indent only as
+      // wide as however 1-6 space characters happen to render in whatever font PowerPoint
+      // substitutes) was exactly the class of measurement/render mismatch that let text overlap
+      // the next item — real coordinates don't have that ambiguity.
+      const runs=[{text:bulletChar+'  ', options:{color:theme.hint, breakLine:false}}];
       // Same quote/citation convention as the editor and Preview/Presenter (see .sem-quote /
       // parseStyledText): a '>' at the very start of the text, or preceded by whitespace
       // anywhere in it, starts an attributed/quoted run that extends to the end. The quoted
@@ -15767,29 +15773,43 @@ async function buildPptxPresentation(slidesData){
       targetSlide.addText(buildBulletTextRuns([item]), {x:textX, y:y+NOTE_CARD_PAD_TOP, w:textW, h:contentH, fontFace:FONT, fontSize, valign:'top', lineSpacingMultiple});
       return totalH;
     }
+    // Every item — bullet, quote-bearing bullet, or note — gets its own box, positioned at
+    // x + indentLevel*INDENT_STEP with a width narrowed by that same offset, rather than the
+    // old approach of batching consecutive plain bullets into one shared-width textbox with
+    // indent faked via leading space characters. That batching was the actual root cause of
+    // overlap: pptxItemHeight measured each item's wrapped-line count against a width already
+    // reduced for its indent level, but the shared batch box at render time used the full,
+    // un-reduced width for every item regardless of indent — two different width assumptions
+    // for the same text. Individually positioning every item means the width passed to
+    // pptxItemHeight (for measuring) and the width of the box actually drawn are always
+    // identical, by construction, for every item — not just the quote/note cases that already
+    // worked this way. Costs a few more shapes per slide; correctness matters more here than
+    // shape count.
+    const INDENT_STEP=0.3;
     function pptxRenderBulletBlock(targetSlide,items,x,y,w,fontSize,lineSpacingMultiple){
-      let cy=y, batch=[];
-      const flushBatch=()=>{
-        if(!batch.length)return;
-        const h=batch.reduce((s,it)=>s+pptxItemHeight(it,w,fontSize,lineSpacingMultiple),0);
-        targetSlide.addText(buildBulletTextRuns(batch), {x, y:cy, w, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
-        cy+=h; batch=[];
-      };
+      let cy=y;
       items.forEach(item=>{
         if(item.type==='note'){
-          flushBatch();
           cy+=pptxRenderNoteCard(targetSlide,item,x,cy,w,fontSize,lineSpacingMultiple);
           return;
         }
+        const indentLevel=Math.max(0,item.indent||0);
+        const itemX=x+indentLevel*INDENT_STEP;
+        const itemW=Math.max(0.5, w-indentLevel*INDENT_STEP-0.4);
         const accentColor=pptxItemAccentColor(item);
-        if(!accentColor){ batch.push(item); return; }
-        flushBatch();
-        const h=pptxItemHeight(item,w,fontSize,lineSpacingMultiple);
-        targetSlide.addShape('rect', {x, y:cy+0.03, w:0.045, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
-        targetSlide.addText(buildBulletTextRuns([item]), {x:x+0.14, y:cy, w:w-0.14, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+        // Quote items lose an extra 0.14in of box width to the accent bar drawn beside them
+        // (see below) — measured here against that same narrower width, not the plain itemW,
+        // so the two can't disagree the way pptxRenderBulletBlock's old shared-batch box and
+        // its per-item height estimate used to.
+        const h=pptxItemHeight(item,accentColor?w-0.14:w,fontSize,lineSpacingMultiple);
+        if(accentColor){
+          targetSlide.addShape('rect', {x:itemX, y:cy+0.03, w:0.045, h:Math.max(0.05,h-0.08), fill:{color:accentColor}, line:{type:'none'}});
+          targetSlide.addText(buildBulletTextRuns([item]), {x:itemX+0.14, y:cy, w:Math.max(0.5,itemW-0.14), h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+        } else {
+          targetSlide.addText(buildBulletTextRuns([item]), {x:itemX, y:cy, w:itemW, h, fontFace:FONT, fontSize, valign:'top', paraSpaceAfter:10, lineSpacingMultiple});
+        }
         cy+=h;
       });
-      flushBatch();
       return cy-y;
     }
 
