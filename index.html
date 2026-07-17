@@ -10222,10 +10222,16 @@ function applyAccentCursor(){
   if(!styleEl){ styleEl=document.createElement('style'); styleEl.id='accent-cursor-style'; document.head.appendChild(styleEl); }
   if(!accentCursorEnabled){ styleEl.textContent=''; return; }
   const hex=getComputedStyle(document.body).getPropertyValue('--accent').trim()||'#c2553d';
-  // Only body's own (inherited) cursor changes — buttons/links/text fields keep their own
-  // cursor:pointer/text rules, which are more specific and still win, so this only replaces the
-  // plain default arrow rather than fighting every other cursor declaration in the app.
-  styleEl.textContent=`body{cursor:${accentCursorSvgUrl(hex)};}`;
+  const cursorValue=accentCursorSvgUrl(hex);
+  // Buttons/links/text fields keep their own cursor:pointer/text rules — those are more specific
+  // than plain body{cursor} and still win, which is exactly right (a hand/I-beam still means
+  // "clickable"/"editable"). But a handful of non-interactive containers explicitly declare
+  // cursor:default for their own reasons (mainly .node-row, hovering the outline itself) — those
+  // are class selectors, so they also beat plain body{cursor}, and the native arrow shows through
+  // right where it's most noticeable. Same intent as body's own default (a plain arrow), so they
+  // get the accent cursor too, just needs !important to actually win against them.
+  const DEFAULT_CURSOR_SELECTORS=['.node-row','.cb-progress','.bl-unresolved','.editor-img-selected','.focus-crumb-current','.node-dlog-dot','.node-slide-divider-badge','.promoted','.pv-tag-chip-static','.qa-item-disabled','#diagram-summary-chip','#meetings-panel-header','#todos-panel-header'];
+  styleEl.textContent=`body{cursor:${cursorValue};} ${DEFAULT_CURSOR_SELECTORS.join(',')}{cursor:${cursorValue} !important;}`;
 }
 function setAccentCursorEnabled(on,persist=true){
   accentCursorEnabled=!!on;
