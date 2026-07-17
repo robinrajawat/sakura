@@ -21458,10 +21458,14 @@ el('outlook-import-confirm-btn')?.addEventListener('click',()=>{
     const startIso=e.start?.dateTime||''; const dt=startIso?new Date(startIso):null;
     const date=dt?dt.toISOString().slice(0,10):'';
     const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
-    const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
+    const attendees=markOrganizerInAttendees(
+      (Array.isArray(e.attendees)?e.attendees:[]).filter(a=>a.status?.response!=='declined').map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean),
+      e.organizer?.emailAddress?.name||e.organizer?.emailAddress?.address||''
+    );
     let agenda='';
     if(e.body?.content){
-      agenda=e.body.contentType==='html'?sakuraSanitizeRichHtml(e.body.content):sakuraSanitizeRichHtml('<p>'+esc(e.body.content).replace(/\n/g,'<br>')+'</p>');
+      const raw=stripIcsMeetingBoilerplate(e.body.content);
+      agenda=e.body.contentType==='html'?htmlDescriptionToAgendaHtml(raw):sakuraSanitizeRichHtml('<p>'+esc(raw.trim()).replace(/\n/g,'<br>')+'</p>');
     }
     const m=normalizeMeetingNote({
       id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
@@ -21497,6 +21501,42 @@ function unfoldIcsLines(text){
 function unescapeIcsText(v){
   return String(v||'').replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
 }
+// Teams/Zoom/Webex-generated invites append a long visual separator (a run of underscores)
+// followed by auto-generated join info (Meeting ID, Passcode, join links) that the organizer
+// never actually typed — cut everything from the first such separator onward, in both the
+// plain-text DESCRIPTION and the HTML X-ALT-DESC, so Agenda holds only what was actually written.
+function stripIcsMeetingBoilerplate(s){
+  if(!s)return s;
+  const m=String(s).match(/_{8,}/);
+  return m?s.slice(0,m.index):s;
+}
+// Marks the organizer inline in an attendee list ("Name (organizer)") instead of leaving them
+// as an unremarkable name in the middle of the list. Most invites also list the organizer as a
+// regular ATTENDEE entry, so this updates that existing entry in place rather than adding a
+// duplicate; only appends a new entry if the organizer genuinely isn't in the attendee list.
+function markOrganizerInAttendees(names,organizer){
+  if(!organizer)return names;
+  let found=false;
+  const out=names.map(n=>{
+    if(!found&&n.trim().toLowerCase()===organizer.trim().toLowerCase()){ found=true; return n+' (organizer)'; }
+    return n;
+  });
+  if(!found)out.push(organizer+' (organizer)');
+  return out;
+}
+// Converts an .ics X-ALT-DESC (the HTML companion to DESCRIPTION) into Agenda-ready HTML:
+// trims the join-info boilerplate, then strips style/class/id/aria-hidden from every element
+// so the invite's own inline fonts/colors don't fight the app's Agenda styling and theme —
+// only the actual structure (paragraphs, bold, links) survives.
+function htmlDescriptionToAgendaHtml(html){
+  const truncated=stripIcsMeetingBoilerplate(html);
+  const container=document.createElement('div');
+  container.innerHTML=truncated;
+  container.querySelectorAll('*').forEach(el=>{
+    el.removeAttribute('style'); el.removeAttribute('class'); el.removeAttribute('id'); el.removeAttribute('aria-hidden'); el.removeAttribute('lang');
+  });
+  return sakuraSanitizeRichHtml(container.innerHTML);
+}
 function parseIcsDate(val){
   // Accepts a date-only value (all-day event, YYYYMMDD) or a date-time (YYYYMMDDTHHMMSS,
   // optionally with a trailing Z for UTC). Doesn't handle the third RFC5545 form — a TZID
@@ -21529,14 +21569,23 @@ function parseIcsFile(text){
     if(name==='UID')cur.uid=value;
     else if(name==='SUMMARY')cur.summary=unescapeIcsText(value);
     else if(name==='DESCRIPTION')cur.description=unescapeIcsText(value);
+    else if(name==='X-ALT-DESC'){
+      if(/FMTTYPE=text\/html/i.test(left))cur.altDescHtml=unescapeIcsText(value);
+    }
     else if(name==='LOCATION')cur.location=unescapeIcsText(value);
     else if(name==='DTSTART')cur.dtstart=value;
     else if(name==='DTEND')cur.dtend=value;
+    else if(name==='ORGANIZER'){
+      const cnMatch=left.match(/CN=([^;]+)/i);
+      cur.organizer=cnMatch?unescapeIcsText(cnMatch[1]):value.replace(/^mailto:/i,'');
+    }
     else if(name==='ATTENDEE'){
       // Rooms and other bookable resources (projectors, equipment) show up as their own
       // ATTENDEE line with CUTYPE=RESOURCE — that's the room, not a person, so it's excluded
       // from the attendee list rather than showing up as an extra name alongside real invitees.
+      // Same for anyone who's formally declined (PARTSTAT=DECLINED) — they're not coming.
       if(/CUTYPE=RESOURCE/i.test(left))continue;
+      if(/PARTSTAT=DECLINED/i.test(left))continue;
       cur.attendees=cur.attendees||[];
       const cnMatch=left.match(/CN=([^;]+)/i);
       cur.attendees.push(cnMatch?cnMatch[1]:value.replace(/^mailto:/i,''));
@@ -21551,6 +21600,8 @@ function parseIcsFile(text){
       start:start?{dateTime:start.toISOString()}:null,
       location:e.location?{displayName:e.location}:null,
       description:e.description||'',
+      descriptionHtml:e.altDescHtml||'',
+      organizer:e.organizer||'',
       attendees:(e.attendees||[]).map(name=>({emailAddress:{name}})),
       recurring:!!e.recurring
     };
@@ -21608,9 +21659,14 @@ el('ics-import-confirm-btn')?.addEventListener('click',()=>{
     const startIso=e.start?.dateTime||''; const dt=startIso?new Date(startIso):null;
     const date=dt?dt.toISOString().slice(0,10):'';
     const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
-    const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
+    const attendees=markOrganizerInAttendees((Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean),e.organizer);
     let agenda='';
-    if(e.description)agenda=sakuraSanitizeRichHtml('<p>'+esc(e.description).replace(/\n/g,'<br>')+'</p>');
+    if(e.descriptionHtml){
+      agenda=htmlDescriptionToAgendaHtml(e.descriptionHtml);
+    } else if(e.description){
+      const trimmed=stripIcsMeetingBoilerplate(e.description).trim();
+      if(trimmed)agenda=sakuraSanitizeRichHtml('<p>'+esc(trimmed).replace(/\n/g,'<br>')+'</p>');
+    }
     const m=normalizeMeetingNote({
       id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
       icsUid:e.id, createdAt:now, modifiedAt:now
