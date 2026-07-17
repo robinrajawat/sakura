@@ -1966,6 +1966,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-editor-row{flex:1;display:flex;min-height:0;overflow:hidden}
 #demo-editor{flex:1;min-width:0;padding:14px 20px;overflow:auto;position:relative}
 .demo-node{display:flex;align-items:center;min-height:25px;padding:2px 6px;border-radius:5px;font:400 13px 'Fira Code',Consolas,monospace;color:var(--fg);white-space:nowrap}
+.demo-row-dot{display:inline-flex;width:14px;justify-content:center;color:var(--muted);font-size:14px;user-select:none;line-height:1}
 .demo-node-text{position:relative}
 .demo-node.demo-selected{background:var(--sel)}
 .demo-node.demo-bold .demo-node-text{font-weight:700}
@@ -24525,11 +24526,18 @@ function demoMakeNodeRow(){
   row.appendChild(dot);
   return row;
 }
+// Dynalist/Workflowy-style plain indentation (see Settings -> Layout -> "Hide tree lines") —
+// padding-left per depth plus a small muted dot as a row anchor, no │├└─ connector characters.
+// The demo used to call the real buildPrefix() here to draw actual branch connectors; using
+// the app's own alternate "clean indented" mode instead is both a better first impression (most
+// people are more used to Workflowy/Dynalist/Notion's plain-indent look than ASCII tree art) and
+// one less thing for the demo to keep in sync with the real editor's connector-drawing logic.
 function demoRecomputePrefixes(){
   demoNodeRows.forEach((row,i)=>{
     const p=row.querySelector('.node-prefix'); if(!p)return;
-    const {vert,conn}=buildPrefix(i,0,demoNodeList);
-    p.innerHTML=(vert?`<span>${esc(vert)}</span>`:'')+(conn?`<span class="node-conn">${esc(conn)}</span>`:'');
+    const depth=demoNodeList[i]?.depth||0;
+    row.style.paddingLeft=(depth*18)+'px';
+    p.innerHTML='<span class="demo-row-dot">·</span>';
   });
 }
 function demoInsertRowAfter(treeEl,afterRow,depth){
