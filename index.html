@@ -2123,6 +2123,9 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #mindmap-overlay.open{display:flex}
 #mindmap-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
 #mindmap-head-title{display:inline-flex;align-items:center;gap:8px;font:700 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
+#mindmap-head-title-text{flex:0 1 260px;min-width:80px;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:700 14px 'Inter',sans-serif;letter-spacing:.1px;padding:4px 7px;margin:-4px -7px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
+#mindmap-head-title-text:hover{background:var(--hover)}
+#mindmap-head-title-text:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 #mindmap-head-title svg{color:var(--accent);flex-shrink:0}
 #mindmap-node-count{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-right:auto;white-space:nowrap}
 #mindmap-zoom-group{display:flex;align-items:center;gap:6px}
@@ -2763,7 +2766,10 @@ body.pad-mindmap-mode #mindmap-tab-body{display:flex}
 .mindmap-row:hover{background:var(--hover)}
 .mindmap-row-icon{flex-shrink:0;width:28px;height:28px;border-radius:7px;background:var(--edit-bg);display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .mindmap-row-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.mindmap-row-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mindmap-row-title-row{display:flex;align-items:center;gap:0;min-width:0}
+.mindmap-row-title-input{font:600 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;appearance:none;border:1px solid transparent;background:transparent;padding:1px 4px;margin:-1px -4px;border-radius:5px;outline:none;width:100%;min-width:0;transition:border-color .12s,background .12s}
+.mindmap-row-title-input:hover{background:var(--hover)}
+.mindmap-row-title-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 .mindmap-row-meta{font:400 11px 'Inter',sans-serif;color:var(--muted)}
 .mindmap-row-scratch-chip{display:inline-flex;align-items:center;font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:4px;padding:1px 6px;margin-left:6px}
 .mindmap-row-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .12s}
@@ -5892,7 +5898,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
   <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
     <div id="mindmap-head">
-      <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg><span id="mindmap-head-title-text">Mind Map</span></div>
+      <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg><input id="mindmap-head-title-text" type="text" placeholder="Untitled map" maxlength="200" autocomplete="off" spellcheck="false" /></div>
       <span id="mindmap-node-count"></span>
       <div id="mindmap-zoom-group">
         <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -34761,9 +34767,24 @@ function renderMindMapsList(){
     icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg>';
     row.appendChild(icon);
     const info=document.createElement('div'); info.className='mindmap-row-info';
-    const titleEl=document.createElement('div'); titleEl.className='mindmap-row-title'; titleEl.textContent=m.title||'Untitled map';
-    if(m.isScratchpad){ const chip=document.createElement('span'); chip.className='mindmap-row-scratch-chip'; chip.textContent='Scratchpad'; chip.dataset.tip="Your persistent scratch space for this document — reachable from Presenter mode's M key. Deliberately unlinked, not a warning."; titleEl.appendChild(chip); }
-    info.appendChild(titleEl);
+    const titleInput=document.createElement('input'); titleInput.type='text'; titleInput.className='mindmap-row-title-input';
+    titleInput.value=m.title||''; titleInput.placeholder='Untitled map'; titleInput.maxLength=200; titleInput.spellcheck=false;
+    titleInput.dataset.tip='Click to rename';
+    titleInput.addEventListener('mousedown',e=>e.stopPropagation());
+    titleInput.addEventListener('click',e=>e.stopPropagation());
+    titleInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); titleInput.blur(); }
+      else if(e.key==='Escape'){ e.preventDefault(); titleInput.value=m.title||''; titleInput.blur(); }
+    });
+    titleInput.addEventListener('blur',()=>{
+      const val=titleInput.value.trim();
+      if(val===(m.title||''))return;
+      m.title=val; m.modifiedAt=Date.now();
+      markDirty(); if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+      if(mindMapActiveId===m.id&&el('mindmap-head-title-text'))el('mindmap-head-title-text').value=val;
+    });
+    if(m.isScratchpad){ const titleRow=document.createElement('div'); titleRow.className='mindmap-row-title-row'; const chip=document.createElement('span'); chip.className='mindmap-row-scratch-chip'; chip.textContent='Scratchpad'; chip.dataset.tip="Your persistent scratch space for this document — reachable from Presenter mode's M key. Deliberately unlinked, not a warning."; titleRow.appendChild(titleInput); titleRow.appendChild(chip); info.appendChild(titleRow); }
+    else info.appendChild(titleInput);
     const meta=document.createElement('div'); meta.className='mindmap-row-meta';
     const count=Array.isArray(m.nodes)?m.nodes.length:0;
     meta.textContent=(count?count+' node'+(count===1?'':'s'):'Empty')+' · '+formatRelativeTime(m.modifiedAt||m.createdAt);
@@ -36004,7 +36025,7 @@ function openMindMapOverlay(mapId){
   }
   mindMapOpen=true; mmSetSelection([],null); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.add('open');
-  if(el('mindmap-head-title-text'))el('mindmap-head-title-text').textContent=findMindMap(mindMapActiveId)?.title||'Mind Map';
+  if(el('mindmap-head-title-text'))el('mindmap-head-title-text').value=findMindMap(mindMapActiveId)?.title||'';
   renderMindMap();
   setTimeout(()=>el('mindmap-overlay')?.focus(),0);
 }
@@ -36022,6 +36043,19 @@ function closeMindMapOverlay(){
   focusPane();
 }
 el('mindmap-close-btn')?.addEventListener('click',closeMindMapOverlay);
+el('mindmap-head-title-text')?.addEventListener('keydown',e=>{
+  e.stopPropagation();
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){ e.preventDefault(); e.target.value=findMindMap(mindMapActiveId)?.title||''; e.target.blur(); }
+});
+el('mindmap-head-title-text')?.addEventListener('blur',e=>{
+  const m=findMindMap(mindMapActiveId); if(!m)return;
+  const val=e.target.value.trim();
+  if(val===(m.title||''))return;
+  m.title=val; m.modifiedAt=Date.now();
+  markDirty(); if(typeof scheduleAutoSave==='function')scheduleAutoSave();
+  if(typeof renderMindMapsList==='function')renderMindMapsList();
+});
 el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
@@ -36064,6 +36098,7 @@ document.addEventListener('keydown',e=>{
   if(!mindMapOpen)return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
+  if(e.target&&e.target.id==='mindmap-head-title-text')return;
   if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-export-menu')?.classList.contains('open')){ mmCloseExportMenu(); return; } if(el('mindmap-layout-menu')?.classList.contains('open')){ mmCloseLayoutMenu(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
