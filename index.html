@@ -4846,7 +4846,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>Clear canvas</strong> resets the currently open map back to genuinely blank — confirms first if there's real content, and is itself undoable</li>
 <li>The <strong>Export</strong> button opens a menu with three ways to get a map back out:</li>
 <li><strong>Export as image</strong> saves a PNG of the whole map (fit to its content, not just what's currently on screen) — reads the actual rendered colors straight off the canvas, so it always matches your current theme and any manual recoloring, and respects whatever's currently collapsed</li>
-<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline below. It's a direct, deterministic conversion of the map's own layout and colors (root nodes keep their accent tint unless manually recolored) and connector labels — no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed. Needs the Diagrams feature on (Settings → Pad Panel)</li>
+<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in this same document's Diagrams tab — the map already belongs to this document, so unlike Generate Outline below there's no new-document detour. It's a direct, deterministic conversion of the map's own layout and colors (root nodes keep their accent tint unless manually recolored) and connector labels — no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed. Needs the Diagrams feature on (Settings → Pad Panel)</li>
 <li><strong>Generate Outline</strong> walks the whole map depth-first and creates a brand-new document from it — the document you're currently in (if any) is never touched or replaced</li>
 <li>Presenter mode's <span class="help-kbd">M</span> key (and its right-click menu entry) opens a persistent <strong>Scratchpad</strong> map instead of the named list above — one per document, created the first time it's used and reopened every time after, the same "always the same one, deliberately unlinked" role Whiteboard plays for sketching. It shows in the Mind Map tab's list too, pinned first with a Scratchpad badge, so anything jotted there mid-talk isn't lost or hard to find afterward</li>
 <li>Settings → Pad Panel → Mind Map turns the whole tab off: hides it from Pad, the Presenter mode Scratchpad button and right-click entry, and every node's link dots and badges. Every map is preserved and comes back exactly as it was when re-enabled</li>
@@ -36454,14 +36454,10 @@ function mmBuildDrawioXml(){
 function mmExportToDiagram(){
   const xml=mmBuildDrawioXml();
   if(!xml){ showToast('Add some ideas to the mind map first'); return; }
-  if(typeof addDiagramFromXml!=='function'||typeof createDoc!=='function'){ showToast('Diagrams feature is not available — enable it in Settings → Features'); return; }
-  if(!padDiagramsTabEnabled){ showToast('Diagrams feature is not available — enable it in Settings → Features'); return; }
-  createDoc();
-  const titleEl=el('header-title');
-  if(titleEl){ titleEl.value='Mind Map Diagram'; titleAutoSyncEnabled=false; if(typeof touchDocIndexTitleOnly==='function'&&currentDocId)touchDocIndexTitleOnly(currentDocId,'Mind Map Diagram'); if(typeof scheduleAutoSave==='function')scheduleAutoSave(); }
+  if(typeof addDiagramFromXml!=='function'){ showToast('Diagrams feature is not available — enable it in Settings → Pad Panel'); return; }
+  if(!padDiagramsTabEnabled){ showToast('Diagrams feature is not available — enable it in Settings → Pad Panel'); return; }
   addDiagramFromXml(xml);
   closeMindMapOverlay();
-  showToast('Diagram created in a new document');
 }
 // Opens a specific map by id (from the Pad Mind Map tab list, or the Scratchpad
 // helper below). No id + nothing already active is treated as a fresh unsaved map
