@@ -11,7 +11,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 - [Meeting Notes & To-Dos](#meeting-notes--to-dos)
 - [Tags, Focus & Backlinks](#tags-focus--backlinks)
 - [AI Features](#ai-features)
-- [Quick Assist & Node Quick Assist](#quick-assist--node-quick-assist)
+- [Quick Assist & Quick Insert](#quick-assist--quick-insert)
 - [Preview, Presenter Mode & Export](#preview-presenter-mode--export)
 - [Theming & Appearance](#theming--appearance)
 - [Installing as an App (PWA)](#installing-as-an-app-pwa)
@@ -57,7 +57,7 @@ Key capabilities:
 - Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand
 - Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
 - Hover any node (Settings → Editing → "Node hover toolbar") to reveal quick Menu and Zoom-in buttons next to its bullet, without needing to select it first
-- `Ctrl/Cmd+Space` while editing a node opens **Node Quick Assist** — a small menu for inserting an em dash, en dash, arrow, checkmark, date/time, opening Note/Code/Tags, or inserting a decision log, without leaving the keyboard
+- `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, Pad, Notes, Meeting Notes, To-Dos, the title field) — not just while editing a node
 
 ## Documents & Tabs
 
@@ -76,10 +76,10 @@ Beyond the outline itself, several floating or docked panels attach richer conte
 
 - **Note** — every node can hold a rich-text note (bold/italic/underline/strike, bullet/numbered lists, links, tables, pasted images, AI Rewrite/Summarise). Floating and draggable, with a compact popover view and a full-screen mode. Shows a Backlinks section for any node that `@mentions` it, plus created/last-modified timestamps. Open via toolbar, right-click → More → Note, or `Ctrl/Cmd+Shift+N`.
 - **Code Block** — every node can hold one plain-text code block (language picker: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown), in the same kind of floating, resizable window as Note. Open via toolbar, right-click → More → Code block, or `Ctrl/Cmd+Shift+K`.
-- **Decision Log** — inserts a structured record under a node: a timestamped header (with optional author) plus configurable child prompts for Context, Decision, Rationale, Alternatives, Impact, and Status. Renders as a bordered, status-colored card in Word/PDF/PowerPoint exports and is separately exportable as its own Excel sheet across a document. Insert via the toolbar's Decision Log button or right-click → More → Decision log.
-- **Pad** — a whole-document workspace, separate from per-node Notes, with three tabs:
+- **Pad** — a whole-document workspace, separate from per-node Notes, with four tabs:
   - **Notepad** — a rich-text scratchpad with the same toolbar Note uses (minus subtree-summarise, since there's no subtree at the document level). File attachments (button, drag-and-drop, or paste — 5 MB cap per file) insert as a downloadable chip, stored inline so they're covered by every existing backup path automatically.
-  - **Q&A** — a running list of question/answer pairs for the document, with AI-assisted answering, bulk answer/group actions, search, and its own PDF export. Individual questions can be linked to a specific node.
+  - **Q&A** — a running list of question/answer pairs for the document, with AI-assisted answering, bulk answer/group actions, search, and its own PDF export. Individual questions can be linked to a specific node — right-click a node → "Add question…" (or `Ctrl/Cmd+K` → "add question"), or the tab's own + button for an unlinked one. Answerable directly from Presenter Mode too, not just the Pad.
+  - **Decision Log** — a structured record, linked to a node rather than inserted into it: a timestamped header (with optional author) plus configurable fields for Context, Decision, Rationale, Alternatives, Impact, and Status. Create one from the Decision Log tab's own + button (the currently-selected node gets it automatically if it's free); a small accent-colored dot appears on a node once it has one, click it to jump straight there. Renders as a bordered, status-colored card in Preview/Word/PDF/PowerPoint exports and is separately exportable as its own Excel sheet across a document.
   - **Diagrams** — link a draw.io diagram to any node; it embeds as a real picture in Word, PowerPoint, and PDF exports, and shows inline in Preview. One diagram per document can instead be a persistent, deliberately unlinked **Whiteboard** — same real draw.io editor, opened directly from Presenter Mode's bar or right-click menu for sketching or brainstorming on the fly; pinned to the top of this list, badged rather than flagged as "Unlinked".
 
   Open the Pad via its floating panel icon or `Ctrl/Cmd+Shift+P`.
@@ -110,10 +110,10 @@ AI features are entirely optional and require your own API key for one of the bu
 - **Provider fallback** — an optional toggle that automatically retries with the next configured provider (in your chosen order) if the active one fails for any reason other than a bad key, which always surfaces directly instead of silently falling back.
 - **Usage today** — a local, best-effort request counter per provider, shown in Settings; it's a rough gauge only, not fetched from the provider, and can drift slightly from that provider's own reset clock.
 
-## Quick Assist & Node Quick Assist
+## Quick Assist & Quick Insert
 
-- **Quick Assist** (`Ctrl/Cmd+Space` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, and settings/help topics show up as **Go to** results.
-- **Node Quick Assist** (`Ctrl/Cmd+Space` while actively editing a node) opens a smaller, node-specific menu instead — inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time, or opening Note/Code block/Tags/Decision log — configurable in Settings → Editing.
+- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, and settings/help topics show up as **Go to** results.
+- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, the Pad, a Note, a Code block, a To-Do, a Meeting Notes field) opens a small character-insert menu — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
 
 ## Preview, Presenter Mode & Export
 
@@ -129,7 +129,7 @@ AI features are entirely optional and require your own API key for one of the bu
 ## Theming & Appearance
 
 - **Light/Dark theme** with an **Auto theme** mode: Off (manual only), System (follows the OS/browser's dark-mode setting live), or Schedule (switches at hours you set). Manually overriding the theme while in System/Schedule mode holds as a temporary override until the automatic value naturally catches up and matches it again.
-- **Accent color** — seven presets plus an intensity slider, used for buttons, borders, and highlights (not node text itself).
+- **Accent color** — seven presets plus an intensity slider, used for buttons, borders, and highlights (not node text itself). Optionally recolors the mouse cursor itself too (Settings → Appearance → "Accent-colored cursor"), off by default.
 - **Chrome background** — five presets (Default, Slate, Sand, Ink, Rose) that recolor the toolbar, sidebar, status bar, app bar, and menus, independent of both the accent color and the Light/Dark theme. The editor/canvas writing surface is untouched by this.
 - **Node text color** — four presets (Default, Black, Charcoal, Slate) for node text specifically, separate from both the accent color and Chrome background.
 - **Editor's Choice preset** (Settings → Appearance, or Quick Assist → "editor's choice") — one click reconfigures the toolbar, sidebar, Pad, hover toolbar, status bar, and app bar into a curated, leaner, writing-focused layout. Doesn't touch accent or node text color. Applying it from Quick Assist gives a one-click Undo that restores every setting it touched.
@@ -161,7 +161,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|
-| Search bar | Header | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+Space`) folds this in regardless of this setting |
+| Search bar | Header | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+K`) folds this in regardless of this setting |
 | Reopen tabs on launch | General | On | Turn off to always start with a single tab |
 | Start each session blank | General | Off | New blank document every launch, instead of restoring the last state |
 | Confirm before delete | General | On | Adds a confirmation dialog before deleting nodes or documents |
@@ -201,8 +201,8 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Hide tree lines | Ctrl/Cmd+Shift+L |
 | Zoom into branch (Focus) / Exit | Ctrl/Cmd+. / Ctrl/Cmd+, |
 | Search this document | Ctrl/Cmd+F |
-| Quick Assist (command + search) | Ctrl/Cmd+Space |
-| Node Quick Assist (while editing a node) | Ctrl/Cmd+Space |
+| Quick Assist (command + search) | Ctrl/Cmd+K |
+| Quick Insert (character insert, while editing text) | Ctrl/Cmd+Space |
 | Open/close Pad | Ctrl/Cmd+Shift+P |
 | Open/close Note | Ctrl/Cmd+Shift+N |
 | Open/close Code block | Ctrl/Cmd+Shift+K |
@@ -217,7 +217,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Select all | Ctrl/Cmd+A |
 | Undo / Redo | Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z |
 
-If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space`, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item always works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
+If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space` for Quick Insert, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item always works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
 
 ## Browser Support
 
