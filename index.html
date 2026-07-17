@@ -35014,6 +35014,19 @@ function mmNodeHeightPx(id){
   const lines=Math.max(1,Math.ceil(text.length/charsPerLine));
   return 34+lines*16;
 }
+// Rough rendered box width, just accurate enough to anchor connector lines at the actual
+// edge instead of the node's center — same estimation spirit as mmNodeHeightPx (this is
+// cosmetic, not layout-critical, so it doesn't need pixel-perfect DOM measurement).
+function mmNodeWidthPx(id){
+  const n=findMindNode(id);
+  const isCentral=!!(n&&mindMap&&n.id===mindMap.centralId);
+  const text=((n&&n.text)||'').trim()||(isCentral?'Central idea':'');
+  const charsPerLine=26;
+  const charW=isCentral?8.5:7.3;
+  const pad=isCentral?40:26;
+  const raw=Math.min(text.length,charsPerLine)*charW+pad;
+  return Math.max(isCentral?60:44,Math.min(220,raw));
+}
 function mmSubtreeExtent(id){
   const kids=mindMapChildren(id);
   const own=mmNodeHeightPx(id);
@@ -35175,9 +35188,11 @@ function renderMindMap(){
     if(n.parentId==null)return;
     if(mmIsHidden(n.id))return;
     const p=findMindNode(n.parentId); if(!p)return;
+    const sx=p.x+mmNodeWidthPx(p.id)/2, sy=p.y;
+    const tx=n.x-mmNodeWidthPx(n.id)/2, ty=n.y;
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    const dx=(n.x-p.x)*0.5;
-    path.setAttribute('d',`M ${p.x} ${p.y} C ${p.x+dx} ${p.y}, ${n.x-dx} ${n.y}, ${n.x} ${n.y}`);
+    const dx=(tx-sx)*0.5;
+    path.setAttribute('d',`M ${sx} ${sy} C ${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}`);
     path.style.stroke=n.color?`var(--fc-${n.color})`:'var(--border)';
     svg.appendChild(path);
   });
