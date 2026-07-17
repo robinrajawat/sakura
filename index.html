@@ -4813,7 +4813,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Beyond the tree itself, two ideas that aren't parent/child can be cross-linked: Ctrl/Cmd+click to select exactly two nodes, then right-click either one and choose "Connect these two." The link is drawn as a dashed line (to tell it apart from the tree's branch lines) and can take its own label the same way; right-click it for "Edit label" or "Remove connection"</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> undoes the last add, delete, rename, drag, recolor, connect, link, or Tidy up; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">Z</span> (or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span>) redoes it — its own undo history, separate from the document's</li>
 <li>The <strong>Tidy up</strong> button (next to Reset view) recomputes a clean auto-layout in one click, remembering whichever style this map last used. Its small caret opens a picker for the three styles: <strong>Horizontal</strong> (the default — every root gets its own row, each generation a step further right), <strong>Vertical</strong> (same idea rotated — generations step downward instead), and <strong>Radial</strong> (each root's tree radiates outward from a center point, generations forming rings further out — reads better for a handful of branches off one core idea than a hierarchical process). Freeform dragging always stays available regardless of which layout Tidy last applied</li>
-<li>Any idea can be linked to a specific node in this same document's outline: right-click it and choose "Link to document node…" to search and pick one, or "Add idea from document…" (also in the canvas toolbar and on right-click over empty canvas) to create a brand-new idea already seeded with a document node's text and pre-linked in one step — picking the same document node twice makes two separate linked ideas rather than reusing one, if that's what you want. A linked idea shows a small connector badge in its corner; right-click it for "Jump to document node" (closes the map, selects and flashes that node in the outline) or "Unlink from document." The outline side shows the same link the other way too — a small dot appears on any node referenced by one or more mind map ideas, next to its note/diagram/decision-log dots if it has those; click it to jump into the right map (or pick from a short list if more than one idea references it)</li>
+<li>Any idea can be linked to a specific node in this same document's outline: right-click it and choose "Link to document node…" to search and pick one, or "Add idea from document…" (also in the canvas toolbar and on right-click over empty canvas) to pull one in — a leaf document node becomes one new linked idea, and a node with sub-points brings its whole nested structure across as a matching branch, each level individually linked back to its own source line, not just the branch's top idea. Picking the same document node twice makes two separate linked branches rather than reusing one, if that's what you want. A linked idea shows a small connector badge in its corner; right-click it for "Jump to document node" (closes the map, selects and flashes that node in the outline) or "Unlink from document." The outline side shows the same link the other way too — a small dot appears on any node referenced by one or more mind map ideas, next to its note/diagram/decision-log dots if it has those; click it to jump into the right map (or pick from a short list if more than one idea references it)</li>
 <li><strong>Clear canvas</strong> resets the currently open map back to genuinely blank — confirms first if there's real content, and is itself undoable</li>
 <li>The <strong>Export</strong> button opens a menu with three ways to get a map back out:</li>
 <li><strong>Export as image</strong> saves a PNG of the whole map (fit to its content, not just what's currently on screen) — reads the actual rendered colors straight off the canvas, so it always matches your current theme and any manual recoloring, and respects whatever's currently collapsed</li>
@@ -35650,7 +35650,7 @@ function renderMindMapAnchorSuggest(query,isFilterUpdate){
     const noneItem=document.createElement('div');
     noneItem.className='diagram-anchor-item diagram-anchor-item-none';
     noneItem.textContent='Not linked to a node';
-    noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setMindMapNodeLink(_mmAnchorTargetId,null); closeMindMapAnchorSuggest(); });
+    noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setMindMapNodeLink(_mmAnchorTargetId,null); setTimeout(closeMindMapAnchorSuggest,0); });
     results.appendChild(noneItem);
   }
   if(!candidates.length){
@@ -35666,7 +35666,7 @@ function renderMindMapAnchorSuggest(query,isFilterUpdate){
       e.preventDefault();
       if(_mmAnchorMode==='link')setMindMapNodeLink(_mmAnchorTargetId,n.id);
       else if(_mmAnchorMode==='add')createMindMapNodeFromDoc(n.id,n.text,_mmAnchorAddPos);
-      closeMindMapAnchorSuggest();
+      setTimeout(closeMindMapAnchorSuggest,0);
     });
     results.appendChild(item);
   });
@@ -35704,15 +35704,47 @@ function setMindMapNodeLink(mindNodeId,docNodeId){
   saveMindMap();
   render();
 }
+// Pulls in a document node AND everything nested under it in the outline, not just its own
+// line — a leaf doc node still produces exactly one idea (nothing changes for that case), but
+// a section with sub-points brings its whole structure across as a matching branch, each level
+// individually linked back to its own source node (not just the branch's root). Positioned via
+// the same recursive layout mmComputeHorizontalLayout uses for the whole canvas, but called for
+// just this one new root — every other existing idea's position is left completely alone.
+function mmBuildBranchFromDocSubtree(docNodeId,atX,atY){
+  const idx=getIndex(docNodeId); if(idx<0)return null;
+  const baseDepth=nodes[idx].depth;
+  const end=getSubtreeEnd(idx);
+  const stack=[];
+  const childColorOf=new Map();
+  let rootMindId=null;
+  for(let i=idx;i<end;i++){
+    const src=nodes[i];
+    const relDepth=src.depth-baseDepth;
+    while(stack.length&&stack[stack.length-1].relDepth>=relDepth)stack.pop();
+    const parent=stack.length?stack[stack.length-1]:null;
+    const mid=mmNewId();
+    const text=stripSemanticMarkers(src.text||'').trim();
+    const color=parent?childColorOf.get(parent.id):null;
+    mindMap.nodes.push({id:mid,x:0,y:0,text,parentId:parent?parent.id:null,color,docNodeId:src.id});
+    if(relDepth===0){ rootMindId=mid; childColorOf.set(mid,mmNextBranchColor()); }
+    else childColorOf.set(mid,color);
+    stack.push({relDepth,id:mid});
+  }
+  if(rootMindId!=null){
+    const bandHeight=mmSubtreeExtent(rootMindId);
+    mmLayoutHorizontalNode(rootMindId,0,atY-bandHeight/2,atX,0);
+  }
+  return rootMindId;
+}
 function createMindMapNodeFromDoc(docNodeId,text,pos){
   ensureMindMap();
   const pre=mmSnapshot();
   const p=pos||{x:0,y:0};
-  const node={id:mmNewId(),x:p.x,y:p.y,text:(text||'').trim(),parentId:null,color:null,docNodeId};
-  mindMap.nodes.push(node);
+  const rootMindId=mmBuildBranchFromDocSubtree(docNodeId,p.x,p.y);
+  if(rootMindId==null)return;
   mmPushUndo(pre);
-  mmSetSelection([node.id],node.id);
-  mmPopNodeId=node.id;
+  mmSetSelection([rootMindId],rootMindId);
+  mmPopNodeId=rootMindId;
   renderMindMap();
   saveMindMap();
   render();
