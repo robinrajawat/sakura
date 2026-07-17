@@ -2630,6 +2630,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .pv-inline-qa-answer{color:var(--fg);margin-top:2px}
 .pv-inline-qa-answer:not(.pv-inline-qa-unanswered){border-left:2px solid var(--accent);padding-left:8px}
 .pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
+.pv-inline-qa-answer-input{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;border-left:2px solid var(--border);background:transparent;padding:0 0 0 8px;margin-top:2px;color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45;transition:border-left-color .12s}
+.pv-inline-qa-answer-input:focus{outline:none;border-left-color:var(--accent)}
+.pv-inline-qa-answer-input:not(:placeholder-shown){border-left-color:var(--accent)}
+.pv-inline-qa-answer-input::placeholder{color:var(--hint);font-style:italic}
 
 
 @keyframes pvFlash{0%{background:color-mix(in srgb,var(--accent) 20%,transparent)}100%{background:transparent}}
@@ -6568,7 +6572,7 @@ let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
 let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
-const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['endash','arrow','checkmark','crossmark','middot','note','tags','ai-rewrite','version-history']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let accentCursorEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
+const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['endash','arrow','checkmark','crossmark','middot','note','qa','tags','ai-rewrite','version-history']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let accentCursorEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -12752,6 +12756,7 @@ const CTX_ACTION_META={
   'ai-icon':{label:'Suggest icon',svg:'<circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/>',group:'ai'},
   'ai-icon-all':{label:'Suggest icons for all nodes',svg:'<circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'notes'},
+  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
@@ -12764,7 +12769,7 @@ const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down',
 // otherwise have nowhere to live except the node's own text, which we don't want to type
 // into. Reuses CTX_ACTION_META icons where a matching right-click action already exists,
 // so the same action looks the same everywhere it appears.
-const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','tags','ai-rewrite','version-history'];
+const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time','note','qa','tags','ai-rewrite','version-history'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
   endash:{label:'Insert en dash',glyph:'–'},
@@ -12774,6 +12779,7 @@ const NODE_QA_ACTION_META={
   middot:{label:'Insert middle dot',glyph:'·'},
   'date-time':{label:'Insert date/time',svg:CTX_ACTION_META['date-time'].svg},
   note:{label:'Note…',svg:CTX_ACTION_META.note.svg},
+  qa:{label:'Add question…',svg:CTX_ACTION_META.qa.svg},
   tags:{label:'Tags…',svg:CTX_ACTION_META.tags.svg},
   'ai-rewrite':{label:'Rewrite node',svg:CTX_ACTION_META['ai-rewrite'].svg},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>'}
@@ -16840,6 +16846,16 @@ async function runNodeQuickAssistAction(actionId,nodeId){
     commitEdit();
     if(actionId==='tags')openTagManager(nodeId,caretRect);
     else openNodePanel(nodeId,caretRect);
+    return;
+  }
+  if(actionId==='qa'){
+    commitEdit();
+    const text=await sakuraPrompt({icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NODE_QA_ACTION_META.qa.svg}</svg>`,title:'Add question',body:'Links a new Q&A question to this node — answer it later from the Pad\'s Q&A tab or from Presenter mode.',defaultValue:'',confirmLabel:'Add',cancelLabel:'Cancel'});
+    if(text===null)return;
+    const trimmed=text.trim();
+    if(!trimmed)return;
+    saveNodeQuestion(nodeId,trimmed);
+    render();
     return;
   }
   if(actionId==='ai-rewrite'){
@@ -26608,20 +26624,39 @@ function previewOpenNotePopover(triggerEl,node){
 function previewOpenQaPopover(triggerEl,qRefs){
   const single=qRefs.length===1;
   const rows=qRefs.map(item=>{
-    const aTrimmed=(item.answer||'').trim();
     const delBtn=single?'':`<button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${item.id}">${markIconSvg('trash')}</button>`;
     return `<div class="pv-inline-qa-row${single?'':' pv-inline-qa-row-multi'}">${delBtn}
       <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span><div class="pv-inline-qa-question">${esc(item.question||'')}</div></div>
-      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span><div class="pv-inline-qa-answer${aTrimmed?'':' pv-inline-qa-unanswered'}">${esc(aTrimmed||'No answer yet')}</div></div>
+      <div class="pv-inline-qa-line"><span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span><textarea class="pv-inline-qa-answer-input" data-qa-id="${item.id}" rows="1" placeholder="Answer">${esc(item.answer||'')}</textarea></div>
     </div>`;
   }).join('');
   const headBtn=single?`<button type="button" class="pv-qm-btn pv-qm-danger pv-qa-delete-btn" data-tip="Delete question" data-qa-id="${qRefs[0].id}">${markIconSvg('trash')}</button>`:'';
   const html=`<div class="pv-popover-head-row"><span class="pv-popover-label">${qRefs.length>1?'Questions':'Question'}</span>${headBtn}</div><div class="pv-inline-qa-body pv-popover-note">${rows}</div>`;
   openPreviewPopover(triggerEl,html,'pv-popover-wide');
+  // Answers are editable right here — this used to render as plain read-only text with no way
+  // to actually type an answer while presenting, the only place questions can be answered
+  // without leaving Presenter mode.
+  previewPopoverEl?.querySelectorAll('.pv-inline-qa-answer-input').forEach(ta=>{
+    autoGrowTextarea(ta);
+    ta.addEventListener('click',e=>e.stopPropagation());
+    ta.addEventListener('keydown',e=>e.stopPropagation());
+    ta.addEventListener('input',()=>{
+      autoGrowTextarea(ta);
+      const item=qaItems.find(q=>q.id===ta.dataset.qaId);
+      if(!item)return;
+      item.answer=ta.value;
+      const hasAnswer=!!ta.value.trim();
+      if(hasAnswer){ item.answeredAt=Date.now(); } else { item.answeredAt=null; item.answeredBy=''; }
+      markDirty(); scheduleAutoSave();
+      if(padViewMode==='qa')renderQaList();
+    });
+  });
   previewPopoverEl?.querySelectorAll('.pv-qa-delete-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
-      const id=Number(btn.dataset.qaId);
+      // qa ids are strings (see newQaId()) — Number(...) here used to silently turn every id
+      // into NaN, so deleteQaRow's lookup never matched anything and the button did nothing.
+      const id=btn.dataset.qaId;
       closePreviewPopover();
       deleteQaRow(id);
       renderPreviewBody();
