@@ -22828,7 +22828,7 @@ const TOUR_STEPS=[
   {target:'#sidebar-toggle',placement:'bottom',title:'Documents & folders',bodyHtml:'<p>Opens and closes your sidebar.</p>'},
   {target:'#sidebar',placement:'right',title:'Sidebar (File Explorer)',bodyHtml:'<p>Every document, folder, and template lives here. Drag rows to reorder or move them, right-click for more options, and use the filter at the top to find anything fast.</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
   {target:'#editor-pane',placement:'inside',title:'Editor',bodyHtml:'<p>Click to type. Enter adds a sibling, Tab indents as a child, Shift+Tab outdents. Right-click any node for more actions.</p>'},
-  {target:'#global-search-wrap',placement:'top',title:'Quick Assist',bodyHtml:'<p>Searches across documents, templates, node text, notes, tags, and the pad — plus settings and help topics.</p><p>Press Ctrl/Cmd+Space to open it from anywhere.</p>'},
+  {target:'#global-search-wrap',placement:'bottom',title:'Quick Assist',bodyHtml:'<p>Searches across documents, templates, node text, notes, tags, and the pad — plus settings and help topics.</p><p>Press Ctrl/Cmd+Space to open it from anywhere.</p>'},
   {target:'#export-toggle',placement:'bottom',title:'Export',bodyHtml:'<p>Export your outline as Markdown, plain text tree, or Word — or copy it as text or an image. Decision logs export to Excel separately.</p>'},
   {target:'#import-toggle',placement:'bottom',title:'Import',bodyHtml:'<p>Bring in an OPML or Word file, or paste raw text and let AI restructure it into an outline.</p>'},
   {target:'#quick-bar',placement:'bottom',title:'Toolbar',bodyHtml:'<p>Formatting, structure, AI, and more — grouped by purpose. Hover an icon to see what it does.</p>'},
@@ -22836,7 +22836,7 @@ const TOUR_STEPS=[
   {target:'#ag-ai',placement:'bottom',title:'AI features',bodyHtml:'<p>Generate a whole outline from a prompt, expand a node into a subtree, summarise a selection into a parent, rewrite a node, or suggest tags and an icon — all powered by your choice of AI provider, with automatic fallback if one fails.</p><p>Configure providers and keys in Settings.</p>'},
   {target:'#editor-controls-group',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, open the <strong>pad</strong>, or <strong>maximize</strong> to hide the sidebar and chrome — Esc brings it all back.</p>'},
   {target:'#editor-preview-toggle',placement:'left',title:'Preview & Presenter mode',bodyHtml:'<p>A clean, read-only render of the outline — foldable, with a table of contents. From there, one click goes fullscreen into <strong>Presenter mode</strong>: slide-by-slide, laser pointer, a running timer, and a Whiteboard for sketching mid-talk.</p>'},
-  {target:'#pad-panel',placement:'left',title:'Pad panel',bodyHtml:'<p>A whole-document workspace, separate from per-node notes — five tabs: a rich-text <strong>Notepad</strong>, a <strong>Q&amp;A</strong> list for open questions, a <strong>Decision Log</strong> view, <strong>Diagrams</strong> — a real embedded draw.io editor, including one persistent <strong>Whiteboard</strong> for freeform sketching — and <strong>Mind Map</strong>, any number of freeform brainstorming canvases for this document.</p>',setup:()=>{ if(padEnabled&&!padOpen)setPadOpen(true,false); },teardown:()=>{ if(padEnabled&&padOpen)setPadOpen(false,false); }},
+  {target:'#pad-panel',placement:'left',title:'Pad panel',bodyHtml:'<p>A whole-document workspace, separate from per-node notes — five tabs: a rich-text <strong>Notepad</strong>, a <strong>Q&amp;A</strong> list for open questions, a <strong>Decision Log</strong> view, <strong>Diagrams</strong> — a real embedded draw.io editor, including one persistent <strong>Whiteboard</strong> for freeform sketching — and <strong>Mind Map</strong>, any number of freeform brainstorming canvases for this document.</p>',setup:()=>{ if(padEnabled&&!padOpen)setPadOpen(true,false,false); },teardown:()=>{ if(padEnabled&&padOpen)setPadOpen(false,false); }},
   {target:'#status-util-group',placement:'top',title:'Meeting Notes & To-Dos',bodyHtml:'<p>Two workspace-wide panels, not tied to any single document — <strong>Meeting Notes</strong> for agendas and minutes, <strong>To-Dos</strong> for tasks — both can reference nodes anywhere across your documents.</p>'},
   {target:'#settings-toggle',placement:'bottom',title:'Settings',bodyHtml:'<p>Theme, accent color, toolbar layout, and a lot more. Everything is stored locally in this browser.</p>'},
   {target:'#help-toggle',placement:'bottom',title:'Help',bodyHtml:'<p>Every shortcut and feature, in detail. Come back here anytime to replay this tour.</p>'},
@@ -22879,6 +22879,7 @@ function positionTourTooltip(rect,placement){
   tip.style.top=top+'px'; tip.style.left=left+'px';
 }
 let _tourLastSetupIndex=-1;
+let tourRenderToken=0;
 const TOUR_AUTOPLAY_BASE_MS=3200;
 const TOUR_AUTOPLAY_PER_CHAR_MS=22;
 const TOUR_AUTOPLAY_MAX_MS=8000;
@@ -22922,8 +22923,9 @@ function setTourAutoplay(on){
 function toggleTourAutoplay(){ setTourAutoplay(!tourAutoplay); }
 function _tourRunTeardown(idx){ const s=TOUR_STEPS[idx]; if(s?.teardown){ try{ s.teardown(); }catch(e){} } }
 function _tourRunSetup(idx){ const s=TOUR_STEPS[idx]; if(s?.setup){ try{ s.setup(); }catch(e){} } }
-function renderTourStep(){
+async function renderTourStep(){
   if(!tourActive)return;
+  const myToken=++tourRenderToken;
   const prevIdx=_tourLastSetupIndex;
   let didSetup=false;
   while(tourStepIndex>=0&&tourStepIndex<TOUR_STEPS.length){
@@ -22936,11 +22938,22 @@ function renderTourStep(){
     tourStepIndex+=(tourDirection<0?-1:1);
   }
   if(tourStepIndex<0||tourStepIndex>=TOUR_STEPS.length){ endTour(true); return }
+  let setupJustRan=didSetup;
   if(tourStepIndex!==prevIdx){
-    if(!didSetup) _tourRunSetup(tourStepIndex);
+    if(!didSetup){ _tourRunSetup(tourStepIndex); setupJustRan=true; }
     if(prevIdx>=0&&prevIdx!==tourStepIndex) _tourRunTeardown(prevIdx);
     _tourLastSetupIndex=tourStepIndex;
   }
+  // Steps whose setup() opens/closes a sliding panel (sidebar, Pad) trigger a ~180ms CSS
+  // transition — measuring the target's rect immediately after triggering one catches it
+  // mid-animation (or still at its pre-open position), which is what put the spotlight and
+  // tooltip in the wrong place for the Sidebar/Editor and Pad panel steps. Waiting past the
+  // transition duration before measuring fixes it at the source rather than nudging the
+  // numbers to compensate. The token guard drops this wait if Next/Back gets clicked again
+  // before it finishes, so a fast double-click can't finish positioning for a step that's no
+  // longer current.
+  if(setupJustRan) await new Promise(r=>setTimeout(r,220));
+  if(!tourActive||myToken!==tourRenderToken)return;
   const step=TOUR_STEPS[tourStepIndex];
   const rect=getTourStepRect(step);
   positionTourSpotlight(rect);
@@ -27661,7 +27674,7 @@ function updatePadVisibility(){
   if(handle) handle.classList.toggle('pad-hidden', !shouldBeOpen);
   if(zenBtn){ zenBtn.style.display=canShow?'':'none'; zenBtn.classList.toggle('is-active', shouldBeOpen); zenBtn.setAttribute('aria-pressed', String(shouldBeOpen)); }
 }
-function setPadOpen(open, persist=true){
+function setPadOpen(open, persist=true, focusEditor=true){
   padOpen=!!open;
   if(!padOpen) closeGenericQuickAssist();
   if(padOpen){
@@ -27671,7 +27684,7 @@ function setPadOpen(open, persist=true){
   }
   if(persist) savePadOpenState();
   updatePadVisibility();
-  if(padOpen && padEnabled && currentDocId) setTimeout(()=>{ try{ el('pad-editor')?.focus(); _reinitPadEditorTables(); }catch(e){} }, 60);
+  if(padOpen && padEnabled && currentDocId && focusEditor) setTimeout(()=>{ try{ el('pad-editor')?.focus(); _reinitPadEditorTables(); }catch(e){} }, 60);
 }
 function togglePad(){ if(!(padEnabled && currentDocId)) return; setPadOpen(!padOpen); }
 
