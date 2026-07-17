@@ -4710,7 +4710,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Diagrams, Q&amp;A, and Pad content are all included in Sakura's Version History now (More menu → Version History for the open document, or right-click a document in the sidebar → Version history) — restoring an older version restores all three alongside the outline text. A restored diagram's thumbnail is blank until it's reopened and saved once in draw.io, which regenerates it automatically; the diagram's actual content isn't affected, only the cached preview image. Pad content restores as text only — any file attachments or pasted images that were in the Pad at that point in time are gone for good, replaced with a small note of what was there, since keeping every version of a 5&nbsp;MB attachment would make History unusably large. Restoring a version with older revisions recorded before this existed leaves diagrams/Q&amp;A/Pad exactly as they currently are, rather than guessing or wiping them — but if one of those diagrams or decision logs is anchored to a node that only exists in the newer state you're restoring away from, it becomes unlinked from any node once the outline rolls back (the data itself isn't deleted — it still shows up in the Diagrams tab or Decision Log list, just without a node to hang off — the same "not linked to a node" state either already shows for a deliberately-detached one). The "Version restored" toast names how many diagrams/decision logs this happened to, if any, so it's never silent</li>
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
-<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> — brings in an existing <span class="help-kbd">.drawio</span>/<span class="help-kbd">.xml</span> file: drag one onto the dropzone, or click it to browse. "Paste XML text instead" is there too for XML that's only sitting in your clipboard rather than saved as a file. Either way it's added to this list, linked to the selected node if it's free, with its thumbnail generated automatically. A small "Copy a prompt built from your outline" link is included for anyone who wants an AI assistant's help getting started — paste the prompt into whichever one you like, save or copy its reply, then bring that back in through Import</li>
+<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> opens with a <strong>Generate with AI</strong> button at the top (needs AI Capabilities configured in Settings → AI Rewrite) — it builds a diagram straight from the open document's outline using Sakura's own AI provider, with the styling (which color bucket each step falls into, spacing, decision diamonds for lines ending in a question mark) handled automatically rather than something to decide by hand, and drops the result straight into the list. Below that is the manual path: drag an existing <span class="help-kbd">.drawio</span>/<span class="help-kbd">.xml</span> file onto the dropzone, or click it to browse; "Paste XML text instead" is there too for XML that's only sitting in your clipboard rather than saved as a file. Either way it's added to this list, linked to the selected node if it's free, with its thumbnail generated automatically. A "Copy the same prompt instead" link is included for anyone who'd rather use a different AI assistant — paste the prompt into whichever one you like, save or copy its reply, then bring that back in through the dropzone/paste box above</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-pad">
@@ -14152,6 +14152,32 @@ async function exportDiagramPrompt(foldOverride){
     showDiagramPromptModal(prompt);
   }
 }
+// Same prompt (and its baked-in muted color-bucket styling — the whole point is not having to
+// think about which color goes where) but sent straight to Sakura's own configured AI provider
+// instead of being copied out to an external assistant and its reply pasted back in by hand.
+const AI_DIAGRAM_SYSTEM_PROMPT='You generate draw.io XML diagrams. Follow the instructions exactly, including using the exact color/style values given rather than inventing your own. Return only the raw XML — no explanation, no markdown code fences, no commentary before or after it.';
+async function generateDiagramFromAi(foldOverride){
+  if(!featureAiEnabled){ showToast('AI Capabilities are off — enable them in Settings → Features'); return; }
+  let key, provider;
+  try{ key=requireAiKey(); provider=getAiProviderById(aiProvider); }
+  catch(e){ showAiErrorModal((getAiProviderById(aiProvider)||{}).label||'AI', e); return; }
+  commitEdit();
+  const prompt=buildDiagramPrompt(foldOverride);
+  const btn=el('diagram-ai-generate-btn');
+  const originalLabel=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Generating…'; }
+  try{
+    const reply=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,AI_DIAGRAM_SYSTEM_PROMPT,prompt,8192,provider.id);
+    const result=extractDrawioXml(reply);
+    if(!result.ok){ showAiErrorModal(provider.label||'AI', new Error(result.error)); return; }
+    el('sakura-modal-overlay')?.classList.remove('open');
+    addDiagramFromXml(result.xml);
+  }catch(e){
+    showAiErrorModal(provider.label||'AI', e);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=originalLabel; }
+  }
+}
 // Manual-copy fallback for when navigator.clipboard.writeText is unavailable or
 // denied — reuses the shared sakura-modal shell (see showAiErrorModal) but swaps
 // the body for a read-only textarea holding the full prompt text.
@@ -14268,6 +14294,24 @@ function openImportDiagramModal(){
 
   let resultXml=null;
 
+  if(featureAiEnabled){
+    const aiBtn=document.createElement('button');
+    aiBtn.type='button';
+    aiBtn.id='diagram-ai-generate-btn';
+    aiBtn.textContent='Generate with AI';
+    aiBtn.style.cssText='width:100%;box-sizing:border-box;padding:9px 14px;font:600 13px \'Inter\',sans-serif;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;';
+    aiBtn.addEventListener('click',()=>generateDiagramFromAi());
+    bodyEl.appendChild(aiBtn);
+    const aiHint=document.createElement('div');
+    aiHint.textContent='Builds a diagram straight from this document\u2019s outline, styled automatically — no colors to pick.';
+    aiHint.style.cssText='font-size:11px;color:var(--muted);margin:6px 0 16px;text-align:center';
+    bodyEl.appendChild(aiHint);
+    const orDivider=document.createElement('div');
+    orDivider.textContent='or bring in your own';
+    orDivider.style.cssText='font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em';
+    bodyEl.appendChild(orDivider);
+  }
+
   const dropzone=document.createElement('div');
   dropzone.style.cssText='border:2px dashed var(--border);border-radius:10px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s;';
   const dropzoneText=document.createElement('div');
@@ -14329,11 +14373,11 @@ function openImportDiagramModal(){
   const promptLink=document.createElement('button');
   promptLink.type='button';
   promptLink.style.cssText='display:block;margin-top:14px;font-size:11.5px;color:var(--hint);background:none;border:none;text-decoration:underline;cursor:pointer;padding:0;';
-  promptLink.textContent='Need a starting point? Copy a prompt built from your outline';
+  promptLink.textContent='Prefer a different AI assistant? Copy the same prompt instead';
   promptLink.addEventListener('click',async()=>{
     await exportDiagramPrompt();
     promptLink.textContent='Copied \u2014 paste it into any AI assistant, then bring the reply back here';
-    setTimeout(()=>promptLink.textContent='Need a starting point? Copy a prompt built from your outline',2400);
+    setTimeout(()=>promptLink.textContent='Prefer a different AI assistant? Copy the same prompt instead',2400);
   });
   bodyEl.appendChild(promptLink);
 
