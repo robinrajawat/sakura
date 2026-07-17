@@ -2117,15 +2117,23 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-overlay.open{display:flex}
 #mindmap-overlay{display:none;position:fixed;inset:0;z-index:1055;background:var(--bg);flex-direction:column;outline:none}
 #mindmap-overlay.open{display:flex}
-#mindmap-head{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
-#mindmap-head-title{font-weight:600;font-size:13px;color:var(--fg);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mindmap-head-hint{font-size:11px;color:var(--muted);margin-right:10px;white-space:nowrap;display:none}
-@media(min-width:900px){#mindmap-head-hint{display:inline}}
-#mindmap-zoom-label{font-size:11px;color:var(--muted);min-width:36px;text-align:center;user-select:none}
-#mindmap-head button{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:6px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,border-color .12s}
-#mindmap-head button:hover{background:var(--hover);border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
-#mindmap-head button#mindmap-generate-btn{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);padding:6px 14px}
-#mindmap-head button#mindmap-generate-btn:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%)}
+#mindmap-head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
+#mindmap-head-title{display:inline-flex;align-items:center;gap:7px;font:700 13.5px 'Inter',sans-serif;color:var(--fg);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
+#mindmap-head-title svg{color:var(--accent);flex-shrink:0}
+#mindmap-head-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);margin-right:6px;white-space:nowrap;display:none}
+@media(min-width:980px){#mindmap-head-hint{display:inline}}
+#mindmap-zoom-group{display:flex;align-items:center;gap:1px;background:var(--hover);border-radius:8px;padding:2px}
+#mindmap-zoom-group button{padding:5px 7px}
+#mindmap-zoom-label{font:600 11px 'Inter',sans-serif;color:var(--muted);min-width:32px;text-align:center;user-select:none}
+#mindmap-head-divider{width:1px;height:18px;background:var(--border);margin:0 1px}
+#mindmap-head button{appearance:none;border:none;background:transparent;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:7px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,color .12s}
+#mindmap-head button:hover{background:var(--hover)}
+#mindmap-zoom-group button:hover{background:var(--bg)}
+#mindmap-clear-btn:hover{background:color-mix(in srgb, var(--fc-red) 14%, transparent);color:var(--fc-red)}
+#mindmap-head button#mindmap-generate-btn{color:#fff;background:color-mix(in srgb,var(--accent) 85%, var(--tb-bg) 15%);padding:7px 16px;margin-left:2px}
+#mindmap-head button#mindmap-generate-btn:hover{background:var(--accent)}
+#mindmap-close-btn{color:var(--muted)}
+#mindmap-close-btn:hover{color:var(--fg)}
 #mindmap-canvas-wrap{position:relative;flex:1;overflow:hidden;background:var(--edit-bg);cursor:grab}
 #mindmap-canvas-wrap.mm-panning{cursor:grabbing}
 #mindmap-canvas{position:absolute;top:0;left:0;transform-origin:0 0;width:1px;height:1px}
@@ -5810,12 +5818,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
   <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
     <div id="mindmap-head">
-      <div id="mindmap-head-title">Mind Map</div>
+      <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><circle cx="4" cy="5" r="2"/><circle cx="20" cy="5" r="2"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="19" r="2"/><path d="M9.8 10.3 5.6 6.4M14.2 10.3l4.2-3.9M9.8 13.7l-4.2 3.9M14.2 13.7l4.2 3.9"/></svg><span>Mind Map</span></div>
       <span id="mindmap-head-hint">Double-click: new idea · Tab/Enter: branch/sibling · Right-click: menu · Ctrl/Cmd+Z: undo</span>
-      <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-      <span id="mindmap-zoom-label">100%</span>
-      <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-      <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+      <div id="mindmap-zoom-group">
+        <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <span id="mindmap-zoom-label">100%</span>
+        <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+      </div>
+      <span id="mindmap-head-divider"></span>
+      <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
       <button type="button" id="mindmap-generate-btn" data-tip="Create a new outline document from this mind map">Generate Outline</button>
       <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
@@ -34887,6 +34899,22 @@ function mmResetView(){
   }
   renderMindMap();
 }
+async function mmClearCanvas(){
+  ensureMindMap();
+  const hasContent=mindMap.nodes.length>1||(mindMap.nodes[0].text||'').trim()!=='Central Idea';
+  if(hasContent){
+    const ok=await sakuraConfirm({title:'Clear Mind Map?',body:'Removes every idea on the canvas and starts over with a blank central idea. Ctrl/Cmd+Z right after undoes this.',confirmLabel:'Clear',confirmCls:'danger',cancelLabel:'Cancel'});
+    if(!ok)return;
+  }
+  mmCloseContextMenu();
+  if(mindMapEditingId!=null){ mindMapEditingId=null; }
+  const pre=mmSnapshot();
+  mindMap={centralId:1,nextId:2,nodes:[{id:1,x:0,y:0,text:'Central Idea',parentId:null,color:null}]};
+  mmPushUndo(pre);
+  mindMapSelectedId=mindMap.centralId;
+  mmResetView();
+  saveMindMap();
+}
 function renderMindMap(){
   const canvas=el('mindmap-canvas'), svg=el('mindmap-lines'), wrap=el('mindmap-canvas-wrap');
   if(!canvas||!svg||!wrap)return;
@@ -34978,6 +35006,7 @@ el('mindmap-generate-btn')?.addEventListener('click',generateOutlineFromMindMap)
 el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
+el('mindmap-clear-btn')?.addEventListener('click',mmClearCanvas);
 el('mindmap-canvas-wrap')?.addEventListener('pointerdown',mmCanvasPointerDown);
 el('mindmap-canvas-wrap')?.addEventListener('dblclick',mmCanvasDblClick);
 el('mindmap-canvas-wrap')?.addEventListener('wheel',mmWheel,{passive:false});
