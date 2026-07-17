@@ -5861,6 +5861,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
         <button type="button" id="mindmap-tidy-btn" data-tip="Tidy up — auto-arrange all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4"/><circle cx="19" cy="6" r="1.8"/><circle cx="19" cy="18" r="1.8"/><circle cx="5" cy="6" r="1.8"/><circle cx="5" cy="18" r="1.8"/><path d="M14 12h3M7 12h3M12 10V8M12 16v-2"/></svg></button>
+        <button type="button" id="mindmap-expand-all-btn" data-tip="Expand all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 6 11 12 16 18"/><polyline points="10 6 5 12 10 18"/></svg></button>
+        <button type="button" id="mindmap-collapse-all-btn" data-tip="Collapse all branches"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
       </div>
       <span id="mindmap-head-divider"></span>
       <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
@@ -6295,7 +6297,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['endash','arrow','checkmark','crossmark','middot','note','tags','ai-rewrite','version-history']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -34620,6 +34622,7 @@ let mindMapRedoStack=[];
 let mindMapEditOriginalText='';
 let mmCtxMenuNodeId=null;
 let mmCtxMenuPoint=null;
+let mmCtxMenuBulk=false;
 function loadMindMap(){
   try{
     const raw=localStorage.getItem(MINDMAP_KEY);
@@ -34656,7 +34659,8 @@ function mmUndo(){
   mindMap=mindMapUndoStack.pop();
   if(cur)mindMapRedoStack.push(cur);
   mindMapEditingId=null;
-  mindMapSelectedId=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  const primary=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  mmSetSelection(primary!=null?[primary]:[],primary);
   renderMindMap();
   saveMindMap();
 }
@@ -34666,7 +34670,8 @@ function mmRedo(){
   mindMap=mindMapRedoStack.pop();
   if(cur)mindMapUndoStack.push(cur);
   mindMapEditingId=null;
-  mindMapSelectedId=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  const primary=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  mmSetSelection(primary!=null?[primary]:[],primary);
   renderMindMap();
   saveMindMap();
 }
@@ -34695,15 +34700,19 @@ function mmPlaceChildPosition(parent){
 function mmBranchColorFor(parent){ return parent.id===mindMap.centralId?mmNextBranchColor():(parent.color||'gray'); }
 function mmAutosizeTextarea(ta){ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
 
+function mmSetSelection(ids,primary){
+  mindMapSelectedIds=new Set(ids);
+  mindMapSelectedId=primary!=null?primary:(ids.length?ids[ids.length-1]:null);
+}
 function mmSelect(id){
   if(mindMapEditingId!=null&&mindMapEditingId!==id)mmCommitEdit();
-  mindMapSelectedId=id;
+  mmSetSelection([id],id);
   renderMindMap();
 }
 function mmStartEdit(id){
   const n=findMindNode(id);
   mindMapEditOriginalText=n?(n.text||''):'';
-  mindMapEditingId=id; mindMapSelectedId=id;
+  mindMapEditingId=id; mmSetSelection([id],id);
   renderMindMap();
 }
 function mmCommitEdit(){
@@ -34734,7 +34743,7 @@ function mmAddChild(parentId){
   const node={id:mmNewId(),x:pos.x,y:pos.y,text:'',parentId:parent.id,color:mmBranchColorFor(parent)};
   mindMap.nodes.push(node);
   mmPushUndo(pre);
-  mindMapSelectedId=node.id;
+  mmSetSelection([node.id],node.id);
   renderMindMap();
   mmStartEdit(node.id);
   saveMindMap();
@@ -34748,7 +34757,7 @@ function mmAddSibling(nodeId){
     const n={id:mmNewId(),x:node.x+40,y:node.y+90,text:'',parentId:null,color:null};
     mindMap.nodes.push(n);
     mmPushUndo(pre);
-    mindMapSelectedId=n.id;
+    mmSetSelection([n.id],n.id);
     renderMindMap();
     mmStartEdit(n.id);
     saveMindMap();
@@ -34761,26 +34770,49 @@ function mmSubtreeIds(id){
   mindMapChildren(id).forEach(c=>out.push(...mmSubtreeIds(c.id)));
   return out;
 }
+// Deletes the whole current selection (one node, or every node in mindMapSelectedIds when
+// more than one is selected) along with each one's subtree. The central idea is silently
+// kept out of a bulk delete rather than blocking the rest of the selection — it only blocks
+// the whole operation when it's the *only* thing selected.
 async function mmDeleteSelected(){
-  if(mindMapSelectedId==null||!mindMap)return;
-  if(mindMapSelectedId===mindMap.centralId){ showToast('The central idea can\'t be deleted — clear its text instead'); return; }
-  const node=findMindNode(mindMapSelectedId); if(!node)return;
-  const ids=mmSubtreeIds(node.id);
-  if(ids.length>1&&confirmBeforeDelete){
-    const ok=await sakuraConfirm({title:'Delete branch?',body:`This will remove "${node.text||'(untitled)'}" and ${ids.length-1} connected idea${ids.length-1===1?'':'s'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!mindMap)return;
+  let ids=mindMapSelectedIds.size?Array.from(mindMapSelectedIds):(mindMapSelectedId!=null?[mindMapSelectedId]:[]);
+  if(!ids.length)return;
+  if(ids.length===1&&ids[0]===mindMap.centralId){ showToast('The central idea can\'t be deleted — clear its text instead'); return; }
+  ids=ids.filter(id=>id!==mindMap.centralId);
+  if(!ids.length)return;
+  const allIds=new Set();
+  ids.forEach(id=>mmSubtreeIds(id).forEach(sid=>allIds.add(sid)));
+  const extra=allIds.size-ids.length;
+  if(allIds.size>1&&confirmBeforeDelete){
+    const label=ids.length===1?`"${(findMindNode(ids[0])||{}).text||'(untitled)'}"`:`${ids.length} selected ideas`;
+    const ok=await sakuraConfirm({title:'Delete branch?',body:`This will remove ${label}${extra>0?` and ${extra} connected idea${extra===1?'':'s'}`:''}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
     if(!ok)return;
   }
   const pre=mmSnapshot();
-  const parentId=node.parentId;
-  mindMap.nodes=mindMap.nodes.filter(n=>!ids.includes(n.id));
+  const singleParentId=ids.length===1?(findMindNode(ids[0])||{}).parentId:null;
+  mindMap.nodes=mindMap.nodes.filter(n=>!allIds.has(n.id));
   mmPushUndo(pre);
-  mindMapSelectedId=parentId!=null?parentId:mindMap.centralId;
+  const primary=singleParentId!=null?singleParentId:mindMap.centralId;
+  mmSetSelection([primary],primary);
+  renderMindMap();
+  saveMindMap();
+}
+function mmSetSelectionColor(color){
+  if(!mindMap)return;
+  const ids=Array.from(mindMapSelectedIds).filter(id=>id!==mindMap.centralId);
+  if(!ids.length)return;
+  const pre=mmSnapshot();
+  const allIds=new Set();
+  ids.forEach(id=>mmSubtreeIds(id).forEach(sid=>allIds.add(sid)));
+  allIds.forEach(id=>{ const n=findMindNode(id); if(n)n.color=color; });
+  mmPushUndo(pre);
   renderMindMap();
   saveMindMap();
 }
 function mmCloseContextMenu(){
   el('mindmap-ctx-menu')?.classList.remove('open');
-  mmCtxMenuNodeId=null; mmCtxMenuPoint=null;
+  mmCtxMenuNodeId=null; mmCtxMenuPoint=null; mmCtxMenuBulk=false;
 }
 function mmPositionContextMenu(menu,clientX,clientY){
   menu.classList.add('open');
@@ -34792,8 +34824,18 @@ function mmPositionContextMenu(menu,clientX,clientY){
 }
 function mmOpenNodeContextMenu(e,id){
   e.preventDefault(); e.stopPropagation();
-  mmSelect(id);
   const menu=el('mindmap-ctx-menu'); if(!menu)return;
+  const isBulk=mindMapSelectedIds.has(id)&&mindMapSelectedIds.size>1;
+  if(isBulk){
+    const colorable=Array.from(mindMapSelectedIds).some(sid=>sid!==mindMap.centralId);
+    const colorRow=colorable?`<div class="mm-ctx-color-row">${MM_BRANCH_COLORS.map(c=>`<span class="mm-ctx-color-dot" data-color="${c}" style="background:var(--fc-${c})"></span>`).join('')}</div>`:'';
+    menu.innerHTML=(colorRow?`${colorRow}<div class="mm-ctx-divider"></div>`:'')+
+      `<div class="mm-ctx-item mm-ctx-danger" data-act="delete-bulk">Delete ${mindMapSelectedIds.size} ideas</div>`;
+    mmCtxMenuNodeId=null; mmCtxMenuPoint=null; mmCtxMenuBulk=true;
+    mmPositionContextMenu(menu,e.clientX,e.clientY);
+    return;
+  }
+  mmSelect(id);
   const node=findMindNode(id);
   const isCentral=mindMap&&id===mindMap.centralId;
   const hasKids=mindMapChildren(id).length>0;
@@ -34805,7 +34847,7 @@ function mmOpenNodeContextMenu(e,id){
     (colorRow?`<div class="mm-ctx-divider"></div>${colorRow}`:'')+
     `<div class="mm-ctx-divider"></div>`+
     `<div class="mm-ctx-item mm-ctx-danger" data-act="delete"${isCentral?' style="opacity:.4;pointer-events:none"':''}>Delete${isCentral?' (central idea)':''}</div>`;
-  mmCtxMenuNodeId=id; mmCtxMenuPoint=null;
+  mmCtxMenuNodeId=id; mmCtxMenuPoint=null; mmCtxMenuBulk=false;
   mmPositionContextMenu(menu,e.clientX,e.clientY);
 }
 function mmOpenCanvasContextMenu(e){
@@ -34816,63 +34858,82 @@ function mmOpenCanvasContextMenu(e){
   const y=(e.clientY-rect.top-mindMapPan.y)/mindMapZoom;
   const menu=el('mindmap-ctx-menu'); if(!menu)return;
   menu.innerHTML=`<div class="mm-ctx-item" data-act="add-here">Add idea here</div>`;
-  mmCtxMenuNodeId=null; mmCtxMenuPoint={x,y};
+  mmCtxMenuNodeId=null; mmCtxMenuPoint={x,y}; mmCtxMenuBulk=false;
   mmPositionContextMenu(menu,e.clientX,e.clientY);
 }
 function mmHandleContextMenuClick(e){
   const colorDot=e.target.closest('.mm-ctx-color-dot');
   if(colorDot){
-    const nodeId=mmCtxMenuNodeId;
+    const color=colorDot.dataset.color, bulk=mmCtxMenuBulk, nodeId=mmCtxMenuNodeId;
     mmCloseContextMenu();
-    if(nodeId!=null)mmSetNodeColor(nodeId,colorDot.dataset.color);
+    if(bulk)mmSetSelectionColor(color); else if(nodeId!=null)mmSetNodeColor(nodeId,color);
     return;
   }
   const item=e.target.closest('.mm-ctx-item'); if(!item)return;
   const act=item.dataset.act;
   const nodeId=mmCtxMenuNodeId, point=mmCtxMenuPoint;
   mmCloseContextMenu();
-  if(act==='child'&&nodeId!=null) mmAddChild(nodeId);
+  if(act==='delete-bulk'){ mmDeleteSelected(); }
+  else if(act==='child'&&nodeId!=null) mmAddChild(nodeId);
   else if(act==='sibling'&&nodeId!=null) mmAddSibling(nodeId);
   else if(act==='toggle-fold'&&nodeId!=null) mmToggleCollapse(nodeId);
   else if(act==='edit'&&nodeId!=null) mmStartEdit(nodeId);
-  else if(act==='delete'&&nodeId!=null){ mindMapSelectedId=nodeId; mmDeleteSelected(); }
+  else if(act==='delete'&&nodeId!=null){ mmSetSelection([nodeId],nodeId); mmDeleteSelected(); }
   else if(act==='add-here'&&point){
     ensureMindMap();
     const pre=mmSnapshot();
     const node={id:mmNewId(),x:point.x,y:point.y,text:'',parentId:null,color:null};
     mindMap.nodes.push(node);
     mmPushUndo(pre);
-    mindMapSelectedId=node.id;
+    mmSetSelection([node.id],node.id);
     renderMindMap();
     mmStartEdit(node.id);
     saveMindMap();
   }
 }
 function mmNodePointerDown(e,id){
-  if(e.target.closest('.mm-add-btn'))return;
+  if(e.target.closest('.mm-add-btn')||e.target.closest('.mm-fold-btn'))return;
   if(e.button===2)return; // right-click handled by contextmenu, not drag
   e.stopPropagation();
   mmCloseContextMenu();
   if(mindMapEditingId===id)return;
   if(mindMapEditingId!=null&&mindMapEditingId!==id)mmCommitEdit();
-  mindMapSelectedId=id;
-  renderMindMap();
-  const node=findMindNode(id); if(!node)return;
+  const ctrlHeld=e.ctrlKey||e.metaKey;
+  if(ctrlHeld){
+    const ids=new Set(mindMapSelectedIds);
+    if(ids.has(id))ids.delete(id); else ids.add(id);
+    mmSetSelection(Array.from(ids),id);
+    renderMindMap();
+    return; // a ctrl-click toggles selection only — it doesn't also start a drag
+  }
+  // A plain click on a node that's already part of a multi-selection keeps the whole
+  // selection intact for a possible group-drag; it only collapses to just this node on
+  // mouseup if nothing was actually dragged (so a real click still narrows the selection,
+  // same as most apps, but doesn't shatter it every time you start dragging from it).
+  const wasMultiSelected=mindMapSelectedIds.has(id)&&mindMapSelectedIds.size>1;
+  if(!wasMultiSelected){
+    mmSetSelection([id],id);
+    renderMindMap();
+  }
+  const dragIds=wasMultiSelected?Array.from(mindMapSelectedIds):[id];
+  const dragOrigins=dragIds.map(did=>{ const n=findMindNode(did); return n?{id:did,x:n.x,y:n.y}:null; }).filter(Boolean);
+  if(!dragOrigins.length)return;
   const preSnap=mmSnapshot();
   const canvas=el('mindmap-canvas');
-  const startX=e.clientX, startY=e.clientY, originX=node.x, originY=node.y;
+  const startX=e.clientX, startY=e.clientY;
   let moved=false;
   const onMove=(ev)=>{
     const dx=(ev.clientX-startX)/mindMapZoom, dy=(ev.clientY-startY)/mindMapZoom;
     if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
-    node.x=originX+dx; node.y=originY+dy;
+    dragOrigins.forEach(o=>{ const n=findMindNode(o.id); if(n){ n.x=o.x+dx; n.y=o.y+dy; } });
     renderMindMap();
-    const fresh=canvas?.querySelector(`.mm-node[data-id="${id}"]`); if(fresh)fresh.classList.add('mm-dragging');
+    dragIds.forEach(did=>{ const fresh=canvas?.querySelector(`.mm-node[data-id="${did}"]`); if(fresh)fresh.classList.add('mm-dragging'); });
   };
   const onUp=()=>{
     document.removeEventListener('pointermove',onMove);
     document.removeEventListener('pointerup',onUp);
     if(moved){ mmPushUndo(preSnap); saveMindMap(); }
+    else if(wasMultiSelected){ mmSetSelection([id],id); renderMindMap(); }
   };
   document.addEventListener('pointermove',onMove);
   document.addEventListener('pointerup',onUp);
@@ -34883,7 +34944,7 @@ function mmCanvasPointerDown(e){
   mmCloseContextMenu();
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
   if(mindMapEditingId!=null)mmCommitEdit();
-  mindMapSelectedId=null;
+  mmSetSelection([],null);
   renderMindMap();
   const startX=e.clientX, startY=e.clientY, originX=mindMapPan.x, originY=mindMapPan.y;
   wrap.classList.add('mm-panning');
@@ -34910,7 +34971,7 @@ function mmCanvasDblClick(e){
   const node={id:mmNewId(),x,y,text:'',parentId:null,color:null};
   mindMap.nodes.push(node);
   mmPushUndo(pre);
-  mindMapSelectedId=node.id;
+  mmSetSelection([node.id],node.id);
   renderMindMap();
   mmStartEdit(node.id);
   saveMindMap();
@@ -34964,7 +35025,7 @@ async function mmClearCanvas(){
   const pre=mmSnapshot();
   mindMap={centralId:1,nextId:2,nodes:[{id:1,x:0,y:0,text:'Central Idea',parentId:null,color:null}]};
   mmPushUndo(pre);
-  mindMapSelectedId=mindMap.centralId;
+  mmSetSelection([mindMap.centralId],mindMap.centralId);
   mmResetView();
   saveMindMap();
 }
@@ -34981,7 +35042,16 @@ function mmIsHidden(id){
 function mmToggleCollapse(id){
   const node=findMindNode(id); if(!node)return;
   node.collapsed=!node.collapsed;
-  if(node.collapsed&&mindMapSelectedId!=null&&mmIsHidden(mindMapSelectedId))mindMapSelectedId=id;
+  if(node.collapsed&&mindMapSelectedId!=null&&mmIsHidden(mindMapSelectedId))mmSetSelection([id],id);
+  renderMindMap();
+  saveMindMap();
+}
+// Pure view state, same as a single node's fold — not pushed to undo, matches the outline
+// editor's own Collapse all/Expand all which are likewise not undoable.
+function mmSetAllCollapsed(collapsed){
+  if(!mindMap)return;
+  mindMap.nodes.forEach(n=>{ if(mindMapChildren(n.id).length)n.collapsed=collapsed; });
+  if(collapsed&&mindMapSelectedId!=null&&mmIsHidden(mindMapSelectedId))mmSetSelection([mindMap.centralId],mindMap.centralId);
   renderMindMap();
   saveMindMap();
 }
@@ -35169,7 +35239,7 @@ async function mmLoadFromDocument(docId){
   mindMap=mmConvertOutlineToMap(srcNodes,srcTitle);
   mmComputeTidyLayout();
   mmPushUndo(pre);
-  mindMapSelectedId=mindMap.centralId;
+  mmSetSelection([mindMap.centralId],mindMap.centralId);
   mmResetView();
   saveMindMap();
   showToast('Loaded into Mind Map');
@@ -35199,7 +35269,7 @@ function renderMindMap(){
   mindMap.nodes.forEach(n=>{
     if(mmIsHidden(n.id))return;
     const div=document.createElement('div');
-    div.className='mm-node'+(n.id===mindMap.centralId?' mm-central':'')+(n.id===mindMapSelectedId?' mm-selected':'');
+    div.className='mm-node'+(n.id===mindMap.centralId?' mm-central':'')+(mindMapSelectedIds.has(n.id)?' mm-selected':'');
     if(n.color)div.dataset.branch=n.color;
     div.dataset.id=String(n.id);
     div.style.left=n.x+'px'; div.style.top=n.y+'px';
@@ -35216,7 +35286,7 @@ function renderMindMap(){
       const label=document.createElement('span');
       label.textContent=n.text||(n.id===mindMap.centralId?'Central idea':'');
       div.appendChild(label);
-      if(n.id===mindMapSelectedId){
+      if(n.id===mindMapSelectedId&&mindMapSelectedIds.size===1){
         const addBtn=document.createElement('span');
         addBtn.className='mm-add-btn'; addBtn.textContent='+'; addBtn.title='Add branch';
         addBtn.addEventListener('pointerdown',e=>e.stopPropagation());
@@ -35259,7 +35329,7 @@ function generateOutlineFromMindMap(){
 }
 function openMindMapOverlay(){
   ensureMindMap();
-  mindMapOpen=true; mindMapSelectedId=mindMap.centralId; mindMapEditingId=null;
+  mindMapOpen=true; mmSetSelection([mindMap.centralId],mindMap.centralId); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.add('open');
   mmResetView();
   setTimeout(()=>el('mindmap-overlay')?.focus(),0);
@@ -35269,7 +35339,7 @@ function closeMindMapOverlay(){
   if(mindMapEditingId!=null)mmCommitEdit();
   mmCloseContextMenu();
   mmCloseLoadMenu();
-  mindMapOpen=false; mindMapSelectedId=null; mindMapEditingId=null;
+  mindMapOpen=false; mmSetSelection([],null); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.remove('open');
   focusPane();
 }
@@ -35281,6 +35351,8 @@ el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
 el('mindmap-tidy-btn')?.addEventListener('click',mmTidyUp);
+el('mindmap-expand-all-btn')?.addEventListener('click',()=>mmSetAllCollapsed(false));
+el('mindmap-collapse-all-btn')?.addEventListener('click',()=>mmSetAllCollapsed(true));
 el('mindmap-load-btn')?.addEventListener('click',e=>{ e.stopPropagation(); mmToggleLoadMenu(); });
 el('mindmap-load-menu')?.addEventListener('click',e=>{
   const item=e.target.closest('.mm-load-item'); if(!item)return;
@@ -35307,6 +35379,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } if(el('mindmap-load-menu')?.classList.contains('open')){ mmCloseLoadMenu(); return; } closeMindMapOverlay(); return; }
   if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
   if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
+  if((e.key==='a'||e.key==='A')&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); if(mindMap){ mmSetSelection(mindMap.nodes.map(n=>n.id),mindMapSelectedId); renderMindMap(); } return; }
   if(e.key==='Delete'||e.key==='Backspace'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmDeleteSelected(); } return; }
   if(e.key==='Tab'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddChild(mindMapSelectedId); } return; }
   if(e.key==='Enter'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddSibling(mindMapSelectedId); } return; }
