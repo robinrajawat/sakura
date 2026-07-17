@@ -2115,6 +2115,37 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    is local to the preview and never touches the real document's state. === */
 #preview-overlay{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);flex-direction:column;outline:none}
 #preview-overlay.open{display:flex}
+#mindmap-overlay{display:none;position:fixed;inset:0;z-index:1055;background:var(--bg);flex-direction:column;outline:none}
+#mindmap-overlay.open{display:flex}
+#mindmap-head{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
+#mindmap-head-title{font-weight:600;font-size:13px;color:var(--fg);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mindmap-head-hint{font-size:11px;color:var(--muted);margin-right:10px;white-space:nowrap;display:none}
+@media(min-width:900px){#mindmap-head-hint{display:inline}}
+#mindmap-zoom-label{font-size:11px;color:var(--muted);min-width:36px;text-align:center;user-select:none}
+#mindmap-head button{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:6px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,border-color .12s}
+#mindmap-head button:hover{background:var(--hover);border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+#mindmap-head button#mindmap-generate-btn{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);padding:6px 14px}
+#mindmap-head button#mindmap-generate-btn:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%)}
+#mindmap-canvas-wrap{position:relative;flex:1;overflow:hidden;background:var(--edit-bg);cursor:grab}
+#mindmap-canvas-wrap.mm-panning{cursor:grabbing}
+#mindmap-canvas{position:absolute;top:0;left:0;transform-origin:0 0;width:1px;height:1px}
+#mindmap-lines{position:absolute;top:0;left:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+#mindmap-lines path{fill:none;stroke-width:1.6;opacity:.75}
+.mm-node{position:absolute;transform:translate(-50%,-50%);max-width:220px;min-width:44px;padding:7px 13px;border-radius:10px;background:var(--tb-bg);border:1.5px solid var(--border);font-size:12.5px;line-height:1.35;color:var(--fg);cursor:grab;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.06);word-break:break-word;text-align:center;white-space:pre-wrap}
+.mm-node:hover{border-color:var(--accent)}
+.mm-node.mm-selected{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%, transparent)}
+.mm-node.mm-central{font-weight:700;font-size:14px;padding:12px 20px;border-radius:14px;border-width:2px;background:color-mix(in srgb,var(--accent) 14%, var(--tb-bg) 86%);border-color:var(--accent)}
+.mm-node.mm-dragging{cursor:grabbing;opacity:.85;z-index:5}
+.mm-node[data-branch="blue"]{border-color:var(--fc-blue)}
+.mm-node[data-branch="green"]{border-color:var(--fc-green)}
+.mm-node[data-branch="orange"]{border-color:var(--fc-orange)}
+.mm-node[data-branch="purple"]{border-color:var(--fc-purple)}
+.mm-node[data-branch="red"]{border-color:var(--fc-red)}
+.mm-node[data-branch="gray"]{border-color:var(--fc-gray)}
+.mm-node .mm-edit{width:100%;min-width:60px;background:transparent;border:none;outline:none;color:inherit;font:inherit;font-weight:inherit;text-align:center;resize:none;overflow:hidden}
+.mm-add-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mm-node:hover .mm-add-btn,.mm-node.mm-selected .mm-add-btn{display:flex}
+#mindmap-empty-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:11.5px;color:var(--muted);background:var(--tb-bg);border:1px solid var(--border);border-radius:999px;padding:4px 12px;pointer-events:none}
 #preview-head{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--border);flex:0 0 auto}
 #preview-head-title{font:700 14px 'Inter',sans-serif;color:var(--fg)}
 #preview-head-actions{display:flex;align-items:center;gap:8px}
@@ -5152,7 +5183,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button><button class="dock-btn" id="mindmap-toggle" data-tip="Mind Map (Ctrl/Cmd+Shift+I)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><circle cx="4" cy="5" r="2"/><circle cx="20" cy="5" r="2"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="19" r="2"/><path d="M9.8 10.3 5.6 6.4M14.2 10.3l4.2-3.9M9.8 13.7l-4.2 3.9M14.2 13.7l4.2 3.9"/></svg><span>Mind Map</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -5770,6 +5801,24 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-whiteboard-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span>Whiteboard</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
+  <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
+    <div id="mindmap-head">
+      <div id="mindmap-head-title">Mind Map</div>
+      <span id="mindmap-head-hint">Double-click canvas: new idea · Tab: add branch · Enter: sibling · Delete: remove</span>
+      <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <span id="mindmap-zoom-label">100%</span>
+      <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button type="button" id="mindmap-reset-view-btn" data-tip="Reset view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></button>
+      <button type="button" id="mindmap-generate-btn" data-tip="Create a new outline document from this mind map">Generate Outline</button>
+      <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div id="mindmap-canvas-wrap">
+      <div id="mindmap-empty-hint" style="display:none">Double-click anywhere to add your first idea</div>
+      <div id="mindmap-canvas">
+        <svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </div>
   <div id="toast"></div>
   <div id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-heading">
     <div id="welcome-modal">
@@ -6187,7 +6236,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['endash','arrow','checkmark','crossmark','middot','note','tags','ai-rewrite','version-history']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -7220,7 +7269,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs,mindMap};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -7347,7 +7396,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice(); tab.mindMap=mindMap;
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -7376,6 +7425,7 @@ function applyTabSnapshot(tab){
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
   diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
   decisionLogs=Array.isArray(tab.decisionLogs)?tab.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null; if(typeof renderDecisionLogsList==='function'&&padOpen&&padViewMode==='decision')renderDecisionLogsList();
+  mindMap=(tab.mindMap&&Array.isArray(tab.mindMap.nodes))?tab.mindMap:null; mindMapSelectedId=null; mindMapEditingId=null; if(mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -7391,7 +7441,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], mindMap:(d.mindMap&&Array.isArray(d.mindMap.nodes))?d.mindMap:null, nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
@@ -7651,6 +7701,7 @@ function ensureDocumentForEditing(){
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; padUndoStack=[]; padRedoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
+  mindMap=null; mindMapSelectedId=null; mindMapEditingId=null; if(mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
   setDocStatus('',false);
@@ -16886,6 +16937,7 @@ const SHORTCUTS = {
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
   toggleMeetings: {combo:'mod+shift+e',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleMeetingsPanel==='function') toggleMeetingsPanel();}},
   toggleDiagrams: {combo:'mod+shift+g',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
+  toggleMindMap:  {combo:'mod+shift+i',   label:'Open/close Mind Map',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleMindMapOverlay==='function') toggleMindMapOverlay();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
 // browser tab, Ctrl+W is reserved by the browser itself and preventDefault can't stop it
@@ -34487,5 +34539,318 @@ window.collectMeetingMatches=function(q){
 // exists, correct that one row instead of waiting for something unrelated to happen to
 // refresh it later.
 if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetingsFeatureEnabled);
+
+// ── Mind Map ──────────────────────────────────────────────────────────────
+// A separate, freeform brainstorming canvas per document (Ctrl/Cmd+Shift+I, or the
+// dock button next to Meetings/To-Dos). Deliberately its own small data model — not
+// built on the Diagrams tab's draw.io embed — so nodes stay simple {id,x,y,text,
+// parentId,color} objects that can be walked and turned into an outline. Persists
+// as `mindMap` alongside the rest of the document (see saveToStorage/switchDoc/
+// captureActiveTabSnapshot/loadTabFromStorageObj). One-way for now: "Generate
+// Outline" always lands in a brand-new document (via insertAiOutlineAsNewDoc,
+// the same landing spot "Restructure text with AI" uses) rather than touching
+// whatever's currently open — nothing here can overwrite existing outline work.
+const MM_BRANCH_COLORS=['blue','green','orange','purple','red','gray'];
+function mmNextBranchColor(){
+  const used={};
+  (mindMap.nodes||[]).forEach(n=>{ if(n.parentId===mindMap.centralId&&n.color) used[n.color]=(used[n.color]||0)+1; });
+  let best=MM_BRANCH_COLORS[0], bestCount=Infinity;
+  MM_BRANCH_COLORS.forEach(c=>{ const cnt=used[c]||0; if(cnt<bestCount){bestCount=cnt; best=c;} });
+  return best;
+}
+function ensureMindMapForDoc(){
+  if(mindMap&&Array.isArray(mindMap.nodes)&&mindMap.nodes.length)return;
+  const title=(el('header-title')?.value||'').trim()||'Central Idea';
+  mindMap={centralId:1,nextId:2,nodes:[{id:1,x:0,y:0,text:title,parentId:null,color:null}]};
+}
+function mmNewId(){ if(!mindMap)ensureMindMapForDoc(); return mindMap.nextId++; }
+function findMindNode(id){ return mindMap?mindMap.nodes.find(n=>n.id===id):undefined; }
+function mindMapChildren(id){ return mindMap.nodes.filter(n=>n.parentId===id).sort((a,b)=>a.id-b.id); }
+function mmPlaceChildPosition(parent){
+  const kids=mindMapChildren(parent.id);
+  const idx=kids.length;
+  if(parent.id===mindMap.centralId){
+    const total=Math.max(idx+1,6);
+    const angle=(idx/total)*2*Math.PI-Math.PI/2;
+    return {x:parent.x+Math.cos(angle)*220, y:parent.y+Math.sin(angle)*220};
+  }
+  const grand=parent.parentId!=null?findMindNode(parent.parentId):null;
+  const baseAngle=grand?Math.atan2(parent.y-grand.y,parent.x-grand.x):0;
+  const spread=Math.PI/5;
+  const step=Math.ceil((idx+1)/2);
+  const sign=idx%2===0?1:-1;
+  const angle=baseAngle+sign*step*spread*0.5;
+  return {x:parent.x+Math.cos(angle)*150, y:parent.y+Math.sin(angle)*150};
+}
+function mmBranchColorFor(parent){ return parent.id===mindMap.centralId?mmNextBranchColor():(parent.color||'gray'); }
+function mmScheduleSave(){ if(typeof scheduleAutoSave==='function')scheduleAutoSave(); }
+function mmAutosizeTextarea(ta){ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
+
+function mmSelect(id){
+  if(mindMapEditingId!=null&&mindMapEditingId!==id)mmCommitEdit();
+  mindMapSelectedId=id;
+  renderMindMap();
+}
+function mmStartEdit(id,selectAll){
+  mindMapEditingId=id; mindMapSelectedId=id;
+  renderMindMap();
+}
+function mmCommitEdit(){
+  if(mindMapEditingId==null)return;
+  const id=mindMapEditingId;
+  const ta=document.querySelector(`.mm-node[data-id="${id}"] .mm-edit`);
+  const node=findMindNode(id);
+  if(node&&ta)node.text=ta.value;
+  mindMapEditingId=null;
+  renderMindMap();
+  mmScheduleSave();
+}
+function mmEditKeyDown(e,id){
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); mmCommitEdit(); mmAddSibling(id); }
+  else if(e.key==='Tab'){ e.preventDefault(); mmCommitEdit(); mmAddChild(id); }
+  else if(e.key==='Escape'){ e.preventDefault(); mmCommitEdit(); }
+}
+function mmAddChild(parentId){
+  ensureMindMapForDoc();
+  const parent=findMindNode(parentId); if(!parent)return null;
+  const pos=mmPlaceChildPosition(parent);
+  const node={id:mmNewId(),x:pos.x,y:pos.y,text:'',parentId:parent.id,color:mmBranchColorFor(parent)};
+  mindMap.nodes.push(node);
+  mindMapSelectedId=node.id;
+  renderMindMap();
+  mmStartEdit(node.id,true);
+  mmScheduleSave();
+  return node;
+}
+function mmAddSibling(nodeId){
+  const node=findMindNode(nodeId); if(!node)return null;
+  if(node.id===mindMap.centralId)return mmAddChild(node.id);
+  if(node.parentId==null){
+    const n={id:mmNewId(),x:node.x+40,y:node.y+90,text:'',parentId:null,color:null};
+    mindMap.nodes.push(n);
+    mindMapSelectedId=n.id;
+    renderMindMap();
+    mmStartEdit(n.id,true);
+    mmScheduleSave();
+    return n;
+  }
+  return mmAddChild(node.parentId);
+}
+function mmSubtreeIds(id){
+  const out=[id];
+  mindMapChildren(id).forEach(c=>out.push(...mmSubtreeIds(c.id)));
+  return out;
+}
+async function mmDeleteSelected(){
+  if(mindMapSelectedId==null||!mindMap)return;
+  if(mindMapSelectedId===mindMap.centralId){ showToast('The central idea can\'t be deleted — clear its text instead'); return; }
+  const node=findMindNode(mindMapSelectedId); if(!node)return;
+  const ids=mmSubtreeIds(node.id);
+  if(ids.length>1&&confirmBeforeDelete){
+    const ok=await sakuraConfirm({title:'Delete branch?',body:`This will remove "${node.text||'(untitled)'}" and ${ids.length-1} connected idea${ids.length-1===1?'':'s'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+    if(!ok)return;
+  }
+  const parentId=node.parentId;
+  mindMap.nodes=mindMap.nodes.filter(n=>!ids.includes(n.id));
+  mindMapSelectedId=parentId!=null?parentId:mindMap.centralId;
+  renderMindMap();
+  mmScheduleSave();
+}
+function mmNodePointerDown(e,id){
+  if(e.target.closest('.mm-add-btn'))return;
+  e.stopPropagation();
+  if(mindMapEditingId===id)return;
+  if(mindMapEditingId!=null&&mindMapEditingId!==id)mmCommitEdit();
+  mindMapSelectedId=id;
+  renderMindMap();
+  const node=findMindNode(id); if(!node)return;
+  const canvas=el('mindmap-canvas');
+  const startX=e.clientX, startY=e.clientY, originX=node.x, originY=node.y;
+  let moved=false;
+  const onMove=(ev)=>{
+    const dx=(ev.clientX-startX)/mindMapZoom, dy=(ev.clientY-startY)/mindMapZoom;
+    if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
+    node.x=originX+dx; node.y=originY+dy;
+    renderMindMap();
+    const fresh=canvas?.querySelector(`.mm-node[data-id="${id}"]`); if(fresh)fresh.classList.add('mm-dragging');
+  };
+  const onUp=()=>{
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    if(moved)mmScheduleSave();
+  };
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+function mmCanvasPointerDown(e){
+  if(e.target.closest('.mm-node'))return;
+  const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  if(mindMapEditingId!=null)mmCommitEdit();
+  mindMapSelectedId=null;
+  renderMindMap();
+  const startX=e.clientX, startY=e.clientY, originX=mindMapPan.x, originY=mindMapPan.y;
+  wrap.classList.add('mm-panning');
+  const onMove=(ev)=>{
+    mindMapPan={x:originX+(ev.clientX-startX),y:originY+(ev.clientY-startY)};
+    renderMindMap();
+  };
+  const onUp=()=>{
+    document.removeEventListener('pointermove',onMove);
+    document.removeEventListener('pointerup',onUp);
+    wrap.classList.remove('mm-panning');
+  };
+  document.addEventListener('pointermove',onMove);
+  document.addEventListener('pointerup',onUp);
+}
+function mmCanvasDblClick(e){
+  if(e.target.closest('.mm-node'))return;
+  ensureMindMapForDoc();
+  const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  const rect=wrap.getBoundingClientRect();
+  const x=(e.clientX-rect.left-mindMapPan.x)/mindMapZoom;
+  const y=(e.clientY-rect.top-mindMapPan.y)/mindMapZoom;
+  const node={id:mmNewId(),x,y,text:'',parentId:null,color:null};
+  mindMap.nodes.push(node);
+  mindMapSelectedId=node.id;
+  renderMindMap();
+  mmStartEdit(node.id,true);
+  mmScheduleSave();
+}
+function mmZoomBy(factor){
+  const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  const rect=wrap.getBoundingClientRect();
+  const cx=rect.width/2, cy=rect.height/2, prevZoom=mindMapZoom;
+  const nz=Math.min(2.2,Math.max(0.35,prevZoom*factor));
+  const worldX=(cx-mindMapPan.x)/prevZoom, worldY=(cy-mindMapPan.y)/prevZoom;
+  mindMapPan={x:cx-worldX*nz,y:cy-worldY*nz};
+  mindMapZoom=nz;
+  renderMindMap();
+}
+function mmWheel(e){
+  e.preventDefault();
+  const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  const rect=wrap.getBoundingClientRect();
+  const cx=e.clientX-rect.left, cy=e.clientY-rect.top, prevZoom=mindMapZoom;
+  const nz=Math.min(2.2,Math.max(0.35,prevZoom*(e.deltaY<0?1.08:0.925)));
+  const worldX=(cx-mindMapPan.x)/prevZoom, worldY=(cy-mindMapPan.y)/prevZoom;
+  mindMapPan={x:cx-worldX*nz,y:cy-worldY*nz};
+  mindMapZoom=nz;
+  renderMindMap();
+}
+function mmResetView(){
+  mindMapZoom=1;
+  const wrap=el('mindmap-canvas-wrap');
+  if(wrap&&mindMap&&mindMap.nodes.length){
+    const rect=wrap.getBoundingClientRect();
+    const central=findMindNode(mindMap.centralId)||mindMap.nodes[0];
+    mindMapPan={x:rect.width/2-central.x,y:rect.height/2-central.y};
+  } else {
+    mindMapPan={x:0,y:0};
+  }
+  renderMindMap();
+}
+function renderMindMap(){
+  const canvas=el('mindmap-canvas'), svg=el('mindmap-lines'), wrap=el('mindmap-canvas-wrap');
+  if(!canvas||!svg||!wrap)return;
+  canvas.style.transform=`translate(${mindMapPan.x}px, ${mindMapPan.y}px) scale(${mindMapZoom})`;
+  const zl=el('mindmap-zoom-label'); if(zl)zl.textContent=Math.round(mindMapZoom*100)+'%';
+  const th=el('mindmap-head-title'); if(th)th.textContent='Mind Map — '+(el('header-title')?.value||'Untitled');
+  canvas.querySelectorAll('.mm-node').forEach(n=>n.remove());
+  svg.innerHTML='';
+  const emptyHint=el('mindmap-empty-hint');
+  if(!mindMap||!mindMap.nodes.length){ if(emptyHint)emptyHint.style.display=''; return; }
+  if(emptyHint)emptyHint.style.display='none';
+  mindMap.nodes.forEach(n=>{
+    if(n.parentId==null)return;
+    const p=findMindNode(n.parentId); if(!p)return;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const dx=(n.x-p.x)*0.5;
+    path.setAttribute('d',`M ${p.x} ${p.y} C ${p.x+dx} ${p.y}, ${n.x-dx} ${n.y}, ${n.x} ${n.y}`);
+    path.style.stroke=n.color?`var(--fc-${n.color})`:'var(--border)';
+    svg.appendChild(path);
+  });
+  mindMap.nodes.forEach(n=>{
+    const div=document.createElement('div');
+    div.className='mm-node'+(n.id===mindMap.centralId?' mm-central':'')+(n.id===mindMapSelectedId?' mm-selected':'');
+    if(n.color)div.dataset.branch=n.color;
+    div.dataset.id=String(n.id);
+    div.style.left=n.x+'px'; div.style.top=n.y+'px';
+    if(n.id===mindMapEditingId){
+      const ta=document.createElement('textarea');
+      ta.className='mm-edit'; ta.rows=1; ta.value=n.text||'';
+      ta.addEventListener('input',()=>mmAutosizeTextarea(ta));
+      ta.addEventListener('keydown',e=>mmEditKeyDown(e,n.id));
+      ta.addEventListener('blur',()=>mmCommitEdit());
+      div.appendChild(ta);
+      canvas.appendChild(div);
+      setTimeout(()=>{ ta.focus(); ta.select(); mmAutosizeTextarea(ta); },0);
+    } else {
+      const label=document.createElement('span');
+      label.textContent=n.text||(n.id===mindMap.centralId?'Central idea':'');
+      div.appendChild(label);
+      if(n.id===mindMapSelectedId){
+        const addBtn=document.createElement('span');
+        addBtn.className='mm-add-btn'; addBtn.textContent='+'; addBtn.title='Add branch';
+        addBtn.addEventListener('pointerdown',e=>e.stopPropagation());
+        addBtn.addEventListener('click',e=>{ e.stopPropagation(); mmAddChild(n.id); });
+        div.appendChild(addBtn);
+      }
+      div.addEventListener('pointerdown',e=>mmNodePointerDown(e,n.id));
+      div.addEventListener('dblclick',e=>{ e.stopPropagation(); mmSelect(n.id); mmStartEdit(n.id,true); });
+      canvas.appendChild(div);
+    }
+  });
+}
+function mmDfsFlatten(){
+  if(!mindMap||!Array.isArray(mindMap.nodes)||!mindMap.nodes.length)return [];
+  const out=[];
+  const visit=(id,depth)=>{
+    const n=findMindNode(id); if(!n)return;
+    out.push({text:n.text||'',depth});
+    mindMapChildren(id).forEach(c=>visit(c.id,depth+1));
+  };
+  mindMap.nodes.filter(n=>n.parentId==null).sort((a,b)=>a.id-b.id).forEach(r=>visit(r.id,0));
+  return out;
+}
+function generateOutlineFromMindMap(){
+  const parsed=mmDfsFlatten();
+  if(!parsed.some(n=>n.text&&n.text.trim())){ showToast('Add some ideas to the mind map first'); return; }
+  const created=insertAiOutlineAsNewDoc(parsed);
+  if(created){ closeMindMapOverlay(); showToast('Outline generated in a new document'); }
+}
+function openMindMapOverlay(){
+  ensureMindMapForDoc();
+  mindMapOpen=true; mindMapSelectedId=mindMap.centralId; mindMapEditingId=null;
+  el('mindmap-overlay')?.classList.add('open');
+  mmResetView();
+  setTimeout(()=>el('mindmap-overlay')?.focus(),0);
+}
+function closeMindMapOverlay(){
+  if(!mindMapOpen)return;
+  if(mindMapEditingId!=null)mmCommitEdit();
+  mindMapOpen=false; mindMapSelectedId=null; mindMapEditingId=null;
+  el('mindmap-overlay')?.classList.remove('open');
+  focusPane();
+}
+function toggleMindMapOverlay(){ if(mindMapOpen)closeMindMapOverlay(); else openMindMapOverlay(); }
+el('mindmap-toggle')?.addEventListener('click',toggleMindMapOverlay);
+el('mindmap-close-btn')?.addEventListener('click',closeMindMapOverlay);
+el('mindmap-generate-btn')?.addEventListener('click',generateOutlineFromMindMap);
+el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
+el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
+el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
+el('mindmap-canvas-wrap')?.addEventListener('pointerdown',mmCanvasPointerDown);
+el('mindmap-canvas-wrap')?.addEventListener('dblclick',mmCanvasDblClick);
+el('mindmap-canvas-wrap')?.addEventListener('wheel',mmWheel,{passive:false});
+el('mindmap-overlay')?.addEventListener('click',e=>{ if(e.target.id==='mindmap-overlay')closeMindMapOverlay(); });
+document.addEventListener('keydown',e=>{
+  if(!mindMapOpen)return;
+  if(el('sakura-modal-overlay')?.classList.contains('open'))return;
+  if(mindMapEditingId!=null)return;
+  if(e.key==='Escape'){ e.preventDefault(); closeMindMapOverlay(); return; }
+  if(e.key==='Delete'||e.key==='Backspace'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmDeleteSelected(); } return; }
+  if(e.key==='Tab'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddChild(mindMapSelectedId); } return; }
+  if(e.key==='Enter'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddSibling(mindMapSelectedId); } return; }
+});
 </script>
 </body></html>
