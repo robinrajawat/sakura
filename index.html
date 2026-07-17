@@ -4720,7 +4720,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Settings → Data → Undo last restore → appears only after you've used Restore (from a backup file, the Local safety copy, or a Backup history entry above) — a snapshot of whatever was in the app right before that restore, in case the file you picked turns out to have been the wrong one. One level deep: it holds only what was there before your most recent restore, not a full history of every restore you've ever done</li>
 <li>Settings → Data → Secure Storage → optional, encrypts AI provider keys and the GitHub Gist token at rest (AES-GCM, passphrase-derived key) instead of storing them as plain text — in this browser and in local backup files. The passphrase itself is never stored anywhere; unlocking derives the key fresh each time, and it only lives in memory for that session — reload the page and you'll need to unlock again to use AI features or Gist auto-sync. There's no recovery if you forget it. Turning it off writes everything back as plain text. Once it's set up, a status-bar chip shows the current Locked/Unlocked state and toggles it in one click — no need to open Settings each session; right-click the chip to jump to the full Secure Storage controls instead. Hide it like any other status-bar item in Settings → Statusbar items if you don't want it there. Unlocking also automatically resumes anything that was paused waiting on it — Auto-rewrite on commit and Gist auto-sync each pick back up on their own the moment you unlock, with no need to redo whatever triggered them originally</li>
 <li>Settings → Data → Cloud Backup → optional, pushes the same full backup as "Backup all data" to GitHub Gist or Google Drive instead of a local file, so you can pull it down again from a different browser or computer. GitHub Gist needs a Personal Access Token with the <span class="help-kbd">gist</span> scope, pasted into Settings — stored in this browser only, the same as an AI provider key (and covered by Secure Storage above, if that's turned on). Google Drive needs your own free OAuth Client ID from Google Cloud Console; the app only ever sees files it created itself, not the rest of your Drive, and the sign-in token lives in memory only — you reconnect each session, nothing Google-related is written to disk. Both providers find your existing backup automatically by name/description on Save and Load, so there's no ID to copy between browsers by hand. Both are manual push/pull by default — Save fully overwrites the cloud copy with what's here, Load fully overwrites what's here with the cloud copy, no merging either direction. Both also offer "Auto-sync on edit" (off by default) — pushes automatically ~1.2s after edits settle, same timing as Auto-backup to file. Gist's auto-sync persists across reloads (the token is saved) and additionally detects conflicts: if the Gist changed elsewhere since your last Save/Load here, auto-push pauses itself and shows a conflict notice rather than silently overwriting the newer version — resolve it with a manual Save or Load. Drive's auto-sync is session-only, since Drive's sign-in token isn't kept across reloads — it turns itself off with a one-time notice (not a nag) whenever the session connection is gone, and needs reconnecting and re-enabling next time; it has no conflict detection of its own, so treat it as a convenience rather than a safety net if you also edit from Drive on another device. Gist's auto-sync also pauses (with a one-time toast, not a nag on every edit) if the token itself can't be read because Secure Storage is locked — nothing is lost in the meantime since local saves and the safety copy never depend on the vault, and the paused push resumes and sends on its own the moment you unlock, no extra edit needed to retrigger it. Neither AI provider keys nor the Gist token — encrypted or not — are ever included in what gets uploaded to Gist or Drive; only your documents are</li>
-<li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting</li>
+<li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting. The document icon next to it, <strong>Import from .ics file</strong>, needs none of that setup — pick any .ics file (exported or shared from Outlook, Google Calendar, Apple Calendar, or elsewhere) and it's parsed entirely in the browser, no sign-in or network call at all. Same checklist, same pre-filled fields, same already-imported dedup, matched by the file's own event UID instead of a Graph API event ID. One real gap: a recurring event (one with an RRULE) imports as just its one base occurrence, not expanded into every future instance the way the Outlook API import does — the picker flags any recurring event so that's never a silent surprise</li>
 <li>Settings → Data → Backup / Restore → still the way to move data between files, browsers, or computers, or to take a one-off manual backup; the sidebar footer has Backup/Restore shortcuts too, so you don't need to open Settings just for that. The header's Export ▾ and Import ▾ buttons are for the current document only (Markdown, Word, OPML, etc.) — Backup/Restore cover all your data</li>
 <li>Settings → Data → "Warn if this session isn't backed up" → offers Export or Connect auto-backup if you've made changes this session but neither has run yet. Three modes: <strong>Strict</strong> shows the browser's own "leave site?" prompt when you try to close the tab, then this dialog if you cancel it — a real last-chance gate, at the cost of that generic browser popup (its wording is fixed by the browser, not by Sakura). <strong>Passive</strong> skips the browser prompt entirely and shows only this dialog, the next time you switch away from or close the tab — quieter, but a direct close with no prior tab-switch gets no warning at all. <strong>Off</strong> disables both; the status-bar "⚠ Back up your data" chip (from the reminder setting above) is your only remaining signal</li>
 <li>Recommended: export before switching to a new version of this file, then import right after opening it</li>
@@ -5467,6 +5467,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="meetings-template-btn" data-tip="New from template" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></button>
     <button type="button" id="meetings-outlook-import-btn" data-tip="Import from Outlook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="8 15 11 18 16 12"/></svg></button>
+    <button type="button" id="meetings-ics-import-btn" data-tip="Import from .ics file — no Azure app registration needed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg></button>
+    <input type="file" id="meetings-ics-file-input" accept=".ics,text/calendar" style="display:none" />
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <span id="meetings-count-label"></span>
   </div>
@@ -5625,6 +5627,22 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
         <button type="button" class="btn" id="outlook-import-cancel-btn">Cancel</button>
         <button type="button" class="btn primary" id="outlook-import-confirm-btn">Import selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="ics-import-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Import from .ics file">
+  <div class="app-modal" style="width:min(520px,94vw)">
+    <div class="app-modal-head">
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Import from .ics file</h2><div class="cs-sub" id="ics-import-sub">Events found in the file you picked</div></div>
+      <button class="app-modal-close-btn" id="ics-import-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div class="app-modal-body">
+      <div id="ics-import-list" style="max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+      <div id="ics-import-empty" style="display:none;font:400 13px 'Inter',sans-serif;color:var(--hint);padding:24px 0;text-align:center">No events found in that file.</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" id="ics-import-cancel-btn">Cancel</button>
+        <button type="button" class="btn primary" id="ics-import-confirm-btn">Import selected</button>
       </div>
     </div>
   </div>
@@ -21455,6 +21473,158 @@ el('outlook-import-confirm-btn')?.addEventListener('click',()=>{
   showToast('Imported '+toImport.length+' meeting'+(toImport.length===1?'':'s')+' from Outlook');
 });
 el('meetings-outlook-import-btn')?.addEventListener('click',openOutlookImportModal);
+
+// === .ics file import (addon alongside Outlook, not a replacement) — reads a calendar file
+// exported or shared from Outlook, Google Calendar, Apple Calendar, or any other calendar app.
+// No OAuth, no Azure app registration, no network call at all: the file never leaves the
+// browser. Deliberately a separate, parallel code path from the Outlook import above (own
+// state, own modal, own dedup field) rather than threading a second source through the
+// existing Outlook-specific functions — safer than risking a regression in an already-working
+// integration for the sake of sharing a little more code.
+function unfoldIcsLines(text){
+  // RFC5545: a line starting with a single space or tab is a continuation of the previous
+  // line, used to wrap long lines — has to be undone before parsing name:value pairs.
+  const rawLines=String(text||'').split(/\r\n|\n|\r/);
+  const out=[];
+  for(const line of rawLines){
+    if((line.startsWith(' ')||line.startsWith('\t'))&&out.length){ out[out.length-1]+=line.slice(1); }
+    else out.push(line);
+  }
+  return out;
+}
+function unescapeIcsText(v){
+  return String(v||'').replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
+}
+function parseIcsDate(val){
+  // Accepts a date-only value (all-day event, YYYYMMDD) or a date-time (YYYYMMDDTHHMMSS,
+  // optionally with a trailing Z for UTC). Doesn't handle the third RFC5545 form — a TZID
+  // parameter naming an IANA timezone — since that needs a timezone database this file
+  // doesn't have; those events fall back to being read as local time, close enough for a
+  // meeting-note import rather than a scheduling system.
+  if(!val)return null;
+  const m=String(val).match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/);
+  if(!m)return null;
+  const [,y,mo,d,h,mi,s,z]=m;
+  if(h===undefined)return new Date(Number(y),Number(mo)-1,Number(d));
+  if(z)return new Date(Date.UTC(Number(y),Number(mo)-1,Number(d),Number(h),Number(mi),Number(s)));
+  return new Date(Number(y),Number(mo)-1,Number(d),Number(h),Number(mi),Number(s));
+}
+// Recurring events (RRULE present) are imported as their one base occurrence, not expanded
+// into every real future instance the way Outlook's own Graph API import does — proper RRULE
+// expansion (weekly/monthly rules, exceptions, until-dates) is real complexity for a feature
+// whose whole point is avoiding heavyweight setup. Flagged in the picker list so it's not a
+// silent gap; picking one still gets you a real meeting note for that occurrence.
+function parseIcsFile(text){
+  const lines=unfoldIcsLines(text);
+  const rawEvents=[]; let cur=null;
+  for(const raw of lines){
+    if(raw==='BEGIN:VEVENT'){ cur={}; continue; }
+    if(raw==='END:VEVENT'){ if(cur)rawEvents.push(cur); cur=null; continue; }
+    if(!cur)continue;
+    const idx=raw.indexOf(':'); if(idx<0)continue;
+    const left=raw.slice(0,idx), value=raw.slice(idx+1);
+    const name=left.split(';')[0].toUpperCase();
+    if(name==='UID')cur.uid=value;
+    else if(name==='SUMMARY')cur.summary=unescapeIcsText(value);
+    else if(name==='LOCATION')cur.location=unescapeIcsText(value);
+    else if(name==='DTSTART')cur.dtstart=value;
+    else if(name==='DTEND')cur.dtend=value;
+    else if(name==='ATTENDEE'){
+      cur.attendees=cur.attendees||[];
+      const cnMatch=left.match(/CN=([^;]+)/i);
+      cur.attendees.push(cnMatch?cnMatch[1]:value.replace(/^mailto:/i,''));
+    }
+    else if(name==='RRULE')cur.recurring=true;
+  }
+  return rawEvents.map((e,i)=>{
+    const start=parseIcsDate(e.dtstart);
+    return {
+      id:e.uid||('ics-'+i+'-'+(e.dtstart||'')),
+      subject:e.summary||'',
+      start:start?{dateTime:start.toISOString()}:null,
+      location:e.location?{displayName:e.location}:null,
+      attendees:(e.attendees||[]).map(name=>({emailAddress:{name}})),
+      recurring:!!e.recurring
+    };
+  }).filter(e=>e.start);
+}
+let icsImportEvents=[];
+const icsImportSelected=new Set();
+function openIcsImportModal(events){
+  icsImportEvents=events;
+  icsImportSelected.clear();
+  const alreadyImportedIds=new Set(meetingNotes.map(m=>m.icsUid).filter(Boolean));
+  icsImportEvents.forEach(e=>{ if(!alreadyImportedIds.has(e.id))icsImportSelected.add(e.id); });
+  renderIcsImportList(alreadyImportedIds);
+  const emptyEl=el('ics-import-empty'); if(emptyEl)emptyEl.style.display=icsImportEvents.length?'none':'';
+  el('ics-import-modal-overlay')?.classList.add('open');
+}
+function renderIcsImportList(alreadyImportedIds){
+  const listEl=el('ics-import-list'); if(!listEl)return;
+  listEl.innerHTML='';
+  icsImportEvents.forEach(e=>{
+    const already=alreadyImportedIds.has(e.id);
+    const row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-radius:6px;cursor:'+(already?'default':'pointer');
+    row.addEventListener('mouseenter',()=>{ if(!already)row.style.background='var(--hover)' });
+    row.addEventListener('mouseleave',()=>{ row.style.background='' });
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=icsImportSelected.has(e.id)&&!already; cb.disabled=already;
+    cb.style.marginTop='3px';
+    cb.addEventListener('change',()=>{ if(cb.checked)icsImportSelected.add(e.id); else icsImportSelected.delete(e.id); });
+    const info=document.createElement('div'); info.style.cssText='flex:1;min-width:0';
+    const dateStr=e.start?.dateTime?new Date(e.start.dateTime).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
+    const timeStr=e.start?.dateTime?new Date(e.start.dateTime).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}):'';
+    const title=document.createElement('div'); title.style.cssText='font:500 13px Inter,sans-serif;color:'+(already?'var(--hint)':'var(--fg)');
+    title.textContent=e.subject||'(No title)';
+    const meta=document.createElement('div'); meta.style.cssText='font:400 11.5px Inter,sans-serif;color:var(--hint);margin-top:2px';
+    const metaParts=[dateStr+(timeStr?' · '+timeStr:'')];
+    if(e.location?.displayName)metaParts.push(e.location.displayName);
+    if(Array.isArray(e.attendees)&&e.attendees.length)metaParts.push(e.attendees.length+' attendee'+(e.attendees.length===1?'':'s'));
+    if(e.recurring)metaParts.push('Recurring — first occurrence only');
+    if(already)metaParts.push('Already imported');
+    meta.textContent=metaParts.join(' · ');
+    info.appendChild(title); info.appendChild(meta);
+    row.appendChild(cb); row.appendChild(info);
+    listEl.appendChild(row);
+  });
+}
+function closeIcsImportModal(){ el('ics-import-modal-overlay')?.classList.remove('open'); }
+el('ics-import-modal-close-btn')?.addEventListener('click',closeIcsImportModal);
+el('ics-import-cancel-btn')?.addEventListener('click',closeIcsImportModal);
+el('ics-import-modal-overlay')?.addEventListener('click',e=>{ if(e.target.id==='ics-import-modal-overlay')closeIcsImportModal(); });
+el('ics-import-confirm-btn')?.addEventListener('click',()=>{
+  const toImport=icsImportEvents.filter(e=>icsImportSelected.has(e.id));
+  if(!toImport.length){ closeIcsImportModal(); return; }
+  toImport.forEach(e=>{
+    const now=Date.now();
+    const startIso=e.start?.dateTime||''; const dt=startIso?new Date(startIso):null;
+    const date=dt?dt.toISOString().slice(0,10):'';
+    const time=dt?String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'):'';
+    const attendees=(Array.isArray(e.attendees)?e.attendees:[]).map(a=>a.emailAddress?.name||a.emailAddress?.address).filter(Boolean);
+    let agenda='';
+    if(e.location?.displayName)agenda=sakuraSanitizeRichHtml('<p>📍 '+esc(e.location.displayName)+'</p>');
+    const m=normalizeMeetingNote({
+      id:mnUid(), title:e.subject||'', date, time, attendees, agenda, body:'', actionItems:[], links:[],
+      icsUid:e.id, createdAt:now, modifiedAt:now
+    });
+    meetingNotes.push(m);
+  });
+  saveMeetingNotes();
+  renderMeetingsList();
+  closeIcsImportModal();
+  showToast('Imported '+toImport.length+' meeting'+(toImport.length===1?'':'s')+' from .ics');
+});
+el('meetings-ics-import-btn')?.addEventListener('click',()=>{ el('meetings-ics-file-input')?.click(); });
+el('meetings-ics-file-input')?.addEventListener('change',async e=>{
+  const file=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!file)return;
+  try{
+    const text=await file.text();
+    const events=parseIcsFile(text);
+    if(!events.length){ showToast('No events found in that file'); return; }
+    openIcsImportModal(events);
+  }catch(err){ showToast('Could not read that .ics file'); }
+});
 updateOutlookCalStatus();
 
 el('vault-setup-btn')?.addEventListener('click',()=>setupVaultPassphrase());
@@ -33138,6 +33308,7 @@ function normalizeMeetingNote(m){
     actionItems:(m&&Array.isArray(m.actionItems))?m.actionItems.map(normalizeMeetingActionItem):[],
     links:(m&&Array.isArray(m.links))?m.links.map(normalizeMeetingLink).filter(Boolean):[],
     outlookEventId:(m&&typeof m.outlookEventId==='string')?m.outlookEventId:'',
+    icsUid:(m&&typeof m.icsUid==='string')?m.icsUid:'',
     createdAt:(m&&Number.isFinite(m.createdAt))?m.createdAt:now,
     modifiedAt:(m&&Number.isFinite(m.modifiedAt))?m.modifiedAt:now
   };
