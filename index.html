@@ -2146,6 +2146,13 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .mm-add-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .mm-node:hover .mm-add-btn,.mm-node.mm-selected .mm-add-btn{display:flex}
 #mindmap-empty-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:11.5px;color:var(--muted);background:var(--tb-bg);border:1px solid var(--border);border-radius:999px;padding:4px 12px;pointer-events:none}
+#mindmap-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:170px}
+#mindmap-ctx-menu.open{display:block}
+.mm-ctx-item{display:flex;align-items:center;padding:7px 9px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
+.mm-ctx-item:hover{background:var(--hover)}
+.mm-ctx-item.mm-ctx-danger{color:var(--fc-red)}
+.mm-ctx-item.mm-ctx-danger:hover{background:color-mix(in srgb, var(--fc-red) 15%, transparent)}
+.mm-ctx-divider{height:1px;background:var(--border);margin:4px 2px}
 #preview-head{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--border);flex:0 0 auto}
 #preview-head-title{font:700 14px 'Inter',sans-serif;color:var(--fg)}
 #preview-head-actions{display:flex;align-items:center;gap:8px}
@@ -5804,7 +5811,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
     <div id="mindmap-head">
       <div id="mindmap-head-title">Mind Map</div>
-      <span id="mindmap-head-hint">Double-click canvas: new idea · Tab: add branch · Enter: sibling · Delete: remove</span>
+      <span id="mindmap-head-hint">Double-click: new idea · Tab/Enter: branch/sibling · Right-click: menu · Ctrl/Cmd+Z: undo</span>
       <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <span id="mindmap-zoom-label">100%</span>
       <button type="button" id="mindmap-zoom-in-btn" data-tip="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -5818,6 +5825,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
     </div>
+    <div id="mindmap-ctx-menu"></div>
   </div>
   <div id="toast"></div>
   <div id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-heading">
@@ -7269,7 +7277,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs,mindMap};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -7396,7 +7404,7 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice(); tab.mindMap=mindMap;
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -7425,7 +7433,6 @@ function applyTabSnapshot(tab){
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
   diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
   decisionLogs=Array.isArray(tab.decisionLogs)?tab.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null; if(typeof renderDecisionLogsList==='function'&&padOpen&&padViewMode==='decision')renderDecisionLogsList();
-  mindMap=(tab.mindMap&&Array.isArray(tab.mindMap.nodes))?tab.mindMap:null; mindMapSelectedId=null; mindMapEditingId=null; if(mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   titleAutoSyncEnabled=!String(tab.title||'').trim(); lastAutoTitle=String(tab.title||'').trim();
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
@@ -7441,7 +7448,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], mindMap:(d.mindMap&&Array.isArray(d.mindMap.nodes))?d.mindMap:null, nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
@@ -7701,7 +7708,6 @@ function ensureDocumentForEditing(){
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; padUndoStack=[]; padRedoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
-  mindMap=null; mindMapSelectedId=null; mindMapEditingId=null; if(mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay();
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
   setDocStatus('',false);
@@ -34541,16 +34547,72 @@ window.collectMeetingMatches=function(q){
 if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetingsFeatureEnabled);
 
 // ── Mind Map ──────────────────────────────────────────────────────────────
-// A separate, freeform brainstorming canvas per document (Ctrl/Cmd+Shift+I, or the
-// dock button next to Meetings/To-Dos). Deliberately its own small data model — not
-// built on the Diagrams tab's draw.io embed — so nodes stay simple {id,x,y,text,
-// parentId,color} objects that can be walked and turned into an outline. Persists
-// as `mindMap` alongside the rest of the document (see saveToStorage/switchDoc/
-// captureActiveTabSnapshot/loadTabFromStorageObj). One-way for now: "Generate
-// Outline" always lands in a brand-new document (via insertAiOutlineAsNewDoc,
-// the same landing spot "Restructure text with AI" uses) rather than touching
-// whatever's currently open — nothing here can overwrite existing outline work.
+// A single, app-level freeform brainstorming canvas (Ctrl/Cmd+Shift+I, or the dock
+// button next to Meetings/To-Dos) — independent of any document, same as Meeting
+// Notes and To-Dos are. Lives in its own storage key (MINDMAP_KEY), not inside any
+// per-document payload, and switching/closing documents never touches it. Its own
+// small data model — not built on the Diagrams tab's draw.io embed — so nodes stay
+// simple {id,x,y,text,parentId,color} objects that can be walked and turned into an
+// outline. One-way for now: "Generate Outline" always lands in a brand-new document
+// (via insertAiOutlineAsNewDoc, the same landing spot "Restructure text with AI"
+// uses) rather than touching whatever document happens to be open.
+const MINDMAP_KEY='sakura_mindmap_v1';
 const MM_BRANCH_COLORS=['blue','green','orange','purple','red','gray'];
+let mindMapUndoStack=[];
+let mindMapRedoStack=[];
+let mindMapEditOriginalText='';
+let mmCtxMenuNodeId=null;
+let mmCtxMenuPoint=null;
+function loadMindMap(){
+  try{
+    const raw=localStorage.getItem(MINDMAP_KEY);
+    if(!raw)return;
+    const parsed=JSON.parse(raw);
+    if(parsed&&Array.isArray(parsed.nodes)&&parsed.nodes.length){
+      mindMap={centralId:Number.isFinite(parsed.centralId)?parsed.centralId:parsed.nodes[0].id, nextId:Number.isFinite(parsed.nextId)?parsed.nextId:(Math.max(...parsed.nodes.map(n=>n.id))+1),
+        nodes:parsed.nodes.filter(n=>n&&Number.isFinite(n.id)).map(n=>({id:n.id,x:Number.isFinite(n.x)?n.x:0,y:Number.isFinite(n.y)?n.y:0,text:typeof n.text==='string'?n.text:'',parentId:(n.parentId===null||n.parentId===undefined)?null:n.parentId,color:typeof n.color==='string'?n.color:null}))};
+    }
+  }catch(e){ mindMap=null; }
+}
+function saveMindMap(){
+  try{
+    localStorage.setItem(MINDMAP_KEY, JSON.stringify(mindMap));
+    // Own storage key, entirely outside the per-document save path — without this a
+    // session that only touched the Mind Map never updates lastSavedAt/triggers
+    // scheduleBackupWrite, same reasoning as saveTodos/saveMeetingNotes.
+    lastAnyDataChangeAt=Date.now();
+    if(typeof scheduleBackupWrite==='function')scheduleBackupWrite();
+  }catch(e){
+    showToast('Storage full — this change was not saved');
+  }
+}
+function mmSnapshot(){ return mindMap?JSON.parse(JSON.stringify(mindMap)):null; }
+function mmPushUndo(preSnapshot){
+  if(!preSnapshot)return;
+  mindMapUndoStack.push(preSnapshot);
+  if(mindMapUndoStack.length>50)mindMapUndoStack.shift();
+  mindMapRedoStack=[];
+}
+function mmUndo(){
+  if(!mindMapUndoStack.length)return;
+  const cur=mmSnapshot();
+  mindMap=mindMapUndoStack.pop();
+  if(cur)mindMapRedoStack.push(cur);
+  mindMapEditingId=null;
+  mindMapSelectedId=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  renderMindMap();
+  saveMindMap();
+}
+function mmRedo(){
+  if(!mindMapRedoStack.length)return;
+  const cur=mmSnapshot();
+  mindMap=mindMapRedoStack.pop();
+  if(cur)mindMapUndoStack.push(cur);
+  mindMapEditingId=null;
+  mindMapSelectedId=(mindMap&&mindMap.nodes.length)?(findMindNode(mindMapSelectedId)?mindMapSelectedId:mindMap.centralId):null;
+  renderMindMap();
+  saveMindMap();
+}
 function mmNextBranchColor(){
   const used={};
   (mindMap.nodes||[]).forEach(n=>{ if(n.parentId===mindMap.centralId&&n.color) used[n.color]=(used[n.color]||0)+1; });
@@ -34558,12 +34620,11 @@ function mmNextBranchColor(){
   MM_BRANCH_COLORS.forEach(c=>{ const cnt=used[c]||0; if(cnt<bestCount){bestCount=cnt; best=c;} });
   return best;
 }
-function ensureMindMapForDoc(){
+function ensureMindMap(){
   if(mindMap&&Array.isArray(mindMap.nodes)&&mindMap.nodes.length)return;
-  const title=(el('header-title')?.value||'').trim()||'Central Idea';
-  mindMap={centralId:1,nextId:2,nodes:[{id:1,x:0,y:0,text:title,parentId:null,color:null}]};
+  mindMap={centralId:1,nextId:2,nodes:[{id:1,x:0,y:0,text:'Central Idea',parentId:null,color:null}]};
 }
-function mmNewId(){ if(!mindMap)ensureMindMapForDoc(); return mindMap.nextId++; }
+function mmNewId(){ if(!mindMap)ensureMindMap(); return mindMap.nextId++; }
 function findMindNode(id){ return mindMap?mindMap.nodes.find(n=>n.id===id):undefined; }
 function mindMapChildren(id){ return mindMap.nodes.filter(n=>n.parentId===id).sort((a,b)=>a.id-b.id); }
 function mmPlaceChildPosition(parent){
@@ -34583,7 +34644,6 @@ function mmPlaceChildPosition(parent){
   return {x:parent.x+Math.cos(angle)*150, y:parent.y+Math.sin(angle)*150};
 }
 function mmBranchColorFor(parent){ return parent.id===mindMap.centralId?mmNextBranchColor():(parent.color||'gray'); }
-function mmScheduleSave(){ if(typeof scheduleAutoSave==='function')scheduleAutoSave(); }
 function mmAutosizeTextarea(ta){ if(!ta)return; ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
 
 function mmSelect(id){
@@ -34591,7 +34651,9 @@ function mmSelect(id){
   mindMapSelectedId=id;
   renderMindMap();
 }
-function mmStartEdit(id,selectAll){
+function mmStartEdit(id){
+  const n=findMindNode(id);
+  mindMapEditOriginalText=n?(n.text||''):'';
   mindMapEditingId=id; mindMapSelectedId=id;
   renderMindMap();
 }
@@ -34600,10 +34662,15 @@ function mmCommitEdit(){
   const id=mindMapEditingId;
   const ta=document.querySelector(`.mm-node[data-id="${id}"] .mm-edit`);
   const node=findMindNode(id);
-  if(node&&ta)node.text=ta.value;
+  const newText=ta?ta.value:(node?node.text:'');
+  if(node&&newText!==mindMapEditOriginalText){
+    const pre=mmSnapshot();
+    node.text=newText;
+    mmPushUndo(pre);
+    saveMindMap();
+  }
   mindMapEditingId=null;
   renderMindMap();
-  mmScheduleSave();
 }
 function mmEditKeyDown(e,id){
   if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); mmCommitEdit(); mmAddSibling(id); }
@@ -34611,27 +34678,31 @@ function mmEditKeyDown(e,id){
   else if(e.key==='Escape'){ e.preventDefault(); mmCommitEdit(); }
 }
 function mmAddChild(parentId){
-  ensureMindMapForDoc();
+  ensureMindMap();
   const parent=findMindNode(parentId); if(!parent)return null;
+  const pre=mmSnapshot();
   const pos=mmPlaceChildPosition(parent);
   const node={id:mmNewId(),x:pos.x,y:pos.y,text:'',parentId:parent.id,color:mmBranchColorFor(parent)};
   mindMap.nodes.push(node);
+  mmPushUndo(pre);
   mindMapSelectedId=node.id;
   renderMindMap();
-  mmStartEdit(node.id,true);
-  mmScheduleSave();
+  mmStartEdit(node.id);
+  saveMindMap();
   return node;
 }
 function mmAddSibling(nodeId){
   const node=findMindNode(nodeId); if(!node)return null;
   if(node.id===mindMap.centralId)return mmAddChild(node.id);
   if(node.parentId==null){
+    const pre=mmSnapshot();
     const n={id:mmNewId(),x:node.x+40,y:node.y+90,text:'',parentId:null,color:null};
     mindMap.nodes.push(n);
+    mmPushUndo(pre);
     mindMapSelectedId=n.id;
     renderMindMap();
-    mmStartEdit(n.id,true);
-    mmScheduleSave();
+    mmStartEdit(n.id);
+    saveMindMap();
     return n;
   }
   return mmAddChild(node.parentId);
@@ -34650,20 +34721,82 @@ async function mmDeleteSelected(){
     const ok=await sakuraConfirm({title:'Delete branch?',body:`This will remove "${node.text||'(untitled)'}" and ${ids.length-1} connected idea${ids.length-1===1?'':'s'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
     if(!ok)return;
   }
+  const pre=mmSnapshot();
   const parentId=node.parentId;
   mindMap.nodes=mindMap.nodes.filter(n=>!ids.includes(n.id));
+  mmPushUndo(pre);
   mindMapSelectedId=parentId!=null?parentId:mindMap.centralId;
   renderMindMap();
-  mmScheduleSave();
+  saveMindMap();
+}
+function mmCloseContextMenu(){
+  el('mindmap-ctx-menu')?.classList.remove('open');
+  mmCtxMenuNodeId=null; mmCtxMenuPoint=null;
+}
+function mmPositionContextMenu(menu,clientX,clientY){
+  menu.classList.add('open');
+  const mw=190, mh=menu.querySelectorAll('.mm-ctx-item').length*30+16;
+  let x=clientX, y=clientY;
+  if(x+mw>window.innerWidth)x=window.innerWidth-mw-8;
+  if(y+mh>window.innerHeight)y=window.innerHeight-mh-8;
+  menu.style.left=Math.max(8,x)+'px'; menu.style.top=Math.max(8,y)+'px';
+}
+function mmOpenNodeContextMenu(e,id){
+  e.preventDefault(); e.stopPropagation();
+  mmSelect(id);
+  const menu=el('mindmap-ctx-menu'); if(!menu)return;
+  const isCentral=mindMap&&id===mindMap.centralId;
+  menu.innerHTML=`<div class="mm-ctx-item" data-act="child">Add branch</div>`+
+    (isCentral?'':'<div class="mm-ctx-item" data-act="sibling">Add sibling</div>')+
+    `<div class="mm-ctx-item" data-act="edit">Rename</div>`+
+    `<div class="mm-ctx-divider"></div>`+
+    `<div class="mm-ctx-item mm-ctx-danger" data-act="delete"${isCentral?' style="opacity:.4;pointer-events:none"':''}>Delete${isCentral?' (central idea)':''}</div>`;
+  mmCtxMenuNodeId=id; mmCtxMenuPoint=null;
+  mmPositionContextMenu(menu,e.clientX,e.clientY);
+}
+function mmOpenCanvasContextMenu(e){
+  e.preventDefault();
+  const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  const rect=wrap.getBoundingClientRect();
+  const x=(e.clientX-rect.left-mindMapPan.x)/mindMapZoom;
+  const y=(e.clientY-rect.top-mindMapPan.y)/mindMapZoom;
+  const menu=el('mindmap-ctx-menu'); if(!menu)return;
+  menu.innerHTML=`<div class="mm-ctx-item" data-act="add-here">Add idea here</div>`;
+  mmCtxMenuNodeId=null; mmCtxMenuPoint={x,y};
+  mmPositionContextMenu(menu,e.clientX,e.clientY);
+}
+function mmHandleContextMenuClick(e){
+  const item=e.target.closest('.mm-ctx-item'); if(!item)return;
+  const act=item.dataset.act;
+  const nodeId=mmCtxMenuNodeId, point=mmCtxMenuPoint;
+  mmCloseContextMenu();
+  if(act==='child'&&nodeId!=null) mmAddChild(nodeId);
+  else if(act==='sibling'&&nodeId!=null) mmAddSibling(nodeId);
+  else if(act==='edit'&&nodeId!=null) mmStartEdit(nodeId);
+  else if(act==='delete'&&nodeId!=null){ mindMapSelectedId=nodeId; mmDeleteSelected(); }
+  else if(act==='add-here'&&point){
+    ensureMindMap();
+    const pre=mmSnapshot();
+    const node={id:mmNewId(),x:point.x,y:point.y,text:'',parentId:null,color:null};
+    mindMap.nodes.push(node);
+    mmPushUndo(pre);
+    mindMapSelectedId=node.id;
+    renderMindMap();
+    mmStartEdit(node.id);
+    saveMindMap();
+  }
 }
 function mmNodePointerDown(e,id){
   if(e.target.closest('.mm-add-btn'))return;
+  if(e.button===2)return; // right-click handled by contextmenu, not drag
   e.stopPropagation();
+  mmCloseContextMenu();
   if(mindMapEditingId===id)return;
   if(mindMapEditingId!=null&&mindMapEditingId!==id)mmCommitEdit();
   mindMapSelectedId=id;
   renderMindMap();
   const node=findMindNode(id); if(!node)return;
+  const preSnap=mmSnapshot();
   const canvas=el('mindmap-canvas');
   const startX=e.clientX, startY=e.clientY, originX=node.x, originY=node.y;
   let moved=false;
@@ -34677,13 +34810,15 @@ function mmNodePointerDown(e,id){
   const onUp=()=>{
     document.removeEventListener('pointermove',onMove);
     document.removeEventListener('pointerup',onUp);
-    if(moved)mmScheduleSave();
+    if(moved){ mmPushUndo(preSnap); saveMindMap(); }
   };
   document.addEventListener('pointermove',onMove);
   document.addEventListener('pointerup',onUp);
 }
 function mmCanvasPointerDown(e){
   if(e.target.closest('.mm-node'))return;
+  if(e.button===2)return;
+  mmCloseContextMenu();
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
   if(mindMapEditingId!=null)mmCommitEdit();
   mindMapSelectedId=null;
@@ -34704,17 +34839,19 @@ function mmCanvasPointerDown(e){
 }
 function mmCanvasDblClick(e){
   if(e.target.closest('.mm-node'))return;
-  ensureMindMapForDoc();
+  ensureMindMap();
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
   const rect=wrap.getBoundingClientRect();
   const x=(e.clientX-rect.left-mindMapPan.x)/mindMapZoom;
   const y=(e.clientY-rect.top-mindMapPan.y)/mindMapZoom;
+  const pre=mmSnapshot();
   const node={id:mmNewId(),x,y,text:'',parentId:null,color:null};
   mindMap.nodes.push(node);
+  mmPushUndo(pre);
   mindMapSelectedId=node.id;
   renderMindMap();
-  mmStartEdit(node.id,true);
-  mmScheduleSave();
+  mmStartEdit(node.id);
+  saveMindMap();
 }
 function mmZoomBy(factor){
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
@@ -34728,6 +34865,7 @@ function mmZoomBy(factor){
 }
 function mmWheel(e){
   e.preventDefault();
+  mmCloseContextMenu();
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
   const rect=wrap.getBoundingClientRect();
   const cx=e.clientX-rect.left, cy=e.clientY-rect.top, prevZoom=mindMapZoom;
@@ -34754,7 +34892,6 @@ function renderMindMap(){
   if(!canvas||!svg||!wrap)return;
   canvas.style.transform=`translate(${mindMapPan.x}px, ${mindMapPan.y}px) scale(${mindMapZoom})`;
   const zl=el('mindmap-zoom-label'); if(zl)zl.textContent=Math.round(mindMapZoom*100)+'%';
-  const th=el('mindmap-head-title'); if(th)th.textContent='Mind Map — '+(el('header-title')?.value||'Untitled');
   canvas.querySelectorAll('.mm-node').forEach(n=>n.remove());
   svg.innerHTML='';
   const emptyHint=el('mindmap-empty-hint');
@@ -34796,7 +34933,8 @@ function renderMindMap(){
         div.appendChild(addBtn);
       }
       div.addEventListener('pointerdown',e=>mmNodePointerDown(e,n.id));
-      div.addEventListener('dblclick',e=>{ e.stopPropagation(); mmSelect(n.id); mmStartEdit(n.id,true); });
+      div.addEventListener('dblclick',e=>{ e.stopPropagation(); mmSelect(n.id); mmStartEdit(n.id); });
+      div.addEventListener('contextmenu',e=>mmOpenNodeContextMenu(e,n.id));
       canvas.appendChild(div);
     }
   });
@@ -34819,7 +34957,7 @@ function generateOutlineFromMindMap(){
   if(created){ closeMindMapOverlay(); showToast('Outline generated in a new document'); }
 }
 function openMindMapOverlay(){
-  ensureMindMapForDoc();
+  ensureMindMap();
   mindMapOpen=true; mindMapSelectedId=mindMap.centralId; mindMapEditingId=null;
   el('mindmap-overlay')?.classList.add('open');
   mmResetView();
@@ -34828,6 +34966,7 @@ function openMindMapOverlay(){
 function closeMindMapOverlay(){
   if(!mindMapOpen)return;
   if(mindMapEditingId!=null)mmCommitEdit();
+  mmCloseContextMenu();
   mindMapOpen=false; mindMapSelectedId=null; mindMapEditingId=null;
   el('mindmap-overlay')?.classList.remove('open');
   focusPane();
@@ -34842,15 +34981,25 @@ el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
 el('mindmap-canvas-wrap')?.addEventListener('pointerdown',mmCanvasPointerDown);
 el('mindmap-canvas-wrap')?.addEventListener('dblclick',mmCanvasDblClick);
 el('mindmap-canvas-wrap')?.addEventListener('wheel',mmWheel,{passive:false});
+el('mindmap-canvas-wrap')?.addEventListener('contextmenu',e=>{ if(e.target.closest('.mm-node'))return; mmOpenCanvasContextMenu(e); });
+el('mindmap-ctx-menu')?.addEventListener('click',mmHandleContextMenuClick);
 el('mindmap-overlay')?.addEventListener('click',e=>{ if(e.target.id==='mindmap-overlay')closeMindMapOverlay(); });
+document.addEventListener('mousedown',e=>{
+  if(!mindMapOpen)return;
+  const menu=el('mindmap-ctx-menu');
+  if(menu&&menu.classList.contains('open')&&!menu.contains(e.target))mmCloseContextMenu();
+});
 document.addEventListener('keydown',e=>{
   if(!mindMapOpen)return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(mindMapEditingId!=null)return;
-  if(e.key==='Escape'){ e.preventDefault(); closeMindMapOverlay(); return; }
+  if(e.key==='Escape'){ e.preventDefault(); if(el('mindmap-ctx-menu')?.classList.contains('open')){ mmCloseContextMenu(); return; } closeMindMapOverlay(); return; }
+  if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){ e.preventDefault(); mmUndo(); return; }
+  if(((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)&&e.shiftKey)||((e.key==='y'||e.key==='Y')&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); mmRedo(); return; }
   if(e.key==='Delete'||e.key==='Backspace'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmDeleteSelected(); } return; }
   if(e.key==='Tab'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddChild(mindMapSelectedId); } return; }
   if(e.key==='Enter'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddSibling(mindMapSelectedId); } return; }
 });
+loadMindMap();
 </script>
 </body></html>
