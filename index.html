@@ -34632,6 +34632,8 @@ let mmCtxMenuBulk=false;
 let mmCtxMenuLinkId=null;
 let mmCtxMenuPos=null;
 let mmDragGuides=null;
+let mmLastClickId=null;
+let mmLastClickTime=0;
 let mmEdgePopoverCommit=null;
 function loadMindMap(){
   try{
@@ -34979,8 +34981,16 @@ function mmNodePointerDown(e,id){
     document.removeEventListener('pointermove',onMove);
     document.removeEventListener('pointerup',onUp);
     if(mmDragGuides){ mmDragGuides=null; renderMindMap(); }
-    if(moved){ mmPushUndo(preSnap); saveMindMap(); }
-    else if(wasMultiSelected){ mmSetSelection([id],id); renderMindMap(); }
+    if(moved){ mmPushUndo(preSnap); saveMindMap(); return; }
+    const now=Date.now();
+    if(mmLastClickId===id&&(now-mmLastClickTime)<450){
+      mmLastClickId=null; mmLastClickTime=0;
+      mmSetSelection([id],id);
+      mmStartEdit(id);
+      return;
+    }
+    mmLastClickId=id; mmLastClickTime=now;
+    if(wasMultiSelected){ mmSetSelection([id],id); renderMindMap(); }
   };
   document.addEventListener('pointermove',onMove);
   document.addEventListener('pointerup',onUp);
@@ -34989,6 +34999,7 @@ function mmCanvasPointerDown(e){
   if(e.target.closest('.mm-node'))return;
   if(e.button===2)return;
   mmCloseContextMenu();
+  mmLastClickId=null; mmLastClickTime=0;
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
   if(mindMapEditingId!=null)mmCommitEdit();
   mmSetSelection([],null);
