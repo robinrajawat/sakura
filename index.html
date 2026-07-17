@@ -1935,22 +1935,31 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-stage-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
 #demo-stage-title{font:700 13px 'Inter',sans-serif;color:var(--fg)}
 #demo-stage-headright{display:flex;align-items:center;gap:4px}
-#demo-pause-btn,#demo-close-btn,#demo-back-btn,#demo-fwd-btn,#demo-speed-btn,#demo-chapters-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;transition:color .12s,background .12s}
+#demo-pause-btn,#demo-close-btn,#demo-back-btn,#demo-fwd-btn,#demo-speed-btn,#demo-chapters-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;transition:color .12s,background .12s,transform .12s}
 #demo-pause-btn:hover,#demo-close-btn:hover,#demo-back-btn:hover,#demo-fwd-btn:hover,#demo-speed-btn:hover,#demo-chapters-btn:hover{color:var(--fg);background:var(--hover)}
+#demo-pause-btn:active,#demo-close-btn:active,#demo-back-btn:active,#demo-fwd-btn:active,#demo-speed-btn:active,#demo-chapters-btn:active{transform:scale(.88)}
 #demo-chapters-btn.demo-active{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 #demo-stage-headright{position:relative}
-#demo-chapters-menu{display:none;position:absolute;top:32px;right:0;width:208px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.22);padding:6px;z-index:30;max-height:280px;overflow-y:auto}
-
+#demo-chapters-menu{display:none;position:absolute;top:32px;right:0;width:236px;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 36px rgba(0,0,0,.24);padding:7px;z-index:30;max-height:300px;overflow-y:auto;opacity:0;transform:translateY(-4px) scale(.98);transition:opacity .16s ease,transform .16s cubic-bezier(.22,.8,.34,1)}
 #demo-chapters-menu.demo-open{display:block}
-.demo-chapter-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;font:400 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer;appearance:none;border:none;background:none;width:100%;text-align:left}
-.demo-chapter-item:hover{background:var(--hover)}
+#demo-chapters-menu.demo-menu-visible{opacity:1;transform:translateY(0) scale(1)}
+.demo-chapter-item{position:relative;display:flex;align-items:center;gap:9px;padding:8px 10px 8px 8px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);cursor:pointer;appearance:none;border:none;background:none;width:100%;text-align:left;transition:background .12s,padding-left .12s}
+.demo-chapter-item:hover{background:var(--hover);padding-left:11px}
 .demo-chapter-item.demo-chapter-current{color:var(--accent);font-weight:600;background:color-mix(in srgb,var(--accent) 10%,transparent)}
-.demo-chapter-num{flex-shrink:0;width:16px;color:var(--hint);font:600 10.5px 'Inter',sans-serif}
-.demo-chapter-item.demo-chapter-current .demo-chapter-num{color:var(--accent)}
+.demo-chapter-item.demo-chapter-current::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2.5px;border-radius:2px;background:var(--accent)}
+.demo-chapter-num{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--hover);color:var(--hint);font:600 10px 'Inter',sans-serif;display:inline-flex;align-items:center;justify-content:center}
+.demo-chapter-item.demo-chapter-current .demo-chapter-num{color:#fff;background:var(--accent)}
 #demo-speed-btn{width:auto;min-width:30px;padding:0 6px;font:700 11px 'Inter',sans-serif;letter-spacing:.01em}
-#demo-progress-track{height:3px;background:var(--border);flex:0 0 auto}
-#demo-progress-bar{height:100%;width:0%;background:var(--accent);transition-property:width;transition-duration:0s;transition-timing-function:linear}
-#demo-body{flex:1;display:flex;min-height:0;overflow:hidden}
+#demo-progress-track{position:relative;height:5px;background:var(--border);flex:0 0 auto;cursor:pointer;transition:height .12s ease}
+#demo-progress-track:hover{height:8px}
+#demo-progress-bar{position:relative;height:100%;width:0%;background:var(--accent);transition-property:width;transition-duration:.32s;transition-timing-function:cubic-bezier(.3,.6,.3,1)}
+#demo-progress-bar::after{content:'';position:absolute;right:-1px;top:50%;width:9px;height:9px;border-radius:50%;background:var(--accent);transform:translate(50%,-50%) scale(0);box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .12s ease}
+#demo-progress-track:hover #demo-progress-bar::after{transform:translate(50%,-50%) scale(1)}
+.demo-progress-tick{position:absolute;top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--bg) 55%,transparent);pointer-events:none}
+#demo-progress-hover-label{position:absolute;bottom:14px;transform:translateX(-50%);background:color-mix(in srgb,var(--bg) 96%,#000 4%);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s ease;box-shadow:0 6px 14px rgba(0,0,0,.2);z-index:5}
+#demo-progress-track:hover #demo-progress-hover-label.demo-shown{opacity:1}
+#demo-body{flex:1;display:flex;min-height:0;overflow:hidden;transition:opacity .16s ease}
+#demo-body.demo-seek-dip{opacity:.35}
 #demo-sidebar{width:140px;flex:0 0 auto;border-right:1px solid var(--border);padding:12px 10px;overflow:hidden;transition:width .3s ease,padding .3s ease,opacity .3s ease;background:color-mix(in srgb,var(--bg) 96%,var(--tb-bg) 4%)}
 .demo-sb-label{font:600 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px}
 #demo-sb-tpl-label{margin-top:14px}
@@ -5861,7 +5870,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <button type="button" id="demo-close-btn" data-tip="Close demo" aria-label="Close demo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
         </div>
       </div>
-      <div id="demo-progress-track"><div id="demo-progress-bar"></div></div>
+      <div id="demo-progress-track"><div id="demo-progress-bar"></div><div id="demo-progress-hover-label"></div></div>
       <div id="demo-body">
         <div id="demo-sidebar">
           <div class="demo-sb-label">Documents</div>
@@ -25216,7 +25225,7 @@ function demoSleep(ms){
 function demoSetProgress(frac){
   const bar=el('demo-progress-bar'); if(!bar)return;
   demoLastFrac=Math.max(0,Math.min(1,frac));
-  bar.style.transitionDuration=demoFastForward?'0ms':'420ms'; bar.style.width=(demoLastFrac*100)+'%';
+  bar.style.width=(demoLastFrac*100)+'%';
   updateDemoChaptersHighlight();
   if(demoFastForward&&demoSeekTarget!==null&&demoLastFrac>=demoSeekTarget-0.0001){
     demoFastForward=false; demoSeekTarget=null;
@@ -25666,6 +25675,19 @@ function buildDemoChaptersMenu(){
   });
   updateDemoChaptersHighlight();
 }
+// Small vertical ticks on the scrubber itself, one per chapter boundary — the same kind of
+// chapter markers a real video player shows directly on its timeline, not just tucked away in
+// a dropdown. Built once; the track's own width handles the rest via CSS percentage position.
+function buildDemoProgressTicks(){
+  const track=el('demo-progress-track'); if(!track)return;
+  track.querySelectorAll('.demo-progress-tick').forEach(t=>t.remove());
+  DEMO_CHAPTERS.forEach(c=>{
+    if(c.frac<=0||c.frac>=1)return;
+    const tick=document.createElement('div'); tick.className='demo-progress-tick';
+    tick.style.left=(c.frac*100)+'%';
+    track.appendChild(tick);
+  });
+}
 function updateDemoChaptersHighlight(){
   const menu=el('demo-chapters-menu'); if(!menu)return;
   let current=DEMO_CHAPTERS[0];
@@ -25678,15 +25700,18 @@ function openDemoChaptersMenu(){
   const menu=el('demo-chapters-menu'), btn=el('demo-chapters-btn'); if(!menu||!btn)return;
   updateDemoChaptersHighlight();
   menu.classList.add('demo-open'); btn.classList.add('demo-active'); btn.setAttribute('aria-expanded','true');
+  requestAnimationFrame(()=>menu.classList.add('demo-menu-visible'));
 }
 function closeDemoChaptersMenu(){
   const menu=el('demo-chapters-menu'), btn=el('demo-chapters-btn'); if(!menu||!btn)return;
-  menu.classList.remove('demo-open'); btn.classList.remove('demo-active'); btn.setAttribute('aria-expanded','false');
+  menu.classList.remove('demo-menu-visible'); btn.classList.remove('demo-active'); btn.setAttribute('aria-expanded','false');
+  setTimeout(()=>{ if(!menu.classList.contains('demo-menu-visible'))menu.classList.remove('demo-open'); },170);
 }
 function toggleDemoChaptersMenu(){
   el('demo-chapters-menu')?.classList.contains('demo-open') ? closeDemoChaptersMenu() : openDemoChaptersMenu();
 }
 buildDemoChaptersMenu();
+buildDemoProgressTicks();
 el('demo-chapters-btn')?.addEventListener('click',e=>{ e.stopPropagation(); toggleDemoChaptersMenu(); });
 document.addEventListener('click',e=>{
   const menu=el('demo-chapters-menu'), btn=el('demo-chapters-btn');
@@ -25694,16 +25719,49 @@ document.addEventListener('click',e=>{
   if(menu.contains(e.target)||btn?.contains(e.target))return;
   closeDemoChaptersMenu();
 });
+// The nearest chapter name to a given point on the track — used both for the hover-preview
+// label and (implicitly) by clicking, which just seeks straight to the raw ratio rather than
+// snapping, so the track behaves like a real scrubber rather than a chapter-only jump list.
+function demoNearestChapterLabel(ratio){
+  let nearest=DEMO_CHAPTERS[0];
+  for(const c of DEMO_CHAPTERS){ if(Math.abs(c.frac-ratio)<Math.abs(nearest.frac-ratio))nearest=c; }
+  return nearest.label;
+}
+(function setupDemoProgressScrub(){
+  const track=el('demo-progress-track'); const hoverLabel=el('demo-progress-hover-label'); if(!track)return;
+  const ratioFromEvent=e=>{ const r=track.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)); };
+  let dragging=false;
+  track.addEventListener('mousemove',e=>{
+    const ratio=ratioFromEvent(e);
+    if(hoverLabel){
+      hoverLabel.textContent=demoNearestChapterLabel(ratio);
+      hoverLabel.style.left=(ratio*100)+'%';
+      hoverLabel.classList.add('demo-shown');
+    }
+    if(dragging)demoSeekTo(ratio);
+  });
+  track.addEventListener('mouseleave',()=>{ hoverLabel?.classList.remove('demo-shown'); });
+  track.addEventListener('mousedown',e=>{ dragging=true; demoSeekTo(ratioFromEvent(e)); });
+  window.addEventListener('mouseup',()=>{ dragging=false; });
+})();
 function setDemoSpeedBtnLabel(){ const b=el('demo-speed-btn'); if(b)b.textContent=(demoSpeed%1===0?demoSpeed:demoSpeed)+'x'; }
 function cycleDemoSpeed(){
   const i=DEMO_SPEEDS.indexOf(demoSpeed);
   demoSpeed=DEMO_SPEEDS[(i+1)%DEMO_SPEEDS.length];
   setDemoSpeedBtnLabel();
 }
+// A quick opacity dip on the stage body around a jump — long enough to register as an
+// intentional transition, short enough to still feel instant, so landing on a new chapter reads
+// as a cut-to rather than the tree/sidebar visibly being wiped and rebuilt from zero.
 function demoSeekTo(targetFrac){
   targetFrac=Math.max(0,Math.min(1,targetFrac));
   demoPaused=false; setDemoPauseBtnState();
   demoSeekTarget=targetFrac; demoFastForward=true;
+  const body=el('demo-body');
+  if(body){
+    body.classList.add('demo-seek-dip');
+    setTimeout(()=>body.classList.remove('demo-seek-dip'),160);
+  }
   runDemoScript();
 }
 function demoSeekStep(dir){
