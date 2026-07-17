@@ -2118,11 +2118,10 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #preview-overlay.open{display:flex}
 #mindmap-overlay{display:none;position:fixed;inset:0;z-index:1055;background:var(--bg);flex-direction:column;outline:none}
 #mindmap-overlay.open{display:flex}
-#mindmap-head{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
-#mindmap-head-title{display:inline-flex;align-items:center;gap:7px;font:700 13.5px 'Inter',sans-serif;color:var(--fg);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
+#mindmap-head{display:flex;align-items:center;gap:8px;padding:11px 18px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-shrink:0}
+#mindmap-head-title{display:inline-flex;align-items:center;gap:8px;font:700 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
 #mindmap-head-title svg{color:var(--accent);flex-shrink:0}
-#mindmap-head-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);margin-right:6px;white-space:nowrap;display:none}
-@media(min-width:980px){#mindmap-head-hint{display:inline}}
+#mindmap-node-count{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-right:auto;white-space:nowrap}
 #mindmap-zoom-group{display:flex;align-items:center;gap:1px;background:var(--hover);border-radius:8px;padding:2px}
 #mindmap-zoom-group button{padding:5px 7px}
 #mindmap-zoom-label{font:600 11px 'Inter',sans-serif;color:var(--muted);min-width:32px;text-align:center;user-select:none}
@@ -2139,10 +2138,11 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #mindmap-canvas-wrap{position:relative;flex:1;overflow:hidden;background:var(--edit-bg);cursor:grab}
 #mindmap-canvas-wrap.mm-panning{cursor:grabbing}
 #mindmap-canvas{position:absolute;top:0;left:0;transform-origin:0 0;width:1px;height:1px}
+#mindmap-canvas.mm-animate{transition:transform .28s cubic-bezier(.2,.7,.3,1)}
 #mindmap-lines{position:absolute;top:0;left:0;width:1px;height:1px;overflow:visible;pointer-events:none}
 #mindmap-lines path{fill:none;stroke-width:1.6;opacity:.75}
-.mm-node{position:absolute;transform:translate(-50%,-50%);width:max-content;max-width:220px;min-width:44px;padding:7px 13px;border-radius:10px;background:var(--tb-bg);border:1.5px solid var(--border);font-size:12.5px;line-height:1.35;color:var(--fg);cursor:grab;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.06);word-break:break-word;text-align:center;white-space:pre-wrap}
-.mm-node:hover{border-color:var(--accent)}
+.mm-node{position:absolute;transform:translate(-50%,-50%);width:max-content;max-width:220px;min-width:44px;padding:7px 13px;border-radius:10px;background:var(--tb-bg);border:1.5px solid var(--border);font-size:12.5px;line-height:1.35;color:var(--fg);cursor:grab;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.06);word-break:break-word;text-align:center;white-space:pre-wrap;transition:box-shadow .12s,border-color .12s}
+.mm-node:hover{border-color:var(--accent);box-shadow:0 3px 10px rgba(0,0,0,.14)}
 .mm-node.mm-selected{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%, transparent)}
 .mm-node.mm-central{font-weight:700;font-size:14px;padding:12px 20px;border-radius:14px;border-width:2px;background:color-mix(in srgb,var(--accent) 14%, var(--tb-bg) 86%);border-color:var(--accent)}
 .mm-node.mm-dragging{cursor:grabbing;opacity:.85;z-index:5}
@@ -4774,7 +4774,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>An app-level freeform brainstorming canvas — one shared canvas across your whole workspace, not tied to any document (same as Meeting Notes and To-Dos). Open it from its button at the end of the status bar, with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">I</span>, or — while presenting — the Mind Map button in the presenter bar, its right-click menu entry, or the <span class="help-kbd">M</span> key; all open the same canvas and the same shortcut/Esc closes it again</li>
 <li>Starts with a single <strong>central idea</strong> node. Double-click empty canvas to drop a new floating idea; double-click any node (or select it and press <span class="help-kbd">Tab</span>) to add a connected branch; <span class="help-kbd">Enter</span> adds a sibling next to the selected node. Double-click a node's own text, or select it and use the right-click menu, to rename it</li>
-<li>Drag a node to reposition it; drag empty canvas to pan; scroll (or the −/100%/+ controls) to zoom. Click selects a node; <span class="help-kbd">Ctrl/Cmd</span>+click toggles a node in or out of the selection without starting a drag, and <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">A</span> selects everything. Dragging any node that's part of a multi-selection moves the whole selection together. <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes the selected node(s) and everything branching from them, confirming first if there's more than one idea involved</li>
+<li>Drag a node to reposition it — while dragging, it snaps to line up its center with any other node's, showing a dashed guide line, the same idea as alignment guides in most design tools. Drag empty canvas to pan; scroll (or the −/100%/+ controls) to zoom. Click selects a node; <span class="help-kbd">Ctrl/Cmd</span>+click toggles a node in or out of the selection without starting a drag, and <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">A</span> selects everything. Dragging any node that's part of a multi-selection moves the whole selection together. <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes the selected node(s) and everything branching from them, confirming first if there's more than one idea involved</li>
 <li>Each branch off the central idea gets its own color, automatically cycled and inherited by everything under it. Right-click any non-central node (or a multi-selection) for a color row to set the color by hand — recoloring cascades to the whole subtree, and a multi-selection recolors every selected branch at once</li>
 <li>Any node with children shows a small fold badge — click it to collapse the branch (shows a hidden-idea count) or expand it again; also available as "Collapse/Expand branch" in the right-click menu. <strong>Expand all</strong> / <strong>Collapse all</strong> (next to Tidy up) do the same for the whole map in one click. This is purely a view state, like the outline's own fold: it doesn't undo, and Generate Outline still walks the full tree regardless of what's currently collapsed</li>
 <li>Double-click a connector line (or right-click it) to add a short label to it — e.g. "if approved" on the line between two ideas. Leave the text blank to remove the label again</li>
@@ -5860,7 +5860,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="mindmap-overlay" role="dialog" aria-modal="true" aria-label="Mind Map" tabindex="-1">
     <div id="mindmap-head">
       <div id="mindmap-head-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2.2"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M6.2 12h3.6M9.8 12 17 5M9.8 12h7.2M9.8 12 17 19"/></svg><span>Mind Map</span></div>
-      <span id="mindmap-head-hint">Double-click: new idea · Tab/Enter: branch/sibling · Right-click: menu · Ctrl/Cmd+Z: undo</span>
+      <span id="mindmap-node-count"></span>
       <div id="mindmap-zoom-group">
         <button type="button" id="mindmap-zoom-out-btn" data-tip="Zoom out"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
         <span id="mindmap-zoom-label">100%</span>
@@ -34631,6 +34631,7 @@ let mmCtxMenuPoint=null;
 let mmCtxMenuBulk=false;
 let mmCtxMenuLinkId=null;
 let mmCtxMenuPos=null;
+let mmDragGuides=null;
 let mmEdgePopoverCommit=null;
 function loadMindMap(){
   try{
@@ -34946,17 +34947,38 @@ function mmNodePointerDown(e,id){
   const preSnap=mmSnapshot();
   const canvas=el('mindmap-canvas');
   const startX=e.clientX, startY=e.clientY;
+  const primaryOrigin=dragOrigins.find(o=>o.id===id)||dragOrigins[0];
   let moved=false;
   const onMove=(ev)=>{
     const dx=(ev.clientX-startX)/mindMapZoom, dy=(ev.clientY-startY)/mindMapZoom;
     if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
-    dragOrigins.forEach(o=>{ const n=findMindNode(o.id); if(n){ n.x=o.x+dx; n.y=o.y+dy; } });
+    let adjDx=dx, adjDy=dy;
+    mmDragGuides=null;
+    if(moved){
+      // Snap the primary dragged node's center to any other node's center within a small
+      // screen-space threshold (scaled by zoom so it feels like a constant ~6px on screen
+      // regardless of how zoomed in/out the canvas is) — same idea as Figma/PowerPoint
+      // smart guides, just center-to-center rather than edge-to-edge.
+      const SNAP=6/mindMapZoom;
+      const propX=primaryOrigin.x+dx, propY=primaryOrigin.y+dy;
+      let bestX=null,bestXd=SNAP, bestY=null,bestYd=SNAP;
+      mindMap.nodes.forEach(n=>{
+        if(dragIds.includes(n.id)||mmIsHidden(n.id))return;
+        const ddx=Math.abs(n.x-propX); if(ddx<bestXd){ bestXd=ddx; bestX=n.x; }
+        const ddy=Math.abs(n.y-propY); if(ddy<bestYd){ bestYd=ddy; bestY=n.y; }
+      });
+      if(bestX!=null){ adjDx=dx+(bestX-propX); }
+      if(bestY!=null){ adjDy=dy+(bestY-propY); }
+      if(bestX!=null||bestY!=null)mmDragGuides={x:bestX,y:bestY};
+    }
+    dragOrigins.forEach(o=>{ const n=findMindNode(o.id); if(n){ n.x=o.x+adjDx; n.y=o.y+adjDy; } });
     renderMindMap();
     dragIds.forEach(did=>{ const fresh=canvas?.querySelector(`.mm-node[data-id="${did}"]`); if(fresh)fresh.classList.add('mm-dragging'); });
   };
   const onUp=()=>{
     document.removeEventListener('pointermove',onMove);
     document.removeEventListener('pointerup',onUp);
+    if(mmDragGuides){ mmDragGuides=null; renderMindMap(); }
     if(moved){ mmPushUndo(preSnap); saveMindMap(); }
     else if(wasMultiSelected){ mmSetSelection([id],id); renderMindMap(); }
   };
@@ -35003,6 +35025,7 @@ function mmCanvasDblClick(e){
 }
 function mmZoomBy(factor){
   const wrap=el('mindmap-canvas-wrap'); if(!wrap)return;
+  mmAnimateCanvasTransform();
   const rect=wrap.getBoundingClientRect();
   const cx=rect.width/2, cy=rect.height/2, prevZoom=mindMapZoom;
   const nz=Math.min(2.2,Math.max(0.35,prevZoom*factor));
@@ -35023,8 +35046,14 @@ function mmWheel(e){
   mindMapZoom=nz;
   renderMindMap();
 }
+function mmAnimateCanvasTransform(){
+  const canvas=el('mindmap-canvas'); if(!canvas)return;
+  canvas.classList.add('mm-animate');
+  setTimeout(()=>canvas.classList.remove('mm-animate'),300);
+}
 function mmResetView(){
   const wrap=el('mindmap-canvas-wrap');
+  mmAnimateCanvasTransform();
   if(!wrap||!mindMap||!mindMap.nodes.length){ mindMapZoom=1; mindMapPan={x:0,y:0}; renderMindMap(); return; }
   const rect=wrap.getBoundingClientRect();
   const xs=mindMap.nodes.map(n=>n.x), ys=mindMap.nodes.map(n=>n.y);
@@ -35409,6 +35438,12 @@ function renderMindMap(){
   if(!canvas||!svg||!wrap)return;
   canvas.style.transform=`translate(${mindMapPan.x}px, ${mindMapPan.y}px) scale(${mindMapZoom})`;
   const zl=el('mindmap-zoom-label'); if(zl)zl.textContent=Math.round(mindMapZoom*100)+'%';
+  const step=24*mindMapZoom;
+  wrap.style.backgroundImage='radial-gradient(circle, color-mix(in srgb, var(--fg) 10%, transparent) 1px, transparent 1px)';
+  wrap.style.backgroundSize=`${step}px ${step}px`;
+  wrap.style.backgroundPosition=`${mindMapPan.x}px ${mindMapPan.y}px`;
+  const countEl=el('mindmap-node-count');
+  if(countEl)countEl.textContent=(mindMap&&mindMap.nodes.length)?`${mindMap.nodes.length} idea${mindMap.nodes.length===1?'':'s'}`:'';
   canvas.querySelectorAll('.mm-node').forEach(n=>n.remove());
   svg.innerHTML='';
   const emptyHint=el('mindmap-empty-hint');
@@ -35441,6 +35476,16 @@ function renderMindMap(){
       onContext:(e)=>mmOpenLinkContextMenu(e,link.id)
     });
   });
+  if(mmDragGuides){
+    const mk=(x1,y1,x2,y2)=>{
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',x1); line.setAttribute('y1',y1); line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+      line.style.stroke='var(--accent)'; line.style.strokeWidth='1'; line.style.strokeDasharray='4,4'; line.style.opacity='.8'; line.style.pointerEvents='none';
+      svg.appendChild(line);
+    };
+    if(mmDragGuides.x!=null)mk(mmDragGuides.x,-6000,mmDragGuides.x,6000);
+    if(mmDragGuides.y!=null)mk(-6000,mmDragGuides.y,6000,mmDragGuides.y);
+  }
   mindMap.nodes.forEach(n=>{
     if(mmIsHidden(n.id))return;
     const div=document.createElement('div');
