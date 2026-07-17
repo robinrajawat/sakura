@@ -4787,6 +4787,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>Load from document</strong> converts an existing document's outline into a mind map: each top-level section in the document becomes its own independent root — a single-root document just means one root, a multi-section document means several equal trees, same as building them by hand. Replaces the current canvas, confirming first if there's real content on it, and auto-tidies the result</li>
 <li><strong>Clear canvas</strong> resets back to a genuinely blank canvas — confirms first if there's real content, and is itself undoable</li>
 <li><strong>Generate Outline</strong> walks the whole map depth-first and creates a brand-new document from it — the document you're currently in (if any) is never touched or replaced</li>
+<li><strong>Export as image</strong> saves a PNG of the whole map (fit to its content, not just what's currently on screen) — reads the actual rendered colors straight off the canvas, so it always matches your current theme and any manual recoloring, and respects whatever's currently collapsed</li>
+<li><strong>Export to Diagrams</strong> converts the map into a draw.io diagram in a brand-new document's Diagrams tab — same "never touches whatever's currently open" guarantee as Generate Outline. It's a direct, deterministic conversion of the map's own layout, colors, and connector labels (no AI involved, so unlike AI-generated diagrams elsewhere this can't come out malformed). Needs the Diagrams feature on (Settings → Features → Pad Panel)</li>
 <li>Settings → Features → Mind Map turns the whole thing off: hides the status bar button, the Presenter mode button and right-click entry, and the <span class="help-kbd">Ctrl/Cmd+Shift+X</span>/<span class="help-kbd">M</span> shortcuts. The canvas itself is preserved and comes back exactly as it was when re-enabled</li>
 </ul>
 </div>
@@ -5876,6 +5878,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button type="button" id="mindmap-clear-btn" data-tip="Clear canvas"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
       <span id="mindmap-head-divider2"></span>
       <button type="button" id="mindmap-load-btn" data-tip="Load from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      <button type="button" id="mindmap-export-image-btn" data-tip="Export as PNG image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+      <button type="button" id="mindmap-export-diagram-btn" data-tip="Export to Diagrams — adds a draw.io diagram using the mind map's own layout and colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg></button>
       <button type="button" id="mindmap-generate-btn" data-tip="Generate Outline — create a new document from this mind map"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12.5" x2="15" y2="12.5"/><line x1="9" y1="16" x2="15" y2="16"/></svg></button>
       <button type="button" id="mindmap-close-btn" data-tip="Close mind map (Esc)" aria-label="Close mind map"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
@@ -35600,6 +35604,193 @@ function generateOutlineFromMindMap(){
   const created=insertAiOutlineAsNewDoc(parsed);
   if(created){ closeMindMapOverlay(); showToast('Outline generated in a new document'); }
 }
+function mmWrapTextLines(text,maxCharsPerLine){
+  const words=String(text||'').split(/\s+/).filter(Boolean);
+  if(!words.length)return [''];
+  const lines=[]; let cur='';
+  words.forEach(w=>{
+    const candidate=cur?cur+' '+w:w;
+    if(candidate.length>maxCharsPerLine&&cur){ lines.push(cur); cur=w; }
+    else cur=candidate;
+  });
+  if(cur)lines.push(cur);
+  return lines;
+}
+function mmCssVar(name,fallback){
+  const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v||fallback;
+}
+function mmEscXml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function mmVisibleBounds(){
+  if(!mindMap||!mindMap.nodes.length)return null;
+  const visible=mindMap.nodes.filter(n=>!mmIsHidden(n.id));
+  if(!visible.length)return null;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  visible.forEach(n=>{
+    const w=mmNodeWidthPx(n.id), h=mmNodeHeightPx(n.id);
+    minX=Math.min(minX,n.x-w/2); maxX=Math.max(maxX,n.x+w/2);
+    minY=Math.min(minY,n.y-h/2); maxY=Math.max(maxY,n.y+h/2);
+  });
+  return {visible,minX,minY,maxX,maxY};
+}
+function mmSvgEdgeLabelMarkup(sx,sy,tx,ty,label,bg,border,fg){
+  const dx=(tx-sx)*0.5;
+  const bx=0.125*sx+0.375*(sx+dx)+0.375*(tx-dx)+0.125*tx;
+  const by=0.125*sy+0.375*sy+0.375*ty+0.125*ty;
+  const text=label.trim();
+  const shown=text.length>26?text.slice(0,25)+'\u2026':text;
+  const estW=Math.min(180,Math.max(28,shown.length*6.2+16));
+  return `<rect x="${bx-estW/2}" y="${by-11}" width="${estW}" height="22" rx="6" fill="${bg}" stroke="${border}"/>`+
+    `<text x="${bx}" y="${by+4}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10.5" font-weight="500" fill="${mmEscXml(fg)}">${mmEscXml(shown)}</text>`;
+}
+// Builds a static SVG snapshot for PNG export. Positions/sizes come from the data model (world
+// coordinates, unaffected by the current pan/zoom) so the export always fits the whole visible
+// map regardless of what's currently on screen; node fill/border/text colors are read straight
+// off the live rendered .mm-node divs via getComputedStyle, since the browser has already
+// resolved their color-mix() backgrounds for us — far simpler and more accurate than
+// re-implementing that blend by hand.
+function mmBuildExportSvg(){
+  const bounds=mmVisibleBounds(); if(!bounds)return null;
+  const canvas=el('mindmap-canvas'); if(!canvas)return null;
+  const divById={};
+  canvas.querySelectorAll('.mm-node').forEach(d=>{ divById[d.dataset.id]=d; });
+  const {visible,minX,minY,maxX,maxY}=bounds;
+  const pad=44;
+  const ox=pad-minX, oy=pad-minY;
+  const width=Math.max(200,Math.ceil(maxX-minX)+pad*2), height=Math.max(120,Math.ceil(maxY-minY)+pad*2);
+  const visibleIds=new Set(visible.map(n=>n.id));
+  const bg=mmCssVar('--edit-bg','#f4f3ef');
+  const border=mmCssVar('--border','#ccc');
+  const fg=mmCssVar('--fg','#222');
+  const accent=mmCssVar('--accent','#c2553d');
+  let parts=[`<rect x="0" y="0" width="${width}" height="${height}" fill="${bg}"/>`];
+  visible.forEach(n=>{
+    if(n.parentId==null)return;
+    const p=findMindNode(n.parentId); if(!p||!visibleIds.has(p.id))return;
+    const sx=p.x+mmNodeWidthPx(p.id)/2+ox, sy=p.y+oy;
+    const tx=n.x-mmNodeWidthPx(n.id)/2+ox, ty=n.y+oy;
+    const dx=(tx-sx)*0.5;
+    const stroke=n.color?mmCssVar(`--fc-${n.color}`,border):border;
+    parts.push(`<path d="M ${sx} ${sy} C ${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>`);
+    if(n.edgeLabel&&n.edgeLabel.trim())parts.push(mmSvgEdgeLabelMarkup(sx,sy,tx,ty,n.edgeLabel,bg,border,fg));
+  });
+  (mindMap.links||[]).forEach(link=>{
+    if(!visibleIds.has(link.a)||!visibleIds.has(link.b))return;
+    const a=findMindNode(link.a), b=findMindNode(link.b); if(!a||!b)return;
+    const aw=mmNodeWidthPx(a.id)/2, bw=mmNodeWidthPx(b.id)/2;
+    let sx,sy,tx,ty;
+    if(a.x<=b.x){ sx=a.x+aw+ox; sy=a.y+oy; tx=b.x-bw+ox; ty=b.y+oy; } else { sx=a.x-aw+ox; sy=a.y+oy; tx=b.x+bw+ox; ty=b.y+oy; }
+    const dx=(tx-sx)*0.5;
+    parts.push(`<path d="M ${sx} ${sy} C ${sx+dx} ${sy}, ${tx-dx} ${ty}, ${tx} ${ty}" fill="none" stroke="${accent}" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="5,4" opacity="0.85"/>`);
+    if(link.label&&link.label.trim())parts.push(mmSvgEdgeLabelMarkup(sx,sy,tx,ty,link.label,bg,border,fg));
+  });
+  visible.forEach(n=>{
+    const div=divById[String(n.id)]; if(!div)return;
+    const cs=getComputedStyle(div);
+    const w=mmNodeWidthPx(n.id), h=mmNodeHeightPx(n.id);
+    const x=n.x-w/2+ox, y=n.y-h/2+oy;
+    const radius=parseFloat(cs.borderTopLeftRadius)||10;
+    const strokeW=parseFloat(cs.borderTopWidth)||1.5;
+    parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${radius}" fill="${cs.backgroundColor||bg}" stroke="${cs.borderTopColor||border}" stroke-width="${strokeW}"/>`);
+    const lines=mmWrapTextLines(n.text||'',26);
+    const fontSize=12.5, lineHeight=fontSize*1.4;
+    const startY=n.y+oy-(lines.length*lineHeight)/2+fontSize*0.85;
+    lines.forEach((line,i)=>{
+      parts.push(`<text x="${n.x+ox}" y="${startY+i*lineHeight}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="${cs.fontWeight||'400'}" fill="${cs.color||fg}">${mmEscXml(line)}</text>`);
+    });
+  });
+  return {svg:`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${parts.join('')}</svg>`,width,height};
+}
+function mmSvgToPngBlob(svgMarkup,width,height,scale){
+  return new Promise((resolve,reject)=>{
+    try{
+      const svgBlob=new Blob([svgMarkup],{type:'image/svg+xml;charset=utf-8'});
+      const url=URL.createObjectURL(svgBlob);
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.ceil(width*scale); canvas.height=Math.ceil(height*scale);
+        const ctx=canvas.getContext('2d');
+        ctx.scale(scale,scale);
+        ctx.drawImage(img,0,0,width,height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Unable to create PNG blob')),'image/png');
+      };
+      img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('Could not rasterize the mind map')); };
+      img.src=url;
+    }catch(e){ reject(e); }
+  });
+}
+async function mmExportImage(){
+  const built=mmBuildExportSvg();
+  if(!built){ showToast('Add some ideas to the mind map first'); return; }
+  try{
+    if(document.fonts?.ready){ try{ await document.fonts.ready; }catch(e){} }
+    const blob=await mmSvgToPngBlob(built.svg,built.width,built.height,2);
+    downloadFileBlob('mind-map.png',blob);
+    showToast('Mind map exported as PNG');
+  }catch(e){
+    showToast('Could not export the mind map as an image');
+  }
+}
+// Deterministic conversion to draw.io XML — no AI involved, so unlike the removed "Generate
+// with AI" diagram feature this can't produce malformed output: it's just a data transform,
+// and the app controls every byte of the XML it writes. Reuses the mind map's own colors
+// (root nodes get an accent-tinted box unless manually recolored, matching their on-canvas
+// look) rather than remapping to the semantic buckets the outline-based prompt uses.
+function mmBuildDrawioXml(){
+  const bounds=mmVisibleBounds(); if(!bounds)return null;
+  const {visible,minX,minY}=bounds;
+  const visibleIds=new Set(visible.map(n=>n.id));
+  const pad=40;
+  const ox=pad-minX, oy=pad-minY;
+  const branchHex={
+    blue:mmCssVar('--fc-blue','#2766c2'), green:mmCssVar('--fc-green','#27824f'), orange:mmCssVar('--fc-orange','#c2701d'),
+    purple:mmCssVar('--fc-purple','#7d3fb5'), red:mmCssVar('--fc-red','#c0392b'), gray:mmCssVar('--fc-gray','#6f6b63')
+  };
+  const border=mmCssVar('--border','#e3e0d8');
+  const fg=mmCssVar('--fg','#3d3929');
+  const accent=mmCssVar('--accent','#c2553d');
+  const bg=mmCssVar('--edit-bg','#ffffff');
+  const cellId=id=>'n'+id;
+  let cells='<mxCell id="0"/><mxCell id="1" parent="0"/>';
+  visible.forEach(n=>{
+    const w=mmNodeWidthPx(n.id), h=mmNodeHeightPx(n.id);
+    const x=Math.round(n.x-w/2+ox), y=Math.round(n.y-h/2+oy);
+    const isRoot=n.parentId==null;
+    const fill=n.color?branchHex[n.color]:bg;
+    const stroke=n.color?branchHex[n.color]:(isRoot?accent:border);
+    const style=`rounded=1;arcSize=18;whiteSpace=wrap;html=1;fontSize=12;fontStyle=${isRoot?1:0};align=center;verticalAlign=middle;fillColor=${fill};strokeColor=${stroke};fontColor=${fg};strokeWidth=${isRoot?2:1.5};`;
+    cells+=`<mxCell id="${cellId(n.id)}" value="${mmEscXml(n.text||'')}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${Math.round(w)}" height="${Math.round(h)}" as="geometry"/></mxCell>`;
+  });
+  let edgeN=1;
+  visible.forEach(n=>{
+    if(n.parentId==null||!visibleIds.has(n.parentId))return;
+    const stroke=n.color?branchHex[n.color]:border;
+    const style=`edgeStyle=none;curved=1;rounded=0;endArrow=none;html=1;strokeColor=${stroke};strokeWidth=1.5;`;
+    cells+=`<mxCell id="e${edgeN++}" value="${mmEscXml(n.edgeLabel||'')}" style="${style}" edge="1" parent="1" source="${cellId(n.parentId)}" target="${cellId(n.id)}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+  });
+  (mindMap.links||[]).forEach(link=>{
+    if(!visibleIds.has(link.a)||!visibleIds.has(link.b))return;
+    const style=`edgeStyle=none;curved=1;rounded=0;endArrow=none;dashed=1;html=1;strokeColor=${accent};strokeWidth=1.5;`;
+    cells+=`<mxCell id="e${edgeN++}" value="${mmEscXml(link.label||'')}" style="${style}" edge="1" parent="1" source="${cellId(link.a)}" target="${cellId(link.b)}"><mxGeometry relative="1" as="geometry"/></mxCell>`;
+  });
+  return `<mxfile><diagram name="Mind Map"><mxGraphModel dx="800" dy="600" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0"><root>${cells}</root></mxGraphModel></diagram></mxfile>`;
+}
+function mmExportToDiagram(){
+  const xml=mmBuildDrawioXml();
+  if(!xml){ showToast('Add some ideas to the mind map first'); return; }
+  if(typeof addDiagramFromXml!=='function'||typeof createDoc!=='function'){ showToast('Diagrams feature is not available — enable it in Settings → Features'); return; }
+  if(!padDiagramsTabEnabled){ showToast('Diagrams feature is not available — enable it in Settings → Features'); return; }
+  createDoc();
+  const titleEl=el('header-title');
+  if(titleEl){ titleEl.value='Mind Map Diagram'; titleAutoSyncEnabled=false; if(typeof touchDocIndexTitleOnly==='function'&&currentDocId)touchDocIndexTitleOnly(currentDocId,'Mind Map Diagram'); if(typeof scheduleAutoSave==='function')scheduleAutoSave(); }
+  addDiagramFromXml(xml);
+  closeMindMapOverlay();
+  showToast('Diagram created in a new document');
+}
 function openMindMapOverlay(){
   ensureMindMap();
   mindMapOpen=true; mmSetSelection([],null); mindMapEditingId=null;
@@ -35621,6 +35812,8 @@ function toggleMindMapOverlay(){ if(mindMapOpen)closeMindMapOverlay(); else open
 el('mindmap-toggle')?.addEventListener('click',toggleMindMapOverlay);
 el('mindmap-close-btn')?.addEventListener('click',closeMindMapOverlay);
 el('mindmap-generate-btn')?.addEventListener('click',generateOutlineFromMindMap);
+el('mindmap-export-image-btn')?.addEventListener('click',mmExportImage);
+el('mindmap-export-diagram-btn')?.addEventListener('click',mmExportToDiagram);
 el('mindmap-zoom-in-btn')?.addEventListener('click',()=>mmZoomBy(1.2));
 el('mindmap-zoom-out-btn')?.addEventListener('click',()=>mmZoomBy(1/1.2));
 el('mindmap-reset-view-btn')?.addEventListener('click',mmResetView);
