@@ -28178,8 +28178,37 @@ function syncAudiencePadContent(){
     const mainEditor=el('pad-editor'), aEditor=win.document.getElementById('pad-editor');
     if(mainEditor&&aEditor&&aEditor.innerHTML!==mainEditor.innerHTML)aEditor.innerHTML=mainEditor.innerHTML;
     if(typeof win.setAudienceQaItems==='function')win.setAudienceQaItems(JSON.parse(JSON.stringify(qaItems)));
+    syncAudiencePadScroll();
   }catch(e){}
 }
+// The audience copy is otherwise a passive mirror nobody at the projector can scroll
+// themselves, so without this it stays pinned wherever it first rendered (usually the top) —
+// scrolling down here to reveal more notes or questions never carried across, effectively
+// capping what the room could ever see at one screenful. Mirrors scrollTop directly rather than
+// a proportional ratio since both sides render identical content (same synced innerHTML /
+// qaItems), so an absolute copy lines them up exactly. Only the currently-visible view (Notes
+// vs Q&A) is synced — the other is offscreen on both ends, so touching its scroll would just be
+// wasted work that can't be seen anyway.
+function syncAudiencePadScroll(){
+  if(!audienceWinLive()||!audienceNotesVisible)return;
+  try{
+    const win=presenterAudienceWin;
+    if(padViewMode==='notes'){
+      const mainEditor=el('pad-editor'), aEditor=win.document.getElementById('pad-editor');
+      if(mainEditor&&aEditor&&aEditor.scrollTop!==mainEditor.scrollTop)aEditor.scrollTop=mainEditor.scrollTop;
+    } else if(padViewMode==='qa'){
+      const mainQa=el('qa-body'), aQa=win.document.getElementById('qa-body');
+      if(mainQa&&aQa&&aQa.scrollTop!==mainQa.scrollTop)aQa.scrollTop=mainQa.scrollTop;
+    }
+  }catch(e){}
+}
+// Live scroll mirroring — fires immediately on the presenter's own scroll rather than waiting
+// for the next 1.5s poll tick, so the audience view tracks smoothly instead of jumping once a
+// second. The poll (below) remains as a catch-all for scroll-position drift from non-scroll
+// causes (e.g. content shrinking while the audience side was scrolled further down than the
+// new content allows).
+el('pad-editor')?.addEventListener('scroll',()=>{ if(padViewMode==='notes')syncAudiencePadScroll(); },{passive:true});
+el('qa-body')?.addEventListener('scroll',()=>{ if(padViewMode==='qa')syncAudiencePadScroll(); },{passive:true});
 let _audiencePadPollTimer=null;
 function startAudiencePadPoll(){
   if(_audiencePadPollTimer)return;
