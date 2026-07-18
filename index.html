@@ -16750,8 +16750,45 @@ async function buildPptxPresentation(slidesData){
     }
   });
 
+  // --- Notepad section — mirrors docxBuildNotepadSection's intent, but text-only: lists/tables
+  // get flattened to plain paragraphs rather than kept as real list/table structures the way
+  // Word's version preserves them (docxNoteBlocks does real HTML→OOXML conversion; pptxgenjs
+  // text runs don't have an equivalent to lean on here without a lot more plumbing). Paragraphs
+  // are split on block-level boundaries, then paginated using real text measurement, same
+  // approach as the bullet pagination earlier in this function. Ordered before Q&A below to
+  // match Word/Preview/PDF, which all put Notepad first too.
+  if(padNotepadExportEnabled){
+    const padHtml=cleanEditorHtml(el('pad-editor'));
+    if(htmlHasVisibleContent(padHtml)){
+      const withBreaks=String(padHtml).replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
+      const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
+      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+      if(paras.length){
+        const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
+        const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
+        const blocks=paras.map(p=>{ const lines=pptxMeasureWrappedLines(p,boxW,fs,false); return {h:lines*pptxLineHeightIn(fs,1.3)+0.12, text:p, lines}; });
+        let pageBlocks=[],usedH=0; const pages=[];
+        blocks.forEach(b=>{ if(pageBlocks.length&&usedH+b.h>availH){ pages.push(pageBlocks); pageBlocks=[]; usedH=0; } pageBlocks.push(b); usedH+=b.h; });
+        if(pageBlocks.length) pages.push(pageBlocks);
+        pages.forEach((page,pi)=>{
+          const slide=pres.addSlide();
+          slide.background={color:theme.bg};
+          pptxApplyBranding(slide,theme);
+          slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+          slide.addText(pi===0?'Notepad':"Notepad (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
+          let y=bodyTop;
+          page.forEach(b=>{
+            const h=b.lines*pptxLineHeightIn(fs,1.3);
+            slide.addText(pptxStripIllegalXmlChars(b.text), {x:MARGIN, y, w:boxW, h, fontFace:FONT, fontSize:fs, color:theme.fg, valign:'top', lineSpacingMultiple:1.3});
+            y+=h+0.12;
+          });
+        });
+      }
+    }
+  }
+
   // --- Q&A section — mirrors docxBuildQaSection's content, paginated across as many slides as
-  // needed using the same real-measurement approach as the bullet pagination above. A section
+  // needed using the same real-measurement approach as the Notepad pagination above. A section
   // header and a Q+A pair are each measured as one unit that stays together across a page break
   // (a question separated from its own answer by a slide boundary reads badly) unless that unit
   // alone is taller than a full page, in which case it just runs onto its own slide anyway.
@@ -16792,41 +16829,6 @@ async function buildPptxPresentation(slidesData){
         let y=bodyTop;
         page.forEach(b=>{ y+=b.render(slide,y); });
       });
-    }
-  }
-
-  // --- Notepad section — mirrors docxBuildNotepadSection's intent, but text-only: lists/tables
-  // get flattened to plain paragraphs rather than kept as real list/table structures the way
-  // Word's version preserves them (docxNoteBlocks does real HTML→OOXML conversion; pptxgenjs
-  // text runs don't have an equivalent to lean on here without a lot more plumbing). Paragraphs
-  // are split on block-level boundaries, then paginated the same way as Q&A above.
-  if(padNotepadExportEnabled){
-    const padHtml=cleanEditorHtml(el('pad-editor'));
-    if(htmlHasVisibleContent(padHtml)){
-      const withBreaks=String(padHtml).replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
-      const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
-      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
-      if(paras.length){
-        const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
-        const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
-        const blocks=paras.map(p=>{ const lines=pptxMeasureWrappedLines(p,boxW,fs,false); return {h:lines*pptxLineHeightIn(fs,1.3)+0.12, text:p, lines}; });
-        let pageBlocks=[],usedH=0; const pages=[];
-        blocks.forEach(b=>{ if(pageBlocks.length&&usedH+b.h>availH){ pages.push(pageBlocks); pageBlocks=[]; usedH=0; } pageBlocks.push(b); usedH+=b.h; });
-        if(pageBlocks.length) pages.push(pageBlocks);
-        pages.forEach((page,pi)=>{
-          const slide=pres.addSlide();
-          slide.background={color:theme.bg};
-          pptxApplyBranding(slide,theme);
-          slide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
-          slide.addText(pi===0?'Notepad':"Notepad (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
-          let y=bodyTop;
-          page.forEach(b=>{
-            const h=b.lines*pptxLineHeightIn(fs,1.3);
-            slide.addText(pptxStripIllegalXmlChars(b.text), {x:MARGIN, y, w:boxW, h, fontFace:FONT, fontSize:fs, color:theme.fg, valign:'top', lineSpacingMultiple:1.3});
-            y+=h+0.12;
-          });
-        });
-      }
     }
   }
 
