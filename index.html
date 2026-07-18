@@ -2481,6 +2481,23 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 #presenter-notes-panel{display:none;flex-direction:column;position:fixed;right:24px;bottom:76px;top:76px;width:340px;z-index:1103;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,.22);overflow:hidden}
 #presenter-notes-panel.open{display:flex}
 #presenter-notes-panel.pn-dragging,#presenter-notes-panel.pn-resizing{border-color:var(--accent)}
+/* While this window's own Notepad/Q&A is being shared to the Audience screen, the panel here
+   is forced to the exact same inset:6% geometry as the Audience-side rule below (rather than
+   whatever docked size/position the person had it at, or dragged it to) — matching sizes is
+   what actually lines the two views up, not just correct percentage math for the laser. A
+   percentage of two *differently sized* boxes still points at the wrong spot the moment their
+   contents don't lay out identically at those different sizes — a narrower panel wraps text
+   differently, so "row 2" sits at a different fractional height than in a wider one. Same
+   geometry on both ends removes that reflow mismatch instead of trying to compensate for it. */
+/* Placement only — width/height are deliberately NOT forced here. A relative inset (say 6% of
+   each window) still leaves the two panels at different *absolute* pixel sizes whenever the two
+   windows themselves are different sizes (the Audience window opens at a fixed 1280x720
+   regardless of this window's own size) — and since text wraps and rows lay out at a fixed font
+   size, not a size scaled to the window, two panels of different absolute width/height drift
+   further out of alignment with every row down the list, not just at the edges. See
+   syncPresenterNotesGeometry(), which sets the exact matching pixel width/height in JS instead. */
+body.presenter-notes-match-audience #presenter-notes-panel{position:fixed!important;top:6% !important;left:6% !important;right:auto!important;bottom:auto!important}
+body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!important}
 #presenter-notes-header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);flex:0 0 auto;cursor:move}
 #presenter-notes-header>span:first-child{font:600 12.5px 'Inter',sans-serif;color:var(--fg);pointer-events:none}
 #presenter-notes-hint{flex:1;font:400 10.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
@@ -27975,6 +27992,12 @@ function audienceWindowReady(win){
     if(!st.previewActive&&typeof win.openPreview==='function')win.openPreview();
     if(!st.previewPresenting&&typeof win.enterPresenterMode==='function')win.enterPresenterMode();
   }catch(e){ if(typeof sakuraLog==='function')sakuraLog('error','audienceWindowReady failed',{message:e&&e.message}); }
+  // Either window resizing (a monitor swap, dragging the Audience window to a differently
+  // sized display, this window itself being resized) can change the Audience panel's exact
+  // pixel size — re-run the geometry match promptly rather than waiting for the next poll tick.
+  // Same-origin, same renderer process, so a plain addEventListener here works exactly like it
+  // would on this window's own `window`.
+  try{ win.addEventListener('resize',()=>syncPresenterNotesGeometry()); }catch(e){}
   syncAudienceWindow();
   updateAudienceButtonState();
 }
@@ -27982,7 +28005,7 @@ function closeAudienceWindow(){
   if(audienceWinLive())presenterAudienceWin.close();
   presenterAudienceWin=null;
   audienceMode='slide';
-  try{ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); stopAudiencePadPoll(); }catch(e){}
+  try{ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); document.body.classList.remove('presenter-notes-match-audience'); stopAudiencePadPoll(); }catch(e){}
   updateAudienceButtonState();
 }
 let _audienceWinPollTimer=null;
@@ -28055,22 +28078,24 @@ function syncAudienceLaser(clientX,clientY){
     const dot=win.document.getElementById('preview-laser-dot'); if(!dot)return;
     // Whole-window percentage mapping only holds up when both windows are showing the same
     // surface at the same scale — true for the slide/Whiteboard/Mind Map, which the Audience
-    // window mirrors edge-to-edge. The shared Notepad/Q&A panel is different: it's a small,
-    // docked, user-resizable box on this window (see presenterNotesPos) but a near-fullscreen
-    // inset:6% box on the Audience side (see the audience-show-notes CSS rule) — genuinely
-    // different sizes and positions, not just a different window size. Mapping by whole-window
-    // percentage in that case points at the wrong spot on the Audience panel (worst right at
-    // its edges, where this window's small panel and the Audience's large one diverge most).
-    // So: while hovering this window's own panel with it actually shared, re-derive the
-    // percentage relative to *that* panel's own box, and place the dot at the same relative
-    // spot inside the Audience's own panel box instead of the whole window.
+    // window mirrors edge-to-edge. The shared Notepad/Q&A panel is different, in two ways: its
+    // outer box is a different absolute pixel size on each window (see
+    // syncPresenterNotesGeometry, which now keeps that matched too), AND its outer box includes
+    // chrome that isn't even the same between the two windows — the Audience side hides the
+    // panel header (tabs, close button) entirely, so its content starts noticeably higher than
+    // this window's own panel, where the header is still visible. Mapping against the *content*
+    // element itself (#qa-body or #pad-editor, whichever is showing) rather than the outer panel
+    // sidesteps both: it's the actual scrollable area holding what's being pointed at, and any
+    // further chrome differences around it stop mattering.
     let xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
     if(audienceNotesVisible){
       const panel=el('presenter-notes-panel');
-      const box=panel&&panel.classList.contains('open')?panel.getBoundingClientRect():null;
+      const contentId=padViewMode==='qa'?'qa-body':'pad-editor';
+      const content=panel&&panel.classList.contains('open')?el(contentId):null;
+      const box=content?content.getBoundingClientRect():null;
       if(box&&box.width>0&&box.height>0&&clientX>=box.left&&clientX<=box.right&&clientY>=box.top&&clientY<=box.bottom){
-        const aPanel=win.document.getElementById('presenter-notes-panel');
-        const aBox=aPanel?aPanel.getBoundingClientRect():null;
+        const aContent=win.document.getElementById(contentId);
+        const aBox=aContent?aContent.getBoundingClientRect():null;
         if(aBox&&aBox.width>0&&aBox.height>0){
           const px=(clientX-box.left)/box.width, py=(clientY-box.top)/box.height;
           dot.style.left=(aBox.left+px*aBox.width)+'px';
@@ -28254,7 +28279,35 @@ el('presenter-notes-tab-qa')?.addEventListener('click',()=>setPadViewMode('qa'))
 // (openPresenterNotesInMode/closePresenterNotes) in that window's own instance rather than
 // mirroring content — the audience window has its own copy of this same document's Pad already.
 let audienceNotesVisible=false;
+// Makes this window's own panel exactly as many pixels wide/tall as the Audience window's copy
+// — not just the same *fraction* of its window (see the CSS comment above for why a relative
+// match still drifts row by row). Reading the Audience panel's own box directly is safe/cheap
+// here the same way every other cross-window read in this file already is: same-origin, same
+// renderer process, no postMessage round trip needed. Re-run on: sharing turning on, either
+// window resizing, and the existing content poll (a window can get dragged onto a different,
+// differently-sized display after the Audience View is already connected).
+function syncPresenterNotesGeometry(){
+  if(!audienceWinLive()||!audienceNotesVisible)return;
+  try{
+    const win=presenterAudienceWin;
+    const aPanel=win.document.getElementById('presenter-notes-panel');
+    const panel=el('presenter-notes-panel');
+    if(!aPanel||!panel)return;
+    const aBox=aPanel.getBoundingClientRect();
+    if(aBox.width<=0||aBox.height<=0)return;
+    if(panel.style.width!==aBox.width+'px')panel.style.width=aBox.width+'px';
+    if(panel.style.height!==aBox.height+'px')panel.style.height=aBox.height+'px';
+  }catch(e){}
+}
 function syncAudienceNotesVisibility(){
+  // This window's own panel geometry always reflects audienceNotesVisible regardless of
+  // whether the Audience window is still around to receive anything — sharing being "on" is
+  // what the panel size is supposed to track, not whether a remote sync could currently reach
+  // anywhere.
+  document.body.classList.toggle('presenter-notes-match-audience',audienceNotesVisible);
+  if(!audienceNotesVisible){
+    const panel=el('presenter-notes-panel'); if(panel){ panel.style.width=''; panel.style.height=''; }
+  }
   if(!audienceWinLive())return;
   try{
     const win=presenterAudienceWin;
@@ -28271,6 +28324,7 @@ function syncAudienceNotesVisibility(){
       // window's prior state.
       if(typeof win.el==='function'&&typeof win.openPresenterNotes==='function'&&!win.el('presenter-notes-panel')?.classList.contains('open'))win.openPresenterNotes();
       if(typeof win.setPadViewMode==='function')win.setPadViewMode(padViewMode);
+      syncPresenterNotesGeometry();
       syncAudiencePadContent();
       startAudiencePadPoll();
     } else {
@@ -28327,6 +28381,7 @@ function startAudiencePadPoll(){
   if(_audiencePadPollTimer)return;
   _audiencePadPollTimer=setInterval(()=>{
     if(!audienceWinLive()||!audienceNotesVisible){ stopAudiencePadPoll(); return; }
+    syncPresenterNotesGeometry();
     syncAudiencePadContent();
   },1500);
 }
@@ -28369,7 +28424,7 @@ function applyPresenterNotesPos(){
 }
 function savePresenterNotesPos(){ try{ if(presenterNotesPos)localStorage.setItem(PRESENTER_NOTES_POS_KEY,JSON.stringify(presenterNotesPos)); else localStorage.removeItem(PRESENTER_NOTES_POS_KEY); }catch(e){} }
 function resetPresenterNotesPos(){ presenterNotesPos=null; applyPresenterNotesPos(); savePresenterNotesPos(); }
-window.addEventListener('resize',()=>{ if(presenterNotesPos)applyPresenterNotesPos(); });
+window.addEventListener('resize',()=>{ if(presenterNotesPos)applyPresenterNotesPos(); syncPresenterNotesGeometry(); });
 (function(){
   const panel=el('presenter-notes-panel'), header=el('presenter-notes-header'), handle=el('presenter-notes-resize-handle');
   if(!panel||!header||!handle)return;
@@ -28377,12 +28432,14 @@ window.addEventListener('resize',()=>{ if(presenterNotesPos)applyPresenterNotesP
   let dragging=false, dStartX=0, dStartY=0, dLeft=0, dTop=0;
   header.addEventListener('mousedown',e=>{
     if(e.target.closest('#presenter-notes-close-btn,#presenter-notes-tabs'))return;
+    if(document.body.classList.contains('presenter-notes-match-audience'))return;
     ensurePos(); dragging=true; dStartX=e.clientX; dStartY=e.clientY; dLeft=presenterNotesPos.left; dTop=presenterNotesPos.top;
     panel.classList.add('pn-dragging'); document.body.style.userSelect='none'; e.preventDefault();
   });
   header.addEventListener('dblclick',e=>{ if(e.target.closest('#presenter-notes-close-btn,#presenter-notes-tabs'))return; resetPresenterNotesPos(); });
   let resizing=false, rStartX=0, rStartY=0, rW=0, rH=0;
   handle.addEventListener('mousedown',e=>{
+    if(document.body.classList.contains('presenter-notes-match-audience'))return;
     ensurePos(); resizing=true; rStartX=e.clientX; rStartY=e.clientY; rW=presenterNotesPos.width; rH=presenterNotesPos.height;
     panel.classList.add('pn-resizing'); document.body.style.userSelect='none'; e.preventDefault(); e.stopPropagation();
   });
