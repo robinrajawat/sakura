@@ -4908,7 +4908,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>An app-level task list — not tied to any document, node, or Pad. One shared list across your whole workspace</li>
 <li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">U</span>; the same shortcut closes it again</li>
-<li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen); the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> button next to it exports the whole list as a PDF</li>
+<li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions, same as its position). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen)</li>
+<li>Two header buttons handle moving the list in and out of Sakura: <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> loads a Sakura To-Dos file — a <code>.json</code> export from another Sakura session or shared by a colleague — adding its tasks to the end of your list with its own Undo toast; any task whose text matches one you already have is flagged (not skipped) in that toast, since text alone can't tell a real duplicate from two tasks that just happen to read the same. <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> <strong>Export</strong> opens a small menu with two formats: <strong>PDF</strong> prints the full list — Open then Completed — regardless of any active priority/status/due filter, so a filtered view never silently shortens the printout; <strong>Sakura To-Dos</strong> saves the same full list as a shareable <code>.json</code> file for a colleague to Import the same way</li>
 <li>Type a task and press Enter (or use the + button) to add it — the box grows as you type so long tasks stay readable. Shift+Enter inserts a line break instead of adding the task, both here and while editing an existing task's text</li>
 <li>The clock icon next to Export opens <strong>Version History</strong> for the whole list — same idea as a document's Version History, kept separately since To-Dos isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first, so restoring is never itself destructive) — keeps the last 20 versions, app-wide</li>
 <li>Checking a task off moves it straight to <strong>Completed</strong>, most-recently-finished first; unchecking sends it back to <strong>Open</strong></li>
@@ -4941,6 +4942,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Action items are simple checkboxes with editable text. The <strong>Promote</strong> icon next to one adds it as a real To-Do — the task text stays clean; instead, the meeting's date (if set) becomes the new task's due date, and a small "from meeting" chip appears on the To-Do row linking back to this note (click it to jump straight there; a small × removes just the link, not the task). Once promoted the icon turns into a checkmark (green) and can't be promoted again, so re-clicking never creates a duplicate</li>
 <li><strong>Linked nodes</strong>: click the link icon to search — results are grouped into Documents (matched by title) and Nodes (matched by text, with a highlighted snippet), same layout as To-Dos' own link search. Leave the search box empty to browse and pick a whole document without typing its title first. A node-link chip shows a small node icon, a document-link chip a document icon, so either reads as "jumps within Sakura" at a glance. Click an attached link to jump straight there; if the node or document has since been deleted, it's shown with a warning color and clicking it explains why instead of failing silently</li>
 <li>Export a single meeting note as a PDF (download icon on hover, next to trash) — title, date/time/attendees, Agenda and Notes with their real formatting (bold, italic, lists, links), Action Items as a checklist (completed ones struck through), and Linked Nodes as a plain list. To-Dos' own list export and Q&amp;A's own export produce a PDF the same way</li>
+<li>The share icon on hover (left of the PDF download icon) saves that one meeting as a Sakura Meeting Notes <code>.json</code> file — send it to a colleague and they bring it in with the header's Import button below, the same "share/import between Sakura users" pattern To-Dos and whole documents also use</li>
+<li>The panel header's two buttons handle the whole list at once, separately from any single note: <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> opens a small menu — <strong>Calendar file (.ics)</strong> reads any standard calendar export the same way Settings → Data → Outlook Calendar's own .ics import does (checklist of events, dedup against already-imported ones by the file's event UID, flags any recurrence too complex to expand); <strong>Sakura Meeting Notes</strong> reads a <code>.json</code> file exported by another Sakura user (the whole-list export below, or a single shared note) — unlike the .ics path, this doesn't skip likely duplicates, it imports everything and flags matches (same title and date as a note you already have) in the confirmation toast, so you decide what to do with them. <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> <strong>Export</strong> saves every dated meeting note as one <code>.ics</code> calendar file — undated notes are skipped, since there's nothing to put on a calendar without a date. Each event gets a 30-minute default length (meeting notes don't track an end time) and lists attendees in the description rather than as real calendar invitees, since Sakura doesn't collect attendee email addresses</li>
 <li>Delete a note from its row (trash icon on hover) — with an in-panel "Undo" toast, same pattern as To-Dos and the document-level panels</li>
 <li>The clock icon in the panel header opens <strong>Version history</strong> for the whole list — same idea as To-Dos' own, kept separately since Meeting Notes isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
 <li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
@@ -33743,7 +33746,14 @@ function _addTagPopoverFromInput(){
 
   // ── Plain text export — the To-Dos list only, nothing else in the app ───
   function exportTodosAsPdf(){
-    const {open, done}=getVisibleTodos();
+    const filterWasActive=anyTodoFilterActive();
+    // Always export the FULL list, not just what the active priority/status/due filter shows —
+    // this is a one-shot document export, not a live view, and silently dropping filtered-out
+    // tasks here (while the "Sakura To-Dos" JSON export in the same menu always exports
+    // everything) was a real, undocumented way to lose tasks from a printed list. Sort mode is
+    // still applied so the PDF reads the same way the panel does when nothing's filtered.
+    const open=sortOpenList(todos.filter(t=>!t.done));
+    const done=todos.filter(t=>t.done).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
     function taskRow(t,isDone){
       const chips=[];
       if(t.priority&&t.priority!=='none') chips.push(`<span class="gpe-chip gpe-chip-${t.priority}">${esc(priorityLabel(t.priority))}</span>`);
@@ -33763,7 +33773,7 @@ function _addTagPopoverFromInput(){
     body+=`<div class="gpe-section-heading">Completed (${done.length})</div>`;
     body+=done.length?done.map(t=>taskRow(t,true)).join(''):'<div class="gpe-empty">(none)</div>';
     printHtmlAsPdf('To-Dos','To-Dos',body);
-    showTodosToast('To-Dos exported');
+    showTodosToast(filterWasActive?'To-Dos exported (full list, not just the active filter)':'To-Dos exported');
   }
 
   loadTodos();
@@ -33967,9 +33977,17 @@ function _addTagPopoverFromInput(){
     }
     const imported=payload.todos.map(normalizeImportedTodo).filter(t=>t.text.trim());
     if(!imported.length){ showTodosToast('No tasks found in that file'); return; }
+    // Duplicate check is against what existed *before* this import, and only flags (via the
+    // toast count below) rather than skipping — same "notice, don't silently drop" choice
+    // Meeting Notes' own Sakura-JSON import makes, for the same reason: matching by text alone
+    // can't tell a real duplicate from two independently-written tasks that happen to read the
+    // same, so this stays a heads-up rather than an automatic skip.
+    const priorTextSet=new Set(todos.map(t=>(t.text||'').trim().toLowerCase()));
+    const dupCount=imported.filter(t=>priorTextSet.has(t.text.trim().toLowerCase())).length;
+    const dupNote=dupCount?` — ${dupCount} match${dupCount===1?'':'es'} an existing task`:'';
     todos=todos.concat(imported);
     saveTodos(); renderTodos();
-    showTodosActionToast(`Imported ${imported.length} task${imported.length===1?'':'s'}`,'Undo',()=>{
+    showTodosActionToast(`Imported ${imported.length} task${imported.length===1?'':'s'}${dupNote}`,'Undo',()=>{
       const idSet=new Set(imported.map(t=>t.id));
       todos=todos.filter(t=>!idSet.has(t.id));
       saveTodos(); renderTodos();
@@ -34466,14 +34484,29 @@ function exportMeetingsAsIcs(){
     if(hasTime){
       const hm=m.time.replace(':','');
       lines.push('DTSTART:'+ymd+'T'+hm+'00');
+      // Meeting notes carry no explicit duration. Leaving DTEND unset makes different calendar
+      // apps default the length differently on import (some show a zero-length event, others
+      // assume an hour) — a fixed 30-minute default gives every importer the same event length.
+      const [hh,mm]=m.time.split(':').map(Number);
+      const startDate=new Date(Number(m.date.slice(0,4)),Number(m.date.slice(5,7))-1,Number(m.date.slice(8,10)),hh,mm);
+      const endDate=new Date(startDate.getTime()+30*60000);
+      const endYmd=endDate.getFullYear()+String(endDate.getMonth()+1).padStart(2,'0')+String(endDate.getDate()).padStart(2,'0');
+      const endHm=String(endDate.getHours()).padStart(2,'0')+String(endDate.getMinutes()).padStart(2,'0');
+      lines.push('DTEND:'+endYmd+'T'+endHm+'00');
     } else {
       lines.push('DTSTART;VALUE=DATE:'+ymd);
     }
     lines.push(icsFold('SUMMARY:'+icsEscape(m.title||'Untitled meeting')));
-    const descParts=[]; if(m.agenda&&stripHtmlToText(m.agenda).trim())descParts.push('Agenda: '+stripHtmlToText(m.agenda).trim());
+    const descParts=[];
+    // Attendee names go in the description rather than a real ATTENDEE property — Sakura never
+    // collects attendee emails, and ATTENDEE's value is supposed to be a CAL-ADDRESS (normally
+    // mailto:); a bare 'ATTENDEE;CN=...:' with nothing after the colon is likely non-conformant
+    // and some calendar apps silently drop attendees with no address at all. A description line
+    // always displays, regardless of how strict the importing calendar is.
+    if((m.attendees||[]).length)descParts.push('Attendees: '+m.attendees.join(', '));
+    if(m.agenda&&stripHtmlToText(m.agenda).trim())descParts.push('Agenda: '+stripHtmlToText(m.agenda).trim());
     if(m.body&&stripHtmlToText(m.body).trim())descParts.push('Notes: '+stripHtmlToText(m.body).trim());
     if(descParts.length)lines.push(icsFold('DESCRIPTION:'+icsEscape(descParts.join('\n\n'))));
-    if((m.attendees||[]).length)lines.push(icsFold('ATTENDEE;CN='+icsEscape(m.attendees.join(', '))+':'));
     lines.push('END:VEVENT');
   });
   lines.push('END:VCALENDAR');
