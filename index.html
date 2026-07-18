@@ -27773,60 +27773,81 @@ function audienceWinLive(){ return !!(presenterAudienceWin && !presenterAudience
 function openAudienceWindow(){
   if(audienceWinLive()){ presenterAudienceWin.focus(); return; }
   if(document.fullscreenElement){ _presenterDualScreenFsExit=true; try{ document.exitFullscreen(); }catch(e){ _presenterDualScreenFsExit=false; } }
-  const styleHtml=[...document.querySelectorAll('style')].map(s=>s.outerHTML).join('');
   const w=window.open('','sakura-audience-view','width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
   if(!w){ showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
   presenterAudienceWin=w;
   audienceMode='slide';
-  // Theme colors (--bg, --fg, --accent, etc. — see setTheme/applyAccentColor/applyChromeColors)
-  // are defined only inside body.theme-light/body.theme-dark rules, not at :root, so the class
-  // and inline custom-property overrides go straight onto <body> here rather than being applied
-  // in a separate step afterward — there must be no gap where this document exists with the
-  // right CSS rules cloned in but no theme class to activate any of them. Single-quoted
-  // attributes since className/cssText are simple space/semicolon-separated values that won't
-  // contain a literal single quote, sidestepping any need to escape embedded double quotes.
-  const bodyClass=document.body.className, bodyStyle=document.body.style.cssText;
-  // Likewise, the current slide's HTML is written in directly rather than left empty for
-  // syncAudienceWindow() to fill in as a follow-up call — same reasoning, no gap.
-  const mainBody=el('preview-body');
-  let initialSlidesHtml=mainBody?mainBody.innerHTML:'';
-  if(mainBody){
-    // Applying pv-slide-active to a *string* clone (not the live DOM) — build it via a detached
-    // template rather than touching the real #preview-body while computing this.
-    const tmp=document.createElement('div'); tmp.innerHTML=initialSlidesHtml;
-    tmp.querySelectorAll('.pv-slide').forEach(s=>{ s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex); });
-    initialSlidesHtml=tmp.innerHTML;
+  try{
+    const aDoc=w.document;
+    aDoc.title='Sakura \u2013 Audience View';
+    // Direct DOM construction rather than document.write() — document.write() is a legacy API
+    // Chrome has been progressively restricting for years (deprecation warnings, interventions
+    // on slow connections, inconsistent behavior across versions), and this whole feature was
+    // silently ending up with a themed-but-empty window in real Chrome despite working in
+    // automated headless testing — exactly the kind of gap that API is known for. Building the
+    // document with createElement/appendChild and setting properties directly has none of that
+    // legacy baggage and behaves predictably.
+    aDoc.querySelectorAll('style').forEach(s=>s.remove());
+    document.querySelectorAll('style').forEach(s=>{
+      const clone=aDoc.createElement('style');
+      clone.textContent=s.textContent;
+      aDoc.head.appendChild(clone);
+    });
+    const extraStyle=aDoc.createElement('style');
+    extraStyle.textContent='html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}';
+    aDoc.head.appendChild(extraStyle);
+    // Theme colors (--bg, --fg, --accent, etc. — see setTheme/applyAccentColor/
+    // applyChromeColors) are defined only inside body.theme-light/body.theme-dark rules, not at
+    // :root — set as real DOM properties here, before anything else touches this body, so
+    // there's no window where the document exists with the right CSS cloned in but no theme
+    // class active to make any of it resolve to a real color.
+    aDoc.body.className=document.body.className;
+    aDoc.body.style.cssText=document.body.style.cssText;
+    // Same reasoning for content: build the current slide's markup into #preview-body as part
+    // of this same synchronous setup, rather than leaving it empty for syncAudienceWindow() to
+    // fill in as a separate follow-up call.
+    const mainBody=el('preview-body');
+    let initialSlidesHtml=mainBody?mainBody.innerHTML:'';
+    if(mainBody){
+      const tmp=document.createElement('div'); tmp.innerHTML=initialSlidesHtml;
+      tmp.querySelectorAll('.pv-slide').forEach(s=>{ s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex); });
+      initialSlidesHtml=tmp.innerHTML;
+    }
+    // Reuses real ids (#preview-overlay, #mindmap-overlay, #mindmap-canvas, #preview-laser-dot
+    // ...) throughout, so the cloned <style> tags above already style everything correctly with
+    // zero CSS written here for those. #audience-whiteboard-view is the one genuinely new
+    // container — Whiteboard is a cross-origin draw.io iframe with no element anywhere in this
+    // app to borrow layout from, so it gets its own small rule above instead.
+    aDoc.body.innerHTML=
+      '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body">'+initialSlidesHtml+'</div></div></div>'+
+      '<div id="mindmap-overlay" class="open"><div id="mindmap-canvas-wrap"><div id="mindmap-canvas"><svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>'+
+      '<div id="audience-whiteboard-view"><img id="audience-whiteboard-img" alt="Whiteboard" /></div>'+
+      '<div id="preview-laser-dot"></div>'+
+      '<div id="presenter-blank-overlay"></div>'+
+      '<div id="audience-hint">Drag this window onto your presentation display,<br>then click anywhere (or press <kbd>F</kbd>) to go fullscreen.</div>';
+    // A <script> inserted via innerHTML never executes — a long-standing, deliberate DOM
+    // behavior (otherwise any innerHTML write of untrusted content could run arbitrary code) —
+    // so this one has to be built as a real element and appended instead.
+    const scriptEl=aDoc.createElement('script');
+    scriptEl.textContent=
+      '(function(){'+
+        'var enterFs=function(){'+
+          'var h=document.getElementById(\'audience-hint\'); if(h)h.remove();'+
+          'if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});'+
+          'if(window.opener)window.opener.focus();'+
+        '};'+
+        'document.getElementById(\'audience-hint\').addEventListener(\'click\',enterFs);'+
+        'document.addEventListener(\'keydown\',function(e){ if(e.key===\'f\'||e.key===\'F\')enterFs(); });'+
+        'window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } });'+
+      '})();';
+    aDoc.body.appendChild(scriptEl);
+  }catch(err){
+    // Surface failures inside the popup itself rather than leaving a silent blank window with
+    // no way to tell what went wrong — sakuraLog also puts it in Settings → About → Debug log.
+    try{ w.document.body.innerHTML='<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:40px;text-align:center;font:500 15px \'Inter\',sans-serif;color:#c0392b;background:#fff">Audience View failed to set up: '+String(err&&err.message||err)+'</div>'; }catch(e2){}
+    if(typeof sakuraLog==='function')sakuraLog('error','openAudienceWindow failed',{message:err&&err.message,stack:err&&err.stack});
+    showToast('Audience View failed to open — see the popup window for details');
   }
-  // Reuses real ids (#preview-overlay, #mindmap-overlay, #mindmap-canvas, #preview-laser-dot...)
-  // throughout, so the cloned <style> tags above already style everything correctly with zero
-  // CSS written here for those. #audience-whiteboard-view is the one genuinely new container —
-  // Whiteboard is a cross-origin draw.io iframe with no element anywhere in this app to borrow
-  // layout from, so it gets its own small rule below instead.
-  const bodyHtml=
-    '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body">'+initialSlidesHtml+'</div></div></div>'+
-    '<div id="mindmap-overlay" class="open"><div id="mindmap-canvas-wrap"><div id="mindmap-canvas"><svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>'+
-    '<div id="audience-whiteboard-view"><img id="audience-whiteboard-img" alt="Whiteboard" /></div>'+
-    '<div id="preview-laser-dot"></div>'+
-    '<div id="presenter-blank-overlay"></div>'+
-    '<div id="audience-hint">Drag this window onto your presentation display,<br>then click anywhere (or press <kbd>F</kbd>) to go fullscreen.</div>'+
-    '<script>(function(){'+
-      'var enterFs=function(){'+
-        'var h=document.getElementById(\'audience-hint\'); if(h)h.remove();'+
-        'if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});'+
-        // Hands keyboard focus straight back to the presenter window the moment this window's
-        // own one-time setup click is done — without this, focus stays wherever the OS put it
-        // after window.open() (this window), and arrow-key/space slide navigation in the
-        // presenter window silently stops responding until the presenter clicks back into it
-        // by hand mid-talk.
-        'if(window.opener)window.opener.focus();'+
-      '};'+
-      'document.getElementById(\'audience-hint\').addEventListener(\'click\',enterFs);'+
-      'document.addEventListener(\'keydown\',function(e){ if(e.key===\'f\'||e.key===\'F\')enterFs(); });'+
-      'window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } });'+
-    '})();<\/script>';
-  w.document.open();
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sakura \u2013 Audience View</title>'+styleHtml+'<style>html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}</style></head><body class=\''+bodyClass+'\' style=\''+bodyStyle+'\'>'+bodyHtml+'</body></html>');
-  w.document.close();
   syncAudienceWindow();
   updateAudienceButtonState();
 }
