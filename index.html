@@ -2856,7 +2856,7 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
-.anchor-suggest-results::-webkit-scrollbar-thumb,#meetings-body::-webkit-scrollbar-thumb,#meeting-link-results::-webkit-scrollbar-thumb,#meetings-template-menu::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb-thumb,
+.anchor-suggest-results::-webkit-scrollbar-thumb,#meetings-body::-webkit-scrollbar-thumb,#meeting-link-results::-webkit-scrollbar-thumb,#meetings-template-menu::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
 #debug-log-view::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
@@ -28452,9 +28452,10 @@ el('presenter-notes-tab-qa')?.addEventListener('click',()=>setPadViewMode('qa'))
 // Optional Notepad/Q&A visibility on the Audience screen — off by default, since notes are
 // usually the presenter's own private prompts, not something meant for the room. Toggling this
 // swaps the Audience window's display over to the current Notes/Q&A view the same way opening
-// Whiteboard or Mind Map does, using the exact same relocate-the-real-Pad-element mechanism
-// (openPresenterNotesInMode/closePresenterNotes) in that window's own instance rather than
-// mirroring content — the audience window has its own copy of this same document's Pad already.
+// Whiteboard or Mind Map does, using the same relocate-the-real-Pad-element mechanism
+// (openPresenterNotes/closePresenterNotes) in that window's own instance — but see
+// syncAudienceNotesVisibility for why it drives that mechanism directly rather than through
+// openPresenterNotesInMode, unlike the local N/Q shortcut does.
 let audienceNotesVisible=false;
 // Makes this window's own panel exactly as many pixels wide/tall as the Audience window's copy
 // — not just the same *fraction* of its window (see the CSS comment above for why a relative
@@ -28474,7 +28475,7 @@ function syncPresenterNotesGeometry(){
     if(aBox.width<=0||aBox.height<=0)return;
     if(panel.style.width!==aBox.width+'px')panel.style.width=aBox.width+'px';
     if(panel.style.height!==aBox.height+'px')panel.style.height=aBox.height+'px';
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','syncPresenterNotesGeometry threw',{message:e&&e.message}); }
 }
 function syncAudienceNotesVisibility(){
   // This window's own panel geometry always reflects audienceNotesVisible regardless of
@@ -28482,6 +28483,12 @@ function syncAudienceNotesVisibility(){
   // what the panel size is supposed to track, not whether a remote sync could currently reach
   // anywhere.
   document.body.classList.toggle('presenter-notes-match-audience',audienceNotesVisible);
+  // The header's own "Drag to move" tooltip would otherwise stay wrong while sharing is on —
+  // dragging is deliberately disabled then (see the header/handle mousedown guards below),
+  // since the panel's size is locked to match the Audience window's copy and a drag wouldn't
+  // visibly do anything anyway.
+  const notesHeader=el('presenter-notes-header');
+  if(notesHeader)notesHeader.setAttribute('data-tip',audienceNotesVisible?'Sharing to Audience — position is locked while shared':'Drag to move');
   if(!audienceNotesVisible){
     const panel=el('presenter-notes-panel'); if(panel){ panel.style.width=''; panel.style.height=''; }
   }
@@ -28508,7 +28515,7 @@ function syncAudienceNotesVisibility(){
       if(typeof win.closePresenterNotes==='function')win.closePresenterNotes();
       stopAudiencePadPoll();
     }
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','syncAudienceNotesVisibility threw',{audienceNotesVisible,message:e&&e.message}); }
 }
 // Notepad is a contenteditable div, where typing directly mutates the DOM — innerHTML cloning
 // reflects it correctly. Q&A rows are <textarea> elements, where typed content lives in the
@@ -28523,7 +28530,7 @@ function syncAudiencePadContent(){
     if(mainEditor&&aEditor&&aEditor.innerHTML!==mainEditor.innerHTML)aEditor.innerHTML=mainEditor.innerHTML;
     if(typeof win.setAudienceQaItems==='function')win.setAudienceQaItems(JSON.parse(JSON.stringify(qaItems)));
     syncAudiencePadScroll();
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','syncAudiencePadContent threw',{message:e&&e.message}); }
 }
 // The audience copy is otherwise a passive mirror nobody at the projector can scroll
 // themselves, so without this it stays pinned wherever it first rendered (usually the top) —
@@ -28544,7 +28551,12 @@ function syncAudiencePadScroll(){
       const mainQa=el('qa-body'), aQa=win.document.getElementById('qa-body');
       if(mainQa&&aQa&&aQa.scrollTop!==mainQa.scrollTop)aQa.scrollTop=mainQa.scrollTop;
     }
-  }catch(e){}
+  }catch(e){
+    // Fires on every scroll event while sharing (see the listeners just below) — logging only
+    // the error, never a per-call trace, same restraint already applied to the laser and zoom
+    // sync, both of which can run at the same frequency.
+    sakuraLog('audience','syncAudiencePadScroll threw',{message:e&&e.message});
+  }
 }
 // Live scroll mirroring — fires immediately on the presenter's own scroll rather than waiting
 // for the next 1.5s poll tick, so the audience view tracks smoothly instead of jumping once a
