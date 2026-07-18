@@ -9133,6 +9133,19 @@ function updateDiagramEditorPagesBadge(d){
 // initial load. Only meaningful once that iframe exists and has finished its own init
 // handshake (see openDiagramEditor's 'init' handling below) — this fires from the 'save'
 // event, which only happens well after that.
+// draw.io's 'xmlsvg' export format returns an SVG whose root element carries the diagram's
+// mxfile XML verbatim in a `content="..."` attribute (HTML-attribute-escaped) — this is how
+// drawio.com itself keeps exported SVGs re-editable. Pulling it back out here means an SVG
+// export doubles as an XML export, without needing a second, less-certain export format.
+function extractXmlFromSvgExport(svgData){
+  if(typeof svgData!=='string')return null;
+  const m=svgData.match(/<svg\b[^>]*\bcontent="([^"]*)"/);
+  if(!m)return null;
+  try{
+    const ta=document.createElement('textarea'); ta.innerHTML=m[1];
+    return ta.value||null;
+  }catch(e){ return null; }
+}
 function syncAudienceWhiteboard(xml){
   if(!audienceWinLive()||!xml)return;
   try{
@@ -9239,31 +9252,31 @@ function openDiagramEditor(diagramId){
       // override path. This means only the currently active page is captured for the thumbnail
       // and for Preview/PDF/Word/PPTX; see the "N pages" badge and Help section for the
       // reminder this is a known limitation, not a bug.
-      _diagramEditorState.pendingExports.push('xmlsvg');
       iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       if(status){ status.textContent=savedAt; status.classList.add('diagram-editor-status-saved'); }
       updateDiagramEditorPagesBadge(d);
       _diagramEditorState.exitAfterExport=!!msg.exit;
     } else if(msg.event==='export'){
-      // Two different things request an export, and they need different handling on response:
-      // the SVG thumbnail export above (piggybacked on an explicit save) vs. the plain-XML poll
-      // below (which runs regardless of whether the person ever explicitly saved). draw.io's
-      // embed protocol doesn't reliably echo back which action a response belongs to, so a
-      // small FIFO queue of what was requested — pushed right before each postMessage, shifted
-      // off here in the same order responses must arrive in for the same iframe — tells the two
-      // apart without guessing from the payload shape.
-      const kind=(_diagramEditorState&&_diagramEditorState.pendingExports.shift())||'xmlsvg';
-      if(kind==='xml'){
-        if(typeof msg.data==='string'&&msg.data&&msg.data!==d.xml){
-          d.xml=msg.data; d.modifiedAt=Date.now(); d.pageCount=splitMxfilePages(d.xml).length;
-          d._hydrated=true; d._hydrationFailed=false;
-          markDirty(); scheduleAutoSave();
-          if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
-        }
-      } else if(msg.data){
+      if(msg.data){
         d.previewSvg=msg.data;
         d.pageSvgs=[{name:'',svg:msg.data}];
+        // 'xmlsvg' is draw.io's "SVG with the diagram XML embedded in it" format — the same
+        // format already used (and confirmed working) for the thumbnail above. Reusing it here
+        // rather than requesting a plain 'xml' format means the live-sync poll below only ever
+        // depends on an export format this codebase already knows draw.io actually honors —
+        // 'xml' alone isn't a documented format value for the embed protocol's export action,
+        // and a request draw.io silently doesn't recognize would fail exactly the way the
+        // Whiteboard's live sync was failing: no error, just nothing ever arriving. Every export
+        // response — whether triggered by an explicit save above or by the poll below — now
+        // keeps d.xml current by extracting the embedded XML straight out of the SVG, so the
+        // Whiteboard picks up live edits without waiting on an explicit save either way.
+        const extractedXml=extractXmlFromSvgExport(msg.data);
+        if(extractedXml&&extractedXml!==d.xml){
+          d.xml=extractedXml; d.pageCount=splitMxfilePages(d.xml).length;
+          d._hydrated=true; d._hydrationFailed=false;
+          if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
+        }
         markDirty(); scheduleAutoSave();
         renderDiagramsList();
       }
@@ -9273,7 +9286,7 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler,pendingExports:[]};
+  _diagramEditorState={diagramId,iframe,handler};
   overlay.classList.add('open');
   // Opening the Audience window's own copy of this same whiteboard (via openOrCreateWhiteboard
   // below) already loads it with this diagram's current d.xml as part of its own normal init
@@ -9288,11 +9301,11 @@ function openDiagramEditor(diagramId){
   // safety-confirm dialog below has a chance to remind them — but that dialog is deliberately
   // skipped while presenting, see closeDiagramEditor, so nothing else was reminding them either).
   // The practical fix is to stop depending on that explicit save at all while presenting: poll
-  // for the canvas's current XML via the same 'export' action already used for the thumbnail,
-  // just with format 'xml' instead of 'xmlsvg' — this reads whatever's currently drawn
-  // regardless of "saved" status, so it picks up live edits automatically and protects against
-  // losing a drawing to an unexpected close, the same way the Notepad/Q&A poll already covers
-  // edits that don't go through a single dedicated event.
+  // for the canvas's current content via the same 'xmlsvg' export action already used for the
+  // thumbnail (see extractXmlFromSvgExport) — this reads whatever's currently drawn regardless
+  // of "saved" status, so it picks up live edits automatically and protects against losing a
+  // drawing to an unexpected close, the same way the Notepad/Q&A poll already covers edits that
+  // don't go through a single dedicated event.
   if(previewPresenting&&d.isWhiteboard)startWhiteboardSyncPoll();
 }
 // Keeps the whiteboard's underlying XML (and the Audience mirror) current with whatever's
@@ -9300,7 +9313,7 @@ function openDiagramEditor(diagramId){
 // comment at the openDiagramEditor call site for why that dependency was the actual bug. Same
 // poll-plus-tolerant-diff shape as the Notepad/Q&A audience poll: cheap to run, self-stops the
 // moment its preconditions stop holding, no separate "did anything change" bookkeeping needed
-// since the 'export' handler above already no-ops when the XML string comes back unchanged.
+// since the 'export' handler above already no-ops when the extracted XML comes back unchanged.
 let _whiteboardSyncPollTimer=null;
 function startWhiteboardSyncPoll(){
   if(_whiteboardSyncPollTimer||SAKURA_AUDIENCE_MODE)return;
@@ -9310,8 +9323,10 @@ function startWhiteboardSyncPoll(){
     if(!d||!d.isWhiteboard){ stopWhiteboardSyncPoll(); return; }
     const iframe=_diagramEditorState.iframe;
     if(!iframe||!iframe.contentWindow||!iframe.isConnected)return;
-    _diagramEditorState.pendingExports.push('xml');
-    iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xml'}),'*');
+    // Deliberately the same 'xmlsvg' format the save-triggered thumbnail export already uses
+    // (see the comment in the 'export' handler for why 'xml' alone was the actual bug) — the
+    // 'export' handler treats every response, save-triggered or poll-triggered, identically.
+    iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
   },2000);
 }
 function stopWhiteboardSyncPoll(){ if(_whiteboardSyncPollTimer){ clearInterval(_whiteboardSyncPollTimer); _whiteboardSyncPollTimer=null; } }
@@ -28038,7 +28053,32 @@ function syncAudienceLaser(clientX,clientY){
   try{
     const win=presenterAudienceWin;
     const dot=win.document.getElementById('preview-laser-dot'); if(!dot)return;
-    const xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
+    // Whole-window percentage mapping only holds up when both windows are showing the same
+    // surface at the same scale — true for the slide/Whiteboard/Mind Map, which the Audience
+    // window mirrors edge-to-edge. The shared Notepad/Q&A panel is different: it's a small,
+    // docked, user-resizable box on this window (see presenterNotesPos) but a near-fullscreen
+    // inset:6% box on the Audience side (see the audience-show-notes CSS rule) — genuinely
+    // different sizes and positions, not just a different window size. Mapping by whole-window
+    // percentage in that case points at the wrong spot on the Audience panel (worst right at
+    // its edges, where this window's small panel and the Audience's large one diverge most).
+    // So: while hovering this window's own panel with it actually shared, re-derive the
+    // percentage relative to *that* panel's own box, and place the dot at the same relative
+    // spot inside the Audience's own panel box instead of the whole window.
+    let xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
+    if(audienceNotesVisible){
+      const panel=el('presenter-notes-panel');
+      const box=panel&&panel.classList.contains('open')?panel.getBoundingClientRect():null;
+      if(box&&box.width>0&&box.height>0&&clientX>=box.left&&clientX<=box.right&&clientY>=box.top&&clientY<=box.bottom){
+        const aPanel=win.document.getElementById('presenter-notes-panel');
+        const aBox=aPanel?aPanel.getBoundingClientRect():null;
+        if(aBox&&aBox.width>0&&aBox.height>0){
+          const px=(clientX-box.left)/box.width, py=(clientY-box.top)/box.height;
+          dot.style.left=(aBox.left+px*aBox.width)+'px';
+          dot.style.top=(aBox.top+py*aBox.height)+'px';
+          return;
+        }
+      }
+    }
     dot.style.left=(xPct*win.innerWidth)+'px';
     dot.style.top=(yPct*win.innerHeight)+'px';
   }catch(e){}
