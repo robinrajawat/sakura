@@ -6908,21 +6908,28 @@ async function setupVaultPassphrase(){
     const combined=new Uint8Array(iv.length+ctBuf.byteLength); combined.set(iv,0); combined.set(new Uint8Array(ctBuf),iv.length);
     localStorage.setItem(SAKURA_VAULT_META_KEY,JSON.stringify({salt:b64FromBytes(saltBytes),verifier:b64FromBytes(combined)}));
     // Migrate existing plaintext AI provider keys to ciphertext
+    let migratedKeys=0, migrationFailed=false;
     try{
       const aiBlob=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}');
       for(const k of Object.keys(aiBlob)){
-        if(k.startsWith('key_')&&aiBlob[k]){ decryptedKeyCache[k]=aiBlob[k]; aiBlob[k]=await vaultEncrypt(aiBlob[k]); }
+        if(k.startsWith('key_')&&aiBlob[k]){ decryptedKeyCache[k]=aiBlob[k]; aiBlob[k]=await vaultEncrypt(aiBlob[k]); migratedKeys++; }
       }
       localStorage.setItem(AI_PREFS_KEY,JSON.stringify(aiBlob));
-    }catch(e){}
+    }catch(e){ migrationFailed=true; }
     // Migrate existing plaintext Gist token to ciphertext
+    let gistMigrated=false;
     try{
       const cloudBlob=loadCloudBackupPrefsRaw();
-      if(cloudBlob.gistToken){ decryptedGistTokenCache=cloudBlob.gistToken; cloudBlob.gistToken=await vaultEncrypt(cloudBlob.gistToken); localStorage.setItem(CLOUD_BACKUP_KEY,JSON.stringify(cloudBlob)); }
-    }catch(e){}
+      if(cloudBlob.gistToken){ decryptedGistTokenCache=cloudBlob.gistToken; cloudBlob.gistToken=await vaultEncrypt(cloudBlob.gistToken); localStorage.setItem(CLOUD_BACKUP_KEY,JSON.stringify(cloudBlob)); gistMigrated=true; }
+    }catch(e){ migrationFailed=true; }
+    // Never log the passphrase, the keys themselves, or any ciphertext — only how many keys
+    // were involved and whether the migration step itself failed. A partial migration (vault
+    // enabled, but some keys never actually got re-encrypted) is exactly the kind of state that
+    // needs to be visible, since it's otherwise indistinguishable from a clean success.
+    sakuraLog('vault','setupVaultPassphrase enabled',{migratedKeys,gistMigrated,migrationFailed});
     updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
     showToast('Encryption enabled');
-  }catch(e){ showToast('Could not set up encryption — your browser may not support it'); vaultCryptoKey=null; }
+  }catch(e){ sakuraLog('vault','setupVaultPassphrase failed',{name:e&&e.name,message:e&&e.message}); showToast('Could not set up encryption — your browser may not support it'); vaultCryptoKey=null; }
 }
 async function unlockVault(){
   let meta; try{ meta=JSON.parse(localStorage.getItem(SAKURA_VAULT_META_KEY)||'null'); }catch(e){ meta=null; }
@@ -6939,22 +6946,36 @@ async function unlockVault(){
     if(text!==VAULT_VERIFIER_PLAINTEXT)throw new Error('bad passphrase');
     vaultCryptoKey=key;
     decryptedKeyCache={};
+    let decryptedKeys=0, keyFailures=0;
     try{
       const aiBlob=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}');
       for(const k of Object.keys(aiBlob)){
-        if(k.startsWith('key_')&&aiBlob[k]){ try{ decryptedKeyCache[k]=await vaultDecrypt(aiBlob[k]); }catch(e){} }
+        if(k.startsWith('key_')&&aiBlob[k]){ try{ decryptedKeyCache[k]=await vaultDecrypt(aiBlob[k]); decryptedKeys++; }catch(e){ keyFailures++; } }
       }
     }catch(e){}
+    let gistDecrypted=false, gistFailed=false;
     try{
       const cloudBlob=loadCloudBackupPrefsRaw();
-      if(cloudBlob.gistToken){ try{ decryptedGistTokenCache=await vaultDecrypt(cloudBlob.gistToken); }catch(e){} }
+      if(cloudBlob.gistToken){ try{ decryptedGistTokenCache=await vaultDecrypt(cloudBlob.gistToken); gistDecrypted=true; }catch(e){ gistFailed=true; } }
     }catch(e){}
+    // Never log the passphrase or any decrypted value — counts only. A per-key decrypt failure
+    // here (keyFailures>0) means that specific key silently stops working with no explanation
+    // beyond "no key saved" in the UI; worth being able to tell that apart from "never had one".
+    sakuraLog('vault','unlockVault succeeded',{decryptedKeys,keyFailures,gistDecrypted,gistFailed});
     updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
     if(aiFallbackEnabled)renderFallbackOrderList();
     showToast('Unlocked');
-  }catch(e){ vaultCryptoKey=null; showToast('Incorrect passphrase'); }
+  }catch(e){
+    // Distinguishing these two matters for diagnosis even though the toast stays the same
+    // either way: "bad passphrase" is the expected/common case and not worth investigating,
+    // but any other error name means something is wrong with the stored vault metadata itself
+    // or this browser's WebCrypto — a genuinely different, rarer problem.
+    sakuraLog('vault','unlockVault failed',{wrongPassphrase:e&&e.message==='bad passphrase',name:e&&e.name});
+    vaultCryptoKey=null; showToast('Incorrect passphrase');
+  }
 }
 function lockVault(){
+  sakuraLog('vault','lockVault',{});
   vaultCryptoKey=null; decryptedKeyCache={}; decryptedGistTokenCache='';
   updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
   if(aiFallbackEnabled)renderFallbackOrderList();
@@ -6964,16 +6985,24 @@ async function disableVaultEncryption(){
   if(!vaultUnlocked()){ showToast('Unlock Secure Storage first'); return; }
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',title:'Turn Off Encryption',body:'Your AI provider keys and GitHub token will be written back as plain text — in this browser and in local backup files. Continue?',confirmLabel:'Turn Off',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
+  let aiWriteFailed=false, gistWriteFailed=false;
   try{
     const aiBlob=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}');
     for(const k of Object.keys(aiBlob)){ if(k.startsWith('key_')&&aiBlob[k]){ aiBlob[k]=decryptedKeyCache[k]||''; } }
     localStorage.setItem(AI_PREFS_KEY,JSON.stringify(aiBlob));
-  }catch(e){}
+  }catch(e){ aiWriteFailed=true; }
   try{
     const cloudBlob=loadCloudBackupPrefsRaw();
     if(cloudBlob.gistToken){ cloudBlob.gistToken=decryptedGistTokenCache||''; localStorage.setItem(CLOUD_BACKUP_KEY,JSON.stringify(cloudBlob)); }
-  }catch(e){}
+  }catch(e){ gistWriteFailed=true; }
   try{ localStorage.removeItem(SAKURA_VAULT_META_KEY); }catch(e){}
+  // If writing the plaintext back out failed, decryptedKeyCache/decryptedGistTokenCache are
+  // about to be cleared below along with vaultCryptoKey — so a write failure here isn't just a
+  // logging gap, it's the one real way this operation could actually lose a key (encrypted
+  // form gone from localStorage the moment SAKURA_VAULT_META_KEY above is removed and the app
+  // no longer treats it as ciphertext; in-memory plaintext gone the moment these caches clear
+  // right after). Flagging it, even though there's nothing to roll back to at this point.
+  if(aiWriteFailed||gistWriteFailed)sakuraLog('vault','disableVaultEncryption: writing plaintext back failed',{aiWriteFailed,gistWriteFailed});
   vaultCryptoKey=null; decryptedKeyCache={}; decryptedGistTokenCache='';
   updateVaultStatusUI(); updateAiKeyStatus(); updateCloudGistStatus();
   showToast('Encryption turned off');
