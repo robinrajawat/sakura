@@ -9153,13 +9153,35 @@ function updateDiagramEditorPagesBadge(d){
 // initial load. Only meaningful once that iframe exists and has finished its own init
 // handshake (see openDiagramEditor's 'init' handling below) — this fires from the 'save'
 // event, which only happens well after that.
+// Executes entirely within whichever window calls it — this distinction is the actual fix here.
+// draw.io's embed protocol validates that a postMessage command genuinely comes from the
+// iframe's own real parent window, and silently drops anything else (standard embed-security
+// practice) — with no error on either side, which is exactly why the previous version of this
+// looked like a successful send that just had no visible effect. Calling
+// aFrame.contentWindow.postMessage(...) directly from the presenter window's own script — even
+// while only reaching into the Audience window's DOM to *find* the iframe — makes the resulting
+// message's event.source the presenter window, not the iframe's actual parent, so draw.io
+// rejects it. Defining this function once (it exists in the identical script both windows run)
+// and calling it as win.loadXmlIntoOwnWhiteboardIframe(xml) — a genuine cross-window function
+// CALL, not just a cross-window object reference — makes the postMessage statement itself
+// execute inside this function's own defining realm: the Audience window's, when win is
+// presenterAudienceWin. Its event.source then correctly matches the iframe's real parent.
+// Verified generally (independent of draw.io) with a two-window postMessage test: reaching into
+// a window's DOM and posting from the caller's own context is seen by the receiving iframe as
+// coming from the caller, not the actual parent; calling a function defined in that window
+// instead is correctly seen as coming from the real parent.
+function loadXmlIntoOwnWhiteboardIframe(xml){
+  const aFrame=document.querySelector('#diagram-editor-iframe-wrap iframe');
+  if(aFrame&&aFrame.contentWindow)aFrame.contentWindow.postMessage(JSON.stringify({action:'load',xml}),'*');
+}
 function syncAudienceWhiteboard(xml){
   if(!audienceWinLive()||!xml){ sakuraLog('diagram','syncAudienceWhiteboard skipped',{audienceLive:audienceWinLive(),hasXml:!!xml}); return; }
   try{
     const win=presenterAudienceWin;
-    const aFrame=win.document.querySelector('#diagram-editor-iframe-wrap iframe');
-    sakuraLog('diagram','syncAudienceWhiteboard posting',{foundAudienceFrame:!!aFrame,hasContentWindow:!!(aFrame&&aFrame.contentWindow),xmlLen:xml.length});
-    if(aFrame&&aFrame.contentWindow)aFrame.contentWindow.postMessage(JSON.stringify({action:'load',xml}),'*');
+    const foundFrame=!!win.document.querySelector('#diagram-editor-iframe-wrap iframe');
+    const hasLoader=typeof win.loadXmlIntoOwnWhiteboardIframe==='function';
+    sakuraLog('diagram','syncAudienceWhiteboard posting',{foundAudienceFrame:foundFrame,hasLoader,xmlLen:xml.length});
+    if(hasLoader)win.loadXmlIntoOwnWhiteboardIframe(xml);
   }catch(e){ sakuraLog('diagram','syncAudienceWhiteboard threw',{message:e&&e.message}); }
 }
 function openDiagramEditor(diagramId){
