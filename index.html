@@ -4734,7 +4734,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Headings come from the Heading 1–6 style you apply in the editor (Format toolbar, next to Text color) — not from tree depth. A node with no heading style of its own renders as plain body text in Preview, unless Settings → Preview → "Headings &amp; Contents" has a level assigned to that node's depth (see below)</li>
 <li>Settings → Preview → "Headings &amp; Contents" → "Heading fallback by depth" lets you assign a heading level to depths 0–5, so an unstyled node can still render as a heading in Preview based purely on how deep it sits in the tree. An explicit heading style on the node always wins over this; depths left as "None" behave exactly as before. This only changes how Preview renders — it never writes a heading style into the actual document</li>
 <li>Table of contents (left panel, toggled with the header button) is built from headings and [Section] markers — what it includes is configurable in Settings → Preview → "Headings &amp; Contents": cap it to a maximum heading level, or turn off section markers to keep it to real headings only. "Treat depth 0 as section markers" there (off by default) makes every top-level node act as a [Section] divider automatically, without needing the [Bracket] text — [Bracket] text still works at any depth on top of this, including depth 0. Unlike the Table of Contents toggle, this one changes the document itself: the outline canvas, Preview/PDF, and rich-text copy all pick up the same section styling, not just what's listed in Contents. Below the headings, a "Decisions" section lists every decision log in the document with a colored status dot — click to jump straight to it. The panel shows itself if there are 2+ headings or at least 1 decision log, whichever applies; it's part of what gets printed to PDF, so the decision index carries over there too</li>
-<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second browser window that mirrors only the current slide — no bar, no notes, no controls — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows a one-time prompt to drag it into place, then click anywhere (or press <span class="help-kbd">F</span>) to make it fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. The laser pointer and any Ctrl+scroll zoom stay presenter-side only and aren't mirrored, so the audience always sees the slide at its normal size. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
+<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second browser window that mirrors only the current slide — no bar, no notes, no controls — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows a one-time prompt to drag it into place, then click anywhere (or press <span class="help-kbd">F</span>) to make it fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, the laser pointer, presenter-side zoom (both the 150% presenting default and any Ctrl+scroll adjustment on top of it), and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. Opening the Whiteboard or Mind Map (below) while the Audience View is connected swaps its display over to that too, the same way it takes over this window's own screen — Mind Map mirrors live, stroke for stroke, since it's plain on-page content same as slides; Whiteboard mirrors as a still image refreshed on every draw.io save (a few seconds behind, not truly live — see the Whiteboard entry below for why), rather than the live editing surface itself. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. If the Audience View (above) is connected, it shows this same drawing too — as a still image, refreshed automatically every time draw.io's own autosave fires (typically a few seconds after you stop drawing), not the live editing surface itself, since draw.io runs in a cross-origin embed with no way to mirror its canvas pixel-for-pixel from outside it. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
 <li>Settings → Preview → "Reading appearance" adds reading width, a sepia reading theme, and a serif body-text option — Preview-only, doesn't touch the editor or document. Settings → Data &amp; Backup → "Export &amp; print" → "PDF page margins" sets the default Export as PDF starts with; the print dialog that opens still lets you change it per export</li>
 <li>Click <span class="help-kbd">▾/▸</span> → fold/unfold a branch, same as the editor — but this fold state is local to Preview and separate from the editor's own collapsed sections. Collapse all / Expand all buttons sit in the header</li>
 <li>Folding a branch that contains a note or a decision log doesn't hide it silently — a small icon next to the <span class="help-kbd">+N</span> badge tells you it's in there; click either to expand</li>
@@ -9181,6 +9181,7 @@ function openDiagramEditor(diagramId){
         d.pageSvgs=[{name:'',svg:msg.data}];
         markDirty(); scheduleAutoSave();
         renderDiagramsList();
+        if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboardSvg(msg.data);
       }
       if(_diagramEditorState&&_diagramEditorState.exitAfterExport){ closeDiagramEditorInternal(); }
     } else if(msg.event==='exit'){
@@ -9190,12 +9191,14 @@ function openDiagramEditor(diagramId){
   window.addEventListener('message',handler);
   _diagramEditorState={diagramId,iframe,handler};
   overlay.classList.add('open');
+  if(previewPresenting&&d.isWhiteboard){ setAudienceMode('whiteboard'); if(d.previewSvg)syncAudienceWhiteboardSvg(d.previewSvg); }
 }
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
   window.removeEventListener('message',_diagramEditorState.handler);
   const overlay=el('diagram-editor-overlay'); if(overlay)overlay.classList.remove('open');
   const wrap=el('diagram-editor-iframe-wrap'); if(wrap)wrap.innerHTML='';
+  if(previewPresenting&&audienceMode==='whiteboard')setAudienceMode('slide');
   _diagramEditorState=null;
   renderDiagramsList();
 }
@@ -27557,6 +27560,7 @@ function previewSetLaser(on){
   if(overlay){ overlay.style.cursor=on?'none':''; overlay.classList.toggle('laser-active',on); }
   dot?.classList.toggle('on',on);
   el('preview-laser-toggle')?.classList.toggle('active',on);
+  if(audienceWinLive())presenterAudienceWin.document.getElementById('preview-laser-dot')?.classList.toggle('on',on);
 }
 function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open'); }
 function openPreview(){
@@ -27748,17 +27752,23 @@ function setPresenterBlank(on){
 }
 function togglePresenterBlank(){ setPresenterBlank(!presenterBlanked); }
 
-// Dual screen / Audience View — a second, same-origin browser window that mirrors only the
-// active slide (no toolbar, no notes, no presenter chrome), meant to be dragged onto a second
-// display and put into fullscreen there while this window stays as the presenter's own view.
+// Dual screen / Audience View — a second, same-origin browser window that mirrors this
+// window's presenting surface (slide, Whiteboard, or Mind Map, whichever is currently showing),
+// with no toolbar, no notes, no presenter chrome. Meant to be dragged onto a second display and
+// put into fullscreen there while this window stays as the presenter's own view.
 // window.open('', ...) with no URL opens about:blank, which inherits this page's scripting
 // origin — so the opener can read/write that window's DOM directly (no postMessage needed),
 // the simplest option given Sakura ships as one static file with no server to coordinate a
-// second real page load through. Content sync is a full re-clone of #preview-body's HTML plus
-// re-toggling .pv-slide-active in the clone — not a diff — since slide decks are small and this
-// only runs on navigation/blank-toggle/content-edit, not on every frame.
+// second real page load through. Content sync is a full re-clone of the relevant container's
+// HTML — not a diff — since none of slides/whiteboard/mind map are large enough for that to
+// matter, and it only runs on navigation/toggle/content-change, not on every frame (mousemove
+// for the laser pointer is the one exception — see syncAudienceLaser).
 let presenterAudienceWin=null;
 let _presenterDualScreenFsExit=false;
+// Which of the three mutually-exclusive surfaces the Audience window is currently showing —
+// mirrors whichever one covers the screen in THIS window too (Whiteboard/Mind Map sit on top of
+// the slide at a higher z-index while open, same idea carried over here).
+let audienceMode='slide';
 function audienceWinLive(){ return !!(presenterAudienceWin && !presenterAudienceWin.closed); }
 function openAudienceWindow(){
   if(audienceWinLive()){ presenterAudienceWin.focus(); return; }
@@ -27767,8 +27777,36 @@ function openAudienceWindow(){
   const w=window.open('','sakura-audience-view','width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
   if(!w){ showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
   presenterAudienceWin=w;
+  audienceMode='slide';
+  // Reuses real ids (#preview-overlay, #mindmap-overlay, #mindmap-canvas, #preview-laser-dot...)
+  // throughout, so the cloned <style> tags above already style everything correctly with zero
+  // CSS written here for those. #audience-whiteboard-view is the one genuinely new container —
+  // Whiteboard is a cross-origin draw.io iframe with no element anywhere in this app to borrow
+  // layout from, so it gets its own small rule below instead.
+  const bodyHtml=
+    '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body"></div></div></div>'+
+    '<div id="mindmap-overlay" class="open"><div id="mindmap-canvas-wrap"><div id="mindmap-canvas"><svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>'+
+    '<div id="audience-whiteboard-view"><img id="audience-whiteboard-img" alt="Whiteboard" /></div>'+
+    '<div id="preview-laser-dot"></div>'+
+    '<div id="presenter-blank-overlay"></div>'+
+    '<div id="audience-hint">Drag this window onto your presentation display,<br>then click anywhere (or press <kbd>F</kbd>) to go fullscreen.</div>'+
+    '<script>(function(){'+
+      'var enterFs=function(){'+
+        'var h=document.getElementById(\'audience-hint\'); if(h)h.remove();'+
+        'if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});'+
+        // Hands keyboard focus straight back to the presenter window the moment this window's
+        // own one-time setup click is done — without this, focus stays wherever the OS put it
+        // after window.open() (this window), and arrow-key/space slide navigation in the
+        // presenter window silently stops responding until the presenter clicks back into it
+        // by hand mid-talk.
+        'if(window.opener)window.opener.focus();'+
+      '};'+
+      'document.getElementById(\'audience-hint\').addEventListener(\'click\',enterFs);'+
+      'document.addEventListener(\'keydown\',function(e){ if(e.key===\'f\'||e.key===\'F\')enterFs(); });'+
+      'window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } });'+
+    '})();<\/script>';
   w.document.open();
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sakura \u2013 Audience View</title>'+styleHtml+'<style>html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay{position:fixed;inset:0}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}</style></head><body><div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body"></div></div><div id="presenter-blank-overlay"></div></div><div id="audience-hint">Drag this window onto your presentation display,<br>then click anywhere (or press <kbd>F</kbd>) to go fullscreen.</div><script>(function(){var enterFs=function(){var h=document.getElementById(\'audience-hint\'); if(h)h.remove(); if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});}; document.getElementById(\'audience-hint\').addEventListener(\'click\',enterFs); document.addEventListener(\'keydown\',function(e){ if(e.key===\'f\'||e.key===\'F\')enterFs(); }); window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } }); })();<\/script></body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sakura \u2013 Audience View</title>'+styleHtml+'<style>html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}</style></head><body>'+bodyHtml+'</body></html>');
   w.document.close();
   syncAudienceWindow();
   updateAudienceButtonState();
@@ -27776,16 +27814,63 @@ function openAudienceWindow(){
 function closeAudienceWindow(){
   if(audienceWinLive())presenterAudienceWin.close();
   presenterAudienceWin=null;
+  audienceMode='slide';
   updateAudienceButtonState();
 }
 window.addEventListener('beforeunload',()=>{ if(audienceWinLive())presenterAudienceWin.close(); });
-function toggleAudienceWindow(){ audienceWinLive()?closeAudienceWindow():openAudienceWindow(); }
+function toggleAudienceWindow(){
+  audienceWinLive()?closeAudienceWindow():openAudienceWindow();
+  el('preview-overlay')?.focus({preventScroll:true});
+}
 function updateAudienceButtonState(){
   const on=audienceWinLive();
   el('presenter-dualscreen-btn')?.classList.toggle('active',on);
   const item=el('preview-ctx-dualscreen-item');
   const label=item?.querySelector('span:last-child');
   if(label)label.textContent=on?'Close Audience View':'Open Audience View';
+}
+function setAudienceMode(mode){
+  audienceMode=mode;
+  if(!audienceWinLive())return;
+  const aDoc=presenterAudienceWin.document;
+  const slideEl=aDoc.getElementById('preview-overlay'), mmEl=aDoc.getElementById('mindmap-overlay'), wbEl=aDoc.getElementById('audience-whiteboard-view');
+  if(slideEl)slideEl.style.display=mode==='slide'?'':'none';
+  if(mmEl)mmEl.style.display=mode==='mindmap'?'':'none';
+  if(wbEl)wbEl.style.display=mode==='whiteboard'?'flex':'none';
+}
+// d.previewSvg is already a ready-to-use data: URI (see how it's consumed for the Diagrams tab's
+// own thumbnails), not raw SVG markup — so this is a direct assignment, no encoding needed.
+function syncAudienceWhiteboardSvg(dataUri){
+  if(!audienceWinLive()||!dataUri)return;
+  const img=presenterAudienceWin.document.getElementById('audience-whiteboard-img'); if(!img)return;
+  img.src=dataUri;
+}
+// Mind Map is plain DOM/SVG in this same document (unlike Whiteboard, which is a cross-origin
+// draw.io iframe with no direct DOM access) — so like slides, this is a straight clone of the
+// real canvas rather than an exported snapshot, kept live via renderMindMap()'s own hook below.
+function syncAudienceMindmap(){
+  if(!audienceWinLive())return;
+  const mainCanvas=el('mindmap-canvas'); if(!mainCanvas)return;
+  const aCanvas=presenterAudienceWin.document.getElementById('mindmap-canvas'); if(!aCanvas)return;
+  aCanvas.innerHTML=mainCanvas.innerHTML;
+  aCanvas.style.transform=mainCanvas.style.transform;
+}
+function syncAudienceZoom(){
+  if(!audienceWinLive())return;
+  const mainBody=el('preview-body'), aBody=presenterAudienceWin.document.getElementById('preview-body');
+  if(mainBody&&aBody)aBody.style.zoom=mainBody.style.zoom;
+}
+// Laser position is sent as a fraction of this window's own viewport, then re-applied against
+// the Audience window's own (likely differently-sized) viewport — both windows show the same
+// content at the same relative position and the same zoom level (see syncAudienceZoom), so a
+// plain percentage lines the dot up closely enough without reaching into content-relative
+// coordinates for something that's meant to be a rough attention-pointer, not a precise cursor.
+function syncAudienceLaser(clientX,clientY){
+  if(!audienceWinLive())return;
+  const dot=presenterAudienceWin.document.getElementById('preview-laser-dot'); if(!dot)return;
+  const xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
+  dot.style.left=(xPct*presenterAudienceWin.innerWidth)+'px';
+  dot.style.top=(yPct*presenterAudienceWin.innerHeight)+'px';
 }
 function syncAudienceWindow(){
   if(!audienceWinLive())return;
@@ -27802,6 +27887,22 @@ function syncAudienceWindow(){
   aDoc.body.className=document.body.className;
   aDoc.body.style.cssText=document.body.style.cssText;
   aDoc.getElementById('presenter-blank-overlay')?.classList.toggle('on',presenterBlanked);
+  aDoc.getElementById('preview-laser-dot')?.classList.toggle('on',previewLaserOn);
+  syncAudienceZoom();
+  // Pick up whichever of Whiteboard/Mind Map (if either) is already open at connect time —
+  // covers opening the Audience View mid-session rather than only at the very start of
+  // presenting, when the mode-switch hooks below wouldn't have fired yet.
+  const wbOpen=el('diagram-editor-overlay')?.classList.contains('open');
+  const activeDiagram=(wbOpen&&_diagramEditorState)?findDiagram(_diagramEditorState.diagramId):null;
+  if(activeDiagram&&activeDiagram.isWhiteboard){
+    setAudienceMode('whiteboard');
+    if(activeDiagram.previewSvg)syncAudienceWhiteboardSvg(activeDiagram.previewSvg);
+  } else if(mindMapOpen){
+    setAudienceMode('mindmap');
+    syncAudienceMindmap();
+  } else {
+    setAudienceMode('slide');
+  }
 }
 
 // Presenter notes — rather than building a separate note-taking surface (and a separate place
@@ -28697,6 +28798,7 @@ el('preview-overlay')?.addEventListener('mousemove',e=>{
   if(!previewLaserOn)return;
   const dot=el('preview-laser-dot'); if(!dot)return;
   dot.style.left=e.clientX+'px'; dot.style.top=e.clientY+'px';
+  if(previewPresenting)syncAudienceLaser(e.clientX,e.clientY);
 });
 
 
@@ -29195,6 +29297,7 @@ function applyPresenterZoom(){
   if(!previewActive){ body.style.zoom=''; return; }
   const effective=(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom;
   body.style.zoom=Math.abs(effective-1)>0.001?String(effective):'';
+  if(previewPresenting)syncAudienceZoom();
 }
 el('preview-presenter-zoom')?.addEventListener('input',e=>setPreviewPresenterZoom(e.target.value));
 // Ctrl+scroll or a trackpad pinch — browsers translate pinch gestures into wheel events with
@@ -37709,7 +37812,7 @@ function renderMindMap(){
   canvas.querySelectorAll('.mm-node').forEach(n=>n.remove());
   svg.innerHTML='';
   const emptyHint=el('mindmap-empty-hint');
-  if(!mindMap||!mindMap.nodes.length){ if(emptyHint)emptyHint.style.display=''; return; }
+  if(!mindMap||!mindMap.nodes.length){ if(emptyHint)emptyHint.style.display=''; if(previewPresenting&&mindMapOpen)syncAudienceMindmap(); return; }
   if(emptyHint)emptyHint.style.display='none';
   mindMap.nodes.forEach(n=>{
     if(n.parentId==null)return;
@@ -37816,6 +37919,7 @@ function renderMindMap(){
     }
   });
   mmPopNodeId=null;
+  if(previewPresenting&&mindMapOpen)syncAudienceMindmap();
 }
 function mmDfsFlatten(){
   if(!mindMap||!Array.isArray(mindMap.nodes)||!mindMap.nodes.length)return [];
@@ -38043,6 +38147,7 @@ function openMindMapOverlay(mapId){
   }
   mindMapOpen=true; mmSetSelection([],null); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.add('open');
+  if(previewPresenting)setAudienceMode('mindmap');
   if(el('mindmap-head-title-text'))el('mindmap-head-title-text').value=findMindMap(mindMapActiveId)?.title||'';
   renderMindMap();
   setTimeout(()=>el('mindmap-overlay')?.focus(),0);
@@ -38062,6 +38167,7 @@ function closeMindMapOverlay(){
   if(typeof renderMindMapsList==='function'&&padOpen&&padViewMode==='mindmap')renderMindMapsList();
   mindMapOpen=false; mmSetSelection([],null); mindMapEditingId=null;
   el('mindmap-overlay')?.classList.remove('open');
+  if(previewPresenting&&audienceMode==='mindmap')setAudienceMode('slide');
   focusPane();
 }
 el('mindmap-close-btn')?.addEventListener('click',closeMindMapOverlay);
