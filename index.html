@@ -9181,7 +9181,22 @@ function syncAudienceWhiteboard(xml){
     const foundFrame=!!win.document.querySelector('#diagram-editor-iframe-wrap iframe');
     const hasLoader=typeof win.loadXmlIntoOwnWhiteboardIframe==='function';
     sakuraLog('diagram','syncAudienceWhiteboard posting',{foundAudienceFrame:foundFrame,hasLoader,xmlLen:xml.length});
-    if(hasLoader)win.loadXmlIntoOwnWhiteboardIframe(xml);
+    if(hasLoader){
+      win.loadXmlIntoOwnWhiteboardIframe(xml);
+    } else {
+      // A real session confirmed hasLoader can be false: the Audience popup can end up running
+      // a slightly older cached copy of the page than this window for a little while after a
+      // deploy (this is a GitHub Pages CDN characteristic, not something either window's own
+      // code controls), even though both are loading the exact same URL. Rather than depend on
+      // the two windows' cached versions being in sync, win.Function(...) constructs a brand
+      // new function whose defining realm is win regardless of what's cached there — verified
+      // generally with a plain two-window test — so calling it still gets the postMessage
+      // correctly attributed to the Audience window's own real parent even when the named
+      // function above doesn't exist yet on that side.
+      sakuraLog('diagram','syncAudienceWhiteboard using dynamic fallback (stale audience cache?)',{});
+      const post=win.Function('payload','var f=document.querySelector("#diagram-editor-iframe-wrap iframe");if(f&&f.contentWindow)f.contentWindow.postMessage(payload,"*");');
+      post(JSON.stringify({action:'load',xml}));
+    }
   }catch(e){ sakuraLog('diagram','syncAudienceWhiteboard threw',{message:e&&e.message}); }
 }
 function openDiagramEditor(diagramId){
