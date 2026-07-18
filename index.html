@@ -7676,6 +7676,7 @@ function saveToStorage(){
       try{ const raw=localStorage.getItem(docKey(currentDocId)); if(raw){const d=JSON.parse(raw); existingHasContent=Array.isArray(d.nodes)&&d.nodes.length>0;} }catch(e){}
       if(existingHasContent){
         console.warn('[sakura] saveToStorage: refused to overwrite existing content for',currentDocId,'with an empty, unedited in-memory document — this save would have destroyed it.');
+        sakuraLog('save','saveToStorage refused — would have overwritten real content with an empty unedited doc',{docId:currentDocId});
         return;
       }
     }
@@ -7759,12 +7760,12 @@ function saveToStorage(){
     updateSavedIndicator();
     const elx=el('sb-saved'); if(elx){elx.style.color='var(--accent)'; setTimeout(()=>{if(elx)elx.style.color=''},900)}
     scheduleBackupWrite();
-  }catch(e){}
+  }catch(e){ sakuraLog('save','saveToStorage threw (unexpected — save likely did not complete)',{docId:currentDocId,message:e&&e.message}); }
 }
 function loadDocFromStorage(id){
   try{
     const raw=localStorage.getItem(docKey(id)); if(!raw)return false;
-    const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return false;
+    const d=JSON.parse(raw); if(!Array.isArray(d.nodes)){ sakuraLog('save','loadDocFromStorage: stored doc has no nodes array — refusing to load',{docId:id}); return false; }
     nodes=d.nodes.map(normalizeNode); nextId=d.nextId||1; selectedId=d.selectedId??(nodes[0]?.id??null);
     multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nodes.some(n=>n.id===idv)):[];
     selectionAnchorId=d.selectionAnchorId??(selectedId??null);
@@ -7781,7 +7782,7 @@ function loadDocFromStorage(id){
     decisionLogs=Array.isArray(d.decisionLogs)?d.decisionLogs:[]; migrateNodeDecisionLogsToArray(); decisionExpandedId=null;
     hydrateDiagramBlobsForDoc(id);
     return true;
-  }catch(e){} return false;
+  }catch(e){ sakuraLog('save','loadDocFromStorage threw — falling back to a blank document',{docId:id,message:e&&e.message}); } return false;
 }
 // Fills in each diagram's real xml/previewSvg/pageSvgs from the IndexedDB overflow store, in
 // the background, after loadDocFromStorage has already populated `diagrams` with lightweight
@@ -7809,13 +7810,15 @@ async function hydrateDiagramBlobsForDoc(id){
     // means the vast majority of documents hydrate cleanly and silently — someone opening a
     // diagram right after the app loads should essentially never see the manual-retry state
     // below; that's now a fallback for genuinely persistent failures, not the common path.
-    let blob,ok=false;
+    let blob,ok=false,attempt=0;
     for(const delay of [0,150,400]){
       if(delay)await new Promise(r=>setTimeout(r,delay));
+      attempt++;
       try{ blob=await idbGet('diagblob:'+id+':'+dgMeta.id); ok=true; break; }catch(e){}
     }
     if(currentDocId!==id)return;
-    if(!ok){ dgMeta._hydrationFailed=true; warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
+    if(!ok){ dgMeta._hydrationFailed=true; sakuraLog('save','hydrateDiagramBlobsForDoc gave up after 3 attempts',{docId:id,diagramId:dgMeta.id}); warnDiagramBlobWriteFailed(); continue; } // leave _hydrated unset — stays protected from being overwritten by saveToStorage until a read actually succeeds
+    if(attempt>1)sakuraLog('save','hydrateDiagramBlobsForDoc succeeded after retry',{docId:id,diagramId:dgMeta.id,attempt});
     dgMeta._hydrationFailed=false;
     const live=diagrams.find(dg=>dg.id===dgMeta.id); if(!live)continue;
     if(blob){ live.xml=blob.xml||''; live.previewSvg=blob.previewSvg||''; live.pageSvgs=Array.isArray(blob.pageSvgs)?blob.pageSvgs:[]; }
@@ -21271,11 +21274,11 @@ let _idbConnPromise=null;
 function idbOpen(){
   if(_idbConnPromise) return _idbConnPromise;
   _idbConnPromise=new Promise((resolve,reject)=>{
-    if(!('indexedDB' in window)){ _idbConnPromise=null; reject(new Error('no indexeddb')); return }
+    if(!('indexedDB' in window)){ sakuraLog('storage','idbOpen: IndexedDB unavailable in this browser',{}); _idbConnPromise=null; reject(new Error('no indexeddb')); return }
     const req=indexedDB.open(SAKURA_BACKUP_DB,1);
     req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(SAKURA_BACKUP_STORE)) db.createObjectStore(SAKURA_BACKUP_STORE) };
     req.onsuccess=()=>{ const db=req.result; db.onclose=()=>{ _idbConnPromise=null }; db.onversionchange=()=>{ db.close(); _idbConnPromise=null }; resolve(db) };
-    req.onerror=()=>{ _idbConnPromise=null; reject(req.error) };
+    req.onerror=()=>{ sakuraLog('storage','idbOpen failed',{message:req.error&&req.error.message}); _idbConnPromise=null; reject(req.error) };
   });
   return _idbConnPromise;
 }
@@ -21286,8 +21289,11 @@ function idbOpen(){
 // silently wiped. Every call site below already wraps its own await in try/catch (or should),
 // so this is safe to let reject.
 async function idbGet(key){ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).get(key); req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error) }) }
-async function idbSet(key,value){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(value,key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
-async function idbDelete(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).delete(key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
+// Never log `value` here — it's the raw diagram XML/thumbnail or other blob content, exactly
+// the kind of thing that shouldn't end up sitting in a shareable debug log. The key alone is
+// enough to identify which write failed.
+async function idbSet(key,value){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(value,key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ sakuraLog('storage','idbSet failed',{key,message:e&&e.message}); return false } }
+async function idbDelete(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).delete(key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ sakuraLog('storage','idbDelete failed',{key,message:e&&e.message}); return false } }
 // Used only by the full-backup builder, to enumerate what's in the overflow store (diagram
 // blobs, meeting notes, document revisions — see "Overflow storage" below) so backups/exports
 // stay complete without needing a separately-maintained index of what's in there.
