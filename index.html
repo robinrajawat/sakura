@@ -15636,7 +15636,23 @@ const extraRelsXml=_docxExtraRels.map(r=>`<Relationship Id="${r.id}" Type="${r.t
 const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${previewPresenterBranding?'<Relationship Id="rIdFooterBranding" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>':''}${extraRelsXml}</Relationships>`;
 return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'docProps/core.xml',data:coreXml},{name:'docProps/app.xml',data:appXml},{name:'word/document.xml',data:documentXml},{name:'word/styles.xml',data:stylesXml},{name:'word/settings.xml',data:settingsXml},{name:'word/_rels/document.xml.rels',data:docRels},...(previewPresenterBranding?[{name:'word/footer1.xml',data:footerXml}]:[]),..._docxMediaFiles])}
-async function exportDocx(foldOverride){const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); const bytes=await buildDocxPackage(foldOverride); suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast('DOCX exported')}
+async function exportDocx(foldOverride){
+  const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_');
+  let bytes;
+  try{
+    bytes=await buildDocxPackage(foldOverride);
+  }catch(e){
+    console.error('[sakura] DOCX export failed:',e);
+    showToast('DOCX export failed — see console');
+    return;
+  }
+  suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
+  const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast('DOCX exported');
+}
 
 // === PowerPoint (.pptx) export ===
 // Builds a genuine .pptx via pptxgenjs (see buildPptxPresentation below) from the same slide
