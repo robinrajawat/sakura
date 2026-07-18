@@ -26739,7 +26739,7 @@ function closePreviewPopover(){
   window.removeEventListener('keydown',previewPopoverEscHandler);
   el('preview-body')?.removeEventListener('scroll',closePreviewPopover);
 }
-function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target))closePreviewPopover(); }
+function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target)&&!e.target.closest('#node-qa-suggest'))closePreviewPopover(); }
 function previewPopoverEscHandler(e){ if(e.key==='Escape')closePreviewPopover(); }
 function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
   closePreviewPopover();
@@ -26809,7 +26809,7 @@ function previewOpenQaPopover(triggerEl,qRefs){
   previewPopoverEl?.querySelectorAll('.pv-inline-qa-answer-input').forEach(ta=>{
     autoGrowTextarea(ta);
     ta.addEventListener('click',e=>e.stopPropagation());
-    ta.addEventListener('keydown',e=>e.stopPropagation());
+    ta.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,ta))return; e.stopPropagation(); });
     ta.addEventListener('input',()=>{
       autoGrowTextarea(ta);
       const item=qaItems.find(q=>q.id===ta.dataset.qaId);
