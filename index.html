@@ -4991,11 +4991,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="export-section-label">From a file</div>
           <button class="export-item" data-import="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
           <button class="export-item" data-import="docx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="export-label">Word <span class="export-ext">.docx</span></span></button>
+          <button class="export-item" data-import="sakura-json" data-tip="A full document shared by another Sakura user — imports as a new document, doesn't touch anything else in your workspace."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
           <div class="export-divider"></div>
           <div class="export-section-label">From pasted text</div>
           <button class="export-item" id="import-ai-restructure" data-import="ai-restructure"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="20" y2="12"/><line x1="14" y1="18" x2="20" y2="18"/><line x1="4" y1="6" x2="4.01" y2="6"/><line x1="4" y1="12" x2="4.01" y2="12"/><line x1="4" y1="18" x2="4.01" y2="18"/></svg></span><span class="export-label">Restructure text ✦</span></button>
         </div>
         <input id="sakura-docx-file-input" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
+        <input id="sakura-doc-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
         <button class="btn primary" id="export-toggle" data-tip="Export"><svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="btn-label">Export ▾</span></button>
         <div class="export-menu export-menu-rich" id="export-menu">
           <div class="export-section-label" id="export-label-copy">Copy</div>
@@ -5009,6 +5011,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <button class="export-item" data-save="pdf"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span><span class="export-label">PDF <span class="export-ext">.pdf</span></span></button>
           <button class="export-item" data-save="pptx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/></svg></span><span class="export-label">PowerPoint <span class="export-ext">.pptx</span></span></button>
           <button class="export-item" data-save="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
+          <div class="export-divider" id="export-divider-share"></div>
+          <div class="export-section-label" id="export-label-share">Share</div>
+          <button class="export-item" data-save="sakura-json" data-tip="Everything — notes, decision logs, diagrams, Q&amp;A, mind maps. For another Sakura user to import."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
           <div class="export-divider" id="export-divider-data"></div>
           <div class="export-section-label" id="export-label-data">Data</div>
           <button class="export-item" data-save="decision-log-xlsx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg></span><span class="export-label">Decision Log <span class="export-ext">.xlsx</span></span></button>
@@ -14640,6 +14645,108 @@ function serializeOpml(scopeNodes=nodes){
   return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${title}</title>\n<dateCreated>${new Date().toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
 }
 function exportOpml(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(getScopedNodes(true,foldOverride)))}
+
+// === Sakura Document (full-fidelity single-document share) ===
+// Every other export format is lossy by design (OPML/text: structure and text only; Word/PDF/
+// PPTX: flattened, no longer a live editable document) or scoped to the whole app rather than
+// one document ("Export All Data", which also *replaces* the recipient's entire workspace on
+// import — unusable for "share this one document with a colleague"). This format exists to fill
+// that specific gap: everything a document holds — notes, decision logs, diagrams (real XML, not
+// just the picture), Q&A, mind maps — in one file a colleague running Sakura can import as a new
+// document without disturbing anything else they have.
+async function exportSakuraDocumentFile(){
+  if(!currentDocId){ showToast('Open a document first'); return; }
+  commitEdit();
+  if(typeof commitDecisionCardIfFocused==='function') commitDecisionCardIfFocused();
+  const meta=getMeta();
+  const title=String(meta.title||'Untitled');
+  try{
+    // Every diagram must carry its real xml/svg, not the blank placeholder a diagram can
+    // briefly still have right after a page load (see hydrateDiagramBlobsForDoc) — waiting
+    // here means the export is correct regardless of how fresh the session is, the same
+    // safety copyDiagramToClipboard already applies for a single diagram.
+    const diagramsOut=[];
+    if(Array.isArray(diagrams)&&diagrams.length){
+      if(diagrams.some(d=>!d._hydrated))showToast('Preparing document — this can take a moment with diagrams…');
+      for(const d of diagrams){
+        if(!d._hydrated)await _waitDiagramHydrated(d);
+        diagramsOut.push({id:d.id, title:d.title||'', xml:d.xml||'', previewSvg:d.previewSvg||'', pageSvgs:Array.isArray(d.pageSvgs)?d.pageSvgs.map(p=>({...p})):[], pageCount:d.pageCount||1, status:d.status||'draft', note:d.note||'', anchorNodeId:d.anchorNodeId??null, isWhiteboard:!!d.isWhiteboard, createdAt:d.createdAt, modifiedAt:d.modifiedAt});
+      }
+    }
+    const payload={
+      v:1, kind:'sakura-document', exportedAt:Date.now(),
+      title, author:String(meta.author||''), docStatus,
+      nodes, nextId, collapsed:[...collapsedIds],
+      pad:cleanEditorHtml(el('pad-editor')),
+      qa:Array.isArray(qaItems)?qaItems:[],
+      diagrams:diagramsOut,
+      mindMaps:Array.isArray(mindMaps)?mindMaps:[],
+      decisionLogs:Array.isArray(decisionLogs)?decisionLogs:[]
+    };
+    const safeTitle=title.replace(/[\\/:*?"<>|]+/g,'_')||'document';
+    downloadFileBlob(`${safeTitle}.sakura.json`, new Blob([JSON.stringify(payload)],{type:'application/json'}));
+    markLastExport();
+    showToast('Document exported — share the .sakura.json file; a colleague imports it via Import ▾ → Sakura Document');
+  }catch(e){ console.error('[sakura] Sakura Document export failed:',e); showToast('Export failed — see console'); }
+}
+function triggerSakuraDocImport(){ el('sakura-doc-file-input')?.click(); }
+async function importSakuraDocumentFile(file){
+  let payload;
+  try{
+    const text=await file.text();
+    payload=JSON.parse(text);
+  }catch(e){ showToast('Could not read that file'); return; }
+  if(!payload||typeof payload!=='object'||payload.kind!=='sakura-document'||!Array.isArray(payload.nodes)){
+    showToast('Not a valid Sakura Document file'); return;
+  }
+  commitEdit(); if(currentDocId) saveToStorage();
+  const newId=genDocId();
+  const title=String(payload.title||'Untitled').trim()||'Untitled';
+  const srcDiagrams=Array.isArray(payload.diagrams)?payload.diagrams:[];
+  const newDiagrams=[];
+  for(const dg of srcDiagrams){
+    const newDgId=newDiagramId();
+    let blobSynced=false;
+    try{
+      if(dg.xml||(Array.isArray(dg.pageSvgs)&&dg.pageSvgs.length)){
+        blobSynced=!!(await idbSet('diagblob:'+newId+':'+newDgId,{xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[]}));
+      }
+    }catch(e){}
+    const {xml,previewSvg,pageSvgs,...meta}=dg;
+    // Same fallback saveToStorage itself uses: only strip the heavy fields from the doc's own
+    // JSON once the IndexedDB write is actually confirmed — an unconfirmed copy stays inline
+    // rather than risking a diagram that silently has no content anywhere.
+    newDiagrams.push(blobSynced ? {...meta, id:newDgId, blobSynced:true} : {...meta, id:newDgId, xml:xml||'', previewSvg:previewSvg||'', pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[], blobSynced:false});
+  }
+  // Node ids, and every anchorNodeId/sourceNodeId/mind-map node-link pointing at them, are left
+  // exactly as exported — those references are only ever meaningful *within* one document, and
+  // this is a brand-new document, so there's no collision risk to remap away (unlike diagram
+  // ids above, which double as IndexedDB blob-key components scoped to a document id).
+  const docPayload={
+    nodes:payload.nodes, nextId:Number.isFinite(payload.nextId)?payload.nextId:(Math.max(0,...payload.nodes.map(n=>Number(n.id)||0))+1),
+    selectedId:null, multiSelectedIds:[], selectionAnchorId:null,
+    collapsed:Array.isArray(payload.collapsed)?payload.collapsed:[], focusedId:null,
+    title, author:typeof payload.author==='string'?payload.author:'',
+    docStatus:typeof payload.docStatus==='string'?payload.docStatus:'',
+    pad:typeof payload.pad==='string'?payload.pad:'',
+    qa:Array.isArray(payload.qa)?payload.qa:[],
+    diagrams:newDiagrams,
+    mindMaps:Array.isArray(payload.mindMaps)?payload.mindMaps:[],
+    decisionLogs:Array.isArray(payload.decisionLogs)?payload.decisionLogs:[]
+  };
+  try{
+    localStorage.setItem(docKey(newId), JSON.stringify(docPayload));
+  }catch(e){ showToast('Import failed — storage full or unavailable'); return; }
+  touchDocIndex(newId, title);
+  switchDoc(newId);
+  showToast(`Imported "${title}" as a new document`);
+}
+el('sakura-doc-file-input')?.addEventListener('change', async e=>{
+  const file=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(file) await importSakuraDocumentFile(file);
+});
+
 // === Diagram prompt builder ===
 // Packages the current node tree into a ready-to-paste prompt for an AI
 // assistant to turn into a styled draw.io flow diagram. [NODES] is swapped for an indented
@@ -17347,8 +17454,8 @@ el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('t
 el('templates-set-default-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); setCurrentAsDefaultTemplate()});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
 el('scale-popover-slider').addEventListener('input',e=>setEditorScale(e.target.value,true));
-document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')await exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx()}));
-document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); const type=item.dataset.import; if(type==='opml')triggerOpmlImport(); else if(type==='docx')triggerDocxImport(); else if(type==='ai-restructure')restructureTextWithAi();})); ['clear-btn','sort-root-az-btn','sort-root-za-btn','sort-root-depth-btn'].forEach(id=>el(id).addEventListener('click',()=>el('more-menu').classList.remove('open')));
+document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')await exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='sakura-json')await exportSakuraDocumentFile()}));
+document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); const type=item.dataset.import; if(type==='opml')triggerOpmlImport(); else if(type==='docx')triggerDocxImport(); else if(type==='ai-restructure')restructureTextWithAi(); else if(type==='sakura-json')triggerSakuraDocImport();})); ['clear-btn','sort-root-az-btn','sort-root-za-btn','sort-root-depth-btn'].forEach(id=>el(id).addEventListener('click',()=>el('more-menu').classList.remove('open')));
 document.addEventListener('click',e=>{ const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')},true);
 // Dedicated capture-phase listener for Quick Insert's outside-click dismissal.
 // Deliberately NOT folded into the bubble-phase listener above: at least 47 buttons in this
