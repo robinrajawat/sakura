@@ -2243,6 +2243,9 @@ body.sakura-audience-window #diagram-editor-header{display:none!important}
 body.sakura-audience-window #diagram-editor-iframe-wrap,
 body.sakura-audience-window #preview-overlay,
 body.sakura-audience-window #mindmap-overlay{pointer-events:none}
+body.sakura-audience-window.audience-show-notes #presenter-notes-panel{display:flex!important;position:fixed!important;inset:6% !important;width:auto!important;height:auto!important;z-index:5000}
+body.sakura-audience-window #presenter-notes-header,
+body.sakura-audience-window #presenter-notes-resize-handle{display:none!important}
 #preview-overlay{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);flex-direction:column;outline:none}
 #preview-overlay.open{display:flex}
 #mindmap-overlay{display:none;position:fixed;inset:0;z-index:1055;background:var(--bg);flex-direction:column;outline:none}
@@ -2485,6 +2488,9 @@ body.sakura-audience-window #mindmap-overlay{pointer-events:none}
 .pn-tab{font-size:11.5px;padding:2px 1px 4px;margin-bottom:-6px}
 #presenter-notes-close-btn{appearance:none;border:none;background:transparent;color:var(--muted);cursor:pointer;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;flex:0 0 auto}
 #presenter-notes-close-btn:hover{background:var(--hover);color:var(--fg)}
+#presenter-notes-audience-toggle{appearance:none;border:none;background:transparent;color:var(--muted);cursor:pointer;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;flex:0 0 auto}
+#presenter-notes-audience-toggle:hover{background:var(--hover);color:var(--fg)}
+#presenter-notes-audience-toggle.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 #presenter-notes-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;position:relative}
 #presenter-notes-body #pad-editor{flex:1}
 #presenter-notes-body #pad-toolbar{flex:0 0 auto}
@@ -4780,7 +4786,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Headings come from the Heading 1–6 style you apply in the editor (Format toolbar, next to Text color) — not from tree depth. A node with no heading style of its own renders as plain body text in Preview, unless Settings → Preview → "Headings &amp; Contents" has a level assigned to that node's depth (see below)</li>
 <li>Settings → Preview → "Headings &amp; Contents" → "Heading fallback by depth" lets you assign a heading level to depths 0–5, so an unstyled node can still render as a heading in Preview based purely on how deep it sits in the tree. An explicit heading style on the node always wins over this; depths left as "None" behave exactly as before. This only changes how Preview renders — it never writes a heading style into the actual document</li>
 <li>Table of contents (left panel, toggled with the header button) is built from headings and [Section] markers — what it includes is configurable in Settings → Preview → "Headings &amp; Contents": cap it to a maximum heading level, or turn off section markers to keep it to real headings only. "Treat depth 0 as section markers" there (off by default) makes every top-level node act as a [Section] divider automatically, without needing the [Bracket] text — [Bracket] text still works at any depth on top of this, including depth 0. Unlike the Table of Contents toggle, this one changes the document itself: the outline canvas, Preview/PDF, and rich-text copy all pick up the same section styling, not just what's listed in Contents. Below the headings, a "Decisions" section lists every decision log in the document with a colored status dot — click to jump straight to it. The panel shows itself if there are 2+ headings or at least 1 decision log, whichever applies; it's part of what gets printed to PDF, so the decision index carries over there too</li>
-<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second, independent browser window showing this same document — normal editor chrome (sidebar, toolbar, everything) stays hidden there, leaving just the current slide — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows the slide right away with a small banner at the bottom — drag the window into place, then click that banner (or press <span class="help-kbd">F</span>) to make the window fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. Beyond that one click, it's a pure display — clicking the slide there or pressing arrow keys in that window does nothing, so it can never drift out of sync with what you're actually presenting. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, the laser pointer, presenter-side zoom (both the 150% presenting default and any Ctrl+scroll adjustment on top of it), and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. With the Audience View connected, a "Next: …" label also appears next to the slide counter in this window's own bar, so you can see what's coming before you advance to it — hidden the rest of the time, since there's nothing to look ahead of if there's only the one screen. Opening the Whiteboard or Mind Map (below) while the Audience View is connected swaps its display over to that too, the same way it takes over this window's own screen — Mind Map mirrors live, stroke for stroke, since it's plain on-page content same as slides; Whiteboard mirrors as a still image refreshed on every draw.io save (a few seconds behind, not truly live — see the Whiteboard entry below for why), rather than the live editing surface itself. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. Closing it while presenting (Esc, or the close button) is instant, same as Notes/Mind Map — the "saved this already?" confirmation that normally guards against losing unsaved draw.io changes only appears outside Presenter mode, since a confirmation dialog interrupting a live talk is worse than the rare case of losing an unsaved doodle on the scratch whiteboard. If the Audience View (above) is connected, it shows this same drawing too — as a still image, refreshed automatically every time draw.io's own autosave fires (typically a few seconds after you stop drawing), not the live editing surface itself, since draw.io runs in a cross-origin embed with no way to mirror its canvas pixel-for-pixel from outside it. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
+<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second, independent browser window showing this same document — normal editor chrome (sidebar, toolbar, everything) stays hidden there, leaving just the current slide — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows the slide right away with a small banner at the bottom — drag the window into place, then click that banner (or press <span class="help-kbd">F</span>) to make the window fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. Beyond that one click, it's a pure display — clicking the slide there or pressing arrow keys in that window does nothing, so it can never drift out of sync with what you're actually presenting. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, the laser pointer, presenter-side zoom (both the 150% presenting default and any Ctrl+scroll adjustment on top of it), and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. With the Audience View connected, a "Next: …" label also appears next to the slide counter in this window's own bar, so you can see what's coming before you advance to it — hidden the rest of the time, since there's nothing to look ahead of if there's only the one screen. Opening the Whiteboard or Mind Map (below) while the Audience View is connected swaps its display over to that too, the same way it takes over this window's own screen — both mirror live: Mind Map because it's plain on-page content same as slides, Whiteboard by pushing each save straight into the Audience window's own draw.io session (see the Whiteboard entry below). Markers, per-node notes, and Q&amp;A questions added to a node while presenting also carry across, on the same refresh that already updates the slide when its content changes. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. A small eye icon in its header shows this same Notepad/Q&amp;A view on the Audience screen too, if it's connected — off by default, since notes are usually your own prompts rather than something meant for the room; toggling it swaps the Audience window's display over to it the same way Whiteboard/Mind Map do, and switching between the Notes/Q&amp;A tabs while it's on updates the Audience window to match. It turns itself back off if you close the panel, exit Presenter mode, or disconnect the Audience View. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. Closing it while presenting (Esc, or the close button) is instant, same as Notes/Mind Map — the "saved this already?" confirmation that normally guards against losing unsaved draw.io changes only appears outside Presenter mode, since a confirmation dialog interrupting a live talk is worse than the rare case of losing an unsaved doodle on the scratch whiteboard. If the Audience View (above) is connected, opening the Whiteboard opens the same drawing in its own live draw.io session there too (loaded fresh from this document's saved copy the moment the Audience View connects), and every save here pushes the latest drawing straight into that session — genuinely live, not a periodic snapshot, since both are real draw.io editors and this uses the same load mechanism draw.io's own embed protocol already provides. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
 <li>Settings → Preview → "Reading appearance" adds reading width, a sepia reading theme, and a serif body-text option — Preview-only, doesn't touch the editor or document. Settings → Data &amp; Backup → "Export &amp; print" → "PDF page margins" sets the default Export as PDF starts with; the print dialog that opens still lets you change it per export</li>
 <li>Click <span class="help-kbd">▾/▸</span> → fold/unfold a branch, same as the editor — but this fold state is local to Preview and separate from the editor's own collapsed sections. Collapse all / Expand all buttons sit in the header</li>
 <li>Folding a branch that contains a note or a decision log doesn't hide it silently — a small icon next to the <span class="help-kbd">+N</span> badge tells you it's in there; click either to expand</li>
@@ -6198,7 +6204,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-overview-grid" role="dialog" aria-label="All slides"></div>
     <div id="presenter-notes-panel" role="complementary" aria-label="Presenter notes">
-      <div id="presenter-notes-header" data-tip="Drag to move"><div id="presenter-notes-tabs"><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-notes" data-mode="notes" role="tab" aria-selected="true">Notes</button><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-qa" data-mode="qa" role="tab" aria-selected="false">Q&amp;A</button></div><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
+      <div id="presenter-notes-header" data-tip="Drag to move"><div id="presenter-notes-tabs"><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-notes" data-mode="notes" role="tab" aria-selected="true">Notes</button><button type="button" class="pad-mode-tab pn-tab" id="presenter-notes-tab-qa" data-mode="qa" role="tab" aria-selected="false">Q&amp;A</button></div><span id="presenter-notes-hint">Saved to this document's Pad</span><button type="button" id="presenter-notes-audience-toggle" data-tip="Show on Audience screen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" id="presenter-notes-close-btn" data-tip="Close (N)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button></div>
       <div id="presenter-notes-body"></div>
       <div id="presenter-notes-resize-handle" data-tip="Drag to resize · double-click to reset position &amp; size"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="21" y1="9" x2="9" y2="21"/><line x1="21" y1="15" x2="15" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg></div>
     </div>
@@ -9120,6 +9126,20 @@ function updateDiagramEditorPagesBadge(d){
     badge.style.display='none';
   }
 }
+// Pushes freshly-saved XML straight into the Audience window's own already-open draw.io
+// iframe — genuinely live, not a periodic snapshot, since both are real draw.io sessions and
+// this is the same {action:'load',...} message the embed protocol already uses for its own
+// initial load. Only meaningful once that iframe exists and has finished its own init
+// handshake (see openDiagramEditor's 'init' handling below) — this fires from the 'save'
+// event, which only happens well after that.
+function syncAudienceWhiteboard(xml){
+  if(!audienceWinLive()||!xml)return;
+  try{
+    const win=presenterAudienceWin;
+    const aFrame=win.document.querySelector('#diagram-editor-iframe-wrap iframe');
+    if(aFrame&&aFrame.contentWindow)aFrame.contentWindow.postMessage(JSON.stringify({action:'load',xml}),'*');
+  }catch(e){}
+}
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
   const overlay=el('diagram-editor-overlay'); if(!overlay)return;
@@ -9204,6 +9224,7 @@ function openDiagramEditor(diagramId){
       // this edit at all — exactly the bug this session's fixes were about.
       d._hydrated=true; d._hydrationFailed=false;
       markDirty(); scheduleAutoSave();
+      if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
       // Piggyback an SVG export request on every save — this is what feeds the panel's
       // thumbnail and Preview/PDF/PPTX/Word.
       //
@@ -9228,7 +9249,6 @@ function openDiagramEditor(diagramId){
         d.pageSvgs=[{name:'',svg:msg.data}];
         markDirty(); scheduleAutoSave();
         renderDiagramsList();
-        if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboardSvg(msg.data);
       }
       if(_diagramEditorState&&_diagramEditorState.exitAfterExport){ closeDiagramEditorInternal(); }
     } else if(msg.event==='exit'){
@@ -9238,7 +9258,11 @@ function openDiagramEditor(diagramId){
   window.addEventListener('message',handler);
   _diagramEditorState={diagramId,iframe,handler};
   overlay.classList.add('open');
-  if(previewPresenting&&d.isWhiteboard){ setAudienceMode('whiteboard'); if(d.previewSvg)syncAudienceWhiteboardSvg(d.previewSvg); }
+  // Opening the Audience window's own copy of this same whiteboard (via openOrCreateWhiteboard
+  // below) already loads it with this diagram's current d.xml as part of its own normal init
+  // handshake — no separate push needed here, and racing one in before that iframe exists yet
+  // would just be ignored (or worse, arrive at the wrong moment in its init sequence).
+  if(previewPresenting&&d.isWhiteboard)setAudienceMode('whiteboard');
 }
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
@@ -24422,6 +24446,7 @@ function setPadViewMode(mode){
   if(padViewMode==='decision')renderDecisionLogsList();
   if(padViewMode==='diagrams')renderDiagramsList();
   if(padViewMode==='mindmap')renderMindMapsList();
+  try{ if(audienceNotesVisible)syncAudienceNotesVisibility(); }catch(e){}
 }
 // Node markers — a quick, at-a-glance status you can drop on any single node without touching
 // its text: Confirmed/Issue/Parked/Follow-up. Distinct from Q&A's follow-up flag (which lives on
@@ -27143,7 +27168,7 @@ function renderPreviewBody(){
   renderPreviewToc(filteredTocEntries,decisionEntries,!!doc.querySelector('#pv-notepad-section'),!!doc.querySelector('#pv-qa-section'));
   updatePreviewProgress();
   updatePreviewFoldToggleButton();
-  if(previewPresenting)applyPresenterState(true,_scrollBeforeRebuild);
+  if(previewPresenting){ applyPresenterState(true,_scrollBeforeRebuild); syncAudienceContent(); }
 }
 function renderPreviewToc(entries,decisionEntries=[],showNotepad=false,showQa=false){
   const toc=el('preview-toc'); if(!toc)return;
@@ -27890,6 +27915,7 @@ function closeAudienceWindow(){
   if(audienceWinLive())presenterAudienceWin.close();
   presenterAudienceWin=null;
   audienceMode='slide';
+  try{ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); stopAudiencePadPoll(); }catch(e){}
   updateAudienceButtonState();
 }
 let _audienceWinPollTimer=null;
@@ -27991,6 +28017,24 @@ function syncAudienceWindow(){
   }catch(e){
     if(typeof sakuraLog==='function')sakuraLog('error','syncAudienceWindow failed',{message:e&&e.message});
   }
+}
+// Pushes the freshest node data into the Audience window and re-renders its slide view from
+// it — covers markers, per-node notes, questions, and any other content edit made while
+// presenting that doesn't itself involve a slide-index change (renderPreviewBody()'s own
+// previewPresenting hook only re-applies which slide is active via applyPresenterState(), it
+// never rebuilds content). Deep-clones rather than passing the live array, so the Audience
+// window's own rendering can never end up mutating the presenter's actual document data
+// through a shared reference.
+function setAudienceNodes(n){
+  nodes=n;
+  renderPreviewBody();
+}
+function syncAudienceContent(){
+  if(!audienceWinLive())return;
+  try{
+    const win=presenterAudienceWin;
+    if(typeof win.setAudienceNodes==='function')win.setAudienceNodes(JSON.parse(JSON.stringify(nodes)));
+  }catch(e){}
 }
 
 // This window running AS an Audience window (see openAudienceWindow() above) — detected once
@@ -28095,6 +28139,60 @@ el('presenter-notes-btn')?.addEventListener('click',()=>openPresenterNotesInMode
 el('presenter-notes-close-btn')?.addEventListener('click',closePresenterNotes);
 el('presenter-notes-tab-notes')?.addEventListener('click',()=>setPadViewMode('notes'));
 el('presenter-notes-tab-qa')?.addEventListener('click',()=>setPadViewMode('qa'));
+// Optional Notepad/Q&A visibility on the Audience screen — off by default, since notes are
+// usually the presenter's own private prompts, not something meant for the room. Toggling this
+// swaps the Audience window's display over to the current Notes/Q&A view the same way opening
+// Whiteboard or Mind Map does, using the exact same relocate-the-real-Pad-element mechanism
+// (openPresenterNotesInMode/closePresenterNotes) in that window's own instance rather than
+// mirroring content — the audience window has its own copy of this same document's Pad already.
+let audienceNotesVisible=false;
+function syncAudienceNotesVisibility(){
+  if(!audienceWinLive())return;
+  try{
+    const win=presenterAudienceWin;
+    win.document.body.classList.toggle('audience-show-notes',audienceNotesVisible);
+    if(audienceNotesVisible){
+      if(typeof win.openPresenterNotesInMode==='function')win.openPresenterNotesInMode(padViewMode);
+      syncAudiencePadContent();
+      startAudiencePadPoll();
+    } else {
+      if(typeof win.closePresenterNotes==='function')win.closePresenterNotes();
+      stopAudiencePadPoll();
+    }
+  }catch(e){}
+}
+// Direct innerHTML clone of whichever of Notepad/Q&A is showing — simpler and far more robust
+// than finding and hooking every place that can change this content (typing, adding/editing a
+// Q&A row, AI rewrite, follow-up flags, answered-by, and more), at the cost of it only being as
+// fresh as the last poll tick rather than instant.
+function syncAudiencePadContent(){
+  if(!audienceWinLive()||!audienceNotesVisible)return;
+  try{
+    const win=presenterAudienceWin;
+    const mainEditor=el('pad-editor'), aEditor=win.document.getElementById('pad-editor');
+    if(mainEditor&&aEditor&&aEditor.innerHTML!==mainEditor.innerHTML)aEditor.innerHTML=mainEditor.innerHTML;
+    const mainQa=el('qa-body'), aQa=win.document.getElementById('qa-body');
+    if(mainQa&&aQa&&aQa.innerHTML!==mainQa.innerHTML)aQa.innerHTML=mainQa.innerHTML;
+  }catch(e){}
+}
+let _audiencePadPollTimer=null;
+function startAudiencePadPoll(){
+  if(_audiencePadPollTimer)return;
+  _audiencePadPollTimer=setInterval(()=>{
+    if(!audienceWinLive()||!audienceNotesVisible){ stopAudiencePadPoll(); return; }
+    syncAudiencePadContent();
+  },1500);
+}
+function stopAudiencePadPoll(){ if(_audiencePadPollTimer){ clearInterval(_audiencePadPollTimer); _audiencePadPollTimer=null; } }
+function toggleAudienceNotesVisibility(){
+  audienceNotesVisible=!audienceNotesVisible;
+  el('presenter-notes-audience-toggle')?.classList.toggle('active',audienceNotesVisible);
+  syncAudienceNotesVisibility();
+}
+el('presenter-notes-audience-toggle')?.addEventListener('click',toggleAudienceNotesVisibility);
+el('presenter-notes-close-btn')?.addEventListener('click',()=>{
+  if(audienceNotesVisible){ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); syncAudienceNotesVisibility(); }
+});
 
 // Presenter Notes panel: draggable (via header) and resizable (via corner grip), same idea
 // as the Pad's own width-drag handle, but for both axes plus position since this one floats
