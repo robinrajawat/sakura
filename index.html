@@ -7641,6 +7641,7 @@ function warnDiagramBlobWriteFailed(){
   showToast('This browser\u2019s IndexedDB storage isn\u2019t syncing diagram content right now. Edits are still being kept in regular storage as a fallback. If a diagram won\u2019t load, use its Retry button rather than drawing over what looks like a blank canvas.');
 }
 function saveToStorage(){
+  try{ if(SAKURA_AUDIENCE_MODE)return; }catch(e){}
   try{
     if(!currentDocId)return;
     // Safety guard: if the in-memory doc is empty AND was never actually edited this session
@@ -10441,7 +10442,7 @@ function updateSavedIndicator(){
 ;(function startSavedTicker(){setInterval(()=>{if(lastSavedAt)updateSavedIndicator()},5000)})();
 function setOutlineNumbering(on,persist=true){outlineNumbering=!!on; const toggle=el('outline-numbering-toggle'); if(toggle){toggle.classList.toggle('on',outlineNumbering); toggle.setAttribute('aria-checked',String(outlineNumbering))} if(persist){savePrefs(); scheduleAutoSave()} render()}
 let autoSaveTimer=null;
-function scheduleAutoSave(immediate=false){try{clearTimeout(autoSaveTimer); const run=()=>{saveToStorage(); if(!suppressPrefsSaveOnUnload)savePrefs()}; if(immediate){run(); return} autoSaveTimer=setTimeout(run,450)}catch(e){}}
+function scheduleAutoSave(immediate=false){try{if(SAKURA_AUDIENCE_MODE)return;}catch(e){} try{clearTimeout(autoSaveTimer); const run=()=>{saveToStorage(); if(!suppressPrefsSaveOnUnload)savePrefs()}; if(immediate){run(); return} autoSaveTimer=setTimeout(run,450)}catch(e){}}
 function getMeta(){return {title:(el('header-title')?.value||'').trim(),author:(el('doc-author')?.value||'').trim()}}
 function formatNow(){const d=new Date(); if(dateTimeFormat==='iso'){const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`} if(dateTimeFormat==='eu'){const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`} const date=d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'}); const time=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); return `${date}, ${time}`}
 function formatTimestamp(ts){if(!Number.isFinite(ts))return '—'; const d=new Date(ts); if(dateTimeFormat==='iso'){const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`} if(dateTimeFormat==='eu'){const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`} const date=d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'}); const time=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); return `${date}, ${time}`}
@@ -28036,6 +28037,10 @@ function syncAudienceContent(){
     if(typeof win.setAudienceNodes==='function')win.setAudienceNodes(JSON.parse(JSON.stringify(nodes)));
   }catch(e){}
 }
+function setAudienceQaItems(items){
+  qaItems=items;
+  renderQaList();
+}
 
 // This window running AS an Audience window (see openAudienceWindow() above) — detected once
 // here, used both by the boot sequence right below and to distinguish "am I being driven by an
@@ -28161,18 +28166,18 @@ function syncAudienceNotesVisibility(){
     }
   }catch(e){}
 }
-// Direct innerHTML clone of whichever of Notepad/Q&A is showing — simpler and far more robust
-// than finding and hooking every place that can change this content (typing, adding/editing a
-// Q&A row, AI rewrite, follow-up flags, answered-by, and more), at the cost of it only being as
-// fresh as the last poll tick rather than instant.
+// Notepad is a contenteditable div, where typing directly mutates the DOM — innerHTML cloning
+// reflects it correctly. Q&A rows are <textarea> elements, where typed content lives in the
+// .value property; innerHTML never reflects that (a well-known DOM quirk: an <input>/<textarea>
+// element's value attribute only tracks its *default* value, not what's currently typed into
+// it), so Q&A goes through the real data + a re-render instead, same pattern as node content.
 function syncAudiencePadContent(){
   if(!audienceWinLive()||!audienceNotesVisible)return;
   try{
     const win=presenterAudienceWin;
     const mainEditor=el('pad-editor'), aEditor=win.document.getElementById('pad-editor');
     if(mainEditor&&aEditor&&aEditor.innerHTML!==mainEditor.innerHTML)aEditor.innerHTML=mainEditor.innerHTML;
-    const mainQa=el('qa-body'), aQa=win.document.getElementById('qa-body');
-    if(mainQa&&aQa&&aQa.innerHTML!==mainQa.innerHTML)aQa.innerHTML=mainQa.innerHTML;
+    if(typeof win.setAudienceQaItems==='function')win.setAudienceQaItems(JSON.parse(JSON.stringify(qaItems)));
   }catch(e){}
 }
 let _audiencePadPollTimer=null;
