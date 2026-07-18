@@ -9280,20 +9280,29 @@ function openDiagramEditor(diagramId){
       if(msg.data){
         d.previewSvg=msg.data;
         d.pageSvgs=[{name:'',svg:msg.data}];
-        // 'xmlsvg' is draw.io's "SVG with the diagram XML embedded in it" format — the same
-        // format already used (and confirmed working) for the thumbnail above. Reusing it here
-        // rather than requesting a plain 'xml' format means the live-sync poll below only ever
-        // depends on an export format this codebase already knows draw.io actually honors —
-        // 'xml' alone isn't a documented format value for the embed protocol's export action,
-        // and a request draw.io silently doesn't recognize would fail exactly the way the
-        // Whiteboard's live sync was failing: no error, just nothing ever arriving. Every export
-        // response — whether triggered by an explicit save above or by the poll below — now
-        // keeps d.xml current by extracting the embedded XML straight out of the SVG, so the
-        // Whiteboard picks up live edits without waiting on an explicit save either way.
-        const extractedXml=extractXmlFromSvgExport(msg.data);
-        sakuraLog('diagram','export extraction result',{diagramId,extracted:!!extractedXml,extractedLen:extractedXml?extractedXml.length:0,changedFromCurrent:!!(extractedXml&&extractedXml!==d.xml),currentXmlLen:d.xml?d.xml.length:0});
-        if(extractedXml&&extractedXml!==d.xml){
-          d.xml=extractedXml; d.pageCount=splitMxfilePages(d.xml).length;
+        // A captured real session (see the shared debug log) showed draw.io's xmlsvg export
+        // response already includes the raw diagram XML directly in msg.xml — no need to parse
+        // it back out of the SVG at all. The earlier content="..." extraction attempt assumed
+        // msg.data was literal SVG markup with the XML embedded in an attribute; real draw.io
+        // sends msg.data as a base64 data URI instead (data:image/svg+xml;base64,...), which
+        // that regex could never match — a silent failure indistinguishable from the outside
+        // from "nothing is happening at all". Falling back to the SVG-embedded extraction only
+        // if msg.xml isn't present, in case some draw.io version or export path omits it.
+        const responseXml=(typeof msg.xml==='string'&&msg.xml)?msg.xml:extractXmlFromSvgExport(msg.data);
+        const newPageCount=responseXml?splitMxfilePages(responseXml).length:0;
+        const curPageCount=d.xml?splitMxfilePages(d.xml).length:0;
+        // The same "only the currently active page is captured" limitation already documented
+        // above for the thumbnail applies here too, apparently to msg.xml as well as msg.data —
+        // a captured real session showed the export's xml consistently shorter than what an
+        // explicit save's xml reports for the same diagram. Harmless for the (default, and by
+        // far most common) single-page Whiteboard, but trusting it unconditionally would let the
+        // poll silently drop every page but the active one from a multi-page Whiteboard. Skip
+        // the update rather than risk that; an explicit save (which always reports the full
+        // document) still keeps a multi-page Whiteboard current regardless.
+        const pageCountRegressed=curPageCount>1&&newPageCount>0&&newPageCount<curPageCount;
+        sakuraLog('diagram','export extraction result',{diagramId,source:(typeof msg.xml==='string'&&msg.xml)?'msg.xml':'svg-embedded',got:!!responseXml,gotLen:responseXml?responseXml.length:0,newPageCount,curPageCount,pageCountRegressed,changedFromCurrent:!!(responseXml&&responseXml!==d.xml),currentXmlLen:d.xml?d.xml.length:0});
+        if(responseXml&&responseXml!==d.xml&&!pageCountRegressed){
+          d.xml=responseXml; d.pageCount=newPageCount||curPageCount;
           d._hydrated=true; d._hydrationFailed=false;
           if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
         }
