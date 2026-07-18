@@ -3019,6 +3019,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-editor-header-sep{width:1px;align-self:stretch;background:var(--border);flex-shrink:0}
 #diagram-editor-status{flex:1;font:500 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right;white-space:nowrap;transition:color .15s}
 #diagram-editor-status.diagram-editor-status-saved{color:var(--fc-green)}
+#diagram-editor-status.diagram-editor-status-unsaved{color:var(--fc-orange)}
 #diagram-editor-dup,#diagram-editor-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
 #diagram-editor-dup:hover{color:var(--accent);background:var(--hover)}
 #diagram-editor-delete:hover{color:var(--fc-red);background:var(--hover)}
@@ -9152,19 +9153,6 @@ function updateDiagramEditorPagesBadge(d){
 // initial load. Only meaningful once that iframe exists and has finished its own init
 // handshake (see openDiagramEditor's 'init' handling below) — this fires from the 'save'
 // event, which only happens well after that.
-// draw.io's 'xmlsvg' export format returns an SVG whose root element carries the diagram's
-// mxfile XML verbatim in a `content="..."` attribute (HTML-attribute-escaped) — this is how
-// drawio.com itself keeps exported SVGs re-editable. Pulling it back out here means an SVG
-// export doubles as an XML export, without needing a second, less-certain export format.
-function extractXmlFromSvgExport(svgData){
-  if(typeof svgData!=='string')return null;
-  const m=svgData.match(/<svg\b[^>]*\bcontent="([^"]*)"/);
-  if(!m)return null;
-  try{
-    const ta=document.createElement('textarea'); ta.innerHTML=m[1];
-    return ta.value||null;
-  }catch(e){ return null; }
-}
 function syncAudienceWhiteboard(xml){
   if(!audienceWinLive()||!xml){ sakuraLog('diagram','syncAudienceWhiteboard skipped',{audienceLive:audienceWinLive(),hasXml:!!xml}); return; }
   try{
@@ -9274,40 +9262,45 @@ function openDiagramEditor(diagramId){
       // and for Preview/PDF/Word/PPTX; see the "N pages" badge and Help section for the
       // reminder this is a known limitation, not a bug.
       iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
+      // Marks the *next* export response (the one just requested above) as establishing a fresh
+      // "this is what was last actually saved" baseline — see the 'export' handler and
+      // startWhiteboardSyncPoll's comment for why a rendered-size comparison, not the export's
+      // own xml field, is what drives the unsaved-changes indicator now.
+      _diagramEditorState.postSaveBaselineDataLen='pending';
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      if(status){ status.textContent=savedAt; status.classList.add('diagram-editor-status-saved'); }
+      if(status){ status.textContent=savedAt; status.classList.remove('diagram-editor-status-unsaved'); status.classList.add('diagram-editor-status-saved'); }
       updateDiagramEditorPagesBadge(d);
       _diagramEditorState.exitAfterExport=!!msg.exit;
     } else if(msg.event==='export'){
       if(msg.data){
         d.previewSvg=msg.data;
         d.pageSvgs=[{name:'',svg:msg.data}];
-        // A captured real session (see the shared debug log) showed draw.io's xmlsvg export
-        // response already includes the raw diagram XML directly in msg.xml — no need to parse
-        // it back out of the SVG at all. The earlier content="..." extraction attempt assumed
-        // msg.data was literal SVG markup with the XML embedded in an attribute; real draw.io
-        // sends msg.data as a base64 data URI instead (data:image/svg+xml;base64,...), which
-        // that regex could never match — a silent failure indistinguishable from the outside
-        // from "nothing is happening at all". Falling back to the SVG-embedded extraction only
-        // if msg.xml isn't present, in case some draw.io version or export path omits it.
-        const responseXml=(typeof msg.xml==='string'&&msg.xml)?msg.xml:extractXmlFromSvgExport(msg.data);
-        const newPageCount=responseXml?splitMxfilePages(responseXml).length:0;
-        const curPageCount=d.xml?splitMxfilePages(d.xml).length:0;
-        // The same "only the currently active page is captured" limitation already documented
-        // above for the thumbnail applies here too, apparently to msg.xml as well as msg.data —
-        // a captured real session showed the export's xml consistently shorter than what an
-        // explicit save's xml reports for the same diagram. Harmless for the (default, and by
-        // far most common) single-page Whiteboard, but trusting it unconditionally would let the
-        // poll silently drop every page but the active one from a multi-page Whiteboard. Skip
-        // the update rather than risk that; an explicit save (which always reports the full
-        // document) still keeps a multi-page Whiteboard current regardless.
-        const pageCountRegressed=curPageCount>1&&newPageCount>0&&newPageCount<curPageCount;
-        sakuraLog('diagram','export extraction result',{diagramId,source:(typeof msg.xml==='string'&&msg.xml)?'msg.xml':'svg-embedded',got:!!responseXml,gotLen:responseXml?responseXml.length:0,newPageCount,curPageCount,pageCountRegressed,changedFromCurrent:!!(responseXml&&responseXml!==d.xml),currentXmlLen:d.xml?d.xml.length:0});
-        if(responseXml&&responseXml!==d.xml&&!pageCountRegressed){
-          d.xml=responseXml; d.pageCount=newPageCount||curPageCount;
-          d._hydrated=true; d._hydrationFailed=false;
-          if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
+        // Deliberately NOT touching d.xml here (a prior version of this code did, hoping the
+        // export's own xml field could substitute for an explicit save). A real captured session
+        // proved that wrong in a way worse than just "doesn't sync": moments after a genuine save
+        // reported 3185 chars of correct, full XML, the very next export response came back at
+        // just 906 chars for the same diagram — and got written straight over the good save,
+        // then pushed to the Audience window as if it were current. draw.io's export XML isn't a
+        // full-fidelity stand-in for its own save XML; whatever it strips or simplifies for
+        // export purposes, trusting it here doesn't just fail to sync, it can silently regress a
+        // diagram that was already saved correctly.
+        //
+        // What the poll (see startWhiteboardSyncPoll) still safely gets from this: the rendered
+        // SVG's own length as a cheap, honest "has the canvas visibly changed since the last real
+        // save" signal — not trustworthy enough to *become* the saved content, but plenty good
+        // enough to notice a difference and say so. This is what actually fixes the underlying
+        // problem (drawing while presenting never reaching the Audience screen) without risking
+        // the data loss the xml-substitution attempt caused: instead of silently guessing at the
+        // content, tell the presenter there's something to save.
+        const state=_diagramEditorState;
+        if(state){
+          if(state.postSaveBaselineDataLen==='pending'){
+            state.postSaveBaselineDataLen=msg.data.length;
+          } else if(previewPresenting&&d.isWhiteboard&&typeof state.postSaveBaselineDataLen==='number'&&msg.data.length!==state.postSaveBaselineDataLen){
+            if(status){ status.textContent='Unsaved drawing — press Ctrl/Cmd+S to update the Audience screen'; status.classList.remove('diagram-editor-status-saved'); status.classList.add('diagram-editor-status-unsaved'); }
+          }
         }
+        sakuraLog('diagram','export received (svg thumbnail only, not synced to d.xml)',{diagramId,dataLen:msg.data.length,baseline:state?state.postSaveBaselineDataLen:undefined});
         markDirty(); scheduleAutoSave();
         renderDiagramsList();
       }
@@ -9317,7 +9310,7 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler};
+  _diagramEditorState={diagramId,iframe,handler,postSaveBaselineDataLen:'pending'};
   overlay.classList.add('open');
   sakuraLog('diagram','openDiagramEditor',{diagramId,isWhiteboard:!!d.isWhiteboard,previewPresenting,audienceLive:audienceWinLive()});
   // Opening the Audience window's own copy of this same whiteboard (via openOrCreateWhiteboard
@@ -9332,20 +9325,21 @@ function openDiagramEditor(diagramId){
   // Close button's own tooltip says "saves automatically" (true the rest of the time, once the
   // safety-confirm dialog below has a chance to remind them — but that dialog is deliberately
   // skipped while presenting, see closeDiagramEditor, so nothing else was reminding them either).
-  // The practical fix is to stop depending on that explicit save at all while presenting: poll
-  // for the canvas's current content via the same 'xmlsvg' export action already used for the
-  // thumbnail (see extractXmlFromSvgExport) — this reads whatever's currently drawn regardless
-  // of "saved" status, so it picks up live edits automatically and protects against losing a
-  // drawing to an unexpected close, the same way the Notepad/Q&A poll already covers edits that
-  // don't go through a single dedicated event.
+  // startWhiteboardSyncPoll() surfaces that gap directly instead: it can tell when the canvas has
+  // visibly changed since the last real save (see the 'export' handler) and turns the status
+  // indicator orange with an explicit "press Ctrl/Cmd+S" prompt when it has — an earlier attempt
+  // tried using the poll's own export content as a stand-in for an actual save, which turned out
+  // to risk silently regressing an already-saved diagram (draw.io's export XML isn't a
+  // full-fidelity copy of its save XML), so this deliberately stops at *telling* the presenter
+  // rather than guessing on their behalf.
   if(previewPresenting&&d.isWhiteboard)startWhiteboardSyncPoll();
 }
-// Keeps the whiteboard's underlying XML (and the Audience mirror) current with whatever's
-// actually drawn, without depending on the presenter remembering to hit Ctrl/Cmd+S — see the
-// comment at the openDiagramEditor call site for why that dependency was the actual bug. Same
-// poll-plus-tolerant-diff shape as the Notepad/Q&A audience poll: cheap to run, self-stops the
-// moment its preconditions stop holding, no separate "did anything change" bookkeeping needed
-// since the 'export' handler above already no-ops when the extracted XML comes back unchanged.
+// Detects unsaved drawing changes while presenting, so the presenter finds out mid-talk instead
+// of the Audience screen silently staying stale — see the 'export' handler for why this stops
+// short of actually using the export's content as a save substitute (a real captured session
+// showed that silently regressing an already-saved diagram, which is worse than just not
+// syncing). Same poll shape as the Notepad/Q&A audience poll: cheap to run, self-stops the
+// moment its preconditions stop holding.
 let _whiteboardSyncPollTimer=null;
 function startWhiteboardSyncPoll(){
   if(_whiteboardSyncPollTimer||SAKURA_AUDIENCE_MODE)return;
@@ -9356,9 +9350,6 @@ function startWhiteboardSyncPoll(){
     if(!d||!d.isWhiteboard){ sakuraLog('diagram','whiteboard sync poll stopping (not whiteboard)',{found:!!d}); stopWhiteboardSyncPoll(); return; }
     const iframe=_diagramEditorState.iframe;
     if(!iframe||!iframe.contentWindow||!iframe.isConnected){ sakuraLog('diagram','whiteboard sync poll tick skipped (iframe not ready)',{hasIframe:!!iframe,connected:!!(iframe&&iframe.isConnected)}); return; }
-    // Deliberately the same 'xmlsvg' format the save-triggered thumbnail export already uses
-    // (see the comment in the 'export' handler for why 'xml' alone was the actual bug) — the
-    // 'export' handler treats every response, save-triggered or poll-triggered, identically.
     sakuraLog('diagram','whiteboard sync poll requesting export',{diagramId:_diagramEditorState.diagramId});
     iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
   },2000);
