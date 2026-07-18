@@ -18287,6 +18287,41 @@ async function summariseSelectionWithAi(){
   finally{if(btn)btn.classList.remove('ai-busy');}
 }
 
+// === Shared AI in-flight-edit guard =========================================================
+// Every AI action that rewrites/applies a result to existing content shares the same risk: the
+// request is async, so whatever it's editing can change — or, for a reused singleton panel
+// (Note, Meeting fields), switch identity to a completely different node/document/meeting —
+// before the response lands. Applying the result unconditionally at that point silently
+// overwrites a newer edit with a rewrite of stale content. This exact bug was found and fixed
+// independently in 10 places across the app in one audit pass; these two helpers exist so the
+// next AI action gets this protection by construction instead of by remembering to copy it.
+
+// True if `current` no longer matches `snapshot` — the field/content changed since the AI
+// request was sent, so its result is no longer safe to apply. A thin, named wrapper around a
+// plain comparison, but it gives every call site the same vocabulary and one place to extend
+// the comparison later (e.g. whitespace normalization) if that's ever needed.
+function aiSnapshotChanged(snapshot,current){ return snapshot!==current; }
+
+// Applies AI results to a batch of nodes, re-resolving each by id (so a deletion/reorder during
+// the request can't corrupt the wrong node — the tree stays fully editable while a batch
+// request is in flight) and skipping any entry whose current text no longer matches what was
+// actually sent for it, per aiSnapshotChanged above. `entries` is [{id, expectedText}, ...];
+// `finalTexts[j]` is the exact string to write for entries[j] (already composed — e.g.
+// icon+' '+label for the icon-suggestion case — not just the raw AI result), or null/empty to
+// skip that entry entirely (no usable result). Returns {appliedCount, total} so callers can
+// report how many were skipped without duplicating the loop to count them.
+function applyAiBatchResults(entries,finalTexts){
+  let appliedCount=0;
+  entries.forEach((entry,j)=>{
+    const finalText=finalTexts[j]; if(!finalText)return;
+    const freshIdx=getIndex(entry.id); if(freshIdx<0)return;
+    if(aiSnapshotChanged(entry.expectedText,nodes[freshIdx].text))return;
+    nodes[freshIdx].text=finalText;
+    appliedCount++;
+  });
+  return {appliedCount,total:entries.length};
+}
+
 const aiRewriteInFlight=new Set();
 async function rewriteNodeText(nodeId){
   if(aiRewriteInFlight.has(nodeId))return; // already rewriting this node — a rapid double-trigger would otherwise fire two concurrent requests
@@ -18307,7 +18342,7 @@ async function rewriteNodeText(nodeId){
     // Same in-flight-edit race fixed elsewhere this session: if the node's text no longer
     // matches what was actually sent to the AI, the user edited it again while waiting —
     // applying the result now would silently overwrite that newer edit.
-    if(nodes[freshIdx].text!==original){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
+    if(aiSnapshotChanged(original,nodes[freshIdx].text)){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
     pushUndo(); nodes[freshIdx].text=result; scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{aiRewriteInFlight.delete(nodeId); if(btn)btn.classList.remove('ai-busy');}
@@ -18328,18 +18363,10 @@ async function rewriteMultipleNodes(nodeIds){
       showToast(total>AI_BATCH_CHUNK_SIZE?`Rewriting nodes ${start}–${end}… ✦`:`Rewriting ${total} nodes… ✦`);
     });
     pushUndo();
-    // Re-resolve each node by id rather than trusting any index captured before the
-    // await — the tree can change while a batch request is in flight. Also skip any node
-    // whose text no longer matches what was actually sent (edited again while waiting) —
-    // same in-flight-edit race fixed in rewriteNodeText/flushAutoRewriteQueue.
-    let appliedCount=0;
-    validIds.forEach((id,j)=>{
-      const freshIdx=getIndex(id);
-      if(freshIdx<0||!results[j])return;
-      if(nodes[freshIdx].text!==texts[j])return;
-      nodes[freshIdx].text=results[j];
-      appliedCount++;
-    });
+    // Re-resolve each node by id and skip anything edited again while waiting —
+    // see applyAiBatchResults.
+    const entries=validIds.map((id,j)=>({id,expectedText:texts[j]}));
+    const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
     if(!callAiByShapeWithFallback._toastShown){
       if(!appliedCount){ undoStack.pop(); showToast('Nothing rewritten — every node was edited again while waiting'); }
@@ -18522,21 +18549,12 @@ async function flushAutoRewriteQueue(){
   try{
     const results=await callAiApiBatch(texts);
     pushUndo();
-    // Re-resolve by id, not a captured index — same reasoning as rewriteMultipleNodes:
-    // the tree keeps changing while this request is in flight during live capture. Also
-    // skip any node whose text no longer matches what it was queued with — the same
-    // in-flight-edit race guarded against for the manual Q&A/Decision Log/Notes AI actions:
-    // this feature exists so people keep typing while it works in the background, so
-    // re-editing a node again before its batch response lands is the expected case, not
-    // an edge case. A skipped node simply gets queued again next time it's committed.
-    let appliedCount=0;
-    validIds.forEach((id,j)=>{
-      const freshIdx=getIndex(id);
-      if(freshIdx<0||!results[j])return;
-      if(nodes[freshIdx].text!==texts[j])return;
-      nodes[freshIdx].text=results[j];
-      appliedCount++;
-    });
+    // Re-resolve by id and skip anything edited again while waiting (this feature exists
+    // so people keep typing while it works in the background, so that's the expected case,
+    // not an edge case — a skipped node simply gets queued again next time it's committed).
+    // See applyAiBatchResults.
+    const entries=validIds.map((id,j)=>({id,expectedText:texts[j]}));
+    const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
     if(appliedCount>0){
       const skipped=validIds.length-appliedCount;
@@ -18985,24 +19003,19 @@ async function suggestIconsForNodeIds(nodeIds){
       });
     }
     pushUndo();
-    // Apply by re-resolving each node's CURRENT index via its id — idxMap/bareTexts were
-    // snapshotted before the AI call, which can be a long, multi-chunk sequence of requests
-    // during which the tree is still fully editable. Re-resolving avoids writing an icon onto
-    // whatever else now sits at a stale index if anything was added/deleted/reordered meanwhile.
-    // Also skip any node whose text no longer matches its pre-request snapshot — the same
-    // in-flight-edit race fixed elsewhere: if the user edited this node's label while its icon
-    // suggestion was in flight, applying icon+staleLabel now would silently discard their edit.
-    let aiPtr=0, appliedCount=0;
-    validIds.forEach((id,j)=>{
+    // Compose the final icon+label text for each node first (pure — no mutation yet), then
+    // hand the re-resolve-by-id / staleness-check / apply loop to the shared helper. See
+    // applyAiBatchResults: a node whose text no longer matches originalFullTexts[j] was
+    // edited again while its icon suggestion was in flight, and gets skipped rather than
+    // having its new text silently discarded.
+    let aiPtr=0;
+    const finalTexts=validIds.map((id,j)=>{
       let icon=hits[j];
       if(icon===null){icon=aiResults[aiPtr]||''; aiPtr++;}
-      if(!icon)return;
-      const freshIdx=getIndex(id);
-      if(freshIdx<0)return; // node was deleted while requests were in flight
-      if(nodes[freshIdx].text!==originalFullTexts[j])return; // edited again while waiting
-      nodes[freshIdx].text=icon+' '+bareTexts[j];
-      appliedCount++;
+      return icon?icon+' '+bareTexts[j]:'';
     });
+    const entries=validIds.map((id,j)=>({id,expectedText:originalFullTexts[j]}));
+    const {appliedCount}=applyAiBatchResults(entries,finalTexts);
     if(!appliedCount){undoStack.pop(); showToast('No suitable icons found'); return;}
     markDirty(); render(); showToast(`${appliedCount} icon${appliedCount===1?'':'s'} suggested ✦`,'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
@@ -23505,7 +23518,7 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
     // kept typing in this same note, or closed it and opened a different node's note into the
     // same #note-editor entirely. Either way, applying the saved Range / replacing innerHTML now
     // would silently overwrite content that's no longer what this rewrite was requested against.
-    if (notePanelNodeId !== requestNodeId || editor.innerHTML !== htmlAtRequestStart) {
+    if (aiSnapshotChanged(requestNodeId,notePanelNodeId) || aiSnapshotChanged(htmlAtRequestStart,editor.innerHTML)) {
       showToast('This note changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
       return;
     }
@@ -24605,7 +24618,7 @@ async function rewriteDecisionField(key){
     // Same in-flight-edit race as draftQaAnswer/rewriteQaField: this field syncs to dl[key] live
     // on every keystroke (see the 'input' listener below), so if the user edited it while this
     // request was pending, applying the AI result now would silently overwrite their edit.
-    if((dl[key]||'')!==originalHtml){
+    if(aiSnapshotChanged(originalHtml,dl[key]||'')){
       showToast('You edited this field — AI rewrite discarded so it wouldn\'t overwrite it');
       return;
     }
@@ -24957,7 +24970,7 @@ async function rewriteQaField(id,field){
     // and syncs to item[field] on every keystroke while this request is pending. If the value
     // has moved since we started, the user edited it in the meantime — discard the rewrite
     // rather than overwrite their edit.
-    if((item[field]||'')!==original){
+    if(aiSnapshotChanged(original,item[field]||'')){
       showToast(`You edited the ${field} — AI rewrite discarded so it wouldn't overwrite it`);
       return;
     }
@@ -25071,7 +25084,7 @@ async function draftQaAnswer(id){
     // to item.answer on every keystroke — so if the user started typing their own answer during
     // the wait, applying the AI result here would silently destroy what they just wrote. Bail
     // out instead of overwriting; the in-progress user answer is left exactly as they typed it.
-    if((item.answer||'')!==answerAtRequestStart){
+    if(aiSnapshotChanged(answerAtRequestStart,item.answer||'')){
       showToast('You started typing an answer — AI draft discarded so it wouldn\'t overwrite it');
       return;
     }
@@ -25117,7 +25130,7 @@ async function bulkDraftUnansweredAnswers(){
       const answerAtStart=item.answer||'';
       try{
         const result=await qaGenerateAnswerText(item);
-        if(result&&(item.answer||'')===answerAtStart){ item.answer=result; item.followUp='ai-draft'; item.answeredAt=Date.now(); draftedCount++; }
+        if(result&&!aiSnapshotChanged(answerAtStart,item.answer||'')){ item.answer=result; item.followUp='ai-draft'; item.answeredAt=Date.now(); draftedCount++; }
       }catch(err){ showAiErrorModal(aiProvider, err); stoppedEarly=true; if(fieldBtn)fieldBtn.classList.remove('ai-busy'); break; }
       if(fieldBtn)fieldBtn.classList.remove('ai-busy');
     }
@@ -35199,7 +35212,7 @@ async function rewriteMeetingField(key){
     // race already guarded in the Undo callback below (meetingExpandedId===it.id) but missing
     // here on the primary apply path. Bail if the field changed, or a different meeting is
     // now open, rather than overwriting an edit or writing into the wrong meeting's fields.
-    if((m[key]||'')!==originalHtml || meetingExpandedId!==requestMeetingId){
+    if(aiSnapshotChanged(originalHtml,m[key]||'') || aiSnapshotChanged(requestMeetingId,meetingExpandedId)){
       showMeetingsToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
       return;
     }
@@ -35347,10 +35360,10 @@ async function runSelectionFmtRewrite(editorId,btn){
     const prompt=aiRewritePrompt+'\n\nText: '+inputText;
     const result=await callAiRaw(prompt,aiMaxTokens);
     if(!result)throw new Error('Empty response from AI');
-    const stillSameNote=editorId!=='note-editor'||notePanelNodeId===requestNoteId;
-    const stillSameDoc=editorId!=='pad-editor'||currentDocId===requestDocId;
-    const stillSameMeeting=!meetingFieldKeyForEditorId(editorId)||meetingExpandedId===requestMeetingId;
-    if(!stillSameNote||!stillSameDoc||!stillSameMeeting||editor.innerHTML!==htmlBefore){
+    const identityChanged=(editorId==='note-editor'&&aiSnapshotChanged(requestNoteId,notePanelNodeId))
+      ||(editorId==='pad-editor'&&aiSnapshotChanged(requestDocId,currentDocId))
+      ||(!!meetingFieldKeyForEditorId(editorId)&&aiSnapshotChanged(requestMeetingId,meetingExpandedId));
+    if(identityChanged||aiSnapshotChanged(htmlBefore,editor.innerHTML)){
       showToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
       return;
     }
