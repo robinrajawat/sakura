@@ -18883,10 +18883,19 @@ function setAutoRewriteBatchCap(value,persist=true){
 function queueAutoRewrite(nodeId){
   if(!autoRewriteEnabled||!featureAiEnabled)return;
   const idx=getIndex(nodeId); if(idx<0)return;
-  if(!shouldAutoRewriteNode(nodes[idx]))return;
+  // Only log the "on but this node got skipped anyway" case, not "auto-rewrite is off" above —
+  // that guard clause fires on every single commit regardless of the feature being in use at
+  // all, and logging it would drown out everything else in the buffer for no diagnostic gain.
+  // This one is the actually surprising case worth seeing: someone watching the queue wondering
+  // why a specific node never got picked up.
+  if(!shouldAutoRewriteNode(nodes[idx])){ sakuraLog('ai','auto-rewrite: node excluded',{nodeId,minWords:autoRewriteMinWords,exclusions:autoRewriteExclusions}); return; }
   autoRewriteQueue.add(nodeId);
   if(_autoRewriteTimer)clearTimeout(_autoRewriteTimer);
-  if(autoRewriteQueue.size>=autoRewriteBatchCap){ _autoRewriteFireAt=null; stopAutoRewriteCountdownTicker(); flushAutoRewriteQueue(); return; }
+  if(autoRewriteQueue.size>=autoRewriteBatchCap){
+    sakuraLog('ai','auto-rewrite: queued, batch cap reached — flushing now',{nodeId,queueSize:autoRewriteQueue.size,batchCap:autoRewriteBatchCap});
+    _autoRewriteFireAt=null; stopAutoRewriteCountdownTicker(); flushAutoRewriteQueue(); return;
+  }
+  sakuraLog('ai','auto-rewrite: queued, waiting for idle',{nodeId,queueSize:autoRewriteQueue.size,idleSec:autoRewriteIdleSec});
   _autoRewriteFireAt=Date.now()+autoRewriteIdleSec*1000;
   _autoRewriteTimer=setTimeout(()=>flushAutoRewriteQueue(), autoRewriteIdleSec*1000);
   if(autoRewriteChipShowCountdown)startAutoRewriteCountdownTicker();
@@ -18962,6 +18971,7 @@ async function flushAutoRewriteQueue(){
     updateAutoRewriteStatusChip();
     if(!wasAlreadyPaused){
       const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider);
+      sakuraLog('ai','auto-rewrite paused',{reason:locked?'vault-locked':'no-key',queueSize:autoRewriteQueue.size});
       showToast(locked?'Auto-rewrite paused — unlock Secure Storage to resume':'Auto-rewrite paused — no AI key set');
     }
     return;
@@ -18970,7 +18980,8 @@ async function flushAutoRewriteQueue(){
   const ids=Array.from(autoRewriteQueue); autoRewriteQueue.clear();
   const validIds=[]; const texts=[];
   ids.forEach(id=>{const i=getIndex(id); if(i>=0&&shouldAutoRewriteNode(nodes[i])){validIds.push(id); texts.push(nodes[i].text||'')}});
-  if(!validIds.length){ updateAutoRewriteStatusChip(); return; }
+  if(!validIds.length){ sakuraLog('ai','auto-rewrite flush: nothing left valid to send',{queuedCount:ids.length}); updateAutoRewriteStatusChip(); return; }
+  sakuraLog('ai','auto-rewrite flush started',{count:validIds.length});
   _autoRewriteFlushing=true;
   updateAutoRewriteStatusChip();
   try{
@@ -18983,8 +18994,9 @@ async function flushAutoRewriteQueue(){
     const entries=validIds.map((id,j)=>({id,expectedText:texts[j]}));
     const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
+    const skipped=validIds.length-appliedCount;
+    sakuraLog('ai','auto-rewrite flush finished',{sent:validIds.length,applied:appliedCount,skippedEditedWhileWaiting:skipped});
     if(appliedCount>0){
-      const skipped=validIds.length-appliedCount;
       showToast(`Auto-rewrote ${appliedCount} node${appliedCount===1?'':'s'}${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`,'success');
     } else {
       undoStack.pop();
@@ -18996,8 +19008,10 @@ async function flushAutoRewriteQueue(){
     // plain toast instead, and give up after repeated failures rather than retrying forever
     // against e.g. an expired key.
     _autoRewriteFailCount++;
+    sakuraLog('ai','auto-rewrite flush failed',{failCount:_autoRewriteFailCount,maxFails:AUTO_REWRITE_MAX_FAILS,msg:err&&err.message});
     showToast('Auto-rewrite failed — '+(err&&err.message?err.message:'AI error'));
     if(_autoRewriteFailCount>=AUTO_REWRITE_MAX_FAILS){
+      sakuraLog('ai','auto-rewrite disabled after repeated failures',{failCount:_autoRewriteFailCount});
       setAutoRewriteEnabled(false);
       showToast('Auto-rewrite turned off after repeated failures — check Settings → AI → Auto-rewrite on commit');
     }
@@ -19011,6 +19025,7 @@ async function flushAutoRewriteQueue(){
 // again just because the key became available a few seconds late.
 function resumeAutoRewriteIfPaused(){
   if(_autoRewritePausedNoKey&&autoRewriteEnabled&&autoRewriteQueue.size&&getAiKey()){
+    sakuraLog('ai','auto-rewrite resuming after pause',{queueSize:autoRewriteQueue.size});
     flushAutoRewriteQueue();
   }
 }
