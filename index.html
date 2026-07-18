@@ -21432,30 +21432,32 @@ async function connectFsBackup(){
     // assume a bug each time.
     let survives=false;
     try{ const back=await idbGet('fsHandle'); survives=!!(back&&typeof back.queryPermission==='function') }catch(e){}
+    sakuraLog('backup','connectFsBackup connected',{survivesReload:survives});
     showToast(survives?'Auto-backup connected':'Connected — but this browser may not remember the file across reloads');
-  }catch(e){ if(e&&e.name==='AbortError')return; showToast('Could not connect backup file') }
+  }catch(e){ if(e&&e.name==='AbortError')return; sakuraLog('backup','connectFsBackup failed',{name:e&&e.name,message:e&&e.message}); showToast('Could not connect backup file') }
 }
 
 async function reconnectFsBackup(){
   if(!fsBackupHandle)return connectFsBackup();
   try{
     const perm=await fsBackupHandle.requestPermission({mode:'readwrite'});
-    if(perm==='granted'){ setFsBackupStatus('connected'); await writeFsBackupNow(); showToast('Auto-backup reconnected') }
-    else setFsBackupStatus('permission-needed');
-  }catch(e){ setFsBackupStatus('permission-needed') }
+    if(perm==='granted'){ setFsBackupStatus('connected'); await writeFsBackupNow(); sakuraLog('backup','reconnectFsBackup granted',{}); showToast('Auto-backup reconnected') }
+    else { sakuraLog('backup','reconnectFsBackup permission not granted',{perm}); setFsBackupStatus('permission-needed'); }
+  }catch(e){ sakuraLog('backup','reconnectFsBackup threw',{name:e&&e.name,message:e&&e.message}); setFsBackupStatus('permission-needed') }
 }
 
 async function disconnectFsBackup(){
   const fname=fsBackupHandle&&fsBackupHandle.name?fsBackupHandle.name:'the backup file';
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-6 6h0a6 6 0 0 1-6-6V8Z"/></svg>',title:'Disconnect Auto-Backup',body:`Stop writing live backups to ${fname}?\nYour document data stays safe — this only stops the automatic file backup. You can reconnect anytime.`,confirmLabel:'Disconnect',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
+  sakuraLog('backup','disconnectFsBackup',{});
   fsBackupHandle=null; await idbDelete('fsHandle'); localStorage.removeItem('sakura_fsBackupConnected'); setFsBackupStatus('disconnected'); showToast('Auto-backup disconnected')
 }
 
 async function writeFsBackupNow(){
   if(!fsBackupHandle||fsBackupStatus!=='connected')return;
   try{ const writable=await fsBackupHandle.createWritable(); await writable.write(JSON.stringify(await buildFullBackupPayload(),null,2)); await writable.close(); try{ localStorage.setItem(LAST_FSBACKUP_KEY,String(Date.now())) }catch(e){} checkBackupReminder(); rotateFsBackupHistory() }
-  catch(e){ setFsBackupStatus('permission-needed') }
+  catch(e){ sakuraLog('backup','writeFsBackupNow failed',{name:e&&e.name,message:e&&e.message}); setFsBackupStatus('permission-needed') }
 }
 
 // Auto-backup to file writes live to one file, always overwritten — good for "always current"
@@ -21844,6 +21846,7 @@ async function importAllDataFromFile(file){
 async function importAllDataFromPayload(payload,opts={}){
   const {preserveKeys=[]}=opts;
   if(!payload||typeof payload!=='object'||!payload.data||typeof payload.data!=='object'){
+    sakuraLog('restore','Data import rejected — not a valid backup shape',{});
     showToast('Not a valid Sakura backup file'); return;
   }
   const keyCount=Object.keys(payload.data).length;
@@ -21875,7 +21878,7 @@ async function importAllDataFromPayload(payload,opts={}){
   const IMPORT_STAGE_KEY='_sakura_import_stage';
   try{
     localStorage.setItem(IMPORT_STAGE_KEY, JSON.stringify(localData));
-  }catch(e){ showToast('Import failed — backup too large for available storage'); return; }
+  }catch(e){ sakuraLog('restore','Data import failed — too large for available storage',{message:e&&e.message}); showToast('Import failed — backup too large for available storage'); return; }
   try{
     localStorage.clear();
     const entries=Object.entries(localData);
@@ -21883,12 +21886,12 @@ async function importAllDataFromPayload(payload,opts={}){
     for(const [k,v] of entries){
       try{ localStorage.setItem(k,v); }catch(e){ failed=true; break; }
     }
-    if(failed){ showToast('Import failed partway — reload and try again'); return; }
+    if(failed){ sakuraLog('restore','Data import failed partway through writing',{}); showToast('Import failed partway — reload and try again'); return; }
     // Clean up stage key if it survived the clear (it shouldn't, but be safe)
     try{ localStorage.removeItem(IMPORT_STAGE_KEY); }catch(e){}
     Object.entries(preserved).forEach(([k,v])=>{ if(!(k in localData)){ try{ localStorage.setItem(k,v); }catch(e){} } });
     await applyBackupDataEntries(idbData);
-  }catch(e){ showToast('Import failed'); return; }
+  }catch(e){ sakuraLog('restore','Data import threw',{message:e&&e.message}); showToast('Import failed'); return; }
   suppressSaveToStorageOnUnload=true;
   sakuraLog('restore','Data import',{keyCount:Object.keys(payload.data||{}).length});
   showToast('Data imported — reloading…');
@@ -21995,6 +21998,7 @@ async function saveBackupToGist(opts={}){
           const meta=await checkRes.json();
           if(d.gistRemoteUpdatedAt&&meta.updated_at&&meta.updated_at!==d.gistRemoteUpdatedAt){
             setCloudGistConflict(true);
+            sakuraLog('backup','Gist save aborted — remote changed elsewhere',{silent});
             if(!silent)showToast('Cloud copy changed elsewhere — resolve with Save or Load first');
             return;
           }
@@ -22006,13 +22010,14 @@ async function saveBackupToGist(opts={}){
     const res=gistId
       ?await gistApiFetch('/gists/'+gistId,d.gistToken,{method:'PATCH',body:JSON.stringify(body)})
       :await gistApiFetch('/gists',d.gistToken,{method:'POST',body:JSON.stringify(body)});
-    if(!res.ok){ if(!silent)showToast(res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'); return; }
+    if(!res.ok){ sakuraLog('backup','Gist save failed',{silent,status:res.status}); if(!silent)showToast(res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'); return; }
     const json=await res.json();
     saveCloudBackupPrefs({gistId:json.id,gistLastSyncAt:Date.now(),gistRemoteUpdatedAt:json.updated_at});
     setCloudGistConflict(false);
     updateCloudGistStatus();
+    sakuraLog('backup','Gist save ok',{silent,gistId:json.id});
     if(!silent)showToast('Backed up to Gist');
-  }catch(e){ if(!silent)showToast('Could not reach GitHub — check your connection'); }
+  }catch(e){ sakuraLog('backup','Gist save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach GitHub — check your connection'); }
   finally{ gistSaveInFlight=false; if(!silent&&btn){btn.disabled=false; btn.textContent='Save to Gist'} }
 }
 async function loadBackupFromGist(){
@@ -22025,18 +22030,19 @@ async function loadBackupFromGist(){
     const gistId=d.gistId||await findExistingGistId(d.gistToken);
     if(!gistId){ showToast('No Sakura backup found on this GitHub account'); return; }
     const res=await gistApiFetch('/gists/'+gistId,d.gistToken);
-    if(!res.ok){ showToast(res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'); return; }
+    if(!res.ok){ sakuraLog('backup','Gist load failed',{status:res.status}); showToast(res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'); return; }
     const json=await res.json();
     const file=json.files&&json.files[CLOUD_GIST_FILENAME];
-    if(!file){ showToast('Backup file missing from that gist'); return; }
+    if(!file){ sakuraLog('backup','Gist load: backup file missing from gist',{gistId}); showToast('Backup file missing from that gist'); return; }
     // Gist API truncates file content over ~1MB and sets truncated:true, with the full
     // content only available via raw_url instead — fall back to that when it happens.
     const text=file.truncated?await (await fetch(file.raw_url)).text():file.content;
     const payload=JSON.parse(text);
     saveCloudBackupPrefs({gistId,gistLastSyncAt:Date.now(),gistRemoteUpdatedAt:json.updated_at});
     setCloudGistConflict(false);
+    sakuraLog('backup','Gist load ok',{gistId});
     await importAllDataFromPayload(payload,{preserveKeys:CLOUD_UNSAFE_KEYS});
-  }catch(e){ showToast('Could not load backup from Gist'); }
+  }catch(e){ sakuraLog('backup','Gist load threw',{message:e&&e.message}); showToast('Could not load backup from Gist'); }
   finally{ gistSaveInFlight=false; if(btn){btn.disabled=false; btn.textContent='Load from Gist…'} }
 }
 function setCloudGistConflict(on){
@@ -22184,12 +22190,13 @@ async function saveBackupToDrive(opts={}){
       const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
       res=await driveApiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body});
     }
-    if(!res.ok){ if(!silent)showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ sakuraLog('backup','Drive save failed',{silent,status:res.status}); if(!silent)showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
     const json=await res.json();
     saveCloudBackupPrefs({driveFileId:json.id||fileId,driveLastSyncAt:Date.now()});
     updateCloudDriveStatus();
+    sakuraLog('backup','Drive save ok',{silent,fileId:json.id||fileId});
     if(!silent)showToast('Backed up to Google Drive');
-  }catch(e){ if(!silent)showToast('Could not reach Google Drive'); }
+  }catch(e){ sakuraLog('backup','Drive save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach Google Drive'); }
   finally{ driveSaveInFlight=false; if(!silent&&btn){btn.disabled=false; btn.textContent='Save to Drive'} }
 }
 async function loadBackupFromDrive(){
@@ -22200,11 +22207,12 @@ async function loadBackupFromDrive(){
     const fileId=d.driveFileId||await findDriveFileId();
     if(!fileId){ showToast('No Sakura backup found in this Google Drive account'); return; }
     const res=await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
-    if(!res.ok){ showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ sakuraLog('backup','Drive load failed',{status:res.status}); showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
     const payload=await res.json();
     saveCloudBackupPrefs({driveFileId:fileId,driveLastSyncAt:Date.now()});
+    sakuraLog('backup','Drive load ok',{fileId});
     await importAllDataFromPayload(payload,{preserveKeys:CLOUD_UNSAFE_KEYS});
-  }catch(e){ showToast('Could not load backup from Google Drive'); }
+  }catch(e){ sakuraLog('backup','Drive load threw',{message:e&&e.message}); showToast('Could not load backup from Google Drive'); }
   finally{ if(btn){btn.disabled=false; btn.textContent='Load from Drive…'} }
 }
 
