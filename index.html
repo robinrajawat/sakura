@@ -27778,13 +27778,32 @@ function openAudienceWindow(){
   if(!w){ showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
   presenterAudienceWin=w;
   audienceMode='slide';
+  // Theme colors (--bg, --fg, --accent, etc. — see setTheme/applyAccentColor/applyChromeColors)
+  // are defined only inside body.theme-light/body.theme-dark rules, not at :root, so the class
+  // and inline custom-property overrides go straight onto <body> here rather than being applied
+  // in a separate step afterward — there must be no gap where this document exists with the
+  // right CSS rules cloned in but no theme class to activate any of them. Single-quoted
+  // attributes since className/cssText are simple space/semicolon-separated values that won't
+  // contain a literal single quote, sidestepping any need to escape embedded double quotes.
+  const bodyClass=document.body.className, bodyStyle=document.body.style.cssText;
+  // Likewise, the current slide's HTML is written in directly rather than left empty for
+  // syncAudienceWindow() to fill in as a follow-up call — same reasoning, no gap.
+  const mainBody=el('preview-body');
+  let initialSlidesHtml=mainBody?mainBody.innerHTML:'';
+  if(mainBody){
+    // Applying pv-slide-active to a *string* clone (not the live DOM) — build it via a detached
+    // template rather than touching the real #preview-body while computing this.
+    const tmp=document.createElement('div'); tmp.innerHTML=initialSlidesHtml;
+    tmp.querySelectorAll('.pv-slide').forEach(s=>{ s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex); });
+    initialSlidesHtml=tmp.innerHTML;
+  }
   // Reuses real ids (#preview-overlay, #mindmap-overlay, #mindmap-canvas, #preview-laser-dot...)
   // throughout, so the cloned <style> tags above already style everything correctly with zero
   // CSS written here for those. #audience-whiteboard-view is the one genuinely new container —
   // Whiteboard is a cross-origin draw.io iframe with no element anywhere in this app to borrow
   // layout from, so it gets its own small rule below instead.
   const bodyHtml=
-    '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body"></div></div></div>'+
+    '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body">'+initialSlidesHtml+'</div></div></div>'+
     '<div id="mindmap-overlay" class="open"><div id="mindmap-canvas-wrap"><div id="mindmap-canvas"><svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>'+
     '<div id="audience-whiteboard-view"><img id="audience-whiteboard-img" alt="Whiteboard" /></div>'+
     '<div id="preview-laser-dot"></div>'+
@@ -27806,7 +27825,7 @@ function openAudienceWindow(){
       'window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } });'+
     '})();<\/script>';
   w.document.open();
-  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sakura \u2013 Audience View</title>'+styleHtml+'<style>html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}</style></head><body>'+bodyHtml+'</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sakura \u2013 Audience View</title>'+styleHtml+'<style>html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,.78);color:#fff;font:500 16px/1.5 \'Inter\',sans-serif;text-align:center;cursor:pointer}#audience-hint kbd{background:rgba(255,255,255,.16);padding:2px 9px;border-radius:5px;font:inherit}</style></head><body class=\''+bodyClass+'\' style=\''+bodyStyle+'\'>'+bodyHtml+'</body></html>');
   w.document.close();
   syncAudienceWindow();
   updateAudienceButtonState();
