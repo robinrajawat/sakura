@@ -33567,8 +33567,9 @@ function _addTagPopoverFromInput(){
     const duePop=document.getElementById('todo-due-popover');
     const linkPop=document.getElementById('todo-link-popover');
     const summaryModal=document.getElementById('todos-summary-modal-overlay');
+    const qaSuggest=document.getElementById('node-qa-suggest');
     const insideToggle=(appbarBtn&&appbarBtn.contains(e.target));
-    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target));
+    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target))||(qaSuggest&&qaSuggest.contains(e.target)); // qaSuggest: Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #todos-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing
     if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle&&!insidePopover){
       closeTodosPanel();
     }
@@ -35349,6 +35350,7 @@ document.addEventListener('mousedown',e=>{
   if(_meetingTemplateMenuOpen)return; // its own outside-click handler covers this
   if(_meetingDatePopoverOpen||_meetingTimePopoverOpen)return; // same reason — both live outside #meetings-panel in the DOM (siblings, not descendants), so without this a click inside either one reads as "outside the panel" and closes the whole thing instead of just picking a date/time
   if(e.target.closest('#selection-fmt-popover'))return; // same reason again — the selection formatting popover is also a sibling of #meetings-panel (needed for position:fixed placement above an arbitrary selection), not a descendant
+  if(e.target.closest('#node-qa-suggest'))return; // Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #meetings-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing instead of just inserting the character
   if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
