@@ -2209,6 +2209,38 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
    Notes and decision logs get card treatment with their real rich content
    (images, lists, etc.) rendered properly, not as raw text. Folding here
    is local to the preview and never touches the real document's state. === */
+html.sakura-audience-boot{visibility:hidden}
+/* Audience View (dual-screen Presenter mode) — a real second navigation of this same page (see
+   openAudienceWindow()), not a constructed/cloned document, so it renders exactly like any
+   normal Sakura tab would. Once its own boot finishes it adds this class to hide everything
+   except the presenting slide surface, and un-hides (removes .sakura-audience-boot above).
+   Specific pieces, not the whole #app-layout — #diagram-editor-overlay lives inside it too,
+   and needs to stay reachable for Whiteboard mirroring (see setAudienceMode). Everything else
+   under #app-layout besides these (todos/meetings/note panels, popovers, modals) is already
+   display:none by default and only shown when explicitly toggled, so it's not a concern here. */
+body.sakura-audience-window #appbar,
+body.sakura-audience-window #sidebar,
+body.sakura-audience-window #sidebar-resize-handle,
+body.sakura-audience-window #doc-tab-strip-row,
+body.sakura-audience-window #tag-filter-bar,
+body.sakura-audience-window #quick-bar,
+body.sakura-audience-window #cross-tab-banner,
+body.sakura-audience-window #editor-row,
+body.sakura-audience-window #statusbar,
+body.sakura-audience-window #welcome-overlay,
+body.sakura-audience-window #sakura-modal-overlay,
+body.sakura-audience-window #why-sakura-overlay,
+body.sakura-audience-window #toast,
+body.sakura-audience-window #context-menu,
+body.sakura-audience-window #tour-overlay,
+body.sakura-audience-window #demo-overlay{display:none!important}
+body.sakura-audience-window #preview-head,
+body.sakura-audience-window #preview-presenter-bar,
+body.sakura-audience-window #presenter-notes-panel,
+body.sakura-audience-window #presenter-overview-grid,
+body.sakura-audience-window #preview-ctx-menu,
+body.sakura-audience-window #diagram-editor-header{display:none!important}
+body.sakura-audience-window #diagram-editor-iframe-wrap{pointer-events:none}
 #preview-overlay{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);flex-direction:column;outline:none}
 #preview-overlay.open{display:flex}
 #mindmap-overlay{display:none;position:fixed;inset:0;z-index:1055;background:var(--bg);flex-direction:column;outline:none}
@@ -3545,6 +3577,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     }catch(e){}
   })();
   </script>
+  <script>
+  // Audience View (dual-screen Presenter mode — see openAudienceWindow()) detection. Runs here,
+  // synchronously before any markup paints, so the normal editor UI never flashes visible in
+  // this window before the audience-mode CSS class (added once boot finishes, further down)
+  // hides it.
+  if(/[?&]sakuraAudience=1(&|$)/.test(location.search)){
+    document.documentElement.classList.add('sakura-audience-boot');
+  }
+  </script>
   <div id="appbar">
     <div id="app-brand">
       <button id="sidebar-toggle" data-tip="Toggle sidebar" aria-label="Toggle sidebar">
@@ -4734,7 +4775,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Headings come from the Heading 1–6 style you apply in the editor (Format toolbar, next to Text color) — not from tree depth. A node with no heading style of its own renders as plain body text in Preview, unless Settings → Preview → "Headings &amp; Contents" has a level assigned to that node's depth (see below)</li>
 <li>Settings → Preview → "Headings &amp; Contents" → "Heading fallback by depth" lets you assign a heading level to depths 0–5, so an unstyled node can still render as a heading in Preview based purely on how deep it sits in the tree. An explicit heading style on the node always wins over this; depths left as "None" behave exactly as before. This only changes how Preview renders — it never writes a heading style into the actual document</li>
 <li>Table of contents (left panel, toggled with the header button) is built from headings and [Section] markers — what it includes is configurable in Settings → Preview → "Headings &amp; Contents": cap it to a maximum heading level, or turn off section markers to keep it to real headings only. "Treat depth 0 as section markers" there (off by default) makes every top-level node act as a [Section] divider automatically, without needing the [Bracket] text — [Bracket] text still works at any depth on top of this, including depth 0. Unlike the Table of Contents toggle, this one changes the document itself: the outline canvas, Preview/PDF, and rich-text copy all pick up the same section styling, not just what's listed in Contents. Below the headings, a "Decisions" section lists every decision log in the document with a colored status dot — click to jump straight to it. The panel shows itself if there are 2+ headings or at least 1 decision log, whichever applies; it's part of what gets printed to PDF, so the decision index carries over there too</li>
-<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second browser window that mirrors only the current slide — no bar, no notes, no controls — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows the slide right away with a small banner at the bottom — drag the window into place, then click that banner (or press <span class="help-kbd">F</span>) to make the window fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, the laser pointer, presenter-side zoom (both the 150% presenting default and any Ctrl+scroll adjustment on top of it), and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. Opening the Whiteboard or Mind Map (below) while the Audience View is connected swaps its display over to that too, the same way it takes over this window's own screen — Mind Map mirrors live, stroke for stroke, since it's plain on-page content same as slides; Whiteboard mirrors as a still image refreshed on every draw.io save (a few seconds behind, not truly live — see the Whiteboard entry below for why), rather than the live editing surface itself. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. If the Audience View (above) is connected, it shows this same drawing too — as a still image, refreshed automatically every time draw.io's own autosave fires (typically a few seconds after you stop drawing), not the live editing surface itself, since draw.io runs in a cross-origin embed with no way to mirror its canvas pixel-for-pixel from outside it. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
+<li>Presenter mode (▶ button in the header) goes fullscreen and hides all the header buttons — the bottom bar (prev/next, slide counter, exit) is the only control surface while presenting. Opens on a decorated title slide (document title, author, the same word-count/decision-count line as the Preview header) before stepping through the rest one section at a time — arrow keys/space to navigate, clicking the slide itself also advances (same as PowerPoint/Keynote), Home/End to jump to first/last, Esc (or leaving fullscreen any other way) to exit. If you've zoomed in with Ctrl+scroll, Esc resets the zoom first instead of exiting — but the browser itself still treats Esc as "leave fullscreen" regardless (a security behavior no page can override), so that first Esc press also drops out of true fullscreen even though it doesn't leave Presenter mode; presenting just continues windowed after that until you exit and re-enter Presenter mode (an earlier attempt at an 'F' shortcut to restore fullscreen manually didn't reliably work and was removed rather than left half-working). Fold state, notes, code blocks, and decision cards all render normally within each slide. Each slide fades in briefly on navigation (not on every edit — only an actual slide change), a thin progress line tracks your position across the top of the screen alongside the slide-counter text, and headings/sub-bullets get a size and weight bump specific to presenting (sub-bullets step down in size by depth on top of the existing color-dimming, headings get bolder) so the hierarchy reads faster from across a room — none of this changes how the same content looks in the regular scrolling Preview. A running elapsed timer sits in the bar. <span class="help-kbd">G</span> opens a grid of every slide's label — click one to jump straight to it, useful for Q&amp;A on longer decks; Esc closes the grid without exiting presenter mode. Right-clicking anywhere that isn't a line's own text opens a small menu: Reset zoom and Laser pointer are always there (same as in the regular scrolling Preview), and while actually presenting it also gets All slides, Notes / Q&amp;A, Whiteboard, Mind Map, and Exit presenter mode — the same actions as their keyboard shortcuts and buttons, just discoverable by right-clicking if you don't remember (or haven't learned) those shortcuts. Each of those five hides itself automatically if its underlying feature is off in Settings, same as the presenter-bar button it mirrors. A two-monitor icon in the presenter bar (or <span class="help-kbd">S</span>, and Open/Close Audience View in the right-click menu) opens a second, independent browser window showing this same document — normal editor chrome (sidebar, toolbar, everything) stays hidden there, leaving just the current slide — meant to be dragged onto a projector or a second monitor while this window stays as your own presenter view. Since Presenter mode fullscreens this window by default, opening the Audience View drops this one back out of fullscreen first — the point is for the *audience* window to be the one that's fullscreen on the projector, not both at once — presenting itself isn't interrupted, this window just continues windowed afterward the same way an Escape-triggered fullscreen exit already leaves it. The new window shows the slide right away with a small banner at the bottom — drag the window into place, then click that banner (or press <span class="help-kbd">F</span>) to make the window fullscreen there — browsers require that click to happen in the new window itself before it's allowed to go fullscreen, so this can't be skipped automatically. From then on it stays in sync automatically — slide changes, <span class="help-kbd">B</span> blank-screen, the laser pointer, presenter-side zoom (both the 150% presenting default and any Ctrl+scroll adjustment on top of it), and even a live content edit made while presenting all mirror across within the same navigation that already updates this window, with no separate export or file involved, since it's just a second view of the same open document. Opening the Whiteboard or Mind Map (below) while the Audience View is connected swaps its display over to that too, the same way it takes over this window's own screen — Mind Map mirrors live, stroke for stroke, since it's plain on-page content same as slides; Whiteboard mirrors as a still image refreshed on every draw.io save (a few seconds behind, not truly live — see the Whiteboard entry below for why), rather than the live editing surface itself. Closing that window, pressing <span class="help-kbd">S</span> again, or exiting Presenter mode (which also closes it automatically) all disconnect it the same way; if it's ever popup-blocked, a toast says so rather than silently doing nothing. <span class="help-kbd">B</span> blacks out the screen to pull attention back to you mid-discussion — press again (or Esc) to resume exactly where you were, nothing about the slide itself changes. <span class="help-kbd">N</span> opens a floating Notepad panel without leaving Presenter mode — <span class="help-kbd">Q</span> opens that same panel straight into its Q&amp;A view instead (pressing the key for whichever view is already showing closes the panel; the other key switches views without closing it) — it's the same Pad that document already has (Settings → Editing → Pad), the real element (editor and toolbar both) just moves into view and back, so whatever you jot down while presenting is that document's Pad afterward, nothing separate to lose track of; needs Pad enabled and a document open. Once it's open, its header also has two small Notes / Q&amp;A tabs you can click directly — the same switch as the N/Q keys, just visible for anyone who'd rather click than remember a shortcut. The panel is movable and resizable — drag its header to reposition it anywhere on screen, drag the small grip in its bottom-right corner to resize it, double-click either one to snap back to the default docked position — whatever you leave it at is remembered next time you open it, this session and future ones. Separately, per-node notes (the small dot that appears on a node with a note attached) stay collapsed on their slide until clicked — clicking one opens it in a popover without leaving Presenter mode. That's a different feature from the floating Notepad panel above it — despite both involving the word "note," one is the whole-document Pad floating over your slides, the other is notes attached to specific nodes and rendered inline within them. A pencil icon in the presenter bar (or <span class="help-kbd">W</span>, and Whiteboard in the right-click menu) opens one persistent draw.io diagram for the document — the same real, embedded draw.io editor the Diagrams tab uses elsewhere, not a separate drawing tool — for sketching or brainstorming mid-talk without it needing to be tied to any particular slide or node; the first click creates it, every click after reopens the same one, and it shows up pinned at the top of the regular Diagrams tab list too, marked with a "Whiteboard" badge instead of the usual "Unlinked" warning, since staying unlinked is the point rather than something to fix. If the Audience View (above) is connected, it shows this same drawing too — as a still image, refreshed automatically every time draw.io's own autosave fires (typically a few seconds after you stop drawing), not the live editing surface itself, since draw.io runs in a cross-origin embed with no way to mirror its canvas pixel-for-pixel from outside it. Needs the Diagrams feature enabled (Settings → Features → Pad Panel) — the button and menu item both hide themselves if it's off, same as everywhere else in Sakura that depends on a feature switch. A second icon next to it (or <span class="help-kbd">M</span>, and Mind Map in the right-click menu) opens the app-level Mind Map canvas without leaving Presenter mode — the same canvas its own status bar button and shortcut open elsewhere, not tied to this document or slide; hides itself if the Mind Map feature is off in Settings. The floating panel shows its own, smaller set of toolbar buttons — Bullet list and AI Rewrite by default — independent of the full toolbar the regular Pad panel shows; pick a different set in Settings → Preview → Presenter mode → Toolbar buttons while presenting. Timer, the all-slides grid, and notes can each be turned off in Settings → Preview → Presenter mode, along with which tree depth starts a new slide, auto-enabling the laser pointer, "Presenter zoom" (scales slide content while presenting, separate from the regular editor's text size — defaults to 150%, since slide content generally reads better larger from across a room than a document read up close), "Open Preview straight into Presenter mode" (skips the regular scrolling Preview — opens straight to the title slide, fullscreen, and Esc then takes you all the way back to the editor in one press instead of backing out one layer at a time), a small optional branding mark in the presenter bar (and, from the same setting, in the corner of exported PowerPoint slides) — "SAKURA" by default, or your own company/team name via "Branding text" — off by default, and a closing slide (on by default) — one more slide after the last content slide, an accent bar plus a short line styled to bookend the opening title slide, reading "Thank you" unless you set your own text and optional smaller subtitle underneath in the same settings section</li>
 <li>Settings → Preview → "Reading appearance" adds reading width, a sepia reading theme, and a serif body-text option — Preview-only, doesn't touch the editor or document. Settings → Data &amp; Backup → "Export &amp; print" → "PDF page margins" sets the default Export as PDF starts with; the print dialog that opens still lets you change it per export</li>
 <li>Click <span class="help-kbd">▾/▸</span> → fold/unfold a branch, same as the editor — but this fold state is local to Preview and separate from the editor's own collapsed sections. Collapse all / Expand all buttons sit in the header</li>
 <li>Folding a branch that contains a note or a decision log doesn't hide it silently — a small icon next to the <span class="help-kbd">+N</span> badge tells you it's in there; click either to expand</li>
@@ -27763,100 +27804,70 @@ function togglePresenterBlank(){ setPresenterBlank(!presenterBlanked); }
 // HTML — not a diff — since none of slides/whiteboard/mind map are large enough for that to
 // matter, and it only runs on navigation/toggle/content-change, not on every frame (mousemove
 // for the laser pointer is the one exception — see syncAudienceLaser).
+// Dual screen / Audience View — a second, REAL navigation of this same page (same file, a
+// query param telling it which "mode" to boot into), not a constructed/cloned document. Earlier
+// attempts (document.write(), then manual DOM construction, then a blob: URL) all tested fine
+// in automated headless testing but kept ending up blank in real Chrome for reasons that never
+// fully surfaced — a genuine second page load sidesteps that whole category of popup-content
+// construction quirks by not depending on any of those APIs at all. Since it's the same file on
+// the same origin, the opener can still read/write this window's globals directly (no
+// postMessage needed) — but now that means calling the SAME functions that already exist in
+// that window's own loaded copy of the app (presenterGoTo, setPresenterBlank, etc.) rather than
+// manipulating its DOM by hand, so its own rendering pipeline does the work exactly the way it
+// already does for this window.
 let presenterAudienceWin=null;
 let _presenterDualScreenFsExit=false;
-// Which of the three mutually-exclusive surfaces the Audience window is currently showing —
-// mirrors whichever one covers the screen in THIS window too (Whiteboard/Mind Map sit on top of
-// the slide at a higher z-index while open, same idea carried over here).
+// Only meaningful for the right-click menu's Whiteboard/Mind Map mirroring — see setAudienceMode.
 let audienceMode='slide';
 function audienceWinLive(){ return !!(presenterAudienceWin && !presenterAudienceWin.closed); }
 function openAudienceWindow(){
   if(audienceWinLive()){ presenterAudienceWin.focus(); return; }
   if(document.fullscreenElement){ _presenterDualScreenFsExit=true; try{ document.exitFullscreen(); }catch(e){ _presenterDualScreenFsExit=false; } }
-  const w=window.open('','sakura-audience-view','width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
+  const url=new URL(location.href);
+  url.searchParams.set('sakuraAudience','1');
+  const w=window.open(url.toString(),'sakura-audience-view','width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
   if(!w){ showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
   presenterAudienceWin=w;
   audienceMode='slide';
+  updateAudienceButtonState();
+  startAudienceWinPoll();
+  // audienceWindowReady() is called BY that window itself once its own boot finishes (see the
+  // SAKURA_AUDIENCE_MODE block near the top of this script) — a real second page load is
+  // inherently variable in timing depending on the machine, so waiting for an explicit signal
+  // from the window itself is far more reliable than guessing a fixed delay here.
+}
+// Called by the Audience window (via window.opener) once it's finished its own boot and is
+// ready to be driven. win is that window's own global object, passed as window.opener.audienceWindowReady(window)
+// — checking it matches presenterAudienceWin guards against a stale call from a window that's
+// since been closed and reopened.
+// Returns this window's real presenting-related state as a plain object. Needed because
+// win.previewSlideIndex (or any other top-level let-declared variable) read as a property from
+// outside always comes back undefined — the same reason direct assignment doesn't work (see
+// setAudienceInteractiveZoom above) — which was silently breaking every conditional check based
+// on the audience window's actual state below. A function call executes in its defining scope
+// and returns real values by copy, which then read correctly from the calling window.
+function sakuraGetAudienceState(){
+  return {
+    currentDocId,
+    previewActive,
+    previewPresenting,
+    previewSlideIndex,
+    presenterBlanked,
+    mindMapOpen,
+    diagramEditorOpen: !!(el('diagram-editor-overlay')?.classList.contains('open'))
+  };
+}
+function audienceWindowReady(win){
+  if(win!==presenterAudienceWin)return;
   try{
-    const aDoc=w.document;
-    aDoc.title='Sakura \u2013 Audience View';
-    // Direct DOM construction (createElement/appendChild), not document.write() — document.write()
-    // is a legacy API Chrome has progressively restricted for years and was leaving this window
-    // blank in real Chrome despite passing in automated headless testing. A blob: URL navigation
-    // was tried in between and reverted — it didn't even open a trackable window in this same
-    // headless test environment, a bad sign for cross-browser reliability in the other direction.
-    aDoc.querySelectorAll('style').forEach(s=>s.remove());
-    document.querySelectorAll('style').forEach(s=>{
-      const clone=aDoc.createElement('style');
-      clone.textContent=s.textContent;
-      aDoc.head.appendChild(clone);
-    });
-    const extraStyle=aDoc.createElement('style');
-    // #audience-hint is a small non-blocking banner, NOT a full-screen overlay — it used to cover
-    // the entire window until clicked, which (very plausibly) is exactly what looked like "just a
-    // background, no content" if it was glanced at without reading the small instruction text
-    // rather than actually clicked. The slide itself is always visible underneath/behind it now.
-    extraStyle.textContent='html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}#preview-overlay,#mindmap-overlay{position:fixed;inset:0}#audience-whiteboard-view{display:none;position:fixed;inset:0;z-index:1050;background:var(--bg);align-items:center;justify-content:center}#audience-whiteboard-img{max-width:96%;max-height:96%;object-fit:contain}#audience-hint{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.82);color:#fff;font:500 13px/1.4 \'Inter\',sans-serif;text-align:center;cursor:pointer;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3)}#audience-hint kbd{background:rgba(255,255,255,.18);padding:1px 7px;border-radius:4px;font:inherit}';
-    aDoc.head.appendChild(extraStyle);
-    // Theme colors (--bg, --fg, --accent, etc. — see setTheme/applyAccentColor/
-    // applyChromeColors) are defined only inside body.theme-light/body.theme-dark rules, not at
-    // :root — set as real DOM properties here, before anything else touches this body, so
-    // there's no window where the document exists with the right CSS cloned in but no theme
-    // class active to make any of it resolve to a real color.
-    aDoc.body.className=document.body.className;
-    aDoc.body.style.cssText=document.body.style.cssText;
-    // Same reasoning for content: build the current slide's markup into #preview-body as part
-    // of this same synchronous setup, rather than leaving it empty for syncAudienceWindow() to
-    // fill in as a separate follow-up call. Also strips any in-progress .pv-slide-entering
-    // fade-in class from the clone — that class means opacity:0 until the main window's own
-    // requestAnimationFrame callback removes it a frame later, which only ever happens in THIS
-    // window, not the clone; carrying it over would leave the cloned slide invisible with
-    // nothing to ever bring it back.
-    const mainBody=el('preview-body');
-    let initialSlidesHtml=mainBody?mainBody.innerHTML:'';
-    if(mainBody){
-      const tmp=document.createElement('div'); tmp.innerHTML=initialSlidesHtml;
-      tmp.querySelectorAll('.pv-slide').forEach(s=>{
-        s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex);
-        s.classList.remove('pv-slide-entering');
-      });
-      initialSlidesHtml=tmp.innerHTML;
-    }
-    // Reuses real ids (#preview-overlay, #mindmap-overlay, #mindmap-canvas, #preview-laser-dot
-    // ...) throughout, so the cloned <style> tags above already style everything correctly with
-    // zero CSS written here for those. #audience-whiteboard-view is the one genuinely new
-    // container — Whiteboard is a cross-origin draw.io iframe with no element anywhere in this
-    // app to borrow layout from, so it gets its own small rule above instead.
-    aDoc.body.innerHTML=
-      '<div id="preview-overlay" class="pv-presenting open"><div id="preview-main"><div id="preview-body">'+initialSlidesHtml+'</div></div></div>'+
-      '<div id="mindmap-overlay" class="open"><div id="mindmap-canvas-wrap"><div id="mindmap-canvas"><svg id="mindmap-lines" xmlns="http://www.w3.org/2000/svg"></svg></div></div></div>'+
-      '<div id="audience-whiteboard-view"><img id="audience-whiteboard-img" alt="Whiteboard" /></div>'+
-      '<div id="preview-laser-dot"></div>'+
-      '<div id="presenter-blank-overlay"></div>'+
-      '<div id="audience-hint"><span>Drag onto your presentation display, then click here (or press <kbd>F</kbd>) to go fullscreen</span></div>';
-    // A <script> inserted via innerHTML never executes — a long-standing, deliberate DOM
-    // behavior (otherwise any innerHTML write of untrusted content could run arbitrary code) —
-    // so this one has to be built as a real element and appended instead.
-    const scriptEl=aDoc.createElement('script');
-    scriptEl.textContent=
-      '(function(){'+
-        'var enterFs=function(){'+
-          'var h=document.getElementById(\'audience-hint\'); if(h)h.remove();'+
-          'if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});'+
-          'if(window.opener)window.opener.focus();'+
-        '};'+
-        'document.getElementById(\'audience-hint\').addEventListener(\'click\',enterFs);'+
-        'document.addEventListener(\'keydown\',function(e){ if(e.key===\'f\'||e.key===\'F\')enterFs(); });'+
-        'window.addEventListener(\'unload\',function(){ if(window.opener&&window.opener.presenterAudienceWin===window){ window.opener.presenterAudienceWin=null; window.opener.updateAudienceButtonState&&window.opener.updateAudienceButtonState(); } });'+
-      '})();';
-    aDoc.body.appendChild(scriptEl);
-  }catch(err){
-    // Surface failures inside the popup itself rather than leaving a silent blank window with
-    // no way to tell what went wrong — sakuraLog also puts it in Settings → About → Debug log.
-    try{ w.document.body.innerHTML='<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:40px;text-align:center;font:500 15px \'Inter\',sans-serif;color:#c0392b;background:#fff">Audience View failed to set up: '+String(err&&err.message||err)+'</div>'; }catch(e2){}
-    if(typeof sakuraLog==='function')sakuraLog('error','openAudienceWindow failed',{message:err&&err.message,stack:err&&err.stack});
-    showToast('Audience View failed to open — see the popup window for details');
-  }
+    const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
+    if(currentDocId&&st.currentDocId!==currentDocId&&typeof win.switchDoc==='function')win.switchDoc(currentDocId);
+    // enterPresenterMode() requires previewSlides to already be populated — that only happens
+    // via openPreview() (renderPreviewBody()), which this window's normal boot never runs since
+    // it never goes through the regular "click the Preview button" flow a real session would.
+    if(!st.previewActive&&typeof win.openPreview==='function')win.openPreview();
+    if(!st.previewPresenting&&typeof win.enterPresenterMode==='function')win.enterPresenterMode();
+  }catch(e){ if(typeof sakuraLog==='function')sakuraLog('error','audienceWindowReady failed',{message:e&&e.message}); }
   syncAudienceWindow();
   updateAudienceButtonState();
 }
@@ -27865,6 +27876,18 @@ function closeAudienceWindow(){
   presenterAudienceWin=null;
   audienceMode='slide';
   updateAudienceButtonState();
+}
+let _audienceWinPollTimer=null;
+function startAudienceWinPoll(){
+  if(_audienceWinPollTimer)return;
+  _audienceWinPollTimer=setInterval(()=>{
+    if(presenterAudienceWin&&presenterAudienceWin.closed){
+      presenterAudienceWin=null;
+      audienceMode='slide';
+      updateAudienceButtonState();
+    }
+    if(!presenterAudienceWin){ clearInterval(_audienceWinPollTimer); _audienceWinPollTimer=null; }
+  },1000);
 }
 window.addEventListener('beforeunload',()=>{ if(audienceWinLive())presenterAudienceWin.close(); });
 function toggleAudienceWindow(){
@@ -27878,80 +27901,117 @@ function updateAudienceButtonState(){
   const label=item?.querySelector('span:last-child');
   if(label)label.textContent=on?'Close Audience View':'Open Audience View';
 }
+// Opens/closes the SAME Whiteboard or Mind Map in the Audience window's own live instance,
+// rather than mirroring a snapshot — both read from the same shared storage this window does,
+// so the audience window just needs telling which one (if either) to have open right now.
 function setAudienceMode(mode){
   audienceMode=mode;
   if(!audienceWinLive())return;
-  const aDoc=presenterAudienceWin.document;
-  const slideEl=aDoc.getElementById('preview-overlay'), mmEl=aDoc.getElementById('mindmap-overlay'), wbEl=aDoc.getElementById('audience-whiteboard-view');
-  if(slideEl)slideEl.style.display=mode==='slide'?'':'none';
-  if(mmEl)mmEl.style.display=mode==='mindmap'?'':'none';
-  if(wbEl)wbEl.style.display=mode==='whiteboard'?'flex':'none';
+  try{
+    const win=presenterAudienceWin;
+    const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
+    if(mode==='whiteboard'){
+      if(!st.diagramEditorOpen&&typeof win.openOrCreateWhiteboard==='function')win.openOrCreateWhiteboard();
+    } else if(mode==='mindmap'){
+      if(!st.mindMapOpen&&typeof win.openAudienceMindmapDirect==='function')win.openAudienceMindmapDirect(mindMap,mindMapPan,mindMapZoom);
+    } else {
+      if(st.diagramEditorOpen&&typeof win.closeDiagramEditorInternal==='function')win.closeDiagramEditorInternal();
+      if(st.mindMapOpen&&typeof win.closeMindMapOverlay==='function')win.closeMindMapOverlay();
+    }
+  }catch(e){}
 }
-// d.previewSvg is already a ready-to-use data: URI (see how it's consumed for the Diagrams tab's
-// own thumbnails), not raw SVG markup — so this is a direct assignment, no encoding needed.
-function syncAudienceWhiteboardSvg(dataUri){
-  if(!audienceWinLive()||!dataUri)return;
-  const img=presenterAudienceWin.document.getElementById('audience-whiteboard-img'); if(!img)return;
-  img.src=dataUri;
-}
-// Mind Map is plain DOM/SVG in this same document (unlike Whiteboard, which is a cross-origin
-// draw.io iframe with no direct DOM access) — so like slides, this is a straight clone of the
-// real canvas rather than an exported snapshot, kept live via renderMindMap()'s own hook below.
+// Mind Map content in the Audience window comes from its own storage-backed state already —
+// this just makes sure its canvas re-renders with the latest pan/zoom/node positions right now,
+// the same way this window's own renderMindMap() call already does for itself.
 function syncAudienceMindmap(){
   if(!audienceWinLive())return;
-  const mainCanvas=el('mindmap-canvas'); if(!mainCanvas)return;
-  const aCanvas=presenterAudienceWin.document.getElementById('mindmap-canvas'); if(!aCanvas)return;
-  aCanvas.innerHTML=mainCanvas.innerHTML;
-  aCanvas.style.transform=mainCanvas.style.transform;
+  try{
+    const win=presenterAudienceWin;
+    const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
+    if(st.mindMapOpen&&typeof win.setAudienceMindmapState==='function')win.setAudienceMindmapState(mindMap,mindMapPan,mindMapZoom);
+  }catch(e){}
 }
 function syncAudienceZoom(){
   if(!audienceWinLive())return;
-  const mainBody=el('preview-body'), aBody=presenterAudienceWin.document.getElementById('preview-body');
-  if(mainBody&&aBody)aBody.style.zoom=mainBody.style.zoom;
+  try{
+    const win=presenterAudienceWin;
+    if(typeof win.setAudienceInteractiveZoom==='function')win.setAudienceInteractiveZoom(previewInteractiveZoom);
+  }catch(e){}
 }
-// Laser position is sent as a fraction of this window's own viewport, then re-applied against
-// the Audience window's own (likely differently-sized) viewport — both windows show the same
-// content at the same relative position and the same zoom level (see syncAudienceZoom), so a
-// plain percentage lines the dot up closely enough without reaching into content-relative
-// coordinates for something that's meant to be a rough attention-pointer, not a precise cursor.
 function syncAudienceLaser(clientX,clientY){
   if(!audienceWinLive())return;
-  const dot=presenterAudienceWin.document.getElementById('preview-laser-dot'); if(!dot)return;
-  const xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
-  dot.style.left=(xPct*presenterAudienceWin.innerWidth)+'px';
-  dot.style.top=(yPct*presenterAudienceWin.innerHeight)+'px';
+  try{
+    const win=presenterAudienceWin;
+    const dot=win.document.getElementById('preview-laser-dot'); if(!dot)return;
+    const xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
+    dot.style.left=(xPct*win.innerWidth)+'px';
+    dot.style.top=(yPct*win.innerHeight)+'px';
+  }catch(e){}
 }
 function syncAudienceWindow(){
   if(!audienceWinLive())return;
-  const mainBody=el('preview-body');
-  const aDoc=presenterAudienceWin.document;
-  const aBody=aDoc.getElementById('preview-body');
-  if(!mainBody||!aBody)return;
-  aBody.innerHTML=mainBody.innerHTML;
-  aBody.querySelectorAll('.pv-slide').forEach(s=>{ s.classList.toggle('pv-slide-active',Number(s.dataset.slideIndex)===previewSlideIndex); });
-  // Mirror theme/accent/chrome-color state in one shot — those all live as a body class plus a
-  // handful of inline --custom-property overrides (see setTheme/applyAccentColor/
-  // applyChromeColors), so copying className + style.cssText covers every one of them without
-  // this needing its own hook into each color-setting function individually.
-  aDoc.body.className=document.body.className;
-  aDoc.body.style.cssText=document.body.style.cssText;
-  aDoc.getElementById('presenter-blank-overlay')?.classList.toggle('on',presenterBlanked);
-  aDoc.getElementById('preview-laser-dot')?.classList.toggle('on',previewLaserOn);
-  syncAudienceZoom();
-  // Pick up whichever of Whiteboard/Mind Map (if either) is already open at connect time —
-  // covers opening the Audience View mid-session rather than only at the very start of
-  // presenting, when the mode-switch hooks below wouldn't have fired yet.
-  const wbOpen=el('diagram-editor-overlay')?.classList.contains('open');
-  const activeDiagram=(wbOpen&&_diagramEditorState)?findDiagram(_diagramEditorState.diagramId):null;
-  if(activeDiagram&&activeDiagram.isWhiteboard){
-    setAudienceMode('whiteboard');
-    if(activeDiagram.previewSvg)syncAudienceWhiteboardSvg(activeDiagram.previewSvg);
-  } else if(mindMapOpen){
-    setAudienceMode('mindmap');
-    syncAudienceMindmap();
-  } else {
-    setAudienceMode('slide');
+  const win=presenterAudienceWin;
+  try{
+    const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
+    if(currentDocId&&st.currentDocId!==currentDocId&&typeof win.switchDoc==='function')win.switchDoc(currentDocId);
+    if(!st.previewActive&&typeof win.openPreview==='function')win.openPreview();
+    if(!st.previewPresenting&&typeof win.enterPresenterMode==='function')win.enterPresenterMode();
+    if(typeof win.presenterGoTo==='function'&&st.previewSlideIndex!==previewSlideIndex)win.presenterGoTo(previewSlideIndex);
+    if(typeof win.setPresenterBlank==='function'&&st.presenterBlanked!==presenterBlanked)win.setPresenterBlank(presenterBlanked);
+    syncAudienceZoom();
+    // Pick up whichever of Whiteboard/Mind Map (if either) is already open here at connect
+    // time — covers opening the Audience View mid-session rather than only at the very start
+    // of presenting, when the mode-switch hooks elsewhere wouldn't have fired yet.
+    const wbOpen=el('diagram-editor-overlay')?.classList.contains('open');
+    if(wbOpen&&_diagramEditorState&&findDiagram(_diagramEditorState.diagramId)?.isWhiteboard){
+      setAudienceMode('whiteboard');
+    } else if(mindMapOpen){
+      setAudienceMode('mindmap');
+      syncAudienceMindmap();
+    } else {
+      setAudienceMode('slide');
+    }
+  }catch(e){
+    if(typeof sakuraLog==='function')sakuraLog('error','syncAudienceWindow failed',{message:e&&e.message});
   }
+}
+
+// This window running AS an Audience window (see openAudienceWindow() above) — detected once
+// here, used both by the boot sequence right below and to distinguish "am I being driven by an
+// opener" elsewhere if ever needed.
+const SAKURA_AUDIENCE_MODE=/[?&]sakuraAudience=1(&|$)/.test(location.search);
+if(SAKURA_AUDIENCE_MODE){
+  window.addEventListener('load',()=>{
+    // A short settle delay for this app's own async init (IndexedDB reads, tab restoration) to
+    // finish before acting — the 'load' event alone only guarantees markup/subresources are in,
+    // not that Sakura's own storage-backed boot sequence has actually finished populating state.
+    setTimeout(()=>{
+      document.body.classList.add('sakura-audience-window');
+      document.documentElement.classList.remove('sakura-audience-boot');
+      el('welcome-overlay')?.classList.remove('open');
+      el('sakura-modal-overlay')?.classList.remove('open');
+      if(tourActive&&typeof tourSkip==='function')tourSkip();
+      // A small, non-blocking click-to-fullscreen banner — enterPresenterMode()'s own fullscreen
+      // request (triggered cross-window by the opener, further down) has no genuine user gesture
+      // behind it and will be silently blocked by the browser, same as any other cross-window
+      // call; this needs a real click inside this window itself.
+      const hint=document.createElement('div');
+      hint.id='audience-hint';
+      hint.innerHTML='<span>Drag onto your presentation display, then click here (or press <kbd>F</kbd>) to go fullscreen</span>';
+      hint.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.82);color:#fff;font:500 13px/1.4 \'Inter\',sans-serif;cursor:pointer;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+      const kbd=hint.querySelector('kbd'); if(kbd)kbd.style.cssText='background:rgba(255,255,255,.18);padding:1px 7px;border-radius:4px;font:inherit';
+      document.body.appendChild(hint);
+      const enterFs=()=>{ hint.remove(); if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{}); if(window.opener)window.opener.focus(); };
+      hint.addEventListener('click',enterFs);
+      document.addEventListener('keydown',e=>{ if(e.key==='f'||e.key==='F')enterFs(); });
+      // Detecting this window closing is handled from the opener's side (startAudienceWinPoll)
+      // rather than from here — window.opener.presenterAudienceWin is always undefined from
+      // outside, since top-level let/const bindings (unlike var or function declarations) never
+      // become window properties, so a cross-window comparison/assignment against it here could
+      // never actually work.
+      if(window.opener&&typeof window.opener.audienceWindowReady==='function')window.opener.audienceWindowReady(window);
+    },300);
+  });
 }
 
 // Presenter notes — rather than building a separate note-taking surface (and a separate place
@@ -29369,6 +29429,13 @@ el('preview-overlay')?.addEventListener('wheel',e=>{
   requestPreviewZoomFrame();
 },{passive:false});
 function resetPreviewZoom(){ previewInteractiveZoom=1; applyPresenterZoom(); }
+// Exists for cross-window sync (see syncAudienceZoom) — win.previewInteractiveZoom=value would
+// not work there: previewInteractiveZoom is declared with let, and top-level let/const
+// bindings never become window properties the way var or function declarations do, so a plain
+// assignment from another window would silently create a disconnected property instead of
+// updating the real variable applyPresenterZoom() reads via closure. A function call runs in
+// its defining scope regardless of which window invoked it, so this reaches the real one.
+function setAudienceInteractiveZoom(z){ previewInteractiveZoom=z; applyPresenterZoom(); }
 // Set true by the keydown Escape handler right before it resets zoom while presenting, and
 // consumed (cleared) by the fullscreenchange listener below — see that listener's comment for
 // why it can't just re-check previewInteractiveZoom itself at that point.
@@ -37846,6 +37913,27 @@ function mmOpenLinkContextMenu(e,linkId){
   menu.innerHTML=`<div class="mm-ctx-item" data-act="edit-link">Edit label</div><div class="mm-ctx-item mm-ctx-danger" data-act="remove-link">Remove connection</div>`;
   mmCtxMenuNodeId=null; mmCtxMenuPoint=null; mmCtxMenuBulk=false; mmCtxMenuLinkId=linkId;
   mmPositionContextMenu(menu,e.clientX,e.clientY);
+}
+// Exists for cross-window sync (see syncAudienceMindmap) — same reason as
+// setAudienceInteractiveZoom above: mindMap/mindMapPan/mindMapZoom are all let-declared, so a
+// direct win.mindMap=... assignment from another window wouldn't reach the real bindings
+// renderMindMap() reads via closure. Deep-clones the incoming state rather than taking the
+// live object reference as-is, so this window's own rendering bookkeeping can never end up
+// mutating the presenter's actual in-editing mind map data through a shared reference.
+function setAudienceMindmapState(mm,pan,zoom){
+  mindMap=mm?JSON.parse(JSON.stringify(mm)):mindMap;
+  mindMapPan=pan||mindMapPan;
+  mindMapZoom=Number.isFinite(zoom)?zoom:mindMapZoom;
+  renderMindMap();
+}
+// Cross-window "open" counterpart to setAudienceMindmapState above — openMindMapOverlay(id)
+// looks the map up in this window's own mindMaps array, which may not include one created in
+// the presenter's session after this window already loaded its snapshot of the document; this
+// takes the actual data directly instead, sidestepping that lookup entirely.
+function openAudienceMindmapDirect(mm,pan,zoom){
+  mindMapOpen=true; mmSetSelection([],null); mindMapEditingId=null;
+  el('mindmap-overlay')?.classList.add('open');
+  setAudienceMindmapState(mm,pan,zoom);
 }
 function renderMindMap(){
   const canvas=el('mindmap-canvas'), svg=el('mindmap-lines'), wrap=el('mindmap-canvas-wrap');
