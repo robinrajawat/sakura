@@ -9164,12 +9164,13 @@ function extractXmlFromSvgExport(svgData){
   }catch(e){ return null; }
 }
 function syncAudienceWhiteboard(xml){
-  if(!audienceWinLive()||!xml)return;
+  if(!audienceWinLive()||!xml){ sakuraLog('diagram','syncAudienceWhiteboard skipped',{audienceLive:audienceWinLive(),hasXml:!!xml}); return; }
   try{
     const win=presenterAudienceWin;
     const aFrame=win.document.querySelector('#diagram-editor-iframe-wrap iframe');
+    sakuraLog('diagram','syncAudienceWhiteboard posting',{foundAudienceFrame:!!aFrame,hasContentWindow:!!(aFrame&&aFrame.contentWindow),xmlLen:xml.length});
     if(aFrame&&aFrame.contentWindow)aFrame.contentWindow.postMessage(JSON.stringify({action:'load',xml}),'*');
-  }catch(e){}
+  }catch(e){ sakuraLog('diagram','syncAudienceWhiteboard threw',{message:e&&e.message}); }
 }
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
@@ -9197,7 +9198,7 @@ function openDiagramEditor(diagramId){
     let msg;
     try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
     if(!msg||!msg.event)return;
-    sakuraLog('diagram','embed event',{event:msg.event,diagramId});
+    sakuraLog('diagram','embed event',{event:msg.event,diagramId,format:msg.format,hasXml:typeof msg.xml==='string',xmlLen:typeof msg.xml==='string'?msg.xml.length:undefined,hasData:typeof msg.data==='string',dataLen:typeof msg.data==='string'?msg.data.length:undefined,dataPreview:typeof msg.data==='string'?msg.data.slice(0,120):undefined,previewPresenting,isWhiteboard:!!d.isWhiteboard});
     if(msg.event==='init'){
       // If this diagram hasn't finished hydrating from the overflow store yet (see
       // hydrateDiagramBlobsForDoc), d.xml right now may still be the blank placeholder it
@@ -9255,6 +9256,7 @@ function openDiagramEditor(diagramId){
       // this edit at all — exactly the bug this session's fixes were about.
       d._hydrated=true; d._hydrationFailed=false;
       markDirty(); scheduleAutoSave();
+      sakuraLog('diagram','save event captured xml',{diagramId,xmlLen:d.xml?d.xml.length:0,willSyncAudience:!!(previewPresenting&&d.isWhiteboard)});
       if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
       // Piggyback an SVG export request on every save — this is what feeds the panel's
       // thumbnail and Preview/PDF/PPTX/Word.
@@ -9289,6 +9291,7 @@ function openDiagramEditor(diagramId){
         // keeps d.xml current by extracting the embedded XML straight out of the SVG, so the
         // Whiteboard picks up live edits without waiting on an explicit save either way.
         const extractedXml=extractXmlFromSvgExport(msg.data);
+        sakuraLog('diagram','export extraction result',{diagramId,extracted:!!extractedXml,extractedLen:extractedXml?extractedXml.length:0,changedFromCurrent:!!(extractedXml&&extractedXml!==d.xml),currentXmlLen:d.xml?d.xml.length:0});
         if(extractedXml&&extractedXml!==d.xml){
           d.xml=extractedXml; d.pageCount=splitMxfilePages(d.xml).length;
           d._hydrated=true; d._hydrationFailed=false;
@@ -9305,6 +9308,7 @@ function openDiagramEditor(diagramId){
   window.addEventListener('message',handler);
   _diagramEditorState={diagramId,iframe,handler};
   overlay.classList.add('open');
+  sakuraLog('diagram','openDiagramEditor',{diagramId,isWhiteboard:!!d.isWhiteboard,previewPresenting,audienceLive:audienceWinLive()});
   // Opening the Audience window's own copy of this same whiteboard (via openOrCreateWhiteboard
   // below) already loads it with this diagram's current d.xml as part of its own normal init
   // handshake — no separate push needed here, and racing one in before that iframe exists yet
@@ -9334,15 +9338,17 @@ function openDiagramEditor(diagramId){
 let _whiteboardSyncPollTimer=null;
 function startWhiteboardSyncPoll(){
   if(_whiteboardSyncPollTimer||SAKURA_AUDIENCE_MODE)return;
+  sakuraLog('diagram','whiteboard sync poll started',{});
   _whiteboardSyncPollTimer=setInterval(()=>{
-    if(!previewPresenting||!_diagramEditorState){ stopWhiteboardSyncPoll(); return; }
+    if(!previewPresenting||!_diagramEditorState){ sakuraLog('diagram','whiteboard sync poll stopping',{previewPresenting,hasState:!!_diagramEditorState}); stopWhiteboardSyncPoll(); return; }
     const d=findDiagram(_diagramEditorState.diagramId);
-    if(!d||!d.isWhiteboard){ stopWhiteboardSyncPoll(); return; }
+    if(!d||!d.isWhiteboard){ sakuraLog('diagram','whiteboard sync poll stopping (not whiteboard)',{found:!!d}); stopWhiteboardSyncPoll(); return; }
     const iframe=_diagramEditorState.iframe;
-    if(!iframe||!iframe.contentWindow||!iframe.isConnected)return;
+    if(!iframe||!iframe.contentWindow||!iframe.isConnected){ sakuraLog('diagram','whiteboard sync poll tick skipped (iframe not ready)',{hasIframe:!!iframe,connected:!!(iframe&&iframe.isConnected)}); return; }
     // Deliberately the same 'xmlsvg' format the save-triggered thumbnail export already uses
     // (see the comment in the 'export' handler for why 'xml' alone was the actual bug) — the
     // 'export' handler treats every response, save-triggered or poll-triggered, identically.
+    sakuraLog('diagram','whiteboard sync poll requesting export',{diagramId:_diagramEditorState.diagramId});
     iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
   },2000);
 }
@@ -27779,6 +27785,14 @@ function enterPresenterMode(){
   if(previewUseFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
   if(previewAutoLaser)previewSetLaser(true);
   if(previewPresenterTimerEnabled)startPresenterTimer();
+  // Covers opening the Whiteboard *before* presenting starts, then entering Presenter mode
+  // afterward — openDiagramEditor's own previewPresenting&&d.isWhiteboard check for starting
+  // this poll only runs at the moment the editor opens, so it would otherwise never fire for a
+  // whiteboard that was already sitting open when presenting began.
+  if(_diagramEditorState){
+    const d=findDiagram(_diagramEditorState.diagramId);
+    if(d&&d.isWhiteboard)startWhiteboardSyncPoll();
+  }
   applyPresenterState();
 }
 function exitPresenterMode(){
