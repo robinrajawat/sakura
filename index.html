@@ -2402,7 +2402,7 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 .pv-ctx-icon{display:flex;align-items:center;justify-content:center;width:9px;flex-shrink:0;color:var(--muted)}
 .pv-ctx-check{margin-left:auto;opacity:0;color:var(--accent);font-size:11px}
 .pv-ctx-item.active .pv-ctx-check{opacity:1}
-#preview-laser-dot{display:none;position:fixed;z-index:1450;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
+#preview-laser-dot{display:none;position:fixed;z-index:5001;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
 #preview-laser-dot.on{display:block}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
 
@@ -9239,13 +9239,29 @@ function openDiagramEditor(diagramId){
       // override path. This means only the currently active page is captured for the thumbnail
       // and for Preview/PDF/Word/PPTX; see the "N pages" badge and Help section for the
       // reminder this is a known limitation, not a bug.
+      _diagramEditorState.pendingExports.push('xmlsvg');
       iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       if(status){ status.textContent=savedAt; status.classList.add('diagram-editor-status-saved'); }
       updateDiagramEditorPagesBadge(d);
       _diagramEditorState.exitAfterExport=!!msg.exit;
     } else if(msg.event==='export'){
-      if(msg.data){
+      // Two different things request an export, and they need different handling on response:
+      // the SVG thumbnail export above (piggybacked on an explicit save) vs. the plain-XML poll
+      // below (which runs regardless of whether the person ever explicitly saved). draw.io's
+      // embed protocol doesn't reliably echo back which action a response belongs to, so a
+      // small FIFO queue of what was requested — pushed right before each postMessage, shifted
+      // off here in the same order responses must arrive in for the same iframe — tells the two
+      // apart without guessing from the payload shape.
+      const kind=(_diagramEditorState&&_diagramEditorState.pendingExports.shift())||'xmlsvg';
+      if(kind==='xml'){
+        if(typeof msg.data==='string'&&msg.data&&msg.data!==d.xml){
+          d.xml=msg.data; d.modifiedAt=Date.now(); d.pageCount=splitMxfilePages(d.xml).length;
+          d._hydrated=true; d._hydrationFailed=false;
+          markDirty(); scheduleAutoSave();
+          if(previewPresenting&&d.isWhiteboard)syncAudienceWhiteboard(d.xml);
+        }
+      } else if(msg.data){
         d.previewSvg=msg.data;
         d.pageSvgs=[{name:'',svg:msg.data}];
         markDirty(); scheduleAutoSave();
@@ -9257,16 +9273,51 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler};
+  _diagramEditorState={diagramId,iframe,handler,pendingExports:[]};
   overlay.classList.add('open');
   // Opening the Audience window's own copy of this same whiteboard (via openOrCreateWhiteboard
   // below) already loads it with this diagram's current d.xml as part of its own normal init
   // handshake — no separate push needed here, and racing one in before that iframe exists yet
   // would just be ignored (or worse, arrive at the wrong moment in its init sequence).
   if(previewPresenting&&d.isWhiteboard)setAudienceMode('whiteboard');
+  // Whiteboard content otherwise only ever reaches the Audience screen (or gets durably saved
+  // at all) when the person explicitly hits Ctrl/Cmd+S — or draw.io's own Save button — inside
+  // the embedded editor itself; the embed protocol has no documented way for the host page to
+  // trigger a save directly. That's an easy thing to not know mid-talk, especially since the
+  // Close button's own tooltip says "saves automatically" (true the rest of the time, once the
+  // safety-confirm dialog below has a chance to remind them — but that dialog is deliberately
+  // skipped while presenting, see closeDiagramEditor, so nothing else was reminding them either).
+  // The practical fix is to stop depending on that explicit save at all while presenting: poll
+  // for the canvas's current XML via the same 'export' action already used for the thumbnail,
+  // just with format 'xml' instead of 'xmlsvg' — this reads whatever's currently drawn
+  // regardless of "saved" status, so it picks up live edits automatically and protects against
+  // losing a drawing to an unexpected close, the same way the Notepad/Q&A poll already covers
+  // edits that don't go through a single dedicated event.
+  if(previewPresenting&&d.isWhiteboard)startWhiteboardSyncPoll();
 }
+// Keeps the whiteboard's underlying XML (and the Audience mirror) current with whatever's
+// actually drawn, without depending on the presenter remembering to hit Ctrl/Cmd+S — see the
+// comment at the openDiagramEditor call site for why that dependency was the actual bug. Same
+// poll-plus-tolerant-diff shape as the Notepad/Q&A audience poll: cheap to run, self-stops the
+// moment its preconditions stop holding, no separate "did anything change" bookkeeping needed
+// since the 'export' handler above already no-ops when the XML string comes back unchanged.
+let _whiteboardSyncPollTimer=null;
+function startWhiteboardSyncPoll(){
+  if(_whiteboardSyncPollTimer||SAKURA_AUDIENCE_MODE)return;
+  _whiteboardSyncPollTimer=setInterval(()=>{
+    if(!previewPresenting||!_diagramEditorState){ stopWhiteboardSyncPoll(); return; }
+    const d=findDiagram(_diagramEditorState.diagramId);
+    if(!d||!d.isWhiteboard){ stopWhiteboardSyncPoll(); return; }
+    const iframe=_diagramEditorState.iframe;
+    if(!iframe||!iframe.contentWindow||!iframe.isConnected)return;
+    _diagramEditorState.pendingExports.push('xml');
+    iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xml'}),'*');
+  },2000);
+}
+function stopWhiteboardSyncPoll(){ if(_whiteboardSyncPollTimer){ clearInterval(_whiteboardSyncPollTimer); _whiteboardSyncPollTimer=null; } }
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
+  stopWhiteboardSyncPoll();
   window.removeEventListener('message',_diagramEditorState.handler);
   const overlay=el('diagram-editor-overlay'); if(overlay)overlay.classList.remove('open');
   const wrap=el('diagram-editor-iframe-wrap'); if(wrap)wrap.innerHTML='';
@@ -28125,6 +28176,18 @@ function closePresenterNotes(){
   _presenterNotesTbOrigParent=null; _presenterNotesTbOrigNext=null;
   _presenterNotesQaOrigParent=null; _presenterNotesQaOrigNext=null;
   if(toolbar)applyPadToolbarButtonVisibility();
+  // Closing this panel — however it happened (the close button, Escape, or pressing the same
+  // N/Q shortcut again to toggle it shut) — always turns off Audience sharing too, matching the
+  // documented behavior ("It turns itself back off if you close the panel"). This used to live
+  // only in the close button's own separate click handler, so Escape and the N/Q toggle-close
+  // path left audienceNotesVisible stuck true while this window's own panel was already gone.
+  // The next share (reopening back into whichever mode was showing before) would then hit
+  // openPresenterNotesInMode's own toggle-close branch on the AUDIENCE side too — its isOpen
+  // and mode still matched what was requested, from before the drift — remotely closing (and
+  // un-relocating) the audience's copy instead of re-showing it: the audience panel stayed
+  // visible, forced open by its own CSS, but empty. Folding this in here, the single place that
+  // actually closes the panel, means every close path keeps both windows' state consistent.
+  if(audienceNotesVisible){ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); syncAudienceNotesVisibility(); }
 }
 function togglePresenterNotes(){
   if(el('presenter-notes-panel')?.classList.contains('open'))closePresenterNotes();
@@ -28157,7 +28220,17 @@ function syncAudienceNotesVisibility(){
     const win=presenterAudienceWin;
     win.document.body.classList.toggle('audience-show-notes',audienceNotesVisible);
     if(audienceNotesVisible){
-      if(typeof win.openPresenterNotesInMode==='function')win.openPresenterNotesInMode(padViewMode);
+      // Deliberately NOT win.openPresenterNotesInMode() here — that function's job is to be a
+      // local toggle (the same N/Q shortcut closes the panel if it's already showing that exact
+      // mode), which is the right feel for a person pressing a key, but wrong for a remote
+      // "make sure the Audience window is showing this mode" call: if the Audience window's own
+      // open+mode state ever happened to already match what's being requested (see
+      // closePresenterNotes' comment for how that drift could occur), calling the toggle
+      // function here would close it instead of leaving it open. Driving open + setPadViewMode
+      // directly can only ever open or switch mode, never close, regardless of the Audience
+      // window's prior state.
+      if(typeof win.el==='function'&&typeof win.openPresenterNotes==='function'&&!win.el('presenter-notes-panel')?.classList.contains('open'))win.openPresenterNotes();
+      if(typeof win.setPadViewMode==='function')win.setPadViewMode(padViewMode);
       syncAudiencePadContent();
       startAudiencePadPoll();
     } else {
@@ -28224,9 +28297,6 @@ function toggleAudienceNotesVisibility(){
   syncAudienceNotesVisibility();
 }
 el('presenter-notes-audience-toggle')?.addEventListener('click',toggleAudienceNotesVisibility);
-el('presenter-notes-close-btn')?.addEventListener('click',()=>{
-  if(audienceNotesVisible){ audienceNotesVisible=false; el('presenter-notes-audience-toggle')?.classList.remove('active'); syncAudienceNotesVisibility(); }
-});
 
 // Presenter Notes panel: draggable (via header) and resizable (via corner grip), same idea
 // as the Pad's own width-drag handle, but for both axes plus position since this one floats
