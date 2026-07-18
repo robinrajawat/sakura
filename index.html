@@ -4622,7 +4622,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>Right-click a node → Zoom in (or <span class="help-kbd">Ctrl/Cmd + .</span>, or the zoom icon in the toolbar Fold group) → only that node and its descendants are shown. A breadcrumb bar appears above the editor showing the path back to the root; click any crumb to zoom out to that level</li>
 <li>Exit focus with <span class="help-kbd">Ctrl/Cmd + ,</span>, by clicking the same toolbar button again, or by clicking the root crumb in the breadcrumb bar</li>
-<li>Focus state is per-tab and is not saved — closing and reopening a document always starts at the full tree</li>
+<li>Focus state is saved with the document, the same way fold state is — closing and reopening it (even in a new session) returns to whatever branch was last focused</li>
 <li>Turning the feature off (Settings → Editing → Focus) hides the zoom-in toolbar button and right-click action, and exits any active focus session immediately. <span class="help-kbd">Ctrl/Cmd + .</span> also stops working while the feature is off</li>
 </ul>
 </div>
@@ -6619,6 +6619,7 @@ const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'impor
 // Same reasoning, same fix — updateExportStatus() and updateSafetyCopyStatus() are also called
 // from the early startup chain and read these.
 const LAST_EXPORT_KEY='sakura_last_export_v1';
+function markLastExport(){ try{ localStorage.setItem(LAST_EXPORT_KEY,String(Date.now())); }catch(e){} }
 const LAST_FSBACKUP_KEY='sakura_last_fsbackup_v1';
 const DL_FIELDS=[
   {key:'context', text:'Context: What prompted this decision?'},
@@ -7750,7 +7751,8 @@ function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice();
+  if(mindMapOpen&&typeof mmSyncActiveIntoArray==='function')mmSyncActiveIntoArray();
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice(); tab.mindMaps=Array.isArray(mindMaps)?mindMaps.slice():[];
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -9987,7 +9989,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; currentFont=['mono','sans'].includes(d.currentFont)?d.currentFont:'sans'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; inlineNotePreviewEnabled=!!d.inlineNotePreviewEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'terracotta'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; exportMenuFoldNoteEnabled=d.exportMenuFoldNoteEnabled===undefined?true:!!d.exportMenuFoldNoteEnabled; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; decisionLogSplitToSlide=d.decisionLogSplitToSlide===undefined?true:!!d.decisionLogSplitToSlide; decisionLogSplitThreshold=Number.isFinite(Number(d.decisionLogSplitThreshold))?Math.max(50,Math.min(2000,Math.round(Number(d.decisionLogSplitThreshold)))):200; decisionLogInPad=d.decisionLogInPad===undefined?true:!!d.decisionLogInPad; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padNotepadTabEnabled=d.padNotepadTabEnabled===undefined?true:!!d.padNotepadTabEnabled; padQaTabEnabled=d.padQaTabEnabled===undefined?true:!!d.padQaTabEnabled; padDiagramsTabEnabled=d.padDiagramsTabEnabled===undefined?true:!!d.padDiagramsTabEnabled; padMindmapTabEnabled=d.padMindmapTabEnabled===undefined?(d.featureMindMapEnabled===undefined?true:!!d.featureMindMapEnabled):!!d.padMindmapTabEnabled; if(!padNotepadTabEnabled&&!padQaTabEnabled&&d.featureDecisionLogEnabled===false){padNotepadTabEnabled=true} padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','image','md','txt','opml','decision-log-xlsx']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; padDefaultView=['notes','qa','decision','diagrams','mindmap'].includes(d.padDefaultView)?d.padDefaultView:(d.padDefaultQa?'qa':'notes'); qaCompactRows=!!d.qaCompactRows; qaRowActionsMode=d.qaRowActionsMode==='fixed'?'fixed':'hover'; qaAiAnswerEnabled=d.qaAiAnswerEnabled===undefined?true:!!d.qaAiAnswerEnabled; qaAiBulkAnswerEnabled=d.qaAiBulkAnswerEnabled===undefined?false:!!d.qaAiBulkAnswerEnabled; qaAiSummaryEnabled=d.qaAiSummaryEnabled===undefined?false:!!d.qaAiSummaryEnabled; qaAiGenerateEnabled=d.qaAiGenerateEnabled===undefined?true:!!d.qaAiGenerateEnabled; qaAiGroupEnabled=d.qaAiGroupEnabled===undefined?true:!!d.qaAiGroupEnabled; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision','rationale','alternatives','impact']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):2; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=d.previewSerifBody===undefined?true:!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=true; /* always on — the toggle that could turn this off was removed; hardcoded regardless of any previewUseFullscreen value saved in an older prefs blob */ previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; previewClosingSlideEnabled=d.previewClosingSlideEnabled===undefined?true:!!d.previewClosingSlideEnabled; previewClosingSlideText=typeof d.previewClosingSlideText==='string'?d.previewClosingSlideText:'Thank you'; previewClosingSlideSubtitle=typeof d.previewClosingSlideSubtitle==='string'?d.previewClosingSlideSubtitle:''; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; featureMindMapEnabled=d.featureMindMapEnabled===undefined?true:!!d.featureMindMapEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=d.nqaIconOnly===undefined?true:!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; depthGuideLines=!!d.depthGuideLines; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; qaExportEnabled=d.qaExportEnabled===undefined?true:!!d.qaExportEnabled; padNotepadExportEnabled=d.padNotepadExportEnabled===undefined?true:!!d.padNotepadExportEnabled; decisionLogExportEnabled=d.decisionLogExportEnabled===undefined?true:!!d.decisionLogExportEnabled; nodeContentExportEnabled=d.nodeContentExportEnabled===undefined?true:!!d.nodeContentExportEnabled; diagramExportEnabled=d.diagramExportEnabled===undefined?true:!!d.diagramExportEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; previewPdfFooterEnabled=d.previewPdfFooterEnabled===undefined?true:!!d.previewPdfFooterEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; accentCursorEnabled=!!d.accentCursorEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):['nodecount','maxdepth','nodewords','fsstatus','theme','scale','author']; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=autoRewriteChipShowQueued; debugLoggingEnabled=!!d.debugLoggingEnabled; typewriterModeEnabled=!!d.typewriterModeEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e)}}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY)||localStorage.getItem(LEGACY_PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; currentFont=['mono','sans'].includes(d.currentFont)?d.currentFont:'sans'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?true:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; compactRows=d.compactRows===undefined?true:!!d.compactRows; inlineNotePreviewEnabled=!!d.inlineNotePreviewEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=d.accentPreset==='default'?'terracotta':(d.accentPreset||'terracotta'); accentIntensity=Number.isFinite(Number(d.accentIntensity))?Math.min(150,Math.max(0,Math.round(Number(d.accentIntensity)))):100; accentCustomColor=/^#[0-9a-fA-F]{6}$/.test(d.accentCustomColor||'')?d.accentCustomColor:'#c2553d'; chromePreset=CHROME_PRESETS[d.chromePreset]?d.chromePreset:'default'; skipFoldedInExports=d.skipFoldedInExports===undefined?true:!!d.skipFoldedInExports; exportMenuFoldNoteEnabled=d.exportMenuFoldNoteEnabled===undefined?true:!!d.exportMenuFoldNoteEnabled; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; decisionLogAskAuthor=d.decisionLogAskAuthor===undefined?true:!!d.decisionLogAskAuthor; decisionLogColors=d.decisionLogColors===undefined?true:!!d.decisionLogColors; lastDecisionAuthor=String(d.lastDecisionAuthor||''); decisionLogHiddenFields=Array.isArray(d.decisionLogHiddenFields)?d.decisionLogHiddenFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):[]; decisionLogSplitToSlide=d.decisionLogSplitToSlide===undefined?true:!!d.decisionLogSplitToSlide; decisionLogSplitThreshold=Number.isFinite(Number(d.decisionLogSplitThreshold))?Math.max(50,Math.min(2000,Math.round(Number(d.decisionLogSplitThreshold)))):200; decisionLogInPad=d.decisionLogInPad===undefined?true:!!d.decisionLogInPad; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} padEnabled=d.padEnabled===undefined?true:!!d.padEnabled; padNotepadTabEnabled=d.padNotepadTabEnabled===undefined?true:!!d.padNotepadTabEnabled; padQaTabEnabled=d.padQaTabEnabled===undefined?true:!!d.padQaTabEnabled; padDiagramsTabEnabled=d.padDiagramsTabEnabled===undefined?true:!!d.padDiagramsTabEnabled; padMindmapTabEnabled=d.padMindmapTabEnabled===undefined?(d.featureMindMapEnabled===undefined?true:!!d.featureMindMapEnabled):!!d.padMindmapTabEnabled; if(!padNotepadTabEnabled&&!padQaTabEnabled&&d.featureDecisionLogEnabled===false){padNotepadTabEnabled=true} padMatchEditorBg=d.padMatchEditorBg===undefined?true:!!d.padMatchEditorBg; padHiddenButtons=Array.isArray(d.padHiddenButtons)?d.padHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):[]; presenterNotesHiddenButtons=Array.isArray(d.presenterNotesHiddenButtons)?d.presenterNotesHiddenButtons.filter(k=>PAD_TB_BUTTONS.includes(k)):PAD_TB_BUTTONS.filter(k=>k!=='ul'&&k!=='ai-rewrite'); exportHiddenButtons=Array.isArray(d.exportHiddenButtons)?d.exportHiddenButtons.filter(k=>EXPORT_TB_BUTTONS.includes(k)):['clipboard','image','md','txt','opml','decision-log-xlsx']; insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteHiddenButtons=Array.isArray(d.noteHiddenButtons)?d.noteHiddenButtons.filter(k=>NOTE_TB_BUTTONS.includes(k)):[]; noteMatchEditorBg=d.noteMatchEditorBg===undefined?true:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?true:!!d.codeMatchEditorBg; padDefaultView=['notes','qa','decision','diagrams','mindmap'].includes(d.padDefaultView)?d.padDefaultView:(d.padDefaultQa?'qa':'notes'); qaCompactRows=!!d.qaCompactRows; qaRowActionsMode=d.qaRowActionsMode==='fixed'?'fixed':'hover'; qaAiAnswerEnabled=d.qaAiAnswerEnabled===undefined?true:!!d.qaAiAnswerEnabled; qaAiBulkAnswerEnabled=d.qaAiBulkAnswerEnabled===undefined?false:!!d.qaAiBulkAnswerEnabled; qaAiSummaryEnabled=d.qaAiSummaryEnabled===undefined?false:!!d.qaAiSummaryEnabled; qaAiGenerateEnabled=d.qaAiGenerateEnabled===undefined?true:!!d.qaAiGenerateEnabled; qaAiGroupEnabled=d.qaAiGroupEnabled===undefined?true:!!d.qaAiGroupEnabled; previewDlFields=Array.isArray(d.previewDlFields)?d.previewDlFields.filter(k=>DL_FIELDS.some(f=>f.key===k)):['context','decision','rationale','alternatives','impact']; previewAlwaysExpand=d.previewAlwaysExpand===undefined?true:!!d.previewAlwaysExpand; previewTocOpen=d.previewTocOpen===undefined?true:!!d.previewTocOpen; previewHeadingDepthFallback=(()=>{ const out={}; const src=d.previewHeadingDepthFallback; if(src&&typeof src==='object'){ for(let depth=0;depth<=5;depth++){ const v=Math.round(Number(src[depth])); if(Number.isFinite(v)&&v>=1&&v<=6) out[depth]=v; } } return out; })(); previewTocMaxLevel=Number.isFinite(Number(d.previewTocMaxLevel))?Math.max(0,Math.min(6,Math.round(Number(d.previewTocMaxLevel)))):2; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewReadingWidth=Number.isFinite(Number(d.previewReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.previewReadingWidth)))):1080; previewSepiaTheme=!!d.previewSepiaTheme; previewSerifBody=d.previewSerifBody===undefined?true:!!d.previewSerifBody; previewPdfMargin=['narrow','normal','wide'].includes(d.previewPdfMargin)?d.previewPdfMargin:'normal'; previewSlideDepth=Number.isFinite(Number(d.previewSlideDepth))?Math.max(0,Math.min(4,Math.round(Number(d.previewSlideDepth)))):0; previewPresenterZoom=Number.isFinite(Number(d.previewPresenterZoom))?Math.max(1,Math.min(2,Number(d.previewPresenterZoom))):1.5; previewAutoLaser=!!d.previewAutoLaser; previewUseFullscreen=true; /* always on — the toggle that could turn this off was removed; hardcoded regardless of any previewUseFullscreen value saved in an older prefs blob */ previewAutoPresenter=!!d.previewAutoPresenter; previewPresenterBranding=!!d.previewPresenterBranding; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; previewPresenterTimerEnabled=d.previewPresenterTimerEnabled===undefined?true:!!d.previewPresenterTimerEnabled; previewPresenterOverviewEnabled=d.previewPresenterOverviewEnabled===undefined?true:!!d.previewPresenterOverviewEnabled; previewPresenterNotesEnabled=d.previewPresenterNotesEnabled===undefined?true:!!d.previewPresenterNotesEnabled; previewClosingSlideEnabled=d.previewClosingSlideEnabled===undefined?true:!!d.previewClosingSlideEnabled; previewClosingSlideText=typeof d.previewClosingSlideText==='string'?d.previewClosingSlideText:'Thank you'; previewClosingSlideSubtitle=typeof d.previewClosingSlideSubtitle==='string'?d.previewClosingSlideSubtitle:''; backupReminderDays=Number.isFinite(Number(d.backupReminderDays))?Math.min(30,Math.max(1,Math.round(Number(d.backupReminderDays)))):2; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureDecisionLogEnabled=d.featureDecisionLogEnabled===undefined?true:!!d.featureDecisionLogEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; featureMindMapEnabled=d.featureMindMapEnabled===undefined?true:!!d.featureMindMapEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=d.nqaIconOnly===undefined?true:!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','decision-log','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; hideTreeLines=!!d.hideTreeLines; depthGuideLines=!!d.depthGuideLines; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; qaExportEnabled=d.qaExportEnabled===undefined?true:!!d.qaExportEnabled; padNotepadExportEnabled=d.padNotepadExportEnabled===undefined?true:!!d.padNotepadExportEnabled; decisionLogExportEnabled=d.decisionLogExportEnabled===undefined?true:!!d.decisionLogExportEnabled; nodeContentExportEnabled=d.nodeContentExportEnabled===undefined?true:!!d.nodeContentExportEnabled; diagramExportEnabled=d.diagramExportEnabled===undefined?true:!!d.diagramExportEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; previewPdfFooterEnabled=d.previewPdfFooterEnabled===undefined?true:!!d.previewPdfFooterEnabled; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):['expand','summarise','tags','icon']; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; contextHiddenActions=Array.isArray(d.contextHiddenActions)?d.contextHiddenActions.filter(k=>[...CTX_ACTION_ORDER,'sort-children'].includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHidePad=!!d.zenHidePad; zenHideAppbar=d.zenHideAppbar===undefined?true:!!d.zenHideAppbar; zenUseFullscreen=d.zenUseFullscreen===undefined?true:!!d.zenUseFullscreen; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideStatusbar=d.zenHideStatusbar===undefined?false:!!d.zenHideStatusbar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; nodeFontColorPreset=NODE_FONT_COLOR_PRESETS[d.nodeFontColorPreset]?d.nodeFontColorPreset:'default'; nodeDepthFadeEnabled=d.nodeDepthFadeEnabled===undefined?true:!!d.nodeDepthFadeEnabled; accentCursorEnabled=!!d.accentCursorEnabled; statusbarVisible=d.statusbarVisible===undefined?true:!!d.statusbarVisible; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarVisible=d.appbarVisible===undefined?true:!!d.appbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):['nodecount','maxdepth','nodewords','fsstatus','theme','scale','author']; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; sessionBackupPromptMode=['off','passive','strict'].includes(d.sessionBackupPromptMode)?d.sessionBackupPromptMode:'strict'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=autoRewriteChipShowQueued; debugLoggingEnabled=!!d.debugLoggingEnabled; typewriterModeEnabled=!!d.typewriterModeEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function updateToolbarSubControls(){[el('toolbar-labels-row'),el('expanded-toolbar-row'),el('toolbar-sections-field')].forEach(row=>{if(row)row.classList.toggle('is-disabled',!toolbarVisible)})}
 function setToolbarVisible(on,persist=true){toolbarVisible=!!on; document.body.classList.toggle('toolbar-hidden',!toolbarVisible); const toggle=el('toolbar-visible-toggle'); if(toggle){toggle.classList.toggle('on',toolbarVisible); toggle.setAttribute('aria-checked',String(toolbarVisible))} const fbtn=el('editor-toolbar-toggle'); if(fbtn){fbtn.classList.toggle('is-active',toolbarVisible); fbtn.setAttribute('aria-pressed',String(toolbarVisible)); fbtn.dataset.tip=(toolbarVisible?'Hide toolbar':'Show toolbar')+' (Ctrl/Cmd+Shift+T)'} updateToolbarSubControls(); if(persist){savePrefs(); scheduleAutoSave()}}
 function setExpandedToolbar(on,persist=true){expandedToolbar=!!on; document.body.classList.toggle('expanded-toolbar',expandedToolbar); const toggle=el('expanded-toolbar-toggle'); if(toggle){toggle.classList.toggle('on',expandedToolbar); toggle.setAttribute('aria-checked',String(expandedToolbar))} if(persist){savePrefs(); scheduleAutoSave()}}
@@ -12899,9 +12901,15 @@ el('editor-pane')?.addEventListener('keyup',e=>{
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')typewriterRecenter();
 });
 
-function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; setSingleSelection(id); pushUndo(); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 function setInputCaret(input,pos=-1){if(!input)return; const len=input.value.length; const p=pos<0?len:Math.min(Math.max(pos,0),len); try{input.setSelectionRange(p,p)}catch(e){}}
-function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const changed=idx>=0&&input&&nodes[idx].text!==input.value; if(changed){nodes[idx].text=input.value; markDirty()} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
+// Undo snapshot is taken here rather than in beginEdit(), and only when this session actually
+// produces a change — either the text itself differs, or the committed text is about to be
+// silently rewritten by the checkbox/heading auto-convert below. A pure click-in/click-out or
+// Escape-without-typing session no longer consumes an undo slot (previously beginEdit() pushed
+// a snapshot unconditionally on every edit session, real or not, polluting the 200-entry undo
+// stack and pushing distant real history out sooner than necessary).
+function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const newText=input?input.value:null; const changed=idx>=0&&input&&nodes[idx].text!==newText; const willAutoConvert=idx>=0&&newText!=null&&(/^\[( |x)\]\s?/i.test(newText)||/^#{1,6}\s+/.test(newText)); if(idx>=0&&(changed||willAutoConvert))pushUndo(); const oldTextForRename=changed?nodes[idx].text:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
 function cancelEdit(){editingId=null; render()}
 function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(idx); const block=nodes.slice(idx,end); if(direction<0){ if(idx===0)return; pushUndo(); const myDepth=nodes[idx].depth; let targetStart=idx-1; while(targetStart>0 && nodes[targetStart].depth>myDepth) targetStart--; nodes.splice(idx, end-idx); nodes.splice(targetStart,0,...block); selectedId=block[0].id } else { if(end>=nodes.length)return; pushUndo(); let nextEnd=getSubtreeEnd(end); nodes.splice(idx, end-idx); const insertAt=nextEnd-(end-idx); nodes.splice(insertAt,0,...block); selectedId=block[0].id } rebuildParentIds(); markDirty(); render(); showToast(direction<0?'Moved up':'Moved down') }
 function clearDragIndicators(){document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child,.node-row.dragging').forEach(row=>row.classList.remove('drag-over-above','drag-over-below','drag-over-child','dragging')); el('editor-pane').classList.remove('drag-over-end')}
@@ -13685,6 +13693,29 @@ function cleanupBacklinksFor(deletedTexts){
     }).replace(/\s{2,}/g,' ').trim();
     if(newText!==n.text) n.text=newText;
   });
+}
+// Same idea as cleanupBacklinksFor above, but for a rename rather than a delete: every other
+// node's [[Old Name]] reference to the just-renamed node is rewritten to [[New Name]] instead
+// of being left to silently point at a string that no longer matches anything (getBacklinksTo
+// and getBacklinkReferrers both resolve purely by matching current node text — there's no
+// stable id in a [[mention]], see commitAtSuggest). A no-op if nothing actually referenced the
+// old text. Only called for a genuine text change on commit, not on every keystroke.
+function renameBacklinksFor(oldText,newTextForRename){
+  const oldTrim=String(oldText||'').trim(); if(!oldTrim)return;
+  const newTrim=String(newTextForRename||'').trim();
+  if(oldTrim.toLowerCase()===newTrim.toLowerCase())return; // case-only change, or nothing to do
+  const oldLower=oldTrim.toLowerCase();
+  let any=false;
+  nodes.forEach(n=>{
+    if(!n.text.includes('[['))return;
+    const updated=n.text.replace(/\[\[([\s\S]*?)\]\](?!\])/g,(match,ref)=>{
+      if(ref.trim().toLowerCase()!==oldLower)return match;
+      any=true;
+      return '[['+newTrim+']]';
+    });
+    if(updated!==n.text) n.text=updated;
+  });
+  return any;
 }
 
 function getBacklinksTo(targetId){
@@ -14590,7 +14621,9 @@ function nodesToOutlineXml(list,startIdx,parentDepth){
       const node=list[i];
       let j=i+1; while(j<list.length && list[j].depth>parentDepth+1) j++;
       const hasKids=j>i+1;
-      const text=escAttr(getNodePlainText(node));
+      const label=getNodePlainText(node);
+      const checkboxPrefix=node.isCheckbox?(node.checked?'[x] ':'[ ] '):'';
+      const text=escAttr(checkboxPrefix+label);
       const noteAttr=(nodeContentExportEnabled&&node.note&&node.note.trim())?` _note="${escAttr(node.note)}"`:'';
       xml+= hasKids ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXml(list,i+1,parentDepth+1)}</outline>` : `<outline text="${text}"${noteAttr}/>`;
       i=j;
@@ -15027,7 +15060,22 @@ function parseOpmlToTreeNodes(xmlText){
 function importOpmlText(xmlText){
   const parsed=parseOpmlToTreeNodes(xmlText);
   if(!parsed.length){ showToast('No outline items found in that OPML file'); return false }
-  pasteParsedNodes(parsed,'Imported');
+  // Always lands in a new document — same guarantee Word import and AI Restructure already
+  // give (createDoc()/insertAiOutlineAsNewDoc), so an import can never silently merge into
+  // whatever document happens to be open. Previously went through pasteParsedNodes(), which
+  // splices into the *current* document instead — inconsistent with every other import path.
+  createDoc();
+  pushUndo(); markDirty();
+  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox));
+  // makeNode() has no `checked` parameter (every new node starts unchecked) — apply the
+  // checkbox state parsed out of the OPML text as a second pass instead of losing it.
+  mapped.forEach((node,i)=>{ if(parsed[i].isCheckbox && parsed[i].checked) node.checked=true; });
+  nodes=mapped;
+  rebuildParentIds();
+  selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
+  render();
+  scheduleAutoSave();
+  showToast(`Imported ${mapped.length} node${mapped.length===1?'':'s'}`);
   return true;
 }
 function triggerOpmlImport(){ el('sakura-opml-file-input')?.click(); }
@@ -15651,6 +15699,7 @@ async function exportDocx(foldOverride){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download=`${title}.docx`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+  markLastExport();
   showToast('DOCX exported');
 }
 
@@ -16797,6 +16846,7 @@ async function exportPptx(){
     suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000);
     // writeFile handles the Blob + download link + revoke internally.
     await pres.writeFile({fileName:`${title}.pptx`});
+    markLastExport();
     if(imageWarnings.length){
       console.warn('[sakura] PPTX export: some diagram images were skipped:', imageWarnings);
       showToast(`PPTX exported — ${imageWarnings.length} diagram image${imageWarnings.length===1?'':'s'} couldn't be embedded (see console)`);
@@ -18254,6 +18304,10 @@ async function rewriteNodeText(nodeId){
     // these back to back. Writing to a stale index would silently corrupt the wrong node.
     const freshIdx=getIndex(nodeId);
     if(freshIdx<0)return; // node was deleted while the request was in flight
+    // Same in-flight-edit race fixed elsewhere this session: if the node's text no longer
+    // matches what was actually sent to the AI, the user edited it again while waiting —
+    // applying the result now would silently overwrite that newer edit.
+    if(nodes[freshIdx].text!==original){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
     pushUndo(); nodes[freshIdx].text=result; scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{aiRewriteInFlight.delete(nodeId); if(btn)btn.classList.remove('ai-busy');}
@@ -18275,9 +18329,25 @@ async function rewriteMultipleNodes(nodeIds){
     });
     pushUndo();
     // Re-resolve each node by id rather than trusting any index captured before the
-    // await — the tree can change while a batch request is in flight.
-    validIds.forEach((id,j)=>{const freshIdx=getIndex(id); if(freshIdx>=0&&results[j])nodes[freshIdx].text=results[j];});
-    scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast(`${validIds.length} nodes rewritten ✦`, 'success');
+    // await — the tree can change while a batch request is in flight. Also skip any node
+    // whose text no longer matches what was actually sent (edited again while waiting) —
+    // same in-flight-edit race fixed in rewriteNodeText/flushAutoRewriteQueue.
+    let appliedCount=0;
+    validIds.forEach((id,j)=>{
+      const freshIdx=getIndex(id);
+      if(freshIdx<0||!results[j])return;
+      if(nodes[freshIdx].text!==texts[j])return;
+      nodes[freshIdx].text=results[j];
+      appliedCount++;
+    });
+    scheduleAutoSave(); render();
+    if(!callAiByShapeWithFallback._toastShown){
+      if(!appliedCount){ undoStack.pop(); showToast('Nothing rewritten — every node was edited again while waiting'); }
+      else{
+        const skipped=validIds.length-appliedCount;
+        showToast(`${appliedCount} node${appliedCount===1?'':'s'} rewritten${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`, 'success');
+      }
+    }
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{if(btn)btn.classList.remove('ai-busy');}
 }
@@ -18453,10 +18523,27 @@ async function flushAutoRewriteQueue(){
     const results=await callAiApiBatch(texts);
     pushUndo();
     // Re-resolve by id, not a captured index — same reasoning as rewriteMultipleNodes:
-    // the tree keeps changing while this request is in flight during live capture.
-    validIds.forEach((id,j)=>{const freshIdx=getIndex(id); if(freshIdx>=0&&results[j])nodes[freshIdx].text=results[j];});
+    // the tree keeps changing while this request is in flight during live capture. Also
+    // skip any node whose text no longer matches what it was queued with — the same
+    // in-flight-edit race guarded against for the manual Q&A/Decision Log/Notes AI actions:
+    // this feature exists so people keep typing while it works in the background, so
+    // re-editing a node again before its batch response lands is the expected case, not
+    // an edge case. A skipped node simply gets queued again next time it's committed.
+    let appliedCount=0;
+    validIds.forEach((id,j)=>{
+      const freshIdx=getIndex(id);
+      if(freshIdx<0||!results[j])return;
+      if(nodes[freshIdx].text!==texts[j])return;
+      nodes[freshIdx].text=results[j];
+      appliedCount++;
+    });
     scheduleAutoSave(); render();
-    showToast(`Auto-rewrote ${validIds.length} node${validIds.length===1?'':'s'} ✦`,'success');
+    if(appliedCount>0){
+      const skipped=validIds.length-appliedCount;
+      showToast(`Auto-rewrote ${appliedCount} node${appliedCount===1?'':'s'}${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`,'success');
+    } else {
+      undoStack.pop();
+    }
     _autoRewriteFailCount=0;
   }catch(err){
     // A background feature popping the full error modal on every idle pause would be far
@@ -18870,6 +18957,7 @@ async function suggestIconsForNodeIds(nodeIds){
     // Re-suggesting on an already-tagged node replaces its icon rather than
     // stacking a second one — strip first, suggest against the bare label.
     const bareTexts=idxMap.map(i=>splitLeadingIcon(nodes[i].text||'').rest);
+    const originalFullTexts=idxMap.map(i=>nodes[i].text||'');
     const hits=new Array(idxMap.length).fill(null);
     const aiSlots=[]; // positions (into idxMap/validIds) still needing an AI call
     idxMap.forEach((nIdx,j)=>{
@@ -18901,6 +18989,9 @@ async function suggestIconsForNodeIds(nodeIds){
     // snapshotted before the AI call, which can be a long, multi-chunk sequence of requests
     // during which the tree is still fully editable. Re-resolving avoids writing an icon onto
     // whatever else now sits at a stale index if anything was added/deleted/reordered meanwhile.
+    // Also skip any node whose text no longer matches its pre-request snapshot — the same
+    // in-flight-edit race fixed elsewhere: if the user edited this node's label while its icon
+    // suggestion was in flight, applying icon+staleLabel now would silently discard their edit.
     let aiPtr=0, appliedCount=0;
     validIds.forEach((id,j)=>{
       let icon=hits[j];
@@ -18908,6 +18999,7 @@ async function suggestIconsForNodeIds(nodeIds){
       if(!icon)return;
       const freshIdx=getIndex(id);
       if(freshIdx<0)return; // node was deleted while requests were in flight
+      if(nodes[freshIdx].text!==originalFullTexts[j])return; // edited again while waiting
       nodes[freshIdx].text=icon+' '+bareTexts[j];
       appliedCount++;
     });
@@ -19468,7 +19560,8 @@ window.addEventListener('beforeunload',e=>{
   // drops whatever's still queued (and never sent) with no way to recover it. Warn the same
   // way an unsaved edit does, rather than losing pending AI-rewrite text without notice.
   const needsAutoRewriteWarning=autoRewriteQueue.size>0;
-  if(!dirty&&!needsStrictBackupWarning&&!needsAutoRewriteWarning)return;
+  const needsMeetingsSyncWarning=(typeof meetingsPendingWriteCount!=='undefined')&&meetingsPendingWriteCount>0;
+  if(!dirty&&!needsStrictBackupWarning&&!needsAutoRewriteWarning&&!needsMeetingsSyncWarning)return;
   e.preventDefault(); e.returnValue='';
   if(needsStrictBackupWarning){
     // Only fires if the tab is still alive AND still the foreground page a moment later —
@@ -21273,7 +21366,7 @@ async function exportAllData(){
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const dateStr=new Date().toISOString().slice(0,10);
     downloadFileBlob(`sakura-backup-${dateStr}.json`, blob);
-    try{ localStorage.setItem(LAST_EXPORT_KEY,String(Date.now())) }catch(e){}
+    try{ markLastExport(); }catch(e){}
     updateExportStatus();
     checkBackupReminder();
     showToast('All data exported');
@@ -23400,11 +23493,22 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
     }
   }
 
+  const requestNodeId = notePanelNodeId;
+  const htmlAtRequestStart = editor.innerHTML;
   btn.classList.add('ai-busy');
   try {
     const prompt = aiRewritePrompt + '\n\nText: ' + inputText;
     const result = await callAiRaw(prompt, aiMaxTokens);
     if (!result) throw new Error('Empty response from AI');
+
+    // The Note panel is a reused singleton — while this request was pending the user could have
+    // kept typing in this same note, or closed it and opened a different node's note into the
+    // same #note-editor entirely. Either way, applying the saved Range / replacing innerHTML now
+    // would silently overwrite content that's no longer what this rewrite was requested against.
+    if (notePanelNodeId !== requestNodeId || editor.innerHTML !== htmlAtRequestStart) {
+      showToast('This note changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
+      return;
+    }
 
     editor.focus();
     // Checkpoint the session stack before mutating — this (not the execCommand calls
@@ -23500,7 +23604,7 @@ const TOUR_STEPS=[
   {target:'#sidebar',placement:'right',title:'Sidebar (File Explorer)',bodyHtml:'<p>Every document, folder, and template lives here. Drag rows to reorder or move them, right-click for more options, and use the filter at the top to find anything fast.</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
   {target:'#editor-pane',placement:'inside',title:'Editor',bodyHtml:'<p>Click to type. Enter adds a sibling, Tab indents as a child, Shift+Tab outdents. Right-click any node for more actions.</p>'},
   {target:'#global-search-wrap',placement:'bottom',title:'Quick Assist',bodyHtml:'<p>Searches across documents, templates, node text, notes, tags, and the pad — plus settings and help topics.</p><p>Press Ctrl/Cmd+K to open it from anywhere.</p>'},
-  {target:'#export-toggle',placement:'bottom',title:'Export',bodyHtml:'<p>Export your outline as Markdown, plain text tree, or Word — or copy it as text or an image. Decision logs export to Excel separately.</p>'},
+  {target:'#export-toggle',placement:'bottom',title:'Export',bodyHtml:'<p>Export your outline as Word, PDF, PowerPoint, Markdown, plain text, or OPML — or copy it as text or an image. Decision logs export to Excel separately.</p>'},
   {target:'#import-toggle',placement:'bottom',title:'Import',bodyHtml:'<p>Bring in an OPML or Word file, or paste raw text and let AI restructure it into an outline.</p>'},
   {target:'#quick-bar',placement:'bottom',title:'Toolbar',bodyHtml:'<p>Formatting, structure, AI, and more — grouped by purpose. Hover an icon to see what it does.</p>'},
   {target:'#ag-inserts',placement:'bottom',title:'Decision logs, notes & tags',bodyHtml:'<p>Attach a <strong>decision log</strong> to capture context, rationale, and status on any node — exportable to Excel. Drop a <strong>note</strong> (Ctrl/Cmd+Shift+N) for longer thoughts that live alongside a node, or a <strong>code block</strong> (Ctrl/Cmd+Shift+K) for a snippet with syntax highlighting. Add <strong>tags</strong> to organize and filter your tree by topic.</p>'},
@@ -24498,6 +24602,13 @@ async function rewriteDecisionField(key){
   try{
     const result=await callAiApi(text);
     if(!result)throw new Error('Empty response from AI');
+    // Same in-flight-edit race as draftQaAnswer/rewriteQaField: this field syncs to dl[key] live
+    // on every keystroke (see the 'input' listener below), so if the user edited it while this
+    // request was pending, applying the AI result now would silently overwrite their edit.
+    if((dl[key]||'')!==originalHtml){
+      showToast('You edited this field — AI rewrite discarded so it wouldn\'t overwrite it');
+      return;
+    }
     pushDecisionFieldSessionUndo(key); _decisionFieldCheckpointPending[key]=true;
     if(field)field.textContent=result;
     dl[key]=sakuraSanitizeRichHtml(field?field.innerHTML:esc(result));
@@ -24842,6 +24953,14 @@ async function rewriteQaField(id,field){
   try{
     const result=await callAiApi(text);
     if(!result)throw new Error('Empty response from AI');
+    // Same in-flight-edit race as draftQaAnswer(): the field's textarea stays fully editable
+    // and syncs to item[field] on every keystroke while this request is pending. If the value
+    // has moved since we started, the user edited it in the meantime — discard the rewrite
+    // rather than overwrite their edit.
+    if((item[field]||'')!==original){
+      showToast(`You edited the ${field} — AI rewrite discarded so it wouldn't overwrite it`);
+      return;
+    }
     item[field]=result;
     const ta=el(`qa-${field==='question'?'q':'a'}-${id}`);
     if(ta){ ta.value=result; autoGrowTextarea(ta); }
@@ -24943,10 +25062,19 @@ async function draftQaAnswer(id){
   if(!(item.question||'').trim()){ showToast('Add a question first'); return; }
   const priorFollowUp=item.followUp||'';
   const priorAnsweredAt=item.answeredAt;
+  const answerAtRequestStart=item.answer||'';
   const btn=el(`qa-rw-answer-${id}`); if(btn)btn.classList.add('ai-busy');
   try{
     const result=await qaGenerateAnswerText(item);
     if(!result)throw new Error('Empty response from AI');
+    // The answer textarea has no disabled/busy state while this request is in flight, and syncs
+    // to item.answer on every keystroke — so if the user started typing their own answer during
+    // the wait, applying the AI result here would silently destroy what they just wrote. Bail
+    // out instead of overwriting; the in-progress user answer is left exactly as they typed it.
+    if((item.answer||'')!==answerAtRequestStart){
+      showToast('You started typing an answer — AI draft discarded so it wouldn\'t overwrite it');
+      return;
+    }
     item.answer=result;
     const ta=el(`qa-a-${id}`); if(ta){ ta.value=result; autoGrowTextarea(ta); }
     item.answeredAt=Date.now();
@@ -24986,9 +25114,10 @@ async function bulkDraftUnansweredAnswers(){
       const item=qaItems.find(it=>it.id===id); if(!item)continue;
       if((item.answer||'').trim())continue; // answered manually mid-batch — leave it alone
       const fieldBtn=el(`qa-rw-answer-${id}`); if(fieldBtn)fieldBtn.classList.add('ai-busy');
+      const answerAtStart=item.answer||'';
       try{
         const result=await qaGenerateAnswerText(item);
-        if(result){ item.answer=result; item.followUp='ai-draft'; item.answeredAt=Date.now(); draftedCount++; }
+        if(result&&(item.answer||'')===answerAtStart){ item.answer=result; item.followUp='ai-draft'; item.answeredAt=Date.now(); draftedCount++; }
       }catch(err){ showAiErrorModal(aiProvider, err); stoppedEarly=true; if(fieldBtn)fieldBtn.classList.remove('ai-busy'); break; }
       if(fieldBtn)fieldBtn.classList.remove('ai-busy');
     }
@@ -27884,6 +28013,7 @@ function exportPreviewAsPdf(onDone){
     style.remove();
     window.removeEventListener('afterprint',cleanup);
     mq?.removeEventListener?.('change',mqHandler);
+    markLastExport();
     if(typeof onDone==='function')onDone();
   };
   window.addEventListener('afterprint',cleanup);
@@ -30893,10 +31023,15 @@ function _addTagPopoverFromInput(){
     if(!t) return;
     if(t.subtasks && t.subtasks.length) return; // completion is derived from subtasks, not manually toggled
     if(!t.done && t.repeat){
+      const priorDueDate=t.dueDate;
       t.dueDate = nextRepeatDate(t.dueDate, t.repeat);
       saveTodos();
       renderTodos();
-      showTodosActionToast(`Recurring task moved to ${fmtDue(t.dueDate)}`);
+      showTodosActionToast(`Recurring task moved to ${fmtDue(t.dueDate)}`,'Undo',()=>{
+        const tt=todos.find(x=>x.id===id); if(!tt)return;
+        tt.dueDate=priorDueDate;
+        saveTodos(); renderTodos();
+      });
       return;
     }
     t.done=!t.done;
@@ -33729,6 +33864,7 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-desc">"Clear pad" isn't on the undo stack — per-node note clear is</span></li>
           <li><span class="cs-desc">Note panel shows <strong>Backlinks</strong> — nodes that @mention this one (click to jump)</span></li>
           <li><span class="cs-desc">Note panel shows <strong>Created / Modified</strong> timestamps for the node</span></li>
+          <li><span class="cs-desc"><strong>Diagrams</strong> (Pad tab) — a real draw.io editor per diagram, optionally linked to a node; embeds as a picture in Word/PDF/PowerPoint exports</span> · <span class="cs-combo" data-cs-shortcut="toggleDiagrams"></span></li>
         </ul>
       </div>
 
@@ -33814,7 +33950,7 @@ function _addTagPopoverFromInput(){
           <li><span class="cs-combo" data-cs-shortcut="save"></span> <span class="cs-desc">save now</span></li>
           <li><span class="cs-combo" data-cs-shortcut="toggleZen"></span> <span class="cs-desc">toggle zen mode</span></li>
           <li><span class="help-kbd">Esc</span> <span class="cs-desc">exit zen mode only (doesn't toggle back in)</span></li>
-          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span> <strong>Preview</strong> — read-only render; foldable, right-click for a laser pointer</span></li>
+          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span> <strong>Preview</strong> — read-only render; foldable, right-click for a laser pointer</span> · <span class="cs-combo" data-cs-shortcut="togglePreview"></span></li>
           <li><span class="cs-desc">Preview → ▶ Presenter mode — title slide, then one top-level section per slide, fullscreen</span> · <span class="help-kbd">→</span>/<span class="help-kbd">Space</span> next · <span class="help-kbd">←</span> prev · <span class="help-kbd">Home</span>/<span class="help-kbd">End</span> first/last · <span class="help-kbd">G</span> all slides · <span class="help-kbd">B</span> blank screen · <span class="help-kbd">N</span> notepad (same as this doc's Pad) · <span class="help-kbd">Q</span> notes in Q&amp;A view · <span class="help-kbd">Esc</span> exit</li>
           <li><span class="cs-combo" data-cs-shortcut="toggleToolbar"></span> <span class="cs-desc">toggle toolbar</span></li>
           <li><span class="cs-combo" data-cs-shortcut="toggleAppbar"></span> <span class="cs-desc">toggle app bar — the reliable way back if you hide it, since Settings lives in that row too</span></li>
@@ -33943,12 +34079,14 @@ async function loadMeetingNotes(){
     }
   }catch(e){}
 }
+let meetingsPendingWriteCount=0;
 function saveMeetingNotes(){
   maybeAutoSnapshotMeetings().catch(()=>{});
   try{
-    idbSet(MEETINGS_KEY, meetingNotes).catch(()=>{
-      showMeetingsToast('Storage full — this change was not saved');
-    });
+    meetingsPendingWriteCount++;
+    idbSet(MEETINGS_KEY, meetingNotes)
+      .catch(()=>{ showMeetingsToast('Storage full — this change was not saved'); })
+      .finally(()=>{ meetingsPendingWriteCount=Math.max(0,meetingsPendingWriteCount-1); });
     // Same reasoning as saveTodos' identical hook: Meeting Notes live in their own storage
     // key outside the per-document save path, so without this a session that only touched
     // Meetings never updated lastSavedAt/triggered scheduleBackupWrite — the "no backup taken
@@ -35043,6 +35181,7 @@ function meetingFieldSessionRedoRun(key){
 // undo stack, so a bad rewrite is a single Undo away without disturbing the other field.
 async function rewriteMeetingField(key){
   const m=findMeeting(meetingExpandedId); if(!m)return;
+  const requestMeetingId=m.id;
   const field=el(key==='agenda'?'meeting-agenda':'meeting-body-field');
   const text=(field?.textContent||'').trim();
   if(!text){ showMeetingsToast('Nothing to rewrite yet'); return; }
@@ -35055,6 +35194,15 @@ async function rewriteMeetingField(key){
   try{
     const result=await callAiApi(inputMd||text);
     if(!result)throw new Error('Empty response from AI');
+    // This field syncs to m[key] on every keystroke (meetingFieldSyncModel), and the panel
+    // is a singleton reused across whichever meeting is currently expanded — same in-flight
+    // race already guarded in the Undo callback below (meetingExpandedId===it.id) but missing
+    // here on the primary apply path. Bail if the field changed, or a different meeting is
+    // now open, rather than overwriting an edit or writing into the wrong meeting's fields.
+    if((m[key]||'')!==originalHtml || meetingExpandedId!==requestMeetingId){
+      showMeetingsToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
+      return;
+    }
     pushMeetingFieldSessionUndo(key); _meetingFieldCheckpointPending[key]=true;
     // Parse the AI's Markdown response back into real HTML (mdTextToHtml) instead of dumping
     // it in as field.textContent — that used to wipe out any list/bold/heading structure by
@@ -35185,11 +35333,27 @@ async function runSelectionFmtRewrite(editorId,btn){
   const savedRange=sel.getRangeAt(0).cloneRange();
   const inputText=savedRange.toString().trim();
   if(!inputText)return;
+  // Snapshot whatever this editor is currently attached to, and its content, so a response
+  // that lands after the user has edited further (or — since these are all reused singleton
+  // editors — switched to a different node/document/meeting entirely) can be told apart from
+  // one that's still safe to apply. The saved Range itself is exactly this fragile: if the DOM
+  // underneath it changed while waiting, restoring it and inserting there is unreliable at best.
+  const requestNoteId=editorId==='note-editor'?notePanelNodeId:null;
+  const requestDocId=editorId==='pad-editor'?currentDocId:null;
+  const requestMeetingId=meetingFieldKeyForEditorId(editorId)?meetingExpandedId:null;
+  const htmlBefore=editor.innerHTML;
   if(btn)btn.classList.add('ai-busy');
   try{
     const prompt=aiRewritePrompt+'\n\nText: '+inputText;
     const result=await callAiRaw(prompt,aiMaxTokens);
     if(!result)throw new Error('Empty response from AI');
+    const stillSameNote=editorId!=='note-editor'||notePanelNodeId===requestNoteId;
+    const stillSameDoc=editorId!=='pad-editor'||currentDocId===requestDocId;
+    const stillSameMeeting=!meetingFieldKeyForEditorId(editorId)||meetingExpandedId===requestMeetingId;
+    if(!stillSameNote||!stillSameDoc||!stillSameMeeting||editor.innerHTML!==htmlBefore){
+      showToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
+      return;
+    }
     editor.focus();
     const selRestore=window.getSelection();
     selRestore.removeAllRanges();
