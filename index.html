@@ -3010,6 +3010,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #ref-jump-popover.open{display:block}
 #ref-jump-popover-title{padding:5px 9px 6px;font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint)}
 .ref-jump-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
+.ref-jump-empty{padding:10px 9px;font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5;max-width:280px}
 .ref-jump-item:hover{background:var(--hover);color:var(--accent)}
 .ref-jump-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ref-jump-item svg{flex-shrink:0;color:var(--accent)}
@@ -6515,6 +6516,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-ai-rewrite-all" /> Rewrite document</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-ai-icon" /> Suggest icon</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-note" checked /> Note…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-qa" /> Add question…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-where-used" /> Where used…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-date-time" /> Insert date/time</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-delete" checked /> Delete</label>
@@ -9361,7 +9364,11 @@ el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion())
 el('more-version-history-btn')?.addEventListener('click',()=>{ el('more-menu')?.classList.remove('open'); if(currentDocId)openVersionHistory(currentDocId); });
 async function deleteDoc(id){
   const entry=loadDocsIndex().find(d=>d.id===id); if(!entry)return;
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Move to Trash',body:'Move this document to Trash?'+(trashRetentionDays>0?` It'll be kept there for ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}, then deleted for good — or restore it any time before that.`:' It stays there until you empty the Trash, and can be restored any time before that.'),confirmLabel:'Move to Trash',confirmCls:'primary',cancelLabel:'Cancel'});
+  const linked=collectLinkedContentForDocument(id);
+  const parts=linkedContentSummaryParts(linked);
+  let linkedWarning=parts.length?`\n\n${joinSummaryParts(parts)} ${parts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked to this document — those links will show as missing while it's in Trash.`:'';
+  if(!linked.complete)linkedWarning+=(parts.length?' ':'\n\n')+"(This document isn't open, so only meetings and to-dos could be checked — not notes, decision logs, diagrams, or Q&A.)";
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Move to Trash',body:'Move this document to Trash?'+(trashRetentionDays>0?` It'll be kept there for ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}, then deleted for good — or restore it any time before that.`:' It stays there until you empty the Trash, and can be restored any time before that.')+linkedWarning,confirmLabel:'Move to Trash',confirmCls:'primary',cancelLabel:'Cancel'});
   if(!ok)return;
   moveDocToTrashCore(id);
   renderDocsList(); renderSidebar();
@@ -9372,7 +9379,11 @@ function restoreDocFromTrash(id){
 }
 async function permanentlyDeleteDoc(id){
   const entry=loadDocsIndex().find(d=>d.id===id); if(!entry)return;
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete Forever',body:`Permanently delete "${entry.title||'Untitled'}"?\n\nThis cannot be undone.`,confirmLabel:'Delete Forever',confirmCls:'danger',cancelLabel:'Cancel'});
+  const linked=collectLinkedContentForDocument(id);
+  const parts=linkedContentSummaryParts(linked);
+  let linkedWarning=parts.length?`\n\n${joinSummaryParts(parts)} ${parts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked to this document and will be left permanently unlinked.`:'';
+  if(!linked.complete)linkedWarning+=(parts.length?' ':'\n\n')+"(This document isn't open, so only meetings and to-dos could be checked — not notes, decision logs, diagrams, or Q&A.)";
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete Forever',body:`Permanently delete "${entry.title||'Untitled'}"?\n\nThis cannot be undone.${linkedWarning}`,confirmLabel:'Delete Forever',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   permanentlyDeleteDocCore(id);
   renderDocsList(); renderSidebar();
@@ -10281,8 +10292,15 @@ async function confirmDeleteIfNeeded(){
   const extCount=referrers.length;
   const intCount=internalRefs.length;
   const blWarning=extCount?`\n\n${extCount} node${extCount===1?'':'s'} link to this — the [[reference${extCount===1?'':'s'}]] will be removed from ${extCount===1?'that node':'those nodes'}.`:(intCount?`\n\nThis subtree contains ${intCount} internal [[backlink${intCount===1?'':'s'}]] that will be lost.`:'');
-  if(!confirmBeforeDelete&&!extCount&&!intCount)return true;
-  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\nYou can use Undo to restore them.${blWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  // Same idea, for everything else that can point at a node — Decision Log, Diagrams, Meetings,
+  // To-Dos, Q&A, Mind Map. Unlike backlinks these don't get deleted outright; they just become
+  // unlinked (same "missing" state already shown when a link's target no longer exists), but
+  // that's still worth knowing about before it happens rather than discovering it afterward.
+  const linked=collectLinkedContentForNodeIds(roots);
+  const linkedParts=linkedContentSummaryParts(linked);
+  const linkedWarning=linkedParts.length?`\n\n${joinSummaryParts(linkedParts)} ${linkedParts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked here and will become unlinked.`:'';
+  if(!confirmBeforeDelete&&!extCount&&!intCount&&!linkedParts.length)return true;
+  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\nYou can use Undo to restore them.${blWarning}${linkedWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
 function formatRelativeTime(ts){if(!ts)return '—'; const secs=Math.floor((Date.now()-ts)/1000); if(secs<5)return 'just now'; if(secs<60)return `${secs}s ago`; const mins=Math.floor(secs/60); if(mins<60)return `${mins}m ago`; const hrs=Math.floor(mins/60); if(hrs<24)return `${hrs}h ago`; return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 let storageWriteFailed=false;
@@ -11873,6 +11891,73 @@ function todoRefsForWholeDoc(docId){
 // used by the presenter-mode Question capture, and the Scan-created rows' own link icon) — but
 // unlike notes, decision logs, diagrams, meetings, and to-dos, nothing on the node itself
 // previously showed that a question was linked to it. This mirrors those existing per-node dots.
+// Aggregates every Decision Log / Diagram / Meeting / To-Do / Q&A / Mind Map reference attached
+// to a set of node ids in the *currently open* document — the single source of truth behind both
+// the "Where used" view and the delete-confirmation warnings, so the two can never drift apart
+// on what counts as "linked". Cross-document data (meetings/todos) still resolves correctly since
+// those lookups take a docId; content that lives inside a document's own saved blob (decision
+// logs, diagrams, Q&A, mind maps) only resolves for whichever document is actually loaded right
+// now — there's no way to inspect another document's content without opening it first.
+function collectLinkedContentForNodeIds(nodeIds){
+  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[]};
+  if(!nodeIds||!nodeIds.length)return out;
+  const idSet=new Set(nodeIds);
+  if(featureDecisionLogEnabled)out.decisionLogs=decisionLogs.filter(dl=>dl.anchorNodeId!=null&&idSet.has(dl.anchorNodeId));
+  if(padDiagramsTabEnabled&&Array.isArray(diagrams))out.diagrams=diagrams.filter(d=>d.anchorNodeId!=null&&idSet.has(d.anchorNodeId));
+  nodeIds.forEach(id=>{
+    out.meetings.push(...meetingRefsForNode(id));
+    out.todos.push(...todoRefsForNode(id));
+    if(padQaTabEnabled)out.qa.push(...qaRefsForNode(id));
+    if(padMindmapTabEnabled)out.mindmap.push(...mindMapNodeRefsForNode(id));
+  });
+  return out;
+}
+function linkedContentTotalCount(bundle){
+  return bundle.decisionLogs.length+bundle.diagrams.length+bundle.meetings.length+bundle.todos.length+bundle.qa.length+bundle.mindmap.length;
+}
+// Plain-English pieces like "2 decision logs" / "1 meeting" — callers join however fits (comma
+// list for a popover heading, a full sentence for a delete-confirmation warning).
+function linkedContentSummaryParts(bundle){
+  const parts=[];
+  if(bundle.decisionLogs.length)parts.push(`${bundle.decisionLogs.length} decision log${bundle.decisionLogs.length===1?'':'s'}`);
+  if(bundle.diagrams.length)parts.push(`${bundle.diagrams.length} diagram${bundle.diagrams.length===1?'':'s'}`);
+  if(bundle.meetings.length)parts.push(`${bundle.meetings.length} meeting${bundle.meetings.length===1?'':'s'}`);
+  if(bundle.todos.length)parts.push(`${bundle.todos.length} to-do${bundle.todos.length===1?'':'s'}`);
+  if(bundle.qa.length)parts.push(`${bundle.qa.length} Q&A question${bundle.qa.length===1?'':'s'}`);
+  if(bundle.mindmap.length)parts.push(`${bundle.mindmap.length} mind map idea${bundle.mindmap.length===1?'':'s'}`);
+  return parts;
+}
+function joinSummaryParts(parts){
+  if(!parts.length)return '';
+  if(parts.length===1)return parts[0];
+  if(parts.length===2)return parts[0]+' and '+parts[1];
+  return parts.slice(0,-1).join(', ')+', and '+parts[parts.length-1];
+}
+// Same idea as collectLinkedContentForNodeIds, but for an entire document — used by the document
+// delete confirmations (deleteDoc / permanentlyDeleteDoc). For the document that's actually
+// loaded right now, every category is checked (its nodes/decisionLogs/diagrams/qaItems/mindMaps
+// are all live in memory). For any other document — the common case, since sidebar delete works
+// on documents you haven't opened — only meetings and to-dos can be checked, since those are
+// their own global stores keyed by docId; everything else lives inside that document's own saved
+// blob, which isn't loaded. Rather than silently under-reporting, the caller is told which case
+// it got via `complete`, so a "some content couldn't be checked" caveat can be shown honestly.
+function collectLinkedContentForDocument(docId){
+  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[],complete:false};
+  if(!docId)return out;
+  if(docId===currentDocId){
+    const allIds=nodes.map(n=>n.id);
+    const perNode=collectLinkedContentForNodeIds(allIds);
+    out.decisionLogs=perNode.decisionLogs; out.diagrams=perNode.diagrams; out.qa=perNode.qa; out.mindmap=perNode.mindmap;
+    out.meetings=meetingRefsForWholeDoc(docId).concat(perNode.meetings);
+    out.todos=todoRefsForWholeDoc(docId).concat(perNode.todos);
+    out.complete=true;
+  } else {
+    out.meetings=typeof window.sakuraMeetingRefsForDocAnyNode==='function'?window.sakuraMeetingRefsForDocAnyNode(docId):[];
+    out.todos=typeof window.sakuraTodoRefsForDocAnyNode==='function'?window.sakuraTodoRefsForDocAnyNode(docId):[];
+    out.complete=false;
+  }
+  return out;
+}
 function qaRefsForNode(nodeId){
   if(nodeId==null)return [];
   return qaItems.filter(it=>it.sourceNodeId===nodeId);
@@ -11999,6 +12084,70 @@ function jumpToNodeQaRefs(refs){
       if(row){ row.scrollIntoView({block:'center',behavior:'smooth'}); row.classList.add('qa-flash'); setTimeout(()=>row.classList.remove('qa-flash'),1100); }
     }));
   }
+}
+const DECISION_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+const DIAGRAM_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>';
+// "Where used" — the one place all six reference types (Decision Log, Diagrams, Meetings,
+// To-Dos, Q&A, Mind Map) show up together, instead of having to notice and click through each
+// dot separately. Reuses the same #ref-jump-popover element/styling the individual dots already
+// use, rather than inventing a second popover system. nodeIds is normally just the one node, but
+// the delete-confirmation caller passes a whole subtree's worth so a folded parent's "Where
+// used" still surfaces what's hidden underneath.
+function openWhereUsedPopover(anchorEl,nodeIds,title){
+  const pop=el('ref-jump-popover'); const list=el('ref-jump-popover-list'); const titleEl=el('ref-jump-popover-title');
+  if(!pop||!list||!anchorEl)return;
+  const bundle=collectLinkedContentForNodeIds(nodeIds);
+  const total=linkedContentTotalCount(bundle);
+  if(titleEl)titleEl.textContent=title||(total?'Where used':'Nothing linked here yet');
+  list.innerHTML='';
+  if(!total){
+    const empty=document.createElement('div'); empty.className='ref-jump-empty';
+    empty.textContent='No decision logs, diagrams, meetings, to-dos, Q&A, or mind map ideas are linked here.';
+    list.appendChild(empty);
+  } else {
+    bundle.decisionLogs.forEach(dl=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      const label=(dl.decision||dl.context||'Untitled decision').trim().slice(0,60);
+      item.innerHTML=DECISION_DOT_SVG+`<span>${esc(label||'Untitled decision')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); setSingleSelection(dl.anchorNodeId); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList(); });
+      list.appendChild(item);
+    });
+    bundle.diagrams.forEach(dg=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=DIAGRAM_DOT_SVG+`<span>${esc(dg.title||'Untitled diagram')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); setSingleSelection(dg.anchorNodeId); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); openDiagramEditor(dg.id); });
+      list.appendChild(item);
+    });
+    bundle.meetings.forEach(m=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=meetingDotIconSvg(12)+`<span>${esc(m.title||'Untitled meeting')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); if(typeof window.sakuraOpenMeetingFromRef==='function')window.sakuraOpenMeetingFromRef(m.id); });
+      list.appendChild(item);
+    });
+    bundle.todos.forEach(t=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=todoDotIconSvg(12)+`<span>${esc((t.text||'').trim()||'(untitled task)')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(t.id); });
+      list.appendChild(item);
+    });
+    bundle.qa.forEach(q=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=qaDotIconSvg(12)+`<span>${esc((q.question||'').trim()||'(untitled question)')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); jumpToNodeQaRefs([q]); });
+      list.appendChild(item);
+    });
+    bundle.mindmap.forEach(r=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=mindmapDotIconSvg(12)+`<span>${esc((r.text||'').trim()||'(untitled idea)')} — ${esc(r.mapTitle)}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); openMindMapOverlay(r.mapId); setTimeout(()=>mmCenterOnNode(r.mindNodeId),60); });
+      list.appendChild(item);
+    });
+  }
+  const r=anchorEl.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _refJumpOpen=true;
 }
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 // A slide divider is a node-level flag, independent of depth or the "[Bracketed]" section-
@@ -12764,12 +12913,13 @@ const CTX_ACTION_META={
   'ai-icon-all':{label:'Suggest icons for all nodes',svg:'<circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'notes'},
   qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'notes'},
+  'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','date-time','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','where-used','date-time','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -12792,8 +12942,17 @@ const CTX_HIDE_KEYS=[...CTX_ACTION_ORDER,'sort-children'];
 const CTX_GROUP_ORDER=['insert','structure','ai','notes','delete']; // order for leftover items in the More panel
 
 function _ctxNoteLabelText(){const idx=getIndex(contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); const hasCode=!!(n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()); return (hasNote||hasCode)?'Edit note…':'Add note…'}
+function _ctxWhereUsedNodeIds(){
+  const idx=getIndex(contextMenuNodeId??selectedId); if(idx<0)return [];
+  const end=getSubtreeEnd(idx);
+  return nodes.slice(idx,end).map(n=>n.id);
+}
+function _ctxWhereUsedLabelText(){
+  const count=linkedContentTotalCount(collectLinkedContentForNodeIds(_ctxWhereUsedNodeIds()));
+  return count?`Where used… (${count})`:'Where used…';
+}
 function _ctxSlideDividerLabelText(){const idx=getIndex(contextMenuNodeId??selectedId); if(idx<0)return 'Mark as slide divider'; return nodes[idx].slideDivider?'Remove slide divider':'Mark as slide divider';}
-function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); if(actionId==='slide-divider')return _ctxSlideDividerLabelText(); return CTX_ACTION_META[actionId].label; }
+function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); if(actionId==='slide-divider')return _ctxSlideDividerLabelText(); if(actionId==='where-used')return _ctxWhereUsedLabelText(); return CTX_ACTION_META[actionId].label; }
 
 // Builds the entire merged top row of the context menu in one pass: the fixed
 // Confirmed/Issue/Parked/Follow-up marker strip (mirrors Presenter's quick-mark
@@ -16997,6 +17156,15 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(!trimmed)return;
     saveNodeQuestion(_ctxNodeId,trimmed);
     render();
+    return;
+  }
+  if(action==='where-used'){
+    if(_ctxNodeId===null)return;
+    const idx=getIndex(_ctxNodeId); if(idx<0)return;
+    const end=getSubtreeEnd(idx);
+    const ids=nodes.slice(idx,end).map(n=>n.id);
+    const anchor=document.querySelector(`.node-row[data-id="${_ctxNodeId}"]`);
+    if(anchor)openWhereUsedPopover(anchor,ids);
     return;
   }
   if(action==='date-time'){if(selectedId!==null)insertDateTime(); return}
@@ -32928,6 +33096,14 @@ function _addTagPopoverFromInput(){
     if(!docId)return [];
     return todos.filter(t=>t.nodeRef&&t.nodeRef.docId===docId&&!t.nodeRef.nodeId);
   };
+  // Every to-do referencing *any part* of a document — whole-doc links and specific-node links
+  // both count. Unlike sakuraTodoRefsForNode/ForWholeDoc, this doesn't need the target document
+  // to be currently open: todos are their own global store keyed by docId, so this resolves for
+  // any document, open or not. Used for the "delete this document" warning.
+  window.sakuraTodoRefsForDocAnyNode=function(docId){
+    if(!docId)return [];
+    return todos.filter(t=>t.nodeRef&&t.nodeRef.docId===docId);
+  };
   window.sakuraTodosSetFeatureEnabled=setTodosFeatureEnabled;
   function applyTodosActionsMode(){
     const panel=document.getElementById('todos-panel');
@@ -35389,6 +35565,13 @@ window.sakuraMeetingRefsForNode=function(docId,nodeId){
 window.sakuraMeetingRefsForWholeDoc=function(docId){
   if(!docId)return [];
   return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===docId&&l.nodeId==null));
+};
+// Same reasoning as sakuraTodoRefsForDocAnyNode — every meeting referencing any part of a
+// document, resolvable without that document being open. Used for the "delete this document"
+// warning.
+window.sakuraMeetingRefsForDocAnyNode=function(docId){
+  if(!docId)return [];
+  return meetingNotes.filter(m=>(m.links||[]).some(l=>l.docId===docId));
 };
 window.sakuraOpenMeetingFromRef=function(meetingId){
   const m=findMeeting(meetingId); if(!m)return false;
