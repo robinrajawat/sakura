@@ -14961,8 +14961,9 @@ async function importSakuraDocumentFile(file){
   try{
     const text=await file.text();
     payload=JSON.parse(text);
-  }catch(e){ showToast('Could not read that file'); return; }
+  }catch(e){ sakuraLog('import','importSakuraDocumentFile: could not parse file',{message:e&&e.message}); showToast('Could not read that file'); return; }
   if(!payload||typeof payload!=='object'||payload.kind!=='sakura-document'||!Array.isArray(payload.nodes)){
+    sakuraLog('import','importSakuraDocumentFile: not a valid sakura-document payload',{});
     showToast('Not a valid Sakura Document file'); return;
   }
   commitEdit(); if(currentDocId) saveToStorage();
@@ -15002,9 +15003,10 @@ async function importSakuraDocumentFile(file){
   };
   try{
     localStorage.setItem(docKey(newId), JSON.stringify(docPayload));
-  }catch(e){ showToast('Import failed — storage full or unavailable'); return; }
+  }catch(e){ sakuraLog('import','importSakuraDocumentFile: localStorage write failed',{message:e&&e.message}); showToast('Import failed — storage full or unavailable'); return; }
   touchDocIndex(newId, title);
   switchDoc(newId);
+  sakuraLog('import','importSakuraDocumentFile ok',{docId:newId,nodeCount:payload.nodes.length,diagramCount:newDiagrams.length});
   showToast(`Imported "${title}" as a new document`);
 }
 el('sakura-doc-file-input')?.addEventListener('change', async e=>{
@@ -15432,7 +15434,7 @@ function parseOpmlToTreeNodes(xmlText){
 }
 function importOpmlText(xmlText){
   const parsed=parseOpmlToTreeNodes(xmlText);
-  if(!parsed.length){ showToast('No outline items found in that OPML file'); return false }
+  if(!parsed.length){ sakuraLog('import','importOpmlText: no outline items found (malformed XML or genuinely empty)'); showToast('No outline items found in that OPML file'); return false }
   // Always lands in a new document — same guarantee Word import and AI Restructure already
   // give (createDoc()/insertAiOutlineAsNewDoc), so an import can never silently merge into
   // whatever document happens to be open. Previously went through pasteParsedNodes(), which
@@ -15448,6 +15450,7 @@ function importOpmlText(xmlText){
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
   render();
   scheduleAutoSave();
+  sakuraLog('import','importOpmlText ok',{nodeCount:mapped.length});
   showToast(`Imported ${mapped.length} node${mapped.length===1?'':'s'}`);
   return true;
 }
@@ -15543,23 +15546,25 @@ function parseDocxHtmlToTreeNodes(html){
 // applied) — same fallback shape as restructureTextWithAi, reusing the same API call and the
 // same "always lands in a new document, original kept in its Pad" insertion behavior.
 async function importDocxFile(file){
-  if(typeof mammoth==='undefined'){ showToast('Word import library failed to load — check your connection and reload the page'); return }
+  if(typeof mammoth==='undefined'){ sakuraLog('import','importDocxFile: mammoth library not loaded'); showToast('Word import library failed to load — check your connection and reload the page'); return }
   let html;
   try{
     const buf=await file.arrayBuffer();
     const result=await mammoth.convertToHtml({arrayBuffer:buf});
     html=result.value;
-  }catch(err){ showToast('Could not read that file — it may be corrupted, password-protected, or not a .docx'); return }
+  }catch(err){ sakuraLog('import','importDocxFile: mammoth conversion threw',{message:err&&err.message}); showToast('Could not read that file — it may be corrupted, password-protected, or not a .docx'); return }
   const parsed=parseDocxHtmlToTreeNodes(html);
-  if(!parsed.length){ showToast('No readable text found in that Word document'); return }
+  if(!parsed.length){ sakuraLog('import','importDocxFile: no readable text found after parsing'); showToast('No readable text found in that Word document'); return }
   const plainText=parsed.map(n=>'  '.repeat(n.depth)+n.text).join('\n');
   const hasHierarchy=new Set(parsed.map(n=>n.depth)).size>=2;
   if(hasHierarchy||parsed.length<3){
+    sakuraLog('import','importDocxFile: imported using existing heading structure',{nodeCount:parsed.length,hasHierarchy});
     insertAiOutlineAsNewDoc(parsed,plainText);
     showToast(hasHierarchy?'Imported with heading structure ✦':'Imported');
     return;
   }
   if(!featureAiEnabled){
+    sakuraLog('import','importDocxFile: imported as flat list — AI capabilities off',{nodeCount:parsed.length});
     insertAiOutlineAsNewDoc(parsed,plainText);
     showToast('No heading styles found — imported as a flat list. Turn on AI Capabilities in Settings for automatic organization.');
     return;
@@ -15570,8 +15575,10 @@ async function importDocxFile(file){
     if(!raw)throw new Error('Empty response from AI');
     const aiParsed=parseTextToTreeNodes(raw);
     if(!aiParsed.length)throw new Error('AI did not return a usable structure');
+    sakuraLog('import','importDocxFile: AI-organized successfully',{inputNodeCount:parsed.length,outputNodeCount:aiParsed.length});
     insertAiOutlineAsNewDoc(aiParsed,plainText);
   }catch(err){
+    sakuraLog('import','importDocxFile: AI organization failed — falling back to flat list',{message:err&&err.message});
     showToast('AI organization failed — imported as a flat list instead');
     insertAiOutlineAsNewDoc(parsed,plainText);
   }
@@ -16065,6 +16072,7 @@ async function exportDocx(foldOverride){
     bytes=await buildDocxPackage(foldOverride);
   }catch(e){
     console.error('[sakura] DOCX export failed:',e);
+    sakuraLog('export','DOCX export failed',{message:e&&e.message});
     showToast('DOCX export failed — see console');
     return;
   }
@@ -16096,16 +16104,16 @@ async function pptxDataUrlToBytes(src){
     if(comma<0) return null;
     const meta=src.slice(5,comma);
     const mime=(meta.split(';')[0]||'image/png').toLowerCase();
-    try{ return {bytes:bytesFromB64(src.slice(comma+1)), mime}; }catch(e){ return null; }
+    try{ return {bytes:bytesFromB64(src.slice(comma+1)), mime}; }catch(e){ sakuraLog('export','pptxDataUrlToBytes: data URI decode failed',{message:e&&e.message}); return null; }
   }
   if(src.startsWith('blob:')||src.startsWith('http:')||src.startsWith('https:')){
     try{
       const resp=await fetch(src);
-      if(!resp.ok) return null;
+      if(!resp.ok){ sakuraLog('export','pptxDataUrlToBytes: fetch not ok',{status:resp.status}); return null; }
       const mime=(resp.headers.get('content-type')||'image/png').split(';')[0].toLowerCase();
       const buf=await resp.arrayBuffer();
       return {bytes:new Uint8Array(buf), mime};
-    }catch(e){ return null; } // most likely a cross-origin fetch the browser refuses, or a blob: URL already revoked
+    }catch(e){ sakuraLog('export','pptxDataUrlToBytes: fetch threw (likely cross-origin or revoked blob: URL)',{message:e&&e.message}); return null; } // most likely a cross-origin fetch the browser refuses, or a blob: URL already revoked
   }
   return null;
 }
@@ -17264,12 +17272,14 @@ async function exportPptx(){
     markLastExport();
     if(imageWarnings.length){
       console.warn('[sakura] PPTX export: some diagram images were skipped:', imageWarnings);
+      sakuraLog('export','PPTX export: some images skipped',{count:imageWarnings.length});
       showToast(`PPTX exported — ${imageWarnings.length} diagram image${imageWarnings.length===1?'':'s'} couldn't be embedded (see console)`);
     } else {
       showToast('PPTX exported');
     }
   }catch(e){
     console.error('[sakura] PPTX export failed:',e);
+    sakuraLog('export','PPTX export failed',{message:e&&e.message});
     showToast('PPTX export failed — see console');
   }finally{
     restoreNodeContentState();
