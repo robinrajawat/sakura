@@ -3027,8 +3027,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #todos-panel-header.dragging{cursor:grabbing}
 #todos-panel.dragging{user-select:none}
 #todos-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
-#todos-panel-maximize,#todos-panel-close,#todos-export-btn,#todos-history-btn,#todos-extract-btn,#todos-summary-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#todos-panel-maximize:hover,#todos-panel-close:hover,#todos-export-btn:hover,#todos-history-btn:hover,#todos-extract-btn:hover,#todos-summary-btn:hover{color:var(--fg);background:var(--hover)}
+#todos-panel-maximize,#todos-panel-close,#todos-export-trigger,#todos-import-btn,#todos-history-btn,#todos-extract-btn,#todos-summary-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#todos-panel-maximize:hover,#todos-panel-close:hover,#todos-export-trigger:hover,#todos-import-btn:hover,#todos-history-btn:hover,#todos-extract-btn:hover,#todos-summary-btn:hover{color:var(--fg);background:var(--hover)}
 #todos-extract-btn,#todos-summary-btn{color:var(--accent)}
 #todos-extract-btn.ai-busy,#todos-summary-btn.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 #todos-input-row{display:flex;gap:6px;padding:10px 14px;flex-shrink:0;border-bottom:1px solid var(--border);align-items:flex-end}
@@ -3329,6 +3329,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .meeting-row-export{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
 .meeting-row-summary:hover .meeting-row-export{opacity:1}
 .meeting-row-export:hover{color:var(--accent);background:var(--hover)}
+.meeting-row-share{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.meeting-row-summary:hover .meeting-row-share{opacity:1}
+.meeting-row-share:hover{color:var(--accent);background:var(--hover)}
+.meeting-row.meeting-row-dup{background:color-mix(in srgb,var(--fc-orange) 10%,transparent)}
+.meeting-row.meeting-row-dup .meeting-row-summary{border-left:2px solid var(--fc-orange)}
 .meeting-row-delete:hover{color:var(--fc-red);background:var(--hover)}
 .meeting-row-expand-slot{padding:0 6px 10px}
 
@@ -3411,6 +3416,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meeting-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
 
 #meetings-template-menu{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:190px;max-height:340px;overflow-y:auto;font-family:'Inter',sans-serif}
+#meetings-import-menu,#todos-export-menu{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:200px;font-family:'Inter',sans-serif}
+#meetings-import-menu.open,#todos-export-menu.open{display:block}
 #meetings-template-menu.open{display:block}
 .meetings-template-menu-item{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:7px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
 .meetings-template-menu-item:hover{background:var(--hover);color:var(--accent)}
@@ -5458,8 +5465,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="todos-panel-title">To-Dos</span>
     <button id="todos-extract-btn" data-tip="Extract action items from document (AI)" aria-label="Extract action items from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/><path d="M9 20h6"/><path d="M10 20v-3"/><path d="M14 20v-3"/></svg></button>
     <button id="todos-summary-btn" data-tip="Status summary (AI)" aria-label="Generate status summary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
-    <button id="todos-export-btn" data-tip="Export list as PDF" aria-label="Export list as PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <button id="todos-share-btn" data-tip="Share whole list as a Sakura file — for another Sakura user to import" aria-label="Share to-do list"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="10" r="3"/><circle cx="18" cy="10" r="3"/><circle cx="8" cy="15.3" r="3"/><circle cx="16" cy="15.3" r="3"/><circle cx="12" cy="10.7" r="1.8"/></svg></button>
+    <button id="todos-export-trigger" data-tip="Export to-do list" aria-label="Export to-do list" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
     <button id="todos-import-btn" data-tip="Import a to-do list shared by another Sakura user" aria-label="Import to-do list"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <input type="file" id="todos-share-file-input" accept=".json,application/json" style="display:none" />
     <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
@@ -5545,12 +5551,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="todos-body"></div>
   <div id="todos-toast" role="status" aria-live="polite"></div>
 </div>
+<div id="todos-export-menu" role="menu" aria-label="Export to-do list">
+  <button type="button" class="meetings-template-menu-item" id="todos-export-pdf-item" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></span><span>PDF</span></button>
+  <button type="button" class="meetings-template-menu-item" id="todos-export-sakura-item" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="10" r="3"/><circle cx="18" cy="10" r="3"/><circle cx="8" cy="15.3" r="3"/><circle cx="16" cy="15.3" r="3"/><circle cx="12" cy="10.7" r="1.8"/></svg></span><span>Sakura To-Dos</span></button>
+</div>
 
 <div id="meetings-panel" role="dialog" aria-label="Meeting Notes">
   <div id="meetings-resize-handle" data-tip="Drag to resize"></div>
   <div id="meetings-panel-header">
     <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span>
     <span id="meetings-panel-title">Meeting Notes</span>
+    <button id="meetings-export-btn" data-tip="Export all meetings as a calendar file (.ics)" aria-label="Export meetings as .ics"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <button id="meetings-import-trigger" data-tip="Import meetings" aria-label="Import meetings" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button id="meetings-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="meetings-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Meeting Notes"><svg id="meetings-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="meetings-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -5559,10 +5571,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="meetings-add-btn" data-tip="New meeting note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="meetings-template-btn" data-tip="New from template" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></button>
     <button type="button" id="meetings-outlook-import-btn" data-tip="Import from Outlook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="8 15 11 18 16 12"/></svg></button>
-    <button type="button" id="meetings-ics-import-btn" data-tip="Import from .ics file"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg></button>
     <input type="file" id="meetings-ics-file-input" accept=".ics,text/calendar" style="display:none" />
-    <button type="button" id="meetings-share-btn" data-tip="Share whole list as a Sakura file — for another Sakura user to import" aria-label="Share meeting notes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="10" r="3"/><circle cx="18" cy="10" r="3"/><circle cx="8" cy="15.3" r="3"/><circle cx="16" cy="15.3" r="3"/><circle cx="12" cy="10.7" r="1.8"/></svg></button>
-    <button type="button" id="meetings-share-import-btn" data-tip="Import meeting notes shared by another Sakura user" aria-label="Import meeting notes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <input type="file" id="meetings-share-file-input" accept=".json,application/json" style="display:none" />
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <span id="meetings-count-label"></span>
@@ -5618,6 +5627,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <div id="meetings-template-menu" role="menu" aria-label="New meeting from template">
   <button type="button" class="meetings-template-menu-item" data-template="" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span>Blank meeting</span></button>
   <div class="meetings-template-menu-sep"></div>
+</div>
+<div id="meetings-import-menu" role="menu" aria-label="Import meetings">
+  <button type="button" class="meetings-template-menu-item" id="meetings-import-ics-item" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="13" y2="18"/></svg></span><span>Calendar file (.ics)</span></button>
+  <button type="button" class="meetings-template-menu-item" id="meetings-import-sakura-item" role="menuitem"><span class="meetings-template-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="10" r="3"/><circle cx="18" cy="10" r="3"/><circle cx="8" cy="15.3" r="3"/><circle cx="16" cy="15.3" r="3"/><circle cx="12" cy="10.7" r="1.8"/></svg></span><span>Sakura Meeting Notes</span></button>
 </div>
 <div id="meeting-link-popover" role="dialog" aria-label="Link a node or document">
   <input id="meeting-link-search-input" type="text" placeholder="Search nodes across all documents…" autocomplete="off" spellcheck="false" />
@@ -22379,7 +22392,6 @@ el('ics-import-confirm-btn')?.addEventListener('click',()=>{
   closeIcsImportModal();
   showToast('Imported '+toImport.length+' meeting'+(toImport.length===1?'':'s')+' from .ics');
 });
-el('meetings-ics-import-btn')?.addEventListener('click',()=>{ el('meetings-ics-file-input')?.click(); });
 el('meetings-ics-file-input')?.addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0]; e.target.value='';
   if(!file)return;
@@ -22391,38 +22403,95 @@ el('meetings-ics-file-input')?.addEventListener('change',async e=>{
   }catch(err){ showToast('Could not read that .ics file'); }
 });
 updateOutlookCalStatus();
-async function exportSakuraMeetingsFile(){
-  if(!meetingNotes.length){ showMeetingsToast('No meeting notes to share'); return; }
-  const payload={v:1, kind:'sakura-meetings', exportedAt:Date.now(), meetings:meetingNotes};
+
+// === Shared small action-item dropdown (fixed-position, same mechanics as the existing
+// meetings-template-menu) — reused for the Meetings Import menu and the To-Dos Export menu,
+// so this positioning/flip/outside-click logic isn't duplicated a third and fourth time. ===
+const _openSimpleMenus=new Set();
+function openSimpleDropdown(menu,btn,widthPx=200){
+  if(!menu||!btn)return;
+  const r=btn.getBoundingClientRect();
+  let left=r.left;
+  if(left+widthPx>window.innerWidth-8)left=window.innerWidth-widthPx-8;
+  if(left<8)left=8;
+  menu.style.left=left+'px';
+  menu.style.top=(r.bottom+4)+'px';
+  menu.classList.add('open');
+  btn.setAttribute('aria-expanded','true');
+  _openSimpleMenus.add(menu.id);
+  const mr=menu.getBoundingClientRect();
+  if(mr.bottom>window.innerHeight-8){
+    const flippedTop=r.top-mr.height-4;
+    menu.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-mr.height))+'px';
+  }
+}
+function closeSimpleDropdown(menu,btn){
+  menu?.classList.remove('open');
+  btn?.setAttribute('aria-expanded','false');
+  if(menu)_openSimpleMenus.delete(menu.id);
+}
+document.addEventListener('mousedown',e=>{
+  if(!_openSimpleMenus.size)return;
+  [...['meetings-import-menu','meetings-import-trigger'],['todos-export-menu','todos-export-trigger']].forEach(([menuId,btnId])=>{
+    if(_openSimpleMenus.has(menuId)&&!e.target.closest('#'+menuId)&&!e.target.closest('#'+btnId))closeSimpleDropdown(el(menuId),el(btnId));
+  });
+},true);
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape'||!_openSimpleMenus.size)return;
+  ['meetings-import-menu','todos-export-menu'].forEach(menuId=>{ if(_openSimpleMenus.has(menuId))closeSimpleDropdown(el(menuId),el(menuId.replace('-menu','-trigger'))); });
+});
+
+// --- Meetings: bulk .ics export ---
+// exportMeetingsAsIcs itself is defined further down, alongside saveMeetingNotes/mnUid/etc —
+// those all read `let meetingNotes`, which lives in a separate, later <script> tag (its own
+// top-level lexical scope; script tags don't share `let`/`const` bindings even though they
+// execute in document order — see the existing "can't see this module's `let meetingNotes`
+// directly" comment elsewhere in this file for the same gotcha hit before). The click handler
+// here only needs an arrow-wrapped reference so the actual lookup of exportMeetingsAsIcs
+// happens at click time, by which point that later script has already run and defined it.
+function icsEscape(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+function icsFold(line){
+  // RFC 5545 requires folding lines longer than 75 octets — a long agenda/notes DESCRIPTION
+  // would otherwise produce a technically-invalid file some calendar apps reject outright.
+  if(line.length<=75)return line;
+  let out=line.slice(0,75), rest=line.slice(75);
+  while(rest.length){ out+='\r\n '+rest.slice(0,74); rest=rest.slice(74); }
+  return out;
+}
+el('meetings-export-btn')?.addEventListener('click', ()=>exportMeetingsAsIcs());
+
+// --- Meetings: Import dropdown (.ics file | Sakura Meeting Notes) ---
+el('meetings-import-trigger')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const menu=el('meetings-import-menu'), btn=el('meetings-import-trigger');
+  if(menu?.classList.contains('open')){ closeSimpleDropdown(menu,btn); return; }
+  openSimpleDropdown(menu,btn,200);
+});
+el('meetings-import-ics-item')?.addEventListener('click',()=>{
+  closeSimpleDropdown(el('meetings-import-menu'),el('meetings-import-trigger'));
+  el('meetings-ics-file-input')?.click();
+});
+el('meetings-import-sakura-item')?.addEventListener('click',()=>{
+  closeSimpleDropdown(el('meetings-import-menu'),el('meetings-import-trigger'));
+  el('meetings-share-file-input')?.click();
+});
+
+// --- Meetings: single-meeting Sakura Meeting Notes share ---
+// A single-meeting Share (see buildMeetingRowSummary) reuses the exact same payload shape as
+// the bulk export, just with a one-item array — importSakuraMeetingsFile (defined alongside
+// meetingNotes further down, for the same cross-script-scope reason as exportMeetingsAsIcs
+// above) doesn't need to know or care whether the file holds one meeting or the whole list.
+function buildSakuraMeetingsPayload(list){ return {v:1, kind:'sakura-meetings', exportedAt:Date.now(), meetings:list}; }
+function downloadSakuraMeetingsFile(payload,filename){
   const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='sakura-meetings.sakura.json'; document.body.appendChild(a); a.click(); a.remove();
+  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  showMeetingsToast('Meeting notes exported — share the file; a colleague imports it via the panel\'s Import button');
 }
-async function importSakuraMeetingsFile(file){
-  let payload;
-  try{ payload=JSON.parse(await file.text()); }
-  catch(e){ showMeetingsToast('Could not read that file'); return; }
-  if(!payload||typeof payload!=='object'||payload.kind!=='sakura-meetings'||!Array.isArray(payload.meetings)){
-    showMeetingsToast('Not a valid Sakura Meetings file'); return;
-  }
-  // normalizeMeetingNote (the same function used loading from this app's own storage) handles
-  // field defaults/sanitization; id is re-minted per note, and links (which point at specific
-  // documents/nodes on the sender's machine) are dropped rather than carried over meaningless
-  // — same reasoning as Sakura Todos' nodeRef/meetingRef handling just above.
-  const imported=payload.meetings.map(m=>{ const n=normalizeMeetingNote(m); n.id=mnUid(); n.links=[]; n.outlookEventId=''; n.icsUid=''; n.actionItems=n.actionItems.map(a=>({...a,promotedTodoId:null})); return n; }).filter(m=>m.title.trim()||m.agenda.trim()||m.body.trim());
-  if(!imported.length){ showMeetingsToast('No meeting notes found in that file'); return; }
-  meetingNotes=meetingNotes.concat(imported);
-  saveMeetingNotes(); renderMeetingsList();
-  showMeetingsActionToast(`Imported ${imported.length} meeting note${imported.length===1?'':'s'}`,'Undo',()=>{
-    const idSet=new Set(imported.map(m=>m.id));
-    meetingNotes=meetingNotes.filter(m=>!idSet.has(m.id));
-    saveMeetingNotes(); renderMeetingsList();
-  });
+function shareSingleMeeting(m){
+  downloadSakuraMeetingsFile(buildSakuraMeetingsPayload([m]), (m.title||'meeting').replace(/[\\/:*?"<>|]+/g,'_')+'.sakura.json');
+  showMeetingsToast('Meeting exported — share the file; a colleague imports it via the Import button above the list');
 }
-el('meetings-share-btn')?.addEventListener('click', exportSakuraMeetingsFile);
-el('meetings-share-import-btn')?.addEventListener('click', ()=>{ el('meetings-share-file-input')?.click(); });
 el('meetings-share-file-input')?.addEventListener('change', async e=>{
   const file=e.target.files&&e.target.files[0]; e.target.value='';
   if(file) await importSakuraMeetingsFile(file);
@@ -33846,7 +33915,20 @@ function _addTagPopoverFromInput(){
       openMenu?.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.focus();
     }
   });
-  document.getElementById('todos-export-btn')?.addEventListener('click', exportTodosAsPdf);
+  document.getElementById('todos-export-trigger')?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const menu=document.getElementById('todos-export-menu'), btn=document.getElementById('todos-export-trigger');
+    if(menu?.classList.contains('open')){ closeSimpleDropdown(menu,btn); return; }
+    openSimpleDropdown(menu,btn,180);
+  });
+  document.getElementById('todos-export-pdf-item')?.addEventListener('click',()=>{
+    closeSimpleDropdown(document.getElementById('todos-export-menu'),document.getElementById('todos-export-trigger'));
+    exportTodosAsPdf();
+  });
+  document.getElementById('todos-export-sakura-item')?.addEventListener('click',()=>{
+    closeSimpleDropdown(document.getElementById('todos-export-menu'),document.getElementById('todos-export-trigger'));
+    exportSakuraTodosFile();
+  });
   async function exportSakuraTodosFile(){
     if(!todos.length){ showTodosToast('No tasks to share'); return; }
     const payload={v:1, kind:'sakura-todos', exportedAt:Date.now(), todos};
@@ -33854,7 +33936,7 @@ function _addTagPopoverFromInput(){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='sakura-todos.sakura.json'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
-    showTodosToast('To-Do list exported — share the file; a colleague imports it via the panel\'s Import button');
+    showTodosToast('To-Do list exported — share the file; a colleague imports it via the Import button above the list');
   }
   function normalizeImportedTodo(t){
     return {
@@ -33893,7 +33975,6 @@ function _addTagPopoverFromInput(){
       saveTodos(); renderTodos();
     });
   }
-  document.getElementById('todos-share-btn')?.addEventListener('click', exportSakuraTodosFile);
   document.getElementById('todos-import-btn')?.addEventListener('click', ()=>document.getElementById('todos-share-file-input')?.click());
   document.getElementById('todos-share-file-input')?.addEventListener('change', async e=>{
     const file=e.target.files&&e.target.files[0];
@@ -34368,6 +34449,76 @@ function saveMeetingNotes(){
   }
   catch(e){ showMeetingsToast('Storage full — this change was not saved'); }
 }
+// --- Sakura Meeting Notes bulk .ics export + Sakura-format import (see the wiring/helper
+// functions near meetings-export-btn/meetings-import-* earlier in the file — physically
+// defined here instead because these read/write `meetingNotes`, declared a few lines up in
+// this same script tag, which code in the earlier <script> block can't see directly). ---
+function exportMeetingsAsIcs(){
+  if(!meetingNotes.length){ showMeetingsToast('No meeting notes to export'); return; }
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sakura//Meeting Notes//EN','CALSCALE:GREGORIAN'];
+  meetingNotes.forEach(m=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(m.date||''))return; // undated notes have nothing to put on a calendar
+    const ymd=m.date.replace(/-/g,'');
+    const hasTime=/^([01]\d|2[0-3]):[0-5]\d$/.test(m.time||'');
+    lines.push('BEGIN:VEVENT');
+    lines.push(icsFold('UID:'+(m.icsUid||m.id)+'@sakura'));
+    lines.push('DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z');
+    if(hasTime){
+      const hm=m.time.replace(':','');
+      lines.push('DTSTART:'+ymd+'T'+hm+'00');
+    } else {
+      lines.push('DTSTART;VALUE=DATE:'+ymd);
+    }
+    lines.push(icsFold('SUMMARY:'+icsEscape(m.title||'Untitled meeting')));
+    const descParts=[]; if(m.agenda&&stripHtmlToText(m.agenda).trim())descParts.push('Agenda: '+stripHtmlToText(m.agenda).trim());
+    if(m.body&&stripHtmlToText(m.body).trim())descParts.push('Notes: '+stripHtmlToText(m.body).trim());
+    if(descParts.length)lines.push(icsFold('DESCRIPTION:'+icsEscape(descParts.join('\n\n'))));
+    if((m.attendees||[]).length)lines.push(icsFold('ATTENDEE;CN='+icsEscape(m.attendees.join(', '))+':'));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  const blob=new Blob([lines.join('\r\n')],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='sakura-meetings.ics'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showMeetingsToast('Meetings exported as .ics');
+}
+// Flash highlight for possible duplicates after a Sakura import — transient (like flashNodeId
+// for newly-added outline nodes), not a persisted field: this is "notice these, decide for
+// yourself" rather than a permanent badge that would need its own dismiss interaction.
+let _meetingDupFlashIds=new Set();
+function meetingIsDuplicateOf(candidate,existingList){
+  const t=(candidate.title||'').trim().toLowerCase();
+  if(!t)return false;
+  return existingList.some(e=>(e.title||'').trim().toLowerCase()===t && (e.date||'')===(candidate.date||''));
+}
+async function importSakuraMeetingsFile(file){
+  let payload;
+  try{ payload=JSON.parse(await file.text()); }
+  catch(e){ showMeetingsToast('Could not read that file'); return; }
+  if(!payload||typeof payload!=='object'||payload.kind!=='sakura-meetings'||!Array.isArray(payload.meetings)){
+    showMeetingsToast('Not a valid Sakura Meeting Notes file'); return;
+  }
+  const priorList=meetingNotes.slice(); // duplicate check is against what existed *before* this import — imported items shouldn't flag each other
+  let dupCount=0;
+  const imported=payload.meetings.map(m=>{
+    const n=normalizeMeetingNote(m); n.id=mnUid(); n.links=[]; n.outlookEventId=''; n.icsUid='';
+    n.actionItems=n.actionItems.map(a=>({...a,promotedTodoId:null}));
+    return n;
+  }).filter(m=>m.title.trim()||m.agenda.trim()||m.body.trim());
+  if(!imported.length){ showMeetingsToast('No meeting notes found in that file'); return; }
+  imported.forEach(m=>{ if(meetingIsDuplicateOf(m,priorList)){ dupCount++; _meetingDupFlashIds.add(m.id); } });
+  meetingNotes=meetingNotes.concat(imported);
+  saveMeetingNotes(); renderMeetingsList();
+  setTimeout(()=>{ _meetingDupFlashIds.clear(); renderMeetingsList(); },6000);
+  const dupNote=dupCount?` — ${dupCount} match${dupCount===1?'':'es'} an existing meeting (highlighted)`:'';
+  showMeetingsActionToast(`Imported ${imported.length} meeting note${imported.length===1?'':'s'}${dupNote}`,'Undo',()=>{
+    const idSet=new Set(imported.map(m=>m.id));
+    meetingNotes=meetingNotes.filter(m=>!idSet.has(m.id));
+    _meetingDupFlashIds.clear();
+    saveMeetingNotes(); renderMeetingsList();
+  });
+}
 // ── Version history ── same self-contained pattern as To-Dos' own (its own storage key,
 // its own periodic auto-snapshot, its own small restore panel) rather than sharing the
 // per-document History modal, which is tightly coupled to document/node concepts meeting
@@ -34726,6 +34877,10 @@ function buildMeetingRowSummary(m){
   const snippetText=meetingRowSnippet(m);
   if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='meeting-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
   summary.appendChild(dateEl); summary.appendChild(content);
+  const shareBtn=document.createElement('button'); shareBtn.type='button'; shareBtn.className='meeting-row-share'; shareBtn.dataset.tip='Share as Sakura Meeting Notes';
+  shareBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="10" r="3"/><circle cx="18" cy="10" r="3"/><circle cx="8" cy="15.3" r="3"/><circle cx="16" cy="15.3" r="3"/><circle cx="12" cy="10.7" r="1.8"/></svg>';
+  shareBtn.addEventListener('click',e=>{ e.stopPropagation(); shareSingleMeeting(m); });
+  summary.appendChild(shareBtn);
   const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as PDF';
   exportBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   exportBtn.addEventListener('click',e=>{ e.stopPropagation(); exportSingleMeetingAsPdf(m); });
@@ -34764,7 +34919,7 @@ function commitMeetingCardIfFocused(){
   }
 }
 function appendMeetingRow(list,m){
-  const row=document.createElement('div'); row.className='meeting-row'+(m.id===meetingExpandedId?' expanded':''); row.dataset.meetingId=m.id;
+  const row=document.createElement('div'); row.className='meeting-row'+(m.id===meetingExpandedId?' expanded':'')+(_meetingDupFlashIds.has(m.id)?' meeting-row-dup':''); row.dataset.meetingId=m.id;
   row.appendChild(buildMeetingRowSummary(m));
   if(m.id===meetingExpandedId){ const slot=document.createElement('div'); slot.className='meeting-row-expand-slot'; row.appendChild(slot); }
   list.appendChild(row);
