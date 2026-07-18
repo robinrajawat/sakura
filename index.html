@@ -28068,7 +28068,8 @@ function openAudienceWindow(){
   const url=new URL(location.href);
   url.searchParams.set('sakuraAudience','1');
   const w=window.open(url.toString(),'sakura-audience-view','width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
-  if(!w){ showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
+  if(!w){ sakuraLog('audience','openAudienceWindow: pop-up blocked'); showToast('Pop-up blocked — allow pop-ups for Sakura to open the Audience View'); return; }
+  sakuraLog('audience','openAudienceWindow: opened, waiting for its own ready signal',{});
   presenterAudienceWin=w;
   audienceMode='slide';
   updateAudienceButtonState();
@@ -28109,6 +28110,7 @@ function audienceWindowReady(win){
     // it never goes through the regular "click the Preview button" flow a real session would.
     if(!st.previewActive&&typeof win.openPreview==='function')win.openPreview();
     if(!st.previewPresenting&&typeof win.enterPresenterMode==='function')win.enterPresenterMode();
+    sakuraLog('audience','audienceWindowReady completed',{docSwitched:!!(currentDocId&&st.currentDocId!==currentDocId)});
   }catch(e){ if(typeof sakuraLog==='function')sakuraLog('error','audienceWindowReady failed',{message:e&&e.message}); }
   // Either window resizing (a monitor swap, dragging the Audience window to a differently
   // sized display, this window itself being resized) can change the Audience panel's exact
@@ -28120,6 +28122,7 @@ function audienceWindowReady(win){
   updateAudienceButtonState();
 }
 function closeAudienceWindow(){
+  sakuraLog('audience','closeAudienceWindow',{wasLive:audienceWinLive()});
   if(audienceWinLive())presenterAudienceWin.close();
   presenterAudienceWin=null;
   audienceMode='slide';
@@ -28162,14 +28165,20 @@ function setAudienceMode(mode){
     const win=presenterAudienceWin;
     const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
     if(mode==='whiteboard'){
-      if(!st.diagramEditorOpen&&typeof win.openOrCreateWhiteboard==='function')win.openOrCreateWhiteboard();
+      if(!st.diagramEditorOpen){
+        if(typeof win.openOrCreateWhiteboard==='function'){ sakuraLog('audience','setAudienceMode: opening whiteboard on Audience side',{}); win.openOrCreateWhiteboard(); }
+        else sakuraLog('audience','setAudienceMode: openOrCreateWhiteboard missing on Audience window (stale cache?)',{});
+      }
     } else if(mode==='mindmap'){
-      if(!st.mindMapOpen&&typeof win.openAudienceMindmapDirect==='function')win.openAudienceMindmapDirect(mindMap,mindMapPan,mindMapZoom);
+      if(!st.mindMapOpen){
+        if(typeof win.openAudienceMindmapDirect==='function'){ sakuraLog('audience','setAudienceMode: opening mind map on Audience side',{}); win.openAudienceMindmapDirect(mindMap,mindMapPan,mindMapZoom); }
+        else sakuraLog('audience','setAudienceMode: openAudienceMindmapDirect missing on Audience window (stale cache?)',{});
+      }
     } else {
       if(st.diagramEditorOpen&&typeof win.closeDiagramEditorInternal==='function')win.closeDiagramEditorInternal();
       if(st.mindMapOpen&&typeof win.closeMindMapOverlay==='function')win.closeMindMapOverlay();
     }
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','setAudienceMode threw',{mode,message:e&&e.message}); }
 }
 // Mind Map content in the Audience window comes from its own storage-backed state already —
 // this just makes sure its canvas re-renders with the latest pan/zoom/node positions right now,
@@ -28180,14 +28189,14 @@ function syncAudienceMindmap(){
     const win=presenterAudienceWin;
     const st=typeof win.sakuraGetAudienceState==='function'?win.sakuraGetAudienceState():{};
     if(st.mindMapOpen&&typeof win.setAudienceMindmapState==='function')win.setAudienceMindmapState(mindMap,mindMapPan,mindMapZoom);
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','syncAudienceMindmap threw',{message:e&&e.message}); }
 }
 function syncAudienceZoom(){
   if(!audienceWinLive())return;
   try{
     const win=presenterAudienceWin;
     if(typeof win.setAudienceInteractiveZoom==='function')win.setAudienceInteractiveZoom(previewInteractiveZoom);
-  }catch(e){}
+  }catch(e){ sakuraLog('audience','syncAudienceZoom threw',{message:e&&e.message}); }
 }
 function syncAudienceLaser(clientX,clientY){
   if(!audienceWinLive())return;
@@ -28242,8 +28251,10 @@ function syncAudienceWindow(){
     // of presenting, when the mode-switch hooks elsewhere wouldn't have fired yet.
     const wbOpen=el('diagram-editor-overlay')?.classList.contains('open');
     if(wbOpen&&_diagramEditorState&&findDiagram(_diagramEditorState.diagramId)?.isWhiteboard){
+      sakuraLog('audience','syncAudienceWindow: connecting into whiteboard mode',{});
       setAudienceMode('whiteboard');
     } else if(mindMapOpen){
+      sakuraLog('audience','syncAudienceWindow: connecting into mind map mode',{});
       setAudienceMode('mindmap');
       syncAudienceMindmap();
     } else {
@@ -28269,7 +28280,8 @@ function syncAudienceContent(){
   try{
     const win=presenterAudienceWin;
     if(typeof win.setAudienceNodes==='function')win.setAudienceNodes(JSON.parse(JSON.stringify(nodes)));
-  }catch(e){}
+    else sakuraLog('audience','syncAudienceContent: setAudienceNodes missing on Audience window (stale cache?)',{});
+  }catch(e){ sakuraLog('audience','syncAudienceContent threw',{message:e&&e.message}); }
 }
 function setAudienceQaItems(items){
   qaItems=items;
