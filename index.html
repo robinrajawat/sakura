@@ -16082,8 +16082,16 @@ async function pptxGatherSlidesData(){
   // current. Async because each diagram image may need to go through
   // pptxEnsureCompatibleImage first.
   const slidesData=[];
+  let sawTitleSlide=false;
   for(const slide of previewSlides){
-    if(slide.nodeId===null){ slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')}); continue; }
+    // previewSlides[0] is always the real title slide (see renderPreviewBody's
+    // `previewSlideList=[{nodeId:null,...}]` seed) — any LATER nodeId:null entry is the
+    // optional closing slide appended at the very end, not another title slide.
+    if(slide.nodeId===null){
+      if(!sawTitleSlide){ sawTitleSlide=true; slidesData.push({isTitle:true, title, author, metaLine:metaParts.join(' · ')}); }
+      else { slidesData.push({isClosing:true, closingTitle:String(previewClosingSlideText||'Thank you').trim()||'Thank you', closingSubtitle:String(previewClosingSlideSubtitle||'').trim()}); }
+      continue;
+    }
     const idx=getIndex(slide.nodeId);
     if(idx<0){ slidesData.push({title:slide.label, items:[], images:[]}); continue; }
     const node=nodes[idx];
@@ -16471,6 +16479,26 @@ async function buildPptxPresentation(slidesData){
         slide.addText(pptxStripIllegalXmlChars(sd.metaLine), {
           x:MARGIN, y, w:PPTX_SLIDE_W-2*MARGIN, h:0.4,
           fontFace:FONT, fontSize:13, color:theme.hint, valign:'top'
+        });
+      }
+      return;
+    }
+
+    if(sd.isClosing){
+      // Mirrors .pv-closing-slide: same accent-bar-plus-big-text language as the title slide,
+      // but centered both ways (no meta/author line anchoring it vertically here) — see that
+      // CSS rule's own comment for why. Centered accent bar: addShape has no text-align concept,
+      // so its x is computed directly rather than via align:'center' (which only applies to text).
+      const accentW=0.55;
+      slide.addShape('rect', {x:(PPTX_SLIDE_W-accentW)/2, y:2.7, w:accentW, h:0.05, fill:{color:theme.accent}, line:{type:'none'}});
+      slide.addText(pptxStripIllegalXmlChars(sd.closingTitle||'Thank you'), {
+        x:MARGIN, y:2.95, w:PPTX_SLIDE_W-2*MARGIN, h:1.1,
+        fontFace:FONT, fontSize:32, bold:true, color:theme.fg, align:'center', valign:'top'
+      });
+      if(sd.closingSubtitle){
+        slide.addText(pptxStripIllegalXmlChars(sd.closingSubtitle), {
+          x:MARGIN, y:4.05, w:PPTX_SLIDE_W-2*MARGIN, h:0.5,
+          fontFace:FONT, fontSize:16, color:theme.muted, align:'center', valign:'top'
         });
       }
       return;
