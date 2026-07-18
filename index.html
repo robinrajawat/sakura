@@ -18460,11 +18460,47 @@ function isRateLimitStatus(status,msg){
   if(typeof msg==='string'){const m=msg.toLowerCase(); if(m.includes('rate limit')||m.includes('quota')||m.includes('too many requests')||m.includes('resource exhausted')||m.includes('rate_limit'))return true;}
   return false;
 }
+// Every AI capability in the app funnels through callAiByShapeWithFallback below with its own
+// system prompt, but most of those prompts are declared as consts local to the function that
+// uses them (e.g. AI_TODO_EXTRACT_SYSTEM_PROMPT lives inside the to-do extraction handler) —
+// not reachable by reference from here. Matching on a short, stable prefix of each prompt's own
+// wording sidesteps that: it works for every capability without needing to plumb an extra label
+// parameter through ~15 call sites (each one a chance to get it wrong), and prompts changing
+// their instructions later (wording, examples, edge cases) won't break the match as long as the
+// opening sentence — which describes what the capability fundamentally does — stays put.
+const AI_CAPABILITY_PREFIXES=[
+  ['You reformat LANGUAGE source code','code-beautify'],
+  ['You assign exactly one relevant emoji','icon-assign'],
+  ['You expand a single outline node','node-expand'],
+  ['You suggest tags for an outline node','node-tags'],
+  ['You are looking at a mind map','mindmap-connect'],
+  ['You write a concise one-line label','group-summarise'],
+  ['You write outlines as plain nested lists','outline-generate'],
+  ['You convert unstructured or messy pasted text','restructure-paste'],
+  ['You answer a question using only the outline context','qa-answer'],
+  ['You write a short status summary of a Q&A list','qa-summary'],
+  ['You read a document outline and suggest questions','qa-generate'],
+  ['You are given a numbered list of questions from a Q&A list','qa-group'],
+  ['You extract concrete action items','todo-extract'],
+  ['You break a task into smaller concrete steps','todo-subtask'],
+  ['You write a short status summary of a task list','todo-summary'],
+];
+function aiCapabilityLabel(systemPrompt){
+  if(!systemPrompt)return 'raw';
+  if(systemPrompt===aiRewritePrompt)return 'rewrite';
+  const found=AI_CAPABILITY_PREFIXES.find(([prefix])=>systemPrompt.startsWith(prefix));
+  return found?found[1]:'other';
+}
 async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,maxTokens){
+  // Never log systemPrompt/userContent/the response text itself — only their lengths. This is
+  // the user's actual outline, notes, or Q&A content; a debug log is meant to be safely
+  // copy-pasted into a support conversation, not a place their document ends up verbatim.
+  sakuraLog('ai',shape+' request',{baseUrl,model,maxTokens,systemPromptLen:systemPrompt?systemPrompt.length:0,userContentLen:userContent?userContent.length:0});
   if(shape==='gemini'){
     const url=baseUrl.replace('{model}',encodeURIComponent(model))+(baseUrl.includes('?')?'&':'?')+'key='+encodeURIComponent(key);
     const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]}],generationConfig:{maxOutputTokens:maxTokens}})});
-    if(!res.ok){const err=await res.json().catch(()=>({}));const msg=err?.error?.message||'Gemini error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
+    sakuraLog('ai',shape+' response status',{status:res.status});
+    if(!res.ok){const err=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',err);const msg=err?.error?.message||'Gemini error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
   } else if(shape==='openai'){
@@ -18473,37 +18509,42 @@ async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,ma
     const openaiHeaders={'Content-Type':'application/json','Authorization':'Bearer '+key};
     if(isOpenRouter){openaiHeaders['HTTP-Referer']=(location.protocol==='file:'?'https://sakura.app':location.href);openaiHeaders['X-Title']='Sakura';}
     if(isGitHubModels){openaiHeaders['Accept']='application/vnd.github+json';openaiHeaders['X-GitHub-Api-Version']='2022-11-28';}
-    sakuraLog('ai','openai-shape fetch',{baseUrl,model});
     const res=await fetch(baseUrl,{method:'POST',headers:openaiHeaders,body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
-    sakuraLog('ai','response status',{status:res.status});
-    if(!res.ok){const errBody=await res.json().catch(()=>({}));sakuraLog('ai','error body',errBody);const msg=errBody?.error?.metadata?.raw||errBody?.error?.message||errBody?.message||'API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
+    sakuraLog('ai',shape+' response status',{status:res.status});
+    if(!res.ok){const errBody=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',errBody);const msg=errBody?.error?.metadata?.raw||errBody?.error?.message||errBody?.message||'API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.choices?.[0]?.message?.content||'').trim();
   } else if(shape==='cerebras'){
     const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,max_completion_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
-    sakuraLog('ai','cerebras status',{status:res.status});
-    if(!res.ok){const errBody=await res.json().catch(()=>({}));sakuraLog('ai','cerebras error',errBody);const msg=errBody?.message||errBody?.error?.message||'Cerebras error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
+    sakuraLog('ai',shape+' response status',{status:res.status});
+    if(!res.ok){const errBody=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',errBody);const msg=errBody?.message||errBody?.error?.message||'Cerebras error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.choices?.[0]?.message?.content||'').trim();
   } else {
     const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'user',content:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]})});
-    if(!res.ok){const err=await res.json().catch(()=>({}));const msg=err?.error?.message||'Claude API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
+    sakuraLog('ai',shape+' response status',{status:res.status});
+    if(!res.ok){const err=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',err);const msg=err?.error?.message||'Claude API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.content?.[0]?.text||'').trim();
   }
 }
 async function callAiByShapeWithFallback(shape,baseUrl,key,model,systemPrompt,userContent,maxTokens,providerId){
   callAiByShapeWithFallback._toastShown=false;
+  const capability=aiCapabilityLabel(systemPrompt);
+  const startedAt=Date.now();
+  sakuraLog('ai','call started',{capability,providerId,model});
   try{
     const result=await callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,maxTokens);
     recordAiUsage(providerId,true);
+    sakuraLog('ai','call succeeded',{capability,providerId,model,ms:Date.now()-startedAt,resultLen:result?result.length:0});
     return result;
   }catch(err){
     const isFallbackable=err instanceof RateLimitError||err instanceof FallbackableError;
     recordAiUsage(providerId,false,err&&err.message);
+    sakuraLog('ai','call failed',{capability,providerId,model,ms:Date.now()-startedAt,type:err&&err.name,msg:err&&err.message,fallbackable:isFallbackable});
     if(!isFallbackable)throw err;
     const chain=getEffectiveFallbackChain();
-    sakuraLog('ai','error, attempting fallback',{type:err.name,msg:err.message,chainLength:chain.length});
+    sakuraLog('ai','attempting fallback',{capability,type:err.name,msg:err.message,chainLength:chain.length,chain:chain.map(c=>c.provider.id)});
     if(!chain.length)throw err;
     const primaryLabel=getAiProviderById(aiProvider).label;
     const reason=err instanceof RateLimitError?'Quota hit on '+primaryLabel:'Error on '+primaryLabel;
@@ -18511,15 +18552,18 @@ async function callAiByShapeWithFallback(shape,baseUrl,key,model,systemPrompt,us
       try{
         const result=await callAiByShape(candidate.provider.shape,candidate.provider.baseUrl,candidate.key,candidate.model,systemPrompt,userContent,maxTokens);
         recordAiUsage(candidate.provider.id,true);
+        sakuraLog('ai','fallback succeeded',{capability,providerId:candidate.provider.id,model:candidate.model,ms:Date.now()-startedAt});
         showToast(reason+' — rewritten with '+candidate.provider.label+' ✦', 'success');
         callAiByShapeWithFallback._toastShown=true;
         return result;
       }catch(e2){
         recordAiUsage(candidate.provider.id,false,e2&&e2.message);
+        sakuraLog('ai','fallback candidate failed',{capability,providerId:candidate.provider.id,type:e2&&e2.name,msg:e2&&e2.message});
         if(!(e2 instanceof RateLimitError)&&!(e2 instanceof FallbackableError))throw e2;
         // continue to next candidate
       }
     }
+    sakuraLog('ai','all fallback providers exhausted',{capability,ms:Date.now()-startedAt});
     throw new Error(reason+'. All fallback providers also failed. Try again later.');
   }
 }
