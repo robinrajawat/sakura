@@ -33390,12 +33390,12 @@ function _addTagPopoverFromInput(){
         +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>` : '')
-      + (showLink ? `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?esc(link):''}" data-linklabel="${linkLabel?esc(linkLabel):''}" data-noderef-doc="${nodeRef?esc(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?esc(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
+      + (showLink ? `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
         + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
         +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
       +`</button>` : '')
       + (meetingRef ? `<span class="todo-meeting-chip${meetingChipMissing?' missing':''}">`
-        +`<button type="button" class="todo-meeting-chip-open" data-id="${t.id}" data-tip="${meetingChipMissing?'That meeting note no longer exists':'From meeting: '+esc(meetingChipTitle)}" aria-label="Open meeting note">`
+        +`<button type="button" class="todo-meeting-chip-open" data-id="${t.id}" data-tip="${meetingChipMissing?'That meeting note no longer exists':'From meeting: '+escAttr(meetingChipTitle)}" aria-label="Open meeting note">`
           +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
           +`<span>${esc(meetingChipTitle||'Untitled meeting')}</span>`
         +`</button>`
