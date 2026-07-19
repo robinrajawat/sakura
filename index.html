@@ -3732,6 +3732,17 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <button class="sb-icon-btn panel-search-toggle-btn" id="settings-search-toggle-btn" data-tip="Search settings" aria-pressed="false" aria-label="Search settings" style="flex:0 0 auto">
               <svg id="settings-search-toggle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
+            <div style="position:relative;flex:0 0 auto">
+              <button class="sb-icon-btn" id="settings-about-toggle-btn" data-tip="About Sakura" aria-pressed="false" aria-haspopup="dialog" aria-label="About Sakura">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <div id="settings-about-popover" role="dialog" aria-modal="false" aria-label="About Sakura" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:280px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:14px;z-index:60">
+                <div style="font-weight:600;margin-bottom:6px">Sakura <span id="about-version"></span></div>
+                <div class="muted-help" style="margin-top:0">A single-file outliner and knowledge-management workspace. No backend, no build step, no account required to use it — your data stays in this browser unless you export it or connect an optional cloud backup yourself.</div>
+                <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">Source &amp; license on GitHub →</a></div>
+                <div class="muted-help">Import/export features use three open-source libraries — SheetJS, mammoth.js, and PptxGenJS — and diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">Full attribution →</a></div>
+              </div>
+            </div>
           </div>
           <div class="settings-body">
             <div class="settings-rail" id="settings-rail">
@@ -4231,14 +4242,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Fade nested text</span><span class="settings-row-desc">Deeper nodes fade toward grey as you nest, as a visual hierarchy cue (matches WorkFlowy/Dynalist/Roam). Off: every node uses the same Text color regardless of depth — raises contrast on deeply-nested text at the cost of the at-a-glance depth cue</span></div><button id="node-depth-fade-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Fade nested text by depth"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Hide tree lines</span><span class="settings-row-desc">Clean indented view, no │├└─ connectors — like Dynalist/Workflowy. Toggle anytime with Ctrl/Cmd+Shift+L. Indentation and folding stay the same either way.</span></div><button id="hide-tree-lines-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Hide tree lines"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Timestamps on hover</span><span class="settings-row-desc">Hovering the tree connector or dot at the start of a node — not the text itself — shows when it was created and last modified. Turn off if the popup feels like clutter while you're just moving the cursor around.</span></div><button id="node-timestamp-hover-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show timestamps on hover"></button></div>
-            </div>
-          </div>
-          <div class="settings-section" data-cat="general">
-            <div class="settings-section-title">About</div>
-            <div style="padding:0 12px 8px">
-              <div class="muted-help" style="margin-top:0">Sakura <span id="about-version"></span> — a single-file outliner and knowledge-management workspace. No backend, no build step, no account required to use it — your data stays in this browser unless you export it or connect an optional cloud backup yourself.</div>
-              <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">Source &amp; license on GitHub →</a></div>
-              <div class="muted-help">Import/export features use three open-source libraries — SheetJS, mammoth.js, and PptxGenJS — and diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">Full attribution →</a></div>
             </div>
           </div>
           <div class="settings-section" data-cat="workspace" id="settings-section-quickassist">
@@ -10837,6 +10840,21 @@ el('settings-search-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation
 el('settings-search')?.addEventListener('input',e=>{const v=e.target.value; filterSettingsPanel(v); const clr=el('settings-search-clear'); if(clr)clr.classList.toggle('visible',v.trim().length>0)});
 el('settings-search-clear')?.addEventListener('click',()=>{const inp=el('settings-search'); if(inp&&inp.value){inp.value=''; inp.focus(); filterSettingsPanel(''); el('settings-search-clear')?.classList.remove('visible')} else {toggleSettingsSearch()}});
 el('settings-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); toggleSettingsSearch()}});
+function setSettingsAboutVisible(on){
+  const pop=el('settings-about-popover'); if(pop)pop.style.display=on?'block':'none';
+  const btn=el('settings-about-toggle-btn'); if(btn)btn.setAttribute('aria-pressed',String(on));
+}
+function toggleSettingsAbout(){const pop=el('settings-about-popover'); const isOpen=!!pop&&pop.style.display!=='none'; setSettingsAboutVisible(!isOpen)}
+el('settings-about-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); toggleSettingsAbout()});
+document.addEventListener('click',e=>{
+  const pop=el('settings-about-popover'); if(!pop||pop.style.display==='none')return;
+  if(e.target.closest('#settings-about-popover')||e.target.closest('#settings-about-toggle-btn'))return;
+  setSettingsAboutVisible(false);
+},true);
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const pop=el('settings-about-popover'); if(pop&&pop.style.display!=='none')setSettingsAboutVisible(false);
+});
 function setHelpSearchVisible(on){
   const wrap=el('help-search-wrap'); if(wrap)wrap.style.display=on?'block':'none';
   const btn=el('help-search-toggle-btn'); if(btn){btn.classList.toggle('active',on); btn.setAttribute('aria-pressed',String(on)); btn.dataset.tip=on?'Close search':'Search help'; btn.setAttribute('aria-label',on?'Close search':'Search help')}
