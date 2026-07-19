@@ -6835,6 +6835,17 @@ function sakuraLog(category,msg,data){
   _debugLogPush(category,msg,data);
   if(data!==undefined)console.log(`[Sakura:${category}] ${msg}`,data); else console.log(`[Sakura:${category}] ${msg}`);
 }
+// Shared by the three CDN-hosted libraries (mammoth, XLSX, PptxGenJS): all fail the same way
+// when the <script> tag doesn't load — the global is just undefined, with no error the app can
+// catch directly. navigator.onLine is the cheapest signal available to narrow down *why*
+// without an extra network round-trip (which would itself be blocked for cross-origin CDN
+// hosts by connect-src): offline:true points at the user's own connection, while offline:false
+// (script tag present, browser online, global still missing) narrows it to either a CSP
+// script-src block or an SRI hash mismatch — worth checking first after any CDN version bump,
+// since a stale hash fails exactly like this rather than with a loud error.
+function sakuraLogLibMissing(libName,category){
+  sakuraLog(category,`${libName} library not loaded (browser reports ${navigator.onLine?'online':'offline'})`,{lib:libName,online:navigator.onLine});
+}
 // Unlike sakuraLog (opt-in breadcrumbs for save/restore/panel/ai flow, gated behind the
 // toggle so normal use isn't spammed), uncaught errors are rare enough and important enough
 // to always capture — the toggle only controls whether the log VIEWER is shown, not whether
@@ -15585,7 +15596,7 @@ function parseDocxHtmlToTreeNodes(html){
 // applied) — same fallback shape as restructureTextWithAi, reusing the same API call and the
 // same "always lands in a new document, original kept in its Pad" insertion behavior.
 async function importDocxFile(file){
-  if(typeof mammoth==='undefined'){ sakuraLog('import','importDocxFile: mammoth library not loaded'); showToast('Word import library failed to load — check your connection and reload the page'); return }
+  if(typeof mammoth==='undefined'){ sakuraLogLibMissing('mammoth','import'); showToast('Word import library failed to load — check your connection and reload the page'); return }
   let html;
   try{
     const buf=await file.arrayBuffer();
@@ -17295,7 +17306,7 @@ async function exportPptx(){
   const restoreNodeContentState=_applyNodeContentExportState();
   renderPreviewBody();
   try{
-    if(!window.PptxGenJS) throw new Error('pptxgenjs failed to load (offline, or the CDN is blocked)');
+    if(!window.PptxGenJS){ sakuraLogLibMissing('PptxGenJS','export'); throw new Error('pptxgenjs failed to load (offline, or the CDN is blocked)'); }
     // Decision-log card sizing measures text with the actual 'Inter' web font via canvas — if
     // it hasn't finished loading yet, that measurement silently falls back to a generic font
     // with different (usually narrower) metrics, undercounting wrapped lines the same way the
@@ -22978,7 +22989,7 @@ renderSidebar();
 
 // === Decision Log ===
 function exportDecisionLogXlsx() {
-  if (typeof XLSX === 'undefined') { showToast('SheetJS not loaded — check your connection'); return; }
+  if (typeof XLSX === 'undefined') { sakuraLogLibMissing('XLSX','export'); showToast('SheetJS not loaded — check your connection'); return; }
 
   // Find all nodes carrying a decision log (structured data attached via the Pad's Decision Log tab)
   const rows = [];
