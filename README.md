@@ -178,6 +178,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Focus | Editing | On | Zoom into a branch; can be turned off entirely |
 | Auto-backup to file | Data | Off (not connected) | Chrome/Edge only; see Data & Backup above |
 | Local safety copy | Data | Always on | Automatic; "Restore" button is the only manual action |
+| Debug logging | Data | Off | Rolling in-memory log (last 500 entries) of app events — save, restore, panel, import/export, AI, and more. Uncaught errors are recorded regardless of this setting; the toggle controls the more detailed breadcrumb trail and whether the log viewer is shown. Never includes your note/task/document text, only metadata (node IDs, lengths, which action ran) — useful to turn on when troubleshooting a specific issue, then use "Copy log" to share it |
 | Skip folded nodes in exports | Data/Export | On | Collapsed subtrees are omitted from exports unless expanded first |
 | Use accent color in exports | Export & print | On | Off: Word, PDF, PowerPoint, and the Q&A/To-Dos/Meeting Notes exports all use one fixed color instead of your live accent, for consistent branding when sharing |
 | Meeting Notes | Features | On | App-level meeting log; independent of any single document |
