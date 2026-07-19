@@ -4348,13 +4348,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <span class="settings-switch-text">Provider</span>
                 <div class="select-wrap"><select class="select" id="ai-provider-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
               </div>
-              <div class="settings-list-row">
-                <span class="settings-switch-text">Custom providers</span>
-                <button class="btn" id="ai-provider-add-btn">+ Add provider</button>
-              </div>
               <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px">
-                <div id="ai-provider-list" style="display:flex;flex-direction:column;gap:6px"></div>
-                <span class="muted-help" style="margin-top:0">All six built-in providers can’t be edited or removed. Every provider needs an API key — select one from the Provider dropdown above to see where to get it. GitHub Models requires a fine-grained personal access token with <code>models:read</code> scope. Add any additional OpenAI-compatible, Gemini-style, or Anthropic-style API with “+ Add provider” — user-added providers can be edited or deleted.</span>
+                <span class="muted-help" style="margin-top:0">All seven built-in providers require their own API key — select one from the Provider dropdown above to see where to get it. GitHub Models requires a fine-grained personal access token with <code>models:read</code> scope. This is a fixed list — Sakura doesn't support adding another API endpoint, so a Content-Security-Policy can restrict outbound requests to these known providers rather than staying open to anywhere.</span>
               </div>
               <div class="settings-list-row">
                 <span class="settings-switch-text">Model</span>
@@ -4766,7 +4761,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>To-Dos AI</strong> — Settings → AI → To-Dos AI, three independent toggles (each on by default): <strong>Extract action items</strong> adds a button in the To-Dos panel header that reads the current document — or your selected nodes, if any are selected — and proposes a batch of tasks from it, added directly with one Undo for the whole batch. <strong>Break into subtasks</strong> adds a small AI button on each open task (next to Rewrite) that proposes 3-6 concrete steps and adds them as real subtasks, also with Undo; it's hidden on tasks that already have subtasks or are set to repeat, since those can't hold subtasks. <strong>Status summary</strong> adds a header button that writes a short plain-language readout of your open tasks — what's overdue or high-priority first, then general progress — shown in a dialog with a Copy button. All three use the same provider/key/model as Rewrite above and need AI Capabilities on (Settings → Features); turning a toggle off here removes just that one button, leaving Rewrite and the other two untouched</li>
 <li><strong>Usage today</strong> — below the API key field, Sakura counts requests made to the currently selected provider today (and shows the count next to each provider in the Fallback order list once any requests are made). This is a local, best-effort counter — it resets on your computer's local calendar day, which can drift slightly from a provider's own reset clock (e.g. Gemini resets at midnight Pacific), and it isn't fetched from the provider itself. Treat it as a rough gauge of how much you've used a provider today, not an authoritative quota reading — check the provider's own dashboard (e.g. Google AI Studio) for the real number if it matters</li>
 <li><strong>Test key</strong> — the Test button next to Save sends a minimal request (asks the model to reply "OK") to confirm the currently typed or saved key actually works, without waiting for your next real Rewrite to find out. A toast reports success or the specific error. This check does not count toward the Usage today total above, since it's a connectivity check rather than real feature use</li>
-<li><strong>Custom providers</strong> — "+ Add provider" connects any OpenAI-compatible, Gemini-style, or Anthropic-style API by name and base URL — no code changes. User-added providers can be edited or deleted; built-ins cannot. Each provider remembers its own last-used model independently</li>
 </ul>
 </div>
           <div class="help-section" data-cat="workspace">  
@@ -7052,21 +7046,27 @@ el('sb-vault-chip')?.addEventListener('contextmenu',e=>{
   applySettingsCategory('data');
   setTimeout(()=>{ el('vault-status')?.scrollIntoView({block:'center',behavior:'smooth'}) },50);
 });
-const AI_CUSTOM_PROVIDERS_KEY='sakura_ai_custom_providers_v1';
 const AI_BUILTIN_PROVIDERS=[
   {id:'gemini',label:'Gemini (free)',shape:'gemini',baseUrl:'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',builtin:true},
   {id:'groq',label:'Groq (free, fast)',shape:'openai',baseUrl:'https://api.groq.com/openai/v1/chat/completions',builtin:true},
   {id:'claude',label:'Claude API',shape:'anthropic',baseUrl:'https://api.anthropic.com/v1/messages',builtin:true},
+  {id:'openai',label:'ChatGPT (OpenAI)',shape:'openai',baseUrl:'https://api.openai.com/v1/chat/completions',builtin:true},
   {id:'seed_openrouter',label:'OpenRouter (free models)',shape:'openai',baseUrl:'https://openrouter.ai/api/v1/chat/completions',builtin:true},
   {id:'seed_cerebras',label:'Cerebras (free tier)',shape:'cerebras',baseUrl:'https://api.cerebras.ai/v1/chat/completions',builtin:true},
   {id:'seed_github_models',label:'GitHub Models (free, your GitHub account)',shape:'openai',baseUrl:'https://models.github.ai/inference/chat/completions',builtin:true}
 ];
-function loadCustomAiProviders(){try{const raw=localStorage.getItem(AI_CUSTOM_PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr.filter(p=>p&&p.id&&p.label&&p.baseUrl&&['gemini','openai','anthropic'].includes(p.shape)&&!AI_BUILTIN_PROVIDERS.some(b=>b.id===p.id)):[]}catch(e){return []}}
-function saveCustomAiProviders(list){try{localStorage.setItem(AI_CUSTOM_PROVIDERS_KEY,JSON.stringify(list))}catch(e){}}
-function getAllAiProviders(){return [...AI_BUILTIN_PROVIDERS,...loadCustomAiProviders()]}
+// The provider list above is now the complete, permanent set — there is no way to add another
+// endpoint beyond these seven. That's deliberate, not an oversight: it's what makes the
+// Content-Security-Policy connect-src allowlist meaningful rather than decorative. A CSP that
+// has to stay wide open to accommodate an arbitrary user-added API origin protects against
+// nothing; a fixed, known list is an actual security boundary. This did remove a real
+// capability — pointing at a self-hosted/local model (Ollama, LM Studio) or any provider
+// outside this list — which was a deliberate trade-off, not a limitation nobody weighed.
+// getAiProviderById's own fallback to AI_BUILTIN_PROVIDERS[0] below means anyone with a
+// previously-selected custom provider ID saved from before this change just lands back on
+// Gemini automatically — no explicit migration needed.
+function getAllAiProviders(){return AI_BUILTIN_PROVIDERS}
 function getAiProviderById(id){return getAllAiProviders().find(p=>p.id===id)||AI_BUILTIN_PROVIDERS[0]}
-function genProviderId(){return 'custom_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function migrateSeedProviders(){try{const list=loadCustomAiProviders();const seedIds=['seed_openrouter','seed_cerebras','seed_github_models'];const filtered=list.filter(p=>!seedIds.includes(p.id));if(filtered.length!==list.length)saveCustomAiProviders(filtered)}catch(e){}}
 function migrateStaleModelIds(){
   // Reset any saved model ID that's no longer in the curated list for that provider
   try{
@@ -7177,6 +7177,7 @@ const AI_CURATED_MODELS={
   gemini:[{v:'gemini-3.5-flash',l:'Gemini 3.5 Flash (recommended)'},{v:'gemini-2.5-flash-lite',l:'Gemini 2.5 Flash Lite (fastest)'},{v:'gemini-3.1-flash-lite',l:'Gemini 3.1 Flash Lite'}],
   groq:[{v:'openai/gpt-oss-20b',l:'GPT-OSS 20B (fastest)'},{v:'openai/gpt-oss-120b',l:'GPT-OSS 120B (quality)'}],
   claude:[{v:'claude-haiku-4-5-20251001',l:'Claude Haiku (fast)'},{v:'claude-sonnet-4-6',l:'Claude Sonnet (quality)'}],
+  openai:[{v:'gpt-5.4-mini',l:'GPT-5.4 mini (fast)'},{v:'gpt-5.5',l:'GPT-5.5 (quality)'}],
   seed_openrouter:[{v:'openai/gpt-oss-20b:free',l:'GPT-OSS 20B (fast)'},{v:'openai/gpt-oss-120b:free',l:'GPT-OSS 120B'},{v:'nvidia/nemotron-3-super-120b-a12b:free',l:'Nemotron 120B'},{v:'openrouter/free',l:'Auto (free router, slower)'}],
   seed_cerebras:[{v:'gpt-oss-120b',l:'GPT-OSS 120B'}],
   seed_github_models:[{v:'openai/gpt-4o-mini',l:'GPT-4o mini (fast)'},{v:'openai/gpt-4.1-mini',l:'GPT-4.1 mini'},{v:'openai/gpt-4o',l:'GPT-4o'},{v:'openai/gpt-4.1',l:'GPT-4.1'}]
@@ -18495,7 +18496,7 @@ function saveAiKey(k){
 }
 function syncAiModelOptions(){const msel=el('ai-model-select'); if(!msel)return; const provider=getAiProviderById(aiProvider); const selectWrap=msel.closest('.select-wrap'); const customInput=el('ai-model-custom-input'); const models=AI_CURATED_MODELS[provider.id]; if(!models||!models.length){ if(selectWrap)selectWrap.style.display='none'; if(customInput){customInput.style.display='block'; customInput.placeholder='Enter exact model ID'; customInput.value=aiModel||''} return } if(selectWrap)selectWrap.style.display=''; msel.innerHTML=''; models.forEach(m=>{const o=document.createElement('option'); o.value=m.v; o.textContent=m.l; msel.appendChild(o)}); const customOpt=document.createElement('option'); customOpt.value='__custom__'; customOpt.textContent='Custom model…'; msel.appendChild(customOpt); const match=models.find(m=>m.v===aiModel); if(match){ msel.value=match.v; if(customInput){customInput.style.display='none'; customInput.value=''} } else { msel.value='__custom__'; if(customInput){customInput.style.display='block'; customInput.placeholder='Enter exact model ID'; customInput.value=aiModel||''} }}
 function hasRawAiKeyForProvider(pid){ try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}');return !!d['key_'+pid]}catch(e){return false} }
-function updateAiKeyStatus(){resumeAutoRewriteIfPaused(); const el2=el('ai-key-status'); if(!el2)return; const k=getAiKey(); const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider); el2.textContent=locked?'Key saved, but Secure Storage is locked.':(k?'Key saved ('+k.length+' chars).':'No key saved.'); const hint=el('ai-key-hint'); if(hint){const a=(url,text)=>'<a href="'+url+'" target="_blank" rel="noopener" style="color:var(--accent)">'+text+'</a>';if(aiProvider==='gemini'){hint.innerHTML='Get a free key at '+a('https://aistudio.google.com/apikey','aistudio.google.com/apikey')+' — no credit card needed.'}else if(aiProvider==='groq'){hint.innerHTML='Get a free key at '+a('https://console.groq.com/keys','console.groq.com/keys')+' — no credit card needed.'}else if(aiProvider==='claude'){hint.innerHTML='Keys at '+a('https://console.anthropic.com/settings/keys','console.anthropic.com')+' — requires a paid account.'}else if(aiProvider==='seed_openrouter'){hint.innerHTML='Create a free account, then get a key at '+a('https://openrouter.ai/settings/keys','openrouter.ai/settings/keys')+'. Free-tier models are marked with a “free” label on their site — no credit card required for those.'}else if(aiProvider==='seed_github_models'){hint.innerHTML='Use a GitHub personal access token as the key — generate one at '+a('https://github.com/settings/tokens','github.com/settings/tokens')+' (no special scopes needed). Model IDs must be prefixed with their vendor, e.g. <code>openai/gpt-4.1</code> or <code>microsoft/phi-4</code>.'}else if(aiProvider==='seed_cerebras'){hint.innerHTML='Sign up for a free account and get a key at '+a('https://cloud.cerebras.ai','cloud.cerebras.ai')+' — no credit card needed for the free tier.'}else{hint.textContent='Enter the API key for this custom provider.'}}}
+function updateAiKeyStatus(){resumeAutoRewriteIfPaused(); const el2=el('ai-key-status'); if(!el2)return; const k=getAiKey(); const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider); el2.textContent=locked?'Key saved, but Secure Storage is locked.':(k?'Key saved ('+k.length+' chars).':'No key saved.'); const hint=el('ai-key-hint'); if(hint){const a=(url,text)=>'<a href="'+url+'" target="_blank" rel="noopener" style="color:var(--accent)">'+text+'</a>';if(aiProvider==='gemini'){hint.innerHTML='Get a free key at '+a('https://aistudio.google.com/apikey','aistudio.google.com/apikey')+' — no credit card needed.'}else if(aiProvider==='groq'){hint.innerHTML='Get a free key at '+a('https://console.groq.com/keys','console.groq.com/keys')+' — no credit card needed.'}else if(aiProvider==='claude'){hint.innerHTML='Keys at '+a('https://console.anthropic.com/settings/keys','console.anthropic.com')+' — requires a paid account.'}else if(aiProvider==='openai'){hint.innerHTML='Keys at '+a('https://platform.openai.com/api-keys','platform.openai.com/api-keys')+' — requires a paid account.'}else if(aiProvider==='seed_openrouter'){hint.innerHTML='Create a free account, then get a key at '+a('https://openrouter.ai/settings/keys','openrouter.ai/settings/keys')+'. Free-tier models are marked with a “free” label on their site — no credit card required for those.'}else if(aiProvider==='seed_github_models'){hint.innerHTML='Use a GitHub personal access token as the key — generate one at '+a('https://github.com/settings/tokens','github.com/settings/tokens')+' (no special scopes needed). Model IDs must be prefixed with their vendor, e.g. <code>openai/gpt-4.1</code> or <code>microsoft/phi-4</code>.'}else if(aiProvider==='seed_cerebras'){hint.innerHTML='Sign up for a free account and get a key at '+a('https://cloud.cerebras.ai','cloud.cerebras.ai')+' — no credit card needed for the free tier.'}else{hint.textContent='Enter the API key for this provider.'}}}
 
 function isRateLimitStatus(status,msg){
   if(status===429)return true;
@@ -19837,71 +19838,6 @@ function syncAiProviderOptions(){
   all.forEach(p=>{const o=document.createElement('option'); o.value=p.id; o.textContent=p.label; sel.appendChild(o)});
   if(!all.some(p=>p.id===aiProvider))aiProvider=all[0].id;
   sel.value=aiProvider;
-  renderAiProviderManageList();
-}
-function renderAiProviderManageList(){
-  const wrap=el('ai-provider-list'); if(!wrap)return;
-  const custom=loadCustomAiProviders();
-  wrap.innerHTML='';
-  if(!custom.length){const empty=document.createElement('div'); empty.className='muted-help'; empty.style.margin='0'; empty.textContent='No custom providers yet.'; wrap.appendChild(empty); return}
-  const shapeLabels={gemini:'Gemini-style',openai:'OpenAI-compatible',anthropic:'Anthropic-style'};
-  custom.forEach(p=>{
-    const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px';
-    const label=document.createElement('span'); label.style.cssText='font:500 12px Inter,sans-serif;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'; label.textContent=p.label+' \u2014 '+(shapeLabels[p.shape]||p.shape);
-    const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:4px;flex-shrink:0';
-    const editBtn=document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit'; editBtn.addEventListener('click',()=>openProviderModal(p));
-    const delBtn=document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete'; delBtn.addEventListener('click',()=>deleteAiProvider(p.id));
-    btns.appendChild(editBtn); btns.appendChild(delBtn);
-    row.appendChild(label); row.appendChild(btns);
-    wrap.appendChild(row);
-  });
-}
-function openProviderModal(existing=null){
-  const overlay=el('sakura-modal-overlay'); if(!overlay)return;
-  el('sakura-modal-icon').style.display='none';
-  el('sakura-modal-title').textContent=existing?'Edit Provider':'Add Provider';
-  const bodyEl=el('sakura-modal-body'); bodyEl.innerHTML=''; bodyEl.style.whiteSpace='normal';
-  const mkField=(labelText,inputEl)=>{const wrap=document.createElement('div'); wrap.style.marginBottom='10px'; const lbl=document.createElement('div'); lbl.textContent=labelText; lbl.style.cssText='font:500 11px Inter,sans-serif;color:var(--muted);margin-bottom:4px'; wrap.appendChild(lbl); wrap.appendChild(inputEl); return wrap};
-  const labelInput=document.createElement('input'); labelInput.type='text'; labelInput.className='meta-input'; labelInput.style.width='100%'; labelInput.placeholder='e.g. OpenRouter'; labelInput.value=existing?.label||'';
-  const shapeSelect=document.createElement('select'); shapeSelect.className='select'; shapeSelect.style.width='100%';
-  [['openai','OpenAI-compatible (most aggregators, Ollama, etc.)'],['gemini','Gemini-style'],['anthropic','Anthropic-style']].forEach(([v,l])=>{const o=document.createElement('option'); o.value=v; o.textContent=l; shapeSelect.appendChild(o)});
-  shapeSelect.value=existing?.shape||'openai';
-  const urlInput=document.createElement('input'); urlInput.type='text'; urlInput.className='meta-input'; urlInput.style.width='100%'; urlInput.placeholder='https://api.example.com/v1/chat/completions'; urlInput.value=existing?.baseUrl||'';
-  const urlHint=document.createElement('div'); urlHint.className='muted-help'; urlHint.style.margin='4px 0 0'; urlHint.textContent='For Gemini-style endpoints, include {model} where the model ID belongs in the URL.';
-  bodyEl.appendChild(mkField('Name',labelInput));
-  bodyEl.appendChild(mkField('Shape (request/response format)',shapeSelect));
-  const urlWrap=mkField('Base URL',urlInput); urlWrap.appendChild(urlHint); bodyEl.appendChild(urlWrap);
-  const errEl=document.createElement('div'); errEl.style.cssText='color:#dc2626;font-size:12px;margin-top:4px;display:none'; bodyEl.appendChild(errEl);
-  const inputWrap=el('sakura-modal-input-wrap'); if(inputWrap)inputWrap.style.display='none';
-  const inputWrap2=el('sakura-modal-input2-wrap'); if(inputWrap2)inputWrap2.style.display='none';
-  const actions=el('sakura-modal-actions'); actions.innerHTML='';
-  const closeIt=()=>{overlay.classList.remove('open'); bodyEl.style.whiteSpace='pre-line'};
-  const cancelBtn=document.createElement('button'); cancelBtn.className='smodal-btn'; cancelBtn.textContent='Cancel'; cancelBtn.onclick=closeIt; actions.appendChild(cancelBtn);
-  if(existing){const delBtn=document.createElement('button'); delBtn.className='smodal-btn danger'; delBtn.textContent='Delete'; delBtn.onclick=()=>{closeIt(); deleteAiProvider(existing.id)}; actions.appendChild(delBtn)}
-  const saveBtn=document.createElement('button'); saveBtn.className='smodal-btn primary'; saveBtn.textContent='Save';
-  saveBtn.onclick=()=>{
-    const label=labelInput.value.trim(); const baseUrl=urlInput.value.trim(); const shape=shapeSelect.value;
-    if(!label||!baseUrl){errEl.textContent='Name and Base URL are both required.'; errEl.style.display='block'; return}
-    const list=loadCustomAiProviders();
-    if(existing){const i=list.findIndex(p=>p.id===existing.id); if(i>=0)list[i]={...existing,label,shape,baseUrl}}
-    else{list.push({id:genProviderId(),label,shape,baseUrl,builtin:false})}
-    saveCustomAiProviders(list);
-    closeIt();
-    syncAiProviderOptions();
-    if(existing&&existing.id===aiProvider)syncAiModelOptions();
-  };
-  actions.appendChild(saveBtn);
-  overlay.classList.add('open');
-  setTimeout(()=>labelInput.focus(),80);
-}
-async function deleteAiProvider(id){
-  const ok=await sakuraConfirm({icon:'',title:'Delete Provider',body:'Delete this custom provider? Any API key saved for it will also be removed.',confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
-  saveCustomAiProviders(loadCustomAiProviders().filter(p=>p.id!==id));
-  delete aiModelByProvider[id];
-  try{const d=JSON.parse(localStorage.getItem(AI_PREFS_KEY)||'{}'); delete d['key_'+id]; localStorage.setItem(AI_PREFS_KEY,JSON.stringify(d))}catch(e){} delete decryptedKeyCache['key_'+id];
-  if(aiProvider===id){aiProvider=AI_BUILTIN_PROVIDERS[0].id; aiModel=aiModelByProvider[aiProvider]||defaultModelForProvider(aiProvider); saveAiPrefs()}
-  syncAiProviderOptions(); updateAiKeyStatus(); syncAiModelOptions();
 }
 
 function renderFallbackOrderList(){
@@ -19972,7 +19908,6 @@ function applyFallbackToggle(){
   if(aiFallbackEnabled)renderFallbackOrderList();
   else{const warning=el('ai-fallback-empty-warning'); if(warning)warning.classList.remove('show');}
 }
-el('ai-provider-add-btn')?.addEventListener('click',()=>openProviderModal(null));
 function setAiMaxTokens(n,persist=true){
   const allowed=[512,1024,2048,4096,8192];
   aiMaxTokens=allowed.includes(Number(n))?Number(n):1024;
@@ -20039,7 +19974,7 @@ el('sbitem-none-btn')?.addEventListener('click',e=>{e.preventDefault(); bulkSetC
 el('ai-prompt-reset-btn').addEventListener('click',()=>{aiRewritePrompt=AI_DEFAULT_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast('Prompt reset to default')});
 el('ai-prompt-rephrase-btn').addEventListener('click',()=>{aiRewritePrompt=AI_REPHRASE_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast('Prompt switched to Rephrase — Auto-rewrite on commit will use this too, if it\'s on')});
 async function resetAiSettingsToDefault(){
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset AI Settings',body:'This restores the AI provider, model, and rewrite prompt to their defaults, and clears any saved API key — for all built-in providers (Gemini, Groq, Claude, OpenRouter, Cerebras, GitHub Models) and any custom providers you\'ve added.\n\nCustom provider definitions themselves (name, shape, base URL) are not deleted, only their keys. Your documents and other app preferences are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset AI Settings',body:'This restores the AI provider, model, and rewrite prompt to their defaults, and clears any saved API key — for all seven built-in providers (Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models).\n\nYour documents and other app preferences are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   try{ localStorage.removeItem(AI_PREFS_KEY); }catch(e){} decryptedKeyCache={};
   showToast('AI settings reset — reloading…');
@@ -20156,7 +20091,7 @@ function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHid
 const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
 function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
 
-loadPrefs(); loadRecentAnswerers(); migrateSeedProviders(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
+loadPrefs(); loadRecentAnswerers(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); titleAutoSyncEnabled=!String(el('header-title')?.value||'').trim(); lastAutoTitle=String(el('header-title')?.value||'').trim(); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search, templates === */
@@ -21946,11 +21881,14 @@ const OUTLOOK_CAL_KEY='sakura_outlook_cal_v1';
 // first. GitHub's (and likely other providers') secret scanning crawls gist content, even
 // "secret" gists, and auto-revokes recognizable token formats via partner programs — so a raw
 // key ending up in a gist doesn't just risk exposure, it gets the key revoked outright.
+// AI_CUSTOM_PROVIDERS_KEY is legacy at this point — custom AI providers were removed as a
+// feature (see AI_BUILTIN_PROVIDERS' own comment for why: a fixed provider list is what makes
+// the CSP connect-src allowlist a real security boundary rather than a wide-open one). Kept
+// here purely defensively, in case anyone's browser still has data under that key from before
+// this change — a saved custom baseUrl could itself have embedded a secret as a query param,
+// so it stays excluded from cloud backups rather than risk it ever leaving this browser.
+const AI_CUSTOM_PROVIDERS_KEY='sakura_ai_custom_providers_v1';
 const CLOUD_UNSAFE_KEYS=[AI_PREFS_KEY,CLOUD_BACKUP_KEY,SAKURA_VAULT_META_KEY,AI_CUSTOM_PROVIDERS_KEY];
-// AI_CUSTOM_PROVIDERS_KEY holds {id,label,baseUrl,shape} for user-added providers — baseUrl is
-// free-text the user pastes in, and some API providers expect the key as a URL query param
-// rather than a header, so a pasted baseUrl could itself contain a secret. Safer to keep the
-// whole custom-provider list local-only, same as the keys themselves, than to try to sanitize it.
 async function buildCloudSafeBackupPayload(){
   const full=await buildFullBackupPayload();
   const data={...full.data};
