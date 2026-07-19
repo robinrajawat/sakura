@@ -6,8 +6,8 @@
 #   sh scripts/setup-git-identity.sh
 
 set -e
-git config user.name "Robin Singh Rajawat"
+git config user.name "robinrajawat"
 git config user.email "robinsinghrajawat@gmail.com"
 git config core.hooksPath .githooks
-echo "✓ Git identity set to Robin Singh Rajawat <robinsinghrajawat@gmail.com>"
+echo "✓ Git identity set to robinrajawat <robinsinghrajawat@gmail.com>"
 echo "✓ core.hooksPath set to .githooks (pre-commit guard active)"
