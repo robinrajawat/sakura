@@ -28183,7 +28183,7 @@ function audienceWindowReady(win){
     if(!st.previewActive&&typeof win.openPreview==='function')win.openPreview();
     if(!st.previewPresenting&&typeof win.enterPresenterMode==='function')win.enterPresenterMode();
     sakuraLog('audience','audienceWindowReady completed',{docSwitched:!!(currentDocId&&st.currentDocId!==currentDocId)});
-  }catch(e){ if(typeof sakuraLog==='function')sakuraLog('error','audienceWindowReady failed',{message:e&&e.message}); }
+  }catch(e){ if(typeof sakuraLogError==='function')sakuraLogError('audience','audienceWindowReady failed',{message:e&&e.message}); }
   // Either window resizing (a monitor swap, dragging the Audience window to a differently
   // sized display, this window itself being resized) can change the Audience panel's exact
   // pixel size — re-run the geometry match promptly rather than waiting for the next poll tick.
@@ -28333,7 +28333,7 @@ function syncAudienceWindow(){
       setAudienceMode('slide');
     }
   }catch(e){
-    if(typeof sakuraLog==='function')sakuraLog('error','syncAudienceWindow failed',{message:e&&e.message});
+    if(typeof sakuraLogError==='function')sakuraLogError('audience','syncAudienceWindow failed',{message:e&&e.message});
   }
 }
 // Pushes the freshest node data into the Audience window and re-renders its slide view from
