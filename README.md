@@ -243,4 +243,4 @@ After cloning, run `sh scripts/setup-git-identity.sh` once — it sets the corre
 
 All rights reserved — see [LICENSE](LICENSE). Public visibility of this repository does not grant permission to reuse, redistribute, or incorporate any part of it into another work.
 
-Sakura loads three open-source libraries from CDN for optional import/export features — SheetJS (Apache 2.0), mammoth.js (BSD-2-Clause), and PptxGenJS (MIT). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for full attribution.
+Sakura loads three open-source libraries from CDN for optional import/export features — SheetJS (Apache 2.0), mammoth.js (BSD-2-Clause), and PptxGenJS (MIT) — and embeds draw.io/diagrams.net (Apache 2.0) for diagram editing. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for full attribution.

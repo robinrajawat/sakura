@@ -1,11 +1,12 @@
 # Third-Party Notices
 
-Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it loads three
-open-source libraries from CDN at runtime for optional import/export
-features. None of their source is vendored into this repository — Sakura
-links to the exact pinned versions below via Subresource Integrity — but
-their licenses are reproduced here regardless, since that's what each one
-asks for.
+Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on a
+few third-party open-source projects for optional features. Three are
+CDN-loaded libraries whose code runs inside Sakura's own page — none of
+their source is vendored into this repository, Sakura links to the exact
+pinned versions below via Subresource Integrity, but their licenses are
+reproduced here regardless, since that's what each one asks for. A fourth,
+draw.io, is a genuinely different relationship — see its own entry below.
 
 ---
 
@@ -50,3 +51,23 @@ software and associated documentation files, to deal in the software
 without restriction, subject to the copyright notice and this permission
 notice being included in all copies or substantial portions of the
 software. See the repository's LICENSE file for the complete text.
+
+---
+
+## draw.io / diagrams.net (Diagrams tab, Whiteboard)
+
+Used for: the diagram editor in the Pad's Diagrams tab, and Presenter mode's
+Whiteboard.
+
+- License: Apache License 2.0
+- Homepage: https://www.drawio.com/
+- Repository: https://github.com/jgraph/drawio
+
+This one is a different relationship from the three above: Sakura embeds
+`embed.diagrams.net` in an iframe and talks to it via `postMessage` — the
+same integration method draw.io's own documentation recommends for
+third-party embedding. No draw.io source is loaded into or bundled with
+Sakura's own code; it's a link to their hosted editor, not a library
+Sakura executes. Included here for accuracy and courtesy regardless.
+
+Copyright draw.io AG / draw.io Ltd (formerly JGraph Ltd).
