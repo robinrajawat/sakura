@@ -19896,7 +19896,31 @@ function renderFallbackOrderList(){
       const p=all.find(x=>x.id===entry.id); if(!p)return false;
       return !!getAiKeyForProvider(p.id);
     });
-    if(aiFallbackEnabled&&!hasEligible){ warning.classList.add('show'); warningText.textContent="No other checked provider has a key saved, so fallback has nowhere to go yet."; }
+    if(aiFallbackEnabled&&!hasEligible){
+      warning.classList.add('show');
+      // Same distinction the per-row " — locked" vs " — no key" label above already makes
+      // (hasRawAiKeyForProvider checks whether a key exists in storage at all, regardless of
+      // whether the vault can currently decrypt it) — but the summary banner below it was
+      // checking getAiKeyForProvider, which returns '' whenever the vault is locked even if
+      // every checked provider genuinely has a key saved. That produced a flatly wrong message
+      // ("no key saved") in exactly the case where keys *are* saved and the actual, fixable
+      // problem is just that Secure Storage needs unlocking.
+      const lockedElsewhere=vaultActive()&&!vaultUnlocked()&&aiFallbackOrder.some(entry=>entry.id!==aiProvider&&entry.enabled&&hasRawAiKeyForProvider(entry.id));
+      warningText.innerHTML='';
+      if(lockedElsewhere){
+        warningText.appendChild(document.createTextNode('Fallback providers have keys saved, but Secure Storage is locked — '));
+        const link=document.createElement('a');
+        link.href='#'; link.textContent='unlock it'; link.style.cssText='color:inherit;text-decoration:underline;cursor:pointer';
+        // unlockVault() already calls renderFallbackOrderList() itself on success (see its own
+        // definition), so this banner corrects itself the moment the passphrase is entered —
+        // no extra refresh needed here.
+        link.addEventListener('click',e=>{ e.preventDefault(); unlockVault(); });
+        warningText.appendChild(link);
+        warningText.appendChild(document.createTextNode(' to use them.'));
+      } else {
+        warningText.textContent="No other checked provider has a key saved, so fallback has nowhere to go yet.";
+      }
+    }
     else{ warning.classList.remove('show'); }
   }
 }
