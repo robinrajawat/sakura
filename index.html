@@ -7294,6 +7294,21 @@ function sakuraSanitizeRichHtml(html){
   }catch(e){ return ''; } // fail closed — if sanitizing itself throws, discard rather than risk raw insertion
 }
 function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+// Blocks a javascript: URL from reaching an <a href> built from user-typed input — the same
+// filter sakuraSanitizeRichHtml already applies to pasted/imported HTML above, but that
+// sanitizer only runs on rich-text paste/import content. sakuraLinkPrompt (the "Insert Link"
+// dialog used by the Notepad, meeting notes, and node note editors) is a separate path: it
+// returns whatever URL the person typed with zero validation, so a value like
+// "javascript:alert(document.cookie)" would otherwise reach the DOM verbatim as a clickable
+// link. escAttr alone only prevents breaking out of the href="..." attribute (quote-escaping)
+// — it doesn't examine what scheme the URL itself uses, which is a different, additive gap.
+// Applied at every href="${escAttr(...)}" site built from typed/pasted user input.
+function sanitizeHrefUrl(url){
+  const trimmed=String(url||'').trim();
+  const stripped=trimmed.replace(/[\x00-\x1f]/g,''); // "jav\tascript:" is a known filter-bypass trick
+  if(/^\s*javascript:/i.test(stripped))return '';
+  return trimmed;
+}
 // The image-resize selection outline (.editor-img-selected) is a transient UI state,
 // not content — it must never be baked into saved note/pad HTML, or the accent border
 // shows up permanently on reload/reopen even though nothing is actually selected.
@@ -12809,7 +12824,7 @@ function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase(
 const DL_LABEL_COLORS={'Context':'--fc-blue','Decision':'--fc-red','Rationale':'--fc-purple','Alternatives':'--fc-gray','Impact':'--fc-orange','Status':'--fc-green','Decision Log':'--fc-gray'};
 const DL_FIELD_TEXT_RE=/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/;
 function isDecisionLogFieldNode(n){ return DL_FIELD_TEXT_RE.test(getNodePlainText(n).trim()); }
-function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="color:var(${colorVar});font-weight:600;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}else{const keyMatch=src.match(/^[A-Za-z][A-Za-z0-9 /&'-]{0,50}:(?=\s)/);if(keyMatch){out+=`<span class="sem-key">${esc(keyMatch[0])}</span>`;i=keyMatch[0].length}}while(i<src.length){const ch=src[i];if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){let qEnd=src.length;out+=`<span class="sem-quote">${esc(src.slice(i+1,qEnd).trimStart())}</span>`;i=qEnd;continue}if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){out+=`<span class="sem-code-inline">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\[([^\]]+)\]/g,'$1').replace(/\(([^)]+)\)/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/(?:^|\s)!(\S+)/g,' $1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${esc(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){out+=`<span class="sem-chip">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){out+=`<span class="sem-meta">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1;while(end<src.length&&!/\s/.test(src[end]))end++;if(end>i+1){out+=`<span class="sem-alert-inline">${esc(src.slice(i+1,end))}</span>`;i=end;continue}}if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);if(noteMatch){const num=noteMatch[2];out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`;i+=noteMatch[0].length;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="color:var(${colorVar});font-weight:600;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}else{const keyMatch=src.match(/^[A-Za-z][A-Za-z0-9 /&'-]{0,50}:(?=\s)/);if(keyMatch){out+=`<span class="sem-key">${esc(keyMatch[0])}</span>`;i=keyMatch[0].length}}while(i<src.length){const ch=src[i];if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){let qEnd=src.length;out+=`<span class="sem-quote">${esc(src.slice(i+1,qEnd).trimStart())}</span>`;i=qEnd;continue}if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){out+=`<span class="sem-code-inline">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\[([^\]]+)\]/g,'$1').replace(/\(([^)]+)\)/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/(?:^|\s)!(\S+)/g,' $1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){out+=`<span class="sem-chip">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){out+=`<span class="sem-meta">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1;while(end<src.length&&!/\s/.test(src[end]))end++;if(end>i+1){out+=`<span class="sem-alert-inline">${esc(src.slice(i+1,end))}</span>`;i=end;continue}}if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);if(noteMatch){const num=noteMatch[2];out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`;i+=noteMatch[0].length;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||''; const iconMatch=isSectionRow?matchSectionEmojiIcon(raw):null; const bodyText=iconMatch?iconMatch.rest:raw; const iconHtml=iconMatch?`<span class="node-emoji-icon"><svg viewBox="0 0 24 24">${iconMatch.inner}</svg></span>`:''; const inner=parseStyledText(bodyText,searchQ)||(iconMatch?'':'&nbsp;'); const html=iconHtml+(node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner); return {cls,html}}
 function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(id)]).filter(Boolean); const hasSelection=selectedNodes.length>0; document.querySelectorAll('.fmt-btn').forEach(btn=>{const styleName=btn.dataset.style; const active=hasSelection&&selectedNodes.every(n=>!!n.styles[styleName]); btn.classList.toggle('toggle-on',active); btn.disabled=!hasSelection; btn.style.opacity=hasSelection?'1':'.55'});
   const hlBtn=el('hl-toggle-btn'); const hlCaret=el('hl-caret-btn');
@@ -23705,7 +23720,7 @@ el('ntb-link')?.addEventListener('mousedown', e => {
       document.execCommand('unlink', false, null);
     } else {
       const text = (result.text || '').trim() || url;
-      document.execCommand('insertHTML', false, `<a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
+      document.execCommand('insertHTML', false, `<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
     }
   });
 });
@@ -24940,7 +24955,7 @@ function renderDecisionLogsList(){
   if(authorSel){
     const authors=[...new Set(all.map(dl=>(dl.author||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     if(!authors.includes(decisionListAuthorFilter))decisionListAuthorFilter='';
-    authorSel.innerHTML='<option value="">All authors</option>'+authors.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+    authorSel.innerHTML='<option value="">All authors</option>'+authors.map(a=>`<option value="${escAttr(a)}">${esc(a)}</option>`).join('');
     authorSel.value=decisionListAuthorFilter;
     authorSel.style.display=authors.length>1?'':'none';
   }
@@ -30984,7 +30999,7 @@ el('ptb-link')?.addEventListener('mousedown', e=>{
       document.execCommand('unlink', false, null);
     } else {
       const text=(result.text||'').trim() || url;
-      document.execCommand('insertHTML', false, `<a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
+      document.execCommand('insertHTML', false, `<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
     }
     markDirty();
   });
@@ -33357,7 +33372,7 @@ function _addTagPopoverFromInput(){
       +`<div class="todo-textwrap">`
       + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
           ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
-          : `<a class="todo-link-open" href="${esc(link)}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
         ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
@@ -36699,7 +36714,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       if(url){
         if(mfKey)checkpointMeetingField(mfKey);
         const text=(result.text||'').trim()||url;
-        document.execCommand('insertHTML',false,`<a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
+        document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
         if(mfKey)meetingFieldSyncModel(mfKey,editor);
       }
       hideSelectionFmtPopover();
