@@ -57,6 +57,28 @@ Sakura v2.0.0 — see LICENSE for terms.
   pptxgenjs <script> tag for the current reasoning on why it's still CDN-hosted.
 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+<!--
+  Referrer-Policy: the app links out to several external sites (SAP Notes via me.sap.com,
+  GitHub token pages, Azure/Google Cloud consoles, provider key pages, draw.io/diagrams.net).
+  Without this, the default browser behavior already leans private in most current browsers,
+  but setting it explicitly guarantees strict-origin-when-cross-origin regardless of the
+  visitor's browser/version: cross-origin link clicks send only this page's origin (never the
+  full URL, path, or any query string) to the destination, while same-origin requests still get
+  the full referrer. No functional dependency on referrer data anywhere in this app, so there's
+  no reason to allow more than that.
+
+  Permissions-Policy: denies every powerful browser feature this app doesn't use — camera,
+  microphone, geolocation, payment, usb, midi, sensors, screen capture/wake-lock, etc. — as
+  defense-in-depth against an injected script trying to invoke them, on top of what CSP already
+  restricts. Scoped from the app's actual API usage (grepped, not guessed): clipboard-read/write
+  are genuinely used (Smart Paste, Copy actions throughout), and fullscreen is genuinely used
+  (Zen mode, Presenter mode) — both left open for 'self' only. Everything else gets none.
+  Caveat: unlike CSP, Permissions-Policy via <meta> has inconsistent browser support (some
+  directives are header-only in some browsers) — kept as an additional layer, not a guarantee
+  every directive is enforced everywhere.
+-->
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), interest-cohort=(), browsing-topics=(), clipboard-read=(self), clipboard-write=(self), fullscreen=(self)" />
 <title>Sakura</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#252523">
