@@ -43,6 +43,17 @@ For updates: use the maintained source file
   confirmed from the code, but Drive/Outlook connect specifically are the parts of this CSP
   most worth testing for real after this ships, since a live OAuth popup flow isn't something
   that could be fully exercised without real Google/Microsoft credentials.
+
+  Known benign console error: with DevTools open, the pptxgenjs bundle's trailing
+  `//# sourceMappingURL=pptxgen.bundle.js.map` comment triggers a blocked-by-CSP warning for
+  `cdn.jsdelivr.net`, since connect-src has no exception for it. This is DevTools alone
+  attempting to fetch the source map for debugging — it doesn't fire for real users, and
+  functionality is unaffected either way. Deliberately left as-is rather than widening
+  connect-src for it: the CSP correctly blocking an origin it was never meant to allow is the
+  policy working as intended, not a bug to fix. Self-hosting the three CDN scripts (see the
+  script-src origins above) would remove the warning at the source without widening anything,
+  and is the preferred fix if/when that's set up — see the PowerPoint export comment near the
+  pptxgenjs <script> tag for the current reasoning on why it's still CDN-hosted.
 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
 <title>Sakura</title>
