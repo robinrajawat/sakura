@@ -9855,7 +9855,7 @@ el('diagram-summary-chip')?.addEventListener('click',()=>{
   renderDiagramsList();
 });
 
-el('history-modal-overlay')?.addEventListener('click',e=>{ if(e.target===el('history-modal-overlay'))closeVersionHistory(); });
+onOverlayBackdropClick(el('history-modal-overlay'),closeVersionHistory);
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
 el('more-version-history-btn')?.addEventListener('click',()=>{ el('more-menu')?.classList.remove('open'); if(currentDocId)openVersionHistory(currentDocId); });
 async function deleteDoc(id){
@@ -12825,7 +12825,29 @@ function _closeModal(key){
   overlay.classList.add('closing');
   setTimeout(()=>{overlay.classList.remove('open','closing'); if(resolve)resolve({key,inputValue:input.value,inputValue2:input2.value,textareaValue:textarea.value})},180);
 }
-el('sakura-modal-overlay').addEventListener('click',e=>{if(e.target===el('sakura-modal-overlay'))_closeModal('cancel')});
+// Clicking the backdrop (not the modal box itself) cancels — but the same drag-select issue
+// fixed on the note panel applies here too: selecting text in the input/textarea and releasing
+// the mouse past the modal box's edge lands the eventual click's target on the overlay itself
+// (the nearest common ancestor of the mousedown and mouseup points), which used to read as "the
+// user clicked the backdrop" and cancel the dialog mid-selection. Only treat it as a genuine
+// backdrop click if the mousedown that started the gesture was ALSO directly on the backdrop.
+let _modalOverlayMouseDownOnBackdrop=false;
+el('sakura-modal-overlay').addEventListener('mousedown',e=>{
+  _modalOverlayMouseDownOnBackdrop=(e.target===el('sakura-modal-overlay'));
+});
+el('sakura-modal-overlay').addEventListener('click',e=>{
+  if(e.target===el('sakura-modal-overlay')&&_modalOverlayMouseDownOnBackdrop)_closeModal('cancel');
+});
+// Shared version of the same fix for the several other overlays below (Version History, Demo,
+// the consolidated Settings sub-modals, the Shortcuts cheatsheet, To-Dos History, Meetings
+// History) that each close on a backdrop click the same way — factored out here so each call
+// site is one line instead of repeating the mousedown-tracking flag by hand.
+function onOverlayBackdropClick(overlay,closeFn){
+  if(!overlay)return;
+  let mouseDownOnBackdrop=false;
+  overlay.addEventListener('mousedown',e=>{ mouseDownOnBackdrop=(e.target===overlay); });
+  overlay.addEventListener('click',e=>{ if(e.target===overlay&&mouseDownOnBackdrop)closeFn(); });
+}
 
 async function sakuraConfirm({icon,title,body,confirmLabel='OK',confirmCls='primary',cancelLabel='Cancel'}){
   const res=await _openModal({icon,title,body,inputValue:null,buttons:[{label:cancelLabel,cls:'',key:'cancel'},{label:confirmLabel,cls:confirmCls,key:'confirm'}]});
@@ -27038,7 +27060,7 @@ el('demo-back-btn')?.addEventListener('click',()=>demoSeekStep(-1));
 el('demo-fwd-btn')?.addEventListener('click',()=>demoSeekStep(1));
 el('demo-speed-btn')?.addEventListener('click',cycleDemoSpeed);
 setDemoSpeedBtnLabel();
-el('demo-overlay')?.addEventListener('click',e=>{ if(e.target===el('demo-overlay'))closeDemo(); });
+onOverlayBackdropClick(el('demo-overlay'),closeDemo);
 
 /* === Preview: read-only presentational render of the real document.
    Pure renderer over the real `nodes` array — never mutates anything,
@@ -27704,13 +27726,20 @@ function previewScrollToNode(nodeId){
   setTimeout(()=>target.classList.remove('pv-flash'),900);
 }
 let previewPopoverEl=null;
+let _previewPopoverMouseDownInside=false;
 function closePreviewPopover(){
   if(previewPopoverEl){previewPopoverEl.remove(); previewPopoverEl=null;}
   document.removeEventListener('click',previewPopoverOutsideHandler,true);
+  document.removeEventListener('mousedown',previewPopoverMouseDownHandler,true);
   window.removeEventListener('keydown',previewPopoverEscHandler);
   el('preview-body')?.removeEventListener('scroll',closePreviewPopover);
 }
-function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target)&&!e.target.closest('#node-qa-suggest'))closePreviewPopover(); }
+// Same drag-selection issue as the note panel and Insert Link dialog: selecting text inside
+// the popover (its note/Q&A content is real, copyable text) and releasing the mouse past its
+// edge fires the eventual click with a target outside previewPopoverEl, which used to read as
+// an outside click and close the popover mid-selection. Track where the gesture started.
+function previewPopoverMouseDownHandler(e){ _previewPopoverMouseDownInside=!!(previewPopoverEl&&previewPopoverEl.contains(e.target)); }
+function previewPopoverOutsideHandler(e){ if(previewPopoverEl&&!previewPopoverEl.contains(e.target)&&!e.target.closest('#node-qa-suggest')&&!_previewPopoverMouseDownInside)closePreviewPopover(); }
 function previewPopoverEscHandler(e){ if(e.key==='Escape')closePreviewPopover(); }
 function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
   closePreviewPopover();
@@ -27729,7 +27758,7 @@ function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
   if(top+ph>window.innerHeight-12)top=atPoint?Math.max(12,atPoint.y-ph-6):Math.max(12,triggerEl.getBoundingClientRect().top-ph-6);
   pop.style.left=Math.max(12,left)+'px'; pop.style.top=top+'px';
   previewPopoverEl=pop;
-  setTimeout(()=>document.addEventListener('click',previewPopoverOutsideHandler,true),0);
+  setTimeout(()=>{ document.addEventListener('click',previewPopoverOutsideHandler,true); document.addEventListener('mousedown',previewPopoverMouseDownHandler,true); },0);
   window.addEventListener('keydown',previewPopoverEscHandler);
   el('preview-body')?.addEventListener('scroll',closePreviewPopover,{once:true});
 }
@@ -30857,7 +30886,7 @@ function setupConsolidatedSettingsModal(openBtnId, overlayId, closeBtnId){
   function close(){ overlay.classList.remove('open'); document.removeEventListener('keydown',onKeydown); }
   openBtn.addEventListener('click',open);
   closeBtn?.addEventListener('click',close);
-  overlay.addEventListener('click',e=>{ if(e.target===overlay)close(); });
+  onOverlayBackdropClick(overlay,close);
 }
 // Same open/close shape as the Keyboard Shortcuts modal below. Wrapped in DOMContentLoaded
 // defensively even though this HTML now sits before the main script tag (unlike the
@@ -31902,7 +31931,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function close(){overlay.classList.remove('open');}
   openBtn.addEventListener('click',open);
   closeBtn?.addEventListener('click',close);
-  overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+  onOverlayBackdropClick(overlay,close);
   searchInput?.addEventListener('input',e=>filterCheatsheet(e.target.value));
   searchInput?.addEventListener('keydown',e=>{
     e.stopPropagation();
@@ -35033,7 +35062,7 @@ function _addTagPopoverFromInput(){
   document.getElementById('todos-history-btn')?.addEventListener('click', openTodosHistory);
   document.getElementById('todos-history-close-x')?.addEventListener('click', closeTodosHistory);
   document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
-  document.getElementById('todos-history-overlay')?.addEventListener('click', e=>{ if(e.target===document.getElementById('todos-history-overlay'))closeTodosHistory(); });
+  onOverlayBackdropClick(document.getElementById('todos-history-overlay'),closeTodosHistory);
   document.addEventListener('keydown', e=>{
     if(e.key==='Escape'&&document.getElementById('todos-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeTodosHistory(); }
   },true);
@@ -36979,7 +37008,7 @@ async function saveMeetingsVersionNow(){
 el('meetings-history-btn')?.addEventListener('click', openMeetingsHistory);
 el('meetings-history-close-x')?.addEventListener('click', closeMeetingsHistory);
 el('meetings-history-save-now-btn')?.addEventListener('click', saveMeetingsVersionNow);
-el('meetings-history-overlay')?.addEventListener('click', e=>{ if(e.target===el('meetings-history-overlay'))closeMeetingsHistory(); });
+onOverlayBackdropClick(el('meetings-history-overlay'),closeMeetingsHistory);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('meetings-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeMeetingsHistory(); }
 });
