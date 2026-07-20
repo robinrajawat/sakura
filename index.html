@@ -1650,6 +1650,10 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-panel-subtitle{padding:6px 14px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
 #note-panel-subtitle:empty{display:none}
 #note-panel.mode-code #note-panel-subtitle{padding-bottom:4px}
+#note-title-row{padding:0 14px 8px;flex-shrink:0}
+#note-title-input{width:100%;box-sizing:border-box;border:none;outline:none;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:0 0 6px;border-bottom:1px solid var(--border)}
+#note-title-input::placeholder{color:var(--hint);font-weight:400}
+#note-title-input:focus{border-bottom-color:var(--accent)}
 #note-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 #note-panel-close:hover{color:var(--fg);background:var(--hover)}
 #note-toolbar{display:none;align-items:center;gap:4px;padding:2px 10px 8px;flex-shrink:0;flex-wrap:wrap}
@@ -1746,7 +1750,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 /* Mode visibility: Note and Code tabs share one panel shell (header, drag, maximize,
    positioning) — only the body swaps. Backlinks/timestamp badges are Note-only (Code
    has no equivalent), hidden in Code mode via .panel-badge-btn's own mode-code rule above. */
-#note-panel.mode-code #note-toolbar,#note-panel.mode-code #note-editor,#note-panel.mode-code #bl-panel,#note-panel.mode-code #node-ts-panel,#note-panel.mode-code #note-panel-footer{display:none}
+#note-panel.mode-code #note-toolbar,#note-panel.mode-code #note-editor,#note-panel.mode-code #bl-panel,#note-panel.mode-code #node-ts-panel,#note-panel.mode-code #note-panel-footer,#note-panel.mode-code #note-title-row{display:none}
 #note-panel.mode-note #code-toolbar,#note-panel.mode-note #code-editor-wrap,#note-panel.mode-note #code-panel-footer{display:none}
 /* ntb-ai-rewrite is hidden by id, not just via #note-toolbar's mode-code rule above —
    Normal view physically relocates it into the header (see the maximize handler in JS),
@@ -2675,6 +2679,8 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-popover-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
 .pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .pv-popover-head-row .pv-popover-label{margin-bottom:0}
+.pv-popover-head-title-group{display:flex;align-items:baseline;gap:7px;min-width:0}
+.pv-popover-note-title{font:600 12px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pv-inline-qa-row-multi{position:relative;padding-right:24px}
 .pv-inline-qa-row-multi .pv-qa-delete-btn{position:absolute;top:0;right:0;width:22px;height:22px}
 .pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2711,8 +2717,9 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
-.pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
-.pv-inline-label svg{flex-shrink:0}
+.pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+.pv-inline-label svg{flex-shrink:0;align-self:center}
+.pv-inline-note-title{font:600 12px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--fg)}
 .pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 /* This must stay defined AFTER .bg-distinct above (equal specificity — later wins) so a plain
@@ -5994,6 +6001,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button id="note-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="note-panel-subtitle"></div>
+  <div id="note-title-row"><input type="text" id="note-title-input" placeholder="Add a title (optional)" maxlength="120" aria-label="Note title" /></div>
   <div id="note-toolbar">
     <button class="note-tb-btn" id="ntb-bold" data-tip="Bold" data-cmd="bold"><strong>B</strong></button>
     <button class="note-tb-btn" id="ntb-italic" data-tip="Italic" data-cmd="italic"><em>I</em></button>
@@ -7502,7 +7510,7 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now}}
 function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
 function normalizeDecisionLog(dl){
   if(!dl||typeof dl!=='object')return null;
@@ -23321,6 +23329,8 @@ function openNodePanel(id, anchorRectOverride, forcedMode) {
     } catch(e) {}
   }
   _loadCodePanelContent(id);
+  const titleInput = el('note-title-input');
+  if (titleInput) titleInput.value = node.noteTitle || '';
   // Subtitle shows the node's own text — shared context line under the Note/Code tabs,
   // replacing the old per-panel "Note — <text>" / "Code — <text>" title now that one
   // panel serves both.
@@ -23746,10 +23756,13 @@ function commitNoteEdit() {
   if (!editor) return;
   linkifySapNotesInElement(editor);
   const html = editor.innerHTML || '';
+  const titleInput = el('note-title-input');
+  const title = titleInput ? titleInput.value.trim() : (nodes[idx].noteTitle || '');
   // Only push undo + dirty if changed
-  if (nodes[idx].note !== html) {
+  if (nodes[idx].note !== html || nodes[idx].noteTitle !== title) {
     pushUndo();
     nodes[idx].note = html;
+    nodes[idx].noteTitle = title;
     markDirty();
     render();
     sakuraLog('commit','commitNoteEdit changed',{nodeId:notePanelNodeId,newLength:html.length});
@@ -24223,14 +24236,17 @@ el('note-panel-clear')?.addEventListener('click', async (e) => {
   if (!ok) return;
   if (targetId !== null) {
     const tidx = getIndex(targetId);
-    if (tidx >= 0 && nodes[tidx].note) {
+    if (tidx >= 0 && (nodes[tidx].note || nodes[tidx].noteTitle)) {
       pushUndo();
       nodes[tidx].note = '';
+      nodes[tidx].noteTitle = '';
       markDirty();
     }
   }
   const editor = el('note-editor');
   if (editor) editor.innerHTML = '';
+  const titleInput = el('note-title-input');
+  if (titleInput) titleInput.value = '';
   closeNodePanel(true);
   showToast('Note cleared');
 });
@@ -27421,7 +27437,11 @@ function renderPreviewBody(){
     // a one-line note on a section heading still reads as a meaningful annotation on that
     // section (often the point being made while presenting it), not a caption that should
     // blend into the row, so it always gets the full note-block card below instead.
-    const isPlainNote = !nodeIsSection(node) && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
+    // A note with a title is excluded too — the inline treatment has nowhere to put a title (no
+    // label row at all, just the raw text right after the node), so a titled note always gets
+    // the block below instead, where the title can actually sit next to the NOTE label.
+    const hasNoteTitle = !!(node.noteTitle && node.noteTitle.trim());
+    const isPlainNote = !nodeIsSection(node) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
     const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
@@ -27588,7 +27608,7 @@ function renderPreviewBody(){
       }
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
+        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
@@ -27811,22 +27831,23 @@ function openPreviewPopover(triggerEl,innerHtml,extraClass,atPoint){
 // there's nothing for the scroll reset to disrupt.
 function deleteNodeNote(nodeId){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
-  const snapshot=node.note;
-  node.note='';
+  const snapshot=node.note; const titleSnapshot=node.noteTitle;
+  node.note=''; node.noteTitle='';
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   closePreviewPopover();
   renderPreviewBody();
   showActionToast('Note deleted','Undo',()=>{
     const n=nodes.find(x=>x.id===nodeId); if(!n)return;
-    n.note=snapshot;
+    n.note=snapshot; n.noteTitle=titleSnapshot;
     markDirty(); scheduleAutoSave();
     renderPreviewBody();
   });
 }
 function previewOpenNotePopover(triggerEl,node){
   const split=splitNoteDiagramImages(node.note||'');
-  const html=`<div class="pv-popover-head-row"><span class="pv-popover-label">Note</span><button type="button" class="pv-qm-btn pv-qm-danger" data-tip="Delete note">${markIconSvg('trash')}</button></div><div class="pv-inline-note-body pv-popover-note">${split.restHtml}</div>`;
+  const titleHtml=node.noteTitle&&node.noteTitle.trim()?`<span class="pv-popover-note-title">${esc(node.noteTitle.trim())}</span>`:'';
+  const html=`<div class="pv-popover-head-row"><div class="pv-popover-head-title-group"><span class="pv-popover-label">Note</span>${titleHtml}</div><button type="button" class="pv-qm-btn pv-qm-danger" data-tip="Delete note">${markIconSvg('trash')}</button></div><div class="pv-inline-note-body pv-popover-note">${split.restHtml}</div>`;
   openPreviewPopover(triggerEl,html,'pv-popover-wide');
   previewPopoverEl?.querySelector('.pv-qm-danger')?.addEventListener('click',()=>deleteNodeNote(node.id));
 }
