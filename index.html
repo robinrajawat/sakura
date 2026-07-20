@@ -2146,8 +2146,8 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 .demo-pv-row{display:flex;align-items:baseline;gap:8px;padding:2px 0 2px 14px;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .demo-pv-bullet{color:var(--muted);flex-shrink:0}
 /* A note now sits inline right under its bullet — a thin accent rule and muted italic text,
-   not a separate bordered card — matching the real Preview's .pv-inline-note-body.pv-note-plain
-   treatment rather than the heavier boxed style. */
+   not a bordered card — matching the real Preview's .pv-inline-note-body treatment, which is
+   the only note-body style now. */
 .demo-pv-note-inline{margin:1px 0 8px 22px;padding:1px 0 1px 10px;border-left:2px solid var(--border);font:400 12.5px 'Inter',sans-serif;font-style:italic;color:var(--muted);line-height:1.5}
 /* Decision Log card — mirrors the real Preview's structured rendering: an uppercase header with
    icon + colored status pill, then each answered field as its own label/value block separated by
@@ -2713,13 +2713,13 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-block{margin:6px 0 14px}
 .pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
 .pv-inline-label svg{flex-shrink:0}
-.pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
-/* A note that's just plain text (no image/table/list/heading/code — see noteIsPlainTextOnly)
-   doesn't need the full bordered/shaded card: that much visual weight for a one-line remark
-   reads as more prominent than the content warrants, and costs real vertical space in a
-   document with many simple notes throughout (e.g. a review Q&A walkthrough). Keeps just a
-   thin left rule — enough to mark it as an aside, without boxing it. */
-.pv-inline-note-body.pv-note-plain{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border)}
+/* Every note now gets this same thin-left-rule treatment — no border, no background, minimal
+   padding — regardless of what it contains (plain text, images, tables, lists, code, or a
+   section heading). There used to be a second, heavier bordered/shaded "card" variant reserved
+   for rich content, but a full box around every image or table read as more visual weight than
+   the content warranted and was inconsistent with how a plain-text note already looked, so it's
+   gone — this is the only note-body treatment now. */
+.pv-inline-note-body{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
 /* Full (untruncated) plain-note text shown inline right after the node's own text — see the
    isPlainNote branch in renderPreviewBody. Note content (whether from saveNodeComment's
    per-entry markup or freeform typing in the Pad's note editor) is naturally built from block-
@@ -2738,7 +2738,6 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .node-note-dot-plain svg{width:9px;height:9px}
 .pv-note-inline-full>div,.pv-note-inline-full>p{display:inline}
 .pv-note-inline-full>div:not(:first-child)::before,.pv-note-inline-full>p:not(:first-child)::before{content:' · ';color:var(--hint)}
-.pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
 .note-comment-entry:first-child{margin-top:0}
@@ -11279,10 +11278,11 @@ function buildFullLabelMarkHtml(text,q,maxLen){
 // Prefers in-memory state (the active tab, or an already-open background tab) so unsaved edits
 // are reflected, and only falls back to localStorage for docs that aren't open anywhere.
 // True when a note's HTML has nothing beyond plain paragraphs and inline formatting (bold,
-// italic, links, etc.) — no images, tables, lists, headings, or code blocks. Used to decide
-// whether a note is worth the full bordered/shaded "card" treatment in Preview/PDF, or whether
-// that's more visual weight than a one-line remark warrants — see the pv-note-plain styling
-// applied where this is checked.
+// italic, links, etc.) — no images, tables, lists, headings, or code blocks. Combined with
+// noteIsSingleLine, used to decide whether a note is simple enough to sit inline right after the
+// node's own text (isPlainNote in renderPreviewBody), or whether it needs its own line in the
+// block below — a placement decision only now; every note (inline or block) renders with the
+// same thin-left-rule pv-inline-note-body style regardless of content, see its CSS comment.
 function noteIsPlainTextOnly(html){
   if(!html)return true;
   const tmp=document.createElement('div');
@@ -11295,7 +11295,7 @@ function noteIsPlainTextOnly(html){
 // lines because of its length is still one logical line and reads fine sitting inline next to
 // the node's own text (see isPlainNote in renderPreviewBody); several genuinely separate lines
 // crammed onto the same row the way .pv-note-inline-full's CSS joins block children inline does
-// not, so those should fall through to the normal click-to-open card treatment instead.
+// not, so those should fall through to the normal always-visible block treatment below instead.
 function noteIsSingleLine(html){
   if(!html)return true;
   const tmp=document.createElement('div');
@@ -27390,16 +27390,19 @@ function renderPreviewBody(){
     // text, in full — not truncated, not behind a click — mirroring how the node's own text and
     // a note would sit "together" if you were just reading the outline. A note with several
     // separate lines (multiple saveNodeComment entries, or manual line breaks) reads worse
-    // crammed onto the same row than as its own card, so it keeps the click-to-open card below
-    // like a rich note does, same as a table or image can't sensibly sit inline with a line of
-    // text regardless of node.marker or anything else. See the contentEl.appendChild(inlineFull)
-    // block below and the two guards (isPlainNote / !isPlainNote) added to the old
-    // truncated-preview and open-card blocks so a plain note's content isn't shown three
-    // different ways at once.
-    // Section nodes are excluded from the plain/inline treatment regardless of note shape —
-    // a one-line note on a section heading still reads as a meaningful annotation on that
-    // section (often the point being made while presenting it), not a caption that should
-    // blend into the row, so it always gets the full note-block card below instead.
+    // crammed onto the same row than as its own block, so it keeps the always-visible block
+    // below instead, same as a table or image can't sensibly sit inline with a line of text
+    // regardless of node.marker or anything else — this is a placement decision only now, not a
+    // visual-weight one: every note (inline or block, plain text or rich content) uses the same
+    // thin-left-rule pv-inline-note-body treatment, see its CSS comment. See the
+    // contentEl.appendChild(inlineFull) block below and the two guards (isPlainNote / !isPlainNote)
+    // added to the old truncated-preview and open-card blocks so a plain note's content isn't
+    // shown three different ways at once.
+    // Section nodes are excluded from the inline treatment regardless of note shape — a
+    // one-line note on a section heading still reads as a meaningful annotation on that section
+    // (often the point being made while presenting it), not a caption that should blend into
+    // the row, so it always gets its own line in the block below instead (same thin-rule style,
+    // just not squeezed onto the heading's own line).
     const isPlainNote = !nodeIsSection(node) && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
     const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
@@ -27568,7 +27571,7 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body';
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
