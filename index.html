@@ -28337,6 +28337,27 @@ function syncAudienceZoom(){
     if(typeof win.setAudienceInteractiveZoom==='function')win.setAudienceInteractiveZoom(previewInteractiveZoom);
   }catch(e){ sakuraLog('audience','syncAudienceZoom threw',{message:e&&e.message}); }
 }
+// Mirrors this window's own #preview-body scroll position onto the Audience window's copy —
+// without this, zooming or scrolling here (e.g. Ctrl+scroll past what fits on screen) only
+// ever moved this window's own scrollbar; the Audience window stayed pinned wherever it last
+// was, so the room saw a different part of the slide than the presenter did, and anything
+// mapped by on-screen percentage on top of that (the laser dot — see syncAudienceLaser) drifted
+// out of alignment right along with it. Mirrors scrollTop/scrollLeft directly rather than by
+// ratio since both windows render the same content at the same zoom once syncAudienceZoom has
+// run, so an absolute copy lines them up exactly.
+function syncAudiencePreviewScroll(){
+  if(!audienceWinLive()||!previewPresenting)return;
+  try{
+    const win=presenterAudienceWin;
+    const mainBody=el('preview-body'), aBody=win.document.getElementById('preview-body');
+    if(!mainBody||!aBody)return;
+    if(aBody.scrollTop!==mainBody.scrollTop)aBody.scrollTop=mainBody.scrollTop;
+    if(aBody.scrollLeft!==mainBody.scrollLeft)aBody.scrollLeft=mainBody.scrollLeft;
+  }catch(e){ sakuraLog('audience','syncAudiencePreviewScroll threw',{message:e&&e.message}); }
+}
+// Live mirroring — fires immediately on the presenter's own scroll (covers manual scrollbar/
+// trackpad scrolling once zoomed past one screenful) rather than waiting on a poll tick.
+el('preview-body')?.addEventListener('scroll',()=>{ if(previewPresenting)syncAudiencePreviewScroll(); },{passive:true});
 function syncAudienceLaser(clientX,clientY){
   if(!audienceWinLive())return;
   try{
@@ -28385,6 +28406,7 @@ function syncAudienceWindow(){
     if(typeof win.presenterGoTo==='function'&&st.previewSlideIndex!==previewSlideIndex)win.presenterGoTo(previewSlideIndex);
     if(typeof win.setPresenterBlank==='function'&&st.presenterBlanked!==presenterBlanked)win.setPresenterBlank(presenterBlanked);
     syncAudienceZoom();
+    syncAudiencePreviewScroll();
     // Pick up whichever of Whiteboard/Mind Map (if either) is already open here at connect
     // time — covers opening the Audience View mid-session rather than only at the very start
     // of presenting, when the mode-switch hooks elsewhere wouldn't have fired yet.
@@ -30004,7 +30026,7 @@ function applyPresenterZoom(){
   if(!previewActive){ body.style.zoom=''; return; }
   const effective=(previewPresenting?previewPresenterZoom:1)*previewInteractiveZoom;
   body.style.zoom=Math.abs(effective-1)>0.001?String(effective):'';
-  if(previewPresenting)syncAudienceZoom();
+  if(previewPresenting){ syncAudienceZoom(); syncAudiencePreviewScroll(); }
 }
 el('preview-presenter-zoom')?.addEventListener('input',e=>setPreviewPresenterZoom(e.target.value));
 // Ctrl+scroll or a trackpad pinch — browsers translate pinch gestures into wheel events with
