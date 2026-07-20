@@ -3190,6 +3190,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-at{font-weight:400}.todo-at-person{color:var(--sem-section)}.todo-at-date{color:var(--muted)}.todo-at-status{color:var(--sem-alert)}
 .todo-tag-chip{color:var(--sem-code)}.todo-remark{color:var(--sem-quote);font-style:italic}
 .todo-dd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:170px;max-height:min(360px,60vh);overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px;display:none;flex-direction:column}
+.doc-link-menu{min-width:280px;overflow:visible}
+.doc-link-menu-inner{display:flex;flex-direction:column;gap:8px;padding:4px}
+.doc-link-menu-inner .meta-input{width:100%;box-sizing:border-box;font:400 12.5px 'Inter',sans-serif;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg)}
+.doc-link-menu-actions{display:flex;justify-content:flex-end;gap:6px}
+.doc-link-menu-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);font:600 11.5px 'Inter',sans-serif;padding:6px 10px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
+.doc-link-menu-btn:hover{background:var(--hover)}
+.doc-link-menu-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.doc-link-menu-btn.primary:hover{filter:brightness(1.06)}
 .todo-dd-menu.open{display:flex}
 .todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
 .todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
@@ -3704,6 +3712,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <button type="button" class="todo-dd-item" data-value="review" role="menuitemradio" aria-checked="false">Review<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
             <button type="button" class="todo-dd-item" data-value="approved" role="menuitemradio" aria-checked="false">Approved<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
             <button type="button" class="todo-dd-item" data-value="rejected" role="menuitemradio" aria-checked="false">Rejected<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+          </div>
+        </div>
+        <div class="todo-dd-wrap" id="doc-link-wrap">
+          <button type="button" class="doc-status-chip unset" id="doc-link-chip" data-tip="Link this document to a URL — e.g. a JIRA story or Epic" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Add link</button>
+          <div class="todo-dd-menu doc-link-menu" id="doc-link-menu" role="menu">
+            <div class="doc-link-menu-inner">
+              <input type="url" id="doc-link-input" class="meta-input" placeholder="https://yourteam.atlassian.net/browse/PROJ-123" aria-label="Document URL" />
+              <div class="doc-link-menu-actions">
+                <button type="button" id="doc-link-remove-btn" class="doc-link-menu-btn">Remove</button>
+                <button type="button" id="doc-link-open-btn" class="doc-link-menu-btn">Open</button>
+                <button type="button" id="doc-link-save-btn" class="doc-link-menu-btn primary">Save</button>
+              </div>
+            </div>
           </div>
         </div>
         <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a meeting or to-do — click to view">
@@ -6770,7 +6791,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let decisionLogs=[]; let decisionExpandedId=null; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=true; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineNotePreviewEnabled=false; let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=[]; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','tags']; let hoverToolbarEnabled=true; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=true; let padOpen=false; let padWidth=320; let padMatchEditorBg=true; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=true; let codeMatchEditorBg=true; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=false; let depthGuideLines=false; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='default'; let nodeDepthFadeEnabled=true; let accentCursorEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -7870,7 +7891,7 @@ function saveToStorage(){
       return meta;
     });
     if(mindMapOpen&&typeof mmSyncActiveIntoArray==='function')mmSyncActiveIntoArray();
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,mindMaps,decisionLogs};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,pad:cleanEditorHtml(el('pad-editor')),qa:qaItems,diagrams:diagramMeta,mindMaps,decisionLogs};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -7915,6 +7936,7 @@ function loadDocFromStorage(id){
     if(el('header-title'))el('header-title').value=d.title||'';
     if(el('doc-author'))el('doc-author').value=d.author||'';
     setDocStatus(typeof d.docStatus==='string'?d.docStatus:'',false);
+    setDocLinkedUrl(typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',false);
     if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(d.pad||'');
     qaItems=Array.isArray(d.qa)?d.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[]; resetDiagramTransientState();
@@ -8001,7 +8023,7 @@ function captureActiveTabSnapshot(){
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
   tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
   if(mindMapOpen&&typeof mmSyncActiveIntoArray==='function')mmSyncActiveIntoArray();
-  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice(); tab.mindMaps=Array.isArray(mindMaps)?mindMaps.slice():[];
+  tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.docLinkedUrl=docLinkedUrl; tab.pad=cleanEditorHtml(el('pad-editor')); tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.decisionLogs=decisionLogs.slice(); tab.mindMaps=Array.isArray(mindMaps)?mindMaps.slice():[];
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
 }
@@ -8026,6 +8048,7 @@ function applyTabSnapshot(tab){
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
+  setDocLinkedUrl(typeof tab.docLinkedUrl==='string'?tab.docLinkedUrl:'',false);
   if(el('pad-editor'))el('pad-editor').innerHTML=sakuraSanitizeRichHtml(tab.pad||'');
   qaItems=Array.isArray(tab.qa)?tab.qa:[]; resetQaTransientState(); if(padViewMode==='qa')renderQaList();
   diagrams=Array.isArray(tab.diagrams)?tab.diagrams:[]; resetDiagramTransientState(); if(typeof renderDiagramsList==='function'&&padOpen&&padViewMode==='diagrams')renderDiagramsList();
@@ -8046,7 +8069,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', pad:d.pad||'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[], decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
@@ -8290,7 +8313,7 @@ function ensureDocumentForEditing(){
   const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:resolvedAuthor,pad:''};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
-  const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',pad:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+  const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',docLinkedUrl:'',pad:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
   openTabs.push(tab);
   currentDocId=id; activeTabDocId=id; saveCurrentDocId(id);
   // Sync the actual input the rest of the app reads from (template stamping, save, status
@@ -8309,6 +8332,7 @@ function clearToNoDocumentState(){
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
   setDocStatus('',false);
+  setDocLinkedUrl('',false);
   if(el('pad-editor'))el('pad-editor').innerHTML='';
   titleAutoSyncEnabled=true; lastAutoTitle='';
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
@@ -8779,6 +8803,47 @@ function updateDocStatusChip(){
 function setDocStatus(status,persist=true){
   docStatus=DOC_STATUSES.includes(status)?status:'';
   updateDocStatusChip();
+  if(persist){ markDirty(); scheduleAutoSave(); }
+}
+// A document-level URL — meant for linking out to the thing this document is *about* rather
+// than content within it (a JIRA story, an Epic, a Confluence page, a ticket in whatever
+// tracker a team uses). Deliberately just one URL, not a list: this is "where does this
+// document live in our tracker", a single canonical link, not a general-purpose bookmarks
+// field — someone wanting several related links can already put those in the Pad or a note.
+function normalizeDocLinkedUrl(raw){
+  const v=String(raw||'').trim();
+  if(!v)return '';
+  // A bare "PROJ-123" or a URL missing its scheme are both common paste patterns for this
+  // field specifically (copied straight from a tracker's own UI, which often shows just the
+  // key) — treat anything without a recognizable scheme as needing https:// prepended rather
+  // than silently saving something that won't actually open as a link.
+  if(/^[a-z][a-z0-9+.-]*:/i.test(v))return v;
+  return 'https://'+v;
+}
+function updateDocLinkChip(){
+  const btn=el('doc-link-chip'); if(!btn)return;
+  const has=!!docLinkedUrl;
+  btn.classList.toggle('unset',!has);
+  btn.innerHTML=(has
+    ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'+esc(docLinkUrlLabel(docLinkedUrl))
+    : '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Add link');
+  btn.dataset.tip=has?('Linked to '+docLinkedUrl+' — click to edit'):'Link this document to a URL — e.g. a JIRA story or Epic';
+  const input=el('doc-link-input'); if(input)input.value=docLinkedUrl||'';
+}
+// Shows just the host + first path segment (e.g. "yourteam.atlassian.net/browse") rather than
+// the full URL, which is usually long enough to force the chip to wrap or push other header
+// controls around — the full URL is still in the tooltip and the popover input for anyone who
+// needs it verbatim.
+function docLinkUrlLabel(url){
+  try{
+    const u=new URL(url);
+    const seg=u.pathname.split('/').filter(Boolean)[0];
+    return u.host+(seg?'/'+seg:'');
+  }catch(e){ return url.length>40?url.slice(0,37)+'…':url; }
+}
+function setDocLinkedUrl(url,persist=true){
+  docLinkedUrl=normalizeDocLinkedUrl(url);
+  updateDocLinkChip();
   if(persist){ markDirty(); scheduleAutoSave(); }
 }
 // LAST_EXPORT_KEY is a single app-wide "anything exported, ever" timestamp — Sakura doesn't
@@ -9750,6 +9815,38 @@ document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
 });
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#doc-status-wrap'))el('doc-status-menu')?.classList.remove('open');
+});
+el('doc-link-chip')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const menu=el('doc-link-menu'); if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
+  menu.classList.toggle('open',!isOpen);
+  e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
+  if(!isOpen){ const input=el('doc-link-input'); if(input){ input.value=docLinkedUrl||''; setTimeout(()=>{ input.focus(); input.select(); },0); } }
+});
+el('doc-link-save-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const input=el('doc-link-input'); if(!input)return;
+  setDocLinkedUrl(input.value);
+  el('doc-link-menu')?.classList.remove('open');
+});
+el('doc-link-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); el('doc-link-save-btn')?.click(); }
+  else if(e.key==='Escape'){ e.preventDefault(); el('doc-link-menu')?.classList.remove('open'); }
+});
+el('doc-link-remove-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  setDocLinkedUrl('');
+  el('doc-link-menu')?.classList.remove('open');
+});
+el('doc-link-open-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const url=el('doc-link-input')?.value?normalizeDocLinkedUrl(el('doc-link-input').value):docLinkedUrl;
+  if(url)window.open(url,'_blank','noopener,noreferrer');
+});
+document.addEventListener('mousedown',e=>{
+  if(!e.target.closest('#doc-link-wrap'))el('doc-link-menu')?.classList.remove('open');
 });
 el('dtb-bulk-delete')?.addEventListener('mousedown',e=>{ e.preventDefault(); bulkDeleteDiagramsSelected(); });
 el('diagram-summary-chip')?.addEventListener('click',()=>{
@@ -24106,12 +24203,24 @@ el('qb-tags')?.addEventListener('click', () => {
 });
 
 // Close note panel when clicking outside it
+// Track where the interaction *started*, not just where it ends — dragging a text
+// selection inside the note editor and releasing the mouse past the panel's edge
+// still fires the eventual click with e.target outside #note-panel, which used to
+// read as "clicked outside" and close the panel mid-selection. Only treat it as a
+// real outside click if the mousedown that began the gesture was also outside.
+let _notePanelMouseDownInside = false;
+document.addEventListener('mousedown', e => {
+  if (!notePanelOpen) return;
+  const panel = el('note-panel');
+  _notePanelMouseDownInside = !!(panel && panel.contains(e.target));
+}, true);
 document.addEventListener('click', e => {
   if (!notePanelOpen) return;
   if (_notePanelSuppressClickOutside) return;
   const panel = el('note-panel');
   if (!panel) return;
   if (panel.contains(e.target)) return;
+  if (_notePanelMouseDownInside) return;
   if (e.target.closest('#qb-note')) return;
   // Also don't close when clicking the shared note/code dot on a node row
   if (e.target.closest('.node-note-dot')) return;
@@ -27247,7 +27356,11 @@ function renderPreviewBody(){
     // block below and the two guards (isPlainNote / !isPlainNote) added to the old
     // truncated-preview and open-card blocks so a plain note's content isn't shown three
     // different ways at once.
-    const isPlainNote = noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
+    // Section nodes are excluded from the plain/inline treatment regardless of note shape —
+    // a one-line note on a section heading still reads as a meaningful annotation on that
+    // section (often the point being made while presenting it), not a caption that should
+    // blend into the row, so it always gets the full note-block card below instead.
+    const isPlainNote = !nodeIsSection(node) && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
     const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
@@ -27415,7 +27528,7 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
