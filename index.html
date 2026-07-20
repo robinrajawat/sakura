@@ -2714,11 +2714,17 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-label{display:flex;align-items:center;gap:5px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
 .pv-inline-label svg{flex-shrink:0}
 .pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
-/* A note that's just plain text (no image/table/list/heading/code — see noteIsPlainTextOnly)
-   doesn't need the full bordered/shaded card: that much visual weight for a one-line remark
-   reads as more prominent than the content warrants, and costs real vertical space in a
-   document with many simple notes throughout (e.g. a review Q&A walkthrough). Keeps just a
-   thin left rule — enough to mark it as an aside, without boxing it. */
+.pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
+/* This must stay defined AFTER .bg-distinct above (equal specificity — later wins) so a plain
+   note's background:transparent always sticks, regardless of whether the noteMatchEditorBg
+   setting is on or off. bg-distinct only ever applies visually to the full card variant. */
+/* A note that doesn't need a container to stay legible — plain text, or a bullet/numbered list
+   (see noteCanUsePlainCard) — doesn't get the full bordered/shaded card: that much visual weight
+   for a short remark or a simple list reads as more prominent than the content warrants, and
+   costs real vertical space in a document with many simple notes throughout (e.g. a review Q&A
+   walkthrough). Keeps just a thin left rule — enough to mark it as an aside, without boxing it.
+   Tables, code blocks, images, headings, and blockquotes still get the full card below, since
+   those need an actual container (a grid, a monospace/contrast box, etc.) to read well. */
 .pv-inline-note-body.pv-note-plain{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border)}
 /* Full (untruncated) plain-note text shown inline right after the node's own text — see the
    isPlainNote branch in renderPreviewBody. Note content (whether from saveNodeComment's
@@ -2738,7 +2744,6 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .node-note-dot-plain svg{width:9px;height:9px}
 .pv-note-inline-full>div,.pv-note-inline-full>p{display:inline}
 .pv-note-inline-full>div:not(:first-child)::before,.pv-note-inline-full>p:not(:first-child)::before{content:' · ';color:var(--hint)}
-.pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
 .note-comment-entry:first-child{margin-top:0}
@@ -11279,10 +11284,11 @@ function buildFullLabelMarkHtml(text,q,maxLen){
 // Prefers in-memory state (the active tab, or an already-open background tab) so unsaved edits
 // are reflected, and only falls back to localStorage for docs that aren't open anywhere.
 // True when a note's HTML has nothing beyond plain paragraphs and inline formatting (bold,
-// italic, links, etc.) — no images, tables, lists, headings, or code blocks. Used to decide
-// whether a note is worth the full bordered/shaded "card" treatment in Preview/PDF, or whether
-// that's more visual weight than a one-line remark warrants — see the pv-note-plain styling
-// applied where this is checked.
+// italic, links, etc.) — no images, tables, lists, headings, or code blocks. Combined with
+// noteIsSingleLine, used to decide whether a note is simple enough to sit inline right after the
+// node's own text (isPlainNote in renderPreviewBody), or whether it needs its own line in the
+// block below. See noteCanUsePlainCard just below for the separate (looser) check that decides
+// the block-below note's actual visual style.
 function noteIsPlainTextOnly(html){
   if(!html)return true;
   const tmp=document.createElement('div');
