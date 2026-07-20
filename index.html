@@ -11289,6 +11289,21 @@ function noteIsPlainTextOnly(html){
   tmp.innerHTML=html;
   return !tmp.querySelector('img,table,ul,ol,blockquote,pre,h1,h2,h3,h4,h5,h6,hr');
 }
+// A narrower check used only for the block-below card-vs-plain styling decision (see the
+// pv-note-plain class applied where this is called) — NOT for the inline-vs-block placement
+// decision above, which still uses the stricter noteIsPlainTextOnly. A bullet/numbered list is
+// still just text: the existing ul/ol padding and bullet markers already separate it visually,
+// so it doesn't need the bordered/shaded card the way a table (needs a grid) or code block
+// (needs monospace + contrast) does. It's excluded from noteIsPlainTextOnly above because a list
+// genuinely can't be flattened onto the node's own line the way a plain paragraph can — that's
+// a placement problem, not a "does this need a box" problem, so the two questions get separate
+// answers here.
+function noteCanUsePlainCard(html){
+  if(!html)return true;
+  const tmp=document.createElement('div');
+  tmp.innerHTML=html;
+  return !tmp.querySelector('img,table,blockquote,pre,h1,h2,h3,h4,h5,h6,hr');
+}
 // A plain-text note can still be several separate lines — most commonly multiple timestamped
 // entries from saveNodeComment, each its own <div class="note-comment-entry">, or a note with
 // manual Shift+Enter line breaks. A single long paragraph that only *wraps* onto several visual
@@ -27568,7 +27583,7 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>';
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteIsPlainTextOnly(noteRestHtml)?' pv-note-plain':'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
