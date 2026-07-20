@@ -2680,7 +2680,8 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .pv-popover-head-row .pv-popover-label{margin-bottom:0}
 .pv-popover-head-title-group{display:flex;align-items:baseline;gap:7px;min-width:0}
-.pv-popover-note-title{font:600 12px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-popover-note-title{font:400 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-popover-note-title-sep{color:var(--muted);margin:0 1px}
 .pv-inline-qa-row-multi{position:relative;padding-right:24px}
 .pv-inline-qa-row-multi .pv-qa-delete-btn{position:absolute;top:0;right:0;width:22px;height:22px}
 .pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2719,7 +2720,8 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-block{margin:6px 0 14px}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
 .pv-inline-label svg{flex-shrink:0;align-self:center}
-.pv-inline-note-title{font:600 12px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--fg)}
+.pv-inline-note-title{font:400 13px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--fg)}
+.pv-inline-note-title-sep{color:var(--muted);margin:0 1px}
 .pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 /* This must stay defined AFTER .bg-distinct above (equal specificity — later wins) so a plain
@@ -27608,7 +27610,7 @@ function renderPreviewBody(){
       }
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
+        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
@@ -27846,7 +27848,7 @@ function deleteNodeNote(nodeId){
 }
 function previewOpenNotePopover(triggerEl,node){
   const split=splitNoteDiagramImages(node.note||'');
-  const titleHtml=node.noteTitle&&node.noteTitle.trim()?`<span class="pv-popover-note-title">${esc(node.noteTitle.trim())}</span>`:'';
+  const titleHtml=node.noteTitle&&node.noteTitle.trim()?`<span class="pv-popover-note-title-sep">—</span><span class="pv-popover-note-title">${esc(node.noteTitle.trim())}</span>`:'';
   const html=`<div class="pv-popover-head-row"><div class="pv-popover-head-title-group"><span class="pv-popover-label">Note</span>${titleHtml}</div><button type="button" class="pv-qm-btn pv-qm-danger" data-tip="Delete note">${markIconSvg('trash')}</button></div><div class="pv-inline-note-body pv-popover-note">${split.restHtml}</div>`;
   openPreviewPopover(triggerEl,html,'pv-popover-wide');
   previewPopoverEl?.querySelector('.pv-qm-danger')?.addEventListener('click',()=>deleteNodeNote(node.id));
