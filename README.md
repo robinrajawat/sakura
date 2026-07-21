@@ -8,7 +8,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 - [Core Editing](#core-editing)
 - [Documents & Tabs](#documents--tabs)
 - [Panels](#panels)
-- [Meeting Notes, To-Dos & Journal](#meeting-notes-to-dos--journal)
+- [Meeting Notes, To-Dos, Journal & Recap](#meeting-notes-to-dos-journal--recap)
 - [Tags, Focus & Backlinks](#tags-focus--backlinks)
 - [AI Features](#ai-features)
 - [Quick Assist & Quick Insert](#quick-assist--quick-insert)
@@ -35,6 +35,7 @@ Key capabilities:
 - `#tags` on nodes, `[[@mention]]` backlinks between nodes, and a "Focus" mode to zoom into one branch
 - Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad (with Notepad, Q&A, and Diagrams tabs)
 - App-level panels shared across your whole workspace, independent of any single document: **Meeting Notes**, **To-Dos**, and **Journal** — with action items promotable directly from a meeting into a linked to-do
+- **Recap** — a curated, document-grouped look back at what actually got done (Today / This Week / Last Week) across every document, To-Dos, Meeting Notes, and Journal at once, with click-to-jump navigation and an optional AI bullet-summary for standups/status updates
 - Diagrams — link a draw.io diagram (Pad → Diagrams tab) to any node; embeds as a real picture in Word, PowerPoint, and PDF exports
 - Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection, plus dedicated AI actions inside To-Dos and Q&A — using your own API key with any of six built-in providers or a custom one
 - Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, to-dos, meetings, journal, and settings)
@@ -84,13 +85,14 @@ Beyond the outline itself, several floating or docked panels attach richer conte
 
   Open the Pad via its floating panel icon or `Ctrl/Cmd+Shift+P`.
 
-## Meeting Notes, To-Dos & Journal
+## Meeting Notes, To-Dos, Journal & Recap
 
 Three panels live at the app level rather than inside any single document — one shared instance across your whole workspace, opened from the app bar or status bar rather than per-document.
 
 - **Meeting Notes** (`Ctrl/Cmd+Shift+M`) — an app-level meeting log. Add a blank note or start from a built-in template (Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, Retrospective), each pre-filling title/Agenda/Notes and a starter action item where relevant. Each note has a title, date, optional time, attendee chips, rich-text Agenda and Notes fields, action items, and links to specific documents or nodes. An action item's **Promote** button turns it into a real To-Do — the new task's due date comes from the meeting's own date, and a small "from meeting" chip links back to the source note. Export a single note as a PDF; Version History keeps the last 20 snapshots of the whole list. The Share icon exports the whole list as a `.sakura.json` file for another Sakura user to import (their own Import button, next to Share) — adds to their list without touching anything already there; links to specific documents/nodes don't carry over, since those would point at documents the recipient doesn't have.
 - **To-Dos** (`Ctrl/Cmd+Shift+T`) — one shared task list across your whole workspace, not tied to any document or node. Supports priority, status, and due dates (with a Today/Tomorrow/Next week quick-pick popover), links, drag-to-reorder, quick-find, and an overdue-count badge. Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date), and sort by priority, due date, or manual order. Select multiple open tasks to bulk-set priority/status/due date or bulk-complete/delete, each with its own Undo. Three optional AI capabilities (Settings → AI → To-Dos AI, each independently toggleable): extract action items from the current document or selection, break a task into subtasks, and generate a status summary of open tasks — all add directly to the list with Undo. Typing `#tag` or `@name`/`@date`/`@status` directly in a task's text renders it as a colored chip with autocomplete. A task can either **repeat** (daily, weekdays, or weekly — completing it advances the due date instead of marking it done for good) or hold **sub-tasks** (a nested checklist with an n/m progress badge; the parent completes automatically once every sub-task is checked) — the two are mutually exclusive on the same task. Export the whole list as a PDF; Version History keeps the last 20 snapshots. Same Share/Import pair as Meeting Notes — exports the whole list as a `.sakura.json` file, imports add to the recipient's list rather than replacing it, and any link to a specific document/node is dropped on import for the same reason.
 - **Journal** (`Ctrl/Cmd+Shift+J`) — a daily journal, one entry per calendar date rather than any number of freely-dated items like Meeting Notes. Writing anything into a date's entry is what creates it — opening a date and navigating away without typing leaves nothing behind. Each entry has an optional mood (five presets, click again to clear), free-form tags, and a rich-text body with the same AI Rewrite as Note/Meeting Notes/Pad (a toolbar button rewrites the whole entry; highlighting text surfaces the shared selection-formatting popover to rewrite just that phrase instead). A calendar popover jumps to any date, marking days that already have an entry. Export a single entry or the whole journal as a PDF; Version History keeps the last 20 snapshots of the whole journal. Searchable from Quick Assist and the global header search, same as Meeting Notes and To-Dos. Unlike Meeting Notes/To-Dos, Journal doesn't yet support node/document links, Share/Import, or in-panel search.
+- **Recap** — a curated recap rather than a stats dashboard: no counts up front, just what actually happened, grouped by document (then Meeting Notes, then Journal), most recently active group first. Three tabs — **Today**, **This Week**, **Last Week** (weeks run Monday–Sunday) — with the exact date range shown underneath. Each group shows a handful of short lines marked done / added / edited (green check / blue plus / muted pencil), capped with a quiet "+N more" rather than listing everything; editing a node's Note counts as activity here the same as editing its text. Click any line to jump straight to its source — a document node, a to-do, a meeting note, or a journal entry — or click a document group's title to just open that document. **Summarize with AI** condenses whichever tab is showing into short standup-ready bullets, grouped by document the same way the panel itself is; needs AI configured the same as the other AI features. Reads across every document, not just the one currently open.
 
 ## Tags, Focus & Backlinks
 
@@ -184,6 +186,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Use accent color in exports | Export & print | On | Off: Word, PDF, PowerPoint, and the Q&A/To-Dos/Meeting Notes/Journal exports all use one fixed color instead of your live accent, for consistent branding when sharing |
 | Meeting Notes | Features | On | App-level meeting log; independent of any single document |
 | Journal | Features | On | App-level daily journal, one entry per calendar date; independent of any single document |
+| Recap | Features | On | Curated Today/This Week/Last Week recap across every document, To-Dos, Meeting Notes, and Journal; includes the optional AI bullet-summary |
 
 ## Keyboard Shortcuts
 
