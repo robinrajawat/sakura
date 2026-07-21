@@ -1222,7 +1222,14 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #report-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
 #report-panel.open{display:flex}
 #report-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
-#report-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#report-panel.dragging{user-select:none}
+#report-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
+#report-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+#report-resize-handle:hover::after,#report-resize-handle.dragging::after{opacity:1}
+#report-panel.maximized #report-resize-handle{display:none}
+#report-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#report-panel.anchored #report-panel-header{cursor:default}
+#report-panel-header.dragging{cursor:grabbing}
 #report-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
 #report-panel-maximize,#report-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #report-panel-maximize:hover,#report-panel-close:hover{color:var(--fg);background:var(--hover)}
@@ -3668,7 +3675,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(78vh,680px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
 #journal-panel.open{display:flex}
 #journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
-#journal-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#journal-panel.dragging{user-select:none}
+#journal-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
+#journal-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+#journal-resize-handle:hover::after,#journal-resize-handle.dragging::after{opacity:1}
+#journal-panel.maximized #journal-resize-handle{display:none}
+#journal-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#journal-panel.anchored #journal-panel-header{cursor:default}
+#journal-panel-header.dragging{cursor:grabbing}
 #journal-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
 #journal-history-btn,#journal-panel-maximize,#journal-panel-close,#journal-export-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #journal-history-btn:hover,#journal-panel-maximize:hover,#journal-panel-close:hover,#journal-export-btn:hover{color:var(--fg);background:var(--hover)}
@@ -3729,6 +3743,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    way of the document underneath it — there was previously no way to hide this short of
    turning each feature off individually in Settings. */
 #status-util-group.collapsed .dock-rail-buttons{display:none}
+/* Collapsed: pull the whole rail in flush against the edge too, not just hide the
+   buttons — with only the small handle left, there's no reason to still hold the full
+   expanded inset, and this minimizes what it covers of the Pad panel or anything else
+   docked along that edge underneath it. */
+#status-util-group.collapsed{right:2px;padding:5px 2px}
 #status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:34px;height:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px}
 #status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #status-util-group .dock-rail-handle svg{transition:transform .15s}
@@ -3745,6 +3764,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   /* Narrow viewports (this app's own mobile/narrow breakpoint) — drop to a bottom bar
      instead of a right-edge rail, since a vertical rail eats too much width there. */
   #status-util-group{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row}
+  #status-util-group.collapsed{right:auto;padding:5px}
   #status-util-group .dock-rail-buttons{flex-direction:row}
   #status-util-group .dock-rail-handle{width:16px;height:34px}
   #status-util-group .dock-rail-handle svg{transform:rotate(-90deg)}
@@ -6754,6 +6774,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
   </div>
   <div id="report-panel" role="dialog" aria-label="Recap">
+    <div id="report-resize-handle" data-tip="Drag to resize"></div>
     <div id="report-panel-header">
       <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
       <span id="report-panel-title">Recap</span>
@@ -6790,6 +6811,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
   </div>
 <div id="journal-panel" role="dialog" aria-label="Journal">
+  <div id="journal-resize-handle" data-tip="Drag to resize"></div>
   <div id="journal-panel-header">
     <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
     <span id="journal-panel-title">Journal</span>
@@ -35607,6 +35629,79 @@ function _addTagPopoverFromInput(){
     const maxTop=Math.max(8, window.innerHeight-panelHeight-8);
     panel.style.top=Math.min(Math.max(preferredTop,8),maxTop)+'px';
   };
+  // Gives a dock panel the same drag-to-move + drag-to-resize behavior To-Dos and Meetings
+  // already have, so Journal and Recap don't feel like a different, more static kind of
+  // panel next to those two. cfg: {panelId, headerId, handleId, closeId, maximizeId,
+  // widthKey, widthMin, widthMax}. Dragging is disabled while anchored (tethered to the
+  // dock chip) or maximized, same rule those two already follow. Width is persisted;
+  // position during a drag is not actually restored on reopen either — matching
+  // restoreTodosPosition()/restoreMeetingsPosition(), which are defined but never called,
+  // so a drag only lasts the session there too. Kept that way here for consistency rather
+  // than quietly giving Journal/Recap a capability the other two don't really have.
+  window.sakuraInitPanelDragResize=function(cfg){
+    const panel=document.getElementById(cfg.panelId);
+    const header=document.getElementById(cfg.headerId);
+    if(!panel||!header)return;
+    let dragging=false,startX=0,startY=0,startLeft=0,startTop=0;
+    header.addEventListener('mousedown',e=>{
+      if(cfg.closeId&&e.target.closest('#'+cfg.closeId))return;
+      if(cfg.maximizeId&&e.target.closest('#'+cfg.maximizeId))return;
+      if(panel.classList.contains('maximized'))return;
+      if(panel.classList.contains('anchored'))return; // tethered to the dock chip — not freely draggable
+      dragging=true;
+      const rect=panel.getBoundingClientRect();
+      startX=e.clientX; startY=e.clientY; startLeft=rect.left; startTop=rect.top;
+      panel.style.left=startLeft+'px'; panel.style.top=startTop+'px'; panel.style.right='auto'; panel.style.bottom='auto';
+      header.classList.add('dragging'); panel.classList.add('dragging');
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!dragging)return;
+      const dx=e.clientX-startX, dy=e.clientY-startY;
+      panel.style.left=Math.max(4,Math.min(window.innerWidth-40,startLeft+dx))+'px';
+      panel.style.top=Math.max(4,Math.min(window.innerHeight-40,startTop+dy))+'px';
+    });
+    document.addEventListener('mouseup',()=>{
+      if(!dragging)return;
+      dragging=false;
+      header.classList.remove('dragging'); panel.classList.remove('dragging');
+    });
+    if(!cfg.handleId)return;
+    const handle=document.getElementById(cfg.handleId);
+    if(!handle)return;
+    let rdragging=false,rstartX=0,rstartWidth=0;
+    handle.addEventListener('mousedown',e=>{
+      if(panel.classList.contains('maximized'))return;
+      rdragging=true;
+      rstartX=e.clientX; rstartWidth=panel.getBoundingClientRect().width;
+      handle.classList.add('dragging'); panel.classList.add('dragging');
+      document.body.style.userSelect='none';
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!rdragging)return;
+      const dx=e.clientX-rstartX;
+      const maxW=Math.min(cfg.widthMax, window.innerWidth-24);
+      panel.style.width=Math.max(cfg.widthMin, Math.min(maxW, rstartWidth-dx))+'px';
+    });
+    document.addEventListener('mouseup',()=>{
+      if(!rdragging)return;
+      rdragging=false;
+      handle.classList.remove('dragging'); panel.classList.remove('dragging');
+      document.body.style.userSelect='';
+      try{ localStorage.setItem(cfg.widthKey, String(Math.round(panel.getBoundingClientRect().width))); }catch(e){}
+    });
+  };
+  // Applies a dock panel's saved width (or its default), clamped to min/max and to the
+  // viewport — same clamp shape as applyTodosWidth()/applyMeetingsWidth().
+  window.sakuraApplyPanelWidth=function(panelId,widthKey,widthMin,widthMax,defaultWidth){
+    const panel=document.getElementById(panelId);
+    if(!panel||panel.classList.contains('maximized'))return;
+    let w=defaultWidth;
+    try{ const raw=localStorage.getItem(widthKey); if(raw){ const n=parseInt(raw,10); if(Number.isFinite(n))w=n; } }catch(e){}
+    const clamped=Math.max(widthMin, Math.min(widthMax, Math.min(w, window.innerWidth-24)));
+    panel.style.width=clamped+'px';
+  };
   function anchorTodosToStatusbarChip(){
     const panel=document.getElementById('todos-panel');
     const chip=document.getElementById('todos-toggle');
@@ -38679,6 +38774,7 @@ function anchorJournalToDockChip(){
   const panel=el('journal-panel');
   const chip=el('journal-toggle');
   if(!panel||!chip)return;
+  panel.classList.add('anchored');
   window.sakuraAnchorPanelAboveChip(panel,chip);
 }
 // ── Panel open/close/maximize ──
@@ -38686,6 +38782,7 @@ function openJournalPanel(){
   journalPanelOpen=true;
   el('journal-panel')?.classList.add('open');
   document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.add('is-active'));
+  window.sakuraApplyPanelWidth('journal-panel','sakura_journal_width_v1',320,720,420);
   renderJournalList();
   showJournalCardView(!!journalExpandedDate);
   anchorJournalToDockChip();
@@ -38705,9 +38802,10 @@ function toggleJournalMaximize(){
   const goingMax=!panel.classList.contains('maximized');
   panel.classList.toggle('maximized',goingMax);
   el('journal-panel-maximize')?.setAttribute('aria-pressed',String(goingMax));
-  if(!goingMax)anchorJournalToDockChip();
+  if(!goingMax){ window.sakuraApplyPanelWidth('journal-panel','sakura_journal_width_v1',320,720,420); anchorJournalToDockChip(); }
 }
 window.toggleJournalPanel=toggleJournalPanel;
+window.sakuraInitPanelDragResize({panelId:'journal-panel',headerId:'journal-panel-header',handleId:'journal-resize-handle',closeId:'journal-panel-close',maximizeId:'journal-panel-maximize',widthKey:'sakura_journal_width_v1',widthMin:320,widthMax:720});
 
 // ── List rendering ──
 function formatJournalDateLabel(dateStr){
@@ -41230,10 +41328,12 @@ function anchorReportToDockChip(){
   const panel=el('report-panel');
   const chip=el('report-toggle');
   if(!panel||!chip)return;
+  panel.classList.add('anchored');
   window.sakuraAnchorPanelAboveChip(panel,chip);
 }
 function openActivityReport(){
   const panel=el('report-panel'); if(!panel)return;
+  window.sakuraApplyPanelWidth('report-panel','sakura_report_width_v1',360,760,480);
   renderActivityReport();
   panel.classList.add('open');
   document.querySelectorAll('#report-toggle').forEach(b=>b.classList.add('is-active'));
@@ -41260,11 +41360,12 @@ function toggleReportMaximize(){
       ?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>'
       :'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   }
-  if(!goingMax)anchorReportToDockChip();
+  if(!goingMax){ window.sakuraApplyPanelWidth('report-panel','sakura_report_width_v1',360,760,480); anchorReportToDockChip(); }
 }
 document.getElementById('report-toggle')?.addEventListener('click',toggleActivityReport);
 document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
 document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
+window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_report_width_v1',widthMin:360,widthMax:760});
 // Same outside-mousedown / Escape close pattern as Journal/Meetings/To-Dos, replacing the
 // old backdrop-click-to-close now that this is an anchored panel rather than a centered
 // modal with its own full-screen backdrop element.
