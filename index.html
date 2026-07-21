@@ -1219,8 +1219,14 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-empty{padding:20px 6px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif;line-height:1.5}
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
-.report-modal{width:min(520px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 64px))}
-.report-modal-title{display:flex;align-items:center;gap:7px}
+#report-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#report-panel.open{display:flex}
+#report-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
+#report-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#report-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
+#report-panel-subheader{padding:10px 14px 0;flex-shrink:0}
+#report-modal-body{flex:1;min-height:60px;overflow-y:auto;padding:0 14px}
+#report-panel-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .report-tabs{display:flex;gap:4px;margin-bottom:8px;flex-shrink:0;background:var(--hover);border-radius:8px;padding:3px}
 .report-tab{flex:1;appearance:none;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
 .report-tab:hover{color:var(--fg)}
@@ -6741,23 +6747,25 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
   </div>
-  <div id="report-modal-overlay" class="history-modal-overlay">
-    <div class="history-modal report-modal">
-      <div class="history-modal-header">
-        <span class="history-modal-title report-modal-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>Recap</span>
-        <button id="report-modal-close-x" class="history-modal-close-x" data-tip="Close">×</button>
-      </div>
+  <div id="report-panel" role="dialog" aria-label="Recap">
+    <div id="report-panel-header">
+      <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+      <span id="report-panel-title">Recap</span>
+      <button id="report-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Recap"><svg id="report-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
+      <button id="report-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div id="report-panel-subheader">
       <div class="report-tabs" role="tablist">
         <button class="report-tab" data-period="today" role="tab">Today</button>
         <button class="report-tab" data-period="week" role="tab">This Week</button>
         <button class="report-tab" data-period="lastWeek" role="tab">Last Week</button>
       </div>
       <div id="report-range-label" class="report-range-label"></div>
-      <div id="report-modal-body" class="history-modal-body report-modal-body"></div>
-      <div class="history-modal-footer">
-        <span class="history-modal-footer-hint">Across every document (notes, decisions, diagrams, Q&amp;A, mind maps), to-dos, meetings, and journal</span>
-        <button type="button" class="btn" id="report-ai-summary-btn"><span class="report-ai-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg></span><span id="report-ai-summary-btn-label">Summarize with AI</span></button>
-      </div>
+    </div>
+    <div id="report-modal-body"></div>
+    <div id="report-panel-footer">
+      <span class="history-modal-footer-hint">Across every document (notes, decisions, diagrams, Q&amp;A, mind maps), to-dos, meetings, and journal</span>
+      <button type="button" class="btn" id="report-ai-summary-btn"><span class="report-ai-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg></span><span id="report-ai-summary-btn-label">Summarize with AI</span></button>
     </div>
   </div>
   <div id="report-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Recap Summary">
@@ -41212,20 +41220,65 @@ function reportHandleNavClick(e){
   }
 }
 el('report-modal-body')?.addEventListener('click',reportHandleNavClick);
-function openActivityReport(){
-  const overlay=el('report-modal-overlay'); if(!overlay)return;
-  renderActivityReport();
-  overlay.classList.add('open');
+function anchorReportToDockChip(){
+  const panel=el('report-panel');
+  const chip=el('report-toggle');
+  if(!panel||!chip)return;
+  window.sakuraAnchorPanelAboveChip(panel,chip);
 }
-function closeActivityReport(){ el('report-modal-overlay')?.classList.remove('open'); }
-document.getElementById('report-toggle')?.addEventListener('click',openActivityReport);
-document.getElementById('report-modal-close-x')?.addEventListener('click',closeActivityReport);
-document.querySelectorAll('.report-tab').forEach(btn=>{
-  btn.addEventListener('click',()=>{ reportModalPeriod=btn.dataset.period; renderActivityReport(); });
-});
-if(typeof onOverlayBackdropClick==='function')onOverlayBackdropClick(el('report-modal-overlay'),closeActivityReport);
+function openActivityReport(){
+  const panel=el('report-panel'); if(!panel)return;
+  renderActivityReport();
+  panel.classList.add('open');
+  document.querySelectorAll('#report-toggle').forEach(b=>b.classList.add('is-active'));
+  anchorReportToDockChip();
+}
+function closeActivityReport(){
+  const panel=el('report-panel');
+  if(panel){ panel.classList.remove('open'); panel.classList.remove('maximized'); }
+  document.querySelectorAll('#report-toggle').forEach(b=>b.classList.remove('is-active'));
+}
+function toggleActivityReport(){
+  const panel=el('report-panel');
+  if(panel&&panel.classList.contains('open')){ closeActivityReport(); return; }
+  openActivityReport();
+}
+function toggleReportMaximize(){
+  const panel=el('report-panel'); if(!panel)return;
+  const goingMax=!panel.classList.contains('maximized');
+  panel.classList.toggle('maximized',goingMax);
+  const btn=el('report-panel-maximize');
+  if(btn){
+    btn.dataset.tip=goingMax?'Restore default view':'Expand to full view';
+    btn.querySelector('svg').innerHTML=goingMax
+      ?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>'
+      :'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
+  }
+  if(!goingMax)anchorReportToDockChip();
+}
+document.getElementById('report-toggle')?.addEventListener('click',toggleActivityReport);
+document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
+document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
+// Same outside-mousedown / Escape close pattern as Journal/Meetings/To-Dos, replacing the
+// old backdrop-click-to-close now that this is an anchored panel rather than a centered
+// modal with its own full-screen backdrop element.
+document.addEventListener('mousedown',e=>{
+  const panel=el('report-panel');
+  const toggleBtn=el('report-toggle');
+  if(el('sakura-modal-overlay')?.classList.contains('open'))return;
+  if(el('report-summary-modal-overlay')?.classList.contains('open'))return;
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
+  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
+    closeActivityReport();
+  }
+},true);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('report-modal-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeActivityReport(); }
+  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')){
+    e.preventDefault(); e.stopPropagation(); closeActivityReport();
+  }
+});
+document.querySelectorAll('.report-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{ reportModalPeriod=btn.dataset.period; renderActivityReport(); anchorReportToDockChip(); });
 });
 window.openActivityReport=openActivityReport;
 
