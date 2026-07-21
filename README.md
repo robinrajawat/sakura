@@ -8,7 +8,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 - [Core Editing](#core-editing)
 - [Documents & Tabs](#documents--tabs)
 - [Panels](#panels)
-- [Meeting Notes & To-Dos](#meeting-notes--to-dos)
+- [Meeting Notes, To-Dos & Journal](#meeting-notes-to-dos--journal)
 - [Tags, Focus & Backlinks](#tags-focus--backlinks)
 - [AI Features](#ai-features)
 - [Quick Assist & Quick Insert](#quick-assist--quick-insert)
@@ -34,10 +34,10 @@ Key capabilities:
 - Fold/unfold subtrees, with a "+N hidden" badge that's clickable to expand
 - `#tags` on nodes, `[[@mention]]` backlinks between nodes, and a "Focus" mode to zoom into one branch
 - Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad (with Notepad, Q&A, and Diagrams tabs)
-- App-level panels shared across your whole workspace, independent of any single document: **Meeting Notes** and **To-Dos** — with action items promotable directly from a meeting into a linked to-do
+- App-level panels shared across your whole workspace, independent of any single document: **Meeting Notes**, **To-Dos**, and **Journal** — with action items promotable directly from a meeting into a linked to-do
 - Diagrams — link a draw.io diagram (Pad → Diagrams tab) to any node; embeds as a real picture in Word, PowerPoint, and PDF exports
 - Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection, plus dedicated AI actions inside To-Dos and Q&A — using your own API key with any of six built-in providers or a custom one
-- Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, to-dos, meetings, and settings)
+- Quick Assist: a combined command bar and search box (plain-English toggles like "hide sidebar," plus search across documents, notes, tags, to-dos, meetings, journal, and settings)
 - In-document search and a global header search across settings, help, documents, and templates
 - Folders and templates in the sidebar (including built-in packs like Meeting Notes, 1:1, Kickoff, Retrospective), with drag-and-drop filing and nesting
 - **Presenter Mode** — a fullscreen, slide-by-slide presentation of any document, with a laser pointer, blackout, an all-slides grid, a running timer, a floating notes panel, a persistent Whiteboard (a real draw.io canvas for sketching mid-talk), and an optional closing slide
@@ -46,7 +46,7 @@ Key capabilities:
 - Deep theming: Light/Dark/System/Schedule auto-theme, seven accent colors, five Chrome background presets, and node-text color presets
 - Installable as a desktop/mobile app (PWA) in supporting browsers
 - Two-tier automatic backup (live file backup + a local safety copy), in addition to manual export/import
-- Version History for documents, the To-Dos list, and Meeting Notes — periodic snapshots you can restore from independently of the undo stack
+- Version History for documents, the To-Dos list, Meeting Notes, and Journal — periodic snapshots you can restore from independently of the undo stack
 
 ## Core Editing
 
@@ -57,7 +57,7 @@ Key capabilities:
 - Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand
 - Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
 - Hover any node (Settings → Editing → "Node hover toolbar") to reveal quick Menu and Zoom-in buttons next to its bullet, without needing to select it first
-- `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, Pad, Notes, Meeting Notes, To-Dos, the title field) — not just while editing a node
+- `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, Pad, Notes, Meeting Notes, To-Dos, Journal, the title field) — not just while editing a node
 
 ## Documents & Tabs
 
@@ -84,12 +84,13 @@ Beyond the outline itself, several floating or docked panels attach richer conte
 
   Open the Pad via its floating panel icon or `Ctrl/Cmd+Shift+P`.
 
-## Meeting Notes & To-Dos
+## Meeting Notes, To-Dos & Journal
 
-Two panels live at the app level rather than inside any single document — one shared instance across your whole workspace, opened from the app bar or status bar rather than per-document.
+Three panels live at the app level rather than inside any single document — one shared instance across your whole workspace, opened from the app bar or status bar rather than per-document.
 
 - **Meeting Notes** (`Ctrl/Cmd+Shift+E`) — an app-level meeting log. Add a blank note or start from a built-in template (Meeting Notes, 1:1, Daily Standup, Weekly Status, Project Kickoff, Retrospective), each pre-filling title/Agenda/Notes and a starter action item where relevant. Each note has a title, date, optional time, attendee chips, rich-text Agenda and Notes fields, action items, and links to specific documents or nodes. An action item's **Promote** button turns it into a real To-Do — the new task's due date comes from the meeting's own date, and a small "from meeting" chip links back to the source note. Export a single note as a PDF; Version History keeps the last 20 snapshots of the whole list. The Share icon exports the whole list as a `.sakura.json` file for another Sakura user to import (their own Import button, next to Share) — adds to their list without touching anything already there; links to specific documents/nodes don't carry over, since those would point at documents the recipient doesn't have.
 - **To-Dos** (`Ctrl/Cmd+Shift+U`) — one shared task list across your whole workspace, not tied to any document or node. Supports priority, status, and due dates (with a Today/Tomorrow/Next week quick-pick popover), links, drag-to-reorder, quick-find, and an overdue-count badge. Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date), and sort by priority, due date, or manual order. Select multiple open tasks to bulk-set priority/status/due date or bulk-complete/delete, each with its own Undo. Three optional AI capabilities (Settings → AI → To-Dos AI, each independently toggleable): extract action items from the current document or selection, break a task into subtasks, and generate a status summary of open tasks — all add directly to the list with Undo. Typing `#tag` or `@name`/`@date`/`@status` directly in a task's text renders it as a colored chip with autocomplete. A task can either **repeat** (daily, weekdays, or weekly — completing it advances the due date instead of marking it done for good) or hold **sub-tasks** (a nested checklist with an n/m progress badge; the parent completes automatically once every sub-task is checked) — the two are mutually exclusive on the same task. Export the whole list as a PDF; Version History keeps the last 20 snapshots. Same Share/Import pair as Meeting Notes — exports the whole list as a `.sakura.json` file, imports add to the recipient's list rather than replacing it, and any link to a specific document/node is dropped on import for the same reason.
+- **Journal** (`Ctrl/Cmd+Shift+J`) — a daily journal, one entry per calendar date rather than any number of freely-dated items like Meeting Notes. Writing anything into a date's entry is what creates it — opening a date and navigating away without typing leaves nothing behind. Each entry has an optional mood (five presets, click again to clear), free-form tags, and a rich-text body with the same AI Rewrite as Note/Meeting Notes/Pad (a toolbar button rewrites the whole entry; highlighting text surfaces the shared selection-formatting popover to rewrite just that phrase instead). A calendar popover jumps to any date, marking days that already have an entry. Export a single entry or the whole journal as a PDF; Version History keeps the last 20 snapshots of the whole journal. Searchable from Quick Assist and the global header search, same as Meeting Notes and To-Dos. Unlike Meeting Notes/To-Dos, Journal doesn't yet support node/document links, Share/Import, or in-panel search.
 
 ## Tags, Focus & Backlinks
 
@@ -112,8 +113,8 @@ AI features are entirely optional and require your own API key for one of the bu
 
 ## Quick Assist & Quick Insert
 
-- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, and settings/help topics show up as **Go to** results.
-- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, the Pad, a Note, a Code block, a To-Do, a Meeting Notes field) opens a small character-insert menu — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
+- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide sidebar," "toggle dark mode," "get rid of pad" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "journal: coffee") narrows a search to one area. Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, insert decision log, apply Editor's Choice preset, and the AI actions above) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, the Pad, to-dos, meetings, journal entries, and settings/help topics show up as **Go to** results.
+- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, the Pad, a Note, a Code block, a To-Do, a Meeting Notes field, a Journal entry) opens a small character-insert menu — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
 
 ## Preview, Presenter Mode & Export
 
@@ -180,8 +181,9 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Local safety copy | Data | Always on | Automatic; "Restore" button is the only manual action |
 | Debug logging | Data | Off | Rolling in-memory log (last 500 entries) of app events — save, restore, panel, import/export, AI, and more. Uncaught errors are recorded regardless of this setting; the toggle controls the more detailed breadcrumb trail and whether the log viewer is shown. Never includes your note/task/document text, only metadata (node IDs, lengths, which action ran) — useful to turn on when troubleshooting a specific issue, then use "Copy log" to share it |
 | Skip folded nodes in exports | Data/Export | On | Collapsed subtrees are omitted from exports unless expanded first |
-| Use accent color in exports | Export & print | On | Off: Word, PDF, PowerPoint, and the Q&A/To-Dos/Meeting Notes exports all use one fixed color instead of your live accent, for consistent branding when sharing |
+| Use accent color in exports | Export & print | On | Off: Word, PDF, PowerPoint, and the Q&A/To-Dos/Meeting Notes/Journal exports all use one fixed color instead of your live accent, for consistent branding when sharing |
 | Meeting Notes | Features | On | App-level meeting log; independent of any single document |
+| Journal | Features | On | App-level daily journal, one entry per calendar date; independent of any single document |
 
 ## Keyboard Shortcuts
 
@@ -210,6 +212,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Open/close Code block | Ctrl/Cmd+Shift+K |
 | Open/close To-Dos | Ctrl/Cmd+Shift+U |
 | Open/close Meeting Notes | Ctrl/Cmd+Shift+E |
+| Open/close Journal | Ctrl/Cmd+Shift+J |
 | Generate outline (AI) | Ctrl/Cmd+Shift+O |
 | Restructure text (AI) | Ctrl/Cmd+Shift+R |
 | Show/hide toolbar | Ctrl/Cmd+Shift+T |
