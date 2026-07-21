@@ -1721,6 +1721,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
+.pv-table-chartable table{cursor:context-menu}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -7917,26 +7918,31 @@ function renderPieChartSvg(series,isDoughnut){
   const hole=isDoughnut?`<circle cx="${cx}" cy="${cy}" r="${(r*0.55).toFixed(1)}" fill="var(--bg)"/>`:'';
   return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${hole}${legend}</svg>`;
 }
-// Right-click menu for changing a rendered chart's type — Preview/Presenter's equivalent of
-// the Pad table context menu's Feature-as-chart toggle, but for the type rather than the
-// on/off flag, and reachable without leaving Preview/Presenter to go find the table in the
-// Notepad. See the contextmenu listener on #preview-overlay for where this is invoked from.
+// Right-click menu for a table rendered in Preview/Presenter — a chart's own equivalent of the
+// Pad table context menu's Feature-as-chart toggle and chart-type picks, reachable without
+// leaving Preview/Presenter to go find the table in the Notepad. Works on a table in either
+// state: right-clicking an already-charted table lets you change its type or flip back to
+// "Show as table"; right-clicking a table still shown as a plain table offers the same type
+// picks, and choosing one turns "Feature as chart" on in the same click rather than requiring
+// a separate step. See the contextmenu listener on #preview-overlay for where this is invoked.
 function openChartCtxMenu(table,x,y){
   const menu=el('chart-ctx-menu'); if(!menu||!table)return;
+  const isChart=isTableFeaturedAsChart(table);
   const current=getTableChartType(table);
   const avail=tableChartTypeAvailability(table);
   const typeItems=CHART_TYPES.map(type=>{
     const ok=!!avail[type]?.ok;
     const cls='pv-ctx-item chart-type-item'+(ok?'':' disabled');
     const title=ok?'':esc(avail[type].reason||'');
-    return `<div class="${cls}" data-chart-type="${type}" title="${title}"><span>${esc(CHART_TYPE_LABELS[type])}</span><span class="pv-ctx-check">${type===current?'✓':''}</span></div>`;
+    return `<div class="${cls}" data-chart-type="${type}" title="${title}"><span>${esc(CHART_TYPE_LABELS[type])}</span><span class="pv-ctx-check">${isChart&&type===current?'✓':''}</span></div>`;
   }).join('');
-  // "Show as table" — the same on/off flip as unchecking "Feature as chart" in the Pad table
-  // menu, but reachable right from the chart itself without going back to find the table.
-  menu.innerHTML=typeItems+`<div class="pv-ctx-divider"></div><div class="pv-ctx-item" data-show-as-table="1"><span>Show as table</span></div>`;
+  // "Show as table" only makes sense once it's actually shown as a chart — right-clicking a
+  // table that's still a plain table has nothing to flip back from.
+  menu.innerHTML=typeItems+(isChart?`<div class="pv-ctx-divider"></div><div class="pv-ctx-item" data-show-as-table="1"><span>Show as table</span></div>`:'');
   menu.querySelectorAll('.chart-type-item:not(.disabled)').forEach(item=>{
     item.addEventListener('mousedown',e=>{
       e.preventDefault();
+      if(!isTableFeaturedAsChart(table))setTableFeatureChart(table,true);
       setTableChartType(table,item.dataset.chartType);
       closeChartCtxMenu();
     });
@@ -28323,6 +28329,8 @@ function renderPreviewBody(){
               if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.chartNodeId=String(node.id); fig.dataset.chartTableIdx=String(tIdx); fig.innerHTML=svg; trow.appendChild(fig); return; }
             }
             const clone=t.cloneNode(true); clone.removeAttribute('data-feature-node'); clone.removeAttribute('data-feature-chart');
+            fig.dataset.chartNodeId=String(node.id); fig.dataset.chartTableIdx=String(tIdx);
+            if(tableChartability(t).ok)fig.classList.add('pv-table-chartable');
             fig.appendChild(clone);
             trow.appendChild(fig);
           });
@@ -30413,17 +30421,19 @@ async function copyPreviewAsRichText(){
 }
 el('preview-overlay')?.addEventListener('contextmenu',e=>{
   e.preventDefault();
-  // A right-click landing on a rendered chart (a table featured with "Feature as chart" —
-  // see the Pad table context menu) changes its chart type instead of doing anything else this
-  // handler normally does — takes priority over both the node popover and the laser-pointer
-  // menu below, in Preview and while actually presenting alike, since either of those would
-  // otherwise fire first and the chart menu would never be reachable.
-  const chartFig=e.target.closest('.pv-table-chart-figure');
-  if(chartFig){
-    const nodeId=Number(chartFig.dataset.chartNodeId);
-    const idx=Number(chartFig.dataset.chartTableIdx);
+  // A right-click landing on a rendered table (a table featured with "Feature under selected
+  // node" — see the Pad table context menu) opens the same chart menu instead of doing
+  // anything else this handler normally does — whether it's already showing as a chart or
+  // still a plain table, as long as its shape is chartable at all (see tableChartability) —
+  // takes priority over both the node popover and the laser-pointer menu below, in Preview and
+  // while actually presenting alike, since either of those would otherwise fire first and the
+  // chart menu would never be reachable.
+  const tableFig=e.target.closest('.pv-table-figure');
+  if(tableFig){
+    const nodeId=Number(tableFig.dataset.chartNodeId);
+    const idx=Number(tableFig.dataset.chartTableIdx);
     const table=Number.isFinite(nodeId)?featuredTablesForNode(nodeId)[idx]:null;
-    if(table){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
+    if(table&&tableChartability(table).ok){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
   }
   // While actually presenting, right-clicking a line opens the node popover (marks, Comment,
   // Question, Edit) instead of the laser-pointer menu — same gating the old left-click
