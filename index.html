@@ -3336,8 +3336,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 .todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
 .todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
-#todo-due-popover,#meeting-date-popover,#meeting-time-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
-#todo-due-popover.open,#meeting-date-popover.open,#meeting-time-popover.open{display:block}
+#todo-due-popover,#meeting-date-popover,#meeting-time-popover,#journal-date-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
+#todo-due-popover.open,#meeting-date-popover.open,#meeting-time-popover.open,#journal-date-popover.open{display:block}
+.due-pop-cal-day{position:relative}
+.due-pop-cal-day.has-entry::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
 .due-pop-preset-btn{flex:1;appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:500 10.5px 'Inter',sans-serif;padding:5px 2px;border-radius:6px;cursor:pointer;text-align:center;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
 .due-pop-preset-btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent)}
@@ -3606,6 +3608,54 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-resize-handle:hover::after,#meetings-resize-handle.dragging::after{opacity:1}
 #meetings-panel.maximized #meetings-resize-handle{display:none}
 #meetings-panel.dragging{user-select:none}
+/* ── Journal panel — same floating-panel shape as Meeting Notes, own fixed default position
+   (no drag/resize/dock-anchoring in this v1 — kept simple since it's a single always-in-one-
+   place panel, not one that needs to sit near a toolbar button). ── */
+#journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(78vh,680px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#journal-panel.open{display:flex}
+#journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
+#journal-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#journal-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
+#journal-history-btn,#journal-panel-maximize,#journal-panel-close,#journal-export-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#journal-history-btn:hover,#journal-panel-maximize:hover,#journal-panel-close:hover,#journal-export-btn:hover{color:var(--fg);background:var(--hover)}
+#journal-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+#journal-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#journal-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
+#journal-count-label{flex:1;text-align:right;font:400 11px 'Inter',sans-serif;color:var(--hint)}
+#journal-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
+#journal-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
+#journal-body.is-empty #journal-empty{display:block}
+#journal-body.is-empty #journal-list{display:none}
+.journal-row{display:flex;align-items:flex-start;gap:8px;padding:8px 8px;border-radius:8px;cursor:pointer;transition:background .12s}
+.journal-row:hover{background:var(--hover)}
+.journal-row-mood{font-size:15px;line-height:1.3;flex-shrink:0;width:18px;text-align:center}
+.journal-row-main{flex:1;min-width:0}
+.journal-row-date{font:600 12px 'Inter',sans-serif;color:var(--fg)}
+.journal-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.journal-row-tags{margin-top:2px;display:flex;gap:4px;flex-wrap:wrap}
+.journal-row-tag{font:500 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:1px 6px;border-radius:99px}
+#journal-card{display:none;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:16px 18px 14px;margin-top:2px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+#journal-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+#journal-back-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex}
+#journal-back-btn:hover{color:var(--fg);background:var(--hover)}
+#journal-date-input{appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:600 12.5px 'Inter',sans-serif;padding:5px 9px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#journal-date-input:hover{border-color:var(--accent)}
+#journal-delete-btn{margin-left:auto;appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex}
+#journal-delete-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+#journal-mood-row{display:flex;gap:6px;margin-bottom:12px}
+.journal-mood-btn{appearance:none;border:1px solid var(--border);background:var(--hover);cursor:pointer;font-size:16px;line-height:1;padding:6px 0;border-radius:8px;flex:1;text-align:center;transition:border-color .12s,background .12s,transform .1s}
+.journal-mood-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.journal-mood-btn.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#journal-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
+.journal-tag-chip{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:var(--hover);border:1px solid var(--border);padding:3px 4px 3px 9px;border-radius:99px}
+.journal-tag-chip button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:1px;display:inline-flex;border-radius:50%}
+.journal-tag-chip button:hover{color:var(--sem-alert,#b85450)}
+#journal-tag-input{flex:1;min-width:90px;appearance:none;border:none;background:none;color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 2px}
+#journal-tag-input:focus{outline:none}
+#journal-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
+#journal-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
+#journal-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
+#journal-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #status-util-group{display:flex;align-items:center;gap:14px;flex-shrink:0}
 #status-util-group .dock-btn{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:5px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));font:inherit;cursor:pointer;transition:color .12s}
 #status-util-group .dock-btn:hover{color:var(--accent)}
@@ -4591,6 +4641,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list" style="margin-top:10px">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">To-Dos</span><span class="settings-row-desc">App-level task list, separate from documents — its dock button (bottom-right of the screen) and the To-Dos panel itself</span></div><button id="feat-todos-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable To-Dos"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Meeting Notes</span><span class="settings-row-desc">App-level meeting log, separate from documents — its dock button (bottom-right of the screen) and the Meeting Notes panel itself</span></div><button id="feat-meetings-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Meeting Notes"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Journal</span><span class="settings-row-desc">App-level daily journal, separate from documents — its dock button (bottom-right of the screen) and the Journal panel itself</span></div><button id="feat-journal-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Journal"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Insert</span><span class="settings-row-desc">Ctrl/Cmd+Space opens a small character-insert menu — em dash, en dash, arrow, check mark, cross mark, middle dot, date/time — while editing a node, or any other editable text area in the app (Pad, Note panel, Code block, To-Dos, Meeting Notes fields). Same menu everywhere, same shortcut everywhere. For actions on a specific node — Note, Tags, Add question, Rewrite, Version history — use the right-click menu instead. Off: Ctrl/Cmd+Space does nothing while editing</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Insert"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist</span><span class="settings-row-desc">Ctrl/Cmd+K command box — type plain-English instructions like "hide sidebar" and they run immediately, run one-off actions like "new document" or "duplicate node," run AI actions like "rewrite document" or "expand node" (each reuses the same AI feature as its toolbar button, so it needs an API key configured under AI Rewrite and respects AI Capabilities being on), or type anything else to search documents, notes, tags, settings, and help. Toggles, one-off actions, and settings changes are instant and reversible with Undo; AI actions are the exception — they call the configured AI provider and can take a few seconds or fail like any other AI call, but their results are still added to Undo once they land</span></div><button id="feat-quickassist-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Assist"></button></div>
               </div>
@@ -5625,7 +5676,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+E)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+U)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -6541,6 +6592,76 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
   </div>
+  <div id="journal-history-overlay" class="history-modal-overlay">
+    <div class="history-modal">
+      <div class="history-modal-header">
+        <span class="history-modal-title">Journal Version History</span>
+        <button id="journal-history-close-x" class="history-modal-close-x" data-tip="Close">×</button>
+      </div>
+      <div id="journal-history-body" class="history-modal-body"></div>
+      <div class="history-modal-footer">
+        <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
+        <button id="journal-history-save-now-btn" class="btn">Save a version now</button>
+      </div>
+    </div>
+  </div>
+<div id="journal-panel" role="dialog" aria-label="Journal">
+  <div id="journal-panel-header">
+    <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+    <span id="journal-panel-title">Journal</span>
+    <button id="journal-export-btn" data-tip="Export whole journal as PDF" aria-label="Export journal as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></button>
+    <button id="journal-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
+    <button id="journal-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Journal"><svg id="journal-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
+    <button id="journal-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="journal-toolbar-row">
+    <button type="button" id="journal-today-btn" data-tip="Today's entry"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button type="button" id="journal-jump-date-btn" data-tip="Jump to a date" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+    <span id="journal-count-label"></span>
+  </div>
+  <div id="journal-body">
+    <div id="journal-list"></div>
+    <div id="journal-empty">No journal entries yet.<br>Click + to write today's.</div>
+    <div id="journal-card">
+      <div id="journal-card-top-row">
+        <button type="button" id="journal-back-btn" data-tip="Back to list" aria-label="Back to list"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button type="button" id="journal-date-input" aria-label="Jump to a different date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="journal-date-input-label">Today</span></button>
+        <button type="button" id="journal-delete-btn" data-tip="Delete this entry"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+      <div id="journal-mood-row">
+        <button type="button" class="journal-mood-btn" data-mood="great" data-tip="Great">☀️</button>
+        <button type="button" class="journal-mood-btn" data-mood="good" data-tip="Good">🙂</button>
+        <button type="button" class="journal-mood-btn" data-mood="neutral" data-tip="Neutral">😐</button>
+        <button type="button" class="journal-mood-btn" data-mood="low" data-tip="Low">🙁</button>
+        <button type="button" class="journal-mood-btn" data-mood="rough" data-tip="Rough">😣</button>
+      </div>
+      <div id="journal-tags-row">
+        <div id="journal-tag-chips"></div>
+        <input id="journal-tag-input" type="text" placeholder="+ Add tag" autocomplete="off" maxlength="40" />
+      </div>
+      <div class="meeting-field" style="margin-top:0;padding-top:0;border-top:none">
+        <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-purple)">Entry</span><div class="meeting-field-tools"><button type="button" class="meeting-field-fmt-btn" data-cmd="insertUnorderedList" data-target="journal-body-field" data-tip="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-fmt-btn" data-cmd="insertOrderedList" data-target="journal-body-field" data-tip="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button></div></div>
+        <div id="journal-body-field" class="meeting-field-body" contenteditable="true" data-placeholder="How did today go?"></div>
+      </div>
+      <div id="journal-timestamp"></div>
+    </div>
+  </div>
+  <div id="journal-toast" role="status" aria-live="polite"></div>
+</div>
+<div id="journal-date-popover" role="dialog" aria-label="Jump to a date">
+  <div class="due-pop-presets">
+    <button type="button" class="due-pop-preset-btn" data-preset="0">Today</button>
+    <button type="button" class="due-pop-preset-btn" data-preset="-1">Yesterday</button>
+    <button type="button" class="due-pop-preset-btn" data-preset="1">Tomorrow</button>
+  </div>
+  <div class="due-pop-cal-header">
+    <button type="button" class="due-pop-cal-nav" id="journal-date-pop-cal-prev" aria-label="Previous month"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="due-pop-cal-title" id="journal-date-pop-cal-title"></span>
+    <button type="button" class="due-pop-cal-nav" id="journal-date-pop-cal-next" aria-label="Next month"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>
+  <div class="due-pop-cal-grid" id="journal-date-pop-cal-dow"></div>
+  <div class="due-pop-cal-grid" id="journal-date-pop-cal-days"></div>
+</div>
 <div id="tag-popover">
   <div id="tag-popover-input-row">
     <input id="tag-popover-input" type="text" placeholder="New tag…" autocomplete="off" spellcheck="false" maxlength="40" />
@@ -10567,7 +10688,8 @@ const FEATURE_FLAGS={
   paddiagrams:{get:()=>padDiagramsTabEnabled,set:v=>{padDiagramsTabEnabled=v; padEnsureValidViewMode(); if(typeof renderDiagramsList==='function')renderDiagramsList();}},
   padmindmap:{get:()=>padMindmapTabEnabled,set:v=>{padMindmapTabEnabled=v; padEnsureValidViewMode(); if(!v&&mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay(); if(typeof renderMindMapsList==='function')renderMindMapsList();}},
   todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}},
-  meetings:{get:()=>(typeof window.sakuraMeetingsFeatureEnabled==='function'?window.sakuraMeetingsFeatureEnabled():true),set:v=>{if(typeof window.sakuraMeetingsSetFeatureEnabled==='function')window.sakuraMeetingsSetFeatureEnabled(v);}}
+  meetings:{get:()=>(typeof window.sakuraMeetingsFeatureEnabled==='function'?window.sakuraMeetingsFeatureEnabled():true),set:v=>{if(typeof window.sakuraMeetingsSetFeatureEnabled==='function')window.sakuraMeetingsSetFeatureEnabled(v);}},
+  journal:{get:()=>(typeof window.sakuraJournalFeatureEnabled==='function'?window.sakuraJournalFeatureEnabled():true),set:v=>{if(typeof window.sakuraJournalSetFeatureEnabled==='function')window.sakuraJournalSetFeatureEnabled(v);}}
 };
 const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-subsection-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],meetings:['settings-section-meetings'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog']};
 const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings'],padmindmap:['help-section-mindmap']};
@@ -18371,6 +18493,7 @@ const SHORTCUTS = {
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+u',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
   toggleMeetings: {combo:'mod+shift+e',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleMeetingsPanel==='function') toggleMeetingsPanel();}},
+  toggleJournal:  {combo:'mod+shift+j',   label:'Open/close Journal',       category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleJournalPanel==='function') toggleJournalPanel();}},
   toggleDiagrams: {combo:'mod+shift+g',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
@@ -31216,6 +31339,16 @@ document.addEventListener('keydown', e=>{
   }
 }, true);
 
+// Ctrl/Cmd+Shift+J — toggle Journal. Same pattern as toggleMeetings above.
+document.addEventListener('keydown', e=>{
+  if(isRecordingShortcut) return;
+  if(matchesShortcut(e, 'toggleJournal')){
+    if(isControlTarget(e.target) && !el('journal-panel')?.contains(e.target)) return;
+    e.preventDefault();
+    fireShortcut('toggleJournal');
+  }
+}, true);
+
 // Pad toolbar commands
 function padExecCmd(cmd, value){
   el('pad-editor')?.focus();
@@ -36830,7 +36963,7 @@ document.querySelectorAll('.meeting-field-fmt-btn').forEach(btn=>{
 // (short of typing raw HTML) to add a link in meeting notes at all, since that field's own
 // toolbar only ever had bullet/numbered list and AI rewrite buttons. Settings → Editing →
 // "Selection formatting popover" turns it off if it gets in the way.
-const SELECTION_FMT_EDITOR_IDS=['note-editor','pad-editor','meeting-agenda','meeting-body-field'];
+const SELECTION_FMT_EDITOR_IDS=['note-editor','pad-editor','meeting-agenda','meeting-body-field','journal-body-field'];
 const SELECTION_HIGHLIGHT_COLOR='rgba(234,179,8,.35)'; // same hue as the node-highlight palette's yellow
 let _selectionFmtEditorId=null;
 function selectionFmtEditorFor(node){
@@ -37155,7 +37288,8 @@ function saveMeetingsSettings(){
 function updateStatusUtilGroupVisibility(){
   const meetingsBtn=document.getElementById('meetings-toggle');
   const todosBtn=document.getElementById('todos-toggle');
-  const anyVisible=(meetingsBtn&&meetingsBtn.style.display!=='none')||(todosBtn&&todosBtn.style.display!=='none');
+  const journalBtn=document.getElementById('journal-toggle');
+  const anyVisible=(meetingsBtn&&meetingsBtn.style.display!=='none')||(todosBtn&&todosBtn.style.display!=='none')||(journalBtn&&journalBtn.style.display!=='none');
   const group=document.getElementById('status-util-group');
   const divider=document.getElementById('sb-util-divider');
   if(group)group.style.display=anyVisible?'':'none';
@@ -37390,6 +37524,458 @@ window.collectMeetingMatches=function(q){
 // exists, correct that one row instead of waiting for something unrelated to happen to
 // refresh it later.
 if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('meetings',meetingsFeatureEnabled);
+
+// =====================================================================
+// === Journal panel (app-level, no document association) =============
+// One entry per calendar date (date is the entry's key, not just a field).
+// Same "own floating panel, own IndexedDB-backed storage, own 20-slot
+// version history" shape as Meeting Notes, deliberately smaller in scope
+// for v1: no drag/resize/dock-anchoring, no import/export beyond PDF, no
+// node-linking, no in-panel search — just write, browse by date, done.
+// =====================================================================
+const JOURNAL_KEY='sakura_journal_v1';
+let journalEntries=[];
+let journalExpandedDate=null; // the date currently open in the card, or null when showing the list
+let journalPanelOpen=false;
+const JOURNAL_MOODS=['great','good','neutral','low','rough'];
+const JOURNAL_MOOD_EMOJI={great:'☀️',good:'🙂',neutral:'😐',low:'🙁',rough:'😣'};
+function jnUid(){ return 'jn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function normalizeJournalEntry(j){
+  const now=Date.now();
+  return {
+    id:(j&&typeof j.id==='string')?j.id:jnUid(),
+    date:(j&&typeof j.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(j.date))?j.date:todayStr(),
+    mood:(j&&JOURNAL_MOODS.includes(j.mood))?j.mood:'',
+    tags:(j&&Array.isArray(j.tags))?j.tags.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim()).slice(0,20):[],
+    body:(j&&typeof j.body==='string')?j.body:'',
+    createdAt:(j&&Number.isFinite(j.createdAt))?j.createdAt:now,
+    modifiedAt:(j&&Number.isFinite(j.modifiedAt))?j.modifiedAt:now
+  };
+}
+// Same IndexedDB-overflow-store pattern as Meeting Notes (loadJournalEntries is async, called
+// once at startup; saveJournalEntries stays sync with a fire-and-forget write inside it).
+async function loadJournalEntries(){
+  try{
+    const idbEntries=await idbGet(JOURNAL_KEY);
+    if(Array.isArray(idbEntries)){ journalEntries=idbEntries.map(normalizeJournalEntry); return; }
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(JOURNAL_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data)){
+      journalEntries=data.map(normalizeJournalEntry);
+      try{ await idbSet(JOURNAL_KEY,journalEntries); localStorage.removeItem(JOURNAL_KEY); }catch(e){}
+    }
+  }catch(e){}
+}
+function saveJournalEntries(){
+  maybeAutoSnapshotJournal().catch(()=>{});
+  try{
+    idbSet(JOURNAL_KEY, journalEntries).catch(()=>{ showJournalToast('Storage full — this change was not saved'); });
+    lastAnyDataChangeAt=Date.now();
+    scheduleBackupWrite();
+  }
+  catch(e){ showJournalToast('Storage full — this change was not saved'); }
+}
+function findJournalEntry(date){ return journalEntries.find(j=>j.date===date); }
+function findOrCreateJournalEntry(date){
+  let j=findJournalEntry(date);
+  if(!j){ j=normalizeJournalEntry({date}); journalEntries.push(j); }
+  return j;
+}
+function deleteJournalEntry(date){
+  sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',title:'Delete This Entry',body:'Delete the journal entry for '+formatJournalDateLabel(date)+'? This can\'t be undone (unless you restore an earlier version).',confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'}).then(ok=>{
+    if(!ok)return;
+    journalEntries=journalEntries.filter(j=>j.date!==date);
+    saveJournalEntries();
+    journalExpandedDate=null;
+    renderJournalList();
+    showJournalCardView(false);
+    showJournalToast('Entry deleted');
+  });
+}
+// ── Version history ── same self-contained pattern as Meeting Notes' own.
+const JOURNAL_REVISION_KEY='sakura_journal_revisions_v1';
+const JOURNAL_REVISION_MAX=20;
+const JOURNAL_REVISION_MIN_GAP_MS=10*60*1000;
+async function loadJournalRevisions(){
+  try{
+    const existing=await idbGet(JOURNAL_REVISION_KEY);
+    if(Array.isArray(existing))return existing;
+  }catch(e){}
+  return [];
+}
+async function saveJournalRevisions(list){ try{ await idbSet(JOURNAL_REVISION_KEY,list) }catch(e){} }
+async function recordJournalRevision(snapshotEntries,reason){
+  if(!Array.isArray(snapshotEntries))return;
+  const list=await loadJournalRevisions();
+  list.push({ts:Date.now(),reason:reason||'Auto',entries:JSON.parse(JSON.stringify(snapshotEntries))});
+  while(list.length>JOURNAL_REVISION_MAX)list.shift();
+  await saveJournalRevisions(list);
+}
+async function maybeAutoSnapshotJournal(){
+  try{
+    const prev=await idbGet(JOURNAL_KEY);
+    if(!Array.isArray(prev)||!prev.length)return;
+    const revisions=await loadJournalRevisions();
+    const last=revisions[revisions.length-1];
+    if(last&&JSON.stringify(last.entries)===JSON.stringify(prev))return;
+    if(last&&(Date.now()-last.ts)<JOURNAL_REVISION_MIN_GAP_MS)return;
+    await recordJournalRevision(prev,'Auto');
+  }catch(e){}
+}
+function openJournalHistory(){
+  const overlay=el('journal-history-overlay'); if(!overlay)return;
+  renderJournalHistoryList();
+  overlay.classList.add('open');
+}
+function closeJournalHistory(){ el('journal-history-overlay')?.classList.remove('open'); }
+function journalHistorySummary(list){
+  if(!Array.isArray(list)||!list.length)return '(empty)';
+  return list.length+' entr'+(list.length===1?'y':'ies');
+}
+async function renderJournalHistoryList(){
+  const body=el('journal-history-body'); if(!body)return;
+  body.innerHTML='';
+  const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
+  const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
+  const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
+  const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=journalHistorySummary(journalEntries);
+  nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
+  nowRow.appendChild(nowInfo);
+  body.appendChild(nowRow);
+  const revisions=(await loadJournalRevisions()).slice().reverse();
+  if(!revisions.length){
+    const empty=document.createElement('div'); empty.className='history-empty';
+    empty.textContent='No earlier versions yet — one is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" below.';
+    body.appendChild(empty);
+    return;
+  }
+  revisions.forEach(rev=>{
+    const row=document.createElement('div'); row.className='history-row';
+    const info=document.createElement('div'); info.className='history-row-info';
+    const time=document.createElement('div'); time.className='history-row-time';
+    time.textContent=new Date(rev.ts).toLocaleString()+(rev.reason&&rev.reason!=='Auto'?' · '+rev.reason:'');
+    const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=journalHistorySummary(rev.entries);
+    info.appendChild(time); info.appendChild(meta);
+    const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
+    restoreBtn.addEventListener('click',()=>restoreJournalRevision(rev.ts));
+    row.appendChild(info); row.appendChild(restoreBtn);
+    body.appendChild(row);
+  });
+}
+async function restoreJournalRevision(ts){
+  const revisions=await loadJournalRevisions();
+  const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace all current journal entries with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
+  if(!ok)return;
+  await recordJournalRevision(journalEntries,'Before restoring an older version');
+  journalEntries=JSON.parse(JSON.stringify(rev.entries)).map(normalizeJournalEntry);
+  journalExpandedDate=null;
+  saveJournalEntries();
+  renderJournalList();
+  showJournalCardView(false);
+  renderJournalHistoryList();
+  showJournalToast('Version restored');
+}
+async function saveJournalVersionNow(){
+  await recordJournalRevision(journalEntries,'Manual checkpoint');
+  renderJournalHistoryList();
+  showJournalToast('Version saved');
+}
+el('journal-history-btn')?.addEventListener('click', openJournalHistory);
+el('journal-history-close-x')?.addEventListener('click', closeJournalHistory);
+el('journal-history-save-now-btn')?.addEventListener('click', saveJournalVersionNow);
+if(typeof onOverlayBackdropClick==='function')onOverlayBackdropClick(el('journal-history-overlay'),closeJournalHistory);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('journal-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeJournalHistory(); }
+});
+
+// ── Toast ──
+function showJournalToast(msg){
+  const t=el('journal-toast'); if(!t)return;
+  t.innerHTML=''; const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
+  t.classList.add('show');
+  clearTimeout(showJournalToast._tm);
+  showJournalToast._tm=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── Panel open/close/maximize ──
+function openJournalPanel(){
+  journalPanelOpen=true;
+  el('journal-panel')?.classList.add('open');
+  document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.add('is-active'));
+  renderJournalList();
+  showJournalCardView(!!journalExpandedDate);
+}
+function closeJournalPanel(){
+  journalPanelOpen=false;
+  el('journal-panel')?.classList.remove('open');
+  document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.remove('is-active'));
+  closeJournalDatePopover();
+}
+function toggleJournalPanel(){
+  if(!journalPanelOpen){ openJournalPanel(); return; }
+  closeJournalPanel();
+}
+function toggleJournalMaximize(){
+  const panel=el('journal-panel'); if(!panel)return;
+  const goingMax=!panel.classList.contains('maximized');
+  panel.classList.toggle('maximized',goingMax);
+  el('journal-panel-maximize')?.setAttribute('aria-pressed',String(goingMax));
+}
+window.toggleJournalPanel=toggleJournalPanel;
+
+// ── List rendering ──
+function formatJournalDateLabel(dateStr){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr||''))return 'Undated';
+  const [y,mo,d]=dateStr.split('-').map(Number);
+  const dt=new Date(y,mo-1,d);
+  if(dateStr===todayStr())return 'Today · '+dt.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+  return dt.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+}
+function renderJournalList(){
+  const list=el('journal-list'); const body=el('journal-body'); if(!list||!body)return;
+  const sorted=journalEntries.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  body.classList.toggle('is-empty',sorted.length===0);
+  const countLabel=el('journal-count-label');
+  if(countLabel)countLabel.textContent=sorted.length?(sorted.length+' entr'+(sorted.length===1?'y':'ies')):'';
+  list.innerHTML='';
+  sorted.forEach(j=>{
+    const row=document.createElement('div'); row.className='journal-row'; row.dataset.journalDate=j.date;
+    const moodEl=document.createElement('div'); moodEl.className='journal-row-mood'; moodEl.textContent=j.mood?JOURNAL_MOOD_EMOJI[j.mood]:'';
+    const main=document.createElement('div'); main.className='journal-row-main';
+    const dateEl=document.createElement('div'); dateEl.className='journal-row-date'; dateEl.textContent=formatJournalDateLabel(j.date);
+    const snippet=stripHtmlToText(j.body||'').trim();
+    const snippetEl=document.createElement('div'); snippetEl.className='journal-row-snippet'; snippetEl.textContent=snippet||'(empty)';
+    main.appendChild(dateEl); main.appendChild(snippetEl);
+    if(j.tags&&j.tags.length){
+      const tagsEl=document.createElement('div'); tagsEl.className='journal-row-tags';
+      j.tags.forEach(t=>{ const chip=document.createElement('span'); chip.className='journal-row-tag'; chip.textContent='#'+t; tagsEl.appendChild(chip); });
+      main.appendChild(tagsEl);
+    }
+    row.appendChild(moodEl); row.appendChild(main);
+    row.addEventListener('click',()=>openJournalEntry(j.date));
+    list.appendChild(row);
+  });
+}
+function refreshJournalRowInList(){ renderJournalList(); }
+
+// ── Card (single entry) rendering ──
+function showJournalCardView(showCard){
+  const list=el('journal-list'), empty=el('journal-empty'), card=el('journal-card'), toolbar=el('journal-toolbar-row');
+  if(card)card.style.display=showCard?'block':'none';
+  if(list)list.style.display=showCard?'none':'';
+  if(empty)empty.style.display=(showCard||journalEntries.length)?'none':'';
+  if(toolbar)toolbar.style.display=showCard?'none':'';
+}
+function openJournalEntry(date){
+  journalExpandedDate=date;
+  const j=findJournalEntry(date)||normalizeJournalEntry({date});
+  showJournalCardView(true);
+  const dateLabel=el('journal-date-input-label'); if(dateLabel)dateLabel.textContent=date===todayStr()?'Today':formatJournalDateLabel(date).replace(/^Today · /,'');
+  document.querySelectorAll('.journal-mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===j.mood));
+  renderJournalTags(j);
+  const bodyField=el('journal-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(j.body||'');
+  const ts=el('journal-timestamp'); if(ts)ts.textContent=j.modifiedAt&&findJournalEntry(date)?('Last updated '+formatTimestamp(j.modifiedAt)):'';
+}
+el('journal-back-btn')?.addEventListener('click',()=>{ journalExpandedDate=null; showJournalCardView(false); renderJournalList(); });
+el('journal-today-btn')?.addEventListener('click',()=>openJournalEntry(todayStr()));
+el('journal-delete-btn')?.addEventListener('click',()=>{ if(journalExpandedDate)deleteJournalEntry(journalExpandedDate); });
+
+// ── Mood chips ──
+document.querySelectorAll('.journal-mood-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(!journalExpandedDate)return;
+    const j=findOrCreateJournalEntry(journalExpandedDate);
+    j.mood=(j.mood===btn.dataset.mood)?'':btn.dataset.mood; // click again to clear
+    j.modifiedAt=Date.now();
+    saveJournalEntries();
+    document.querySelectorAll('.journal-mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===j.mood));
+    refreshJournalRowInList();
+  });
+});
+
+// ── Tags ──
+function renderJournalTags(j){
+  const wrap=el('journal-tag-chips'); if(!wrap)return;
+  wrap.innerHTML='';
+  (j.tags||[]).forEach(tag=>{
+    const chip=document.createElement('span'); chip.className='journal-tag-chip';
+    const label=document.createElement('span'); label.textContent=tag;
+    const rm=document.createElement('button'); rm.type='button'; rm.setAttribute('aria-label','Remove tag'); rm.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    rm.addEventListener('click',()=>{
+      const entry=findJournalEntry(journalExpandedDate); if(!entry)return;
+      entry.tags=(entry.tags||[]).filter(t=>t!==tag); entry.modifiedAt=Date.now();
+      saveJournalEntries(); renderJournalTags(entry); refreshJournalRowInList();
+    });
+    chip.appendChild(label); chip.appendChild(rm); wrap.appendChild(chip);
+  });
+}
+el('journal-tag-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const input=e.currentTarget; const val=input.value.trim().replace(/^#/,'');
+    if(!val||!journalExpandedDate)return;
+    const j=findOrCreateJournalEntry(journalExpandedDate);
+    if(!j.tags.includes(val))j.tags.push(val);
+    j.modifiedAt=Date.now();
+    saveJournalEntries();
+    renderJournalTags(j); refreshJournalRowInList();
+    input.value='';
+  }
+});
+
+// ── Body field ──
+el('journal-body-field')?.addEventListener('keydown',e=>{
+  if(typeof handleGenericQaKeydown==='function'&&handleGenericQaKeydown(e,e.currentTarget))return;
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='b'){ e.preventDefault(); document.execCommand('bold'); return; }
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='i'){ e.preventDefault(); document.execCommand('italic'); return; }
+});
+el('journal-body-field')?.addEventListener('input',()=>{
+  if(!journalExpandedDate)return;
+  const j=findOrCreateJournalEntry(journalExpandedDate);
+  j.body=sakuraSanitizeRichHtml(el('journal-body-field').innerHTML);
+  j.modifiedAt=Date.now();
+  const ts=el('journal-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(j.modifiedAt);
+  saveJournalEntries();
+  refreshJournalRowInList();
+});
+
+// ── Date-jump popover — same look/mechanics as Meeting Notes' date popover, but its dots mark
+// which days already have an entry rather than marking the single selected date. ──
+let _journalDateViewMonth=null;
+let _journalDatePopoverOpen=false;
+function toJournalISODate(d){ const y=d.getFullYear(), mo=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${mo}-${day}`; }
+function journalDatePreset(daysFromToday){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+daysFromToday); return toJournalISODate(d); }
+function renderJournalDatePopover(){
+  if(!_journalDateViewMonth)return;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayIso=toJournalISODate(today);
+  const current=journalExpandedDate||todayIso;
+  const entryDates=new Set(journalEntries.map(j=>j.date));
+  const titleEl=el('journal-date-pop-cal-title');
+  if(titleEl)titleEl.textContent=_journalDateViewMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const dowEl=el('journal-date-pop-cal-dow');
+  if(dowEl&&!dowEl.childElementCount){ dowEl.innerHTML=['S','M','T','W','T','F','S'].map(d=>`<span class="due-pop-cal-dow">${d}</span>`).join(''); }
+  const daysEl=el('journal-date-pop-cal-days');
+  if(daysEl){
+    const y=_journalDateViewMonth.getFullYear(), mo=_journalDateViewMonth.getMonth();
+    const firstDow=new Date(y,mo,1).getDay();
+    const daysInMonth=new Date(y,mo+1,0).getDate();
+    const daysInPrevMonth=new Date(y,mo,0).getDate();
+    let html='';
+    for(let i=0;i<firstDow;i++){ html+=`<button type="button" class="due-pop-cal-day muted" disabled>${daysInPrevMonth-firstDow+1+i}</button>`; }
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=toJournalISODate(new Date(y,mo,d));
+      const isToday=iso===todayIso, isSelected=current===iso, hasEntry=entryDates.has(iso);
+      html+=`<button type="button" class="due-pop-cal-day${isToday?' today':''}${isSelected?' selected':''}${hasEntry?' has-entry':''}" data-date="${iso}">${d}</button>`;
+    }
+    const trailing=(7-((firstDow+daysInMonth)%7))%7;
+    for(let i=1;i<=trailing;i++){ html+=`<button type="button" class="due-pop-cal-day muted" disabled>${i}</button>`; }
+    daysEl.innerHTML=html;
+    daysEl.querySelectorAll('.due-pop-cal-day[data-date]').forEach(dBtn=>{
+      dBtn.addEventListener('click',()=>{ openJournalEntry(dBtn.getAttribute('data-date')); closeJournalDatePopover(); });
+    });
+  }
+}
+function openJournalDatePopover(btn){
+  const pop=el('journal-date-popover'); if(!pop||!btn)return;
+  const base=journalExpandedDate?new Date(journalExpandedDate+'T00:00:00'):new Date();
+  _journalDateViewMonth=new Date(base.getFullYear(),base.getMonth(),1);
+  const rect=btn.getBoundingClientRect();
+  const pw=216; let left=rect.left;
+  if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
+  if(left<8)left=8;
+  pop.style.left=left+'px'; pop.style.top=(rect.bottom+4)+'px';
+  renderJournalDatePopover();
+  pop.classList.add('open'); _journalDatePopoverOpen=true;
+  const pr=pop.getBoundingClientRect();
+  if(pr.bottom>window.innerHeight-8){
+    const flippedTop=rect.top-pr.height-4;
+    pop.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-pr.height))+'px';
+  }
+}
+function closeJournalDatePopover(){ el('journal-date-popover')?.classList.remove('open'); _journalDatePopoverOpen=false; }
+el('journal-date-input')?.addEventListener('click',e=>{ e.stopPropagation(); if(_journalDatePopoverOpen){ closeJournalDatePopover(); return; } openJournalDatePopover(e.currentTarget); });
+el('journal-jump-date-btn')?.addEventListener('click',e=>{ e.stopPropagation(); if(_journalDatePopoverOpen){ closeJournalDatePopover(); return; } openJournalDatePopover(e.currentTarget); });
+document.querySelectorAll('#journal-date-popover .due-pop-preset-btn').forEach(pBtn=>{
+  pBtn.addEventListener('click',()=>{ openJournalEntry(journalDatePreset(Number(pBtn.getAttribute('data-preset')))); closeJournalDatePopover(); });
+});
+el('journal-date-pop-cal-prev')?.addEventListener('click',()=>{ _journalDateViewMonth.setMonth(_journalDateViewMonth.getMonth()-1); renderJournalDatePopover(); });
+el('journal-date-pop-cal-next')?.addEventListener('click',()=>{ _journalDateViewMonth.setMonth(_journalDateViewMonth.getMonth()+1); renderJournalDatePopover(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&_journalDatePopoverOpen){ e.stopPropagation(); closeJournalDatePopover(); } },true);
+document.addEventListener('mousedown',e=>{
+  if(_journalDatePopoverOpen&&!e.target.closest('#journal-date-popover')&&!e.target.closest('#journal-date-input')&&!e.target.closest('#journal-jump-date-btn'))closeJournalDatePopover();
+},true);
+
+// ── PDF export (single entry + whole journal), via the shared generic panel PDF exporter ──
+function journalEntryPdfHtml(j){
+  const moodLine=j.mood?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">Mood: ${JOURNAL_MOOD_EMOJI[j.mood]} ${j.mood}</div>`:'';
+  const tagsLine=(j.tags&&j.tags.length)?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">${j.tags.map(t=>'#'+esc(t)).join('  ')}</div>`:'';
+  return `<div class="gpe-section"><h2>${esc(formatJournalDateLabel(j.date))}</h2>${moodLine}${tagsLine}<div>${sakuraSanitizeRichHtml(j.body||'')||'<p style="color:var(--muted)"><em>(empty)</em></p>'}</div></div>`;
+}
+function exportJournalEntryAsPdf(date){
+  const j=findJournalEntry(date); if(!j){ showJournalToast('Nothing to export yet'); return; }
+  printHtmlAsPdf('Journal — '+formatJournalDateLabel(date),'Journal — '+esc(formatJournalDateLabel(date)),journalEntryPdfHtml(j));
+}
+function exportJournalAsPdf(){
+  if(!journalEntries.length){ showJournalToast('No journal entries to export'); return; }
+  const sorted=journalEntries.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const body=sorted.map(journalEntryPdfHtml).join('<hr style="margin:18px 0;border:none;border-top:1px solid var(--border)">');
+  printHtmlAsPdf('Journal',  'Journal', body);
+}
+el('journal-export-btn')?.addEventListener('click',exportJournalAsPdf);
+
+// ── Panel chrome wiring ──
+el('journal-toggle')?.addEventListener('click',toggleJournalPanel);
+el('journal-panel-close')?.addEventListener('click',closeJournalPanel);
+el('journal-panel-maximize')?.addEventListener('click',toggleJournalMaximize);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')){
+    if(document.activeElement&&document.activeElement.closest('#journal-card'))return;
+    closeJournalPanel();
+  }
+});
+document.addEventListener('mousedown',e=>{
+  const panel=el('journal-panel');
+  const toggleBtn=el('journal-toggle');
+  if(_journalDatePopoverOpen)return;
+  if(e.target.closest('#selection-fmt-popover'))return;
+  if(e.target.closest('#node-qa-suggest'))return;
+  if(el('sakura-modal-overlay')?.classList.contains('open'))return;
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
+  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
+    closeJournalPanel();
+  }
+},true);
+
+// ── Feature toggle (Settings → Features → Journal) ──
+const JOURNAL_SETTINGS_KEY='sakura_journal_settings_v1';
+let journalFeatureEnabled=true;
+window.sakuraJournalFeatureEnabled=function(){ return journalFeatureEnabled; };
+function loadJournalSettings(){
+  try{ const raw=localStorage.getItem(JOURNAL_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); journalFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
+}
+function saveJournalSettings(){ try{ localStorage.setItem(JOURNAL_SETTINGS_KEY, JSON.stringify({featureEnabled:journalFeatureEnabled})); }catch(e){} }
+function applyJournalLocation(){
+  const dockBtn=el('journal-toggle');
+  const hideAll=!journalFeatureEnabled;
+  if(dockBtn)dockBtn.style.display=hideAll?'none':'';
+  if(hideAll)closeJournalPanel();
+  if(typeof updateStatusUtilGroupVisibility==='function')updateStatusUtilGroupVisibility();
+}
+function setJournalFeatureEnabled(on){
+  journalFeatureEnabled=!!on;
+  saveJournalSettings();
+  applyJournalLocation();
+}
+window.sakuraJournalSetFeatureEnabled=setJournalFeatureEnabled;
+loadJournalSettings();
+applyJournalLocation();
+loadJournalEntries().then(()=>{ renderJournalList(); }).catch(()=>{});
+if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('journal',journalFeatureEnabled);
 
 // ── Mind Map ──────────────────────────────────────────────────────────────
 // Per-document: each document can hold any number of named mind maps (mindMaps[]),
