@@ -3713,29 +3713,26 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Floating dock rail (Journal/Meetings/To-Dos/Recap) — fixed to the right edge,
    independent of the status bar and of #sidebar's layout flow, so relocating it
-   never touches the app's main flex layout. Sits in the bottom-right corner, clear of
-   both the status bar below it and the eye/toolbar/pad/maximize cluster
-   (#editor-controls-group) beside it — NOT vertically centered: these panels anchor
-   themselves directly above this rail's chips (see sakuraAnchorPanelAboveChip), and a
-   centered rail leaves far less than a full panel-height of room above it, which is what
-   was pushing Journal/Meetings/To-Dos off the top of the screen.
-   Horizontal, matching #editor-controls-group's own row layout directly below it, rather
-   than a vertical stack — the two read as one consistent bottom-right toolbar area instead
-   of two differently-oriented clusters. The collapse handle sits at the right (outer) end,
-   in the direction it collapses toward, same as the eye/toolbar icons' own row reads
-   left-to-right beneath it. */
-#status-util-group{position:fixed;right:16px;bottom:88px;z-index:60;display:flex;flex-direction:row;align-items:center;gap:4px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
-#status-util-group .dock-rail-buttons{display:flex;flex-direction:row;gap:2px}
+   never touches the app's main flex layout. Vertically centered: stacking it in the
+   bottom-right corner (an earlier version of this) put it directly above
+   #editor-controls-group's own row of icons, which read as two crowded, differently-
+   sized clusters piled on top of each other in the same corner. Centering it avoids
+   that; the collapse handle (see below) is there for when it sits over content someone
+   wants to see. These panels anchor themselves directly above this rail's chips (see
+   sakuraAnchorPanelAboveChip), which clamps to the viewport itself now rather than
+   assuming there's always a full panel-height of empty space above the chip, so a
+   centered rail no longer risks pushing Journal/Meetings/To-Dos off the top of the
+   screen the way it did before that helper was hardened. */
+#status-util-group{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+#status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px}
 /* Collapsed: only the handle stays, so the whole rail can be tucked away when it's in the
    way of the document underneath it — there was previously no way to hide this short of
    turning each feature off individually in Settings. */
 #status-util-group.collapsed .dock-rail-buttons{display:none}
-#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:16px;height:34px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px}
+#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:34px;height:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px}
 #status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
-/* Base chevron SVG points down; rotated to point right (toward the edge it collapses
-   into) when expanded, and left (back toward the hidden buttons) once collapsed. */
-#status-util-group .dock-rail-handle svg{transition:transform .15s;transform:rotate(-90deg)}
-#status-util-group.collapsed .dock-rail-handle svg{transform:rotate(90deg)}
+#status-util-group .dock-rail-handle svg{transition:transform .15s}
+#status-util-group.collapsed .dock-rail-handle svg{transform:rotate(180deg)}
 #status-util-group .dock-btn{appearance:none;-webkit-appearance:none;position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));font:inherit;cursor:pointer;transition:color .12s,background .12s}
 #status-util-group .dock-btn:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #status-util-group .dock-btn.is-active{color:var(--accent);font-weight:600;background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -3743,11 +3740,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 /* Icon-only: label text stays in the DOM (accessible name, and still readable by the
    data-tip tooltip system) but is visually clipped rather than removed. */
 #status-util-group .dock-btn-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-#status-util-group .todo-overdue-badge{position:absolute;top:0;right:0;margin-left:0;min-width:15px;height:15px;font-size:8px;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box}
+#status-util-group .todo-overdue-badge{position:absolute;top:1px;right:1px;margin-left:0;min-width:14px;height:14px;font-size:8.5px}
 @media (max-width:760px){
-  /* Narrow viewports (this app's own mobile/narrow breakpoint) — move to a bottom-center
-     bar instead of hugging the right edge, so it doesn't crowd a narrow screen's edge. */
-  #status-util-group{right:auto;left:50%;bottom:14px;transform:translateX(-50%)}
+  /* Narrow viewports (this app's own mobile/narrow breakpoint) — drop to a bottom bar
+     instead of a right-edge rail, since a vertical rail eats too much width there. */
+  #status-util-group{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row}
+  #status-util-group .dock-rail-buttons{flex-direction:row}
+  #status-util-group .dock-rail-handle{width:16px;height:34px}
+  #status-util-group .dock-rail-handle svg{transform:rotate(-90deg)}
+  #status-util-group.collapsed .dock-rail-handle svg{transform:rotate(90deg)}
 }
 
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
@@ -5836,13 +5837,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
      Same button IDs as before, so every existing click handler, badge updater, and
      anchor-to-chip panel-positioning function keeps working unchanged. -->
 <div id="status-util-group" role="toolbar" aria-label="Workspace panels">
+  <button type="button" id="dock-rail-collapse-btn" class="dock-rail-handle" data-tip="Hide these panel buttons" aria-label="Hide workspace panel rail" aria-expanded="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
   <div class="dock-rail-buttons" id="dock-rail-buttons">
   <button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="dock-btn-label">Journal</span></button>
   <button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span class="dock-btn-label">Meetings</span></button>
   <button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span class="dock-btn-label">To-Dos</span></button>
   <button class="dock-btn" id="report-toggle" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span class="dock-btn-label">Recap</span></button>
   </div>
-  <button type="button" id="dock-rail-collapse-btn" class="dock-rail-handle" data-tip="Hide these panel buttons" aria-label="Hide workspace panel rail" aria-expanded="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
 </div>
 
 <!-- Node Note Panel -->
