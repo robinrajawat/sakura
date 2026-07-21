@@ -3628,7 +3628,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-body.is-empty #journal-list{display:none}
 .journal-row{display:flex;align-items:flex-start;gap:8px;padding:8px 8px;border-radius:8px;cursor:pointer;transition:background .12s}
 .journal-row:hover{background:var(--hover)}
-.journal-row-mood{font-size:15px;line-height:1.3;flex-shrink:0;width:18px;text-align:center}
+.journal-row-mood{flex-shrink:0;width:18px;display:flex;align-items:center;justify-content:center;padding-top:3px}
+.journal-row-mood-dot{display:inline-block;width:9px;height:9px;border-radius:50%}
 .journal-row-main{flex:1;min-width:0}
 .journal-row-date{font:600 12px 'Inter',sans-serif;color:var(--fg)}
 .journal-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
@@ -3643,7 +3644,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-delete-btn{margin-left:auto;appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex}
 #journal-delete-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 #journal-mood-row{display:flex;gap:6px;margin-bottom:12px}
-.journal-mood-btn{appearance:none;border:1px solid var(--border);background:var(--hover);cursor:pointer;font-size:16px;line-height:1;padding:6px 0;border-radius:8px;flex:1;text-align:center;transition:border-color .12s,background .12s,transform .1s}
+.journal-mood-btn{appearance:none;border:1px solid var(--border);background:var(--hover);cursor:pointer;padding:7px 0;border-radius:8px;flex:1;display:inline-flex;align-items:center;justify-content:center;transition:border-color .12s,background .12s,transform .1s}
 .journal-mood-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
 .journal-mood-btn.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 #journal-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
@@ -6629,18 +6630,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" id="journal-delete-btn" data-tip="Delete this entry"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div>
       <div id="journal-mood-row">
-        <button type="button" class="journal-mood-btn" data-mood="great" data-tip="Great">☀️</button>
-        <button type="button" class="journal-mood-btn" data-mood="good" data-tip="Good">🙂</button>
-        <button type="button" class="journal-mood-btn" data-mood="neutral" data-tip="Neutral">😐</button>
-        <button type="button" class="journal-mood-btn" data-mood="low" data-tip="Low">🙁</button>
-        <button type="button" class="journal-mood-btn" data-mood="rough" data-tip="Rough">😣</button>
+        <button type="button" class="journal-mood-btn" data-mood="great" data-tip="Great" style="color:var(--fc-green)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M7 13Q12 19 17 13"/></svg></button>
+        <button type="button" class="journal-mood-btn" data-mood="good" data-tip="Good" style="color:var(--fc-blue)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8 14.5Q12 16.5 16 14.5"/></svg></button>
+        <button type="button" class="journal-mood-btn" data-mood="neutral" data-tip="Neutral" style="color:var(--fc-gray)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="15" x2="16" y2="15"/></svg></button>
+        <button type="button" class="journal-mood-btn" data-mood="low" data-tip="Low" style="color:var(--fc-orange)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8 15.5Q12 13.5 16 15.5"/></svg></button>
+        <button type="button" class="journal-mood-btn" data-mood="rough" data-tip="Rough" style="color:var(--fc-red)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M7.5 9.5l2 1M16.5 9.5l-2 1"/><path d="M7.5 16Q12 12.5 16.5 16"/></svg></button>
       </div>
       <div id="journal-tags-row">
         <div id="journal-tag-chips"></div>
         <input id="journal-tag-input" type="text" placeholder="+ Add tag" autocomplete="off" maxlength="40" />
       </div>
       <div class="meeting-field" style="margin-top:0;padding-top:0;border-top:none">
-        <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-purple)">Entry</span><div class="meeting-field-tools"><button type="button" class="meeting-field-fmt-btn" data-cmd="insertUnorderedList" data-target="journal-body-field" data-tip="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-fmt-btn" data-cmd="insertOrderedList" data-target="journal-body-field" data-tip="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button></div></div>
+        <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-purple)">Entry</span><div class="meeting-field-tools"><button type="button" class="meeting-field-fmt-btn" data-cmd="insertUnorderedList" data-target="journal-body-field" data-tip="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-fmt-btn" data-cmd="insertOrderedList" data-target="journal-body-field" data-tip="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-rewrite" id="journal-rewrite-body" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div></div>
         <div id="journal-body-field" class="meeting-field-body" contenteditable="true" data-placeholder="How did today go?"></div>
       </div>
       <div id="journal-timestamp"></div>
@@ -37538,7 +37539,8 @@ let journalEntries=[];
 let journalExpandedDate=null; // the date currently open in the card, or null when showing the list
 let journalPanelOpen=false;
 const JOURNAL_MOODS=['great','good','neutral','low','rough'];
-const JOURNAL_MOOD_EMOJI={great:'☀️',good:'🙂',neutral:'😐',low:'🙁',rough:'😣'};
+const JOURNAL_MOOD_COLOR={great:'green',good:'blue',neutral:'gray',low:'orange',rough:'red'};
+const JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
 function jnUid(){ return 'jn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function normalizeJournalEntry(j){
   const now=Date.now();
@@ -37756,7 +37758,8 @@ function renderJournalList(){
   list.innerHTML='';
   sorted.forEach(j=>{
     const row=document.createElement('div'); row.className='journal-row'; row.dataset.journalDate=j.date;
-    const moodEl=document.createElement('div'); moodEl.className='journal-row-mood'; moodEl.textContent=j.mood?JOURNAL_MOOD_EMOJI[j.mood]:'';
+    const moodEl=document.createElement('div'); moodEl.className='journal-row-mood';
+    if(j.mood){ const dot=document.createElement('span'); dot.className='journal-row-mood-dot'; dot.style.background=`var(--fc-${JOURNAL_MOOD_COLOR[j.mood]})`; dot.dataset.tip=JOURNAL_MOOD_LABEL[j.mood]; moodEl.appendChild(dot); }
     const main=document.createElement('div'); main.className='journal-row-main';
     const dateEl=document.createElement('div'); dateEl.className='journal-row-date'; dateEl.textContent=formatJournalDateLabel(j.date);
     const snippet=stripHtmlToText(j.body||'').trim();
@@ -37855,6 +37858,63 @@ el('journal-body-field')?.addEventListener('input',()=>{
   refreshJournalRowInList();
 });
 
+// Toast with an inline action button (Undo) — same shape as showMeetingsActionToast, targeting
+// #journal-toast instead.
+function showJournalActionToast(msg,actionLabel,actionFn){
+  const t=el('journal-toast'); if(!t)return;
+  t.innerHTML='';
+  const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
+  const btn=document.createElement('button'); btn.type='button'; btn.textContent=actionLabel;
+  btn.style.cssText='appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px \'Inter\',sans-serif;cursor:pointer;flex-shrink:0;';
+  btn.addEventListener('click',()=>{ t.classList.remove('show'); actionFn(); });
+  t.appendChild(btn);
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(()=>t.classList.remove('show'),6000);
+}
+// AI rewrite for the whole entry body — same shape as rewriteMeetingField: extract as Markdown
+// so list/bold/italic structure survives the round-trip, bail if the entry changed underneath
+// the in-flight request (field is a reused singleton, same race as Meeting Notes'), one-click
+// Undo via the action toast.
+async function rewriteJournalField(){
+  if(!journalExpandedDate)return;
+  const requestDate=journalExpandedDate;
+  const j=findOrCreateJournalEntry(requestDate);
+  const field=el('journal-body-field');
+  const text=(field?.textContent||'').trim();
+  if(!text){ showJournalToast('Nothing to rewrite yet'); return; }
+  const originalHtml=j.body||'';
+  const inputMd=mdBlocksFromHtml(originalHtml,0).trim();
+  const btn=el('journal-rewrite-body'); if(btn)btn.classList.add('ai-busy');
+  try{
+    const result=await callAiApi(inputMd||text);
+    if(!result)throw new Error('Empty response from AI');
+    const current=findJournalEntry(requestDate);
+    if(!current || aiSnapshotChanged(originalHtml,current.body||'') || aiSnapshotChanged(requestDate,journalExpandedDate)){
+      showJournalToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
+      return;
+    }
+    const rebuiltHtml=sakuraSanitizeRichHtml(mdTextToHtml(result));
+    if(field&&journalExpandedDate===requestDate)field.innerHTML=rebuiltHtml;
+    current.body=rebuiltHtml;
+    current.modifiedAt=Date.now();
+    const ts=el('journal-timestamp'); if(ts&&journalExpandedDate===requestDate)ts.textContent='Last updated '+formatTimestamp(current.modifiedAt);
+    saveJournalEntries();
+    refreshJournalRowInList();
+    showJournalActionToast('Entry rewritten','Undo',()=>{
+      const it=findJournalEntry(requestDate); if(!it)return;
+      it.body=originalHtml;
+      const field2=el('journal-body-field');
+      if(field2&&journalExpandedDate===requestDate)field2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
+      it.modifiedAt=Date.now();
+      saveJournalEntries();
+      refreshJournalRowInList();
+    });
+  }catch(e){ showJournalToast('Rewrite failed — '+(e.message||'try again')); }
+  finally{ if(btn)btn.classList.remove('ai-busy'); }
+}
+el('journal-rewrite-body')?.addEventListener('click',rewriteJournalField);
+
 // ── Date-jump popover — same look/mechanics as Meeting Notes' date popover, but its dots mark
 // which days already have an entry rather than marking the single selected date. ──
 let _journalDateViewMonth=null;
@@ -37924,7 +37984,7 @@ document.addEventListener('mousedown',e=>{
 
 // ── PDF export (single entry + whole journal), via the shared generic panel PDF exporter ──
 function journalEntryPdfHtml(j){
-  const moodLine=j.mood?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">Mood: ${JOURNAL_MOOD_EMOJI[j.mood]} ${j.mood}</div>`:'';
+  const moodLine=j.mood?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">Mood: ${JOURNAL_MOOD_LABEL[j.mood]}</div>`:'';
   const tagsLine=(j.tags&&j.tags.length)?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">${j.tags.map(t=>'#'+esc(t)).join('  ')}</div>`:'';
   return `<div class="gpe-section"><h2>${esc(formatJournalDateLabel(j.date))}</h2>${moodLine}${tagsLine}<div>${sakuraSanitizeRichHtml(j.body||'')||'<p style="color:var(--muted)"><em>(empty)</em></p>'}</div></div>`;
 }
