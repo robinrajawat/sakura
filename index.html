@@ -25126,18 +25126,26 @@ function getQuestionNodes(){
 // cover the sandbox client too?" has a real open question in it that getQuestionNodes alone
 // would never surface. Splits the note into block-level lines (noteBlockLines — one per <p>/
 // <li>/manual line break, so multi-paragraph notes don't get glued together), then further
-// splits each line on sentence boundaries so an embedded question doesn't need a line to
-// itself. Returns plain question strings; linking back to the node is the caller's job (see
-// openQaInsert), same as getQuestionNodes leaves node-level linking to its own caller.
+// splits each line on: (1) an inline bullet run — " - Point one - Point two" typed or pasted
+// as one flowing paragraph instead of each point getting its own <li>/<br>, which noteBlockLines
+// has no boundary for on its own — and (2) ordinary sentence boundaries, so an embedded
+// question doesn't need a bullet or a line to itself either. Returns plain question strings;
+// linking back to the node is the caller's job (see openQaInsert), same as getQuestionNodes
+// leaves node-level linking to its own caller.
+const NOTE_BULLET_CHAR_RE='[-\u2022\u25cf\u25e6\u2023\u2043]'; // - • ● ◦ ‣ ⁃
 function getNoteQuestionSegments(node){
   if(!node||!node.note)return [];
   const lines=noteBlockLines(node.note);
   const out=[];
-  for(const line of lines){
-    const parts=line.split(/(?<=[.?!])\s+(?=[A-Z0-9])/);
-    for(const raw of parts){
-      const t=raw.trim();
-      if(t.length>1&&t.endsWith('?'))out.push(t);
+  for(let line of lines){
+    line=line.replace(new RegExp('^\\s*'+NOTE_BULLET_CHAR_RE+'\\s+'),'');
+    const bulletPieces=line.split(new RegExp('\\s+'+NOTE_BULLET_CHAR_RE+'\\s+(?=\\S)'));
+    for(const piece of bulletPieces){
+      const parts=piece.split(/(?<=[.?!])\s+(?=[A-Z0-9])/);
+      for(const raw of parts){
+        const t=raw.trim();
+        if(t.length>1&&t.endsWith('?'))out.push(t);
+      }
     }
   }
   return out;
