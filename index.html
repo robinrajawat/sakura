@@ -4953,7 +4953,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>Restructure text (AI)</strong> — Import ▾ → "Restructure text", or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">R</span>: paste messy or unstructured text (notes, an email, a transcript) and it organizes it into a tree, cleaning up wording as needed (fixing broken line wraps, tightening long sentences) so it reads well as outline nodes — it will not invent facts that are not in your text, but it is not a verbatim copy either. If the pasted text already has clear structure (bullets, consistent indentation, or literal tree-connector characters), it is parsed directly with no AI call at all. Unlike Generate outline, this always opens as a new document rather than inserting into the one you have open, so an import can never accidentally merge into unrelated work — your original pasted text is kept in that new document's Pad so you can check it against the result</li>
 <li><strong>Word import</strong> — Import ▾ → "Word (.docx)": converts the file's own heading and list structure directly into nodes — no AI involved when the document actually uses heading styles, since that structure is already explicit in the file. If a document has no heading styles at all (just a wall of plain paragraphs), its text is automatically handed to the same AI restructuring used above instead of being imported as one long flat list. Tables import as a node per row with each column as a child node; images are dropped but left as a "[image]" placeholder so nothing vanishes silently. Always opens as a new document, with the extracted text kept in its Pad. Legacy <span class="help-kbd">.doc</span> files (pre-2007 binary format) are not supported — only modern <span class="help-kbd">.docx</span></li>
 <li><strong>Word export</strong> — Export ▾ → "Word (.docx)": a genuine, editable document — real heading styles (so Word's own navigation pane and outline view work), and a Table of Contents (headings and section markers both) with clickable page references. Page numbers start as "1" until Word recalculates them — select all (<span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">A</span>) then press <span class="help-kbd">F9</span> once after opening to load the real ones (a note to this effect sits right above the Table of Contents); right-click → Update Field works too for just the TOC, or again any time headings change later. Decision Log entries render as bordered/shaded cards with the same accent-colored status and field labels as Preview. Notes carry through with their actual formatting — bold, italic, underline, strike, and links all become real Word formatting rather than flattening to plain text; bullet/numbered lists inside a note get a simple prefix treatment, and a table inside a note flattens to one line per row (cells joined by " | ") rather than a real Word table grid. Images marked "Feature as diagram" (right-click an image in a note) embed as real pictures, same as PowerPoint export, scaled to fit while keeping their aspect ratio; a diagram that can't be read or converted is skipped with the rest of the document still exporting normally. Diagrams created in the Pad's Diagrams tab and linked to a node embed the same way, controlled by Settings → Export &amp; print → "Include Diagrams in exports". Settings → Export & print → "Cover page" (on by default, shared with PDF) adds a title page — document title, a divider rule, author, and a word count/read time/decisions-logged line — before the Table of Contents, which always starts on its own page and is followed by one before the body content begins. Follows Preview/Presenter's own fold state (like PDF and PowerPoint) rather than Settings → Export & print → "Skip folded sections" — whichever sections are currently folded there are what's left out. Settings → Preview → Presenter mode → "Branding" adds the same small corner mark used in PowerPoint export and the Presenter bar, as a running page footer, plus a wordmark above the title on the cover page itself</li>
-<li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, with its entire subtree (not just its direct children) as bullet text, nested a level at a time (•/◦/▪), and any images marked "Feature as diagram" (right-click an image in a note) — or diagrams from the Pad's Diagrams tab linked to that node — embedded as pictures sized to fit, correctly scaled to their real aspect ratio. A node right-clicked and marked "Slide divider" (independent of that depth setting, and independent of section markers) always gets its own standalone, title-only slide at that point in the deck — same divider node, same title-only treatment as Presenter mode's mid-deck dividers, vertically centered so it reads as a chapter break rather than a second cover page. A node's own marker (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) shows as a small colored glyph in front of its bullet. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. If a slide's bullets don't fit in the space available, the rest spills onto a new slide titled "&lt;Title&gt; (cont'd)" rather than getting clipped — measured against the actual font, not guessed. A node's Note text rides along with its bullet too, shown with a <span class="cs-inline-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> icon in italic muted text so it reads as an annotation rather than more outline content; a note's own embedded diagram images still become pictures as above, only for the slide's own top node, not deeper descendants. Two more sections get their own slides before the very end, each paginated the same way: a Notepad section (text only, unlike Word's version, since lists and tables flatten to plain paragraphs rather than becoming real PowerPoint structures) and a Q&A section (question bold, answer below it, unanswered ones marked "No answer provided") — both follow the same Settings → Export & print toggles Word uses for Notepad and Q&A. An optional closing slide (Settings → Preview → "Closing slide" — "Thank you" by default, or your own text and subtitle) is always the genuine last slide in the deck, after Notepad and Q&A, same as Presenter mode's own closing slide. A table in the Notepad right-clicked and marked "Feature under selected node" (see the Notepad section above) rides along on that node's own slide as a real, editable PowerPoint table — or, if also marked "Feature as chart", as a real chart instead (Bar, Line, or Pie — whichever type was picked in the Notepad or by right-clicking the chart in Preview/Presenter), stacked below any bullets/images/decision cards already on the slide. Whichever sections are currently folded in Preview/Presenter (not the main outline editor, and not Settings → Export & print → "Skip folded sections") are what's left out of the deck — fold or expand a section there first if you want to change what exports. Settings → Preview → "Branding" (off by default) adds a small mark to the bottom-right corner of every slide — "SAKURA" by default, or your own company/team name if set in "Branding text" right below it — the same mark and setting used in the Presenter bar, and in PDF and Word exports too</li>
+<li><strong>PowerPoint export</strong> — Export ▾ → "PowerPoint (.pptx)": builds a genuine, editable slide deck using the same slide breakdown as Preview's Presenter mode (Settings → Preview → "Presenter slide breaks at" controls this) — a title slide, then one slide per node at that depth, with its entire subtree (not just its direct children) as bullet text, nested a level at a time (•/◦/▪), and any images marked "Feature as diagram" (right-click an image in a note) — or diagrams from the Pad's Diagrams tab linked to that node — embedded as pictures sized to fit, correctly scaled to their real aspect ratio. A node right-clicked and marked "Slide divider" (independent of that depth setting, and independent of section markers) always gets its own standalone, title-only slide at that point in the deck — same divider node, same title-only treatment as Presenter mode's mid-deck dividers, vertically centered so it reads as a chapter break rather than a second cover page. A node's own marker (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) shows as a small colored glyph in front of its bullet. Everything opens fully editable in PowerPoint, Keynote, or Google Slides — text boxes, bullets, and pictures are normal native shapes, not a flattened image of the slide. If a slide's bullets don't fit in the space available, the rest spills onto a new slide titled "&lt;Title&gt; (cont'd)" rather than getting clipped — measured against the actual font, not guessed. A node's Note text rides along with its bullet too, shown with a <span class="cs-inline-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> icon in italic muted text so it reads as an annotation rather than more outline content; a note's own embedded diagram images still become pictures as above, only for the slide's own top node, not deeper descendants. Two more sections get their own slides before the very end, each paginated the same way: a Notepad section (lists flatten to plain paragraphs, unlike Word's version, since pptxgenjs text runs don't have a real list structure to lean on without a lot more plumbing — but a table stays a real, editable PowerPoint table, wherever it was typed relative to the surrounding notes) and a Q&A section (question bold, answer below it, unanswered ones marked "No answer provided") — both follow the same Settings → Export & print toggles Word uses for Notepad and Q&A. An optional closing slide (Settings → Preview → "Closing slide" — "Thank you" by default, or your own text and subtitle) is always the genuine last slide in the deck, after Notepad and Q&A, same as Presenter mode's own closing slide. A table in the Notepad doesn't need to be linked to a node to export as a real table — right-clicking it and marking it "Feature under selected node" (see the Notepad section above) instead makes it ALSO ride along a second time on that node's own slide — or, if also marked "Feature as chart", as a real chart instead (Bar, Line, or Pie — whichever type was picked in the Notepad or by right-clicking the chart in Preview/Presenter), stacked below any bullets/images/decision cards already on the slide. Whichever sections are currently folded in Preview/Presenter (not the main outline editor, and not Settings → Export & print → "Skip folded sections") are what's left out of the deck — fold or expand a section there first if you want to change what exports. Settings → Preview → "Branding" (off by default) adds a small mark to the bottom-right corner of every slide — "SAKURA" by default, or your own company/team name if set in "Branding text" right below it — the same mark and setting used in the Presenter bar, and in PDF and Word exports too</li>
 <li><strong>Sakura Document</strong> — Export ▾ → Share → "Sakura Document" (<span class="help-kbd">.sakura.json</span>): the one full-fidelity export — everything the document holds, including notes, Decision Logs, Diagrams as real editable draw.io XML (not just a picture of it), Q&amp;A, and Mind Maps. Every other export format is lossy on purpose (OPML/Markdown/plain text keep structure and text only; Word/PDF/PowerPoint flatten into a document no longer editable in Sakura) — this one exists to hand a complete, still-editable document to a colleague also running Sakura. <strong>Import ▾ → Sakura Document</strong> brings a received file in as a brand-new document; it never touches any other document, folder, or setting already in your workspace — for moving everything in the app at once (all documents, folders, templates), use Settings → Data → Export/Import instead, though note that importing there replaces the entire app's contents rather than adding to it</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="15" r="7"/><circle cx="6.3" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="11.7" cy="12.8" r="1.1" fill="currentColor" stroke="none"/><path d="M6 16.5c1.2 1.7 3.6 1.7 4.8 0"/><path d="M19 2.85L19.81 5.28L22.15 6L19.81 6.72L19 9.15L18.19 6.72L15.85 6L18.19 5.28Z" fill="currentColor" stroke="currentColor" stroke-width="0.6"/></svg></span> button next to Outline → Suggest icon: picks a fitting emoji for the selected node's label and adds it as a prefix (e.g. "🛒 Webshop"). With multiple nodes selected, applies one straight away to each, picked from a keyword list first and an exact match against icons already used elsewhere in your documents/templates, falling to AI only when neither matches. For a single node, if more than one good option turns up, a small popover appears above it to pick from; right-click → <span class="help-kbd">More</span> → Suggest icons for all nodes runs it over the whole tree (asks to confirm first). Since the icon is just leading text, removing or changing it is normal editing — double-click the node and edit it like any other text</li>
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
@@ -18089,39 +18089,61 @@ async function buildPptxPresentation(slidesData){
     }
   });
 
-  // --- Notepad section — mirrors docxBuildNotepadSection's intent, but text-only: lists/tables
-  // get flattened to plain paragraphs rather than kept as real list/table structures the way
-  // Word's version preserves them (docxNoteBlocks does real HTML→OOXML conversion; pptxgenjs
-  // text runs don't have an equivalent to lean on here without a lot more plumbing). Paragraphs
-  // are split on block-level boundaries, then paginated using real text measurement, same
-  // approach as the bullet pagination earlier in this function. Ordered before Q&A below to
-  // match Word/Preview/PDF, which all put Notepad first too.
+  // --- Notepad section — mirrors docxBuildNotepadSection's intent. Lists get flattened to
+  // plain paragraphs (pptxgenjs text runs don't have an equivalent to lean on for real list
+  // structure without a lot more plumbing — same reasoning as before), but tables render as
+  // real, editable pptxgenjs tables (addTable) — same "genuinely editable, not a flattened
+  // image" bar the rest of this export already holds itself to, and matching what's actually
+  // visible in the Notepad editor. A table doesn't need to be linked to a node (see "Feature
+  // under selected node" elsewhere in this file) to get this treatment; that link only decides
+  // whether a table ALSO appears a second time, riding along on a specific node's own slide.
+  // Paragraphs and tables are paginated together using real text measurement (paragraphs) and
+  // a per-row estimate (tables), same approach as the bullet pagination earlier in this
+  // function, so a table still lands wherever it was typed relative to surrounding notes
+  // rather than always at the end. Ordered before Q&A below to match Word/Preview/PDF, which
+  // all put Notepad first too.
   if(padNotepadExportEnabled){
     const padHtml=cleanEditorHtml(el('pad-editor'));
     if(htmlHasVisibleContent(padHtml)){
-      // Tables are pulled out and converted to plain text via a real DOM walk BEFORE the
-      // generic div/p/li/h1-6/br flattening below runs — a cell's own internal markup (a bold
-      // span, or a <div>/<p> a browser's contenteditable normalization can add while a cell is
-      // being edited) would otherwise be misread by that regex as a paragraph break between
-      // cells still on the same row, splitting a row like "Month | Online Sales | In-Store
-      // Sales" across three separate lines. Reading each cell via textContent sidesteps that —
-      // whatever's nested inside a cell collapses to its plain text regardless of markup, and
-      // only real row boundaries (one row per table <tr>) become paragraph breaks, each row's
-      // cells joined with " | ".
+      // Tables are pulled out via a real DOM walk (pptxTableRowsFromElement — the same reader
+      // "Feature under selected node" tables use, so header-row bolding matches too) and
+      // replaced with a placeholder marker that holds their position in the paragraph
+      // sequence. A printable, essentially-never-typed marker (not a NUL or other control
+      // character) survives the HTML round-trip below intact — real browsers replace NUL
+      // bytes with U+FFFD during parsing, which would have corrupted a NUL-based marker.
       const srcRoot=document.createElement('div'); srcRoot.innerHTML=padHtml;
+      const notepadTables=[];
       srcRoot.querySelectorAll('table').forEach(table=>{
-        const rows=Array.from(table.querySelectorAll('tr'))
-          .map(tr=>Array.from(tr.children).map(cell=>(cell.textContent||'').trim().replace(/\s+/g,' ')).join(' | '))
-          .filter(r=>r.replace(/\s*\|\s*/g,'').trim());
-        table.replaceWith(document.createTextNode(rows.length?'\n\n'+rows.join('\n\n')+'\n\n':''));
+        const rows=pptxTableRowsFromElement(table);
+        if(rows.length){
+          const idx=notepadTables.length;
+          notepadTables.push(rows);
+          table.replaceWith(document.createTextNode(`\n\n\u00a7SAKURA_TABLE_${idx}\u00a7\n\n`));
+        } else {
+          table.remove();
+        }
       });
       const withBreaks=srcRoot.innerHTML.replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
       const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
-      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
-      if(paras.length){
+      const paraStrings=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+      if(paraStrings.length){
         const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
         const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
-        const blocks=paras.map(p=>{ const lines=pptxMeasureWrappedLines(p,boxW,fs,false); return {h:lines*pptxLineHeightIn(fs,1.3)+0.12, text:p, lines}; });
+        const tableMarkerRe=/^\u00a7SAKURA_TABLE_(\d+)\u00a7$/;
+        // A table's height has no text-measurement equivalent to lean on the way a paragraph
+        // does — this is a rough per-row estimate (12pt row text plus cell padding), the same
+        // rough-but-good-enough approach the per-node featured-table sizing already uses
+        // rather than a full pptxgenjs layout pass just to measure.
+        const blocks=paraStrings.map(p=>{
+          const m=tableMarkerRe.exec(p);
+          if(m){
+            const rows=notepadTables[Number(m[1])]||[];
+            const h=Math.min(availH,Math.max(0.5,rows.length*0.32));
+            return {h:h+0.12, isTable:true, rows};
+          }
+          const lines=pptxMeasureWrappedLines(p,boxW,fs,false);
+          return {h:lines*pptxLineHeightIn(fs,1.3)+0.12, text:p, lines};
+        });
         let pageBlocks=[],usedH=0; const pages=[];
         blocks.forEach(b=>{ if(pageBlocks.length&&usedH+b.h>availH){ pages.push(pageBlocks); pageBlocks=[]; usedH=0; } pageBlocks.push(b); usedH+=b.h; });
         if(pageBlocks.length) pages.push(pageBlocks);
@@ -18133,9 +18155,18 @@ async function buildPptxPresentation(slidesData){
           slide.addText(pi===0?'Notepad':"Notepad (cont'd)", {x:MARGIN, y:0.58, w:boxW, h:1.05, fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'});
           let y=bodyTop;
           page.forEach(b=>{
-            const h=b.lines*pptxLineHeightIn(fs,1.3);
-            slide.addText(pptxStripIllegalXmlChars(b.text), {x:MARGIN, y, w:boxW, h, fontFace:FONT, fontSize:fs, color:theme.fg, valign:'top', lineSpacingMultiple:1.3});
-            y+=h+0.12;
+            if(b.isTable){
+              slide.addTable(b.rows, {
+                x:MARGIN, y, w:boxW, h:b.h-0.12,
+                fontFace:FONT, fontSize:12, color:theme.fg,
+                border:{type:'solid', color:'D9D6CE', pt:0.75},
+                autoPage:false
+              });
+            } else {
+              const h=b.lines*pptxLineHeightIn(fs,1.3);
+              slide.addText(pptxStripIllegalXmlChars(b.text), {x:MARGIN, y, w:boxW, h, fontFace:FONT, fontSize:fs, color:theme.fg, valign:'top', lineSpacingMultiple:1.3});
+            }
+            y+=b.h;
           });
         });
       }
