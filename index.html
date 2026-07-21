@@ -18147,6 +18147,7 @@ async function buildPptxPresentation(slidesData){
     if(featTables.length){
       const availH=Math.max(0.6, bottomLimit-cursorY);
       const perTableH=Math.min(3.5, availH/featTables.length-0.15);
+      let targetSlide=slide, ty=cursorY;
       featTables.forEach(item=>{
         // A chart's whole FRAME — not just its plot area (see addFeaturedTableOrChart's own
         // layout fix above) — needs a real floor. Without one, a slide already crowded with
@@ -18154,11 +18155,27 @@ async function buildPptxPresentation(slidesData){
         // nothing, and a chart squeezed into a sliver that thin renders as a flattened line
         // with the legend overlapping it rather than sitting below — illegible regardless of
         // the plot-area fix. A plain table degrades more gracefully at a small height (rows
-        // just get tight), so only charts get the floor; a chart that needs it may run past
-        // the slide's usual bottom margin, which is still better than being unreadable.
-        const h=item.isChart?Math.max(2.2,perTableH):perTableH;
-        addFeaturedTableOrChart(slide,item,MARGIN,cursorY,PPTX_SLIDE_W-2*MARGIN,h,sd.title);
-        cursorY+=h+0.15;
+        // just get tight), so only charts get the floor.
+        let h=item.isChart?Math.max(2.2,perTableH):perTableH;
+        // That floor can now push the item past the bottom of a slide that was already mostly
+        // full before this section even started — rather than let it run off the edge, spill
+        // it onto a fresh continuation slide (same "<Title> (cont'd)" pattern the bullet
+        // pagination above uses for the same reason), recomputing its height against a full,
+        // empty page instead of whatever sliver was left on the original one.
+        if(ty+h>bottomLimit){
+          targetSlide=pres.addSlide();
+          targetSlide.background={color:theme.bg};
+          pptxApplyBranding(targetSlide,theme);
+          targetSlide.addShape('rect', {x:MARGIN, y:0.45, w:0.3, h:0.04, fill:{color:theme.accent}, line:{type:'none'}});
+          targetSlide.addText(pptxStripIllegalXmlChars((sd.title||'')+" (cont'd)"), {
+            x:MARGIN, y:0.58, w:PPTX_SLIDE_W-2*MARGIN, h:1.05,
+            fontFace:FONT, fontSize:28, bold:false, color:theme.heading, valign:'top'
+          });
+          ty=1.75;
+          h=item.isChart?Math.max(2.2,Math.min(3.5,bottomLimit-ty-0.15)):Math.min(3.5,bottomLimit-ty-0.15);
+        }
+        addFeaturedTableOrChart(targetSlide,item,MARGIN,ty,PPTX_SLIDE_W-2*MARGIN,h,sd.title);
+        ty+=h+0.15;
       });
     }
   });
