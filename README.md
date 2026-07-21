@@ -215,7 +215,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Open/close Journal | Ctrl/Cmd+Shift+J |
 | Generate outline (AI) | Ctrl/Cmd+Shift+O |
 | Restructure text (AI) | Ctrl/Cmd+Shift+R |
-| Show/hide toolbar | Ctrl/Cmd+Shift+V |
+| Show/hide toolbar | Ctrl/Cmd+Shift+X |
 | Save now | Ctrl/Cmd+S |
 | New document | Ctrl/Cmd+Alt+N |
 | Copy selection | Ctrl/Cmd+Shift+C |
