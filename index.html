@@ -1207,18 +1207,16 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .report-tab{flex:1;appearance:none;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
 .report-tab:hover{color:var(--fg)}
 .report-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.report-stats-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.report-stat{flex:1;min-width:76px;background:var(--hover);border-radius:8px;padding:8px 10px;text-align:center}
-.report-stat-num{font:700 18px 'Inter',sans-serif;color:var(--fg);display:block;line-height:1.2}
-.report-stat-label{font:400 10.5px 'Inter',sans-serif;color:var(--muted);display:block;margin-top:1px}
-.report-section{margin-bottom:14px}
-.report-section-title{font:600 11px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.report-section-title .report-count{font-weight:400;text-transform:none;letter-spacing:0}
-.report-item{display:flex;align-items:baseline;gap:8px;padding:5px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg)}
-.report-item:hover{background:var(--hover)}
-.report-item-time{flex-shrink:0;font-size:11px;color:var(--muted);min-width:42px}
-.report-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.report-item-doc{flex-shrink:0;font-size:10.5px;color:var(--muted);background:var(--hover);border-radius:4px;padding:1px 6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report-doc-group{margin-bottom:16px}
+.report-doc-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.report-work-list{display:flex;flex-direction:column;gap:2px}
+.report-work-item{display:flex;align-items:flex-start;gap:7px;padding:3px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45}
+.report-work-item:hover{background:var(--hover)}
+.report-work-glyph{flex-shrink:0;width:13px;text-align:center;color:var(--muted);font-size:12px;line-height:1.55}
+.report-work-item.done .report-work-glyph{color:var(--accent)}
+.report-work-item.added .report-work-glyph{color:var(--muted)}
+.report-item-text{flex:1;overflow-wrap:break-word;word-break:break-word}
+.report-work-item.report-item-more{color:var(--muted);font-size:11.5px;padding-left:24px}
 .report-empty{font:400 12.5px 'Inter',sans-serif;color:var(--muted);text-align:center;padding:28px 8px}
 .sb-hint-bar.visible{display:flex}
 .sb-hint-bar .sb-hint-text{flex:1}
@@ -40055,7 +40053,6 @@ function reportPreviewHtmlText(html,max){
   if(!t)return '(no content)';
   return t.length>max?t.slice(0,max-1)+'…':t;
 }
-function reportTimeLabel(ts){ try{ return new Date(ts).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
 
 // Returns every doc's node array without disturbing the currently-open document's in-memory
 // state: the active doc reads straight from `nodes` (freshest, including unsaved edits this
@@ -40121,12 +40118,25 @@ function buildActivityReport(period){
     tasksCompleted,itemsCreated,itemsEdited,meetingItems,journalItems
   };
 }
-function reportRenderSection(title,items,renderRow,cap){
+function reportGroupByDoc(r){
+  const groups=new Map(); // doc title -> {completed:[],created:[],edited:[],lastTs}
+  const touch=(doc,bucket,item)=>{
+    if(!groups.has(doc))groups.set(doc,{completed:[],created:[],edited:[],lastTs:0});
+    const g=groups.get(doc);
+    g[bucket].push(item);
+    g.lastTs=Math.max(g.lastTs,item.ts||0);
+  };
+  r.tasksCompleted.forEach(it=>touch(it.doc,'completed',it));
+  r.itemsCreated.forEach(it=>touch(it.doc,'created',it));
+  r.itemsEdited.forEach(it=>touch(it.doc,'edited',it));
+  return [...groups.entries()].map(([doc,g])=>({doc,...g})).sort((a,b)=>b.lastTs-a.lastTs);
+}
+function reportWorkItemsHtml(items,cls,glyph,cap){
   if(!items.length)return '';
-  const shown=items.slice(0,cap||30);
-  const rows=shown.map(renderRow).join('');
-  const more=items.length>shown.length?`<div class="report-item report-item-more" style="color:var(--muted);font-size:11.5px">+${items.length-shown.length} more</div>`:'';
-  return `<div class="report-section"><div class="report-section-title">${esc(title)} <span class="report-count">(${items.length})</span></div>${rows}${more}</div>`;
+  const shown=items.slice(0,cap||6);
+  const rows=shown.map(it=>`<div class="report-work-item ${cls}"><span class="report-work-glyph">${glyph}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('');
+  const more=items.length>shown.length?`<div class="report-work-item report-item-more">+${items.length-shown.length} more</div>`:'';
+  return rows+more;
 }
 function renderActivityReport(){
   const body=el('report-modal-body'); if(!body)return;
@@ -40135,26 +40145,23 @@ function renderActivityReport(){
   const totalItems=r.stats.tasksCompleted+r.stats.itemsCreated+r.stats.itemsEdited+r.stats.meetings+r.stats.journal;
   if(!totalItems){
     const label=reportModalPeriod==='today'?'today':(reportModalPeriod==='week'?'this week':'last week');
-    body.innerHTML=`<div class="report-empty">No activity recorded for ${esc(label)} yet.</div>`;
+    body.innerHTML=`<div class="report-empty">Nothing recorded for ${esc(label)} yet — get to work! 🌸</div>`;
     return;
   }
-  const statsHtml=`<div class="report-stats-row">
-    <div class="report-stat"><span class="report-stat-num">${r.stats.tasksCompleted}</span><span class="report-stat-label">Tasks done</span></div>
-    <div class="report-stat"><span class="report-stat-num">${r.stats.itemsCreated}</span><span class="report-stat-label">Created</span></div>
-    <div class="report-stat"><span class="report-stat-num">${r.stats.itemsEdited}</span><span class="report-stat-label">Edited</span></div>
-    <div class="report-stat"><span class="report-stat-num">${r.stats.docsTouched}</span><span class="report-stat-label">Docs touched</span></div>
-  </div>`;
-  const tasksHtml=reportRenderSection('Tasks completed',r.tasksCompleted,it=>
-    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">✓ ${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
-  const createdHtml=reportRenderSection('Created',r.itemsCreated,it=>
-    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
-  const editedHtml=reportRenderSection('Edited',r.itemsEdited,it=>
-    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
-  const meetingsHtml=reportRenderSection('Meeting notes',r.meetingItems,it=>
-    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${it.action==='created'?'New: ':'Updated: '}${esc(reportPreviewText(it.text,60))}</span></div>`);
-  const journalHtml=reportRenderSection('Journal',r.journalItems,it=>
-    `<div class="report-item"><span class="report-item-time">${esc(it.date||'')}</span><span class="report-item-text">${esc(reportPreviewHtmlText(it.text,60))}</span>${it.mood?`<span class="report-item-doc">${esc(JOURNAL_MOOD_LABEL[it.mood]||it.mood)}</span>`:''}</div>`);
-  body.innerHTML=statsHtml+tasksHtml+createdHtml+editedHtml+meetingsHtml+journalHtml;
+  const docGroups=reportGroupByDoc(r);
+  const docsHtml=docGroups.map(g=>`<div class="report-doc-group">
+    <div class="report-doc-title">${esc(g.doc)}</div>
+    <div class="report-work-list">${reportWorkItemsHtml(g.completed,'done','✓')}${reportWorkItemsHtml(g.created,'added','+')}${reportWorkItemsHtml(g.edited,'edited','✎')}</div>
+  </div>`).join('');
+  const meetingsHtml=r.meetingItems.length?`<div class="report-doc-group">
+    <div class="report-doc-title">Meeting Notes</div>
+    <div class="report-work-list">${r.meetingItems.slice(0,8).map(it=>`<div class="report-work-item ${it.action==='created'?'added':'edited'}"><span class="report-work-glyph">${it.action==='created'?'+':'✎'}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('')}</div>
+  </div>`:'';
+  const journalHtml=r.journalItems.length?`<div class="report-doc-group">
+    <div class="report-doc-title">Journal</div>
+    <div class="report-work-list">${r.journalItems.slice(0,8).map(it=>`<div class="report-work-item"><span class="report-work-glyph">✎</span><span class="report-item-text">${esc(it.date||'')}${it.mood?' · '+esc(JOURNAL_MOOD_LABEL[it.mood]||it.mood):''} — ${esc(reportPreviewHtmlText(it.text,80))}</span></div>`).join('')}</div>
+  </div>`:'';
+  body.innerHTML=docsHtml+meetingsHtml+journalHtml;
 }
 function openActivityReport(){
   const overlay=el('report-modal-overlay'); if(!overlay)return;
