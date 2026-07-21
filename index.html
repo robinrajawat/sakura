@@ -1219,7 +1219,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .report-work-item{display:flex;align-items:flex-start;gap:7px;padding:3px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45}
 .report-work-glyph{flex-shrink:0;width:13px;display:flex;align-items:center;justify-content:center;padding-top:2px}
 .report-item-text{flex:1;overflow-wrap:break-word;word-break:break-word}
-.report-doc-title[data-nav]{cursor:pointer;margin:-2px -4px 3px;padding:2px 4px 6px;border-radius:6px}
+.report-doc-title[data-nav]{cursor:pointer;margin:-2px -4px 3px;padding:2px 4px 6px;border-radius:6px 6px 0 0}
 .report-doc-title[data-nav]:hover{color:var(--accent);background:var(--hover)}
 .report-work-item[data-nav]{cursor:pointer}
 .report-work-item[data-nav]:hover{background:var(--hover)}
@@ -41020,7 +41020,7 @@ function showReportSummaryModal(text){
   const lines=String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[-•*]\s*/,''));
   _reportSummaryLines=lines.length?lines:[String(text||'').trim()];
   const bulletDot='<svg width="7" height="7" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:6px"><circle cx="12" cy="12" r="10" fill="var(--accent)"/></svg>';
-  body.innerHTML=_reportSummaryLines.map(bullet=>`<div class="report-summary-line">${bulletDot}<span>${esc(bullet)}</span></div>`).join('');
+  body.innerHTML=_reportSummaryLines.map(bullet=>`<div class="report-summary-line">${bulletDot}<span>${mdInlineToHtml(bullet)}</span></div>`).join('');
   overlay.classList.add('open');
 }
 function closeReportSummaryModal(){ el('report-summary-modal-overlay')?.classList.remove('open'); }
