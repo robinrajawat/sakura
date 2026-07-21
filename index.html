@@ -5189,6 +5189,20 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Settings → Meeting Notes: dock the toggle button in the status bar instead of the app bar, same as To-Dos</li>
 </ul>
 </div>
+          <div class="help-section" data-cat="panels" id="help-section-journal">
+<h4>Journal</h4>
+<ul>
+<li>An app-level daily journal — not tied to any document. One shared list across your whole workspace, same idea as Meeting Notes and To-Dos, but keyed to one entry per calendar date rather than any number of freely-dated items</li>
+<li>Open it from its button at the end of the status bar with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">J</span>; the same shortcut closes it again</li>
+<li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> for today's entry — it's created the moment you type something into it, not the moment you open it, so opening a fresh date and then navigating away without writing anything leaves no empty entry behind. Entries are listed newest first, each row showing its date, mood dot (if set), a one-line preview, and any tags; click a row to open it</li>
+<li>Each entry has an optional <strong>mood</strong> (five presets — click again to clear), free-form <strong>tags</strong> (type one, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add it), and a rich-text <strong>body</strong> — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to the field's label, plus a small AI-rewrite icon that appears on hover next to the label (rewrites the whole entry). Highlight any text in the body and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight, Link, and Rewrite (AI, scoped to just the highlighted phrase). Settings → Editing → "Selection formatting popover" turns this off if it's not wanted</li>
+<li>The calendar icon jumps to any date — Today/Yesterday/Tomorrow presets, or pick a day from the month grid; days with an existing entry show a small dot. Opening a past or future date this way works the same as opening today's — write something and it becomes a real entry</li>
+<li>Export a single entry as a PDF (top of the entry, download icon) — date, mood, tags, and the body with its real formatting. The export icon in the panel header instead exports every entry, newest first, as one PDF</li>
+<li>Delete an entry from its card (trash icon) — with a confirm dialog first, since there's no separate Undo toast for this one</li>
+<li>The clock icon in the panel header opens <strong>Version history</strong> for the whole journal — same idea as Meeting Notes' own, kept separately since Journal isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces every current entry (after saving a checkpoint of what was there first) — keeps the last 20 versions, app-wide</li>
+<li>Settings → Features → Journal turns the whole feature (dock button and panel) off</li>
+</ul>
+</div>
           <div class="help-section" data-cat="panels" id="help-section-mindmap">
 <h4>Mind Map</h4>
 <ul>
@@ -10693,7 +10707,7 @@ const FEATURE_FLAGS={
   journal:{get:()=>(typeof window.sakuraJournalFeatureEnabled==='function'?window.sakuraJournalFeatureEnabled():true),set:v=>{if(typeof window.sakuraJournalSetFeatureEnabled==='function')window.sakuraJournalSetFeatureEnabled(v);}}
 };
 const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-subsection-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],meetings:['settings-section-meetings'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog']};
-const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings'],padmindmap:['help-section-mindmap']};
+const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings'],journal:['help-section-journal'],padmindmap:['help-section-mindmap']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
   ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
@@ -11716,6 +11730,7 @@ function collectSearchGroups(q){
     {name:'Pad',items:collectPadMatches(q)},
     {name:'Todos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
     {name:'Meetings',items:(typeof collectMeetingMatches==='function'?collectMeetingMatches(q):[])},
+    {name:'Journal',items:(typeof collectJournalMatches==='function'?collectJournalMatches(q):[])},
     {name:'Folders',items:collectFolderMatches(q)},
     {name:'Templates',items:collectTemplateMatches(q)},
     {name:'Settings',items:collectSettingsMatches(q)},
@@ -11996,6 +12011,7 @@ const QA_SEARCH_CATEGORIES=[
   {key:'pad',group:'Pad'},
   {key:'todos',group:'To-Dos'},
   {key:'meetings',group:'Meetings'},
+  {key:'journal',group:'Journal'},
   {key:'settings',group:'Settings'},
   {key:'features',group:'Features'},
   {key:'help',group:'Help'}
@@ -12016,6 +12032,7 @@ const QA_CATEGORY_PREFIXES={
   tag:'tags', tags:'tags',
   pad:'pad',
   todo:'todos', todos:'todos',
+  journal:'journal', journals:'journal',
   setting:'settings', settings:'settings',
   feature:'features', features:'features',
   help:'help'
@@ -35523,6 +35540,17 @@ function _addTagPopoverFromInput(){
         </ul>
       </div>
 
+      <div class="cs-card" data-feature-requires="journal" data-cs-anchor="journal">
+        <h3>Journal</h3>
+        <ul>
+          <li><span class="cs-desc">App-level, like Meeting Notes — one entry per calendar date</span> · <span class="cs-combo" data-cs-shortcut="toggleJournal"></span></li>
+          <li><span class="cs-desc">List view newest first — mood dot, one-line preview, and tags per row; click a row (or the calendar icon to jump to any date) to open it</span></li>
+          <li><span class="cs-desc">Optional mood (5 presets, click again to clear), free-form tags, rich-text body with AI rewrite — whole entry via the toolbar wand, or just a highlighted phrase via the selection popover</span></li>
+          <li><span class="cs-desc">Export one entry or the whole journal as a PDF; version history keeps the last 20 snapshots, app-wide</span></li>
+        </ul>
+      </div>
+
+
       <div class="cs-card" data-feature-requires="codeblock" data-cs-anchor="codeblock">
         <h3>Code (Note panel)</h3>
         <ul>
@@ -38044,6 +38072,38 @@ function setJournalFeatureEnabled(on){
   applyJournalLocation();
 }
 window.sakuraJournalSetFeatureEnabled=setJournalFeatureEnabled;
+window.sakuraOpenJournalFromRef=function(date){
+  if(!findJournalEntry(date))return false;
+  openJournalPanel();
+  openJournalEntry(date);
+  return true;
+};
+// Same shape as window.collectMeetingMatches — Quick Assist / Global Search previously had no
+// visibility into Journal at all, since it lives in its own storage key outside the per-
+// document search path. Matches tags and the plain-text body content of each entry.
+window.collectJournalMatches=function(q){
+  if(!journalFeatureEnabled) return [];
+  const out=[];
+  const tokens=(typeof qaTokenizeQuery==='function')?qaTokenizeQuery(q):String(q||'').split(/\s+/).filter(Boolean);
+  const hayMatch=(typeof qaHayMatches==='function')?qaHayMatches:((hay,toks)=>toks.every(t=>hay.toLowerCase().includes(t.toLowerCase())));
+  const snippet=(typeof buildMatchSnippetHtml==='function')?buildMatchSnippetHtml:((text)=>esc(text));
+  const sorted=journalEntries.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  for(const j of sorted){
+    if(out.length>=6) break;
+    const bodyText=stripHtmlToText(j.body||'');
+    const hay=[(j.tags||[]).join(' '), bodyText].join(' ');
+    if(!hayMatch(hay, tokens)) continue;
+    const label=bodyText.trim()||formatJournalDateLabel(j.date);
+    out.push({
+      group:'Journal',
+      label:label.slice(0,80),
+      labelHtml:snippet(label,q),
+      meta: formatJournalDateLabel(j.date),
+      action:()=>{ if(typeof closeAllPanelsExceptGlobalSearch==='function') closeAllPanelsExceptGlobalSearch(); window.sakuraOpenJournalFromRef(j.date); }
+    });
+  }
+  return out;
+};
 loadJournalSettings();
 applyJournalLocation();
 loadJournalEntries().then(()=>{ renderJournalList(); }).catch(()=>{});
