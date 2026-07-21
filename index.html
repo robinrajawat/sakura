@@ -17580,6 +17580,14 @@ async function buildPptxPresentation(slidesData){
           opts.showLegend=item.series.length>1; opts.legendPos='b'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
           opts.catAxisLabelFontFace=FONT; opts.catAxisLabelColor=theme.fg;
           opts.valAxisLabelFontFace=FONT; opts.valAxisLabelColor=theme.fg;
+          // Without an explicit layout, PowerPoint's own auto-layout for the plot area can
+          // leave a lot of unexplained blank space around it inside the chart's frame — the
+          // frame itself is the right size (see addFeaturedTableOrChart's x/y/w/h), but the
+          // actual bars/lines end up rendered in only a fraction of it, reading as the whole
+          // chart being shrunk. layoutTarget:'inner' (what pptxgenjs's layout option produces)
+          // pins the plot area to fill almost the entire frame instead, leaving a bit less
+          // room at the bottom when a legend needs to fit under it.
+          opts.layout={x:0.02, y:0.05, w:0.96, h:opts.showLegend?0.72:0.85};
         }
         slide.addChart(pptxType, chartData, opts);
         renderedChart=true;
