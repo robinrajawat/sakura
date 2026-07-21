@@ -6689,7 +6689,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="report-range-label" class="report-range-label"></div>
       <div id="report-modal-body" class="history-modal-body report-modal-body"></div>
       <div class="history-modal-footer">
-        <span class="history-modal-footer-hint">Across all documents, to-dos, meeting notes, and journal entries</span>
+        <span class="history-modal-footer-hint">Across every document (notes, decisions, diagrams, Q&amp;A, mind maps), to-dos, meetings, and journal</span>
         <button type="button" class="btn" id="report-ai-summary-btn"><span class="report-ai-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg></span><span id="report-ai-summary-btn-label">Summarize with AI</span></button>
       </div>
     </div>
@@ -35647,10 +35647,10 @@ function _addTagPopoverFromInput(){
       <div class="cs-card" data-feature-requires="report" data-cs-anchor="recap">
         <h3>Recap</h3>
         <ul>
-          <li><span class="cs-desc">A curated look at what got done — Today / This Week / Last Week — across every document, To-Dos, Meeting Notes, and Journal, not just one document</span></li>
+          <li><span class="cs-desc">A curated look at what got done — Today / This Week / Last Week (with the ISO week number shown) — across every document, To-Dos, Meeting Notes, and Journal, not just one document</span></li>
           <li><span class="cs-desc">Grouped by document (most recently active first), each line marked done / added / edited — click any line to jump straight to it, or a group's title to just open that document</span></li>
-          <li><span class="cs-desc">Editing a node's Note counts as activity here too, same as its main text</span></li>
-          <li><span class="cs-desc"><strong>Summarize with AI</strong> turns the current tab into standup-ready bullets, grouped by document — Regenerate and Copy included</span></li>
+          <li><span class="cs-desc">Editing a node's Note counts as activity here too, same as its main text — Decision Log, Diagram, Q&amp;A, and Mind Map activity count too</span></li>
+          <li><span class="cs-desc"><strong>Summarize with AI</strong> turns the current tab into status-meeting-ready bullets, grouped by document — Regenerate and Copy included</span></li>
         </ul>
       </div>
 
@@ -40152,21 +40152,21 @@ function buildActivityReport(period){
       if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,docId,nodeId:n.id,source:'doc'}); docsTouched.add(docId); }
     });
     (docDLs||[]).forEach(dl=>{
-      const label='Decision: '+reportPreviewText(dl.decision||dl.context||'(untitled decision)',80);
+      const label='Decision: '+(dl.decision||dl.context||'(untitled decision)');
       const createdIn=reportInRange(dl.createdAt,range);
       const modifiedIn=reportInRange(dl.modifiedAt,range)&&dl.modifiedAt!==dl.createdAt;
       if(createdIn){ itemsCreated.push({text:label,ts:dl.createdAt,doc:title,docId,decisionId:dl.id}); docsTouched.add(docId); }
       if(modifiedIn){ itemsEdited.push({text:label,ts:dl.modifiedAt,doc:title,docId,decisionId:dl.id}); docsTouched.add(docId); }
     });
     (docDiagrams||[]).forEach(dg=>{
-      const label='Diagram: '+reportPreviewText(dg.title||'(untitled diagram)',80);
+      const label='Diagram: '+(dg.title||'(untitled diagram)');
       const createdIn=reportInRange(dg.createdAt,range);
       const modifiedIn=reportInRange(dg.modifiedAt,range)&&dg.modifiedAt!==dg.createdAt;
       if(createdIn){ itemsCreated.push({text:label,ts:dg.createdAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
       if(modifiedIn){ itemsEdited.push({text:label,ts:dg.modifiedAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
     });
     (docMindMaps||[]).forEach(mm=>{
-      const label='Mind Map: '+reportPreviewText(mm.title||'(untitled map)',80);
+      const label='Mind Map: '+(mm.title||'(untitled map)');
       const createdIn=reportInRange(mm.createdAt,range);
       const modifiedIn=reportInRange(mm.modifiedAt,range)&&mm.modifiedAt!==mm.createdAt;
       if(createdIn){ itemsCreated.push({text:label,ts:mm.createdAt,doc:title,docId,mindMapId:mm.id}); docsTouched.add(docId); }
@@ -40174,7 +40174,7 @@ function buildActivityReport(period){
     });
     (docQa||[]).forEach(it=>{
       if(it.type==='section'||!Number.isFinite(it.createdAt))return; // sections aren't "activity"; items saved before this tracking existed have no timestamp to go on
-      const label='Question: '+reportPreviewText(it.question||'(blank question)',80);
+      const label='Question: '+(it.question||'(blank question)');
       const createdIn=reportInRange(it.createdAt,range);
       const modifiedIn=Number.isFinite(it.modifiedAt)&&reportInRange(it.modifiedAt,range)&&it.modifiedAt!==it.createdAt;
       if(createdIn){ itemsCreated.push({text:label,ts:it.createdAt,doc:title,docId,qaId:it.id}); docsTouched.add(docId); }
