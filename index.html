@@ -18099,9 +18099,18 @@ async function buildPptxPresentation(slidesData){
   if(padNotepadExportEnabled){
     const padHtml=cleanEditorHtml(el('pad-editor'));
     if(htmlHasVisibleContent(padHtml)){
-      const withBreaks=String(padHtml).replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
+      // Table cells/rows have no equivalent of a real table here (see comment above), but they
+      // still need SOME separator — without one, adjacent cells' text runs together with
+      // nothing between them (e.g. a "100"/"80" pair of cells reads as "10080"). A " | " before
+      // each cell's closing tag keeps a row on one line and readable; a paragraph break after
+      // each </tr> (added to the same tag list below) puts each row on its own line, same as a
+      // list item already gets its own paragraph.
+      const withCellSep=String(padHtml).replace(/<\/(td|th)>/gi,' | </$1>');
+      const withBreaks=withCellSep.replace(/<\/(div|p|li|h[1-6]|tr)>|<br\s*\/?>/gi,'\n\n$&');
       const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
-      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+      // Strip the trailing " |" a row's last cell is left with (there's no cell after it to
+      // separate from) now that the text is plain again and tags are gone.
+      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim().replace(/\s*\|\s*$/,'')).filter(Boolean);
       if(paras.length){
         const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
         const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
