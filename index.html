@@ -1203,18 +1203,19 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
 .report-modal{width:min(520px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 64px))}
-.report-tabs{display:flex;gap:4px;margin-bottom:10px;flex-shrink:0;background:var(--hover);border-radius:8px;padding:3px}
+.report-modal-title{display:flex;align-items:center;gap:7px}
+.report-tabs{display:flex;gap:4px;margin-bottom:8px;flex-shrink:0;background:var(--hover);border-radius:8px;padding:3px}
 .report-tab{flex:1;appearance:none;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
 .report-tab:hover{color:var(--fg)}
 .report-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.report-range-label{font:400 11px 'Inter',sans-serif;color:var(--muted);margin:0 0 12px 2px}
 .report-doc-group{margin-bottom:16px}
-.report-doc-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.report-doc-title{display:flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.report-doc-icon{display:inline-flex;flex-shrink:0;color:var(--muted)}
 .report-work-list{display:flex;flex-direction:column;gap:2px}
 .report-work-item{display:flex;align-items:flex-start;gap:7px;padding:3px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45}
 .report-work-item:hover{background:var(--hover)}
-.report-work-glyph{flex-shrink:0;width:13px;text-align:center;color:var(--muted);font-size:12px;line-height:1.55}
-.report-work-item.done .report-work-glyph{color:var(--accent)}
-.report-work-item.added .report-work-glyph{color:var(--muted)}
+.report-work-glyph{flex-shrink:0;width:13px;display:flex;align-items:center;justify-content:center;padding-top:2px}
 .report-item-text{flex:1;overflow-wrap:break-word;word-break:break-word}
 .report-work-item.report-item-more{color:var(--muted);font-size:11.5px;padding-left:24px}
 .report-empty{font:400 12.5px 'Inter',sans-serif;color:var(--muted);text-align:center;padding:28px 8px}
@@ -4660,7 +4661,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">To-Dos</span><span class="settings-row-desc">App-level task list, separate from documents — its dock button (bottom-right of the screen) and the To-Dos panel itself</span></div><button id="feat-todos-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable To-Dos"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Meeting Notes</span><span class="settings-row-desc">App-level meeting log, separate from documents — its dock button (bottom-right of the screen) and the Meeting Notes panel itself</span></div><button id="feat-meetings-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Meeting Notes"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Journal</span><span class="settings-row-desc">App-level daily journal, separate from documents — its dock button (bottom-right of the screen) and the Journal panel itself</span></div><button id="feat-journal-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Journal"></button></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Activity Report</span><span class="settings-row-desc">The Report dock button and its Today / This Week / Last Week summary of activity across all documents, To-Dos, Meeting Notes, and Journal — including the optional AI bullet-summary for standups</span></div><button id="feat-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Activity Report"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Recap</span><span class="settings-row-desc">The Recap dock button and its Today / This Week / Last Week curated summary of work across all documents, To-Dos, Meeting Notes, and Journal — including the optional AI bullet-summary for standups</span></div><button id="feat-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Recap"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Insert</span><span class="settings-row-desc">Ctrl/Cmd+Space opens a small character-insert menu — em dash, en dash, arrow, check mark, cross mark, middle dot, date/time — while editing a node, or any other editable text area in the app (Pad, Note panel, Code block, To-Dos, Meeting Notes fields). Same menu everywhere, same shortcut everywhere. For actions on a specific node — Note, Tags, Add question, Rewrite, Version history — use the right-click menu instead. Off: Ctrl/Cmd+Space does nothing while editing</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Insert"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist</span><span class="settings-row-desc">Ctrl/Cmd+K command box — type plain-English instructions like "hide sidebar" and they run immediately, run one-off actions like "new document" or "duplicate node," run AI actions like "rewrite document" or "expand node" (each reuses the same AI feature as its toolbar button, so it needs an API key configured under AI Rewrite and respects AI Capabilities being on), or type anything else to search documents, notes, tags, settings, and help. Toggles, one-off actions, and settings changes are instant and reversible with Undo; AI actions are the exception — they call the configured AI provider and can take a few seconds or fail like any other AI call, but their results are still added to Undo once they land</span></div><button id="feat-quickassist-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Assist"></button></div>
               </div>
@@ -5709,7 +5710,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button><button class="dock-btn" id="report-toggle" data-tip="Activity Report — what you've done today / this week"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Report</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button><button class="dock-btn" id="report-toggle" data-tip="Recap — a curated look at what you've done today / this week"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Recap</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -6641,7 +6642,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="report-modal-overlay" class="history-modal-overlay">
     <div class="history-modal report-modal">
       <div class="history-modal-header">
-        <span class="history-modal-title">Activity Report</span>
+        <span class="history-modal-title report-modal-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>Recap</span>
         <button id="report-modal-close-x" class="history-modal-close-x" data-tip="Close">×</button>
       </div>
       <div class="report-tabs" role="tablist">
@@ -6649,6 +6650,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button class="report-tab" data-period="week" role="tab">This Week</button>
         <button class="report-tab" data-period="lastWeek" role="tab">Last Week</button>
       </div>
+      <div id="report-range-label" class="report-range-label"></div>
       <div id="report-modal-body" class="history-modal-body report-modal-body"></div>
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint">Across all documents, to-dos, meeting notes, and journal entries</span>
@@ -6656,10 +6658,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
   </div>
-  <div id="report-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Activity Report Summary">
+  <div id="report-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Recap Summary">
     <div class="app-modal" style="width:min(480px,94vw)">
       <div class="app-modal-head">
-        <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>Activity Summary</h2><div class="cs-sub" id="report-summary-modal-sub">AI-generated — handy for status updates or standups</div></div>
+        <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>Recap Summary</h2><div class="cs-sub" id="report-summary-modal-sub">AI-generated — handy for status updates or standups</div></div>
         <button class="app-modal-close-btn" id="report-summary-modal-close-btn" aria-label="Close summary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
       </div>
       <div class="app-modal-body">
@@ -7636,7 +7638,7 @@ async function setImageCaption(img){
   const editor=el('note-editor');
   if(notePanelNodeId!==null&&editor){
     const idx=getIndex(notePanelNodeId);
-    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); markDirty(); }
+    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
   }
   showToast(trimmed?'Caption saved':'Caption removed');
 }
@@ -7647,7 +7649,7 @@ function toggleImageDiagramFeature(img){
   const editor=el('note-editor');
   if(notePanelNodeId!==null&&editor){
     const idx=getIndex(notePanelNodeId);
-    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); markDirty(); }
+    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
   }
   showToast(featured?'Featured as diagram — shows full-size in Preview/Presenter':'No longer featured as a diagram');
 }
@@ -23961,6 +23963,7 @@ function commitNoteEdit() {
     pushUndo();
     nodes[idx].note = html;
     nodes[idx].noteTitle = title;
+    nodes[idx].modifiedAt = Date.now();
     markDirty();
     render();
     sakuraLog('commit','commitNoteEdit changed',{nodeId:notePanelNodeId,newLength:html.length});
@@ -29970,7 +29973,7 @@ function _imgResizeSelect(img,editorId){
 function _imgResizePersist(){
   if(_imgResizeEditorId==='note-editor'&&notePanelNodeId!==null){
     const idx=getIndex(notePanelNodeId); const editor=el('note-editor');
-    if(idx>=0&&editor)nodes[idx].note=cleanEditorHtml(editor);
+    if(idx>=0&&editor){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); }
   }
   markDirty();
 }
@@ -37163,7 +37166,7 @@ async function runSelectionFmtRewrite(editorId,btn){
     document.execCommand('insertText',false,result);
     if(editorId==='note-editor'&&notePanelNodeId!==null){
       const idx=getIndex(notePanelNodeId);
-      if(idx>=0){ pushUndo(); nodes[idx].note=cleanEditorHtml(editor); markDirty(); }
+      if(idx>=0){ pushUndo(); nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
     } else if(editorId==='pad-editor'){
       markDirty();
     } else if(mfKey){
@@ -40023,7 +40026,7 @@ document.addEventListener('keydown',e=>{
 });
 migrateLegacyGlobalMindMap();
 
-// === Activity Report ===
+// === Recap (formerly "Activity Report" — renamed for tone; internal identifiers kept as report* to avoid a risky mass-rename) ===
 // A read-only, on-demand scan across every document (current in-memory doc plus every other
 // doc's saved localStorage payload), plus the app-wide To-Dos, Meeting Notes, and Journal
 // stores, bucketed into Today / This Week / Last Week. Nothing here is cached or kept live —
@@ -40060,12 +40063,12 @@ function reportPreviewHtmlText(html,max){
 function reportGetAllDocNodeSets(){
   const out=[];
   loadActiveDocsIndex().forEach(d=>{
-    if(d.id===currentDocId){ out.push({docId:d.id,title:d.title||'Untitled',nodes:nodes}); return; }
+    if(d.id===currentDocId){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:nodes}); return; }
     try{
       const raw=localStorage.getItem(docKey(d.id));
       const parsed=raw?JSON.parse(raw):null;
-      out.push({docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[]});
-    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',nodes:[]}); }
+      out.push({docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',icon:d.icon||null,nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[]});
+    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:[]}); }
   });
   return out;
 }
@@ -40080,21 +40083,23 @@ function buildActivityReport(period){
   const range=getReportRange(period);
   const tasksCompleted=[], itemsCreated=[], itemsEdited=[], meetingItems=[], journalItems=[];
   const docsTouched=new Set();
+  const docIcons=new Map();
 
-  reportGetAllDocNodeSets().forEach(({docId,title,nodes:docNodes})=>{
+  reportGetAllDocNodeSets().forEach(({docId,title,icon,nodes:docNodes})=>{
+    docIcons.set(docId,icon);
     (docNodes||[]).forEach(n=>{
       const createdIn=reportInRange(n.createdAt,range);
       const modifiedIn=reportInRange(n.modifiedAt,range)&&n.modifiedAt!==n.createdAt;
       const completedIn=n.isCheckbox&&n.checked&&reportInRange(n.completedAt,range);
-      if(createdIn){ itemsCreated.push({text:n.text,ts:n.createdAt,doc:title}); docsTouched.add(docId); }
-      if(modifiedIn){ itemsEdited.push({text:n.text,ts:n.modifiedAt,doc:title}); docsTouched.add(docId); }
-      if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,source:'doc'}); docsTouched.add(docId); }
+      if(createdIn){ itemsCreated.push({text:n.text,ts:n.createdAt,doc:title,docId}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:n.text,ts:n.modifiedAt,doc:title,docId}); docsTouched.add(docId); }
+      if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,docId,source:'doc'}); docsTouched.add(docId); }
     });
   });
 
   reportGetTodosList().forEach(t=>{
-    if(t.done&&reportInRange(t.completedAt,range)) tasksCompleted.push({text:t.text,ts:t.completedAt,doc:'To-Dos',source:'todo'});
-    else if(reportInRange(t.createdAt,range)) itemsCreated.push({text:t.text,ts:t.createdAt,doc:'To-Dos'});
+    if(t.done&&reportInRange(t.completedAt,range)) tasksCompleted.push({text:t.text,ts:t.completedAt,doc:'To-Dos',docId:'__todos',source:'todo'});
+    else if(reportInRange(t.createdAt,range)) itemsCreated.push({text:t.text,ts:t.createdAt,doc:'To-Dos',docId:'__todos'});
   });
 
   (typeof meetingNotes!=='undefined'?meetingNotes:[]).forEach(m=>{
@@ -40113,35 +40118,61 @@ function buildActivityReport(period){
   meetingItems.sort(byTsDesc); journalItems.sort(byTsDesc);
 
   return {
-    range,
+    range,docIcons,
     stats:{docsTouched:docsTouched.size,tasksCompleted:tasksCompleted.length,itemsCreated:itemsCreated.length,itemsEdited:itemsEdited.length,meetings:meetingItems.length,journal:journalItems.length},
     tasksCompleted,itemsCreated,itemsEdited,meetingItems,journalItems
   };
 }
 function reportGroupByDoc(r){
-  const groups=new Map(); // doc title -> {completed:[],created:[],edited:[],lastTs}
-  const touch=(doc,bucket,item)=>{
-    if(!groups.has(doc))groups.set(doc,{completed:[],created:[],edited:[],lastTs:0});
-    const g=groups.get(doc);
+  const groups=new Map(); // group key -> {doc,docId,icon,completed:[],created:[],edited:[],lastTs}
+  const touch=(doc,docId,bucket,item)=>{
+    const key=docId||doc;
+    if(!groups.has(key))groups.set(key,{doc,docId,icon:docId?r.docIcons.get(docId):null,completed:[],created:[],edited:[],lastTs:0});
+    const g=groups.get(key);
     g[bucket].push(item);
     g.lastTs=Math.max(g.lastTs,item.ts||0);
   };
-  r.tasksCompleted.forEach(it=>touch(it.doc,'completed',it));
-  r.itemsCreated.forEach(it=>touch(it.doc,'created',it));
-  r.itemsEdited.forEach(it=>touch(it.doc,'edited',it));
-  return [...groups.entries()].map(([doc,g])=>({doc,...g})).sort((a,b)=>b.lastTs-a.lastTs);
+  r.tasksCompleted.forEach(it=>touch(it.doc,it.docId,'completed',it));
+  r.itemsCreated.forEach(it=>touch(it.doc,it.docId,'created',it));
+  r.itemsEdited.forEach(it=>touch(it.doc,it.docId,'edited',it));
+  return [...groups.values()].sort((a,b)=>b.lastTs-a.lastTs);
 }
-function reportWorkItemsHtml(items,cls,glyph,cap){
+// Small monoline glyphs, colored to match the app's existing text-color palette (--fc-*),
+// so a completed task, a new item, and an edit read apart at a glance without resorting to
+// a legend or plain ✓/+/✎ characters.
+const REPORT_GLYPHS={
+  done:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fc-green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6"/></svg>`,
+  added:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fc-blue)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  edited:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`
+};
+const REPORT_GROUP_ICONS={
+  todos:`<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/>`,
+  meetings:`<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>`,
+  journal:`<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
+  doc:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>`
+};
+function reportGroupIconHtml(g){
+  if(g.doc==='To-Dos')return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.todos}</svg>`;
+  const custom=g.icon&&typeof docIconSvg==='function'?docIconSvg(g.icon,13):null;
+  return custom||`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.doc}</svg>`;
+}
+function reportWorkItemsHtml(items,kind,cap){
   if(!items.length)return '';
   const shown=items.slice(0,cap||6);
-  const rows=shown.map(it=>`<div class="report-work-item ${cls}"><span class="report-work-glyph">${glyph}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('');
+  const rows=shown.map(it=>`<div class="report-work-item ${kind}"><span class="report-work-glyph">${REPORT_GLYPHS[kind]}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('');
   const more=items.length>shown.length?`<div class="report-work-item report-item-more">+${items.length-shown.length} more</div>`:'';
   return rows+more;
+}
+function reportRangeLabel(period,range){
+  const fmt=(ts)=>new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'});
+  if(period==='today')return new Date(range.start).toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});
+  return fmt(range.start)+' – '+fmt(range.end-86400000);
 }
 function renderActivityReport(){
   const body=el('report-modal-body'); if(!body)return;
   document.querySelectorAll('.report-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.period===reportModalPeriod));
   const r=buildActivityReport(reportModalPeriod);
+  const rangeEl=el('report-range-label'); if(rangeEl)rangeEl.textContent=reportRangeLabel(reportModalPeriod,r.range);
   const totalItems=r.stats.tasksCompleted+r.stats.itemsCreated+r.stats.itemsEdited+r.stats.meetings+r.stats.journal;
   if(!totalItems){
     const label=reportModalPeriod==='today'?'today':(reportModalPeriod==='week'?'this week':'last week');
@@ -40150,16 +40181,16 @@ function renderActivityReport(){
   }
   const docGroups=reportGroupByDoc(r);
   const docsHtml=docGroups.map(g=>`<div class="report-doc-group">
-    <div class="report-doc-title">${esc(g.doc)}</div>
-    <div class="report-work-list">${reportWorkItemsHtml(g.completed,'done','✓')}${reportWorkItemsHtml(g.created,'added','+')}${reportWorkItemsHtml(g.edited,'edited','✎')}</div>
+    <div class="report-doc-title"><span class="report-doc-icon">${reportGroupIconHtml(g)}</span>${esc(g.doc)}</div>
+    <div class="report-work-list">${reportWorkItemsHtml(g.completed,'done')}${reportWorkItemsHtml(g.created,'added')}${reportWorkItemsHtml(g.edited,'edited')}</div>
   </div>`).join('');
   const meetingsHtml=r.meetingItems.length?`<div class="report-doc-group">
-    <div class="report-doc-title">Meeting Notes</div>
-    <div class="report-work-list">${r.meetingItems.slice(0,8).map(it=>`<div class="report-work-item ${it.action==='created'?'added':'edited'}"><span class="report-work-glyph">${it.action==='created'?'+':'✎'}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('')}</div>
+    <div class="report-doc-title"><span class="report-doc-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.meetings}</svg></span>Meeting Notes</div>
+    <div class="report-work-list">${r.meetingItems.slice(0,8).map(it=>`<div class="report-work-item ${it.action==='created'?'added':'edited'}"><span class="report-work-glyph">${it.action==='created'?REPORT_GLYPHS.added:REPORT_GLYPHS.edited}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('')}</div>
   </div>`:'';
   const journalHtml=r.journalItems.length?`<div class="report-doc-group">
-    <div class="report-doc-title">Journal</div>
-    <div class="report-work-list">${r.journalItems.slice(0,8).map(it=>`<div class="report-work-item"><span class="report-work-glyph">✎</span><span class="report-item-text">${esc(it.date||'')}${it.mood?' · '+esc(JOURNAL_MOOD_LABEL[it.mood]||it.mood):''} — ${esc(reportPreviewHtmlText(it.text,80))}</span></div>`).join('')}</div>
+    <div class="report-doc-title"><span class="report-doc-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.journal}</svg></span>Journal</div>
+    <div class="report-work-list">${r.journalItems.slice(0,8).map(it=>`<div class="report-work-item"><span class="report-work-glyph">${REPORT_GLYPHS.edited}</span><span class="report-item-text">${esc(it.date||'')}${it.mood?' · '+esc(JOURNAL_MOOD_LABEL[it.mood]||it.mood):''} — ${esc(reportPreviewHtmlText(it.text,80))}</span></div>`).join('')}</div>
   </div>`:'';
   body.innerHTML=docsHtml+meetingsHtml+journalHtml;
 }
@@ -40180,7 +40211,7 @@ document.addEventListener('keydown',e=>{
 });
 window.openActivityReport=openActivityReport;
 
-// === Activity Report: AI bullet summary ===
+// === Recap: AI bullet summary ===
 // Condenses the currently-displayed period's raw activity into a short, skimmable bullet list
 // phrased for a status update or daily standup — reuses the same generic AI call path every
 // other AI feature in the app goes through (callAiApiWithPrompt), so it automatically respects
@@ -40197,7 +40228,7 @@ function buildReportSummaryUserMsg(r,periodLabel){
 }
 function reportPeriodLabel(period){ return period==='today'?'Today':(period==='week'?'This Week':'Last Week'); }
 function generateReportSummary(){
-  if(!(typeof reportFeatureEnabled==='undefined'?true:reportFeatureEnabled)){ showToast('Activity Report is off — Settings → Features'); return; }
+  if(!(typeof reportFeatureEnabled==='undefined'?true:reportFeatureEnabled)){ showToast('Recap is off — Settings → Features'); return; }
   if(typeof featureAiEnabled!=='undefined'&&!featureAiEnabled){ showToast('AI Capabilities is off — Settings → Features'); return; }
   if(typeof callAiApiWithPrompt!=='function'){ showToast('AI is not available'); return; }
   const r=buildActivityReport(reportModalPeriod);
@@ -40243,7 +40274,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('report-summary-modal-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeReportSummaryModal(); }
 });
 
-// === Activity Report: feature activation toggle (Settings → Features) ===
+// === Recap: feature activation toggle (Settings → Features) ===
 // Same self-contained module pattern as Journal/Meetings/To-Dos: its own tiny settings key,
 // a getter exposed on window for FEATURE_FLAGS to read, and a setter that hides the dock
 // button (and closes the panel if open) rather than relying on a shared feature-off-* CSS rule.
