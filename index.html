@@ -5141,7 +5141,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="help-section" data-cat="panels" id="help-section-qa">
 <h4>Q&amp;A</h4>
 <ul>
-<li>One of the Pad's five tabs — a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?" and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
+<li>One of the Pad's five tabs — a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?", plus questions found inside notes attached to nodes, and offers them as a checklist — pre-checked if you had question nodes selected first, otherwise all of them; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Drag the grip on the left to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. Hover a row for a small select checkbox (Shift-click for a range), or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Editing → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only)</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-decision-log">
@@ -7609,6 +7609,7 @@ function setTableFeatureNode(table,nodeId){
   if(!table)return;
   if(nodeId==null){
     table.removeAttribute('data-feature-node');
+    table.removeAttribute('data-feature-chart');
     showToast('Removed from presentation');
   } else {
     table.setAttribute('data-feature-node',String(nodeId));
@@ -7622,6 +7623,66 @@ function featuredTablesForNode(nodeId){
   const editor=el('pad-editor'); if(!editor)return [];
   return Array.from(editor.querySelectorAll('table[data-feature-node="'+nodeId+'"]'));
 }
+// Column count of a table's first row — used both to decide whether "Feature as chart" is even
+// offered and, at export time, to shape the chart data pulled from the table.
+function tableColumnCount(table){
+  const row=table?.querySelector('tr');
+  return row?row.cells.length:0;
+}
+// Whether a table is a good candidate for charting, purely by column count — a table's shape
+// alone says a lot about whether a chart will read better than the table itself:
+//  - 1 column: not enough to chart (just labels, or just numbers with no pairing between them)
+//  - 2 columns: the sweet spot — single-series bar/line/pie all work
+//  - 3-5 columns: still chartable — every column after the first becomes its own series,
+//    read together as a grouped/multi-line chart
+//  - 6+ columns: usually clearer left as a table; charting that many series at once gets
+//    cluttered rather than clarifying anything
+function tableChartability(table){
+  const cols=tableColumnCount(table);
+  if(cols<2)return {ok:false,cols,reason:'Add at least 2 columns first — with just one, there\'s only labels or only numbers, nothing to pair up into a chart.'};
+  if(cols>=6)return {ok:false,cols,reason:'6+ columns usually reads clearer as a table — charting that many series at once creates clutter rather than clarity.'};
+  return {ok:true,cols};
+}
+function isTableFeaturedAsChart(table){
+  return !!(table&&table.getAttribute('data-feature-chart')==='1');
+}
+// Toggles the chart flag on a featured table. Chart export (see pptxChartSeriesFromTable) only
+// kicks in for tables that are BOTH linked to a node (data-feature-node) AND flagged here —
+// the flag alone doesn't do anything on its own, since a chart has to land on some slide.
+function setTableFeatureChart(table,on){
+  if(!table)return;
+  if(on){
+    table.setAttribute('data-feature-chart','1');
+    showToast('Will export as a chart');
+  } else {
+    table.removeAttribute('data-feature-chart');
+    showToast('Will export as a table');
+  }
+  markDirty(); scheduleAutoSave();
+}
+// Reads a featured+charted table's first row as series names (column A holds category labels,
+// so it's skipped) and every row after as one category's values — the same row/column shape a
+// person would build in a spreadsheet before charting it. Non-numeric cells (blank, stray text)
+// come through as 0 rather than breaking the whole series, since a table mid-edit may have gaps.
+function pptxChartSeriesFromTable(table){
+  const rows=Array.from(table?.querySelectorAll('tr')||[]);
+  if(rows.length<2)return null;
+  const headerCells=Array.from(rows[0].cells).map(c=>pptxStripIllegalXmlChars((c.textContent||'').trim()));
+  const seriesNames=headerCells.slice(1);
+  if(!seriesNames.length)return null;
+  const bodyRows=rows.slice(1);
+  const labels=bodyRows.map(r=>pptxStripIllegalXmlChars((r.cells[0]?.textContent||'').trim()));
+  const series=seriesNames.map((name,i)=>({
+    name: name||('Series '+(i+1)),
+    labels,
+    values: bodyRows.map(r=>{
+      const raw=(r.cells[i+1]?.textContent||'').trim().replace(/,/g,'');
+      const n=parseFloat(raw);
+      return Number.isFinite(n)?n:0;
+    })
+  }));
+  return series.length?series:null;
+}
 // Diagrams/decision logs already leave an orphaned-but-harmless anchorNodeId behind when their
 // linked node is deleted (they just stop appearing anywhere, no cleanup call exists for them
 // either) — consistent, fine, since they live in their own tab and don't visually claim to
@@ -7632,7 +7693,7 @@ function cleanupOrphanedFeaturedTables(deletedIds){
   const editor=el('pad-editor'); if(!editor||!deletedIds||!deletedIds.length)return;
   const idSet=new Set(deletedIds.map(String));
   editor.querySelectorAll('table[data-feature-node]').forEach(t=>{
-    if(idSet.has(t.getAttribute('data-feature-node')))t.removeAttribute('data-feature-node');
+    if(idSet.has(t.getAttribute('data-feature-node'))){ t.removeAttribute('data-feature-node'); t.removeAttribute('data-feature-chart'); }
   });
 }
 function cleanEditorHtml(editor){
@@ -14919,6 +14980,26 @@ function setSidebarSearchVisible(on,persist=true){sidebarSearchVisible=!!on; con
 function toggleSidebarSearchBar(){setSidebarSearchVisible(!sidebarSearchVisible); if(sidebarSearchVisible){const inp=el('sidebar-search'); if(inp)inp.focus()}}
 function computeOutlineNumbers(list){if(!outlineNumbering)return list.map(()=>''); const counters=[]; return list.map(node=>{const depth=node.depth||0; counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; return counters.slice(0,depth+1).join('.')})}
 function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes); return scopeNodes.map((node,idx)=>{const p=buildPrefix(idx,-minDepth,scopeNodes); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const num=numbers[idx]; return `${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd()}).join('\n')}
+// Same tree-connector serialization as serializeTreeText, but with each node's note appended
+// as its own indented "Note:" line right under it. Used only where the AI actually needs to
+// reason about note content (currently: generateQaQuestionsAI) — the plain serializeTreeText
+// stays note-free everywhere else (export/restructure) so this doesn't change any output that
+// wasn't asked for.
+function serializeTreeTextWithNotes(scopeNodes=nodes,rebaseDepth=false){
+  if(!scopeNodes.length)return '';
+  const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0;
+  const numbers=computeOutlineNumbers(scopeNodes);
+  const lines=[];
+  scopeNodes.forEach((node,idx)=>{
+    const p=buildPrefix(idx,-minDepth,scopeNodes);
+    if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn='';}
+    const num=numbers[idx];
+    lines.push(`${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd());
+    const noteText=node.note?stripHtmlToText(node.note):'';
+    if(noteText)lines.push(`${p.vert}    Note: ${noteText}`);
+  });
+  return lines.join('\n');
+}
 function serializeMarkdown(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes); return scopeNodes.map((node,idx)=>`${'  '.repeat(Math.max(0,node.depth-minDepth))}- ${numbers[idx]?numbers[idx]+' ':''}${getNodePlainText(node)}`).join('\n')}
 function getClipboardThemeColors(){const cs=getComputedStyle(document.body); const read=name=>String(cs.getPropertyValue(name)||'').trim(); return {fg:read('--fg')||'#1a1a1a',muted:read('--muted')||'#6b7280',vert:read('--vert')||'#9ca3af',conn:read('--conn')||read('--accent')||'#c96442',semSection:read('--sem-section')||read('--accent')||'#2563eb',semAlert:read('--sem-alert')||'#dc2626',semCode:read('--sem-code')||'#7c3aed',semQuote:read('--sem-quote')||'#6b6240',codeBg:read('--chip')||'#f3f4f6',fcRed:read('--fc-red')||'#c0392b',fcOrange:read('--fc-orange')||'#c2701d',fcGreen:read('--fc-green')||'#27824f',fcBlue:read('--fc-blue')||'#2766c2',fcPurple:read('--fc-purple')||'#7d3fb5',fcGray:read('--fc-gray')||'#6f6b63'}}
 // Fixed light-mode palette for anything copied to the system clipboard as rich text (serializeClipboardHtml,
@@ -17079,12 +17160,19 @@ async function pptxGatherSlidesData(){
       }
     }
     // Tables in the Pad Notepad marked "Feature under selected node" and linked to this
-    // slide's node — same one-node-per-slide scope as the images/diagrams just above.
+    // slide's node — same one-node-per-slide scope as the images/diagrams just above. A table
+    // also flagged "Feature as chart" (and still shaped right for one — see tableChartability)
+    // is gathered as chart series data instead of table rows; buildPptxPresentation renders it
+    // with addChart rather than addTable.
     const tables=[];
     if(padNotepadExportEnabled){
       for(const t of featuredTablesForNode(node.id)){
+        if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
+          const series=pptxChartSeriesFromTable(t);
+          if(series){ tables.push({isChart:true,series}); continue; }
+        }
         const rows=pptxTableRowsFromElement(t);
-        if(rows.length)tables.push(rows);
+        if(rows.length)tables.push({isChart:false,rows});
       }
     }
     slidesData.push({title:slide.label, items, images, tables});
@@ -17643,18 +17731,34 @@ async function buildPptxPresentation(slidesData){
     // Tables in the Pad Notepad marked "Feature under selected node" and linked to this slide's
     // node — real pptxgenjs table shapes (genuinely editable in PowerPoint), stacked below any
     // images/logs/bullets already placed above via cursorY. Each gets an even share of the
-    // remaining slide height, capped so a tall table doesn't run off the bottom.
+    // remaining slide height, capped so a tall table doesn't run off the bottom. A table also
+    // flagged "Feature as chart" renders as an actual chart instead (bar — grouped automatically
+    // by pptxgenjs when the table has more than one data series), so column-count-appropriate
+    // tables (see tableChartability) show up as something readable in one glance rather than a
+    // grid of numbers.
     const featTables=sd.tables||[];
     if(featTables.length){
       const availH=Math.max(0.6, bottomLimit-cursorY);
       const perTableH=Math.min(3.5, availH/featTables.length-0.15);
-      featTables.forEach(rows=>{
-        slide.addTable(rows, {
-          x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
-          fontFace:FONT, fontSize:12, color:theme.fg,
-          border:{type:'solid', color:'D9D6CE', pt:0.75},
-          autoPage:false
-        });
+      const chartColorPalette=[theme.accent, theme.fcBlue, theme.fcGreen, theme.fcOrange, theme.fcPurple, theme.fcRed];
+      featTables.forEach(item=>{
+        if(item.isChart){
+          slide.addChart(pres.ChartType.bar, item.series, {
+            x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
+            barDir:'col', chartColors:chartColorPalette,
+            showLegend:item.series.length>1, legendPos:'b', legendFontFace:FONT, legendColor:theme.fg,
+            catAxisLabelFontFace:FONT, catAxisLabelColor:theme.fg,
+            valAxisLabelFontFace:FONT, valAxisLabelColor:theme.fg,
+            dataLabelFontFace:FONT
+          });
+        } else {
+          slide.addTable(item.rows, {
+            x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
+            fontFace:FONT, fontSize:12, color:theme.fg,
+            border:{type:'solid', color:'D9D6CE', pt:0.75},
+            autoPage:false
+          });
+        }
         cursorY+=perTableH+0.15;
       });
     }
@@ -24984,6 +25088,27 @@ function closeIconLibrary(){
 function getQuestionNodes(){
   return nodes.filter(n=>{ const t=getNodePlainText(n).trim(); return t.length>1 && t.endsWith('?') && !isDecisionLogFieldNode(n) });
 }
+// A question can also be buried inside a node's note rather than sitting on its own as a node
+// that ends in "?" — e.g. a note reading "Confirmed with IT. Still need to check: does this
+// cover the sandbox client too?" has a real open question in it that getQuestionNodes alone
+// would never surface. Splits the note into block-level lines (noteBlockLines — one per <p>/
+// <li>/manual line break, so multi-paragraph notes don't get glued together), then further
+// splits each line on sentence boundaries so an embedded question doesn't need a line to
+// itself. Returns plain question strings; linking back to the node is the caller's job (see
+// openQaInsert), same as getQuestionNodes leaves node-level linking to its own caller.
+function getNoteQuestionSegments(node){
+  if(!node||!node.note)return [];
+  const lines=noteBlockLines(node.note);
+  const out=[];
+  for(const line of lines){
+    const parts=line.split(/(?<=[.?!])\s+(?=[A-Z0-9])/);
+    for(const raw of parts){
+      const t=raw.trim();
+      if(t.length>1&&t.endsWith('?'))out.push(t);
+    }
+  }
+  return out;
+}
 let _qaInsertCloseTimer=null;
 // Shared by the "Scan outline for questions", "AI: Generate questions", and "Import Q&A" entry
 // points below — same review-before-add modal, same dedup-against-existing-questions logic,
@@ -25032,10 +25157,20 @@ function openQaInsert(){
   const selectedQNodes=qNodes.filter(n=>selectedIds.has(n.id));
   const preferSelection=selectedQNodes.length>0;
   const candidates=qNodes.map(n=>({text:getNodePlainText(n).trim(),nodeId:n.id,checked:preferSelection?selectedIds.has(n.id):true}));
+  // Notes attached to nodes can hold a question that never became its own outline line ending
+  // in "?" — scan every node's note too (see getNoteQuestionSegments) and offer each one found,
+  // linked back to the node whose note it came from so it still gets the same jump-to-node icon
+  // a node-sourced row does.
+  for(const n of nodes){
+    if(isDecisionLogFieldNode(n))continue;
+    for(const q of getNoteQuestionSegments(n)){
+      candidates.push({text:q,nodeId:n.id,checked:preferSelection?selectedIds.has(n.id):true});
+    }
+  }
   renderQaInsertCandidates(candidates,{
     heading:'Scan outline for questions',
-    sub:'Every node ending in "?" — uncheck any you don\'t want. Only your outline selection starts checked if you had question nodes selected.',
-    emptyMsg:'No nodes ending in "?" found in this document. Close this and use the + button to add a row directly.'
+    sub:'Every node ending in "?", plus questions found inside notes — uncheck any you don\'t want. Only your outline selection starts checked if you had question nodes selected.',
+    emptyMsg:'No questions found in this document\'s nodes or notes. Close this and use the + button to add a row directly.'
   });
 }
 function closeQaInsert(){
@@ -26172,7 +26307,7 @@ async function generateQaQuestionsAI(){
     // proven to fit comfortably in a request alongside a system prompt and response budget.
     // rebaseDepth=true so a selected subtree starting partway down the tree still reads as a
     // normal outline from the left margin, rather than needlessly indented.
-    const outline=serializeTreeText(scopeNodes,true);
+    const outline=serializeTreeTextWithNotes(scopeNodes,true);
     if(!outline.trim()){ showToast('Nothing in this document yet to generate questions from'); return; }
     const truncated=outline.length>AI_RESTRUCTURE_MAX_CHARS;
     const userMsg='Document outline'+scopeNote+':\n\n'+outline.slice(0,AI_RESTRUCTURE_MAX_CHARS)+(truncated?'\n\n[...truncated — outline was longer than the supported limit]':'');
@@ -31773,6 +31908,42 @@ el('pad-editor')?.addEventListener('keydown', e => {
     const sel=window.getSelection();
     if(!sel || !sel.rangeCount) return;
     const range=sel.getRangeAt(0);
+    // Table cell navigation takes priority over the list-indent/space-insert behavior below —
+    // a Tab landed inside a <td>/<th> means "move to the next cell", spreadsheet-style, not
+    // "indent this line". Shift+Tab reverses direction; Tab from the very last cell appends a
+    // new row and lands in its first cell, so a fast typist can keep tabbing through a growing
+    // table without reaching for the context menu's "Add row below" each time.
+    const anchorEl=sel.anchorNode?.nodeType===1?sel.anchorNode:sel.anchorNode?.parentElement;
+    const cell=anchorEl?.closest?.('td,th');
+    if(cell){
+      const table=cell.closest('table');
+      const allCells=table?Array.from(table.querySelectorAll('td,th')):[];
+      const cellIdx=allCells.indexOf(cell);
+      let targetCell=null;
+      if(e.shiftKey){
+        targetCell=cellIdx>0?allCells[cellIdx-1]:null;
+      } else if(cellIdx===allCells.length-1){
+        pushPadUndo();
+        const lastRow=table.rows[table.rows.length-1];
+        const newRow=lastRow.cloneNode(false);
+        const colCount=lastRow.cells.length;
+        for(let i=0;i<colCount;i++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); }
+        (table.tBodies[0]||table).appendChild(newRow);
+        _attachTableResizeHandles(table);
+        targetCell=newRow.cells[0];
+      } else {
+        targetCell=allCells[cellIdx+1];
+      }
+      if(targetCell){
+        const newRange=document.createRange();
+        newRange.selectNodeContents(targetCell);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+      markDirty();
+      return;
+    }
     const li=sel.anchorNode?.closest?.('li') || (sel.anchorNode?.parentElement?.closest?.('li'));
     if(li){
       document.execCommand(e.shiftKey ? 'outdent' : 'indent');
@@ -31873,6 +32044,42 @@ el('pad-editor')?.addEventListener('contextmenu', e => {
         markDirty();
       }
     ));
+    menu.appendChild(_noteCtxItem(
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><rect x="3" y="3" width="18" height="6" fill="currentColor" stroke="none" opacity="0.28"/></svg>',
+      'Toggle header row', false, () => {
+        const table=inCell.closest('table');
+        const firstRow=table?.rows[0];
+        if(!firstRow) return;
+        const makeHeader=Array.from(firstRow.cells).every(c=>c.tagName!=='TH');
+        // Being a header is encoded in the cell tag itself (<th> vs <td>) — every reader of
+        // this table (pptxTableRowsFromElement's isHeadRow check, Add column right just above,
+        // the header-row CSS) keys off that, so toggling has to swap the tag, not just restyle.
+        const newTag=makeHeader?'th':'td';
+        const newCells=Array.from(firstRow.cells).map(oldCell=>{
+          const nc=document.createElement(newTag);
+          nc.contentEditable='true';
+          nc.innerHTML=oldCell.innerHTML;
+          return nc;
+        });
+        firstRow.innerHTML='';
+        newCells.forEach(c=>firstRow.appendChild(c));
+        // Move the row into/out of a <thead> too, so a thead-based header check (used by the
+        // PPTX/Word/PDF exporters) and a cell-tag-based one always agree about this same row.
+        if(makeHeader){
+          let thead=table.querySelector('thead');
+          if(!thead){ thead=document.createElement('thead'); table.insertBefore(thead, table.firstChild); }
+          thead.appendChild(firstRow);
+        } else {
+          let tbody=table.querySelector('tbody');
+          if(!tbody)tbody=table.createTBody();
+          tbody.insertBefore(firstRow, tbody.firstChild);
+          const thead=table.querySelector('thead');
+          if(thead && !thead.rows.length)thead.remove();
+        }
+        _noteCtxTableMutated(table);
+        markDirty();
+      }
+    ));
     menu.appendChild(_noteCtxDivider());
     menu.appendChild(_noteCtxItem(
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
@@ -31911,6 +32118,20 @@ el('pad-editor')?.addEventListener('contextmenu', e => {
       }
     ));
     if(_isFeatured){
+      // "Feature as chart" only makes sense once a table's already featured under a node —
+      // a chart, like a featured table, has to land on some slide. Column count decides
+      // whether it's even offered (see tableChartability): too few or too many columns and
+      // the item is disabled with the reason as its hover title, rather than hidden outright,
+      // so it's clear the option exists and why it isn't available right now.
+      const _chartCheck=tableChartability(_featTable);
+      const _isCharted=isTableFeaturedAsChart(_featTable);
+      const chartBtn=_noteCtxItem(
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="4"/><line x1="4" y1="20" x2="20" y2="20"/><rect x="7" y="12" width="3" height="8" fill="currentColor" stroke="none"/><rect x="12" y="8" width="3" height="12" fill="currentColor" stroke="none"/><rect x="17" y="14" width="3" height="6" fill="currentColor" stroke="none"/></svg>',
+        _isCharted ? 'Remove chart feature' : 'Feature as chart', false,
+        () => { setTableFeatureChart(_featTable, !_isCharted); }
+      );
+      if(!_chartCheck.ok && !_isCharted){ chartBtn.disabled=true; chartBtn.title=_chartCheck.reason; }
+      menu.appendChild(chartBtn);
       menu.appendChild(_noteCtxItem(
         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>',
         'Remove from presentation', true,
