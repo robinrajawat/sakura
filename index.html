@@ -374,7 +374,10 @@ body.feature-off-pad #editor-pad-toggle{display:none!important}
 body.feature-off-hovertoolbar #node-hover-rail{display:none!important}
 body.feature-off-quickassist #global-search-wrap{display:none!important}
 .ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
-#report-ai-summary-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
+.report-ai-icon{display:inline-flex;align-items:center;vertical-align:-2px;margin-right:4px}
+#report-ai-summary-btn.ai-busy{pointer-events:none;opacity:.75}
+#report-ai-summary-btn.ai-busy .report-ai-icon{animation:report-ai-pulse 1.6s ease-in-out infinite}
+@keyframes report-ai-pulse{0%,100%{opacity:.45;transform:scale(.88)}50%{opacity:1;transform:scale(1.08)}}
 @keyframes ai-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .data-io-btn{min-width:84px;text-align:center}
 .backup-btn{min-width:120px}
@@ -5272,9 +5275,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>A curated look back at what actually got done — not a stats dashboard. Open it from its button at the end of the status bar (next to Journal/Meetings/To-Dos); it reads across <em>everything</em>: every document (not just the one currently open), To-Dos, Meeting Notes, and the Journal</li>
 <li>Three tabs — <strong>Today</strong>, <strong>This Week</strong>, and <strong>Last Week</strong> — with the actual date range shown just underneath so it's clear what window you're looking at (weeks run Monday–Sunday)</li>
 <li>Content is grouped by document (then Meeting Notes, then Journal), most recently active first — each group's own icon is shown if the document has one set. Within a group, items are short plain-language lines: a green check for something completed, a blue plus for something new, and a muted pencil for an edit — capped at a few lines each with a quiet "+N more" rather than dumping everything</li>
-<li>Editing a node's <strong>Note</strong> counts as activity here too, same as editing its main text — so work that happened entirely in a note (not the outline line itself) still shows up</li>
+<li>Editing a node's <strong>Note</strong> counts as activity here too, same as editing its main text — so work that happened entirely in a note (not the outline line itself) still shows up. Decision Log entries, Diagrams, Q&amp;A questions, and Mind Maps count too, each labeled by type (e.g. "Decision: …", "Diagram: …") within its document's group</li>
 <li>Click any line to jump straight to it — a document item opens that document and scrolls to/flashes the node, a to-do opens To-Dos and highlights it, a meeting note opens Meeting Notes to that entry, and a journal line opens that day's entry. Click a document's own title (icon + name) to just switch to that document without picking a specific line</li>
-<li><strong>Summarize with AI</strong> (bottom of the panel) turns whatever the current tab is showing into a short bullet list phrased for a standup or status update — grouped by document the same way the panel itself is, so multi-item groups collapse into one bullet rather than listing every line. Needs AI configured (Settings → AI Rewrite) and the AI feature on; Regenerate and Copy are both available in the summary that opens</li>
+<li><strong>Summarize with AI</strong> (bottom of the panel) turns whatever the current tab is showing into a status-meeting-ready bullet list — grouped by document the same way the panel itself is, with a bullet (or a couple, for a genuinely busy group) per document/To-Dos/Meeting Notes/Journal, written with enough specifics to actually say out loud in a meeting rather than compressed into a bare label. Also picks up Decision Log, Diagram, Q&amp;A, and Mind Map activity, same as the panel itself. Needs AI configured (Settings → AI Rewrite) and the AI feature on; Regenerate and Copy are both available in the summary that opens</li>
 <li>Settings → Features → Recap turns the whole feature (dock button and panel, including the AI summary) off</li>
 </ul>
 </div>
@@ -6687,7 +6690,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="report-modal-body" class="history-modal-body report-modal-body"></div>
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint">Across all documents, to-dos, meeting notes, and journal entries</span>
-        <button type="button" class="btn" id="report-ai-summary-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:-2px"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>Summarize with AI</button>
+        <button type="button" class="btn" id="report-ai-summary-btn"><span class="report-ai-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg></span><span id="report-ai-summary-btn-label">Summarize with AI</span></button>
       </div>
     </div>
   </div>
@@ -25048,10 +25051,10 @@ function confirmQaInsert(){
   const snapshot=qaItems.slice();
   checked.forEach(cb=>{
     const text=cb.nextElementSibling.textContent.trim();
-    if(cb.dataset.isSection==='1'){ qaItems.push({id:newQaId(),type:'section',title:text}); return; }
+    if(cb.dataset.isSection==='1'){ qaItems.push({id:newQaId(),type:'section',title:text,createdAt:Date.now()}); return; }
     const sourceNodeId=cb.dataset.nodeId?Number(cb.dataset.nodeId):null;
     const answer=cb.dataset.answer||'';
-    qaItems.push({id:newQaId(),question:text,answer,sourceNodeId});
+    qaItems.push({id:newQaId(),question:text,answer,sourceNodeId,createdAt:Date.now()});
   });
   if(!padEnabled){ showToast('Pad is disabled — Settings → Editing → Pad'); closeQaInsert(); return; }
   if(!padOpen)setPadOpen(true,false);
@@ -25766,7 +25769,7 @@ async function rewriteDecisionField(key){
   el('decision-'+key)?.addEventListener('keydown',e=>{ handleGenericQaKeydown(e,e.currentTarget); });
 });
 function addQaRow(){
-  const item={id:newQaId(),question:'',answer:''};
+  const item={id:newQaId(),question:'',answer:'',createdAt:Date.now()};
   qaItems.push(item);
   renderQaList();
   markDirty(); scheduleAutoSave();
@@ -25780,7 +25783,7 @@ function addQaRowInSection(sectionId){
   const secIdx=qaItems.findIndex(it=>it.id===sectionId); if(secIdx<0)return;
   let insertAt=qaItems.length;
   for(let i=secIdx+1;i<qaItems.length;i++){ if(qaIsSection(qaItems[i])){ insertAt=i; break; } }
-  const item={id:newQaId(),question:'',answer:''};
+  const item={id:newQaId(),question:'',answer:'',createdAt:Date.now()};
   qaItems.splice(insertAt,0,item);
   renderQaList();
   markDirty(); scheduleAutoSave();
@@ -25793,7 +25796,7 @@ function addQaRowInSection(sectionId){
 // naturally skips section rows for free, since they have no question field at all.
 function qaIsSection(it){ return it&&it.type==='section'; }
 function addQaSection(){
-  const item={id:newQaId(),type:'section',title:''};
+  const item={id:newQaId(),type:'section',title:'',createdAt:Date.now()};
   qaItems.push(item);
   renderQaList();
   markDirty(); scheduleAutoSave();
@@ -26577,7 +26580,7 @@ function renderQaList(){
 
     const qWrap=document.createElement('div'); qWrap.className='qa-field-wrap';
     const qTa=document.createElement('textarea'); qTa.id=`qa-q-${item.id}`; qTa.className='qa-field-q'; qTa.rows=1; qTa.placeholder='Question'; qTa.value=item.question||'';
-    qTa.addEventListener('input',()=>{ item.question=qTa.value; autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
+    qTa.addEventListener('input',()=>{ item.question=qTa.value; item.modifiedAt=Date.now(); autoGrowTextarea(qTa); markDirty(); scheduleAutoSave(); });
     qTa.addEventListener('keydown',e=>{ handleGenericQaKeydown(e,qTa); });
     const qIcons=document.createElement('div'); qIcons.className='qa-field-icons';
     if(item.sourceNodeId!=null && nodes.some(n=>n.id===item.sourceNodeId)){
@@ -26597,7 +26600,7 @@ function renderQaList(){
     const isDraftState=qaAiAnswerEnabled&&!(item.answer||'').trim();
     aRw.dataset.tip=isDraftState?'Draft answer (AI)':'Rewrite answer (AI)'; aRw.innerHTML=isDraftState?wandSvg:sparkleSvg;
     aTa.addEventListener('input',()=>{
-      item.answer=aTa.value; autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); updateQaProgress();
+      item.answer=aTa.value; item.modifiedAt=Date.now(); autoGrowTextarea(aTa); markDirty(); scheduleAutoSave(); updateQaProgress();
       const draftNow=qaAiAnswerEnabled&&!aTa.value.trim(); aRw.dataset.tip=draftNow?'Draft answer (AI)':'Rewrite answer (AI)'; aRw.innerHTML=draftNow?wandSvg:sparkleSvg;
       const hasAnswer=!!aTa.value.trim();
       if(hasAnswer){ item.answeredAt=Date.now(); } else { item.answeredAt=null; item.answeredBy=''; }
@@ -28349,7 +28352,7 @@ function saveNodeComment(nodeId,text){
 // odd near-duplicate sitting right next to the original.
 function saveNodeQuestion(nodeId,text){
   const trimmed=text.trim(); if(!trimmed)return;
-  qaItems.push({id:newQaId(),question:trimmed,answer:'',sourceNodeId:nodeId});
+  qaItems.push({id:newQaId(),question:trimmed,answer:'',sourceNodeId:nodeId,createdAt:Date.now()});
   markDirty(); scheduleAutoSave();
   if(padViewMode==='qa')renderQaList();
   showToast('Question added to Q&A');
@@ -40106,12 +40109,22 @@ function reportPreviewHtmlText(html,max){
 function reportGetAllDocNodeSets(){
   const out=[];
   loadActiveDocsIndex().forEach(d=>{
-    if(d.id===currentDocId){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:nodes}); return; }
+    if(d.id===currentDocId){
+      out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes,decisionLogs:(typeof decisionLogs!=='undefined'?decisionLogs:[]),diagrams:(typeof diagrams!=='undefined'?diagrams:[]),qaItems:(typeof qaItems!=='undefined'?qaItems:[]),mindMaps:(typeof mindMaps!=='undefined'?mindMaps:[])});
+      return;
+    }
     try{
       const raw=localStorage.getItem(docKey(d.id));
       const parsed=raw?JSON.parse(raw):null;
-      out.push({docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',icon:d.icon||null,nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[]});
-    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:[]}); }
+      out.push({
+        docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',icon:d.icon||null,
+        nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[],
+        decisionLogs:(parsed&&Array.isArray(parsed.decisionLogs))?parsed.decisionLogs:[],
+        diagrams:(parsed&&Array.isArray(parsed.diagrams))?parsed.diagrams:[],
+        qaItems:(parsed&&Array.isArray(parsed.qa))?parsed.qa:[],
+        mindMaps:(parsed&&Array.isArray(parsed.mindMaps))?parsed.mindMaps:[]
+      });
+    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:[],decisionLogs:[],diagrams:[],qaItems:[],mindMaps:[]}); }
   });
   return out;
 }
@@ -40128,7 +40141,7 @@ function buildActivityReport(period){
   const docsTouched=new Set();
   const docIcons=new Map();
 
-  reportGetAllDocNodeSets().forEach(({docId,title,icon,nodes:docNodes})=>{
+  reportGetAllDocNodeSets().forEach(({docId,title,icon,nodes:docNodes,decisionLogs:docDLs,diagrams:docDiagrams,qaItems:docQa,mindMaps:docMindMaps})=>{
     docIcons.set(docId,icon);
     (docNodes||[]).forEach(n=>{
       const createdIn=reportInRange(n.createdAt,range);
@@ -40137,6 +40150,35 @@ function buildActivityReport(period){
       if(createdIn){ itemsCreated.push({text:n.text,ts:n.createdAt,doc:title,docId,nodeId:n.id}); docsTouched.add(docId); }
       if(modifiedIn){ itemsEdited.push({text:n.text,ts:n.modifiedAt,doc:title,docId,nodeId:n.id}); docsTouched.add(docId); }
       if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,docId,nodeId:n.id,source:'doc'}); docsTouched.add(docId); }
+    });
+    (docDLs||[]).forEach(dl=>{
+      const label='Decision: '+reportPreviewText(dl.decision||dl.context||'(untitled decision)',80);
+      const createdIn=reportInRange(dl.createdAt,range);
+      const modifiedIn=reportInRange(dl.modifiedAt,range)&&dl.modifiedAt!==dl.createdAt;
+      if(createdIn){ itemsCreated.push({text:label,ts:dl.createdAt,doc:title,docId,decisionId:dl.id}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:label,ts:dl.modifiedAt,doc:title,docId,decisionId:dl.id}); docsTouched.add(docId); }
+    });
+    (docDiagrams||[]).forEach(dg=>{
+      const label='Diagram: '+reportPreviewText(dg.title||'(untitled diagram)',80);
+      const createdIn=reportInRange(dg.createdAt,range);
+      const modifiedIn=reportInRange(dg.modifiedAt,range)&&dg.modifiedAt!==dg.createdAt;
+      if(createdIn){ itemsCreated.push({text:label,ts:dg.createdAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:label,ts:dg.modifiedAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
+    });
+    (docMindMaps||[]).forEach(mm=>{
+      const label='Mind Map: '+reportPreviewText(mm.title||'(untitled map)',80);
+      const createdIn=reportInRange(mm.createdAt,range);
+      const modifiedIn=reportInRange(mm.modifiedAt,range)&&mm.modifiedAt!==mm.createdAt;
+      if(createdIn){ itemsCreated.push({text:label,ts:mm.createdAt,doc:title,docId,mindMapId:mm.id}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:label,ts:mm.modifiedAt,doc:title,docId,mindMapId:mm.id}); docsTouched.add(docId); }
+    });
+    (docQa||[]).forEach(it=>{
+      if(it.type==='section'||!Number.isFinite(it.createdAt))return; // sections aren't "activity"; items saved before this tracking existed have no timestamp to go on
+      const label='Question: '+reportPreviewText(it.question||'(blank question)',80);
+      const createdIn=reportInRange(it.createdAt,range);
+      const modifiedIn=Number.isFinite(it.modifiedAt)&&reportInRange(it.modifiedAt,range)&&it.modifiedAt!==it.createdAt;
+      if(createdIn){ itemsCreated.push({text:label,ts:it.createdAt,doc:title,docId,qaId:it.id}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:label,ts:it.modifiedAt,doc:title,docId,qaId:it.id}); docsTouched.add(docId); }
     });
   });
 
@@ -40207,6 +40249,10 @@ function reportNavAttr(it){
   if(it.nodeId!==undefined&&it.nodeId!==null) return ` data-nav="node|${esc(String(it.docId))}|${it.nodeId}"`;
   if(it.todoId!==undefined&&it.todoId!==null) return ` data-nav="todo|${esc(String(it.todoId))}"`;
   if(it.meetingId!==undefined&&it.meetingId!==null) return ` data-nav="meeting|${esc(String(it.meetingId))}"`;
+  if(it.decisionId!==undefined&&it.decisionId!==null) return ` data-nav="decision|${esc(String(it.docId))}|${esc(String(it.decisionId))}"`;
+  if(it.diagramId!==undefined&&it.diagramId!==null) return ` data-nav="diagram|${esc(String(it.docId))}|${esc(String(it.diagramId))}"`;
+  if(it.mindMapId!==undefined&&it.mindMapId!==null) return ` data-nav="mindmap|${esc(String(it.docId))}|${esc(String(it.mindMapId))}"`;
+  if(it.qaId!==undefined&&it.qaId!==null) return ` data-nav="qa|${esc(String(it.docId))}|${esc(String(it.qaId))}"`;
   if(it.date!==undefined&&it.date!==null) return ` data-nav="journal|${esc(it.date)}"`;
   return '';
 }
@@ -40217,10 +40263,21 @@ function reportWorkItemsHtml(items,kind,cap){
   const more=items.length>shown.length?`<div class="report-work-item report-item-more">+${items.length-shown.length} more</div>`:'';
   return rows+more;
 }
+// ISO 8601 week number (Monday-start weeks, week 1 is the week containing the year's first
+// Thursday) — the standard definition most people mean by "week 29", matching the Monday–
+// Sunday week boundaries Recap already uses for its This Week / Last Week tabs.
+function reportIsoWeekNumber(ts){
+  const d=new Date(ts);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+3-((d.getDay()+6)%7)); // shift to this week's Thursday
+  const firstThursday=new Date(d.getFullYear(),0,4);
+  firstThursday.setDate(firstThursday.getDate()+3-((firstThursday.getDay()+6)%7));
+  return 1+Math.round((d-firstThursday)/(7*86400000));
+}
 function reportRangeLabel(period,range){
   const fmt=(ts)=>new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'});
   if(period==='today')return new Date(range.start).toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});
-  return fmt(range.start)+' – '+fmt(range.end-86400000);
+  return fmt(range.start)+' – '+fmt(range.end-86400000)+' · Week '+reportIsoWeekNumber(range.start);
 }
 // "2026-07-21" -> "Today" / "Yesterday" / "Jul 18" (adds the year only when it isn't the
 // current one) — the raw ISO date was the one thing in the redesigned Recap that still read
@@ -40285,6 +40342,22 @@ function reportHandleNavClick(e){
     if(typeof window.sakuraOpenMeetingFromRef==='function')window.sakuraOpenMeetingFromRef(parts[1]);
   } else if(type==='journal'){
     if(typeof window.sakuraOpenJournalFromRef==='function')window.sakuraOpenJournalFromRef(parts[1]);
+  } else if(type==='decision'||type==='diagram'||type==='mindmap'||type==='qa'){
+    const docId=parts[1], itemId=parts[2];
+    if(docId&&docId!==currentDocId&&typeof switchDoc==='function')switchDoc(docId);
+    if(typeof setPadOpen==='function')setPadOpen(true);
+    if(type==='decision'){
+      if(typeof setPadViewMode==='function')setPadViewMode('decision');
+      decisionExpandedId=itemId;
+      if(typeof renderDecisionLogsList==='function')renderDecisionLogsList();
+    } else if(type==='diagram'){
+      if(typeof openDiagramEditor==='function')openDiagramEditor(itemId);
+    } else if(type==='mindmap'){
+      if(typeof openMindMapOverlay==='function')openMindMapOverlay(Number(itemId)||itemId);
+    } else if(type==='qa'){
+      if(typeof setPadViewMode==='function')setPadViewMode('qa');
+      if(typeof renderQaList==='function')renderQaList();
+    }
   }
 }
 el('report-modal-body')?.addEventListener('click',reportHandleNavClick);
@@ -40310,7 +40383,7 @@ window.openActivityReport=openActivityReport;
 // phrased for a status update or daily standup — reuses the same generic AI call path every
 // other AI feature in the app goes through (callAiApiWithPrompt), so it automatically respects
 // whichever provider/model/key the user has configured in Settings → AI.
-const AI_REPORT_SUMMARY_SYSTEM_PROMPT='You write a short standup/status-update summary from a raw activity log that is already grouped by document/project (plus To-Dos, Meeting Notes, and Journal as their own groups), each group listing what was completed, added, or edited. Respond with ONLY plain bullet points, one line each starting with "- ". Where a group has more than one item, lead the bullet with that group\'s name as a short label (e.g. "- Project Alpha: shipped the auth flow, drafted the rollout doc") and merge its items into one bullet rather than one per item; a group with a single item can just be "- <what happened>" without forcing a label. Keep bullets short (under ~20 words), lead with the outcome not the timestamp, skip empty or placeholder-looking groups, and drop groups that are pure noise (e.g. a single trivial edit). No headers, no preamble like "Here is a summary", no closing remarks, nothing except the bullet lines themselves.';
+const AI_REPORT_SUMMARY_SYSTEM_PROMPT='You write a status-meeting-ready summary from a raw activity log that is already grouped by document/project (plus To-Dos, Meeting Notes, Journal, Decision Log entries, Diagrams, Q&A, and Mind Maps as their own groups), each group listing what was completed, added, or edited. Respond with ONLY plain bullet points, one line each starting with "- ". Each group gets its own bullet or, if there is genuinely more than one distinct piece of work in it, a couple of bullets — do not force everything in a group into a single over-compressed line, and do not pad a group with filler to make it longer than the source material supports. Start each bullet with the group\\'s name as a short bold-style label followed by a colon (e.g. "- Project Alpha: shipped the auth flow; drafted the rollout doc and flagged two open risks in the decision log"), except a lone one-item group can skip the label if it reads fine without it. Bullets should read like something you would actually say out loud in a status meeting — specific enough to be useful (what changed, what was decided, what is now unblocked or still open), not a generic label. Aim for roughly 12-30 words per bullet; do not artificially truncate to hit a low word count, but do not pad either. Skip empty or placeholder-looking groups, and drop groups that are pure noise (e.g. a single trivial edit with nothing to say about it). No headers, no preamble like "Here is a summary", no closing remarks, nothing except the bullet lines themselves.';
 function buildReportSummaryUserMsg(r,periodLabel){
   const lines=[`Period: ${periodLabel}`];
   reportGroupByDoc(r).forEach(g=>{
@@ -40333,11 +40406,13 @@ function generateReportSummary(){
   if(!totalItems){ showToast('Nothing to summarize for this period'); return; }
   const periodLabel=reportPeriodLabel(reportModalPeriod);
   const btn=el('report-ai-summary-btn');
+  const btnLabel=el('report-ai-summary-btn-label');
   const regenBtn=el('report-summary-regenerate-btn');
   if(btn)btn.classList.add('ai-busy');
+  if(btnLabel)btnLabel.textContent='Summarizing…';
   if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='Regenerating…'; }
   const sub=el('report-summary-modal-sub'); if(sub)sub.textContent=periodLabel+' — AI-generated, handy for status updates or standups';
-  const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024,1024);
+  const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024,2048);
   callAiApiWithPrompt(AI_REPORT_SUMMARY_SYSTEM_PROMPT, buildReportSummaryUserMsg(r,periodLabel), maxTok).then(raw=>{
     if(!raw)throw new Error('Empty response from AI');
     showReportSummaryModal(raw.trim());
@@ -40346,6 +40421,7 @@ function generateReportSummary(){
     else showToast('AI summary failed');
   }).finally(()=>{
     if(btn)btn.classList.remove('ai-busy');
+    if(btnLabel)btnLabel.textContent='Summarize with AI';
     if(regenBtn){ regenBtn.disabled=false; regenBtn.textContent='Regenerate'; }
   });
 }
