@@ -18148,8 +18148,17 @@ async function buildPptxPresentation(slidesData){
       const availH=Math.max(0.6, bottomLimit-cursorY);
       const perTableH=Math.min(3.5, availH/featTables.length-0.15);
       featTables.forEach(item=>{
-        addFeaturedTableOrChart(slide,item,MARGIN,cursorY,PPTX_SLIDE_W-2*MARGIN,perTableH,sd.title);
-        cursorY+=perTableH+0.15;
+        // A chart's whole FRAME — not just its plot area (see addFeaturedTableOrChart's own
+        // layout fix above) — needs a real floor. Without one, a slide already crowded with
+        // bullets/images/decision cards before this table can push perTableH down to almost
+        // nothing, and a chart squeezed into a sliver that thin renders as a flattened line
+        // with the legend overlapping it rather than sitting below — illegible regardless of
+        // the plot-area fix. A plain table degrades more gracefully at a small height (rows
+        // just get tight), so only charts get the floor; a chart that needs it may run past
+        // the slide's usual bottom margin, which is still better than being unreadable.
+        const h=item.isChart?Math.max(2.2,perTableH):perTableH;
+        addFeaturedTableOrChart(slide,item,MARGIN,cursorY,PPTX_SLIDE_W-2*MARGIN,h,sd.title);
+        cursorY+=h+0.15;
       });
     }
   });
@@ -18212,8 +18221,7 @@ async function buildPptxPresentation(slidesData){
           if(m){
             const entry=notepadTables[Number(m[1])];
             const rowCount=(entry.rows||[]).length;
-            const floor=entry.isChart?2.2:0.5;
-            const h=Math.min(availH,Math.max(floor,rowCount*0.32));
+            const h=entry.isChart?Math.max(2.2,rowCount*0.32):Math.min(availH,Math.max(0.5,rowCount*0.32));
             return {h:h+0.12, kind:'table', entry};
           }
           const lines=pptxMeasureWrappedLines(p,boxW,fs,false);
