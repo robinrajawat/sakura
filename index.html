@@ -1719,6 +1719,8 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+.pv-table-chart-figure{flex:1 1 100%}
+.pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -7715,6 +7717,65 @@ function pptxChartSeriesFromTable(table){
     values: bodyRows.map(r=>parseNum(r.cells[i+1]?.textContent))
   }));
   return series.length?series:null;
+}
+// Renders a featured+charted table (see pptxChartSeriesFromTable, whose output this consumes
+// directly — same series/labels/values shape the PowerPoint chart is built from, so the two
+// stay in sync automatically) as a plain hand-rolled SVG grouped bar chart. Preview, Presenter
+// mode, and PDF all share the same render call this feeds into (see the comment where this is
+// called), and none of them have a charting library loaded — unlike PowerPoint export, which
+// gets a real, native pptxgenjs chart via addChart instead of this. Colors are CSS custom
+// properties, same as every other icon/figure already in the app, so the chart follows the
+// document's live theme/accent rather than being baked in at render time.
+const CHART_SERIES_COLOR_VARS=['--accent','--fc-blue','--fc-green','--fc-orange','--fc-purple','--fc-red'];
+function chartFormatAxisNum(v){
+  if(Math.abs(v)>=1000)return (v/1000).toFixed(v%1000===0?0:1)+'k';
+  return Number.isInteger(v)?String(v):v.toFixed(1);
+}
+function renderTableChartSvg(table){
+  const series=pptxChartSeriesFromTable(table);
+  if(!series||!series.length)return null;
+  const labels=series[0].labels;
+  const n=labels.length;
+  if(!n)return null;
+  const hasLegend=series.length>1;
+  const W=560, padL=44, padR=16, padT=16, padB=hasLegend?60:40;
+  const H=280;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const maxVal=Math.max(1,...series.flatMap(s=>s.values));
+  const groupW=plotW/n;
+  const barGap=groupW*0.18;
+  const barW=(groupW-barGap)/series.length;
+  let bars='', catLabels='';
+  labels.forEach((label,i)=>{
+    series.forEach((s,si)=>{
+      const v=s.values[i]||0;
+      const h=(v/maxVal)*plotH;
+      const x=padL+i*groupW+barGap/2+si*barW;
+      const y=padT+plotH-h;
+      bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW*0.82).toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})" rx="2"/>`;
+    });
+    const lx=padL+i*groupW+groupW/2;
+    catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+  });
+  let axis='';
+  const ticks=4;
+  for(let t=0;t<=ticks;t++){
+    const v=maxVal*t/ticks;
+    const y=padT+plotH-(v/maxVal)*plotH;
+    axis+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+    axis+=`<text x="${(padL-8).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Inter,sans-serif">${chartFormatAxisNum(v)}</text>`;
+  }
+  let legend='';
+  if(hasLegend){
+    let lx=padL;
+    series.forEach((s,si)=>{
+      const label=String(s.name||'').slice(0,20);
+      legend+=`<rect x="${lx}" y="${H-18}" width="9" height="9" rx="2" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})"/>`;
+      legend+=`<text x="${lx+13}" y="${H-10}" font-size="10" fill="var(--fg)" font-family="Inter,sans-serif">${esc(label)}</text>`;
+      lx+=13+label.length*6+16;
+    });
+  }
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${bars}${catLabels}${legend}</svg>`;
 }
 // Diagrams/decision logs already leave an orphaned-but-harmless anchorNodeId behind when their
 // linked node is deleted (they just stop appearing anywhere, no cleanup call exists for them
@@ -28005,14 +28066,22 @@ function renderPreviewBody(){
       // Tables in the Pad Notepad marked "Feature under selected node" and linked to this
       // node — same figure treatment as an anchored diagram just above, so a reader can't
       // tell which workflow produced it. Presenter mode and PDF both render from this same
-      // function's output, so this covers all three surfaces in one place.
+      // function's output, so this covers all three surfaces in one place. A table also
+      // flagged "Feature as chart" (and still shaped right for one — see tableChartability)
+      // renders as the actual chart here too (renderTableChartSvg), not just in PowerPoint
+      // export — otherwise "Feature as chart" would only ever show up after a full PPTX
+      // export, which isn't what turning the toggle on implies.
       if(padNotepadTabEnabled){
         const featTables=featuredTablesForNode(node.id);
         if(featTables.length){
           const trow=document.createElement('div'); trow.className='pv-diagram-row'; trow.style.paddingLeft=inlinePad;
           featTables.forEach(t=>{
             const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
-            const clone=t.cloneNode(true); clone.removeAttribute('data-feature-node');
+            if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
+              const svg=renderTableChartSvg(t);
+              if(svg){ fig.classList.add('pv-table-chart-figure'); fig.innerHTML=svg; trow.appendChild(fig); return; }
+            }
+            const clone=t.cloneNode(true); clone.removeAttribute('data-feature-node'); clone.removeAttribute('data-feature-chart');
             fig.appendChild(clone);
             trow.appendChild(fig);
           });
