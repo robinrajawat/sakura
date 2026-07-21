@@ -37701,10 +37701,21 @@ function showJournalToast(msg){
   showJournalToast._tm=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
+function anchorJournalToDockChip(){
+  const panel=el('journal-panel');
+  const chip=el('journal-toggle');
+  if(!panel||!chip)return;
+  const rect=chip.getBoundingClientRect();
+  panel.style.left='auto';
+  panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
+  panel.style.bottom=Math.max(8, window.innerHeight-rect.top+8)+'px';
+  panel.style.top='auto';
+}
 // ── Panel open/close/maximize ──
 function openJournalPanel(){
   journalPanelOpen=true;
   el('journal-panel')?.classList.add('open');
+  anchorJournalToDockChip();
   document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.add('is-active'));
   renderJournalList();
   showJournalCardView(!!journalExpandedDate);
@@ -37724,6 +37735,7 @@ function toggleJournalMaximize(){
   const goingMax=!panel.classList.contains('maximized');
   panel.classList.toggle('maximized',goingMax);
   el('journal-panel-maximize')?.setAttribute('aria-pressed',String(goingMax));
+  if(!goingMax)anchorJournalToDockChip();
 }
 window.toggleJournalPanel=toggleJournalPanel;
 
