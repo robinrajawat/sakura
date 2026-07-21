@@ -18099,18 +18099,25 @@ async function buildPptxPresentation(slidesData){
   if(padNotepadExportEnabled){
     const padHtml=cleanEditorHtml(el('pad-editor'));
     if(htmlHasVisibleContent(padHtml)){
-      // Table cells/rows have no equivalent of a real table here (see comment above), but they
-      // still need SOME separator — without one, adjacent cells' text runs together with
-      // nothing between them (e.g. a "100"/"80" pair of cells reads as "10080"). A " | " before
-      // each cell's closing tag keeps a row on one line and readable; a paragraph break after
-      // each </tr> (added to the same tag list below) puts each row on its own line, same as a
-      // list item already gets its own paragraph.
-      const withCellSep=String(padHtml).replace(/<\/(td|th)>/gi,' | </$1>');
-      const withBreaks=withCellSep.replace(/<\/(div|p|li|h[1-6]|tr)>|<br\s*\/?>/gi,'\n\n$&');
+      // Tables are pulled out and converted to plain text via a real DOM walk BEFORE the
+      // generic div/p/li/h1-6/br flattening below runs — a cell's own internal markup (a bold
+      // span, or a <div>/<p> a browser's contenteditable normalization can add while a cell is
+      // being edited) would otherwise be misread by that regex as a paragraph break between
+      // cells still on the same row, splitting a row like "Month | Online Sales | In-Store
+      // Sales" across three separate lines. Reading each cell via textContent sidesteps that —
+      // whatever's nested inside a cell collapses to its plain text regardless of markup, and
+      // only real row boundaries (one row per table <tr>) become paragraph breaks, each row's
+      // cells joined with " | ".
+      const srcRoot=document.createElement('div'); srcRoot.innerHTML=padHtml;
+      srcRoot.querySelectorAll('table').forEach(table=>{
+        const rows=Array.from(table.querySelectorAll('tr'))
+          .map(tr=>Array.from(tr.children).map(cell=>(cell.textContent||'').trim().replace(/\s+/g,' ')).join(' | '))
+          .filter(r=>r.replace(/\s*\|\s*/g,'').trim());
+        table.replaceWith(document.createTextNode(rows.length?'\n\n'+rows.join('\n\n')+'\n\n':''));
+      });
+      const withBreaks=srcRoot.innerHTML.replace(/<\/(div|p|li|h[1-6])>|<br\s*\/?>/gi,'\n\n$&');
       const tmp=document.createElement('div'); tmp.innerHTML=withBreaks;
-      // Strip the trailing " |" a row's last cell is left with (there's no cell after it to
-      // separate from) now that the text is plain again and tags are gone.
-      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim().replace(/\s*\|\s*$/,'')).filter(Boolean);
+      const paras=(tmp.textContent||tmp.innerText||'').split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
       if(paras.length){
         const bodyTop=1.75, boxW=PPTX_SLIDE_W-2*MARGIN, fs=14;
         const availH=(PPTX_SLIDE_H-0.4)-bodyTop;
