@@ -121,6 +121,7 @@ Sakura v1.0.0 — see LICENSE for terms.
     var appbarIconOnlyExportImport = false;
     var statusbarHiddenItems = ['nodecount','maxdepth','nodewords','fsstatus','theme','scale','author'];
     var appbarHiddenButtons = [];
+    var qaLocation = 'appbar';
     var raw = localStorage.getItem('sakura_v001_prefs');
     var d = null;
     if (raw) {
@@ -132,7 +133,9 @@ Sakura v1.0.0 — see LICENSE for terms.
       if (d.appbarIconOnlyExportImport !== undefined) appbarIconOnlyExportImport = !!d.appbarIconOnlyExportImport;
       if (Array.isArray(d.statusbarHiddenItems)) statusbarHiddenItems = d.statusbarHiddenItems;
       if (Array.isArray(d.appbarHiddenButtons)) appbarHiddenButtons = d.appbarHiddenButtons;
+      if (d.qaLocation === 'statusbar') qaLocation = 'statusbar';
     }
+    var dockRailCollapsed = localStorage.getItem('sakura_dock_rail_collapsed') === 'true';
 
     // autorewrite/fsstatus/vault are excluded here on purpose — they own state-dependent
     // visibility logic of their own (e.g. the auto-rewrite chip only shows when a
@@ -149,6 +152,15 @@ Sakura v1.0.0 — see LICENSE for terms.
     if (!appbarVisible) cls.push('presetup-appbar-hidden');
     if (appbarDecluttered) cls.push('presetup-appbar-decluttered');
     if (appbarIconOnlyExportImport) cls.push('presetup-appbar-io-icononly');
+    // Quick Assist's search box defaults to living in the app bar, but its markup is
+    // authored inside the status bar (the only place setQaLocation() can always find it on
+    // a first paint) and gets physically moved into #appbar-qa-slot by JS. Without this, it
+    // visibly sits in the status bar for a frame on every load/reload before that move runs.
+    if (qaLocation === 'appbar') cls.push('presetup-qa-appbar-pending');
+    // Same flash problem for a collapsed dock rail (Journal/Meetings/To-Dos/Recap) — the
+    // buttons are static markup, so they'd paint open for a frame before setDockRailCollapsed
+    // (which runs later, alongside the rest of the panel wiring) reads the saved state.
+    if (dockRailCollapsed) cls.push('presetup-dockrail-collapsed');
     // Hiding the item itself isn't enough — its leading divider dot (e.g. #sb-maxdepth-divider)
     // defaults to visible in the markup and is only reconciled by refreshStatusbarDividers()
     // once the main script runs, so without this it flashes as an orphan "·" on reload even
@@ -204,6 +216,8 @@ Sakura v1.0.0 — see LICENSE for terms.
 <style>
 .presetup-sidebar-hidden #sidebar{width:0;flex-basis:0;opacity:0;pointer-events:none}
 .presetup-sidebar-hidden #sidebar-resize-handle{display:none}
+.presetup-qa-appbar-pending #global-search-wrap{display:none}
+.presetup-dockrail-collapsed #status-util-group .dock-rail-buttons{display:none}
 .presetup-statusbar-hidden #statusbar{display:none}
 .presetup-toolbar-hidden #quick-bar{display:none}
 .presetup-appbar-hidden #appbar{display:none}
@@ -3691,8 +3705,22 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Floating dock rail (Journal/Meetings/To-Dos/Recap) — fixed to the right edge,
    independent of the status bar and of #sidebar's layout flow, so relocating it
-   never touches the app's main flex layout. Vertically centered by default. */
-#status-util-group{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+   never touches the app's main flex layout. Sits in the bottom-right corner, clear of
+   both the status bar below it and the eye/toolbar/pad/maximize cluster
+   (#editor-controls-group) beside it — NOT vertically centered: these panels anchor
+   themselves directly above this rail's chips (see sakuraAnchorPanelAboveChip), and a
+   centered rail leaves far less than a full panel-height of room above it, which is what
+   was pushing Journal/Meetings/To-Dos off the top of the screen. */
+#status-util-group{position:fixed;right:16px;bottom:88px;z-index:60;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+#status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px}
+/* Collapsed: only the handle stays, so the whole rail can be tucked away when it's in the
+   way of the document underneath it — there was previously no way to hide this short of
+   turning each feature off individually in Settings. */
+#status-util-group.collapsed .dock-rail-buttons{display:none}
+#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:34px;height:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px}
+#status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#status-util-group .dock-rail-handle svg{transition:transform .15s}
+#status-util-group.collapsed .dock-rail-handle svg{transform:rotate(180deg)}
 #status-util-group .dock-btn{appearance:none;-webkit-appearance:none;position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));font:inherit;cursor:pointer;transition:color .12s,background .12s}
 #status-util-group .dock-btn:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 #status-util-group .dock-btn.is-active{color:var(--accent);font-weight:600;background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -3704,8 +3732,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 @media (max-width:760px){
   /* Narrow viewports (this app's own mobile/narrow breakpoint) — drop to a bottom bar
      instead of a right-edge rail, since a vertical rail eats too much width there. */
-  #status-util-group{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%);flex-direction:row}
+  #status-util-group{right:auto;left:50%;bottom:14px;transform:translateX(-50%);flex-direction:row}
+  #status-util-group .dock-rail-buttons{flex-direction:row}
+  #status-util-group .dock-rail-handle{width:16px;height:34px}
+  #status-util-group .dock-rail-handle svg{transform:rotate(-90deg)}
+  #status-util-group.collapsed .dock-rail-handle svg{transform:rotate(90deg)}
 }
+
 .todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
 .todo-toast-action:hover{opacity:.85}
 /* Status summary highlighting: reuses the exact colors from the row chips
@@ -5792,10 +5825,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
      Same button IDs as before, so every existing click handler, badge updater, and
      anchor-to-chip panel-positioning function keeps working unchanged. -->
 <div id="status-util-group" role="toolbar" aria-label="Workspace panels">
+  <button type="button" id="dock-rail-collapse-btn" class="dock-rail-handle" data-tip="Hide these panel buttons" aria-label="Hide workspace panel rail" aria-expanded="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+  <div class="dock-rail-buttons" id="dock-rail-buttons">
   <button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="dock-btn-label">Journal</span></button>
   <button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span class="dock-btn-label">Meetings</span></button>
   <button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span class="dock-btn-label">To-Dos</span></button>
   <button class="dock-btn" id="report-toggle" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span class="dock-btn-label">Recap</span></button>
+  </div>
 </div>
 
 <!-- Node Note Panel -->
@@ -15254,6 +15290,7 @@ function setQaIconOnly(on,persist=true){qaIconOnly=!!on; const wrap=el('global-s
 // isn't yanked back out from under the app bar the next time that order is reapplied.
 function setQaLocation(loc,persist=true){
   qaLocation=loc==='appbar'?'appbar':'statusbar';
+  document.documentElement.classList.remove('presetup-qa-appbar-pending');
   const wrap=el('global-search-wrap'); const divider=el('sb-qa-divider'); const slot=el('appbar-qa-slot');
   if(wrap){
     if(qaLocation==='appbar'){
@@ -35403,9 +35440,9 @@ function _addTagPopoverFromInput(){
     if(!panel) return;
     pruneCompleted();
     panel.classList.add('open');
-    anchorTodosToStatusbarChip();
     applyTodosWidth();
     renderTodos();
+    anchorTodosToStatusbarChip();
     refreshTodosAiButtons();
     document.querySelectorAll('#todos-toggle').forEach(b=>b.classList.add('is-active'));
     setTimeout(()=>{ document.getElementById('todos-input')?.focus(); },40);
@@ -35533,23 +35570,35 @@ function _addTagPopoverFromInput(){
     if(!panel) return;
     const goingMax=!panel.classList.contains('maximized');
     panel.classList.toggle('maximized', goingMax);
-    if(!goingMax){ anchorTodosToStatusbarChip(); applyTodosWidth(); }
+    if(!goingMax){ applyTodosWidth(); anchorTodosToStatusbarChip(); }
     _updateTodosMaximizeIcon();
   }
 
-  // Docked-in-status-bar feel: tether the panel directly above its chip, the same way
-  // the Scale popover and Quick Assist's own dropdown hang off their status bar trigger —
-  // integrated and predictable, not a window that could be floating anywhere on screen.
+  // Anchors a floating dock panel (To-Dos/Meetings/Journal) above its own dock-rail chip,
+  // clamped so it always stays fully on-screen. Must be called AFTER anything that changes
+  // the panel's rendered size (applyTodosWidth()/renderTodos() and their Meetings/Journal
+  // equivalents) — it reads the panel's actual offsetHeight, and a conservative "worst-case
+  // CSS max-height" stand-in was tried instead (to avoid that ordering requirement) but
+  // overshoots badly for short content: it clamps as if the panel were near its tallest
+  // possible, pushing even a nearly-empty panel down far enough to overlap the chip above
+  // it. Reading the real height after render is both simpler and correct in both directions.
+  window.sakuraAnchorPanelAboveChip=function(panel,chip){
+    if(!panel||!chip)return;
+    const rect=chip.getBoundingClientRect();
+    panel.style.left='auto';
+    panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
+    panel.style.bottom='auto';
+    const panelHeight=panel.offsetHeight||0;
+    const preferredTop=rect.top-8-panelHeight; // just above the chip, with an 8px gap
+    const maxTop=Math.max(8, window.innerHeight-panelHeight-8);
+    panel.style.top=Math.min(Math.max(preferredTop,8),maxTop)+'px';
+  };
   function anchorTodosToStatusbarChip(){
     const panel=document.getElementById('todos-panel');
     const chip=document.getElementById('todos-toggle');
     if(!panel||!chip) return;
     panel.classList.add('anchored');
-    const rect=chip.getBoundingClientRect();
-    panel.style.left='auto';
-    panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
-    panel.style.bottom=Math.max(8, window.innerHeight-rect.top+8)+'px';
-    panel.style.top='auto';
+    window.sakuraAnchorPanelAboveChip(panel,chip);
   }
 
   function restoreTodosPosition(){
@@ -36806,10 +36855,10 @@ function openMeetingsPanel(){
   pruneOldMeetings();
   const panel=el('meetings-panel');
   panel?.classList.add('open');
-  anchorMeetingsToDockChip();
   applyMeetingsWidth();
   document.querySelectorAll('#meetings-toggle').forEach(b=>b.classList.add('is-active'));
   renderMeetingsList();
+  anchorMeetingsToDockChip();
 }
 function closeMeetingsPanel(){
   meetingsPanelOpen=false;
@@ -36826,7 +36875,7 @@ function toggleMeetingsMaximize(){
   const panel=el('meetings-panel'); if(!panel)return;
   const goingMax=!panel.classList.contains('maximized');
   panel.classList.toggle('maximized',goingMax);
-  if(!goingMax){ anchorMeetingsToDockChip(); applyMeetingsWidth(); }
+  if(!goingMax){ applyMeetingsWidth(); anchorMeetingsToDockChip(); }
   const btn=el('meetings-panel-maximize');
   if(btn){
     if(goingMax){
@@ -38226,11 +38275,7 @@ function anchorMeetingsToDockChip(){
   const chip=el('meetings-toggle');
   if(!panel||!chip)return;
   panel.classList.add('anchored');
-  const rect=chip.getBoundingClientRect();
-  panel.style.left='auto';
-  panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
-  panel.style.bottom=Math.max(8, window.innerHeight-rect.top+8)+'px';
-  panel.style.top='auto';
+  window.sakuraAnchorPanelAboveChip(panel,chip);
 }
 function restoreMeetingsPosition(){
   const panel=el('meetings-panel');
@@ -38620,20 +38665,16 @@ function anchorJournalToDockChip(){
   const panel=el('journal-panel');
   const chip=el('journal-toggle');
   if(!panel||!chip)return;
-  const rect=chip.getBoundingClientRect();
-  panel.style.left='auto';
-  panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
-  panel.style.bottom=Math.max(8, window.innerHeight-rect.top+8)+'px';
-  panel.style.top='auto';
+  window.sakuraAnchorPanelAboveChip(panel,chip);
 }
 // ── Panel open/close/maximize ──
 function openJournalPanel(){
   journalPanelOpen=true;
   el('journal-panel')?.classList.add('open');
-  anchorJournalToDockChip();
   document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.add('is-active'));
   renderJournalList();
   showJournalCardView(!!journalExpandedDate);
+  anchorJournalToDockChip();
 }
 function closeJournalPanel(){
   journalPanelOpen=false;
@@ -38917,6 +38958,36 @@ el('journal-export-btn')?.addEventListener('click',exportJournalAsPdf);
 el('journal-toggle')?.addEventListener('click',toggleJournalPanel);
 el('journal-panel-close')?.addEventListener('click',closeJournalPanel);
 el('journal-panel-maximize')?.addEventListener('click',toggleJournalMaximize);
+
+// ── Dock rail collapse/expand ──
+// Lets the Journal/Meetings/To-Dos/Recap rail be tucked away when it's sitting over
+// something the person wants to see, without touching each feature's own on/off switch in
+// Settings — those still control the feature itself, not just this rail's visibility.
+// Persisted in its own dedicated localStorage key (same pattern as sakura_sidebar_open)
+// rather than folded into the main prefs blob, and mirrored by the pre-paint chrome
+// visibility script at the top of the document so a collapsed rail doesn't flash open
+// for a frame on reload.
+const DOCK_RAIL_COLLAPSED_KEY='sakura_dock_rail_collapsed';
+function setDockRailCollapsed(collapsed){
+  document.documentElement.classList.remove('presetup-dockrail-collapsed');
+  const group=el('status-util-group');
+  const btn=el('dock-rail-collapse-btn');
+  if(group)group.classList.toggle('collapsed',!!collapsed);
+  if(btn){
+    btn.setAttribute('aria-expanded',String(!collapsed));
+    btn.dataset.tip=collapsed?'Show Journal, Meetings, To-Dos & Recap':'Hide these panel buttons';
+  }
+  try{ localStorage.setItem(DOCK_RAIL_COLLAPSED_KEY, collapsed?'true':'false'); }catch(e){}
+}
+(function(){
+  let collapsed=false;
+  try{ collapsed=localStorage.getItem(DOCK_RAIL_COLLAPSED_KEY)==='true'; }catch(e){}
+  setDockRailCollapsed(collapsed);
+})();
+el('dock-rail-collapse-btn')?.addEventListener('click',()=>{
+  const group=el('status-util-group');
+  setDockRailCollapsed(!(group&&group.classList.contains('collapsed')));
+});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#journal-card'))return;
