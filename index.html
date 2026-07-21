@@ -1720,7 +1720,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
 .pv-table-chart-figure{flex:1 1 100%}
-.pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block}
+.pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -2344,6 +2344,7 @@ body.sakura-audience-window #preview-presenter-bar,
 body.sakura-audience-window #presenter-notes-panel,
 body.sakura-audience-window #presenter-overview-grid,
 body.sakura-audience-window #preview-ctx-menu,
+body.sakura-audience-window #chart-ctx-menu,
 body.sakura-audience-window #diagram-editor-header{display:none!important}
 body.sakura-audience-window #diagram-editor-iframe-wrap,
 body.sakura-audience-window #preview-overlay,
@@ -2498,8 +2499,8 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 #preview-close-btn{padding:6px 9px !important;font-size:13px !important}
 #preview-copy-rich-btn{position:relative}
 #preview-copy-rich-btn.copied{border-color:var(--fc-green)!important;color:var(--fc-green)!important}
-#preview-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:160px}
-#preview-ctx-menu.open{display:block}
+#preview-ctx-menu,#chart-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:160px}
+#preview-ctx-menu.open,#chart-ctx-menu.open{display:block}
 .pv-ctx-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
 .pv-ctx-divider{height:1px;background:var(--border);margin:4px 2px}
 .pv-ctx-item:hover{background:var(--hover)}
@@ -6470,6 +6471,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="presenter-blank-overlay"></div>
     <div id="presenter-progress-bar"><div id="presenter-progress-fill"></div></div>
+    <div id="chart-ctx-menu"></div>
     <div id="preview-ctx-menu"><div class="pv-ctx-item" id="preview-reset-zoom-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/></svg></span><span>Reset zoom</span></div><div class="pv-ctx-item" id="preview-laser-toggle"><span class="pv-ctx-dot"></span><span>Laser pointer</span><span class="pv-ctx-check">✓</span></div><div class="pv-ctx-divider" id="preview-ctx-presenting-divider"></div><div class="pv-ctx-item" id="preview-ctx-overview-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span>All slides</span></div><div class="pv-ctx-item" id="preview-ctx-dualscreen-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="13" height="9" rx="1"/><path d="M4.5 15.5h6"/><rect x="10" y="9" width="13" height="9" rx="1"/><path d="M13.5 21.5h6"/></svg></span><span>Open Audience View</span></div><div class="pv-ctx-item" id="preview-ctx-notes-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span>Notes / Q&amp;A</span></div><div class="pv-ctx-item" id="preview-ctx-whiteboard-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></span><span>Whiteboard</span></div><div class="pv-ctx-item" id="preview-ctx-mindmap-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg></span><span>Mind Map</span></div><div class="pv-ctx-item" id="preview-ctx-exit-item"><span class="pv-ctx-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span><span>Exit presenter mode</span></div></div>
     <div id="preview-laser-dot"></div>
   </div>
@@ -7684,9 +7686,33 @@ function setTableFeatureChart(table,on){
     showToast('Will export as a chart');
   } else {
     table.removeAttribute('data-feature-chart');
+    table.removeAttribute('data-chart-type');
     showToast('Will export as a table');
   }
   markDirty(); scheduleAutoSave();
+  if(previewActive)renderPreviewBody();
+}
+const CHART_TYPES=['bar','line','pie'];
+const CHART_TYPE_LABELS={bar:'Bar chart',line:'Line chart',pie:'Pie chart'};
+function getTableChartType(table){
+  const t=table?.getAttribute('data-chart-type');
+  return CHART_TYPES.includes(t)?t:'bar';
+}
+// Sets which chart shape a featured+charted table renders as — Bar (the default), Line, or
+// Pie. Read by every renderer that draws this table as a chart: the inline SVG one used by
+// Preview/Presenter/PDF (renderTableChartSvg) and the native pptxgenjs one used by PowerPoint
+// export (buildPptxPresentation), so a type picked here is what shows up everywhere, not just
+// wherever it was picked from. Set from the Pad's table context menu or, once a chart is
+// actually showing, by right-clicking the chart itself in Preview/Presenter (see chart-ctx-menu
+// below) — the same table element and attribute either way.
+function setTableChartType(table,type){
+  if(!table)return;
+  const clean=CHART_TYPES.includes(type)?type:'bar';
+  if(getTableChartType(table)===clean)return;
+  table.setAttribute('data-chart-type',clean);
+  markDirty(); scheduleAutoSave();
+  showToast(CHART_TYPE_LABELS[clean]);
+  if(previewActive)renderPreviewBody();
 }
 // Reads a featured+charted table into pptxgenjs chart series data. Two shapes, matching
 // tableChartability's two chartable cases:
@@ -7720,12 +7746,13 @@ function pptxChartSeriesFromTable(table){
 }
 // Renders a featured+charted table (see pptxChartSeriesFromTable, whose output this consumes
 // directly — same series/labels/values shape the PowerPoint chart is built from, so the two
-// stay in sync automatically) as a plain hand-rolled SVG grouped bar chart. Preview, Presenter
-// mode, and PDF all share the same render call this feeds into (see the comment where this is
-// called), and none of them have a charting library loaded — unlike PowerPoint export, which
-// gets a real, native pptxgenjs chart via addChart instead of this. Colors are CSS custom
-// properties, same as every other icon/figure already in the app, so the chart follows the
-// document's live theme/accent rather than being baked in at render time.
+// stay in sync automatically) as a plain hand-rolled SVG chart, dispatching on the table's own
+// chart type (getTableChartType). Preview, Presenter mode, and PDF all share the same render
+// call this feeds into (see the comment where this is called), and none of them have a
+// charting library loaded — unlike PowerPoint export, which gets a real, native pptxgenjs
+// chart via addChart instead of this. Colors are CSS custom properties, same as every other
+// icon/figure already in the app, so the chart follows the document's live theme/accent rather
+// than being baked in at render time.
 const CHART_SERIES_COLOR_VARS=['--accent','--fc-blue','--fc-green','--fc-orange','--fc-purple','--fc-red'];
 function chartFormatAxisNum(v){
   if(Math.abs(v)>=1000)return (v/1000).toFixed(v%1000===0?0:1)+'k';
@@ -7734,6 +7761,14 @@ function chartFormatAxisNum(v){
 function renderTableChartSvg(table){
   const series=pptxChartSeriesFromTable(table);
   if(!series||!series.length)return null;
+  const type=getTableChartType(table);
+  if(type==='pie')return renderPieChartSvg(series);
+  return renderCartesianChartSvg(series,type);
+}
+// Shared axis/plot geometry for the two category-on-x, value-on-y chart shapes (bar and line) —
+// everything but how each category's value(s) actually get drawn (grouped rects vs. a
+// connected polyline+dots) is identical between them.
+function renderCartesianChartSvg(series,kind){
   const labels=series[0].labels;
   const n=labels.length;
   if(!n)return null;
@@ -7742,21 +7777,35 @@ function renderTableChartSvg(table){
   const H=280;
   const plotW=W-padL-padR, plotH=H-padT-padB;
   const maxVal=Math.max(1,...series.flatMap(s=>s.values));
-  const groupW=plotW/n;
-  const barGap=groupW*0.18;
-  const barW=(groupW-barGap)/series.length;
-  let bars='', catLabels='';
-  labels.forEach((label,i)=>{
+  let marks='', catLabels='';
+  if(kind==='line'){
+    const stepX=n>1?plotW/(n-1):0;
+    const xAt=i=>n>1?padL+i*stepX:padL+plotW/2;
     series.forEach((s,si)=>{
-      const v=s.values[i]||0;
-      const h=(v/maxVal)*plotH;
-      const x=padL+i*groupW+barGap/2+si*barW;
-      const y=padT+plotH-h;
-      bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW*0.82).toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})" rx="2"/>`;
+      const color=`var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})`;
+      const pts=s.values.map((v,i)=>[xAt(i),padT+plotH-(v/maxVal)*plotH]);
+      marks+=`<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>`;
+      pts.forEach(p=>{ marks+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${color}"/>`; });
     });
-    const lx=padL+i*groupW+groupW/2;
-    catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
-  });
+    labels.forEach((label,i)=>{
+      catLabels+=`<text x="${xAt(i).toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+    });
+  } else {
+    const groupW=plotW/n;
+    const barGap=groupW*0.18;
+    const barW=(groupW-barGap)/series.length;
+    labels.forEach((label,i)=>{
+      series.forEach((s,si)=>{
+        const v=s.values[i]||0;
+        const h=(v/maxVal)*plotH;
+        const x=padL+i*groupW+barGap/2+si*barW;
+        const y=padT+plotH-h;
+        marks+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW*0.82).toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})" rx="2"/>`;
+      });
+      const lx=padL+i*groupW+groupW/2;
+      catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+    });
+  }
   let axis='';
   const ticks=4;
   for(let t=0;t<=ticks;t++){
@@ -7775,8 +7824,65 @@ function renderTableChartSvg(table){
       lx+=13+label.length*6+16;
     });
   }
-  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${bars}${catLabels}${legend}</svg>`;
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${marks}${catLabels}${legend}</svg>`;
 }
+// A pie only ever shows one series — its values across categories, as slices — the same reason
+// a spreadsheet's own pie-chart tool ignores extra columns rather than trying to stack them
+// into one pie. Always uses series[0] and quietly drops the rest; the chart-type menu's own Pie
+// label notes this so it isn't a silent surprise (see chart-ctx-menu below).
+function renderPieChartSvg(series){
+  const s=series[0];
+  const total=s.values.reduce((sum,v)=>sum+Math.max(0,v),0);
+  if(total<=0)return null;
+  const W=420,H=280, cx=140, cy=H/2, r=100;
+  let angle=-Math.PI/2, slices='', legend='', ly=30;
+  s.values.forEach((v,i)=>{
+    const val=Math.max(0,v);
+    if(val<=0)return;
+    const frac=val/total;
+    const next=angle+frac*Math.PI*2;
+    const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+    const x2=cx+r*Math.cos(next), y2=cy+r*Math.sin(next);
+    const large=frac>0.5?1:0;
+    const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
+    // A full-circle single slice (only one nonzero category) degenerates the arc math above —
+    // a start point equal to the end point draws nothing — so that case gets a plain <circle>.
+    slices+=(frac>=0.9999)
+      ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" stroke="var(--bg)" stroke-width="1.5"/>`
+      : `<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    angle=next;
+    const label=String(s.labels[i]||'').slice(0,18);
+    legend+=`<rect x="290" y="${ly}" width="10" height="10" rx="2" fill="${color}"/>`;
+    legend+=`<text x="305" y="${ly+9}" font-size="11" fill="var(--fg)" font-family="Inter,sans-serif">${esc(label)}</text>`;
+    ly+=20;
+  });
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${legend}</svg>`;
+}
+// Right-click menu for changing a rendered chart's type — Preview/Presenter's equivalent of
+// the Pad table context menu's Feature-as-chart toggle, but for the type rather than the
+// on/off flag, and reachable without leaving Preview/Presenter to go find the table in the
+// Notepad. See the contextmenu listener on #preview-overlay for where this is invoked from.
+function openChartCtxMenu(table,x,y){
+  const menu=el('chart-ctx-menu'); if(!menu||!table)return;
+  const current=getTableChartType(table);
+  menu.innerHTML=CHART_TYPES.map(type=>{
+    const label=CHART_TYPE_LABELS[type]+(type==='pie'?' (first data column only)':'');
+    return `<div class="pv-ctx-item chart-type-item" data-chart-type="${type}"><span>${esc(label)}</span><span class="pv-ctx-check">${type===current?'✓':''}</span></div>`;
+  }).join('');
+  menu.querySelectorAll('.chart-type-item').forEach(item=>{
+    item.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      setTableChartType(table,item.dataset.chartType);
+      closeChartCtxMenu();
+    });
+  });
+  menu.classList.add('open');
+  const mw=menu.offsetWidth||200, mh=menu.offsetHeight||110;
+  menu.style.left=Math.min(x,window.innerWidth-mw-8)+'px';
+  menu.style.top=Math.min(y,window.innerHeight-mh-8)+'px';
+}
+function closeChartCtxMenu(){ el('chart-ctx-menu')?.classList.remove('open'); }
+document.addEventListener('mousedown',e=>{ if(!e.target.closest('#chart-ctx-menu'))closeChartCtxMenu(); });
 // Diagrams/decision logs already leave an orphaned-but-harmless anchorNodeId behind when their
 // linked node is deleted (they just stop appearing anywhere, no cleanup call exists for them
 // either) — consistent, fine, since they live in their own tab and don't visually claim to
@@ -17263,7 +17369,7 @@ async function pptxGatherSlidesData(){
       for(const t of featuredTablesForNode(node.id)){
         if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
           const series=pptxChartSeriesFromTable(t);
-          if(series){ tables.push({isChart:true,series}); continue; }
+          if(series){ tables.push({isChart:true,series,chartType:getTableChartType(t)}); continue; }
         }
         const rows=pptxTableRowsFromElement(t);
         if(rows.length)tables.push({isChart:false,rows});
@@ -17826,10 +17932,13 @@ async function buildPptxPresentation(slidesData){
     // node — real pptxgenjs table shapes (genuinely editable in PowerPoint), stacked below any
     // images/logs/bullets already placed above via cursorY. Each gets an even share of the
     // remaining slide height, capped so a tall table doesn't run off the bottom. A table also
-    // flagged "Feature as chart" renders as an actual chart instead (bar — grouped automatically
-    // by pptxgenjs when the table has more than one data series), so column-count-appropriate
-    // tables (see tableChartability) show up as something readable in one glance rather than a
-    // grid of numbers.
+    // flagged "Feature as chart" renders as an actual chart instead, in whichever type was
+    // picked (Pad table context menu, or right-click the rendered chart in Preview/Presenter —
+    // see getTableChartType/setTableChartType) — bar (grouped automatically by pptxgenjs when
+    // there's more than one data series), line, or pie (first data series/column only — see
+    // renderPieChartSvg's own comment for why), so column-count-appropriate tables (see
+    // tableChartability) show up as something readable in one glance rather than a grid of
+    // numbers.
     const featTables=sd.tables||[];
     if(featTables.length){
       const availH=Math.max(0.6, bottomLimit-cursorY);
@@ -17837,14 +17946,23 @@ async function buildPptxPresentation(slidesData){
       const chartColorPalette=[theme.accent, theme.fcBlue, theme.fcGreen, theme.fcOrange, theme.fcPurple, theme.fcRed];
       featTables.forEach(item=>{
         if(item.isChart){
-          slide.addChart(pres.ChartType.bar, item.series, {
+          const type=item.chartType||'bar';
+          const pptxType=type==='line'?pres.ChartType.line:type==='pie'?pres.ChartType.pie:pres.ChartType.bar;
+          const chartData=type==='pie'?[item.series[0]]:item.series;
+          const opts={
             x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
-            barDir:'col', chartColors:chartColorPalette,
-            showLegend:item.series.length>1, legendPos:'b', legendFontFace:FONT, legendColor:theme.fg,
-            catAxisLabelFontFace:FONT, catAxisLabelColor:theme.fg,
-            valAxisLabelFontFace:FONT, valAxisLabelColor:theme.fg,
-            dataLabelFontFace:FONT
-          });
+            chartColors:chartColorPalette, dataLabelFontFace:FONT
+          };
+          if(type==='pie'){
+            opts.showLegend=true; opts.legendPos='r'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
+            opts.showPercent=true;
+          } else {
+            if(type==='bar')opts.barDir='col';
+            opts.showLegend=item.series.length>1; opts.legendPos='b'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
+            opts.catAxisLabelFontFace=FONT; opts.catAxisLabelColor=theme.fg;
+            opts.valAxisLabelFontFace=FONT; opts.valAxisLabelColor=theme.fg;
+          }
+          slide.addChart(pptxType, chartData, opts);
         } else {
           slide.addTable(item.rows, {
             x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
@@ -28075,11 +28193,15 @@ function renderPreviewBody(){
         const featTables=featuredTablesForNode(node.id);
         if(featTables.length){
           const trow=document.createElement('div'); trow.className='pv-diagram-row'; trow.style.paddingLeft=inlinePad;
-          featTables.forEach(t=>{
+          featTables.forEach((t,tIdx)=>{
             const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
             if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
               const svg=renderTableChartSvg(t);
-              if(svg){ fig.classList.add('pv-table-chart-figure'); fig.innerHTML=svg; trow.appendChild(fig); return; }
+              // dataset lets a right-click on the rendered chart (see openChartCtxMenu, invoked
+              // from #preview-overlay's contextmenu listener) trace back to the live table
+              // element in the Pad — the figure itself is rebuilt from scratch on every render,
+              // so nothing here can hold a direct JS reference across re-renders.
+              if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.chartNodeId=String(node.id); fig.dataset.chartTableIdx=String(tIdx); fig.innerHTML=svg; trow.appendChild(fig); return; }
             }
             const clone=t.cloneNode(true); clone.removeAttribute('data-feature-node'); clone.removeAttribute('data-feature-chart');
             fig.appendChild(clone);
@@ -29715,6 +29837,7 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview #preview-progress,
       body.printing-preview #preview-toc-resize-handle,
       body.printing-preview #preview-ctx-menu,
+      body.printing-preview #chart-ctx-menu,
       body.printing-preview #preview-laser-dot,
       body.printing-preview .fold-toggle,
       body.printing-preview .fold-spacer,
@@ -30171,6 +30294,18 @@ async function copyPreviewAsRichText(){
 }
 el('preview-overlay')?.addEventListener('contextmenu',e=>{
   e.preventDefault();
+  // A right-click landing on a rendered chart (a table featured with "Feature as chart" —
+  // see the Pad table context menu) changes its chart type instead of doing anything else this
+  // handler normally does — takes priority over both the node popover and the laser-pointer
+  // menu below, in Preview and while actually presenting alike, since either of those would
+  // otherwise fire first and the chart menu would never be reachable.
+  const chartFig=e.target.closest('.pv-table-chart-figure');
+  if(chartFig){
+    const nodeId=Number(chartFig.dataset.chartNodeId);
+    const idx=Number(chartFig.dataset.chartTableIdx);
+    const table=Number.isFinite(nodeId)?featuredTablesForNode(nodeId)[idx]:null;
+    if(table){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
+  }
   // While actually presenting, right-clicking a line opens the node popover (marks, Comment,
   // Question, Edit) instead of the laser-pointer menu — same gating the old left-click
   // interception used (blanked screen, overview grid open, and real controls/links/images are
@@ -30184,6 +30319,7 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
     }
   }
   const menu=el('preview-ctx-menu'); if(!menu)return;
+  closeChartCtxMenu();
   // Only worth showing when there's actually a zoom to reset — Ctrl+scroll's
   // previewInteractiveZoom, the same value Esc resets while presenting (see the keydown
   // handler). A right-click reset works everywhere Esc's zoom-reset does (presenting or just
@@ -32242,6 +32378,23 @@ el('pad-editor')?.addEventListener('contextmenu', e => {
       );
       if(!_chartCheck.ok && !_isCharted){ chartBtn.disabled=true; chartBtn.title=_chartCheck.reason; }
       menu.appendChild(chartBtn);
+      if(_isCharted){
+        // Same three types as the chart's own right-click menu in Preview/Presenter (see
+        // openChartCtxMenu) — offered here too so the type can be set without leaving the Pad
+        // to go find the chart first. The current type shows disabled rather than with a
+        // checkmark, matching the "already added" treatment used elsewhere in this menu family.
+        const _curType=getTableChartType(_featTable);
+        CHART_TYPES.forEach(type=>{
+          const isCurrent=type===_curType;
+          const typeBtn=_noteCtxItem(
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>',
+            CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), false,
+            () => { setTableChartType(_featTable, type); }
+          );
+          if(isCurrent)typeBtn.disabled=true;
+          menu.appendChild(typeBtn);
+        });
+      }
       menu.appendChild(_noteCtxItem(
         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>',
         'Remove from presentation', true,
