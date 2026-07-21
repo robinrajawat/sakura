@@ -2502,6 +2502,7 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 #preview-ctx-menu,#chart-ctx-menu{display:none;position:fixed;z-index:1102;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 14px 28px rgba(0,0,0,.18);padding:5px;min-width:160px}
 #preview-ctx-menu.open,#chart-ctx-menu.open{display:block}
 .pv-ctx-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap}
+.pv-ctx-item.disabled{opacity:.4;cursor:default;pointer-events:none}
 .pv-ctx-divider{height:1px;background:var(--border);margin:4px 2px}
 .pv-ctx-item:hover{background:var(--hover)}
 .pv-ctx-dot{width:9px;height:9px;border-radius:50%;background:#e0312f;flex-shrink:0;box-shadow:0 0 5px rgba(224,49,47,.7)}
@@ -7692,22 +7693,52 @@ function setTableFeatureChart(table,on){
   markDirty(); scheduleAutoSave();
   if(previewActive)renderPreviewBody();
 }
-const CHART_TYPES=['bar','line','pie'];
-const CHART_TYPE_LABELS={bar:'Bar chart',line:'Line chart',pie:'Pie chart'};
+const CHART_TYPES=['bar','stackedBar','line','pie','doughnut'];
+const CHART_TYPE_LABELS={bar:'Bar chart',stackedBar:'Stacked bar chart',line:'Line chart',pie:'Pie chart',doughnut:'Doughnut chart'};
 function getTableChartType(table){
   const t=table?.getAttribute('data-chart-type');
   return CHART_TYPES.includes(t)?t:'bar';
 }
-// Sets which chart shape a featured+charted table renders as — Bar (the default), Line, or
-// Pie. Read by every renderer that draws this table as a chart: the inline SVG one used by
-// Preview/Presenter/PDF (renderTableChartSvg) and the native pptxgenjs one used by PowerPoint
-// export (buildPptxPresentation), so a type picked here is what shows up everywhere, not just
-// wherever it was picked from. Set from the Pad's table context menu or, once a chart is
-// actually showing, by right-clicking the chart itself in Preview/Presenter (see chart-ctx-menu
-// below) — the same table element and attribute either way.
+// Which of the five chart types actually make sense for THIS table, not just whether a chart
+// in general does (that's tableChartability, which this builds on). A pie or doughnut slices up
+// a single series — showing one for a table with several data columns would silently drop every
+// column but the first, so those two are only offered when there's exactly one; a stacked bar
+// only means anything with 2+ series to stack, so it's hidden for a single-series table where
+// it would render identically to a plain bar. Bar and Line always work whenever the table is
+// chartable at all. Returns {ok,reason} per type, mirroring tableChartability's own shape, so
+// callers (the Pad table menu, and the chart's own right-click menu in Preview/Presenter) can
+// disable/hide inapplicable types with the reason on hover rather than just omitting them
+// unexplained.
+function tableChartTypeAvailability(table){
+  const base=tableChartability(table);
+  if(!base.ok){
+    const off={ok:false,reason:base.reason};
+    return CHART_TYPES.reduce((o,t)=>{o[t]=off; return o;},{});
+  }
+  const seriesCount=base.cols<=1?1:base.cols-1;
+  const pieAvail=seriesCount===1
+    ? {ok:true}
+    : {ok:false,reason:'Pie/doughnut only work with a single data column — this table has '+seriesCount+'. Use Bar, Stacked bar, or Line instead.'};
+  const stackedAvail=seriesCount>=2
+    ? {ok:true}
+    : {ok:false,reason:'Stacking only means something with 2+ data columns — with just one, it\u2019s identical to a plain bar chart.'};
+  return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail};
+}
+// Sets which chart shape a featured+charted table renders as. Read by every renderer that draws
+// this table as a chart: the inline SVG one used by Preview/Presenter/PDF (renderTableChartSvg)
+// and the native pptxgenjs one used by PowerPoint export (buildPptxPresentation), so a type
+// picked here is what shows up everywhere, not just wherever it was picked from. Set from the
+// Pad's table context menu or, once a chart is actually showing, by right-clicking the chart
+// itself in Preview/Presenter (see chart-ctx-menu below) — the same table element and attribute
+// either way. Silently falls back to whatever type is actually available (see
+// tableChartTypeAvailability) rather than setting one that wouldn't render sensibly — callers
+// are expected to only offer available types in the first place, but this is the one place that
+// actually enforces it.
 function setTableChartType(table,type){
   if(!table)return;
-  const clean=CHART_TYPES.includes(type)?type:'bar';
+  let clean=CHART_TYPES.includes(type)?type:'bar';
+  const avail=tableChartTypeAvailability(table);
+  if(!avail[clean]?.ok)clean='bar';
   if(getTableChartType(table)===clean)return;
   table.setAttribute('data-chart-type',clean);
   markDirty(); scheduleAutoSave();
@@ -7762,12 +7793,12 @@ function renderTableChartSvg(table){
   const series=pptxChartSeriesFromTable(table);
   if(!series||!series.length)return null;
   const type=getTableChartType(table);
-  if(type==='pie')return renderPieChartSvg(series);
+  if(type==='pie'||type==='doughnut')return renderPieChartSvg(series,type==='doughnut');
   return renderCartesianChartSvg(series,type);
 }
-// Shared axis/plot geometry for the two category-on-x, value-on-y chart shapes (bar and line) —
-// everything but how each category's value(s) actually get drawn (grouped rects vs. a
-// connected polyline+dots) is identical between them.
+// Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
+// bar, and line) — everything but how each category's value(s) actually get drawn (grouped
+// rects, stacked rects, or a connected polyline+dots) is identical between them.
 function renderCartesianChartSvg(series,kind){
   const labels=series[0].labels;
   const n=labels.length;
@@ -7776,7 +7807,12 @@ function renderCartesianChartSvg(series,kind){
   const W=560, padL=44, padR=16, padT=16, padB=hasLegend?60:40;
   const H=280;
   const plotW=W-padL-padR, plotH=H-padT-padB;
-  const maxVal=Math.max(1,...series.flatMap(s=>s.values));
+  // A stacked bar's tallest column is the SUM of that category's series, not the single
+  // largest value across all of them — using the plain per-value max here would clip every
+  // stack taller than one series' own biggest number.
+  const maxVal=kind==='stackedBar'
+    ? Math.max(1,...labels.map((_,i)=>series.reduce((sum,s)=>sum+Math.max(0,s.values[i]||0),0)))
+    : Math.max(1,...series.flatMap(s=>s.values));
   let marks='', catLabels='';
   if(kind==='line'){
     const stepX=n>1?plotW/(n-1):0;
@@ -7789,6 +7825,22 @@ function renderCartesianChartSvg(series,kind){
     });
     labels.forEach((label,i)=>{
       catLabels+=`<text x="${xAt(i).toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+    });
+  } else if(kind==='stackedBar'){
+    const groupW=plotW/n;
+    const barW=groupW*0.62;
+    labels.forEach((label,i)=>{
+      let stackBottom=padT+plotH; // segments stack upward from the baseline
+      series.forEach((s,si)=>{
+        const v=Math.max(0,s.values[i]||0);
+        const h=(v/maxVal)*plotH;
+        const x=padL+i*groupW+(groupW-barW)/2;
+        const y=stackBottom-h;
+        marks+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})"/>`;
+        stackBottom=y;
+      });
+      const lx=padL+i*groupW+groupW/2;
+      catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
     });
   } else {
     const groupW=plotW/n;
@@ -7826,11 +7878,15 @@ function renderCartesianChartSvg(series,kind){
   }
   return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${marks}${catLabels}${legend}</svg>`;
 }
-// A pie only ever shows one series — its values across categories, as slices — the same reason
-// a spreadsheet's own pie-chart tool ignores extra columns rather than trying to stack them
-// into one pie. Always uses series[0] and quietly drops the rest; the chart-type menu's own Pie
-// label notes this so it isn't a silent surprise (see chart-ctx-menu below).
-function renderPieChartSvg(series){
+// A pie/doughnut only ever shows one series — its values across categories, as slices — the
+// same reason a spreadsheet's own pie-chart tool ignores extra columns rather than trying to
+// stack them into one pie. Always uses series[0] and quietly drops the rest; both menus that
+// offer these two types (Pad table menu, chart's own right-click menu) hide them entirely for a
+// table with more than one series in the first place (see tableChartTypeAvailability), so this
+// case shouldn't normally be reached with real multi-series data. Doughnut is the same wedges
+// with a plain background-colored circle punched through the middle — not real inner/outer arc
+// geometry, just the cheapest way to get the visual right for a hand-rolled chart like this one.
+function renderPieChartSvg(series,isDoughnut){
   const s=series[0];
   const total=s.values.reduce((sum,v)=>sum+Math.max(0,v),0);
   if(total<=0)return null;
@@ -7856,7 +7912,8 @@ function renderPieChartSvg(series){
     legend+=`<text x="305" y="${ly+9}" font-size="11" fill="var(--fg)" font-family="Inter,sans-serif">${esc(label)}</text>`;
     ly+=20;
   });
-  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${legend}</svg>`;
+  const hole=isDoughnut?`<circle cx="${cx}" cy="${cy}" r="${(r*0.55).toFixed(1)}" fill="var(--bg)"/>`:'';
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${hole}${legend}</svg>`;
 }
 // Right-click menu for changing a rendered chart's type — Preview/Presenter's equivalent of
 // the Pad table context menu's Feature-as-chart toggle, but for the type rather than the
@@ -7865,11 +7922,14 @@ function renderPieChartSvg(series){
 function openChartCtxMenu(table,x,y){
   const menu=el('chart-ctx-menu'); if(!menu||!table)return;
   const current=getTableChartType(table);
+  const avail=tableChartTypeAvailability(table);
   menu.innerHTML=CHART_TYPES.map(type=>{
-    const label=CHART_TYPE_LABELS[type]+(type==='pie'?' (first data column only)':'');
-    return `<div class="pv-ctx-item chart-type-item" data-chart-type="${type}"><span>${esc(label)}</span><span class="pv-ctx-check">${type===current?'✓':''}</span></div>`;
+    const ok=!!avail[type]?.ok;
+    const cls='pv-ctx-item chart-type-item'+(ok?'':' disabled');
+    const title=ok?'':esc(avail[type].reason||'');
+    return `<div class="${cls}" data-chart-type="${type}" title="${title}"><span>${esc(CHART_TYPE_LABELS[type])}</span><span class="pv-ctx-check">${type===current?'✓':''}</span></div>`;
   }).join('');
-  menu.querySelectorAll('.chart-type-item').forEach(item=>{
+  menu.querySelectorAll('.chart-type-item:not(.disabled)').forEach(item=>{
     item.addEventListener('mousedown',e=>{
       e.preventDefault();
       setTableChartType(table,item.dataset.chartType);
@@ -7877,7 +7937,7 @@ function openChartCtxMenu(table,x,y){
     });
   });
   menu.classList.add('open');
-  const mw=menu.offsetWidth||200, mh=menu.offsetHeight||110;
+  const mw=menu.offsetWidth||200, mh=menu.offsetHeight||150;
   menu.style.left=Math.min(x,window.innerWidth-mw-8)+'px';
   menu.style.top=Math.min(y,window.innerHeight-mh-8)+'px';
 }
@@ -17363,15 +17423,18 @@ async function pptxGatherSlidesData(){
     // slide's node — same one-node-per-slide scope as the images/diagrams just above. A table
     // also flagged "Feature as chart" (and still shaped right for one — see tableChartability)
     // is gathered as chart series data instead of table rows; buildPptxPresentation renders it
-    // with addChart rather than addTable.
+    // with addChart rather than addTable. rows is computed either way — even for a chart item —
+    // so a chart that fails to build for some reason at render time (a pptxgenjs edge case,
+    // rather than anything caught here) still falls back to the plain table instead of the
+    // slide silently ending up with nothing at all where the table used to be.
     const tables=[];
     if(padNotepadExportEnabled){
       for(const t of featuredTablesForNode(node.id)){
+        const rows=pptxTableRowsFromElement(t);
         if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
           const series=pptxChartSeriesFromTable(t);
-          if(series){ tables.push({isChart:true,series,chartType:getTableChartType(t)}); continue; }
+          if(series){ tables.push({isChart:true,series,chartType:getTableChartType(t),rows}); continue; }
         }
-        const rows=pptxTableRowsFromElement(t);
         if(rows.length)tables.push({isChart:false,rows});
       }
     }
@@ -17396,7 +17459,17 @@ async function pptxGatherSlidesData(){
 // and the doc's own current theme (light/dark) and accent color for the deck background — so
 // the exported file reads as "this document, as slides" rather than a completely different
 // visual product bearing no relation to the app it came from.
+// Populated inside buildPptxPresentation when a chart fails to build and falls back to a plain
+// table instead (see the addChart try/catch there); read by exportPptx right after, alongside
+// the existing imageWarnings, so a silent per-chart failure still surfaces to the person
+// exporting instead of just quietly showing a table where a chart was expected.
+let _pptxChartFallbackWarnings=[];
 async function buildPptxPresentation(slidesData){
+  // Reset here rather than only at module load — buildPptxPresentation can run more than once
+  // per session (Export ▾ → PowerPoint again after fixing something), and a stale warning from
+  // a previous export shouldn't carry over into a clean one. Read by exportPptx right after
+  // this call returns, alongside the existing imageWarnings toast.
+  _pptxChartFallbackWarnings=[];
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
   const author=String(meta.author||'');
@@ -17934,36 +18007,51 @@ async function buildPptxPresentation(slidesData){
     // remaining slide height, capped so a tall table doesn't run off the bottom. A table also
     // flagged "Feature as chart" renders as an actual chart instead, in whichever type was
     // picked (Pad table context menu, or right-click the rendered chart in Preview/Presenter —
-    // see getTableChartType/setTableChartType) — bar (grouped automatically by pptxgenjs when
-    // there's more than one data series), line, or pie (first data series/column only — see
-    // renderPieChartSvg's own comment for why), so column-count-appropriate tables (see
+    // see getTableChartType/setTableChartType/tableChartTypeAvailability) — bar, stacked bar,
+    // line, pie, or doughnut (the latter two use the first data series/column only — see
+    // renderPieChartSvg's own comment for why) — so column-count-appropriate tables (see
     // tableChartability) show up as something readable in one glance rather than a grid of
-    // numbers.
+    // numbers. addChart is wrapped defensively: if it ever throws for some pptxgenjs-internal
+    // reason, the slide falls back to the plain table (item.rows is always gathered, even for a
+    // chart item — see pptxGatherSlidesData) rather than that part of the slide just vanishing.
     const featTables=sd.tables||[];
     if(featTables.length){
       const availH=Math.max(0.6, bottomLimit-cursorY);
       const perTableH=Math.min(3.5, availH/featTables.length-0.15);
       const chartColorPalette=[theme.accent, theme.fcBlue, theme.fcGreen, theme.fcOrange, theme.fcPurple, theme.fcRed];
       featTables.forEach(item=>{
+        let renderedChart=false;
         if(item.isChart){
-          const type=item.chartType||'bar';
-          const pptxType=type==='line'?pres.ChartType.line:type==='pie'?pres.ChartType.pie:pres.ChartType.bar;
-          const chartData=type==='pie'?[item.series[0]]:item.series;
-          const opts={
-            x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
-            chartColors:chartColorPalette, dataLabelFontFace:FONT
-          };
-          if(type==='pie'){
-            opts.showLegend=true; opts.legendPos='r'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
-            opts.showPercent=true;
-          } else {
-            if(type==='bar')opts.barDir='col';
-            opts.showLegend=item.series.length>1; opts.legendPos='b'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
-            opts.catAxisLabelFontFace=FONT; opts.catAxisLabelColor=theme.fg;
-            opts.valAxisLabelFontFace=FONT; opts.valAxisLabelColor=theme.fg;
+          try{
+            const type=item.chartType||'bar';
+            const isPieLike=type==='pie'||type==='doughnut';
+            const pptxType=type==='line'?pres.ChartType.line
+              :type==='pie'?pres.ChartType.pie
+              :type==='doughnut'?pres.ChartType.doughnut
+              :pres.ChartType.bar; // bar and stackedBar both use the bar chart type
+            const chartData=isPieLike?[item.series[0]]:item.series;
+            const opts={
+              x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
+              chartColors:chartColorPalette, dataLabelFontFace:FONT
+            };
+            if(isPieLike){
+              opts.showLegend=true; opts.legendPos='r'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
+              opts.showPercent=true;
+            } else {
+              if(type==='bar'||type==='stackedBar')opts.barDir='col';
+              if(type==='stackedBar')opts.barGrouping='stacked';
+              opts.showLegend=item.series.length>1; opts.legendPos='b'; opts.legendFontFace=FONT; opts.legendColor=theme.fg;
+              opts.catAxisLabelFontFace=FONT; opts.catAxisLabelColor=theme.fg;
+              opts.valAxisLabelFontFace=FONT; opts.valAxisLabelColor=theme.fg;
+            }
+            slide.addChart(pptxType, chartData, opts);
+            renderedChart=true;
+          }catch(err){
+            console.warn('[sakura] PPTX chart failed, falling back to a plain table for this slide:',err);
+            _pptxChartFallbackWarnings.push(sd.title||'Untitled slide');
           }
-          slide.addChart(pptxType, chartData, opts);
-        } else {
+        }
+        if(!renderedChart){
           slide.addTable(item.rows, {
             x:MARGIN, y:cursorY, w:PPTX_SLIDE_W-2*MARGIN, h:perTableH,
             fontFace:FONT, fontSize:12, color:theme.fg,
@@ -18114,10 +18202,12 @@ async function exportPptx(){
     // writeFile handles the Blob + download link + revoke internally.
     await pres.writeFile({fileName:`${title}.pptx`});
     markLastExport();
-    if(imageWarnings.length){
-      console.warn('[sakura] PPTX export: some diagram images were skipped:', imageWarnings);
-      sakuraLog('export','PPTX export: some images skipped',{count:imageWarnings.length});
-      showToast(`PPTX exported — ${imageWarnings.length} diagram image${imageWarnings.length===1?'':'s'} couldn't be embedded (see console)`);
+    const chartWarnings=_pptxChartFallbackWarnings;
+    if(imageWarnings.length||chartWarnings.length){
+      if(imageWarnings.length){ console.warn('[sakura] PPTX export: some diagram images were skipped:', imageWarnings); sakuraLog('export','PPTX export: some images skipped',{count:imageWarnings.length}); }
+      if(chartWarnings.length){ console.warn('[sakura] PPTX export: some charts fell back to a plain table:', chartWarnings); sakuraLog('export','PPTX export: some charts fell back to table',{count:chartWarnings.length}); }
+      const parts=[imageWarnings.length?`${imageWarnings.length} diagram image${imageWarnings.length===1?'':'s'} couldn't be embedded`:null, chartWarnings.length?`${chartWarnings.length} chart${chartWarnings.length===1?'':'s'} fell back to a table`:null].filter(Boolean);
+      showToast(`PPTX exported — ${parts.join(', ')} (see console)`);
     } else {
       showToast('PPTX exported');
     }
@@ -32379,19 +32469,24 @@ el('pad-editor')?.addEventListener('contextmenu', e => {
       if(!_chartCheck.ok && !_isCharted){ chartBtn.disabled=true; chartBtn.title=_chartCheck.reason; }
       menu.appendChild(chartBtn);
       if(_isCharted){
-        // Same three types as the chart's own right-click menu in Preview/Presenter (see
+        // Same five types as the chart's own right-click menu in Preview/Presenter (see
         // openChartCtxMenu) — offered here too so the type can be set without leaving the Pad
-        // to go find the chart first. The current type shows disabled rather than with a
-        // checkmark, matching the "already added" treatment used elsewhere in this menu family.
+        // to go find the chart first. The current type, and any type that doesn't make sense
+        // for this table's shape (see tableChartTypeAvailability — e.g. Pie/Doughnut on a
+        // multi-series table, or Stacked bar on a single-series one), shows disabled rather
+        // than clickable, matching the "already added"/"not applicable" treatment used
+        // elsewhere in this menu family.
         const _curType=getTableChartType(_featTable);
+        const _typeAvail=tableChartTypeAvailability(_featTable);
         CHART_TYPES.forEach(type=>{
           const isCurrent=type===_curType;
+          const avail=_typeAvail[type];
           const typeBtn=_noteCtxItem(
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>',
             CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), false,
             () => { setTableChartType(_featTable, type); }
           );
-          if(isCurrent)typeBtn.disabled=true;
+          if(isCurrent||!avail.ok){ typeBtn.disabled=true; if(!avail.ok)typeBtn.title=avail.reason; }
           menu.appendChild(typeBtn);
         });
       }
