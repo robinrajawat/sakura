@@ -1201,6 +1201,24 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-empty{padding:20px 6px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif;line-height:1.5}
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
+.report-modal{width:min(520px,calc(100vw - 32px));max-height:min(640px,calc(100vh - 64px))}
+.report-tabs{display:flex;gap:4px;margin-bottom:10px;flex-shrink:0;background:var(--hover);border-radius:8px;padding:3px}
+.report-tab{flex:1;appearance:none;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
+.report-tab:hover{color:var(--fg)}
+.report-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.report-stats-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.report-stat{flex:1;min-width:76px;background:var(--hover);border-radius:8px;padding:8px 10px;text-align:center}
+.report-stat-num{font:700 18px 'Inter',sans-serif;color:var(--fg);display:block;line-height:1.2}
+.report-stat-label{font:400 10.5px 'Inter',sans-serif;color:var(--muted);display:block;margin-top:1px}
+.report-section{margin-bottom:14px}
+.report-section-title{font:600 11px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.report-section-title .report-count{font-weight:400;text-transform:none;letter-spacing:0}
+.report-item{display:flex;align-items:baseline;gap:8px;padding:5px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg)}
+.report-item:hover{background:var(--hover)}
+.report-item-time{flex-shrink:0;font-size:11px;color:var(--muted);min-width:42px}
+.report-item-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report-item-doc{flex-shrink:0;font-size:10.5px;color:var(--muted);background:var(--hover);border-radius:4px;padding:1px 6px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report-empty{font:400 12.5px 'Inter',sans-serif;color:var(--muted);text-align:center;padding:28px 8px}
 .sb-hint-bar.visible{display:flex}
 .sb-hint-bar .sb-hint-text{flex:1}
 .sb-hint-bar .sb-hint-dismiss{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;font-size:11px;padding:0 2px;flex-shrink:0;line-height:1.4;display:inline-flex;align-items:center;justify-content:center}
@@ -5691,7 +5709,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div><!-- /editor-row -->
   <div id="statusbar">
     <div id="status-left"><span id="sb-nodecount-divider" class="status-divider" style="display:none">·</span><span id="sb-nodecount" class="status-strong">Nodes 0</span><span id="sb-maxdepth-divider" class="status-divider">·</span><span id="sb-maxdepth" class="status-strong">Max depth 0</span><span id="sb-wordcount-divider" class="status-divider">·</span><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider">·</span><span id="sb-depth" class="status-strong">Depth —</span><span id="sb-nodewords-divider" class="status-divider">·</span><span id="sb-nodewords" class="status-strong">Node words —</span></div>
-    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
+    <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong">Saved —</span><span id="sb-fs-status-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-fs-status-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-backup-reminder-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-backup-reminder-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-theme-divider" class="status-divider">·</span><span id="sb-theme" class="status-chip">Light</span><span id="sb-scale-divider" class="status-divider">·</span><div class="scale-wrap" id="scale-wrap"><button type="button" id="sb-scale" class="status-chip status-chip-btn" data-tip="Click to adjust text size">100%</button><div class="scale-popover" id="scale-popover"><input id="scale-popover-slider" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="scale-popover-value" class="settings-slider-value">100%</span></div></div><span id="sb-author-divider" class="status-divider">·</span><span id="sb-author" class="status-passive status-author-empty" style="cursor:pointer" data-tip="Click to set author">+ Add author</span><span id="sb-util-divider" class="status-divider">·</span><div id="status-util-group"><button class="dock-btn" id="journal-toggle" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button><button class="dock-btn" id="meetings-toggle" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button><button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button><button class="dock-btn" id="report-toggle" data-tip="Activity Report — what you've done today / this week"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Report</span></button></div><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
           <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg></button>
           <input id="qa-input" type="text" placeholder="Ask or search…" autocomplete="off" aria-label="Quick assist command and search input" />
@@ -6617,6 +6635,23 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
         <button id="journal-history-save-now-btn" class="btn">Save a version now</button>
+      </div>
+    </div>
+  </div>
+  <div id="report-modal-overlay" class="history-modal-overlay">
+    <div class="history-modal report-modal">
+      <div class="history-modal-header">
+        <span class="history-modal-title">Activity Report</span>
+        <button id="report-modal-close-x" class="history-modal-close-x" data-tip="Close">×</button>
+      </div>
+      <div class="report-tabs" role="tablist">
+        <button class="report-tab" data-period="today" role="tab">Today</button>
+        <button class="report-tab" data-period="week" role="tab">This Week</button>
+        <button class="report-tab" data-period="lastWeek" role="tab">Last Week</button>
+      </div>
+      <div id="report-modal-body" class="history-modal-body report-modal-body"></div>
+      <div class="history-modal-footer">
+        <span class="history-modal-footer-hint">Across all documents, to-dos, meeting notes, and journal entries</span>
       </div>
     </div>
   </div>
@@ -7648,7 +7683,7 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
 function normalizeDecisionLog(dl){
   if(!dl||typeof dl!=='object')return null;
@@ -7694,7 +7729,7 @@ function migrateNodeDecisionLogsToArray(){
     delete node.decisionLog;
   }
 }
-function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',codeBlock:null,tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now}}
+function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',codeBlock:null,tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,currentFont,focusedId})}
 function restoreFromSnapshot(s){const d=JSON.parse(s);nodes=(d.nodes||[]).map(normalizeNode);nextId=d.nextId||1;selectedId=d.selectedId??(nodes[0]?.id??null);multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)):[];selectionAnchorId=d.selectionAnchorId??(selectedId??null);focusedId=(d.focusedId!=null&&nodes.some(n=>n.id===d.focusedId))?d.focusedId:null;editingId=null;selectAllMode=false;flashNodeId=null}
@@ -14286,7 +14321,7 @@ function propagateCheckboxUp(idx){
   const pIdx=getParentIndex(idx); if(pIdx<0)return;
   const parent=nodes[pIdx]; if(!isCheckboxNode(parent))return;
   const {total,checked}=getCheckboxChildStats(pIdx);
-  if(total>0){const allDone=checked===total; if(parent.checked!==allDone){parent.checked=allDone; propagateCheckboxUp(pIdx);}}
+  if(total>0){const allDone=checked===total; if(parent.checked!==allDone){parent.checked=allDone; parent.completedAt=allDone?Date.now():null; propagateCheckboxUp(pIdx);}}
 }
 
 function toggleCheckbox(id){
@@ -14295,14 +14330,16 @@ function toggleCheckbox(id){
   const node=nodes[idx];
   const newChecked=!node.checked;
   node.checked=newChecked;
+  node.completedAt=newChecked?Date.now():null;
   cascadeCheckboxDown(idx,newChecked);
   propagateCheckboxUp(idx); markDirty(); render();
 }
 
 function cascadeCheckboxDown(idx,checked){
   const end=getSubtreeEnd(idx);
+  const ts=checked?Date.now():null;
   for(let i=idx+1;i<end;i++){
-    if(isCheckboxNode(nodes[i])) nodes[i].checked=checked;
+    if(isCheckboxNode(nodes[i])){ nodes[i].checked=checked; nodes[i].completedAt=ts; }
   }
 }
 
@@ -14311,19 +14348,20 @@ function toggleCheckboxMulti(){
   if(!targets.length)return;
   const allChecked=targets.every(id=>{const i=getIndex(id); return i>=0&&nodes[i].isCheckbox&&nodes[i].checked;});
   pushUndo();
-  targets.forEach(id=>{const i=getIndex(id); if(i>=0&&nodes[i].isCheckbox){nodes[i].checked=!allChecked; propagateCheckboxUp(i);}});
+  const ts=allChecked?null:Date.now();
+  targets.forEach(id=>{const i=getIndex(id); if(i>=0&&nodes[i].isCheckbox){nodes[i].checked=!allChecked; nodes[i].completedAt=ts; propagateCheckboxUp(i);}});
   markDirty(); render();
 }
 
 function convertToCheckbox(id){
   const idx=getIndex(id); if(idx<0)return;
-  pushUndo(); nodes[idx].isCheckbox=true; nodes[idx].checked=false;
+  pushUndo(); nodes[idx].isCheckbox=true; nodes[idx].checked=false; nodes[idx].completedAt=null;
   markDirty(); render();
 }
 
 function removeCheckbox(id){
   const idx=getIndex(id); if(idx<0)return;
-  pushUndo(); nodes[idx].isCheckbox=false; nodes[idx].checked=false;
+  pushUndo(); nodes[idx].isCheckbox=false; nodes[idx].checked=false; nodes[idx].completedAt=null;
   markDirty(); render();
 }
 
@@ -39966,5 +40004,148 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){ if(mindMapSelectedId!=null){ e.preventDefault(); mmAddSibling(mindMapSelectedId); } return; }
 });
 migrateLegacyGlobalMindMap();
+
+// === Activity Report ===
+// A read-only, on-demand scan across every document (current in-memory doc plus every other
+// doc's saved localStorage payload), plus the app-wide To-Dos, Meeting Notes, and Journal
+// stores, bucketed into Today / This Week / Last Week. Nothing here is cached or kept live —
+// it re-scans each time the modal opens or the tab changes, which is cheap at normal
+// document counts and keeps this feature from needing its own persisted index to stay in sync.
+let reportModalPeriod='today';
+function reportStartOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.getTime(); }
+function getReportRange(period){
+  const now=new Date();
+  const todayStart=reportStartOfDay(now);
+  const todayEnd=todayStart+86400000;
+  if(period==='today') return {start:todayStart,end:todayEnd};
+  const dow=now.getDay(); // 0=Sun..6=Sat
+  const diffToMonday=(dow===0?6:dow-1);
+  const thisWeekStart=todayStart-diffToMonday*86400000;
+  if(period==='week') return {start:thisWeekStart,end:thisWeekStart+7*86400000};
+  return {start:thisWeekStart-7*86400000,end:thisWeekStart}; // lastWeek
+}
+function reportInRange(ts,range){ return Number.isFinite(ts)&&ts>=range.start&&ts<range.end; }
+function reportPreviewText(s,max){
+  const t=stripSemanticMarkers(String(s||'')).replace(/\s+/g,' ').trim();
+  if(!t)return '(untitled)';
+  return t.length>max?t.slice(0,max-1)+'…':t;
+}
+function reportTimeLabel(ts){ try{ return new Date(ts).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); }catch(e){ return ''; } }
+
+// Returns every doc's node array without disturbing the currently-open document's in-memory
+// state: the active doc reads straight from `nodes` (freshest, including unsaved edits this
+// session), every other doc reads its last-saved payload directly out of localStorage.
+function reportGetAllDocNodeSets(){
+  const out=[];
+  loadActiveDocsIndex().forEach(d=>{
+    if(d.id===currentDocId){ out.push({docId:d.id,title:d.title||'Untitled',nodes:nodes}); return; }
+    try{
+      const raw=localStorage.getItem(docKey(d.id));
+      const parsed=raw?JSON.parse(raw):null;
+      out.push({docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[]});
+    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',nodes:[]}); }
+  });
+  return out;
+}
+function reportGetTodosList(){
+  try{
+    const raw=localStorage.getItem('sakura_todos_v1');
+    const arr=raw?JSON.parse(raw):[];
+    return Array.isArray(arr)?arr:[];
+  }catch(e){ return []; }
+}
+function buildActivityReport(period){
+  const range=getReportRange(period);
+  const tasksCompleted=[], itemsCreated=[], itemsEdited=[], meetingItems=[], journalItems=[];
+  const docsTouched=new Set();
+
+  reportGetAllDocNodeSets().forEach(({docId,title,nodes:docNodes})=>{
+    (docNodes||[]).forEach(n=>{
+      const createdIn=reportInRange(n.createdAt,range);
+      const modifiedIn=reportInRange(n.modifiedAt,range)&&n.modifiedAt!==n.createdAt;
+      const completedIn=n.isCheckbox&&n.checked&&reportInRange(n.completedAt,range);
+      if(createdIn){ itemsCreated.push({text:n.text,ts:n.createdAt,doc:title}); docsTouched.add(docId); }
+      if(modifiedIn){ itemsEdited.push({text:n.text,ts:n.modifiedAt,doc:title}); docsTouched.add(docId); }
+      if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,source:'doc'}); docsTouched.add(docId); }
+    });
+  });
+
+  reportGetTodosList().forEach(t=>{
+    if(t.done&&reportInRange(t.completedAt,range)) tasksCompleted.push({text:t.text,ts:t.completedAt,doc:'To-Dos',source:'todo'});
+    else if(reportInRange(t.createdAt,range)) itemsCreated.push({text:t.text,ts:t.createdAt,doc:'To-Dos'});
+  });
+
+  (typeof meetingNotes!=='undefined'?meetingNotes:[]).forEach(m=>{
+    const label=m.title||'Untitled meeting';
+    if(reportInRange(m.createdAt,range)) meetingItems.push({text:label,ts:m.createdAt,action:'created'});
+    else if(reportInRange(m.modifiedAt,range)&&m.modifiedAt!==m.createdAt) meetingItems.push({text:label,ts:m.modifiedAt,action:'updated'});
+  });
+
+  (typeof journalEntries!=='undefined'?journalEntries:[]).forEach(j=>{
+    if(reportInRange(j.createdAt,range)) journalItems.push({date:j.date,ts:j.createdAt,mood:j.mood,text:j.body,action:'created'});
+    else if(reportInRange(j.modifiedAt,range)&&j.modifiedAt!==j.createdAt) journalItems.push({date:j.date,ts:j.modifiedAt,mood:j.mood,text:j.body,action:'updated'});
+  });
+
+  const byTsDesc=(a,b)=>(b.ts||0)-(a.ts||0);
+  tasksCompleted.sort(byTsDesc); itemsCreated.sort(byTsDesc); itemsEdited.sort(byTsDesc);
+  meetingItems.sort(byTsDesc); journalItems.sort(byTsDesc);
+
+  return {
+    range,
+    stats:{docsTouched:docsTouched.size,tasksCompleted:tasksCompleted.length,itemsCreated:itemsCreated.length,itemsEdited:itemsEdited.length,meetings:meetingItems.length,journal:journalItems.length},
+    tasksCompleted,itemsCreated,itemsEdited,meetingItems,journalItems
+  };
+}
+function reportRenderSection(title,items,renderRow,cap){
+  if(!items.length)return '';
+  const shown=items.slice(0,cap||30);
+  const rows=shown.map(renderRow).join('');
+  const more=items.length>shown.length?`<div class="report-item report-item-more" style="color:var(--muted);font-size:11.5px">+${items.length-shown.length} more</div>`:'';
+  return `<div class="report-section"><div class="report-section-title">${esc(title)} <span class="report-count">(${items.length})</span></div>${rows}${more}</div>`;
+}
+function renderActivityReport(){
+  const body=el('report-modal-body'); if(!body)return;
+  document.querySelectorAll('.report-tab').forEach(btn=>btn.classList.toggle('active',btn.dataset.period===reportModalPeriod));
+  const r=buildActivityReport(reportModalPeriod);
+  const totalItems=r.stats.tasksCompleted+r.stats.itemsCreated+r.stats.itemsEdited+r.stats.meetings+r.stats.journal;
+  if(!totalItems){
+    const label=reportModalPeriod==='today'?'today':(reportModalPeriod==='week'?'this week':'last week');
+    body.innerHTML=`<div class="report-empty">No activity recorded for ${esc(label)} yet.</div>`;
+    return;
+  }
+  const statsHtml=`<div class="report-stats-row">
+    <div class="report-stat"><span class="report-stat-num">${r.stats.tasksCompleted}</span><span class="report-stat-label">Tasks done</span></div>
+    <div class="report-stat"><span class="report-stat-num">${r.stats.itemsCreated}</span><span class="report-stat-label">Created</span></div>
+    <div class="report-stat"><span class="report-stat-num">${r.stats.itemsEdited}</span><span class="report-stat-label">Edited</span></div>
+    <div class="report-stat"><span class="report-stat-num">${r.stats.docsTouched}</span><span class="report-stat-label">Docs touched</span></div>
+  </div>`;
+  const tasksHtml=reportRenderSection('Tasks completed',r.tasksCompleted,it=>
+    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">✓ ${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
+  const createdHtml=reportRenderSection('Created',r.itemsCreated,it=>
+    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
+  const editedHtml=reportRenderSection('Edited',r.itemsEdited,it=>
+    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${esc(reportPreviewText(it.text,60))}</span><span class="report-item-doc">${esc(it.doc)}</span></div>`);
+  const meetingsHtml=reportRenderSection('Meeting notes',r.meetingItems,it=>
+    `<div class="report-item"><span class="report-item-time">${reportTimeLabel(it.ts)}</span><span class="report-item-text">${it.action==='created'?'New: ':'Updated: '}${esc(reportPreviewText(it.text,60))}</span></div>`);
+  const journalHtml=reportRenderSection('Journal',r.journalItems,it=>
+    `<div class="report-item"><span class="report-item-time">${esc(it.date||'')}</span><span class="report-item-text">${esc(reportPreviewText(it.text,60))}</span>${it.mood?`<span class="report-item-doc">${esc(JOURNAL_MOOD_LABEL[it.mood]||it.mood)}</span>`:''}</div>`);
+  body.innerHTML=statsHtml+tasksHtml+createdHtml+editedHtml+meetingsHtml+journalHtml;
+}
+function openActivityReport(){
+  const overlay=el('report-modal-overlay'); if(!overlay)return;
+  renderActivityReport();
+  overlay.classList.add('open');
+}
+function closeActivityReport(){ el('report-modal-overlay')?.classList.remove('open'); }
+document.getElementById('report-toggle')?.addEventListener('click',openActivityReport);
+document.getElementById('report-modal-close-x')?.addEventListener('click',closeActivityReport);
+document.querySelectorAll('.report-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{ reportModalPeriod=btn.dataset.period; renderActivityReport(); });
+});
+if(typeof onOverlayBackdropClick==='function')onOverlayBackdropClick(el('report-modal-overlay'),closeActivityReport);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('report-modal-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeActivityReport(); }
+});
+window.openActivityReport=openActivityReport;
 </script>
 </body></html>
