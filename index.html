@@ -3242,9 +3242,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .dock-tab.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .dock-tab svg{flex-shrink:0}
 .dock-tab span{white-space:nowrap}
-#dock-tabstrip-maximize,#dock-tabstrip-close,#dock-tabstrip-popout{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
-#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover,#dock-tabstrip-popout:hover{color:var(--fg);background:var(--hover)}
-#dock-tabstrip-popout[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+#dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
+#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover{color:var(--fg);background:var(--hover)}
 /* Each panel keeps its own action-button row (extract/import/export/history etc.) — only
    the title (now shown as the active tab instead) and the maximize/close (now shared,
    in the tab strip) are redundant once the tab strip is present. */
@@ -3252,7 +3251,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-panel-header .panel-title-icon,#meetings-panel-title,#meetings-panel-maximize,#meetings-panel-close,
 #journal-panel-header .panel-title-icon,#journal-panel-title,#journal-panel-maximize,#journal-panel-close,
 #report-panel-header .panel-title-icon,#report-panel-title,#report-panel-maximize,#report-panel-close
-{display:none}
+{display:none!important}
 #todos-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #todos-panel.anchored #todos-panel-header{cursor:default}
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -3696,23 +3695,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 /* ── Journal panel — same floating-panel shape as Meeting Notes, own fixed default position
    (no drag/resize/dock-anchoring in this v1 — kept simple since it's a single always-in-one-
    place panel, not one that needs to sit near a toolbar button). ── */
-#journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
+#journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;font-family:'Inter',sans-serif;overflow:hidden}
 #journal-panel.open{display:flex}
-/* Docked (default) — pinned flush to the right edge, full height below the app bar,
-   rounded only on the left and shadowed only on the left edge, since there's no screen
-   edge on the other three sides to round/shadow against. Inspired by Outlook's Calendar/
-   To Do panel: one launcher in the app bar, panel docks to the side rather than floating
-   over the middle of the document. .popped-out reverts to the original floating-window
-   look (rounded/shadowed on every side, roughly top-right of the screen, freely
-   draggable/resizable via the same machinery as before) for anyone who'd rather not have
-   it pinned to the edge. This block has to come after all four panels' own base rules
-   above (not just have higher specificity) to reliably win the cascade — same ID-selector
-   specificity either way, so whichever comes later in the file wins. */
-#report-panel,#todos-panel,#meetings-panel,#journal-panel{top:48px;right:0;bottom:0;max-height:none;border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
-#report-panel.popped-out,#todos-panel.popped-out,#meetings-panel.popped-out,#journal-panel.popped-out{top:64px;right:16px;bottom:auto;border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);border-right:1px solid var(--border)}
-#report-panel.popped-out{max-height:min(72vh,640px)}
-#todos-panel.popped-out{max-height:min(74vh,640px)}
-#meetings-panel.popped-out,#journal-panel.popped-out{max-height:min(78vh,680px)}
+/* Docked to the right edge, full height below the app bar, rounded only on the left and
+   shadowed only on the left edge (no screen edge to round/shadow against on the other
+   three sides). Inspired by Outlook's Calendar/To Do panel: one launcher in the app bar,
+   panel docks to the side rather than floating over the middle of the document.
+   One fixed width shared by all four (rather than each panel keeping its own) so
+   switching tabs doesn't visibly resize the panel — that read as each tab "adjusting
+   itself" instead of one steady panel. This block has to come after all four panels' own
+   base rules above (not just have higher specificity) to reliably win the cascade — same
+   ID-selector specificity either way, so whichever comes later in the file wins. */
+#report-panel,#todos-panel,#meetings-panel,#journal-panel{top:48px;right:0;bottom:0;max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
 #journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #journal-panel.dragging{user-select:none}
 #journal-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -3995,7 +3989,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         </div>
       </div>
       <div id="appbar-qa-slot"></div>
-      <button class="btn icon-btn" id="dock-panel-appbar-toggle" data-tip="Journal, Meetings, To-Dos &amp; Recap" aria-label="Open workspace panel"><svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
+      <button class="btn icon-btn" id="dock-panel-appbar-toggle" data-tip="Journal, Meetings, To-Dos &amp; Recap" aria-label="Open workspace panel"><svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16" stroke-width="2"/><path d="M15 8h4M15 12h4M15 16h4" stroke-width="1.6"/></svg></button>
       <div class="settings-wrap">
         <button class="btn" id="settings-toggle" data-tip="Settings">Settings</button>
         <div class="settings-panel" id="settings-panel">
@@ -5947,7 +5941,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <button type="button" class="dock-tab" id="dock-tab-todos" data-tab="todos" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button>
   <button type="button" class="dock-tab" id="dock-tab-report" data-tab="report" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Recap</span></button>
   <span id="dock-tabstrip-spacer"></span>
-  <button type="button" id="dock-tabstrip-popout" data-tip="Pop out into a floating window" aria-label="Pop out into a floating window" aria-pressed="false"><svg id="dock-tabstrip-popout-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
   <button type="button" id="dock-tabstrip-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="dock-tabstrip-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
   <button type="button" id="dock-tabstrip-close" data-tip="Close (Esc)" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
 </div>
@@ -33444,7 +33437,7 @@ function _addTagPopoverFromInput(){
 (function(){
   const TODOS_KEY='sakura_todos_v1';
   const TODOS_POS_KEY='sakura_todos_pos_v1';
-  const TODOS_WIDTH_KEY='sakura_todos_width_v1';
+  const TODOS_WIDTH_KEY='sakura_dock_panel_width_v1';
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
   let todosSelectedIds=new Set(); // bulk-select mode, open tasks only — scoped to this module, not persisted
@@ -33455,8 +33448,8 @@ function _addTagPopoverFromInput(){
   // both. Whichever is set is what todo-link/todo-link-open render and act on.
   const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
-  const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=720;
-  let todosWidth=380; // default matches the CSS fallback (min(380px, calc(100vw - 32px)))
+  const TODOS_WIDTH_MIN=320, TODOS_WIDTH_MAX=720;
+  let todosWidth=440; // default matches the shared dock-panel width all four tabs now share
   let completedOpen=null; // lazily initialized from settings.completedCollapsedByDefault on first render; then a per-session toggle
   const TODO_ELEMENT_KEYS=['priority','due','repeat','subtask','status','link'];
   let settings={ expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[], aiExtractEnabled:true, aiSubtaskEnabled:true, aiSummaryEnabled:true, aiSummaryHighlight:true };
@@ -35842,6 +35835,7 @@ function _addTagPopoverFromInput(){
   function applyTodosWidth(){
     const panel=document.getElementById('todos-panel');
     if(!panel||panel.classList.contains('maximized')) return;
+    try{ const raw=localStorage.getItem(TODOS_WIDTH_KEY); if(raw){ const n=parseInt(raw,10); if(Number.isFinite(n))todosWidth=n; } }catch(e){}
     const clamped=Math.max(TODOS_WIDTH_MIN, Math.min(TODOS_WIDTH_MAX, Math.min(todosWidth, window.innerWidth-24)));
     panel.style.width=clamped+'px';
   }
@@ -38429,14 +38423,14 @@ document.addEventListener('mousedown',e=>{
 // code) since To-Dos' versions live inside that module's own closure.
 const MEETINGS_SETTINGS_KEY='sakura_meetings_settings_v1';
 const MEETINGS_POS_KEY='sakura_meetings_pos_v1';
-const MEETINGS_WIDTH_KEY='sakura_meetings_width_v1';
-const MEETINGS_WIDTH_MIN=320, MEETINGS_WIDTH_MAX=760;
+const MEETINGS_WIDTH_KEY='sakura_dock_panel_width_v1';
+const MEETINGS_WIDTH_MIN=320, MEETINGS_WIDTH_MAX=720;
 let meetingsFeatureEnabled=true;
 let meetingsExpiryDays=0;
 let meetingsCapMax=0;
 let meetingsPastCollapsedByDefault=false;
 let meetingPastOpen=null; // lazily initialized from meetingsPastCollapsedByDefault on first render; then a per-session toggle
-let meetingsWidth=420; // default matches the CSS fallback (min(420px, calc(100vw - 32px)))
+let meetingsWidth=440; // default matches the shared dock-panel width all four tabs now share
 window.sakuraMeetingsFeatureEnabled=function(){ return meetingsFeatureEnabled; };
 function loadMeetingsSettings(){
   try{
@@ -38520,6 +38514,7 @@ function saveMeetingsWidth(w){
 function applyMeetingsWidth(){
   const panel=el('meetings-panel');
   if(!panel||panel.classList.contains('maximized'))return;
+  try{ const raw=localStorage.getItem(MEETINGS_WIDTH_KEY); if(raw){ const n=parseInt(raw,10); if(Number.isFinite(n))meetingsWidth=n; } }catch(e){}
   const clamped=Math.max(MEETINGS_WIDTH_MIN, Math.min(MEETINGS_WIDTH_MAX, Math.min(meetingsWidth, window.innerWidth-24)));
   panel.style.width=clamped+'px';
 }
@@ -38882,7 +38877,7 @@ function openJournalPanel(){
   journalPanelOpen=true;
   el('journal-panel')?.classList.add('open');
   document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.add('is-active'));
-  window.sakuraApplyPanelWidth('journal-panel','sakura_journal_width_v1',320,720,420);
+  window.sakuraApplyPanelWidth('journal-panel','sakura_dock_panel_width_v1',320,720,440);
   renderJournalList();
   showJournalCardView(!!journalExpandedDate);
   anchorJournalToDockChip();
@@ -38904,10 +38899,10 @@ function toggleJournalMaximize(){
   const goingMax=!panel.classList.contains('maximized');
   panel.classList.toggle('maximized',goingMax);
   el('journal-panel-maximize')?.setAttribute('aria-pressed',String(goingMax));
-  if(!goingMax){ window.sakuraApplyPanelWidth('journal-panel','sakura_journal_width_v1',320,720,420); anchorJournalToDockChip(); }
+  if(!goingMax){ window.sakuraApplyPanelWidth('journal-panel','sakura_dock_panel_width_v1',320,720,440); anchorJournalToDockChip(); }
 }
 window.toggleJournalPanel=toggleJournalPanel;
-window.sakuraInitPanelDragResize({panelId:'journal-panel',headerId:'journal-panel-header',handleId:'journal-resize-handle',closeId:'journal-panel-close',maximizeId:'journal-panel-maximize',widthKey:'sakura_journal_width_v1',widthMin:320,widthMax:720});
+window.sakuraInitPanelDragResize({panelId:'journal-panel',headerId:'journal-panel-header',handleId:'journal-resize-handle',closeId:'journal-panel-close',maximizeId:'journal-panel-maximize',widthKey:'sakura_dock_panel_width_v1',widthMin:320,widthMax:720});
 
 // ── List rendering ──
 function formatJournalDateLabel(dateStr){
@@ -41443,7 +41438,7 @@ function anchorReportToDockChip(){
 }
 function openActivityReport(){
   const panel=el('report-panel'); if(!panel)return;
-  window.sakuraApplyPanelWidth('report-panel','sakura_report_width_v1',360,760,480);
+  window.sakuraApplyPanelWidth('report-panel','sakura_dock_panel_width_v1',320,720,440);
   renderActivityReport();
   panel.classList.add('open');
   document.querySelectorAll('#report-toggle').forEach(b=>b.classList.add('is-active'));
@@ -41472,12 +41467,12 @@ function toggleReportMaximize(){
       ?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>'
       :'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   }
-  if(!goingMax){ window.sakuraApplyPanelWidth('report-panel','sakura_report_width_v1',360,760,480); anchorReportToDockChip(); }
+  if(!goingMax){ window.sakuraApplyPanelWidth('report-panel','sakura_dock_panel_width_v1',320,720,440); anchorReportToDockChip(); }
 }
 document.getElementById('report-toggle')?.addEventListener('click',()=>toggleDockTab('report'));
 document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
 document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
-window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_report_width_v1',widthMin:360,widthMax:760});
+window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_dock_panel_width_v1',widthMin:320,widthMax:720});
 // Same outside-mousedown / Escape close pattern as Journal/Meetings/To-Dos, replacing the
 // old backdrop-click-to-close now that this is an anchored panel rather than a centered
 // modal with its own full-screen backdrop element.
@@ -41525,10 +41520,6 @@ let dockActiveTab=null;
 // persisted so it's remembered across a reload, not just within the session.
 let dockLastTab='journal';
 try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved])dockLastTab=saved; }catch(e){}
-// Docked (pinned to the right edge, full height) vs popped-out (free-floating, draggable/
-// resizable window) — one shared preference across all four tabs, persisted the same way.
-let dockPoppedOut=false;
-try{ dockPoppedOut=localStorage.getItem('sakura_dock_popped_out')==='true'; }catch(e){}
 function dockPanelIsOpen(tab){
   const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
   return !!(panel&&panel.classList.contains('open'));
@@ -41555,16 +41546,6 @@ function dockMoveTabstripInto(tab){
   panel.insertBefore(strip,panel.firstChild);
   strip.classList.add('active');
   document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  // Popped-out/docked is one shared preference across all four tabs (not per-tab) — a
-  // fresh tab should open in whichever mode you left the panel in, not always reset to
-  // docked, since switching tabs should feel like changing what's showing, not like
-  // closing one window and opening a different kind of window.
-  panel.classList.toggle('popped-out', dockPoppedOut);
-  const popoutBtn=document.getElementById('dock-tabstrip-popout');
-  if(popoutBtn){
-    popoutBtn.setAttribute('aria-pressed',String(dockPoppedOut));
-    popoutBtn.dataset.tip=dockPoppedOut?'Dock to the side':'Pop out into a floating window';
-  }
   const maxBtn=document.getElementById('dock-tabstrip-maximize');
   const dstIcon=document.getElementById('dock-tabstrip-max-icon');
   const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[tab]);
@@ -41629,19 +41610,6 @@ document.getElementById('dock-tabstrip-close')?.addEventListener('click',()=>{
 document.getElementById('dock-panel-appbar-toggle')?.addEventListener('click',(e)=>{
   toggleDockTab(dockActiveTab||dockLastTab);
   e.currentTarget.blur();
-});
-document.getElementById('dock-tabstrip-popout')?.addEventListener('click',()=>{
-  dockPoppedOut=!dockPoppedOut;
-  try{ localStorage.setItem('sakura_dock_popped_out', dockPoppedOut?'true':'false'); }catch(e){}
-  if(dockActiveTab){
-    const panel=document.getElementById(DOCK_TAB_PANEL_ID[dockActiveTab]);
-    panel?.classList.toggle('popped-out',dockPoppedOut);
-    const popoutBtn=document.getElementById('dock-tabstrip-popout');
-    if(popoutBtn){
-      popoutBtn.setAttribute('aria-pressed',String(dockPoppedOut));
-      popoutBtn.dataset.tip=dockPoppedOut?'Dock to the side':'Pop out into a floating window';
-    }
-  }
 });
 
 
