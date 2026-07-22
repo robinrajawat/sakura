@@ -3086,7 +3086,7 @@ body.printing-generic #gpe-overlay{
 </style>
 <style>
 /* === Todos panel === */
-#todos-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(380px,calc(100vw - 32px));max-height:min(74vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#todos-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(380px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
 
 /* Diagrams — now a Pad tab (alongside Notepad/Q&A/Decision Log) rather than its own floating
    panel: it's document-level content, same category as those three, so it belongs in the same
@@ -3242,8 +3242,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .dock-tab.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .dock-tab svg{flex-shrink:0}
 .dock-tab span{white-space:nowrap}
-#dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
-#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover{color:var(--fg);background:var(--hover)}
+#dock-tabstrip-maximize,#dock-tabstrip-close,#dock-tabstrip-popout{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
+#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover,#dock-tabstrip-popout:hover{color:var(--fg);background:var(--hover)}
+#dock-tabstrip-popout[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 /* Each panel keeps its own action-button row (extract/import/export/history etc.) — only
    the title (now shown as the active tab instead) and the maximize/close (now shared,
    in the tab strip) are redundant once the tab strip is present. */
@@ -3529,7 +3530,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #todos-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ===== Meeting Notes panel ===== */
-#meetings-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(78vh,680px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#meetings-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
 #meetings-panel.open{display:flex}
 #meetings-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #meetings-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
@@ -3695,8 +3696,23 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 /* ── Journal panel — same floating-panel shape as Meeting Notes, own fixed default position
    (no drag/resize/dock-anchoring in this v1 — kept simple since it's a single always-in-one-
    place panel, not one that needs to sit near a toolbar button). ── */
-#journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(78vh,680px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
+#journal-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
 #journal-panel.open{display:flex}
+/* Docked (default) — pinned flush to the right edge, full height below the app bar,
+   rounded only on the left and shadowed only on the left edge, since there's no screen
+   edge on the other three sides to round/shadow against. Inspired by Outlook's Calendar/
+   To Do panel: one launcher in the app bar, panel docks to the side rather than floating
+   over the middle of the document. .popped-out reverts to the original floating-window
+   look (rounded/shadowed on every side, roughly top-right of the screen, freely
+   draggable/resizable via the same machinery as before) for anyone who'd rather not have
+   it pinned to the edge. This block has to come after all four panels' own base rules
+   above (not just have higher specificity) to reliably win the cascade — same ID-selector
+   specificity either way, so whichever comes later in the file wins. */
+#report-panel,#todos-panel,#meetings-panel,#journal-panel{top:48px;right:0;bottom:0;max-height:none;border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
+#report-panel.popped-out,#todos-panel.popped-out,#meetings-panel.popped-out,#journal-panel.popped-out{top:64px;right:16px;bottom:auto;border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);border-right:1px solid var(--border)}
+#report-panel.popped-out{max-height:min(72vh,640px)}
+#todos-panel.popped-out{max-height:min(74vh,640px)}
+#meetings-panel.popped-out,#journal-panel.popped-out{max-height:min(78vh,680px)}
 #journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #journal-panel.dragging{user-select:none}
 #journal-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -3765,7 +3781,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    *width* down to nothing rather than hiding it outright, so the rail visibly narrows
    toward the handle at the edge (a horizontal collapse) instead of just vanishing
    vertically while still holding its full width. */
-#status-util-group{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:row;align-items:stretch;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14);transition:right .18s cubic-bezier(.22,.8,.34,1),padding .18s cubic-bezier(.22,.8,.34,1),background .15s ease,border-color .15s ease,box-shadow .15s ease,opacity .15s ease}
+/* Replaced by the single #dock-panel-appbar-toggle button in the app bar (Outlook-style:
+   one launcher, panel docks to the side) — the whole rationale for this floating rail
+   (where to put 4 separate buttons, how to collapse it, whether it overlaps content) goes
+   away once there's only one button and it lives in a toolbar that's already always
+   there. Force-hidden rather than removed: badge/is-active tracking on the individual
+   chips underneath still runs (harmlessly, on invisible elements) so nothing else needs
+   to change. */
+#status-util-group{display:none!important}
+#dock-panel-appbar-toggle{position:relative}
+#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-3px;right:-3px;margin-left:0;min-width:14px;height:14px;font-size:8.5px;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box}
 #status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px;width:34px;opacity:1;overflow:hidden;transition:width .18s cubic-bezier(.22,.8,.34,1),opacity .14s ease}
 /* Collapsed: shrink the buttons column's width to 0 (clipped by the overflow:hidden
    above) rather than display:none-ing it — a widthless, still-flexbox-participating
@@ -3970,6 +3995,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         </div>
       </div>
       <div id="appbar-qa-slot"></div>
+      <button class="btn icon-btn" id="dock-panel-appbar-toggle" data-tip="Journal, Meetings, To-Dos &amp; Recap" aria-label="Open workspace panel"><svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
       <div class="settings-wrap">
         <button class="btn" id="settings-toggle" data-tip="Settings">Settings</button>
         <div class="settings-panel" id="settings-panel">
@@ -5921,6 +5947,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <button type="button" class="dock-tab" id="dock-tab-todos" data-tab="todos" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button>
   <button type="button" class="dock-tab" id="dock-tab-report" data-tab="report" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Recap</span></button>
   <span id="dock-tabstrip-spacer"></span>
+  <button type="button" id="dock-tabstrip-popout" data-tip="Pop out into a floating window" aria-label="Pop out into a floating window" aria-pressed="false"><svg id="dock-tabstrip-popout-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
   <button type="button" id="dock-tabstrip-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="dock-tabstrip-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
   <button type="button" id="dock-tabstrip-close" data-tip="Close (Esc)" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
 </div>
@@ -34128,7 +34155,7 @@ function _addTagPopoverFromInput(){
   // so the person doesn't need to open the panel just to find out something's overdue.
   function updateOverdueBadge(){
     const count=settings.showOverdueBadge ? todos.filter(t=>!t.done&&isOverdue(t.dueDate,t.done)).length : 0;
-    document.querySelectorAll('#todos-toggle, #dock-tab-todos').forEach(btn=>{
+    document.querySelectorAll('#todos-toggle, #dock-tab-todos, #dock-panel-appbar-toggle').forEach(btn=>{
       let badge=btn.querySelector('.todo-overdue-badge');
       if(count>0){
         if(!badge){ badge=document.createElement('span'); badge.className='todo-overdue-badge'; btn.appendChild(badge); }
@@ -36459,11 +36486,12 @@ function _addTagPopoverFromInput(){
   document.addEventListener('mousedown',e=>{
     const panel=document.getElementById('todos-panel');
     const appbarBtn=document.getElementById('todos-toggle');
+    const dockAppbarBtn=document.getElementById('dock-panel-appbar-toggle');
     const duePop=document.getElementById('todo-due-popover');
     const linkPop=document.getElementById('todo-link-popover');
     const summaryModal=document.getElementById('todos-summary-modal-overlay');
     const qaSuggest=document.getElementById('node-qa-suggest');
-    const insideToggle=(appbarBtn&&appbarBtn.contains(e.target));
+    const insideToggle=(appbarBtn&&appbarBtn.contains(e.target))||(dockAppbarBtn&&dockAppbarBtn.contains(e.target));
     const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target))||(qaSuggest&&qaSuggest.contains(e.target)); // qaSuggest: Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #todos-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing
     if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle&&!insidePopover){
       closeTodosPanel();
@@ -38389,7 +38417,7 @@ document.addEventListener('mousedown',e=>{
   if(e.target.closest('#selection-fmt-popover'))return; // same reason again — the selection formatting popover is also a sibling of #meetings-panel (needed for position:fixed placement above an arbitrary selection), not a descendant
   if(e.target.closest('#node-qa-suggest'))return; // Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #meetings-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing instead of just inserting the character
   if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeMeetingsPanel();
   }
@@ -39194,7 +39222,7 @@ document.addEventListener('mousedown',e=>{
   if(e.target.closest('#selection-fmt-popover'))return;
   if(e.target.closest('#node-qa-suggest'))return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeJournalPanel();
   }
@@ -41458,7 +41486,7 @@ document.addEventListener('mousedown',e=>{
   const toggleBtn=el('report-toggle');
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
   if(el('report-summary-modal-overlay')?.classList.contains('open'))return;
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target));
+  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeActivityReport();
   }
@@ -41493,6 +41521,14 @@ const DOCK_TAB_TOGGLE={
   report: ()=>toggleActivityReport(),
 };
 let dockActiveTab=null;
+// Which tab reopens when the app-bar launcher is clicked with nothing currently open —
+// persisted so it's remembered across a reload, not just within the session.
+let dockLastTab='journal';
+try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved])dockLastTab=saved; }catch(e){}
+// Docked (pinned to the right edge, full height) vs popped-out (free-floating, draggable/
+// resizable window) — one shared preference across all four tabs, persisted the same way.
+let dockPoppedOut=false;
+try{ dockPoppedOut=localStorage.getItem('sakura_dock_popped_out')==='true'; }catch(e){}
 function dockPanelIsOpen(tab){
   const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
   return !!(panel&&panel.classList.contains('open'));
@@ -41519,6 +41555,16 @@ function dockMoveTabstripInto(tab){
   panel.insertBefore(strip,panel.firstChild);
   strip.classList.add('active');
   document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  // Popped-out/docked is one shared preference across all four tabs (not per-tab) — a
+  // fresh tab should open in whichever mode you left the panel in, not always reset to
+  // docked, since switching tabs should feel like changing what's showing, not like
+  // closing one window and opening a different kind of window.
+  panel.classList.toggle('popped-out', dockPoppedOut);
+  const popoutBtn=document.getElementById('dock-tabstrip-popout');
+  if(popoutBtn){
+    popoutBtn.setAttribute('aria-pressed',String(dockPoppedOut));
+    popoutBtn.dataset.tip=dockPoppedOut?'Dock to the side':'Pop out into a floating window';
+  }
   const maxBtn=document.getElementById('dock-tabstrip-maximize');
   const dstIcon=document.getElementById('dock-tabstrip-max-icon');
   const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[tab]);
@@ -41535,6 +41581,8 @@ function openDockTab(tab){
     DOCK_TAB_TOGGLE[dockActiveTab]();
   }
   dockActiveTab=tab;
+  dockLastTab=tab;
+  try{ localStorage.setItem('sakura_dock_last_tab',tab); }catch(e){}
   if(!dockPanelIsOpen(tab))DOCK_TAB_TOGGLE[tab]();
   dockMoveTabstripInto(tab);
   document.getElementById('status-util-group')?.classList.add('panel-open');
@@ -41573,6 +41621,27 @@ document.getElementById('dock-tabstrip-maximize')?.addEventListener('click',()=>
 });
 document.getElementById('dock-tabstrip-close')?.addEventListener('click',()=>{
   if(dockActiveTab)toggleDockTab(dockActiveTab);
+});
+// App bar launcher — single button, replacing the floating rail as the primary way to
+// open this panel. Toggles like any other chip: opens dockActiveTab (falling back to
+// whichever tab was open last, remembered across reloads) if nothing's open, closes it
+// if that same tab is already showing.
+document.getElementById('dock-panel-appbar-toggle')?.addEventListener('click',(e)=>{
+  toggleDockTab(dockActiveTab||dockLastTab);
+  e.currentTarget.blur();
+});
+document.getElementById('dock-tabstrip-popout')?.addEventListener('click',()=>{
+  dockPoppedOut=!dockPoppedOut;
+  try{ localStorage.setItem('sakura_dock_popped_out', dockPoppedOut?'true':'false'); }catch(e){}
+  if(dockActiveTab){
+    const panel=document.getElementById(DOCK_TAB_PANEL_ID[dockActiveTab]);
+    panel?.classList.toggle('popped-out',dockPoppedOut);
+    const popoutBtn=document.getElementById('dock-tabstrip-popout');
+    if(popoutBtn){
+      popoutBtn.setAttribute('aria-pressed',String(dockPoppedOut));
+      popoutBtn.dataset.tip=dockPoppedOut?'Dock to the side':'Pop out into a floating window';
+    }
+  }
 });
 
 
