@@ -3744,17 +3744,22 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    *width* down to nothing rather than hiding it outright, so the rail visibly narrows
    toward the handle at the edge (a horizontal collapse) instead of just vanishing
    vertically while still holding its full width. */
-#status-util-group{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:row;align-items:stretch;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+#status-util-group{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:row;align-items:stretch;gap:2px;padding:5px;border-radius:12px;background:var(--tb-bg);border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14);transition:right .18s cubic-bezier(.22,.8,.34,1),padding .18s cubic-bezier(.22,.8,.34,1),background .15s ease,border-color .15s ease,box-shadow .15s ease,opacity .15s ease}
 #status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px;width:34px;opacity:1;overflow:hidden;transition:width .18s cubic-bezier(.22,.8,.34,1),opacity .14s ease}
 /* Collapsed: shrink the buttons column's width to 0 (clipped by the overflow:hidden
    above) rather than display:none-ing it — a widthless, still-flexbox-participating
    element transitions smoothly, where display:none can only jump. Also pull the whole
-   rail in flush against the edge, since with the buttons gone there's no reason to still
-   hold the full expanded inset — minimizes what it covers of the Pad panel or anything
-   else docked along that edge underneath it. */
+   rail in flush against the edge and drop the padding/gap down to just what the handle
+   itself needs — there's no reason to still hold the full expanded inset once the
+   buttons are gone, and the previous version still looked like a thick pill rather than
+   a slim edge tab. Translucent and borderless at rest so it reads as a quiet edge tab
+   rather than a solid floating chip; hovering brings back full contrast so it's still
+   easy to find and read. */
 #status-util-group.collapsed .dock-rail-buttons{width:0;opacity:0}
-#status-util-group.collapsed{right:2px;padding:5px 2px}
-#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px;flex-shrink:0}
+#status-util-group.collapsed{right:1px;padding:2px 1px;gap:0;background:color-mix(in srgb,var(--tb-bg) 45%,transparent);border-color:transparent;box-shadow:none;opacity:.6}
+#status-util-group.collapsed:hover{opacity:1;background:var(--tb-bg);border-color:color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px;flex-shrink:0;transition:width .18s cubic-bezier(.22,.8,.34,1)}
+#status-util-group.collapsed .dock-rail-handle{width:12px}
 #status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 /* Base chevron SVG points down; rotated to point right (the direction the buttons
    column shrinks toward) when expanded, and left (back toward where they'll reappear)
@@ -3776,7 +3781,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
      column, since a vertical stack eats too much of a short viewport's height. The
      collapse itself still works the same way (the buttons column's width shrinks to 0). */
   #status-util-group{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%)}
-  #status-util-group.collapsed{right:auto;padding:5px 2px}
+  #status-util-group.collapsed{right:auto;padding:1px 2px}
   #status-util-group .dock-rail-buttons{flex-direction:row;width:auto;height:34px}
   #status-util-group.collapsed .dock-rail-buttons{width:0}
 }
