@@ -92,7 +92,8 @@ Sakura v1.0.0 — see LICENSE for terms.
 <meta name="twitter:description" content="Outliner, meeting notes, decision log, diagrams, and AI writing tools — presents live, no PowerPoint needed. No install, no account, no backend." />
 <meta name="twitter:image" content="https://robinrajawat.github.io/sakura/social-card.png" />
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f8f8f6">
+<meta name="theme-color" content="#f8f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#252523" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="icon-192-dark.png" media="(prefers-color-scheme: dark)">
@@ -148,6 +149,21 @@ Sakura v1.0.0 — see LICENSE for terms.
     var AB_ITEM_EL_ID = {help:'help-toggle',print:'print-btn',import:'import-toggle',export:'export-toggle'};
 
     var cls = [];
+    // Same flash problem as everything else in this block, but for the theme itself:
+    // setTheme() only runs partway through the main script's init sequence, well after
+    // body is parsed and painted once already. That's a visible flash of the default
+    // light background on every load for anyone in dark mode — more jarring in a
+    // standalone PWA window than a regular tab, since there's no browser chrome around
+    // it to soften the moment. Mirrors setTheme()'s own resolution logic (manual value,
+    // or system preference when themeMode is 'system') using only synchronous APIs
+    // available this early.
+    var resolvedTheme = 'light';
+    if (d && d.themeMode === 'system' && window.matchMedia) {
+      resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else if (d && d.theme === 'dark') {
+      resolvedTheme = 'dark';
+    }
+    if (resolvedTheme === 'dark') cls.push('presetup-theme-dark');
     if (!sidebarOpen) cls.push('presetup-sidebar-hidden');
     if (!statusbarVisible) cls.push('presetup-statusbar-hidden');
     if (!toolbarVisible) cls.push('presetup-toolbar-hidden');
@@ -216,6 +232,7 @@ Sakura v1.0.0 — see LICENSE for terms.
 })();
 </script>
 <style>
+html.presetup-theme-dark{color-scheme:dark;--bg:#1e1e1c;--tb-bg:#252523;--border:#353430;--fg:#e8e5dc;--node-fg:#e8e5dc;--muted:#a3a099;--hint:#82807b;--accent:#d97757;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#2c2b28;--sel:#333129;--sel-fg:#f0eee5;--edit-bg:#23231f;--canvas-bg:#23231f;--scroll:#3e3c38;--vert:#666666;--conn:#666666;--chip:#2c2b28;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
 .presetup-sidebar-hidden #sidebar{width:0;flex-basis:0;opacity:0;pointer-events:none}
 .presetup-sidebar-hidden #sidebar-resize-handle{display:none}
 .presetup-qa-appbar-pending #global-search-wrap{display:none}
@@ -3899,8 +3916,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         document.body.classList.remove('theme-light');
         document.body.classList.add('theme-dark');
       } else {
-        var metaEl=document.querySelector('meta[name="theme-color"]');
-        if(metaEl) metaEl.setAttribute('content','#f8f8f6');
+        document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){ m.setAttribute('content','#f8f8f6'); });
       }
 
       var ACCENT_PRESETS_PP={terracotta:{light:'#c2553d',dark:'#d97757'},teal:{light:'#2e8479',dark:'#3caa9b'},indigo:{light:'#5173c2',dark:'#8199d3'},violet:{light:'#8c4ec2',dark:'#a774d4'},plum:{light:'#c04c86',dark:'#d381aa'},moss:{light:'#4b842e',dark:'#61ac3c'},amber:{light:'#917233',dark:'#bd9442'}};
@@ -13881,7 +13897,7 @@ const CHROME_PRESETS={
   ink:{light:{'--bg':'#1e2023','--tb-bg':'#24272a','--edit-bg':'#ffffff','--border':'#34383c','--hover':'#2a2e32','--sel':'#31363a','--sel-fg':'#f2f2f0','--chip':'#2a2e32','--fg':'#f2f2f0','--muted':'#a8abaf','--hint':'#9a9da1'},dark:{'--bg':'#141517','--tb-bg':'#1b1d20','--edit-bg':'#1c1d1f','--border':'#2b2d30','--hover':'#202225','--sel':'#25282b','--sel-fg':'#f2f2f0','--chip':'#202225','--fg':'#f0f0ee','--muted':'#9fa2a6','--hint':'#94979b'}},
   rose:{light:{'--bg':'#f8eef1','--tb-bg':'#f8eef1','--edit-bg':'#fffbfc','--border':'#ecd9de','--hover':'#f1e2e6','--sel':'#ecdadf','--sel-fg':'#35232a','--chip':'#f1e2e6','--fg':'#35232a','--muted':'#8a6b73','--hint':'#8d7079'},dark:{'--bg':'#211a1d','--tb-bg':'#291f23','--edit-bg':'#241c20','--border':'#3f2e34','--hover':'#2c2226','--sel':'#332229','--sel-fg':'#f5e9ec','--chip':'#2c2226','--fg':'#f0e4e7','--muted':'#b89aa1','--hint':'#ab8e95'}}
 };
-function applyChromeColors(){if(chromePreset==='default'||!CHROME_PRESETS[chromePreset]){CHROME_TOKENS.forEach(k=>document.body.style.removeProperty(k));}else{const t=CHROME_PRESETS[chromePreset][currentTheme==='dark'?'dark':'light']; CHROME_TOKENS.forEach(k=>{if(t[k])document.body.style.setProperty(k,t[k])});} const themeColorMeta=document.querySelector('meta[name="theme-color"]'); if(themeColorMeta){const tbBg=getComputedStyle(document.body).getPropertyValue('--tb-bg').trim(); if(tbBg)themeColorMeta.setAttribute('content',tbBg);}}
+function applyChromeColors(){if(chromePreset==='default'||!CHROME_PRESETS[chromePreset]){CHROME_TOKENS.forEach(k=>document.body.style.removeProperty(k));}else{const t=CHROME_PRESETS[chromePreset][currentTheme==='dark'?'dark':'light']; CHROME_TOKENS.forEach(k=>{if(t[k])document.body.style.setProperty(k,t[k])});} const tbBg=getComputedStyle(document.body).getPropertyValue('--tb-bg').trim(); if(tbBg)document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute('content',tbBg));}
 function setChromePreset(id,persist=true){chromePreset=CHROME_PRESETS[id]?id:'default'; document.querySelectorAll('#chrome-swatch-row .accent-swatch').forEach(sw=>{const active=sw.dataset.chrome===chromePreset; sw.classList.toggle('active',active); sw.setAttribute('aria-checked',String(active))}); applyChromeColors(); if(persist){savePrefs(); scheduleAutoSave()}}
 const ACCENT_BLEND_BASE={light:{text:{terracotta:44.0,teal:50.5,indigo:49.0,violet:51.0,plum:53.0,moss:45.5,amber:58.5},border:{terracotta:30.0,teal:28.0,indigo:34.5,violet:35.5,plum:36.5,moss:25.5,amber:29.5},hint:{terracotta:24.5,teal:24.0,indigo:29.5,violet:31.3,plum:33.0,moss:21.0,amber:25.5}},dark:{text:{terracotta:45.0,teal:40.5,indigo:63.0,violet:66.5,plum:70.0,moss:36.5,amber:46.0},border:{terracotta:30.0,teal:34.0,indigo:26.5,violet:26.0,plum:25.5,moss:43.0,amber:32.5},hint:{terracotta:25.0,teal:28.5,indigo:22.5,violet:22.0,plum:21.5,moss:35.0,amber:28.5}}};
 // Node text color presets — deliberately a separate variable (--node-fg) from --accent above and
