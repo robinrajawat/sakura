@@ -1227,7 +1227,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #report-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
 #report-resize-handle:hover::after,#report-resize-handle.dragging::after{opacity:1}
 #report-panel.maximized #report-resize-handle{display:none}
-#report-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#report-panel-header{display:none}
 #report-panel.anchored #report-panel-header{cursor:default}
 #report-panel-header.dragging{cursor:grabbing}
 #report-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
@@ -3237,9 +3237,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #dock-tabstrip{display:none;align-items:center;gap:2px;padding:8px 8px 8px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #dock-tabstrip.active{display:flex}
 #dock-tabstrip-spacer{flex:1}
-.dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
-.dock-tab:hover{color:var(--fg);background:var(--hover)}
-.dock-tab.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 2px 6px;margin:0 12px -1px 0;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
+.dock-tab:hover{color:var(--fg)}
+.dock-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .dock-tab svg{flex-shrink:0}
 .dock-tab span{white-space:nowrap}
 #dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
@@ -3532,16 +3532,17 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
 #meetings-panel.open{display:flex}
 #meetings-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
-#meetings-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#meetings-panel-header{display:none}
 #meetings-panel.anchored #meetings-panel-header{cursor:default}
 #meetings-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
 #meetings-history-btn,#meetings-panel-maximize,#meetings-panel-close,#meetings-export-btn,#meetings-import-trigger{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #meetings-history-btn:hover,#meetings-panel-maximize:hover,#meetings-panel-close:hover,#meetings-export-btn:hover,#meetings-import-trigger:hover{color:var(--fg);background:var(--hover)}
 #meetings-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.dock-toolbar-spacer{flex:1}
 #meetings-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #meetings-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
 #meetings-toolbar-row button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#meetings-count-label{margin-left:auto;font:400 11px 'Inter',sans-serif;color:var(--hint)}
+#meetings-count-label{font:400 11px 'Inter',sans-serif;color:var(--hint)}
 #meetings-search-row{display:flex;align-items:center;gap:6px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);color:var(--hint)}
 #meetings-search-row input{flex:1;appearance:none;border:none;background:none;color:var(--fg);font:400 12.5px 'Inter',sans-serif;outline:none}
 #meetings-search-row input::placeholder{color:var(--hint)}
@@ -3713,7 +3714,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
 #journal-resize-handle:hover::after,#journal-resize-handle.dragging::after{opacity:1}
 #journal-panel.maximized #journal-resize-handle{display:none}
-#journal-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#journal-panel-header{display:none}
 #journal-panel.anchored #journal-panel-header{cursor:default}
 #journal-panel-header.dragging{cursor:grabbing}
 #journal-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
@@ -5953,10 +5954,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="todos-panel-title">To-Dos</span>
     <button id="todos-extract-btn" data-tip="Extract action items from document (AI)" aria-label="Extract action items from document"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/><path d="M9 20h6"/><path d="M10 20v-3"/><path d="M14 20v-3"/></svg></button>
     <button id="todos-summary-btn" data-tip="Status summary (AI)" aria-label="Generate status summary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
+    <input type="file" id="todos-share-file-input" accept=".json,application/json" style="display:none" />
+    <span class="dock-toolbar-spacer"></span>
+    <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="todos-import-btn" data-tip="Import a to-do list shared by another Sakura user" aria-label="Import to-do list"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button id="todos-export-trigger" data-tip="Export to-do list" aria-label="Export to-do list" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <input type="file" id="todos-share-file-input" accept=".json,application/json" style="display:none" />
-    <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -6049,9 +6051,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="meetings-panel-header">
     <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span>
     <span id="meetings-panel-title">Meeting Notes</span>
-    <button id="meetings-import-trigger" data-tip="Import meetings" aria-label="Import meetings" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-    <button id="meetings-export-btn" data-tip="Export all meetings as a calendar file (.ics)" aria-label="Export meetings as .ics"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <button id="meetings-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="meetings-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Meeting Notes"><svg id="meetings-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="meetings-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -6062,6 +6061,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <input type="file" id="meetings-ics-file-input" accept=".ics,text/calendar" style="display:none" />
     <input type="file" id="meetings-share-file-input" accept=".json,application/json" style="display:none" />
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <span class="dock-toolbar-spacer"></span>
+    <button id="meetings-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
+    <button id="meetings-import-trigger" data-tip="Import meetings" aria-label="Import meetings" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+    <button id="meetings-export-btn" data-tip="Export all meetings as a calendar file (.ics)" aria-label="Export meetings as .ics"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
     <span id="meetings-count-label"></span>
   </div>
   <div id="meetings-search-row" style="display:none">
@@ -6894,8 +6897,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="journal-panel-header">
     <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
     <span id="journal-panel-title">Journal</span>
-    <button id="journal-export-btn" data-tip="Export whole journal as PDF" aria-label="Export journal as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></button>
-    <button id="journal-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="journal-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Journal"><svg id="journal-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="journal-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -6903,6 +6904,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="journal-today-btn" data-tip="Today's entry"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="journal-jump-date-btn" data-tip="Jump to a date" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
     <span id="journal-count-label"></span>
+    <button id="journal-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
+    <button id="journal-export-btn" data-tip="Export whole journal as PDF" aria-label="Export journal as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></button>
   </div>
   <div id="journal-body">
     <div id="journal-list"></div>
