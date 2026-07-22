@@ -36405,7 +36405,7 @@ function _addTagPopoverFromInput(){
   document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
   onOverlayBackdropClick(document.getElementById('todos-history-overlay'),closeTodosHistory);
   document.addEventListener('keydown', e=>{
-    if(e.key==='Escape'&&document.getElementById('todos-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeTodosHistory(); }
+    if(e.key==='Escape'&&document.getElementById('todos-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopImmediatePropagation(); closeTodosHistory(); }
   },true);
   document.getElementById('todos-extract-btn')?.addEventListener('click', extractTodosFromDocument);
   document.getElementById('todos-summary-btn')?.addEventListener('click', generateTodosSummary);
@@ -36476,26 +36476,16 @@ function _addTagPopoverFromInput(){
     if(e.key==='Escape'&&panel&&panel.classList.contains('open')){
       const summaryModal=document.getElementById('todos-summary-modal-overlay');
       if(summaryModal&&summaryModal.classList.contains('open')) return; // that modal's own Escape handler closes it instead
+      if(document.getElementById('todos-history-overlay')?.classList.contains('open')) return; // same reason — its own Escape handler closes it instead
       const active=document.activeElement;
       if(active&&(active.id==='todos-input'||active.id==='todos-search-input'||active.classList.contains('todo-text'))){ active.blur(); return; }
       closeTodosPanel();
     }
   });
-  document.addEventListener('mousedown',e=>{
-    const panel=document.getElementById('todos-panel');
-    const appbarBtn=document.getElementById('todos-toggle');
-    const dockAppbarBtn=document.getElementById('dock-panel-appbar-toggle');
-    const duePop=document.getElementById('todo-due-popover');
-    const linkPop=document.getElementById('todo-link-popover');
-    const summaryModal=document.getElementById('todos-summary-modal-overlay');
-    const historyOverlay=document.getElementById('todos-history-overlay');
-    const qaSuggest=document.getElementById('node-qa-suggest');
-    const insideToggle=(appbarBtn&&appbarBtn.contains(e.target))||(dockAppbarBtn&&dockAppbarBtn.contains(e.target));
-    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target))||(historyOverlay&&historyOverlay.contains(e.target))||(qaSuggest&&qaSuggest.contains(e.target)); // qaSuggest: Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #todos-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing
-    if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle&&!insidePopover){
-      closeTodosPanel();
-    }
-  },true);
+  // Outside-click-closes was removed here: this is a persistent docked panel now (not a
+  // transient popover), so an accidental click anywhere in the document while writing
+  // shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
+  // same rail/app-bar chip again.
 
   initTodosDrag();
   initTodosResize();
@@ -38376,7 +38366,7 @@ el('meetings-history-close-x')?.addEventListener('click', closeMeetingsHistory);
 el('meetings-history-save-now-btn')?.addEventListener('click', saveMeetingsVersionNow);
 onOverlayBackdropClick(el('meetings-history-overlay'),closeMeetingsHistory);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('meetings-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeMeetingsHistory(); }
+  if(e.key==='Escape'&&el('meetings-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopImmediatePropagation(); closeMeetingsHistory(); }
 });
 
 // ── Toolbar wiring ──
@@ -38402,26 +38392,15 @@ el('meetings-search-clear-btn')?.addEventListener('click',()=>{
   renderMeetingsList();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')){
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('meetings-history-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
     closeMeetingsPanel();
   }
 });
-document.addEventListener('mousedown',e=>{
-  const panel=el('meetings-panel');
-  const toggleBtn=el('meetings-toggle');
-  if(_meetingLinkPopoverOpen)return; // its own outside-click handler covers this
-  if(_meetingTemplateMenuOpen)return; // its own outside-click handler covers this
-  if(_meetingDatePopoverOpen||_meetingTimePopoverOpen)return; // same reason — both live outside #meetings-panel in the DOM (siblings, not descendants), so without this a click inside either one reads as "outside the panel" and closes the whole thing instead of just picking a date/time
-  if(e.target.closest('#selection-fmt-popover'))return; // same reason again — the selection formatting popover is also a sibling of #meetings-panel (needed for position:fixed placement above an arbitrary selection), not a descendant
-  if(e.target.closest('#node-qa-suggest'))return; // Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #meetings-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing instead of just inserting the character
-  if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
-  if(el('meetings-history-overlay')?.classList.contains('open'))return; // same reason as the checks above — it's a full-screen sibling overlay, not a descendant, so interacting with it read as a click away from the panel
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
-  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
-    closeMeetingsPanel();
-  }
-},true);
+// Outside-click-closes was removed here: this is a persistent docked panel now (not a
+// transient popover), so an accidental click anywhere in the document while writing
+// shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
+// same rail/app-bar chip again.
 
 // ── Dock anchoring, drag & resize — same pattern as To-Dos' own (see anchorTodosToStatusbarChip
 // etc.), now that both live permanently in #status-util-group instead of choosing between an app bar
@@ -38859,7 +38838,7 @@ el('journal-history-close-x')?.addEventListener('click', closeJournalHistory);
 el('journal-history-save-now-btn')?.addEventListener('click', saveJournalVersionNow);
 if(typeof onOverlayBackdropClick==='function')onOverlayBackdropClick(el('journal-history-overlay'),closeJournalHistory);
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('journal-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeJournalHistory(); }
+  if(e.key==='Escape'&&el('journal-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopImmediatePropagation(); closeJournalHistory(); }
 });
 
 // ── Toast ──
@@ -39211,24 +39190,15 @@ el('dock-rail-collapse-btn')?.addEventListener('click',(e)=>{
   e.currentTarget.blur();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')){
+  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('journal-history-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#journal-card'))return;
     closeJournalPanel();
   }
 });
-document.addEventListener('mousedown',e=>{
-  const panel=el('journal-panel');
-  const toggleBtn=el('journal-toggle');
-  if(_journalDatePopoverOpen)return;
-  if(e.target.closest('#selection-fmt-popover'))return;
-  if(e.target.closest('#node-qa-suggest'))return;
-  if(el('sakura-modal-overlay')?.classList.contains('open'))return;
-  if(el('journal-history-overlay')?.classList.contains('open'))return; // same reason as the checks above — full-screen sibling overlay, not a descendant, so interacting with it read as a click away from the panel
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
-  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
-    closeJournalPanel();
-  }
-},true);
+// Outside-click-closes was removed here: this is a persistent docked panel now (not a
+// transient popover), so an accidental click anywhere in the document while writing
+// shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
+// same rail/app-bar chip again.
 
 // ── Feature toggle (Settings → Features → Journal) ──
 const JOURNAL_SETTINGS_KEY='sakura_journal_settings_v1';
@@ -41480,19 +41450,10 @@ document.getElementById('report-toggle')?.addEventListener('click',()=>toggleDoc
 document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
 document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
 window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_dock_panel_width_v1',widthMin:320,widthMax:720});
-// Same outside-mousedown / Escape close pattern as Journal/Meetings/To-Dos, replacing the
-// old backdrop-click-to-close now that this is an anchored panel rather than a centered
-// modal with its own full-screen backdrop element.
-document.addEventListener('mousedown',e=>{
-  const panel=el('report-panel');
-  const toggleBtn=el('report-toggle');
-  if(el('sakura-modal-overlay')?.classList.contains('open'))return;
-  if(el('report-summary-modal-overlay')?.classList.contains('open'))return;
-  const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
-  if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
-    closeActivityReport();
-  }
-},true);
+// Outside-click-closes was removed here: this is a persistent docked panel now (not a
+// transient popover), so an accidental click anywhere in the document while writing
+// shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
+// same rail/app-bar chip again.
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')){
     e.preventDefault(); e.stopPropagation(); closeActivityReport();
@@ -41527,6 +41488,9 @@ let dockActiveTab=null;
 // persisted so it's remembered across a reload, not just within the session.
 let dockLastTab='journal';
 try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved])dockLastTab=saved; }catch(e){}
+// Maximize is one shared state across all four tabs (like width), not per-panel — switching
+// tabs while maximized should keep the panel maximized, not silently drop back to docked.
+let dockMaximized=false;
 function dockPanelIsOpen(tab){
   const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
   return !!(panel&&panel.classList.contains('open'));
@@ -41553,6 +41517,12 @@ function dockMoveTabstripInto(tab){
   panel.insertBefore(strip,panel.firstChild);
   strip.classList.add('active');
   document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  // Bring this tab's maximize state in line with the shared one — click its own maximize
+  // button (rather than toggling the class directly) so every side effect that button's
+  // own handler does (icon swap, width re-apply on restore, etc.) still runs correctly.
+  if(panel.classList.contains('maximized')!==dockMaximized){
+    document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
+  }
   const maxBtn=document.getElementById('dock-tabstrip-maximize');
   const dstIcon=document.getElementById('dock-tabstrip-max-icon');
   const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[tab]);
@@ -41597,13 +41567,15 @@ document.querySelectorAll('.dock-tab').forEach(btn=>{
 document.getElementById('dock-tabstrip-maximize')?.addEventListener('click',()=>{
   if(!dockActiveTab)return;
   document.getElementById(DOCK_TAB_MAXIMIZE_ID[dockActiveTab])?.click();
-  // Re-sync the shared icon/tooltip with whatever that click just toggled.
+  // Re-sync the shared icon/tooltip with whatever that click just toggled, and record the
+  // new state so switching to another tab carries it over instead of resetting to docked.
   const panel=document.getElementById(DOCK_TAB_PANEL_ID[dockActiveTab]);
   const maxBtn=document.getElementById('dock-tabstrip-maximize');
   const dstIcon=document.getElementById('dock-tabstrip-max-icon');
   const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[dockActiveTab]);
   if(panel&&maxBtn&&srcIcon&&dstIcon){
-    maxBtn.dataset.tip=panel.classList.contains('maximized')?'Restore default view':'Expand to full view';
+    dockMaximized=panel.classList.contains('maximized');
+    maxBtn.dataset.tip=dockMaximized?'Restore default view':'Expand to full view';
     dstIcon.innerHTML=srcIcon.innerHTML;
   }
 });
