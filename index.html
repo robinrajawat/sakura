@@ -1475,8 +1475,8 @@ body.pad-mindmap-mode #pad-editor{display:none}
 .decision-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px;cursor:pointer;border-radius:8px;transition:background .12s}
 .decision-row-summary:hover{background:var(--hover)}
 .decision-row.expanded .decision-row-summary{background:var(--hover)}
-.decision-row-drag-handle{flex-shrink:0;width:0;height:20px;margin-top:1px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
-.decision-row-summary:hover .decision-row-drag-handle{width:9px;opacity:.6;pointer-events:auto}
+.decision-row-drag-handle{flex-shrink:0;width:9px;height:20px;margin-top:1px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .12s;background:none;border:none;padding:0}
+.decision-row-summary:hover .decision-row-drag-handle{opacity:.6;pointer-events:auto}
 .decision-row-drag-handle:hover{opacity:1!important}
 .decision-row-drag-handle:active{cursor:grabbing}
 .decision-row-status{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;flex-shrink:0}
@@ -1596,8 +1596,8 @@ body.pad-qa-mode.qa-has-selection span.qa-bulk-btn{display:flex}
    button itself stays clickable so it can double as the cancel control. */
 body.qa-bulk-busy #qa-list{pointer-events:none;opacity:.85}
 body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
-.qa-row-select{margin:0;cursor:pointer;flex-shrink:0;width:0;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;align-self:flex-start;margin-top:3px}
-.qa-row:hover .qa-row-select,#qa-body.qa-has-selection .qa-row-select{width:13px;opacity:1;pointer-events:auto}
+.qa-row-select{margin:0;cursor:pointer;flex-shrink:0;width:13px;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .12s;align-self:flex-start;margin-top:3px}
+.qa-row:hover .qa-row-select,#qa-body.qa-has-selection .qa-row-select{opacity:1;pointer-events:auto}
 .qa-row.qa-row-selected{background:color-mix(in srgb,var(--sel) 55%,transparent);border-radius:8px;margin-left:-6px;padding-left:6px;margin-right:-6px}
 #qa-body.qa-is-empty #qa-empty{display:block}
 .qa-row{position:relative;display:flex;align-items:flex-start;gap:4px;padding:0 0 12px 0;margin-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);transition:padding-right .16s ease}
@@ -1616,8 +1616,8 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 #qa-body.qa-actions-fixed .qa-field-wrap textarea.qa-field-q{padding-right:36px}
 .qa-row:last-child{border-bottom:none;margin-bottom:0}
 .qa-row-content{flex:1;min-width:0}
-.qa-drag-handle{flex-shrink:0;width:0;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
-.qa-row:hover .qa-drag-handle{width:14px;opacity:.6;pointer-events:auto}
+.qa-drag-handle{flex-shrink:0;width:14px;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .12s;background:none;border:none;padding:0}
+.qa-row:hover .qa-drag-handle{opacity:.6;pointer-events:auto}
 .qa-drag-handle:hover{opacity:1 !important}
 .qa-row.qa-dragging{opacity:.4}
 .qa-row.qa-drag-over{border-top:2px solid var(--accent)}
@@ -3120,10 +3120,10 @@ body.pad-mindmap-mode #mindmap-tab-body{display:flex}
 .diagram-row.diagram-row-selected{background:color-mix(in srgb,var(--sel) 55%,transparent)}
 .diagram-row.diagram-row-dragging{opacity:.4}
 .diagram-row.diagram-row-drag-over{border-top:2px solid var(--accent)}
-.diagram-row-select{margin:0;cursor:pointer;flex-shrink:0;width:0;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s}
-.diagram-row:hover .diagram-row-select,body.diagram-has-selection .diagram-row-select{width:13px;opacity:1;pointer-events:auto}
-.diagram-row-drag-handle{flex-shrink:0;width:0;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:width .16s ease,opacity .12s;background:none;border:none;padding:0}
-.diagram-row:hover .diagram-row-drag-handle{width:14px;opacity:.6;pointer-events:auto}
+.diagram-row-select{margin:0;cursor:pointer;flex-shrink:0;width:13px;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .12s}
+.diagram-row:hover .diagram-row-select,body.diagram-has-selection .diagram-row-select{opacity:1;pointer-events:auto}
+.diagram-row-drag-handle{flex-shrink:0;width:14px;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .12s;background:none;border:none;padding:0}
+.diagram-row:hover .diagram-row-drag-handle{opacity:.6;pointer-events:auto}
 .diagram-row-drag-handle:hover{opacity:1 !important}
 .diagram-row-drag-handle:active{cursor:grabbing}
 body.diagram-sort-locked .diagram-row-drag-handle{display:none}
@@ -3556,25 +3556,26 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 
 .meeting-row{display:flex;flex-direction:column;margin:0 -6px 4px;border-radius:8px}
 .meeting-row:last-child{margin-bottom:0}
-.meeting-row-summary{display:flex;align-items:flex-start;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px;transition:background .12s}
+.meeting-row-summary{position:relative;display:flex;align-items:flex-start;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px;transition:background .12s}
 .meeting-row-summary:hover{background:var(--hover)}
 .meeting-row.expanded .meeting-row-summary{background:var(--hover)}
 .meeting-row-date{flex:0 0 auto;width:42px;text-align:center;font:700 9.5px 'Inter',sans-serif;color:var(--accent);line-height:1.1;border:1px solid var(--border);border-radius:8px;overflow:hidden;text-transform:uppercase;letter-spacing:.03em;padding-top:3px}
 .meeting-row-date .mrd-day{display:block;font-size:16px;font-weight:700;color:var(--fg);background:var(--hover);padding:3px 0 2px;letter-spacing:0}
 .meeting-row-content{flex:1;min-width:0}
-.meeting-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:78px}
 .meeting-row-title:empty::before{content:'Untitled meeting';color:var(--hint);font-style:italic}
 .meeting-row-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px}
 .meeting-row-attendee-chip{font:400 10px 'Inter',sans-serif;color:var(--hint);background:color-mix(in srgb,var(--muted) 14%,transparent);border-radius:999px;padding:1px 6px}
 .meeting-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meeting-row-progress{font:500 10px 'Inter',sans-serif;color:var(--accent);flex-shrink:0}
 .meeting-row-time{font:500 10px 'Inter',sans-serif;color:var(--muted);flex-shrink:0}
-.meeting-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.meeting-row-icons{position:absolute;top:6px;right:6px;display:flex;gap:2px}
+.meeting-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .meeting-row-summary:hover .meeting-row-delete{opacity:1}
-.meeting-row-export{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.meeting-row-export{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .meeting-row-summary:hover .meeting-row-export{opacity:1}
 .meeting-row-export:hover{color:var(--accent);background:var(--hover)}
-.meeting-row-share{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s;align-self:flex-start}
+.meeting-row-share{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .meeting-row-summary:hover .meeting-row-share{opacity:1}
 .meeting-row-share:hover{color:var(--accent);background:var(--hover)}
 .meeting-row.meeting-row-dup{background:color-mix(in srgb,var(--fc-orange) 10%,transparent)}
@@ -3785,7 +3786,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    to change. */
 #status-util-group{display:none!important}
 #dock-panel-appbar-toggle{position:relative}
-#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-3px;right:-3px;margin-left:0;min-width:14px;height:14px;font-size:8.5px;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box}
+#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-6px;right:-6px;margin-left:0;min-width:11px;height:11px;font-size:7px;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box}
 #status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px;width:34px;opacity:1;overflow:hidden;transition:width .18s cubic-bezier(.22,.8,.34,1),opacity .14s ease}
 /* Collapsed: shrink the buttons column's width to 0 (clipped by the overflow:hidden
    above) rather than display:none-ing it — a widthless, still-flexbox-participating
@@ -4222,6 +4223,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for Q&amp;A</span><span class="settings-row-desc">Draft answer, Bulk-draft unanswered, and Q&amp;A summary live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="qa-ai-settings-jump-btn">Open in AI settings</button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Compact Q&amp;A rows</span><span class="settings-row-desc">Tighter spacing between separate Q&amp;A rows, similar to the To-Dos panel's compact row spacing. Doesn't affect line spacing within a single question or answer — that stays comfortable to read either way.</span></div><button id="qa-compact-rows-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Compact Q&amp;A rows"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">"On hover" keeps rows compact and reveals the select checkbox, drag handle, and delete button only when you point at a row. "Always visible" keeps them in place permanently — less compact, but nothing moves or hides.</span></div><select id="qa-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
               </div>
             </div>
             <div class="settings-subsection" id="settings-subsection-decisionlog">
@@ -31122,6 +31124,7 @@ function setQaCompactRows(on, persist=true){
 }
 el('qa-compact-rows-toggle')?.addEventListener('click',()=>setQaCompactRows(!qaCompactRows));
 el('qa-compact-rows-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaCompactRows(!qaCompactRows);}});
+el('qa-actions-mode-select')?.addEventListener('change',e=>setQaRowActionsMode(e.target.value));
 
 // Row actions visibility for Q&A rows — 'hover' (default) reveals the select checkbox, field
 // icons, and delete button only on row hover; 'fixed' keeps them always visible. Mirrors the
@@ -37341,18 +37344,20 @@ function buildMeetingRowSummary(m){
   const snippetText=meetingRowSnippet(m);
   if(snippetText){ const snippetEl=document.createElement('div'); snippetEl.className='meeting-row-snippet'; snippetEl.textContent=snippetText; content.appendChild(snippetEl); }
   summary.appendChild(dateEl); summary.appendChild(content);
+  const iconsWrap=document.createElement('div'); iconsWrap.className='meeting-row-icons';
   const shareBtn=document.createElement('button'); shareBtn.type='button'; shareBtn.className='meeting-row-share'; shareBtn.dataset.tip='Share as Sakura Meeting Notes';
   shareBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>';
   shareBtn.addEventListener('click',e=>{ e.stopPropagation(); shareSingleMeeting(m); });
-  summary.appendChild(shareBtn);
+  iconsWrap.appendChild(shareBtn);
   const exportBtn=document.createElement('button'); exportBtn.type='button'; exportBtn.className='meeting-row-export'; exportBtn.dataset.tip='Export as PDF';
   exportBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   exportBtn.addEventListener('click',e=>{ e.stopPropagation(); exportSingleMeetingAsPdf(m); });
-  summary.appendChild(exportBtn);
+  iconsWrap.appendChild(exportBtn);
   const delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='meeting-row-delete'; delBtn.dataset.tip='Delete meeting note';
   delBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
   delBtn.addEventListener('click',e=>{ e.stopPropagation(); deleteMeetingNote(m.id); });
-  summary.appendChild(delBtn);
+  iconsWrap.appendChild(delBtn);
+  summary.appendChild(iconsWrap);
   summary.addEventListener('click',()=>toggleMeetingExpanded(m.id));
   return summary;
 }
