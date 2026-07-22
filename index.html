@@ -3231,6 +3231,27 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 
 #todos-panel.open{display:flex}
 #todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
+/* Shared dock-panel tab strip — see the HTML comment above #dock-tabstrip for why this
+   exists. Same visual weight as the panel headers it replaces (same padding/border), so
+   swapping it between panels doesn't cause a visible jump. */
+#dock-tabstrip{display:none;align-items:center;gap:2px;padding:8px 8px 8px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:2}
+#dock-tabstrip.active{display:flex}
+#dock-tabstrip-spacer{flex:1}
+.dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s}
+.dock-tab:hover{color:var(--fg);background:var(--hover)}
+.dock-tab.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.dock-tab svg{flex-shrink:0}
+.dock-tab span{white-space:nowrap}
+#dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
+#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover{color:var(--fg);background:var(--hover)}
+/* Each panel keeps its own action-button row (extract/import/export/history etc.) — only
+   the title (now shown as the active tab instead) and the maximize/close (now shared,
+   in the tab strip) are redundant once the tab strip is present. */
+#todos-panel-header .panel-title-icon,#todos-panel-title,#todos-panel-maximize,#todos-panel-close,
+#meetings-panel-header .panel-title-icon,#meetings-panel-title,#meetings-panel-maximize,#meetings-panel-close,
+#journal-panel-header .panel-title-icon,#journal-panel-title,#journal-panel-maximize,#journal-panel-close,
+#report-panel-header .panel-title-icon,#report-panel-title,#report-panel-maximize,#report-panel-close
+{display:none}
 #todos-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #todos-panel.anchored #todos-panel-header{cursor:default}
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -3758,6 +3779,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #status-util-group.collapsed .dock-rail-buttons{width:0;opacity:0}
 #status-util-group.collapsed{right:1px;padding:2px 1px;gap:0;background:color-mix(in srgb,var(--tb-bg) 45%,transparent);border-color:transparent;box-shadow:none;opacity:.6}
 #status-util-group.collapsed:hover{opacity:1;background:var(--tb-bg);border-color:color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+/* Hidden (not just faded) while a dock panel is open — redundant once open, since the
+   panel's own tab strip already covers switching, and this is what actually stops a tall
+   panel from visually covering the rail sitting underneath it rather than just reducing
+   how often that happens. */
+#status-util-group.panel-open{opacity:0;pointer-events:none}
 #status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px;flex-shrink:0;transition:width .18s cubic-bezier(.22,.8,.34,1)}
 #status-util-group.collapsed .dock-rail-handle{width:12px}
 #status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -5882,6 +5908,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <button class="dock-btn" id="report-toggle" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span class="dock-btn-label">Recap</span></button>
   </div>
   <button type="button" id="dock-rail-collapse-btn" class="dock-rail-handle" data-tip="Hide these panel buttons" aria-label="Hide workspace panel rail" aria-expanded="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+</div>
+
+<!-- Shared dock-panel tab strip — moved by JS to be the first child of whichever of
+     Journal/Meetings/To-Dos/Recap is currently open, so the four read as one tabbed
+     panel instead of four separately-chrome'd windows. Each panel keeps its own action
+     buttons (extract/import/export/history etc.) in its existing header row below this;
+     only the title/maximize/close portion of that row is hidden once this is present. -->
+<div id="dock-tabstrip">
+  <button type="button" class="dock-tab" id="dock-tab-journal" data-tab="journal" data-tip="Journal (Ctrl/Cmd+Shift+J)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Journal</span></button>
+  <button type="button" class="dock-tab" id="dock-tab-meetings" data-tab="meetings" data-tip="Meeting Notes (Ctrl/Cmd+Shift+M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg><span>Meetings</span></button>
+  <button type="button" class="dock-tab" id="dock-tab-todos" data-tab="todos" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button>
+  <button type="button" class="dock-tab" id="dock-tab-report" data-tab="report" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Recap</span></button>
+  <span id="dock-tabstrip-spacer"></span>
+  <button type="button" id="dock-tabstrip-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="dock-tabstrip-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
+  <button type="button" id="dock-tabstrip-close" data-tip="Close (Esc)" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
 </div>
 
 <!-- Node Note Panel -->
@@ -19290,9 +19331,9 @@ const SHORTCUTS = {
   toggleNote:     {combo:'mod+shift+n',   label:'Open/close note',          category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='note'){closeNodePanel(true);}else{setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'note');}},
   toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
-  toggleTodos:    {combo:'mod+shift+t',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleTodosPanel==='function') toggleTodosPanel();}},
-  toggleMeetings: {combo:'mod+shift+m',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleMeetingsPanel==='function') toggleMeetingsPanel();}},
-  toggleJournal:  {combo:'mod+shift+j',   label:'Open/close Journal',       category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleJournalPanel==='function') toggleJournalPanel();}},
+  toggleTodos:    {combo:'mod+shift+t',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('todos');}},
+  toggleMeetings: {combo:'mod+shift+m',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('meetings');}},
+  toggleJournal:  {combo:'mod+shift+j',   label:'Open/close Journal',       category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('journal');}},
   toggleDiagrams: {combo:'mod+shift+g',   label:'Open/close Diagrams',      category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDiagramsPanel==='function') toggleDiagramsPanel();}},
 };
 // Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
@@ -34087,7 +34128,7 @@ function _addTagPopoverFromInput(){
   // so the person doesn't need to open the panel just to find out something's overdue.
   function updateOverdueBadge(){
     const count=settings.showOverdueBadge ? todos.filter(t=>!t.done&&isOverdue(t.dueDate,t.done)).length : 0;
-    document.querySelectorAll('#todos-toggle').forEach(btn=>{
+    document.querySelectorAll('#todos-toggle, #dock-tab-todos').forEach(btn=>{
       let badge=btn.querySelector('.todo-overdue-badge');
       if(count>0){
         if(!badge){ badge=document.createElement('span'); badge.className='todo-overdue-badge'; btn.appendChild(badge); }
@@ -35508,6 +35549,7 @@ function _addTagPopoverFromInput(){
     closeTodosSearch();
     if(typeof closeTodoAtSuggest==='function') closeTodoAtSuggest();
     if(panel?.classList.contains('select-mode')) toggleTodoSelectMode(false);
+    if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
   }
   function toggleTodosPanel(){
     document.getElementById('todos-toggle')?.blur();
@@ -36119,7 +36161,7 @@ function _addTagPopoverFromInput(){
   updateOverdueBadge();
   setInterval(updateOverdueBadge, 60000); // catches a due date rolling into "overdue" at midnight while the app stays open
 
-  document.getElementById('todos-toggle')?.addEventListener('click',toggleTodosPanel);
+  document.getElementById('todos-toggle')?.addEventListener('click',()=>toggleDockTab('todos'));
   document.getElementById('todos-panel-close')?.addEventListener('click',closeTodosPanel);
   document.getElementById('todos-panel-maximize')?.addEventListener('click',toggleTodosMaximize);
   // Links rendered inside .todo-text (see renderTodoTextHtml's SAP Note handling) sit inside a
@@ -37003,6 +37045,7 @@ function closeMeetingsPanel(){
   document.querySelectorAll('#meetings-toggle').forEach(b=>b.classList.remove('is-active'));
   closeMeetingLinkPopover();
   if(typeof closeMeetingTemplateMenu==='function')closeMeetingTemplateMenu();
+  if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
 }
 function toggleMeetingsPanel(){
   el('meetings-toggle')?.blur();
@@ -38310,7 +38353,7 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── Toolbar wiring ──
-el('meetings-toggle')?.addEventListener('click',toggleMeetingsPanel);
+el('meetings-toggle')?.addEventListener('click',()=>toggleDockTab('meetings'));
 el('meetings-panel-close')?.addEventListener('click',closeMeetingsPanel);
 el('meetings-panel-maximize')?.addEventListener('click',toggleMeetingsMaximize);
 el('meetings-add-btn')?.addEventListener('click',createMeetingNote);
@@ -38821,6 +38864,7 @@ function closeJournalPanel(){
   el('journal-panel')?.classList.remove('open');
   document.querySelectorAll('#journal-toggle').forEach(b=>b.classList.remove('is-active'));
   closeJournalDatePopover();
+  if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
 }
 function toggleJournalPanel(){
   el('journal-toggle')?.blur();
@@ -39097,7 +39141,7 @@ function exportJournalAsPdf(){
 el('journal-export-btn')?.addEventListener('click',exportJournalAsPdf);
 
 // ── Panel chrome wiring ──
-el('journal-toggle')?.addEventListener('click',toggleJournalPanel);
+el('journal-toggle')?.addEventListener('click',()=>toggleDockTab('journal'));
 el('journal-panel-close')?.addEventListener('click',closeJournalPanel);
 el('journal-panel-maximize')?.addEventListener('click',toggleJournalMaximize);
 
@@ -41381,6 +41425,7 @@ function closeActivityReport(){
   const panel=el('report-panel');
   if(panel){ panel.classList.remove('open'); panel.classList.remove('maximized'); }
   document.querySelectorAll('#report-toggle').forEach(b=>b.classList.remove('is-active'));
+  if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
 }
 function toggleActivityReport(){
   el('report-toggle')?.blur();
@@ -41401,7 +41446,7 @@ function toggleReportMaximize(){
   }
   if(!goingMax){ window.sakuraApplyPanelWidth('report-panel','sakura_report_width_v1',360,760,480); anchorReportToDockChip(); }
 }
-document.getElementById('report-toggle')?.addEventListener('click',toggleActivityReport);
+document.getElementById('report-toggle')?.addEventListener('click',()=>toggleDockTab('report'));
 document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
 document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
 window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_report_width_v1',widthMin:360,widthMax:760});
@@ -41427,6 +41472,109 @@ document.querySelectorAll('.report-tab').forEach(btn=>{
   btn.addEventListener('click',()=>{ reportModalPeriod=btn.dataset.period; renderActivityReport(); anchorReportToDockChip(); });
 });
 window.openActivityReport=openActivityReport;
+
+// ── Dock panel tab strip orchestration ──
+// Ties Journal/Meetings/To-Dos/Recap together so the four read as one tabbed panel
+// instead of four independently floating windows, which is what was letting them overlap
+// each other and the dock rail inconsistently. Each panel's own open/close/maximize/
+// anchor/drag/resize logic above is completely untouched — this layer only decides *when*
+// those functions get called (never more than one panel open at a time) and moves the
+// shared #dock-tabstrip header into whichever panel is currently showing.
+const DOCK_TAB_PANEL_ID={journal:'journal-panel',meetings:'meetings-panel',todos:'todos-panel',report:'report-panel'};
+const DOCK_TAB_MAXIMIZE_ID={journal:'journal-panel-maximize',meetings:'meetings-panel-maximize',todos:'todos-panel-maximize',report:'report-panel-maximize'};
+const DOCK_TAB_MAXICON_ID={journal:'journal-max-icon',meetings:'meetings-max-icon',todos:'todos-max-icon',report:'report-max-icon'};
+const DOCK_TAB_CLOSE_ID={journal:'journal-panel-close',meetings:'meetings-panel-close',todos:'todos-panel-close',report:'report-panel-close'};
+// toggleTodosPanel lives inside To-Dos' own module closure, reached only via window.;
+// the other three are ordinary top-level function declarations (already global).
+const DOCK_TAB_TOGGLE={
+  journal: ()=>toggleJournalPanel(),
+  meetings: ()=>toggleMeetingsPanel(),
+  todos: ()=>window.toggleTodosPanel(),
+  report: ()=>toggleActivityReport(),
+};
+let dockActiveTab=null;
+function dockPanelIsOpen(tab){
+  const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
+  return !!(panel&&panel.classList.contains('open'));
+}
+// Re-evaluates rail visibility (and clears dockActiveTab) from real DOM state rather than
+// only from the orchestrator's own open/close calls — needed because a panel can also
+// close via Escape, an outside click, or its own (now-hidden) X button, none of which go
+// through toggleDockTab/openDockTab. Called from each panel's actual close function below
+// (closeJournalPanel/closeMeetingsPanel/closeTodosPanel/closeActivityReport) since those
+// are the one choke point every closing path already runs through, however it was
+// triggered — cheaper and more robust than trying to intercept every trigger separately.
+function dockSyncRailVisibility(){
+  const anyOpen=['journal','meetings','todos','report'].some(dockPanelIsOpen);
+  document.getElementById('status-util-group')?.classList.toggle('panel-open',anyOpen);
+  if(!anyOpen){
+    document.getElementById('dock-tabstrip')?.classList.remove('active');
+    dockActiveTab=null;
+  }
+}
+function dockMoveTabstripInto(tab){
+  const strip=document.getElementById('dock-tabstrip');
+  const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
+  if(!strip||!panel)return;
+  panel.insertBefore(strip,panel.firstChild);
+  strip.classList.add('active');
+  document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  const maxBtn=document.getElementById('dock-tabstrip-maximize');
+  const dstIcon=document.getElementById('dock-tabstrip-max-icon');
+  const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[tab]);
+  if(maxBtn&&srcIcon&&dstIcon){
+    const isMax=panel.classList.contains('maximized');
+    maxBtn.dataset.tip=isMax?'Restore default view':'Expand to full view';
+    dstIcon.innerHTML=srcIcon.innerHTML;
+  }
+}
+// Ensures `tab` ends up open and active, closing whichever other tab was showing first
+// (real open/close functions still do the work — this just sequences them).
+function openDockTab(tab){
+  if(dockActiveTab&&dockActiveTab!==tab&&dockPanelIsOpen(dockActiveTab)){
+    DOCK_TAB_TOGGLE[dockActiveTab]();
+  }
+  dockActiveTab=tab;
+  if(!dockPanelIsOpen(tab))DOCK_TAB_TOGGLE[tab]();
+  dockMoveTabstripInto(tab);
+  document.getElementById('status-util-group')?.classList.add('panel-open');
+}
+// Used by the rail's own launcher buttons: same as clicking a chip always has — open it,
+// or close it again if it's already the one showing. Reading real DOM state
+// (dockPanelIsOpen) rather than trusting dockActiveTab blindly means this stays correct
+// even after the panel was closed some other way (Escape, outside click, its own X).
+function toggleDockTab(tab){
+  if(dockActiveTab===tab&&dockPanelIsOpen(tab)){
+    DOCK_TAB_TOGGLE[tab]();
+    document.getElementById('dock-tabstrip')?.classList.remove('active');
+    document.getElementById('status-util-group')?.classList.remove('panel-open');
+    dockActiveTab=null;
+    return;
+  }
+  openDockTab(tab);
+}
+document.querySelectorAll('.dock-tab').forEach(btn=>{
+  // Tabs inside the open panel only switch — closing is the rail chip's job (or the
+  // shared close button), not something clicking a tab you're already looking at should do.
+  btn.addEventListener('click',()=>openDockTab(btn.dataset.tab));
+});
+document.getElementById('dock-tabstrip-maximize')?.addEventListener('click',()=>{
+  if(!dockActiveTab)return;
+  document.getElementById(DOCK_TAB_MAXIMIZE_ID[dockActiveTab])?.click();
+  // Re-sync the shared icon/tooltip with whatever that click just toggled.
+  const panel=document.getElementById(DOCK_TAB_PANEL_ID[dockActiveTab]);
+  const maxBtn=document.getElementById('dock-tabstrip-maximize');
+  const dstIcon=document.getElementById('dock-tabstrip-max-icon');
+  const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[dockActiveTab]);
+  if(panel&&maxBtn&&srcIcon&&dstIcon){
+    maxBtn.dataset.tip=panel.classList.contains('maximized')?'Restore default view':'Expand to full view';
+    dstIcon.innerHTML=srcIcon.innerHTML;
+  }
+});
+document.getElementById('dock-tabstrip-close')?.addEventListener('click',()=>{
+  if(dockActiveTab)toggleDockTab(dockActiveTab);
+});
+
 
 // === Recap: AI bullet summary ===
 // Condenses the currently-displayed period's raw activity into a short, skimmable bullet list
