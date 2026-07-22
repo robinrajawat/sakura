@@ -35633,16 +35633,25 @@ function _addTagPopoverFromInput(){
   // overshoots badly for short content: it clamps as if the panel were near its tallest
   // possible, pushing even a nearly-empty panel down far enough to overlap the chip above
   // it. Reading the real height after render is both simpler and correct in both directions.
+  // Used to anchor a dock panel directly above its chip on the rail — deliberately no
+  // longer does that. With the rail now floating at center-right (rather than pinned to a
+  // status-bar corner) and collapsible, tethering panel position to "wherever the rail
+  // currently is" meant panels opened in a different spot depending on rail state, which
+  // read as unpredictable rather than direct-manipulation-y. Panels are also fully
+  // draggable/resizable now (see sakuraInitPanelDragResize below), so they don't need a
+  // contextual starting position to be discoverable or usable.
+  // Every dock panel's own base CSS already defaults to top:64px;right:16px (that was
+  // the position before dock-chip anchoring existed at all) — this just makes sure a
+  // reopen always lands back there, clearing any inline position a previous drag/resize
+  // in the same session left behind, rather than reusing the anchor math. The chip
+  // parameter is kept (and still passed by all four call sites) purely so none of them
+  // needed to change.
   window.sakuraAnchorPanelAboveChip=function(panel,chip){
-    if(!panel||!chip)return;
-    const rect=chip.getBoundingClientRect();
-    panel.style.left='auto';
-    panel.style.right=Math.max(8, window.innerWidth-rect.right)+'px';
-    panel.style.bottom='auto';
-    const panelHeight=panel.offsetHeight||0;
-    const preferredTop=rect.top-8-panelHeight; // just above the chip, with an 8px gap
-    const maxTop=Math.max(8, window.innerHeight-panelHeight-8);
-    panel.style.top=Math.min(Math.max(preferredTop,8),maxTop)+'px';
+    if(!panel)return;
+    panel.style.left='';
+    panel.style.top='';
+    panel.style.right='';
+    panel.style.bottom='';
   };
   // Gives a dock panel the same drag-to-move + drag-to-resize behavior To-Dos and Meetings
   // already have, so Journal and Recap don't feel like a different, more static kind of
