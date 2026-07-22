@@ -3542,7 +3542,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #meetings-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #meetings-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
 #meetings-toolbar-row button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#meetings-count-label{font:400 11px 'Inter',sans-serif;color:var(--hint)}
+#meetings-count-label{margin-left:6px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
 #meetings-search-row{display:flex;align-items:center;gap:6px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);color:var(--hint)}
 #meetings-search-row input{flex:1;appearance:none;border:none;background:none;color:var(--fg);font:400 12.5px 'Inter',sans-serif;outline:none}
 #meetings-search-row input::placeholder{color:var(--hint)}
@@ -3723,7 +3723,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #journal-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 #journal-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #journal-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
-#journal-count-label{flex:1;text-align:right;font:400 11px 'Inter',sans-serif;color:var(--hint)}
+#journal-count-label{margin-left:6px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
 #journal-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
 #journal-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
 #journal-body.is-empty #journal-empty{display:block}
@@ -6061,11 +6061,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <input type="file" id="meetings-ics-file-input" accept=".ics,text/calendar" style="display:none" />
     <input type="file" id="meetings-share-file-input" accept=".json,application/json" style="display:none" />
     <button type="button" id="meetings-search-toggle" data-tip="Find a meeting" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <span id="meetings-count-label"></span>
     <span class="dock-toolbar-spacer"></span>
     <button id="meetings-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="meetings-import-trigger" data-tip="Import meetings" aria-label="Import meetings" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button id="meetings-export-btn" data-tip="Export all meetings as a calendar file (.ics)" aria-label="Export meetings as .ics"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <span id="meetings-count-label"></span>
   </div>
   <div id="meetings-search-row" style="display:none">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -6904,6 +6904,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="journal-today-btn" data-tip="Today's entry"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="journal-jump-date-btn" data-tip="Jump to a date" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
     <span id="journal-count-label"></span>
+    <span class="dock-toolbar-spacer"></span>
     <button id="journal-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
     <button id="journal-export-btn" data-tip="Export whole journal as PDF" aria-label="Export journal as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></button>
   </div>
@@ -36487,9 +36488,10 @@ function _addTagPopoverFromInput(){
     const duePop=document.getElementById('todo-due-popover');
     const linkPop=document.getElementById('todo-link-popover');
     const summaryModal=document.getElementById('todos-summary-modal-overlay');
+    const historyOverlay=document.getElementById('todos-history-overlay');
     const qaSuggest=document.getElementById('node-qa-suggest');
     const insideToggle=(appbarBtn&&appbarBtn.contains(e.target))||(dockAppbarBtn&&dockAppbarBtn.contains(e.target));
-    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target))||(qaSuggest&&qaSuggest.contains(e.target)); // qaSuggest: Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #todos-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing
+    const insidePopover=(duePop&&duePop.contains(e.target))||(linkPop&&linkPop.contains(e.target))||(summaryModal&&summaryModal.contains(e.target))||(historyOverlay&&historyOverlay.contains(e.target))||(qaSuggest&&qaSuggest.contains(e.target)); // qaSuggest: Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #todos-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing
     if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle&&!insidePopover){
       closeTodosPanel();
     }
@@ -38414,6 +38416,7 @@ document.addEventListener('mousedown',e=>{
   if(e.target.closest('#selection-fmt-popover'))return; // same reason again — the selection formatting popover is also a sibling of #meetings-panel (needed for position:fixed placement above an arbitrary selection), not a descendant
   if(e.target.closest('#node-qa-suggest'))return; // Quick Insert's popover (Ctrl/Cmd+Space) is shared app-wide and lives outside #meetings-panel too — without this, picking a character from it read as a click away from the panel and closed the whole thing instead of just inserting the character
   if(el('sakura-modal-overlay')?.classList.contains('open'))return; // a confirm/prompt dialog (e.g. "Delete this meeting note?") is on top — its click isn't a click-away from the panel underneath it
+  if(el('meetings-history-overlay')?.classList.contains('open'))return; // same reason as the checks above — it's a full-screen sibling overlay, not a descendant, so interacting with it read as a click away from the panel
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeMeetingsPanel();
@@ -39220,6 +39223,7 @@ document.addEventListener('mousedown',e=>{
   if(e.target.closest('#selection-fmt-popover'))return;
   if(e.target.closest('#node-qa-suggest'))return;
   if(el('sakura-modal-overlay')?.classList.contains('open'))return;
+  if(el('journal-history-overlay')?.classList.contains('open'))return; // same reason as the checks above — full-screen sibling overlay, not a descendant, so interacting with it read as a click away from the panel
   const insideToggle=(toggleBtn&&toggleBtn.contains(e.target))||el('dock-panel-appbar-toggle')?.contains(e.target);
   if(panel&&panel.classList.contains('open')&&!panel.classList.contains('maximized')&&!panel.contains(e.target)&&!insideToggle){
     closeJournalPanel();
