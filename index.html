@@ -28601,7 +28601,24 @@ function renderPreviewBody(){
     // Plain single-line notes already show their full text inline via pv-note-inline-full above.
     slideTarget.appendChild(mainEl);
     if(!(folded&&hasChildren)){
-      const inlinePad=((Math.min(depth,7)-1)*18)+'px';
+      // inlinePad previously matched only the row's own paddingLeft (the depth step), so
+      // content rendered below a node — the note card, decision-log card, diagram figures —
+      // lined up with the row's bare left edge rather than with where that row's own bullet/
+      // text actually sits. A regular bullet row additionally has a fold-spacer/fold-toggle
+      // (18px + 1px margin) then the bullet or checkbox (16px) before the gap-separated text,
+      // each pair of flex items separated by the row's own 4px gap — see .fold-spacer,
+      // .fold-toggle, .pv-bullet, .pv-cb, .pv-row{gap:4px} — 18+1+4+16+4=43px total. A heading/
+      // section/divider row only has the fold icon before its text (no separate bullet) and
+      // uses .pv-h-row's own 5px gap instead — 18+1+5=24px. Keep these two constants in sync
+      // with those selectors if their widths ever change.
+      const ROW_BULLET_COL_PX=43, HEADING_ICON_COL_PX=24;
+      const isHeadingLike=node.slideDivider||isSection||headingLevel>0;
+      // Headings/sections/dividers special-case depth 0 to a flat 0px rather than the
+      // (depth-1)*18 formula's -18px at that depth (see hrow.style.paddingLeft above) — matched
+      // here so a depth-0 heading's note lines up with its own title instead of sitting 18px
+      // further left than everything else that follows this same isHeadingLike branch.
+      const depthPad=(isHeadingLike&&depth===0)?0:(Math.min(depth,7)-1)*18;
+      const inlinePad=(depthPad+(isHeadingLike?HEADING_ICON_COL_PX:ROW_BULLET_COL_PX))+'px';
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)){
         if(decisionLogIsLarge(decisionLogForNode(node.id))){
           const dlSlideWrap=document.createElement('div'); dlSlideWrap.className='pv-slide';
