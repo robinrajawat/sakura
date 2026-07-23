@@ -16585,6 +16585,182 @@ const DIAGRAM_GEN_TAG_CYCLE=['blue','green','amber','red','purple','teal','coral
 // so they outrank both tag and branch coloring when present. 'followup' (usually shown as an
 // orange glyph elsewhere in the app) maps to the closest palette hue, amber.
 const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',followup:'amber',na:'gray'};
+// ── AI diagram guideline (shape + layer + flow classification) ─────────────────────────────
+// AI is asked for a small, whitelisted classification of the SAME tree the deterministic
+// layout already builds — never raw coordinates, never XML, never a restructured hierarchy.
+// It can say "this node is a decision" or "these nodes are UI/service/backend" and "this node
+// also connects to that one" — everything else (box sizing, positioning, color, valid XML)
+// stays 100% the existing deterministic code. Any AI response that fails validation, times
+// out, or simply isn't available (no key, feature off) falls back to exactly today's plain
+// tree behavior — the feature is never worse than what existed before this guideline layer.
+const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','external','actor','decision','note'];
+const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
+// Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
+// a trailing catch-all row instead of being dropped — an unclassified node still gets drawn.
+const DIAGRAM_GEN_LAYER_ORDER=['actor','ui','service','middleware','backend','external'];
+const DIAGRAM_GEN_UNLAYERED_ROW='__unlayered__';
+// Only shapes that have a real, meaningfully different draw.io geometry get an entry here —
+// ui/service/middleware/process all still render as the plain rounded box for now (shared with
+// every existing diagram); the more structural ones (decision/backend/actor/external/note) get
+// their own shape since that's where a real visual read (branch point, datastore, external
+// system, person, comment) actually helps.
+const DIAGRAM_GEN_SHAPE_STYLE={
+  decision:'rhombus;whiteSpace=wrap;html=1;',
+  backend:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
+  actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;',
+  external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
+  note:'shape=note;whiteSpace=wrap;html=1;size=14;'
+};
+// Fixed (not cycled) hue per shape category, so the same category reads as the same color
+// across every diagram — the "webshop and another external system share a color because
+// they're both external" idea, at the category level (per-name identity coloring is parked).
+// Only applies to nodes AI actually classified; unclassified nodes keep today's tag/branch
+// coloring untouched. 'note' is deliberately excluded — it gets its own muted, non-palette
+// style below instead of competing for one of the system hues.
+const DIAGRAM_GEN_SHAPE_COLOR={ui:'blue',service:'teal',middleware:'purple',backend:'coral',external:'gray',actor:'pink',decision:'amber'};
+const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
+const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',external:'External system',actor:'Actor',decision:'Decision',note:'Note'};
+const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'};
+const AI_DIAGRAM_GEN_SYSTEM_PROMPT=`You turn an outline tree into guidance for drawing a system/process architecture diagram. You do not draw anything yourself — you only classify and connect nodes; a separate deterministic renderer handles all layout, sizing, and color.
+
+You will be given a list of nodes as "id|indented text" (indentation shows the existing outline hierarchy — never change or reject that hierarchy). Reply with ONLY a JSON object — no explanation, no markdown code fences.
+
+Schema:
+{
+  "mode": "tree" | "layered",
+  "nodes": { "<id>": { "shape": "...", "layer": "..." }, ... },
+  "edges": [ { "from": <id>, "to": <id>, "label": "optional short label", "style": "solid" | "dashed" }, ... ]
+}
+
+Rules:
+- "mode": choose "layered" when the content describes a system/architecture or a process flow spanning distinct layers (UI, services, middleware, backend, external systems). Choose "tree" when the content is a genuine hierarchy/outline with no clear layering (e.g. a plain list of topics or requirements). If unsure, prefer "tree".
+- "shape" must be exactly one of: ui, service, middleware, backend, external, actor, decision, note. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box. Use "note" only for pure commentary/information, never for an actual system or step. Use "decision" only for a genuine branch point (e.g. "if X succeeds").
+- "layer" (only meaningful in "layered" mode) must be exactly one of: actor, ui, service, middleware, backend, external. Omit it if the node doesn't clearly belong to one of these.
+- "edges" (only used in "layered" mode) are extra connections beyond the outline's own parent-child links — e.g. a UI node calling a service, or a decision branching to two later steps. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
+- Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.`;
+// Validates and sanitizes a raw AI response into a safe, ready-to-use guideline object — every
+// nodeId must exist in the current scope, shape/layer/mode must be in the fixed whitelists
+// above (anything else is silently dropped, never trusted verbatim), edges need two distinct
+// valid endpoints. Returns null on any parse failure or on a response with nothing usable,
+// which is the caller's signal to fall back to plain tree mode.
+function diagramGenValidateGuideline(raw,scope){
+  let parsed;
+  try{ parsed=JSON.parse(String(raw||'').replace(/```json|```/gi,'').trim()); }catch(e){ return null; }
+  if(!parsed||typeof parsed!=='object')return null;
+  const mode=parsed.mode==='layered'?'layered':(parsed.mode==='tree'?'tree':null);
+  if(!mode)return null;
+  const validIds=new Set(scope.scopeIdxs.map(idx=>nodes[idx].id));
+  const nodeMeta=new Map();
+  if(parsed.nodes&&typeof parsed.nodes==='object'){
+    Object.keys(parsed.nodes).forEach(key=>{
+      const id=Number(key); if(!validIds.has(id))return;
+      const entry=parsed.nodes[key]||{};
+      const shape=DIAGRAM_GEN_SHAPE_WHITELIST.includes(entry.shape)?entry.shape:null;
+      const layer=DIAGRAM_GEN_LAYER_WHITELIST.includes(entry.layer)?entry.layer:null;
+      if(shape||layer)nodeMeta.set(id,{shape:shape||'process',layer});
+    });
+  }
+  const edges=[];
+  if(mode==='layered'&&Array.isArray(parsed.edges)){
+    parsed.edges.forEach(e=>{
+      if(!e)return;
+      const from=Number(e.from), to=Number(e.to);
+      if(!validIds.has(from)||!validIds.has(to)||from===to)return;
+      edges.push({from,to,label:typeof e.label==='string'?e.label.slice(0,40):'',dashed:e.style==='dashed'});
+    });
+  }
+  // Layered mode with nothing usable at all isn't worth the extra rendering complexity over
+  // plain tree mode — treat it the same as a failed/unavailable response.
+  if(mode==='layered'&&!edges.length&&![...nodeMeta.values()].some(m=>m.layer))return null;
+  return {mode,nodeMeta,edges};
+}
+// One JSON call for the whole scope (not per-node) — fast, and matches how the rest of this
+// feature already caps scope size. Silent fallback (returns null) on no key, a locked vault,
+// a provider error, or a response that fails validation — same discipline as diagramGenTrimText.
+async function requestDiagramGenGuideline(scope){
+  if(!featureAiEnabled)return null;
+  try{
+    const outlineText=scope.scopeIdxs.map(idx=>{
+      const node=nodes[idx]; const relDepth=node.depth-scope.baseDepth;
+      return node.id+'|'+'  '.repeat(relDepth)+getNodePlainText(node).slice(0,200);
+    }).join('\n');
+    const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,1024);
+    if(!raw)return null;
+    return diagramGenValidateGuideline(raw,scope);
+  }catch(e){ return null; }
+}
+// Additive override on top of the existing marker>tag>branch color algorithm — runs after it,
+// completely unchanged, and only repaints nodes AI actually classified with a shape that has a
+// fixed category color. A node with both a marker AND a shape keeps its marker color (a
+// deliberate per-node review flag should never be masked by an automatic category color).
+// 'note' and unclassified ('process') nodes are never touched here.
+function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta){
+  if(!nodeMeta||!nodeMeta.size)return;
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx];
+    if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])return;
+    const meta=nodeMeta.get(node.id);
+    if(meta&&meta.shape&&DIAGRAM_GEN_SHAPE_COLOR[meta.shape])colorByIdx.set(idx,DIAGRAM_GEN_SHAPE_COLOR[meta.shape]);
+  });
+}
+// Layered layout: buckets nodes into fixed-order rows by AI-given layer (anything unclassified
+// falls into one trailing catch-all row rather than being dropped), sizes each row to its
+// tallest box, vertically centers shorter boxes within their row, and keeps original outline
+// order left-to-right within a row so placement stays deterministic. Notes never occupy a
+// layer row — real anchoring-near-the-referenced-node is a follow-up; for now they're kept
+// visually distinct (their own shape/style) and collected into their own trailing row so they
+// never distort the height of a real system layer.
+function layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta){
+  const noteIdxs=[]; const rowsMap=new Map();
+  scope.scopeIdxs.forEach(idx=>{
+    const meta=nodeMeta.get(nodes[idx].id);
+    if(meta&&meta.shape==='note'){ noteIdxs.push(idx); return; }
+    const layerKey=(meta&&meta.layer&&DIAGRAM_GEN_LAYER_ORDER.includes(meta.layer))?meta.layer:DIAGRAM_GEN_UNLAYERED_ROW;
+    if(!rowsMap.has(layerKey))rowsMap.set(layerKey,[]);
+    rowsMap.get(layerKey).push(idx);
+  });
+  const rowOrder=DIAGRAM_GEN_LAYER_ORDER.filter(k=>rowsMap.has(k));
+  if(rowsMap.has(DIAGRAM_GEN_UNLAYERED_ROW))rowOrder.push(DIAGRAM_GEN_UNLAYERED_ROW);
+  const positions=new Map();
+  function placeRow(idxs,y){
+    const rowH=Math.max(...idxs.map(i=>dimsByIdx.get(i).h));
+    let x=0;
+    idxs.forEach(idx=>{ const d=dimsByIdx.get(idx); positions.set(idx,{x,y:y+(rowH-d.h)/2}); x+=d.w+DIAGRAM_GEN_GAP_X; });
+    return rowH;
+  }
+  let y=0;
+  rowOrder.forEach(layerKey=>{ y+=placeRow(rowsMap.get(layerKey),y)+DIAGRAM_GEN_GAP_Y; });
+  if(noteIdxs.length)placeRow(noteIdxs,y);
+  return positions;
+}
+// Which shape/marker categories actually appear in this diagram — the legend only ever shows
+// what's really on the page, never a static "here are all N possible shapes" block.
+function diagramGenLegendEntries(scope,nodeMeta){
+  const shapesUsed=new Set(), markersUsed=new Set();
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx]; const meta=nodeMeta.get(node.id);
+    if(meta&&meta.shape&&meta.shape!=='process')shapesUsed.add(meta.shape);
+    if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])markersUsed.add(node.marker);
+  });
+  const entries=[];
+  DIAGRAM_GEN_LAYER_ORDER.concat(['decision','note']).forEach(k=>{
+    if(!shapesUsed.has(k))return;
+    entries.push({label:DIAGRAM_GEN_SHAPE_LABEL[k]||k,color:k==='note'?DIAGRAM_GEN_NOTE_COLOR:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_SHAPE_COLOR[k]||'gray']});
+  });
+  Object.keys(DIAGRAM_GEN_MARKER_LABEL).forEach(k=>{
+    if(markersUsed.has(k))entries.push({label:DIAGRAM_GEN_MARKER_LABEL[k],color:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_MARKER_COLOR[k]]});
+  });
+  return entries;
+}
+function diagramGenLegendCells(entries,x,y){
+  let out='';
+  entries.forEach((e,i)=>{
+    const ey=y+i*22;
+    out+=`<mxCell id="gd-legend-sw${i}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=${e.color.fill};strokeColor=${e.color.stroke};" vertex="1" parent="1"><mxGeometry x="${x}" y="${ey}" width="14" height="14" as="geometry" /></mxCell>\n`;
+    out+=`<mxCell id="gd-legend-lbl${i}" value="${escXmlAttr(e.label)}" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#5F5E5A;" vertex="1" parent="1"><mxGeometry x="${x+20}" y="${ey-3}" width="150" height="20" as="geometry" /></mxCell>\n`;
+  });
+  return out;
+}
 function escXmlAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 // Deterministic per-document: same tag text always picks the same reserved hue, without a
 // hardcoded keyword dictionary that would only fit one person's vocabulary.
@@ -16786,12 +16962,18 @@ async function generateDiagramFromOutline(){
   // exposure — downstream layout still resolves nodes by index too, so an outline edited during
   // generation can still shift things after this point, but the label-fetch phase itself is safe.
   const rawTexts=scope.scopeIdxs.map(idx=>getNodePlainText(nodes[idx]));
-  const trimmed=await Promise.all(rawTexts.map(t=>diagramGenTrimText(t)));
+  const [trimmed,guideline]=await Promise.all([
+    Promise.all(rawTexts.map(t=>diagramGenTrimText(t))),
+    requestDiagramGenGuideline(scope)
+  ]);
   const labels=new Map();
   scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
+  const nodeMeta=guideline?guideline.nodeMeta:new Map();
+  const mode=guideline?guideline.mode:'tree';
+  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta);
   const dimsByIdx=new Map();
   scope.scopeIdxs.forEach(idx=>dimsByIdx.set(idx,diagramGenBoxDims(labels.get(idx))));
-  const positions=layoutDiagramGenTree(scope,dimsByIdx);
+  const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx);
   let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
@@ -16800,24 +16982,48 @@ async function generateDiagramFromOutline(){
   const offsetX=40-minX;
   let cells='';
   scope.scopeIdxs.forEach(idx=>{
-    const p=positions.get(idx), d=dimsByIdx.get(idx); const c=DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray;
-    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
+    const p=positions.get(idx), d=dimsByIdx.get(idx); const meta=nodeMeta.get(nodes[idx].id);
+    const isNote=meta&&meta.shape==='note';
+    const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray);
+    const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
+    const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${Math.round(p.x+offsetX)}" y="${Math.round(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
   });
-  function edgeCell(a,b){
-    return `<mxCell id="gd-e${a}-${b}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
+  let edgeCounter=0;
+  function edgeCell(a,b,label,dashed){
+    const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;'+(dashed?'dashed=1;':'');
+    const val=label?` value="${escXmlAttr(label)}"`:'';
+    return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
   }
-  scope.scopeIdxs.forEach(idx=>{
-    const kids=diagramGenChildIdxs(idx);
-    if(!kids.length)return;
-    if(diagramGenIsChainGroup(idx)){
-      cells+=edgeCell(idx,kids[0]);
-      for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1]);
-    } else {
-      kids.forEach(ci=>{ cells+=edgeCell(idx,ci); });
-    }
-  });
-  const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
+  if(mode==='layered'&&guideline.edges.length){
+    // Layered mode draws exactly the connections AI gave us — a pure parent-child tree edge
+    // set wouldn't express cross-layer calls or decision branches anyway, and AI saw the whole
+    // scope, so it's positioned to know what actually connects to what.
+    const idToIdx=new Map(scope.scopeIdxs.map(idx=>[nodes[idx].id,idx]));
+    guideline.edges.forEach(e=>{
+      const a=idToIdx.get(e.from), b=idToIdx.get(e.to);
+      if(a==null||b==null)return;
+      cells+=edgeCell(a,b,e.label,e.dashed);
+    });
+  } else {
+    scope.scopeIdxs.forEach(idx=>{
+      const kids=diagramGenChildIdxs(idx);
+      if(!kids.length)return;
+      if(diagramGenIsChainGroup(idx)){
+        cells+=edgeCell(idx,kids[0]);
+        for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1]);
+      } else {
+        kids.forEach(ci=>{ cells+=edgeCell(idx,ci); });
+      }
+    });
+  }
+  const legendEntries=diagramGenLegendEntries(scope,nodeMeta);
+  let legendW=0;
+  if(legendEntries.length){
+    cells+=diagramGenLegendCells(legendEntries,Math.round(maxX-minX+offsetX+40),40);
+    legendW=190;
+  }
+  const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80+legendW)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
   if(existing){
     existing.xml=xml; existing.pageCount=splitMxfilePages(xml).length; existing.modifiedAt=Date.now();
     markDirty(); scheduleAutoSave();
