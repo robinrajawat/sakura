@@ -2911,6 +2911,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-hidden-chip-note{color:var(--muted)}
 .pv-hidden-chip-code{color:var(--sem-code)}
 .pv-hidden-chip-decision{color:var(--fc-green)}
+.pv-hidden-chip-quote{color:var(--sem-quote)}
 #preview-body .pv-empty{text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif;padding:60px 0}
 
 
@@ -28382,6 +28383,11 @@ function previewSubtreeHasNote(idx){
   for(let i=idx+1;i<end;i++){ if(nodes[i].note&&nodes[i].note.trim())return true; }
   return false;
 }
+function previewSubtreeHasQuote(idx){
+  const end=getSubtreeEnd(idx);
+  for(let i=idx+1;i<end;i++){ if(previewSplitQuotes(nodes[i].text||'').quotes.length)return true; }
+  return false;
+}
 function previewSubtreeHasCode(idx){
   const end=getSubtreeEnd(idx);
   for(let i=idx+1;i<end;i++){ const cb=nodes[i].codeBlock; if(cb&&cb.code&&cb.code.trim())return true; }
@@ -28597,6 +28603,12 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&featureCodeEnabled&&(ownCode||previewSubtreeHasCode(idx))){
         const chip=document.createElement('span'); chip.className='pv-hidden-chip pv-hidden-chip-code'; chip.dataset.tip='Contains a code block — click to expand';
         chip.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg>';
+        chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
+        contentEl.appendChild(chip);
+      }
+      if(!_pvSuppressNoteCodeIndicators&&(pvQuotes.length||previewSubtreeHasQuote(idx))){
+        const chip=document.createElement('span'); chip.className='pv-hidden-chip pv-hidden-chip-quote'; chip.dataset.tip='Contains a citation — click to expand';
+        chip.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.757-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h1v1c0 1.25-.75 2-2 2z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h1v1c0 1.25-.75 2-2 2z"/></svg>';
         chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
         contentEl.appendChild(chip);
       }
