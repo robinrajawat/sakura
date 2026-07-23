@@ -16633,25 +16633,50 @@ async function diagramGenTrimText(text){
   if(lastSpace>20)cut=cut.slice(0,lastSpace);
   return cut+'…';
 }
-// Bottom-up subtree-width computation, then top-down x/y assignment — standard tree layout,
-// fixed box width throughout so the only variable is how many siblings a subtree must fit.
+// Returns a node's direct children (one depth level down, within its own subtree).
+function diagramGenChildIdxs(idx){
+  const node=nodes[idx]; const end=getSubtreeEnd(idx); const out=[];
+  for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)out.push(i); }
+  return out;
+}
+function diagramGenIsLeaf(idx){ return diagramGenChildIdxs(idx).length===0; }
+// A "chain group": more than one child, and every one of them is a leaf. Almost always means
+// a flat list of sequential steps rather than genuine parallel branches (a real branch usually
+// has its own sub-detail) — so these render as a single vertical column with sequential edges
+// (parent → step 1 → step 2 → …) instead of fanning out into a wide row of siblings.
+function diagramGenIsChainGroup(idx){
+  const kids=diagramGenChildIdxs(idx);
+  return kids.length>1&&kids.every(diagramGenIsLeaf);
+}
+// Bottom-up subtree-width computation, then top-down x/y assignment. Fixed box width
+// throughout; a chain group collapses to a single column (width = one box, not a sum of
+// children), which is what keeps a long flat step-list narrow instead of blowing out the
+// canvas width the way a horizontal fan-out of the same list would.
 function layoutDiagramGenTree(scope){
   const widthByIdx=new Map();
   function computeWidth(idx){
-    const node=nodes[idx]; const end=getSubtreeEnd(idx); const children=[];
-    for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)children.push(i); }
-    if(!children.length){ widthByIdx.set(idx,DIAGRAM_GEN_BOX_W); return DIAGRAM_GEN_BOX_W; }
-    let sum=0; children.forEach((ci,k)=>{ sum+=computeWidth(ci); if(k>0)sum+=DIAGRAM_GEN_GAP_X; });
+    const kids=diagramGenChildIdxs(idx);
+    if(!kids.length||diagramGenIsChainGroup(idx)){ widthByIdx.set(idx,DIAGRAM_GEN_BOX_W); return DIAGRAM_GEN_BOX_W; }
+    let sum=0; kids.forEach((ci,k)=>{ sum+=computeWidth(ci); if(k>0)sum+=DIAGRAM_GEN_GAP_X; });
     const w=Math.max(DIAGRAM_GEN_BOX_W,sum); widthByIdx.set(idx,w); return w;
   }
   const positions=new Map();
-  function place(idx,left,depth){
+  // y is passed as an absolute pixel row rather than depth*constant, since a chain group
+  // consumes extra vertical rows beyond its outline depth — render position and outline
+  // depth are no longer the same thing once a chain is in play.
+  function place(idx,left,y){
     const w=widthByIdx.get(idx);
-    positions.set(idx,{x:left+w/2-DIAGRAM_GEN_BOX_W/2,y:depth*(DIAGRAM_GEN_BOX_H+DIAGRAM_GEN_GAP_Y)});
-    const node=nodes[idx]; const end=getSubtreeEnd(idx); const children=[];
-    for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)children.push(i); }
+    positions.set(idx,{x:left+w/2-DIAGRAM_GEN_BOX_W/2,y});
+    const kids=diagramGenChildIdxs(idx);
+    if(!kids.length)return;
+    if(diagramGenIsChainGroup(idx)){
+      let curY=y+DIAGRAM_GEN_BOX_H+DIAGRAM_GEN_GAP_Y;
+      const colX=left+w/2-DIAGRAM_GEN_BOX_W/2;
+      kids.forEach(ci=>{ widthByIdx.set(ci,DIAGRAM_GEN_BOX_W); positions.set(ci,{x:colX,y:curY}); curY+=DIAGRAM_GEN_BOX_H+DIAGRAM_GEN_GAP_Y; });
+      return;
+    }
     let cursor=left;
-    children.forEach(ci=>{ const cw=widthByIdx.get(ci); place(ci,cursor,depth+1); cursor+=cw+DIAGRAM_GEN_GAP_X; });
+    kids.forEach(ci=>{ const cw=widthByIdx.get(ci); place(ci,cursor,y+DIAGRAM_GEN_BOX_H+DIAGRAM_GEN_GAP_Y); cursor+=cw+DIAGRAM_GEN_GAP_X; });
   }
   if(scope.rootIdxs.length>1){
     let cursor=0;
@@ -16682,12 +16707,17 @@ async function generateDiagramFromOutline(){
     const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${Math.round(p.x+offsetX)}" y="${Math.round(p.y+40)}" width="${DIAGRAM_GEN_BOX_W}" height="${DIAGRAM_GEN_BOX_H}" as="geometry" /></mxCell>\n`;
   });
+  function edgeCell(a,b){
+    return `<mxCell id="gd-e${a}-${b}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
+  }
   scope.scopeIdxs.forEach(idx=>{
-    const node=nodes[idx]; const end=getSubtreeEnd(idx);
-    for(let i=idx+1;i<end;i++){
-      if(nodes[i].depth===node.depth+1){
-        cells+=`<mxCell id="gd-e${idx}-${i}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="gd-n${idx}" target="gd-n${i}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
-      }
+    const kids=diagramGenChildIdxs(idx);
+    if(!kids.length)return;
+    if(diagramGenIsChainGroup(idx)){
+      cells+=edgeCell(idx,kids[0]);
+      for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1]);
+    } else {
+      kids.forEach(ci=>{ cells+=edgeCell(idx,ci); });
     }
   });
   const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
