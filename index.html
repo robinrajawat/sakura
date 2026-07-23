@@ -20784,6 +20784,12 @@ function setAutoRewriteEnabled(on,persist=true){
   const t=el('auto-rewrite-toggle'); if(t){t.classList.toggle('on',autoRewriteEnabled); t.setAttribute('aria-checked',String(autoRewriteEnabled))}
   const sub=el('auto-rewrite-sub-controls'); if(sub)sub.classList.toggle('is-disabled',!autoRewriteEnabled);
   updateAutoRewriteStatusChip();
+  // Per-node 'queued for auto-rewrite' dots are drawn by the main render() based on
+  // autoRewriteEnabled + autoRewriteQueue — neither of which triggers a re-render on its own,
+  // so without this the dots from before toggling off would sit stale in the DOM (the queue
+  // itself clears immediately above, but nothing repaints the tree to reflect that) until some
+  // unrelated action happened to re-render later.
+  render();
   if(persist){savePrefs(); scheduleAutoSave()}
 }
 
@@ -29758,6 +29764,13 @@ function openPreview(){
   applyPresenterZoom();
   el('preview-overlay')?.classList.add('open');
   if(previewAutoPresenter){ previewSlideIndex=0; enterPresenterMode(); }
+  // Preview renders whatever's currently in nodes[].text — a node still queued for
+  // auto-rewrite hasn't been touched yet, so what's shown here may change shortly after.
+  // Worth flagging rather than letting it look like the rewritten version already.
+  if(autoRewriteEnabled&&autoRewriteQueue.size>0){
+    const n=autoRewriteQueue.size;
+    showToast(`${n} node${n===1?'':'s'} still queued for auto-rewrite — Preview shows the current text until ${n===1?'it\u2019s':'they\u2019re'} rewritten`,null,false,2600);
+  }
 }
 function closePreview(){
   previewActive=false;
