@@ -16607,7 +16607,7 @@ const DIAGRAM_GEN_UNLAYERED_ROW='__unlayered__';
 const DIAGRAM_GEN_SHAPE_STYLE={
   decision:'rhombus;whiteSpace=wrap;html=1;',
   backend:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
-  actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;',
+  actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;verticalLabelPosition=bottom;verticalAlign=top;overflow=visible;',
   external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
   note:'shape=note;whiteSpace=wrap;html=1;size=14;'
 };
@@ -16861,7 +16861,17 @@ async function diagramGenTrimText(text){
   if(lastSpace>20)cut=cut.slice(0,lastSpace);
   return cut+'…';
 }
-// Box dims from a (possibly already-trimmed) label: width grows with length up to the cap;
+// A diamond has far less usable interior area than its bounding box for the same text (the
+// angled edges eat into it), and an actor icon's proportions are fixed by the shape itself —
+// sizing it to a wide label-driven box just squashes the stick figure. Runs after the normal
+// label-fit box dims, only for the shapes that actually need geometry different from a plain
+// rectangle.
+function diagramGenAdjustDimsForShape(dims,shape){
+  if(shape==='decision')return {w:Math.round(dims.w*1.35),h:Math.round(dims.h*1.5)};
+  if(shape==='actor')return {w:70,h:86}; // fixed compact portrait size — label renders below the icon, not inside it
+  if(shape==='backend')return {w:dims.w,h:dims.h+16}; // cylinder's elliptical cap eats into the label area otherwise
+  return dims;
+}
 // height only steps up to the two-line size if the label still needs to wrap at that width —
 // short labels stay compact instead of every box defaulting to the same fixed size.
 function diagramGenBoxDims(text){
@@ -16972,13 +16982,17 @@ async function generateDiagramFromOutline(){
   const mode=guideline?guideline.mode:'tree';
   applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta);
   const dimsByIdx=new Map();
-  scope.scopeIdxs.forEach(idx=>dimsByIdx.set(idx,diagramGenBoxDims(labels.get(idx))));
+  scope.scopeIdxs.forEach(idx=>{
+    const meta=nodeMeta.get(nodes[idx].id);
+    dimsByIdx.set(idx,diagramGenAdjustDimsForShape(diagramGenBoxDims(labels.get(idx)),meta&&meta.shape));
+  });
   const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx);
   let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
     minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x+d.w); maxY=Math.max(maxY,p.y+d.h);
   });
+  const snap10=n=>Math.round(n/10)*10;
   const offsetX=40-minX;
   let cells='';
   scope.scopeIdxs.forEach(idx=>{
@@ -16987,7 +17001,7 @@ async function generateDiagramFromOutline(){
     const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray);
     const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
     const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
-    cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${Math.round(p.x+offsetX)}" y="${Math.round(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
+    cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${snap10(p.x+offsetX)}" y="${snap10(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
   });
   let edgeCounter=0;
   function edgeCell(a,b,label,dashed){
@@ -17020,7 +17034,7 @@ async function generateDiagramFromOutline(){
   const legendEntries=diagramGenLegendEntries(scope,nodeMeta);
   let legendW=0;
   if(legendEntries.length){
-    cells+=diagramGenLegendCells(legendEntries,Math.round(maxX-minX+offsetX+40),40);
+    cells+=diagramGenLegendCells(legendEntries,Math.round(maxX+offsetX+40),40);
     legendW=190;
   }
   const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80+legendW)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
