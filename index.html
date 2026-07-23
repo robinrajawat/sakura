@@ -29088,7 +29088,7 @@ function showPopoverCaptureForm(nodeId,kind){
   pop.classList.remove('pv-marker-popover');
   pop.classList.add('pv-popover-capture');
   const label=kind==='comment'?'Note':'Q&amp;A';
-  const placeholder=kind==='comment'?'Type your note…':'Type your question…';
+  const placeholder=kind==='comment'?'Type your note… ("- " for a bullet)':'Type your question…';
   // Both start blank and fold a short read-only preview of the node's text into the header line
   // itself (label · preview), confirming which line you're capturing against without a whole
   // extra row for it — neither copies that text into what actually gets saved.
@@ -29168,15 +29168,45 @@ function saveNodeText(nodeId,text){
   markDirty(); scheduleAutoSave();
   showToast('Node text updated');
 }
+// Converts markdown-style "- "/"* " lines typed into the presenter-mode note textarea into a
+// real <ul><li> list, so a quick "- risk\n- mitigation\n- owner" capture reads as an actual
+// bulleted list everywhere node.note is rendered (Note panel, exports, PPTX/Word notes) rather
+// than three dashes glued into one run-on line — noteBlockLines/notePreviewPlainText already
+// treat <li> as its own block, same as the rich editor's real lists, so nothing downstream needs
+// to change. Non-bullet lines stay plain text, each its own block. Deliberately not full
+// Markdown (no bold/italic/links) — this popover is a fast plain-textarea capture, not the rich
+// contenteditable editor.
+function noteCaptureLinesToHtml(text){
+  const lines=text.split(/\r\n|\r|\n/);
+  let html=''; let listBuf=[];
+  const flushList=()=>{ if(listBuf.length){ html+='<ul>'+listBuf.map(t=>`<li>${esc(t)}</li>`).join('')+'</ul>'; listBuf=[]; } };
+  for(const raw of lines){
+    const m=/^\s*[-*]\s+(.+)$/.exec(raw);
+    if(m){ listBuf.push(m[1].trim()); continue; }
+    flushList();
+    if(raw.trim()==='')continue;
+    html+=`<div>${esc(raw.trim())}</div>`;
+  }
+  flushList();
+  return html;
+}
 function saveNodeComment(nodeId,text){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const trimmed=text.trim(); if(!trimmed)return;
   const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
   // Stamp and text share one line (no <br> between them) — the one part of the same-line
-  // experiment worth keeping. Entries themselves stay <div>-based (not spans) so multiple
+  // experiment worth keeping — but only for the plain single-line case, which is still the
+  // overwhelming majority of captures and keeps producing byte-identical markup to before this
+  // function grew list support. Anything with a newline or a leading "- "/"* " routes through
+  // noteCaptureLinesToHtml instead, with the stamp getting its own line via <br> rather than
+  // sharing one with the first bullet — gluing a timestamp onto the front of a list item read
+  // worse than a run-on sentence did. Entries themselves stay <div>-based (not spans) so multiple
   // comments on one node still stack as separate, clearly-separated blocks via the existing
   // margin — a "·"-joined run of several full sentences read worse than each on its own line.
-  const addition=`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span> ${esc(trimmed)}</div>`;
+  const isPlainSingleLine=!/\r|\n/.test(trimmed)&&!/^\s*[-*]\s+/.test(trimmed);
+  const addition=isPlainSingleLine
+    ?`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span> ${esc(trimmed)}</div>`
+    :`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span><br>${noteCaptureLinesToHtml(trimmed)}</div>`;
   node.note=node.note?(node.note.trim()+addition):addition;
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
