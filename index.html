@@ -5867,6 +5867,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span class="note-tb-sep decision-only-btn" id="dltb-sep-2"></span>
     <button type="button" id="dltb-reorder-toggle" class="note-tb-btn decision-only-btn" data-tip="Drag to reorder decisions" aria-label="Drag to reorder decisions" aria-pressed="false"><svg width="9" height="14" viewBox="0 0 9 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="7" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="7" cy="12" r="1.3"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-add" data-tip="New diagram"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button class="note-tb-btn diagrams-only-btn" id="dtb-generate" data-tip="Generate a rough diagram from the outline (selected node, or whole document)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-import" data-tip="Import a diagram file (.drawio/.xml)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
     <button class="note-tb-btn diagrams-only-btn" id="dtb-search" data-tip="Filter diagrams" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     <button class="note-tb-btn mindmap-only-btn" id="mtb-add" data-tip="New mind map"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -10586,6 +10587,7 @@ document.addEventListener('mousedown',e=>{
 },true);
 
 el('dtb-add')?.addEventListener('click',createDiagram);
+el('dtb-generate')?.addEventListener('click',generateDiagramFromOutline);
 el('mtb-add')?.addEventListener('click',()=>{ const m=createMindMap('Untitled map'); markDirty(); if(typeof scheduleAutoSave==='function')scheduleAutoSave(); renderMindMapsList(); openMindMapOverlay(m.id); });
 el('dtb-import')?.addEventListener('click',openImportDiagramModal);
 el('dtb-search')?.addEventListener('mousedown',e=>{ e.preventDefault(); toggleDiagramSearch(); });
@@ -16509,6 +16511,188 @@ function addDiagramFromXml(xml){
   renderDiagramsList();
   showToast('Diagram added');
   regenerateDiagramThumbnail(d.id);
+}
+// ── "Generate rough diagram" (v1) ─────────────────────────────────────────
+// Deterministic tree diagram from the outline: fixed-width boxes, bottom-up subtree-width
+// layout, and a color algorithm (branch position + tag override) using the same subtle
+// fill/stroke/text weights across every hue — not a bright/saturated palette. AI is only
+// ever asked to shorten overlong node text; it never touches layout, color, or structure,
+// so a weak or unconfigured AI provider can only make a label less concise, never break
+// the diagram. Falls back to plain truncation if no AI key is set or the call fails.
+const DIAGRAM_GEN_MAX_NODES=30;
+const DIAGRAM_GEN_MAX_DEPTH=5; // levels, root counted as depth 0
+const DIAGRAM_GEN_CHAR_BUDGET=42;
+const DIAGRAM_GEN_BOX_W=200, DIAGRAM_GEN_BOX_H=60, DIAGRAM_GEN_GAP_X=30, DIAGRAM_GEN_GAP_Y=50;
+// Same stops (50 fill / 600 stroke / 800 text) as the c-{ramp} classes used elsewhere for
+// diagrams — kept as plain hex here since this XML has to render correctly outside any
+// Sakura-specific CSS, straight in draw.io.
+const DIAGRAM_GEN_PALETTE={
+  gray:  {fill:'#F1EFE8',stroke:'#5F5E5A',font:'#2C2C2A'},
+  purple:{fill:'#EEEDFE',stroke:'#534AB7',font:'#3C3489'},
+  teal:  {fill:'#E1F5EE',stroke:'#0F6E56',font:'#085041'},
+  coral: {fill:'#FAECE7',stroke:'#993C1D',font:'#712B13'},
+  pink:  {fill:'#FBEAF0',stroke:'#993556',font:'#72243E'},
+  blue:  {fill:'#E6F1FB',stroke:'#185FA5',font:'#0C447C'},
+  green: {fill:'#EAF3DE',stroke:'#3B6D11',font:'#27500A'},
+  amber: {fill:'#FAEEDA',stroke:'#854F0B',font:'#633806'},
+  red:   {fill:'#FCEBEB',stroke:'#A32D2D',font:'#791F1F'}
+};
+// Reserved for tag-based overrides only — kept out of the branch-cycling set below so a
+// tagged "system" always reads as semantically distinct from ordinary branch coloring.
+const DIAGRAM_GEN_BRANCH_CYCLE=['purple','teal','coral','pink'];
+const DIAGRAM_GEN_TAG_CYCLE=['blue','green','amber','red'];
+function escXmlAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+// Deterministic per-document: same tag text always picks the same reserved hue, without a
+// hardcoded keyword dictionary that would only fit one person's vocabulary.
+function diagramGenTagColorKey(tag){
+  let h=0; for(let i=0;i<tag.length;i++)h=(h+tag.charCodeAt(i))%DIAGRAM_GEN_TAG_CYCLE.length;
+  return DIAGRAM_GEN_TAG_CYCLE[h];
+}
+// Picks the scope to diagram: a single selected node's subtree, or (nothing selected) the
+// whole document treated as an implicit multi-root tree. Returns null (after a toast) if the
+// scope is empty, spans more than one explicit selection, or exceeds the size/depth cap —
+// same "select a smaller subtree" pattern other bulk AI actions in the app already use.
+function pickDiagramGenScope(){
+  if(!nodes.length){ showToast('Nothing to diagram — this document is empty'); return null; }
+  const selIds=getSelectedIds();
+  let rootIdxs;
+  if(selIds.length===0){
+    rootIdxs=nodes.map((n,i)=>i).filter(i=>nodes[i].depth===0);
+  } else if(selIds.length===1){
+    const idx=getIndex(selIds[0]);
+    if(idx<0){ showToast('Selected node not found'); return null; }
+    rootIdxs=[idx];
+  } else {
+    showToast('Select a single node to diagram just that section, or nothing to diagram the whole document');
+    return null;
+  }
+  const baseDepth=nodes[rootIdxs[0]].depth;
+  const scopeIdxSet=new Set();
+  rootIdxs.forEach(ri=>{ const end=getSubtreeEnd(ri); for(let i=ri;i<end;i++)scopeIdxSet.add(i); });
+  const scopeIdxs=[...scopeIdxSet].sort((a,b)=>a-b);
+  const maxDepth=Math.max(...scopeIdxs.map(i=>nodes[i].depth))-baseDepth;
+  if(scopeIdxs.length>DIAGRAM_GEN_MAX_NODES||maxDepth>=DIAGRAM_GEN_MAX_DEPTH){
+    showToast(`Too much to diagram at once (${scopeIdxs.length} nodes) — select a smaller section first`);
+    return null;
+  }
+  return {rootIdxs,baseDepth,scopeIdxs};
+}
+// Assigns a palette key to every node in scope: multi-root docs use a virtual root (gray,
+// never drawn) so each top-level item still gets its own branch color; a tagged node (or its
+// tagged ancestor, once inherited) overrides branch color with a reserved hue instead.
+function assignDiagramGenColors(scope){
+  const colorByIdx=new Map();
+  let branchCursor=0;
+  function walk(idx,inheritedKey){
+    const node=nodes[idx];
+    let key=inheritedKey;
+    const tag=Array.isArray(node.tags)&&node.tags.length?node.tags[0]:null;
+    if(tag)key=diagramGenTagColorKey(tag);
+    colorByIdx.set(idx,key);
+    const end=getSubtreeEnd(idx);
+    for(let i=idx+1;i<end;i++){
+      if(nodes[i].depth===node.depth+1)walk(i,key);
+    }
+  }
+  if(scope.rootIdxs.length>1){
+    scope.rootIdxs.forEach(ri=>{
+      const key=DIAGRAM_GEN_BRANCH_CYCLE[branchCursor%DIAGRAM_GEN_BRANCH_CYCLE.length]; branchCursor++;
+      walk(ri,key);
+    });
+  } else {
+    colorByIdx.set(scope.rootIdxs[0],'gray');
+    const rootIdx=scope.rootIdxs[0], end=getSubtreeEnd(rootIdx);
+    let assignedRoot=false;
+    for(let i=rootIdx+1;i<end;i++){
+      if(nodes[i].depth===nodes[rootIdx].depth+1){
+        const key=DIAGRAM_GEN_BRANCH_CYCLE[branchCursor%DIAGRAM_GEN_BRANCH_CYCLE.length]; branchCursor++;
+        walk(i,key); assignedRoot=true;
+      }
+    }
+    if(!assignedRoot)colorByIdx.set(rootIdx,'gray');
+  }
+  return colorByIdx;
+}
+// Only ever shortens text — never asked to restructure, summarize away meaning, or touch
+// anything but the string itself. Silent, safe fallback to plain truncation.
+async function diagramGenTrimText(text){
+  const plain=String(text||'').trim()||'(untitled)';
+  if(plain.length<=DIAGRAM_GEN_CHAR_BUDGET)return plain;
+  if(featureAiEnabled){
+    try{
+      const out=await callAiApiWithPrompt(
+        'Shorten the given text to at most 40 characters while preserving its core meaning. Reply with only the shortened text — no quotes, no explanation.',
+        plain, 60
+      );
+      const trimmed=String(out||'').trim().replace(/^["']|["']$/g,'');
+      if(trimmed&&trimmed.length<=DIAGRAM_GEN_CHAR_BUDGET)return trimmed;
+    }catch(e){ /* no key, locked vault, or provider error — fall through to truncation */ }
+  }
+  let cut=plain.slice(0,DIAGRAM_GEN_CHAR_BUDGET-1);
+  const lastSpace=cut.lastIndexOf(' ');
+  if(lastSpace>20)cut=cut.slice(0,lastSpace);
+  return cut+'…';
+}
+// Bottom-up subtree-width computation, then top-down x/y assignment — standard tree layout,
+// fixed box width throughout so the only variable is how many siblings a subtree must fit.
+function layoutDiagramGenTree(scope){
+  const widthByIdx=new Map();
+  function computeWidth(idx){
+    const node=nodes[idx]; const end=getSubtreeEnd(idx); const children=[];
+    for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)children.push(i); }
+    if(!children.length){ widthByIdx.set(idx,DIAGRAM_GEN_BOX_W); return DIAGRAM_GEN_BOX_W; }
+    let sum=0; children.forEach((ci,k)=>{ sum+=computeWidth(ci); if(k>0)sum+=DIAGRAM_GEN_GAP_X; });
+    const w=Math.max(DIAGRAM_GEN_BOX_W,sum); widthByIdx.set(idx,w); return w;
+  }
+  const positions=new Map();
+  function place(idx,left,depth){
+    const w=widthByIdx.get(idx);
+    positions.set(idx,{x:left+w/2-DIAGRAM_GEN_BOX_W/2,y:depth*(DIAGRAM_GEN_BOX_H+DIAGRAM_GEN_GAP_Y)});
+    const node=nodes[idx]; const end=getSubtreeEnd(idx); const children=[];
+    for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)children.push(i); }
+    let cursor=left;
+    children.forEach(ci=>{ const cw=widthByIdx.get(ci); place(ci,cursor,depth+1); cursor+=cw+DIAGRAM_GEN_GAP_X; });
+  }
+  if(scope.rootIdxs.length>1){
+    let cursor=0;
+    scope.rootIdxs.forEach(ri=>{ const w=computeWidth(ri); place(ri,cursor,0); cursor+=w+DIAGRAM_GEN_GAP_X; });
+  } else {
+    computeWidth(scope.rootIdxs[0]);
+    place(scope.rootIdxs[0],0,0);
+  }
+  return positions;
+}
+async function generateDiagramFromOutline(){
+  if(!padDiagramsTabEnabled){ showToast('Diagrams is off — turn it back on in Settings → Features → Pad Panel'); return; }
+  const scope=pickDiagramGenScope();
+  if(!scope)return;
+  showToast('Generating a rough diagram…');
+  const colorByIdx=assignDiagramGenColors(scope);
+  const positions=layoutDiagramGenTree(scope);
+  const labels=new Map();
+  for(const idx of scope.scopeIdxs){
+    labels.set(idx, await diagramGenTrimText(getNodePlainText(nodes[idx])));
+  }
+  let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
+  positions.forEach(p=>{ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x+DIAGRAM_GEN_BOX_W); maxY=Math.max(maxY,p.y+DIAGRAM_GEN_BOX_H); });
+  const offsetX=40-minX;
+  let cells='';
+  scope.scopeIdxs.forEach(idx=>{
+    const p=positions.get(idx); const c=DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray;
+    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
+    cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${Math.round(p.x+offsetX)}" y="${Math.round(p.y+40)}" width="${DIAGRAM_GEN_BOX_W}" height="${DIAGRAM_GEN_BOX_H}" as="geometry" /></mxCell>\n`;
+  });
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx]; const end=getSubtreeEnd(idx);
+    for(let i=idx+1;i<end;i++){
+      if(nodes[i].depth===node.depth+1){
+        cells+=`<mxCell id="gd-e${idx}-${i}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="gd-n${idx}" target="gd-n${i}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
+      }
+    }
+  });
+  const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
+  addDiagramFromXml(xml);
+  showToast('Rough diagram generated — refine it in draw.io');
 }
 // Sibling of addDiagramFromXml for a diagram copied whole via the row's own Copy button
 // (see copyDiagramToClipboard) — the payload already carries title/status/note/pageSvgs, so
