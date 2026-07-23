@@ -15349,7 +15349,14 @@ function splitNodeAtCursor(id,caretPos){
   nodes.splice(getSubtreeEnd(idx),0,nn);
   rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); beginEdit(nn.id,false);
 }
-function indentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots[0]<=0)return; pushUndo(); markDirty(); roots.forEach(idx=>{const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)nodes[i].depth+=1}); rebuildParentIds(); render()}
+// A node can only be indented if some earlier node at the SAME depth exists to become its new
+// parent — walking back from idx, hitting an equal depth first means yes; hitting a shallower
+// depth first (an ancestor, no elder sibling) means no, idx is already a first child. Without
+// this check, indenting a first child silently produced a depth that skipped a level with no
+// valid parent underneath it (rebuildParentIds finds nothing at depth-1 and leaves parentId
+// null while depth stays bumped) — a broken, inconsistent tree node.
+function canIndentAt(idx){const depth=nodes[idx].depth; for(let i=idx-1;i>=0;i--){if(nodes[i].depth===depth)return true; if(nodes[i].depth<depth)return false} return false}
+function indentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots.some(idx=>!canIndentAt(idx)))return; pushUndo(); markDirty(); roots.forEach(idx=>{const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)nodes[i].depth+=1}); rebuildParentIds(); render()}
 function outdentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots.every(idx=>nodes[idx].depth===0))return; pushUndo(); markDirty(); roots.forEach(idx=>{if(nodes[idx].depth===0)return; const end=getSubtreeEnd(idx); for(let i=idx;i<end;i++)nodes[i].depth-=1}); rebuildParentIds(); render()}
 function deleteSelected(){
   if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); cleanupOrphanedFeaturedTables(allIds); render(); showToast('Cleared tree'); return}
