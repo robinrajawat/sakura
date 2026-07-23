@@ -14318,7 +14318,18 @@ function setInputCaret(input,pos=-1){if(!input)return; const len=input.value.len
 // Escape-without-typing session no longer consumes an undo slot (previously beginEdit() pushed
 // a snapshot unconditionally on every edit session, real or not, polluting the 200-entry undo
 // stack and pushing distant real history out sooner than necessary).
-function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const newText=input?input.value:null; const changed=idx>=0&&input&&nodes[idx].text!==newText; const willAutoConvert=idx>=0&&newText!=null&&(/^\[( |x)\]\s?/i.test(newText)||/^#{1,6}\s+/.test(newText)); if(idx>=0&&(changed||willAutoConvert))pushUndo(); const oldTextForRename=changed?nodes[idx].text:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
+function commitEdit(){if(editingId===null)return; const _eid=editingId; const idx=getIndex(_eid); const input=getEditingInput(); const newText=input?input.value:null; const origText=editSessionOriginalText;
+  // nodes[idx].text is already live-synced to the input's value on every keystroke (see the
+  // 'input' listener in render()), so comparing it against newText here would always match —
+  // that used to make this "changed" check always false and silently skip pushUndo() for
+  // ordinary typing. Compare against the text captured at beginEdit() instead.
+  const changed=idx>=0&&input&&origText!==null&&origText!==newText; const willAutoConvert=idx>=0&&newText!=null&&(/^\[( |x)\]\s?/i.test(newText)||/^#{1,6}\s+/.test(newText));
+  if(idx>=0&&(changed||willAutoConvert)){
+    // Snapshot must capture the PRE-edit text, not the already-live-updated text, or Undo
+    // would just restore the same value that's already showing.
+    const liveText=nodes[idx].text; if(changed)nodes[idx].text=origText; pushUndo(); nodes[idx].text=liveText;
+  }
+  const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
 function cancelEdit(){editingId=null; render()}
 function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(idx); const block=nodes.slice(idx,end); if(direction<0){ if(idx===0)return; pushUndo(); const myDepth=nodes[idx].depth; let targetStart=idx-1; while(targetStart>0 && nodes[targetStart].depth>myDepth) targetStart--; nodes.splice(idx, end-idx); nodes.splice(targetStart,0,...block); selectedId=block[0].id } else { if(end>=nodes.length)return; pushUndo(); let nextEnd=getSubtreeEnd(end); nodes.splice(idx, end-idx); const insertAt=nextEnd-(end-idx); nodes.splice(insertAt,0,...block); selectedId=block[0].id } rebuildParentIds(); markDirty(); render(); showToast(direction<0?'Moved up':'Moved down') }
 function clearDragIndicators(){document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child,.node-row.dragging').forEach(row=>row.classList.remove('drag-over-above','drag-over-below','drag-over-child','dragging')); el('editor-pane').classList.remove('drag-over-end')}
