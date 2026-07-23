@@ -2547,7 +2547,7 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 
 
 #preview-doc{max-width:min(var(--pv-reading-width,1080px),94%);margin:0 auto;padding:0 48px 0 24px;font-family:'Inter',sans-serif;color:var(--node-fg)}
-.pv-serif-body .pv-text,.pv-serif-body .pv-dlog-field-value,.pv-serif-body .pv-dlog-value,.pv-serif-body .pv-inline-note-body{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
+.pv-serif-body .pv-text,.pv-serif-body .pv-dlog-field-value,.pv-serif-body .pv-dlog-value{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
 #preview-overlay.pv-theme-sepia{--bg:#faf5e9;--edit-bg:#fefcf6;--fg:#544632;--node-fg:#544632;--muted:#a2937a;--hint:#b0a189;--border:#f0e8d4;--hover:#f5efdf;--accent:#b0703a}
 #preview-overlay.pv-presenting .pv-slide{display:none}
 #preview-overlay.pv-presenting .pv-slide.pv-slide-active{display:block;opacity:1;transition:opacity .18s ease}
@@ -2693,6 +2693,16 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-notepad-body{font:400 14px 'Inter',sans-serif;color:var(--fg);line-height:1.65}
 @media print{#pv-notepad-section{break-inside:avoid-page}}
 .pv-row{display:flex;align-items:baseline;gap:4px;margin:0}
+/* Default (screen) value for the icon-column width used by inlinePad (see renderPreviewBody) —
+   43px = fold-spacer/fold-toggle(18+1) + gap(4) + bullet/checkbox(16) + gap(4); 24px = fold
+   icon(18+1) + .pv-h-row's own 5px gap. PDF export overrides these to smaller values once
+   .fold-toggle/.fold-spacer are hidden for print (no click target on paper) — but as an
+   important inline body style set in exportPreviewAsPdf (PRINT_LIGHT_VARS), not a @media print
+   rule here, since a handful of other var() overrides in this file already found @media print
+   custom-property rules don't reliably survive Chrome's print rendering pass (see that
+   function's own comment). Keep this default in sync with PRINT_LIGHT_VARS's --pv-row-bcol/
+   --pv-heading-bcol if either changes.  */
+body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-h-row-1{margin:18px 0 6px}
 .pv-heading-1{min-width:0;font-family:'Inter',sans-serif;font-size:26px;font-weight:400;letter-spacing:-.015em;line-height:1.28;color:var(--heading-c1);word-break:break-word}
 .pv-heading-2{min-width:0;font-family:'Inter',sans-serif;font-size:21px;font-weight:400;letter-spacing:-.01em;line-height:1.3;color:var(--heading-c2);word-break:break-word}
@@ -2787,7 +2797,7 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-label svg{flex-shrink:0;align-self:center}
 .pv-inline-note-title{font:700 10px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--muted);overflow-wrap:break-word;min-width:0}
 .pv-inline-note-title-sep{color:var(--muted);margin:0 1px}
-.pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55}
+.pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 13px 'Inter',sans-serif;color:var(--muted);line-height:1.55}
 .pv-inline-note-body.bg-distinct{background:var(--tb-bg)}
 /* This must stay defined AFTER .bg-distinct above (equal specificity — later wins) so a plain
    note's background:transparent always sticks, regardless of whether the noteMatchEditorBg
@@ -28646,16 +28656,30 @@ function renderPreviewBody(){
       // each pair of flex items separated by the row's own 4px gap — see .fold-spacer,
       // .fold-toggle, .pv-bullet, .pv-cb, .pv-row{gap:4px} — 18+1+4+16+4=43px total. A heading/
       // section/divider row only has the fold icon before its text (no separate bullet) and
-      // uses .pv-h-row's own 5px gap instead — 18+1+5=24px. Keep these two constants in sync
-      // with those selectors if their widths ever change.
-      const ROW_BULLET_COL_PX=43, HEADING_ICON_COL_PX=24;
+      // uses .pv-h-row's own 5px gap instead — 18+1+5=24px.
+      //
+      // PDF export prints this exact same DOM but hides .fold-toggle/.fold-spacer entirely —
+      // they're an on-screen interaction affordance with nothing to click on paper. That
+      // removes not just the icon but one of the row's flex gaps too (one fewer flex item), so
+      // a printed row's bullet/text sits 23px further left (rows) or the full 24px further left
+      // (headings, nothing left before the text at all) than it does on screen. A single
+      // JS-computed pixel value can't differ between the two — renderPreviewBody only runs once
+      // — so the icon-column width is a CSS custom property instead, read via var() at paint
+      // time: --pv-row-bcol/--pv-heading-bcol default to the on-screen widths below (see the
+      // body{} rule near .pv-row) and get overridden smaller as an important inline body style
+      // in exportPreviewAsPdf (PRINT_LIGHT_VARS) right before print() fires — not a @media print
+      // rule, since a few other var() overrides in this file already learned those don't
+      // reliably survive Chrome's print pass. The depth step itself (depthPad) isn't part of
+      // either variable — it's unaffected by print, since only the icon is print-only chrome.
+      // Keep these two var defaults in sync with PRINT_LIGHT_VARS's override values if either
+      // changes.
       const isHeadingLike=node.slideDivider||isSection||headingLevel>0;
       // Headings/sections/dividers special-case depth 0 to a flat 0px rather than the
       // (depth-1)*18 formula's -18px at that depth (see hrow.style.paddingLeft above) — matched
       // here so a depth-0 heading's note lines up with its own title instead of sitting 18px
       // further left than everything else that follows this same isHeadingLike branch.
       const depthPad=(isHeadingLike&&depth===0)?0:(Math.min(depth,7)-1)*18;
-      const inlinePad=(depthPad+(isHeadingLike?HEADING_ICON_COL_PX:ROW_BULLET_COL_PX))+'px';
+      const inlinePad=`calc(${depthPad}px + var(${isHeadingLike?'--pv-heading-bcol':'--pv-row-bcol'}))`;
       if(pvQuotes.length){
         // Each citation gets its own line rather than sharing one wrapped paragraph with the
         // node's main text (or with each other) — see previewSplitQuotes above for why. Same
@@ -30360,7 +30384,13 @@ function exportPreviewAsPdf(onDone){
     '--hover':'transparent','--sel':'transparent','--sel-fg':'#1f1c14','--edit-bg':'#faf9f5','--canvas-bg':'#ffffff',
     '--scroll':'transparent','--vert':'#999999','--conn':'#999999','--chip':'#f0eee5',
     '--sem-section':'#2e429e','--sem-alert':'#9b2f28','--sem-code':'#4a3a6a','--sem-quote':'#5a5030',
-    '--fc-red':'#a8362a','--fc-orange':'#a85f1a','--fc-green':'#226b41','--fc-blue':'#22529e','--fc-purple':'#69359a','--fc-gray':'#5c584f'
+    '--fc-red':'#a8362a','--fc-orange':'#a85f1a','--fc-green':'#226b41','--fc-blue':'#22529e','--fc-purple':'#69359a','--fc-gray':'#5c584f',
+    // Not colors, but the same "set as an important inline body style before print(), clean up
+    // after" mechanism as everything else here — inlinePad's icon-column width (see
+    // renderPreviewBody) needs a smaller value once .fold-toggle/.fold-spacer are hidden for
+    // print (no click target on paper), same reasoning as the color overrides above about
+    // @media print custom-property rules not reliably surviving Chrome's print pass.
+    '--pv-row-bcol':'20px','--pv-heading-bcol':'0px'
   };
   Object.entries(PRINT_LIGHT_VARS).forEach(([k,v])=>document.body.style.setProperty(k,v,'important'));
   const style=document.createElement('style');
