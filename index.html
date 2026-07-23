@@ -16777,10 +16777,18 @@ async function generateDiagramFromOutline(){
   }
   showToast('Generating a rough diagram…');
   const colorByIdx=assignDiagramGenColors(scope);
+  // All text reads happen synchronously, up front, before any await — the actual trim calls
+  // (each a real network round-trip when AI is needed) then run in parallel via Promise.all
+  // instead of one at a time. Previously a sequential for-of loop meant a diagram with several
+  // overlong labels paid a full round-trip per label; it also left the door open for a stale
+  // read if the outline changed mid-loop, since nodes[idx] was re-read after every individual
+  // await. Capturing every label's plain text before the first await removes that particular
+  // exposure — downstream layout still resolves nodes by index too, so an outline edited during
+  // generation can still shift things after this point, but the label-fetch phase itself is safe.
+  const rawTexts=scope.scopeIdxs.map(idx=>getNodePlainText(nodes[idx]));
+  const trimmed=await Promise.all(rawTexts.map(t=>diagramGenTrimText(t)));
   const labels=new Map();
-  for(const idx of scope.scopeIdxs){
-    labels.set(idx, await diagramGenTrimText(getNodePlainText(nodes[idx])));
-  }
+  scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
   const dimsByIdx=new Map();
   scope.scopeIdxs.forEach(idx=>dimsByIdx.set(idx,diagramGenBoxDims(labels.get(idx))));
   const positions=layoutDiagramGenTree(scope,dimsByIdx);
