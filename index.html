@@ -2781,6 +2781,8 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
+.pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
+.pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:.92em;line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
 .pv-inline-label svg{flex-shrink:0;align-self:center}
 .pv-inline-note-title{font:700 10px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--muted);overflow-wrap:break-word;min-width:0}
@@ -28232,9 +28234,43 @@ function previewParseStyledText(text,searchQ=''){const src=String(text||'');let 
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
-function previewNodeInnerHtml(node){
-  const inner=previewParseStyledText(node.text||'')||'&nbsp;';
+function previewNodeInnerHtml(node,textOverride){
+  const inner=previewParseStyledText(textOverride!==undefined?textOverride:(node.text||''))||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
+}
+// Pulls '>citation' segments out of a node's text so Preview/Presenter can render them as their
+// own block below the node instead of sharing a wrapped line with it (see the pv-quote-block
+// this feeds into, in renderPreviewBody) — multiple citations glued into one run-on paragraph,
+// separated only by sem-quote's thin left border, read poorly once there's more than one (see
+// the PPTX export's pptxItemContentSegments, which already gives quotes their own line for the
+// same reason). Mirrors previewParseStyledText's own traversal — same quote-boundary rule (a
+// quote runs until the next '>' preceded by whitespace/start-of-line) and the same backtick/
+// wiki-link/bracket/paren skipping, so a literal '>' inside a code span or aside isn't mistaken
+// for a citation start. Deliberately doesn't mirror the '!alert'/'SAP Note' branches — neither
+// can plausibly contain a '>' character, so skipping them here doesn't change where a citation
+// boundary falls. Quote text itself isn't run back through inline parsing (same as
+// previewParseStyledText's own sem-quote span — always esc()'d, never nested markup) since a
+// citation is meant to be attributed text, not a second line of formatted content.
+function previewSplitQuotes(text){
+  const src=String(text||'');
+  let main=''; const quotes=[]; let i=0;
+  while(i<src.length){
+    const ch=src[i];
+    if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){
+      let qEnd=src.length;
+      for(let j=i+1;j<src.length;j++){if(src[j]==='>'&&/\s/.test(src[j-1])){qEnd=j;break}}
+      const q=src.slice(i+1,qEnd).trim();
+      if(q)quotes.push(q);
+      i=qEnd;
+      continue;
+    }
+    if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
+    if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){main+=src.slice(i,end+2);i=end+2;continue}}
+    if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
+    if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
+    main+=ch; i++;
+  }
+  return {main:main.replace(/\s+$/,''),quotes};
 }
 function previewStatusBadgeColor(value){
   const v=String(value||'').toLowerCase();
@@ -28412,6 +28448,7 @@ function renderPreviewBody(){
     if(folded&&hasChildren)skipDepth=node.depth;
 
     const depth=node.depth||0;
+    const {main:pvMainText,quotes:pvQuotes}=previewSplitQuotes(node.text||'');
     const isSection=nodeIsSection(node);
     const headingLevel=node.styles.heading||(depth<=5?(previewHeadingDepthFallback[depth]||0):0);
     let mainEl,contentEl;
@@ -28420,7 +28457,7 @@ function renderPreviewBody(){
       drow.appendChild(foldEl);
       const dtitle=document.createElement('div'); dtitle.className='pv-divider-title '+previewStyleClasses(node);
       if(node.styles.color)dtitle.style.color='var(--fc-'+node.styles.color+')';
-      dtitle.innerHTML=previewNodeInnerHtml(node);
+      dtitle.innerHTML=previewNodeInnerHtml(node,pvMainText);
       drow.appendChild(dtitle);
       mainEl=drow; contentEl=dtitle;
       lastHeadingLevel=null;
@@ -28433,7 +28470,7 @@ function renderPreviewBody(){
       lastHeadingLevel='section';
       hrow.appendChild(foldEl);
       const div=document.createElement('div'); div.className='pv-section';
-      const sectionText=String(node.text||'').trim().replace(/^\[|\]$/g,'');
+      const sectionText=String(pvMainText||'').trim().replace(/^\[|\]$/g,'');
       div.textContent=sectionText;
       hrow.appendChild(div);
       mainEl=hrow; contentEl=div;
@@ -28446,7 +28483,7 @@ function renderPreviewBody(){
       hrow.appendChild(foldEl);
       const h=document.createElement('div'); h.className='pv-heading-'+headingLevel+' '+previewStyleClasses(node);
       if(node.styles.color)h.style.color='var(--fc-'+node.styles.color+')';
-      h.innerHTML=previewNodeInnerHtml(node);
+      h.innerHTML=previewNodeInnerHtml(node,pvMainText);
       hrow.appendChild(h);
       mainEl=hrow; contentEl=h;
       tocEntries.push({id:node.id,text:stripSemanticMarkers(node.text||'').trim()||'Untitled',level:headingLevel,kind:'heading'});
@@ -28466,7 +28503,7 @@ function renderPreviewBody(){
       }
       const txt=document.createElement('div'); txt.className='pv-text'+(depth>=4?' pv-deep':depth===3?' pv-d3':depth===2?' pv-d2':'')+' '+previewStyleClasses(node);
       if(node.styles.color)txt.style.color='var(--fc-'+node.styles.color+')';
-      txt.innerHTML=previewNodeInnerHtml(node);
+      txt.innerHTML=previewNodeInnerHtml(node,pvMainText);
       row.appendChild(txt);
       mainEl=row; contentEl=txt;
     }
@@ -28619,6 +28656,19 @@ function renderPreviewBody(){
       // further left than everything else that follows this same isHeadingLike branch.
       const depthPad=(isHeadingLike&&depth===0)?0:(Math.min(depth,7)-1)*18;
       const inlinePad=(depthPad+(isHeadingLike?HEADING_ICON_COL_PX:ROW_BULLET_COL_PX))+'px';
+      if(pvQuotes.length){
+        // Each citation gets its own line rather than sharing one wrapped paragraph with the
+        // node's main text (or with each other) — see previewSplitQuotes above for why. Same
+        // sem-quote visual language (italic, left accent bar) as before, just block-level and
+        // stacked instead of run-in, and indented to this node's own inlinePad so it lines up
+        // under its bullet/text exactly like the note card and diagram figures below it do.
+        const qBlock=document.createElement('div'); qBlock.className='pv-quote-block'; qBlock.style.paddingLeft=inlinePad;
+        pvQuotes.forEach(q=>{
+          const qLine=document.createElement('div'); qLine.className='pv-quote-line'; qLine.textContent=q;
+          qBlock.appendChild(qLine);
+        });
+        slideTarget.appendChild(qBlock);
+      }
       if(featureDecisionLogEnabled&&decisionLogExportEnabled&&decisionLogForNode(node.id)){
         if(decisionLogIsLarge(decisionLogForNode(node.id))){
           const dlSlideWrap=document.createElement('div'); dlSlideWrap.className='pv-slide';
