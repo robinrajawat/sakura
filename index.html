@@ -3059,10 +3059,10 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
 .history-modal-body,.code-lang-menu,#at-suggest,#node-qa-suggest,#demo-chapters-menu,#demo-preview-body,
-#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#meetings-body,#meeting-link-results,#meetings-template-menu,#link-pop-node-results
+#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#meetings-body,#meeting-link-results,#meetings-template-menu,#link-pop-node-results,#diagram-gen-review-list
 {scrollbar-gutter:stable}
 .settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
-#cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#qa-insert-modal::-webkit-scrollbar,#qa-insert-list::-webkit-scrollbar,
+#cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#qa-insert-modal::-webkit-scrollbar,#qa-insert-list::-webkit-scrollbar,#diagram-gen-review-modal::-webkit-scrollbar,#diagram-gen-review-list::-webkit-scrollbar,
 .app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
 .history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
@@ -3071,7 +3071,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #debug-log-view::-webkit-scrollbar,#report-modal-body::-webkit-scrollbar
 {width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
-#cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,
+#cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
 .history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
@@ -17096,26 +17096,25 @@ async function requestDiagramGenGuideline(scope){
 // 'note' and 'excluded' get their own bespoke, non-palette color elsewhere and are untouched
 // here regardless.
 //
-// Once AI ran a genuine, deliberate pass over the WHOLE scope, every other color on the page
-// needs to mean something too — the legend only ever documents classified shape categories (see
-// diagramGenLegendEntries), so a node AI left unclassified but which still carries its original
-// branch-cycle hue (arbitrary, per-branch, never meant to be a category) reads as an unexplained
-// color next to ones that ARE explained, so it falls back to neutral gray instead. A tag match
-// is different: it's an incidental hit on whichever one or two nodes happen to carry that tag,
-// not a considered judgment about the whole diagram — collapsing every OTHER node's branch color
-// to gray just because one unrelated node happened to be tagged "database" would be a surprising
-// disproportionate side effect of an ordinary tag. So only `aiRan` (guideline!=null) triggers
-// the gray fallback; tag-only classification still recolors the specific tagged node(s) but
-// leaves everything else's branch-cycle color alone, same as if nothing were classified at all.
-function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,aiRan){
-  if(!nodeMeta||!nodeMeta.size)return;
+// Once a real, deliberate shape classification exists ANYWHERE in the scope, every other color
+// on the page needs to mean something too — the legend only ever documents classified shape
+// categories (see diagramGenLegendEntries), so a node left unclassified but which still carries
+// its original branch-cycle hue (arbitrary, per-branch, never meant to be a category) reads as
+// an unexplained color next to ones that ARE explained, so it falls back to neutral gray
+// instead. Driven by `anyShapeSet` (computed by the caller: does ANY node in this scope have a
+// real shape?) rather than a fixed true/false — nodeMeta itself is never empty now (the review
+// screen always produces one entry per node, even when every field is left at its default), so
+// checking `nodeMeta.size` alone can no longer tell "a deliberate pass happened" from "nothing
+// was ever classified" the way it could when nodeMeta only existed at all if AI had run.
+function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,anyShapeSet){
+  if(!nodeMeta||!nodeMeta.size||!anyShapeSet)return;
   scope.scopeIdxs.forEach(idx=>{
     const node=nodes[idx];
     if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])return;
     const meta=nodeMeta.get(node.id);
     if(meta&&meta.shape&&DIAGRAM_GEN_SHAPE_COLOR[meta.shape]){ colorByIdx.set(idx,DIAGRAM_GEN_SHAPE_COLOR[meta.shape]); return; }
     if(meta&&(meta.shape==='note'||meta.shape==='excluded'))return; // bespoke color, colorByIdx unused for these
-    if(aiRan)colorByIdx.set(idx,'gray');
+    colorByIdx.set(idx,'gray');
   });
 }
 // Layered layout: buckets nodes into fixed-order rows by AI-given layer (anything unclassified
@@ -17537,7 +17536,8 @@ async function generateDiagramFromOutline(){
 // Colors, dims, and layout all read confirmed nodeMeta, never AI output or numbering regexes.
 function diagramGenFinishGenerate(scope,labels,nodeMeta,existing){
   const colorByIdx=assignDiagramGenColors(scope,nodeMeta);
-  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,true);
+  const anyShapeSet=scope.scopeIdxs.some(idx=>{ const m=nodeMeta.get(nodes[idx].id); return !!(m&&m.shape); });
+  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,anyShapeSet);
   // A decision node's label can't be sized correctly until its shape is known — a second, local
   // pass on top of the generic trim already done in generateDiagramFromOutline.
   labels.forEach((text,idx)=>{
