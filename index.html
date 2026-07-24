@@ -16752,7 +16752,12 @@ const DIAGRAM_GEN_PALETTE={
   amber: {fill:'#FAEEDA',stroke:'#854F0B',font:'#633806'},
   red:   {fill:'#FCEBEB',stroke:'#A32D2D',font:'#791F1F'}
 };
-const DIAGRAM_GEN_BRANCH_CYCLE=['purple','teal','coral','pink'];
+// All 8 non-gray hues, not just 4 — now that assignDiagramGenColors cycles a color at every
+// genuine fan-out in the tree (not just the root's own direct children), a single moderately
+// branchy diagram can easily produce 5+ real branches, and 4 buckets guarantees a collision
+// past that point (same pigeonhole problem DIAGRAM_GEN_TAG_CYCLE already solved this way,
+// below) — two unrelated branches would otherwise silently end up reading as the same system.
+const DIAGRAM_GEN_BRANCH_CYCLE=['purple','teal','coral','pink','blue','green','amber','red'];
 // All 8 non-gray hues, not just the 4 semantic ones — with only 4 buckets, any document
 // with more than ~4 distinct tags is guaranteed a collision (pigeonhole). Widening to 8 means
 // a tag can coincidentally land on the same hue a branch is already using, but that's a much
@@ -16762,7 +16767,12 @@ const DIAGRAM_GEN_TAG_CYCLE=['blue','green','amber','red','purple','teal','coral
 // Node markers are a deliberate, already-meaningful status flag (Settings → node marker),
 // so they outrank both tag and branch coloring when present. 'followup' (usually shown as an
 // orange glyph elsewhere in the app) maps to the closest palette hue, amber.
-const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',followup:'amber',na:'gray'};
+// 'na' gets its own hue (pink) rather than sharing 'parked'\u2019s gray — a document using both
+// markers previously rendered them as visually identical boxes despite having separate legend
+// entries once na was added there. pink is otherwise only used for the 'actor' shape, and a
+// marker always outranks a shape color when both would apply to the same node (see
+// applyDiagramGenShapeColorOverrides), so the two can never actually compete for the same box.
+const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',followup:'amber',na:'pink'};
 // ── AI diagram guideline (shape + layer + flow classification) ─────────────────────────────
 // AI is asked for a small, whitelisted classification of the SAME tree the deterministic
 // layout already builds — never raw coordinates, never XML, never a restructured hierarchy.
@@ -16816,7 +16826,7 @@ const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
 // washed-out by comparison so the two read as different things, not just different shapes.
 const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F7F7F5',stroke:'#C7C4BA',font:'#9A978C'};
 const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',datastore:'Data store',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
-const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'};
+const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up',na:'N/A'};
 const AI_DIAGRAM_GEN_SYSTEM_PROMPT=`You turn an outline tree into guidance for drawing a system/process architecture diagram. You do not draw anything yourself — you only classify and connect nodes; a separate deterministic renderer handles all layout, sizing, and color.
 
 You will be given a list of nodes as "id|indented text" (indentation shows the existing outline hierarchy — never change or reject that hierarchy). Reply with ONLY a JSON object — no explanation, no markdown code fences.
