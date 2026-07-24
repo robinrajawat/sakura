@@ -17390,8 +17390,21 @@ async function generateDiagramFromOutline(){
   // The fill is a lightened version of the box's own fill (a further step toward white, still
   // clearly the same hue); the border is a more moderately lightened version of the box's own
   // stroke, muted but still visible enough to actually read as an edge.
+  //
+  // The header's own text moves onto this background as a title instead of also getting its
+  // own box below (see chainHeaderSuppressed / pass 2) — except when AI classified the header
+  // itself as a genuine 'decision' diamond: a decision with exactly its Yes/No-style leaf
+  // outcomes also happens to satisfy this same leaf-children structural pattern, but the
+  // diamond shape itself is meaningful and stays a real, visible box, so its background here
+  // stays unlabeled same as before rather than absorbing text a reader would then see twice.
+  const chainHeaderSuppressed=idx=>{
+    if(!diagramGenIsChainGroup(idx))return false;
+    const meta=nodeMeta.get(nodes[idx].id);
+    return !meta||meta.shape!=='decision';
+  };
   scope.scopeIdxs.forEach(idx=>{
     if(!diagramGenIsChainGroup(idx))return;
+    const suppressed=chainHeaderSuppressed(idx);
     const meta=nodeMeta.get(nodes[idx].id);
     const isNote=meta&&meta.shape==='note';
     const isExcluded=meta&&meta.shape==='excluded';
@@ -17403,10 +17416,23 @@ async function generateDiagramFromOutline(){
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
     const groupFill=diagramGenLighten(groupBase.fill,0.40);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.60);
-    cells+=`<mxCell id="gd-grp${idx}" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=${groupFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
+    // The header's own rect (first in `rects` above) is exactly the space its box used to
+    // occupy at the top of the group — labeling the container itself there, center-aligned to
+    // match how every box in this layout is already centered in its column, means the title
+    // lands in the same visual spot the box used to, just without a border of its own now that
+    // pass 2 below skips drawing that box.
+    const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=12;fontColor=${groupBase.font};spacingTop=10;`:'';
+    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${groupFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
+    const value=suppressed?escXmlAttr(labels.get(idx)):'';
+    cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
   });
-  // Pass 2: the actual node boxes, on top of any group container from pass 1.
+  // Pass 2: the actual node boxes, on top of any group container from pass 1. A chain-group
+  // header is skipped here when its text already rendered as the container's own title above
+  // (chainHeaderSuppressed) — drawing it again as a box too would just restate the same label
+  // twice for one node. A decision-shaped header is exempt (see chainHeaderSuppressed) and
+  // still gets its own diamond box normally.
   scope.scopeIdxs.forEach(idx=>{
+    if(chainHeaderSuppressed(idx))return;
     const meta=nodeMeta.get(nodes[idx].id);
     const isNote=meta&&meta.shape==='note';
     const isExcluded=meta&&meta.shape==='excluded';
@@ -17419,6 +17445,19 @@ async function generateDiagramFromOutline(){
   let edgeCounter=0;
   const drawnPairs=new Set();
   function edgeCell(a,b,label,dashed){
+    // A suppressed chain-group header has no box of its own anymore (see the group-background
+    // rendering above) — redirect any edge that would have pointed at it onto its first real
+    // step instead, the box that visually sits right under the container's new title. Applied
+    // here, once, rather than at every call site, so structural tree/numbered-sequence edges,
+    // AI-suggested trigger edges, and layered-mode edges all pick it up the same way. A
+    // decision-shaped header is never suppressed (see chainHeaderSuppressed above) so it's
+    // untouched here — its edges still point at its own diamond box as always.
+    const entryIdx=i=>chainHeaderSuppressed(i)?diagramGenChildIdxs(i)[0]:i;
+    a=entryIdx(a); b=entryIdx(b);
+    // A header's own "header → first child" edge redirects both ends onto that same first
+    // child, collapsing to a self-loop — correctly dropped rather than drawn, since the
+    // container's title needs no incoming arrow from itself.
+    if(a===b)return '';
     const key=a+'\u2192'+b;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
