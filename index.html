@@ -16775,7 +16775,10 @@ const DIAGRAM_GEN_SHAPE_STYLE={
   actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;verticalLabelPosition=bottom;verticalAlign=top;overflow=visible;',
   external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
   note:'shape=note;whiteSpace=wrap;html=1;size=14;',
-  excluded:'rounded=1;whiteSpace=wrap;html=1;dashed=1;'
+  // Dotted rather than external's dashed — the two were previously indistinguishable at a
+  // glance (same dash style, near-identical muted gray), which let an in-scope external system
+  // (nShift) read as though it might be another out-of-scope branch next to Day Delivery.
+  excluded:'rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=1 3;'
 };
 // Fixed (not cycled) hue per shape category, so the same category reads as the same color
 // across every diagram — the "webshop and another external system share a color because
@@ -16789,9 +16792,12 @@ const DIAGRAM_GEN_SHAPE_STYLE={
 const DIAGRAM_GEN_SHAPE_COLOR={ui:'blue',service:'teal',middleware:'purple',backend:'coral',datastore:'coral',external:'gray',actor:'pink',decision:'amber'};
 const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
 // Deliberately flatter/greyer than DIAGRAM_GEN_NOTE_COLOR — a note is still active content
-// worth reading; an excluded branch is meant to visually recede (dashed outline + muted fill),
-// the same "current setup, no changes here" treatment as the reference Day Delivery box.
-const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F4F4F2',stroke:'#A6A49C',font:'#6B6A64'};
+// worth reading; an excluded branch is meant to visually recede (dotted outline + faded fill),
+// the same "current setup, no changes here" treatment as the reference Day Delivery box. Also
+// deliberately lower-contrast than DIAGRAM_GEN_PALETTE.gray (external's color) — external is a
+// real, in-scope part of the diagram and keeps normal contrast; excluded is meant to look
+// washed-out by comparison so the two read as different things, not just different shapes.
+const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F7F7F5',stroke:'#C7C4BA',font:'#9A978C'};
 const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',datastore:'Data store',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
 const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'};
 const AI_DIAGRAM_GEN_SYSTEM_PROMPT=`You turn an outline tree into guidance for drawing a system/process architecture diagram. You do not draw anything yourself — you only classify and connect nodes; a separate deterministic renderer handles all layout, sizing, and color.
@@ -16809,7 +16815,7 @@ Rules:
 - "mode": a sequence of steps that touches several systems is still usually a linear process, not an architecture diagram — keep it as "tree" and rely on per-node "shape" (below) to color each step by the system that owns it. Only choose "layered" when the content genuinely fans out or in (e.g. one UI calling several independent services in parallel, several sources feeding one backend, a real multi-actor architecture) — something a single top-to-bottom sequence can't represent. If a chain of steps just happens to hop from UI to service to backend in order, that's still "tree". If unsure, prefer "tree".
 - "shape" must be exactly one of: ui, service, middleware, backend, datastore, external, actor, decision, note, excluded. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box.
   - "note": pure commentary/information, never an actual system or step. This includes anything phrased as an attributed aside or hedge — a name followed by a colon and a caveat ("Paul Peter: implementing this could be challenging..."), or language like "TBD", "to confirm", "risk:", "concern:", "open question" — even if it sits among real steps in the outline. If a node reads like someone's comment about the process rather than a step IN the process, it's a note.
-  - "decision": ONLY for a genuine fork — the node's own children (or what immediately follows it) are two or more clearly distinct outcomes/paths. A precondition or eligibility criterion ("customer must have X") is NOT a decision by itself unless the outline actually branches after it. A decision node's own text should stay short (a condition or question, a few words) — if the source text is a full sentence, classify a follow-up node instead of stretching the diamond to fit it; a diamond has much less usable interior space than a box.
+  - "decision": ONLY for a genuine fork — judge this from the outline's actual indentation: this exact node must have 2+ children in the given list that represent distinct outcomes/paths. Do NOT infer a decision from a node's own wording alone — a node whose text says "...will have two options: X and Y" is NOT a decision if X and Y appear as this node's siblings (or anywhere else) rather than as its own indented children; that's a lead-in sentence, not a fork, and should be left unclassified. A precondition or eligibility criterion ("customer must have X") is likewise NOT a decision by itself unless the outline actually branches into children right after it. A decision node's own text should stay short (a condition or question, a few words) — if the source text is a full sentence, classify a follow-up node instead of stretching the diamond to fit it; a diamond has much less usable interior space than a box.
   - "backend": a step or process that happens to run inside a backend/ERP-type system (e.g. "ERP determines the Night Route", "delivery creation happens in ERP") — renders as a plain box, same geometry as ui/service/middleware, just colored differently.
   - "datastore": ONLY when the node is literally describing persisted/stored data itself (a table, database, repository, "the record is saved to X") — not a process step that merely happens to touch a backend system. Renders as a cylinder, which specifically reads as "this is a data store" to anyone looking at the diagram, so misusing it on an ordinary process step is misleading. When in doubt between backend and datastore, use backend.
   - "excluded": a branch that's explicitly out of scope, unaffected, or unchanged by whatever the rest of the content describes (e.g. "no impact", "current setup — unchanged", "not in scope") — renders dashed and muted so it visibly recedes rather than competing with the real flow.
@@ -16828,12 +16834,21 @@ function diagramGenValidateGuideline(raw,scope){
   const mode=parsed.mode==='layered'?'layered':(parsed.mode==='tree'?'tree':null);
   if(!mode)return null;
   const validIds=new Set(scope.scopeIdxs.map(idx=>nodes[idx].id));
+  const idToIdx=new Map(scope.scopeIdxs.map(idx=>[nodes[idx].id,idx]));
   const nodeMeta=new Map();
   if(parsed.nodes&&typeof parsed.nodes==='object'){
     Object.keys(parsed.nodes).forEach(key=>{
       const id=Number(key); if(!validIds.has(id))return;
       const entry=parsed.nodes[key]||{};
-      const shape=DIAGRAM_GEN_SHAPE_WHITELIST.includes(entry.shape)?entry.shape:null;
+      let shape=DIAGRAM_GEN_SHAPE_WHITELIST.includes(entry.shape)?entry.shape:null;
+      // The model can judge "decision" from a node's own wording (e.g. "...will have two
+      // options: X and Y") even when X and Y are actually that node's siblings elsewhere in
+      // the outline, not its children — the sentence describes a fork, but the tree doesn't
+      // branch there. The real outline structure is unambiguous where the model's reading of
+      // the prose isn't, so a claimed decision only sticks if the node genuinely has 2+
+      // children right here; otherwise it's silently downgraded to unclassified rather than
+      // rendering as a diamond with no actual fork under it.
+      if(shape==='decision'&&diagramGenChildIdxs(idToIdx.get(id)).length<2)shape=null;
       const layer=DIAGRAM_GEN_LAYER_WHITELIST.includes(entry.layer)?entry.layer:null;
       if(shape||layer)nodeMeta.set(id,{shape:shape||'process',layer});
     });
