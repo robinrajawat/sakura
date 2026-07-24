@@ -17255,11 +17255,23 @@ function diagramGenChainHeaderSuppressed(idx,nodeMeta){
 // diagramGenIsChainGroup can't infer on its own here, since each numbered node has real
 // children of its own (it isn't a flat run of leaves). Requires EVERY sibling to be numbered,
 // not just some, so a single numbered aside among otherwise-ordinary children doesn't
-// accidentally pull the whole group into sequence mode.
-const DIAGRAM_GEN_NUMBERED_RE=/^\d+[.)]\s/;
+// accidentally pull the whole group into sequence mode. Covers common numbering styles beyond
+// a plain "1." — "1)", "1:", "1 · " (middle dot), "1 - " — since people number lists
+// differently and the actual character used isn't the meaningful part.
+const DIAGRAM_GEN_NUMBERED_RE=/^\d+\s*[.):·-]\s+/;
 function diagramGenIsNumberedSequence(idx){
   const kids=diagramGenChildIdxs(idx);
   return kids.length>1&&kids.every(ci=>DIAGRAM_GEN_NUMBERED_RE.test(getNodePlainText(nodes[ci])));
+}
+// A chain group (flat run of leaf steps) whose own steps are ALSO explicitly numbered reads as
+// "these are stages within this layer, read left to right" the same way an outer numbered
+// sequence reads as top-to-bottom — same signal, different level of the tree. Row layout
+// instead of the usual vertical column (see layoutDiagramGenTree); the actual arrow direction
+// between them comes for free from edgeCell's own geometry-based orientation below, so nothing
+// about edge-drawing needs to know this happened.
+function diagramGenIsHorizontalChain(idx){
+  if(!diagramGenIsChainGroup(idx))return false;
+  return diagramGenChildIdxs(idx).every(ci=>DIAGRAM_GEN_NUMBERED_RE.test(getNodePlainText(nodes[ci])));
 }
 // The terminal node of a chain-like subtree — the box a NEXT numbered stage's edge should
 // connect from, rather than from the stage's own header (which would skip over everything the
@@ -17283,6 +17295,15 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
     const ownW=dimsByIdx.get(idx).w;
     if(!kids.length){ widthByIdx.set(idx,ownW); return ownW; }
     if(diagramGenIsChainGroup(idx)){
+      // A horizontally-numbered chain (see diagramGenIsHorizontalChain) needs the SUM of its
+      // steps' widths plus the gaps between them, same as any left-to-right row — the usual
+      // vertical stack only ever needed the single widest box's width, since nothing sits
+      // beside anything else there.
+      if(diagramGenIsHorizontalChain(idx)){
+        let rowW=0; kids.forEach((ci,k)=>{ rowW+=dimsByIdx.get(ci).w; if(k>0)rowW+=DIAGRAM_GEN_GAP_X; });
+        const colW=Math.max(ownW,rowW);
+        widthByIdx.set(idx,colW); return colW;
+      }
       const colW=Math.max(ownW,...kids.map(ci=>dimsByIdx.get(ci).w));
       widthByIdx.set(idx,colW); return colW;
     }
@@ -17310,7 +17331,19 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
     if(!kids.length)return y+ownDims.h;
     if(diagramGenIsChainGroup(idx)){
       const headerGap=diagramGenChainHeaderSuppressed(idx,nodeMeta)?DIAGRAM_GEN_GROUP_TITLE_GAP:DIAGRAM_GEN_GAP_Y;
-      let curY=y+ownDims.h+headerGap;
+      const rowY=y+ownDims.h+headerGap;
+      if(diagramGenIsHorizontalChain(idx)){
+        const rowW=widthByIdx.get(idx);
+        let cx=left+w/2-rowW/2, maxH=0;
+        kids.forEach(ci=>{
+          const cd=dimsByIdx.get(ci);
+          positions.set(ci,{x:cx,y:rowY});
+          cx+=cd.w+DIAGRAM_GEN_GAP_X;
+          maxH=Math.max(maxH,cd.h);
+        });
+        return rowY+maxH;
+      }
+      let curY=rowY;
       kids.forEach(ci=>{
         const cd=dimsByIdx.get(ci);
         positions.set(ci,{x:left+w/2-cd.w/2,y:curY});
@@ -17464,15 +17497,18 @@ async function generateDiagramFromOutline(){
   // stays a plain unlabeled card same as before rather than absorbing text a reader would then
   // see twice.
   //
-  // Rendered as draw.io's own `swimlane` shape for a suppressed header — a real title bar
-  // (its own more saturated fill, `startSize` tall) with a divider line separating it from a
-  // lighter-tinted body underneath, rather than one flat-tone rectangle with a label floating
-  // in a corner. Safe to center the title in that bar now (it wasn't when this first shipped —
-  // see edgeCell above): edges into/out of a suppressed group now stop right at the container's
-  // own boundary instead of reaching inside, so nothing crosses through the title bar itself
-  // anymore. An unsuppressed (decision) background keeps the older plain single-tone card,
-  // since it has no title to give a bar to.
+  // One flat card per suppressed header (its title text sits directly on top, centered — see
+  // the style below) or a plain unlabeled card for a decision header that keeps its own box.
+  // Centering the title is safe here: edges into/out of a suppressed group stop right at the
+  // container's own boundary instead of reaching inside (see edgeCell below), so nothing
+  // crosses through the title text's position.
   const chainHeaderSuppressed=idx=>diagramGenChainHeaderSuppressed(idx,nodeMeta);
+  // A suppressed header's own bounding box, keyed by idx — edgeCell needs this to figure out
+  // which side of the container an edge should actually touch (top/bottom for a vertical
+  // approach, left/right for a horizontal one, e.g. a horizontally-numbered chain's group
+  // sitting beside something rather than below it), since gd-grp{idx} isn't a real node with
+  // its own entry in finalRect the way a normal box is.
+  const groupRect=new Map();
   scope.scopeIdxs.forEach(idx=>{
     if(!diagramGenIsChainGroup(idx))return;
     const suppressed=chainHeaderSuppressed(idx);
@@ -17485,14 +17521,9 @@ async function generateDiagramFromOutline(){
     const pad=12;
     const gx=Math.min(...rects.map(r=>r.x))-pad, gy=Math.min(...rects.map(r=>r.y))-pad;
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
+    groupRect.set(idx,{x:gx,y:gy,w:gx2-gx,h:gy2-gy});
     const bodyFill=diagramGenLighten(groupBase.fill,0.55);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
-    // One flat card, same fill and border throughout — the title is just bold text sitting
-    // directly on top of it, not a separately-filled bar with its own divider line (that read
-    // as a box nested inside the container, per the reference this is matching). Centering is
-    // safe (it wasn't when this first shipped): edges into/out of a suppressed group now stop
-    // at the container's own boundary rather than reaching inside, so nothing crosses through
-    // the title text's position anymore.
     const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=13;fontColor=${groupBase.font};spacingTop=12;`:'';
     const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
     const value=suppressed?escXmlAttr(labels.get(idx)):'';
@@ -17536,12 +17567,28 @@ async function generateDiagramFromOutline(){
     const key=srcId+'\u2192'+tgtId;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
-    // Every layout this feature produces flows top-to-bottom, so pinning exit/entry to
-    // bottom-center/top-center (rather than leaving draw.io's auto-router to pick whichever
-    // side looks shortest) keeps a straight vertical line whenever two boxes are already
-    // center-aligned — which chain/tree layout guarantees for a plain parent-child edge — and
-    // still draws a clean right-angle path when they're not, instead of a needless extra jog.
-    const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;'+(dashed?'dashed=1;':'');
+    // Anchor side picked from where the two boxes actually ended up, rather than always
+    // assuming top-to-bottom — needed now that a horizontally-numbered chain (see
+    // diagramGenIsHorizontalChain) places its steps side by side instead of stacked, and their
+    // connecting edges need to exit/enter left-right instead of top-bottom. Whichever axis has
+    // the bigger gap between the two centers is the one that matters; the smaller axis is
+    // assumed already near-aligned (chain/tree layout guarantees this for a plain edge), so
+    // pinning to a fixed center-side keeps the line straight instead of leaving it to
+    // draw.io's own auto-router, which can jog unnecessarily even when dead straight is
+    // possible.
+    const rectOf=i=>chainHeaderSuppressed(i)?groupRect.get(i):finalRect.get(i);
+    const ra=rectOf(a), rb=rectOf(b);
+    let exitAnchor='exitX=0.5;exitY=1;', entryAnchor='entryX=0.5;entryY=0;';
+    if(ra&&rb){
+      const dx=(rb.x+rb.w/2)-(ra.x+ra.w/2), dy=(rb.y+rb.h/2)-(ra.y+ra.h/2);
+      if(Math.abs(dx)>Math.abs(dy)){
+        exitAnchor=dx>=0?'exitX=1;exitY=0.5;':'exitX=0;exitY=0.5;';
+        entryAnchor=dx>=0?'entryX=0;entryY=0.5;':'entryX=1;entryY=0.5;';
+      } else if(dy<0){
+        exitAnchor='exitX=0.5;exitY=0;'; entryAnchor='entryX=0.5;entryY=1;';
+      }
+    }
+    const style=`edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;${exitAnchor}exitDx=0;exitDy=0;${entryAnchor}entryDx=0;entryDy=0;`+(dashed?'dashed=1;':'');
     const val=label?` value="${escXmlAttr(label)}"`:'';
     return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="${srcId}" target="${tgtId}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
   }
