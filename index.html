@@ -16742,6 +16742,11 @@ const DIAGRAM_GEN_MAX_DEPTH=10; // levels, root counted as depth 0
 const DIAGRAM_GEN_MIN_W=140, DIAGRAM_GEN_MAX_W=260, DIAGRAM_GEN_PAD=24, DIAGRAM_GEN_CHAR_PX=7;
 const DIAGRAM_GEN_ONE_LINE_H=44, DIAGRAM_GEN_TWO_LINE_H=64;
 const DIAGRAM_GEN_GAP_X=30, DIAGRAM_GEN_GAP_Y=50;
+// A suppressed chain-group header (see diagramGenChainHeaderSuppressed) needs far less vertical
+// room than a real box once its text becomes the container's title instead — reserving the same
+// full box height plus standard gap left a wide, mostly-empty band above the first real step
+// that read as a missing box rather than a compact section title.
+const DIAGRAM_GEN_GROUP_TITLE_H=30, DIAGRAM_GEN_GROUP_TITLE_GAP=22;
 // Two lines' worth of characters at max box width — only text longer than this (after
 // wrapping still wouldn't fit) goes through AI shortening at all.
 const DIAGRAM_GEN_CHAR_BUDGET=2*Math.floor((DIAGRAM_GEN_MAX_W-DIAGRAM_GEN_PAD)/DIAGRAM_GEN_CHAR_PX);
@@ -16815,6 +16820,24 @@ const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',foll
 // out, or simply isn't available (no key, feature off) falls back to exactly today's plain
 // tree behavior — the feature is never worse than what existed before this guideline layer.
 const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','datastore','external','actor','decision','note','excluded'];
+// A tag on a node is an explicit, deliberate signal from whoever wrote the outline — worth
+// trusting over (or filling in for) a probabilistic AI guess, and worth having even when AI
+// classification never ran at all (no key configured, a failed call, AI Capabilities off),
+// rather than every node falling back to one plain shape regardless of what it's tagged.
+// Several spellings map to the same shape since tagging conventions vary person to person;
+// first match in a node's own tag list wins if it happens to have more than one mapped tag.
+const DIAGRAM_GEN_TAG_SHAPE_MAP={
+  decision:'decision', decisions:'decision',
+  database:'datastore', db:'datastore', datastore:'datastore', 'data-store':'datastore', data:'datastore',
+  external:'external', thirdparty:'external', '3rdparty':'external',
+  actor:'actor', user:'actor', persona:'actor',
+  excluded:'excluded', 'out-of-scope':'excluded', outofscope:'excluded',
+  note:'note', caveat:'note',
+  ui:'ui', frontend:'ui', 'front-end':'ui',
+  service:'service', api:'service',
+  middleware:'middleware', integration:'middleware',
+  backend:'backend', 'back-end':'backend'
+};
 const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
 // Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
 // a trailing catch-all row instead of being dropped — an unclassified node still gets drawn.
@@ -17203,6 +17226,20 @@ function diagramGenIsChainGroup(idx){
   const kids=diagramGenChildIdxs(idx);
   return kids.length>1&&kids.every(diagramGenIsLeaf);
 }
+// A chain-group header's text moves onto its group's background container as a title instead
+// of getting its own box (see the render pass and layoutDiagramGenTree, both of which call
+// this) — except when AI (or a tag override — see diagramGenApplyTagShapeOverrides) classified
+// the header itself as a genuine 'decision' diamond: a decision with exactly its Yes/No-style
+// leaf outcomes also happens to satisfy this same leaf-children structural pattern, but the
+// diamond shape itself is meaningful and stays a real, visible box. Shared between the render
+// passes (which need to know whether to draw/skip a box) and the tree layout (which needs to
+// reserve less vertical space above a suppressed header than a real box would need) so the two
+// can never disagree about which nodes are suppressed.
+function diagramGenChainHeaderSuppressed(idx,nodeMeta){
+  if(!diagramGenIsChainGroup(idx))return false;
+  const meta=nodeMeta.get(nodes[idx].id);
+  return !meta||meta.shape!=='decision';
+}
 // An explicit numbered list ("1. Webshop Layer", "2. ERP Layer", ...) is a person directly
 // saying "these siblings are stages of one flow, read top to bottom" — something
 // diagramGenIsChainGroup can't infer on its own here, since each numbered node has real
@@ -17229,7 +17266,7 @@ function diagramGenChainTailIdx(idx){
 // (label-derived) box dims rather than one fixed size throughout. A chain group's column
 // width is the widest box among the group members, so shorter step boxes still center under
 // the parent rather than each sitting at a different offset.
-function layoutDiagramGenTree(scope,dimsByIdx){
+function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
   const widthByIdx=new Map();
   function computeWidth(idx){
     const kids=diagramGenChildIdxs(idx);
@@ -17262,7 +17299,8 @@ function layoutDiagramGenTree(scope,dimsByIdx){
     const kids=diagramGenChildIdxs(idx);
     if(!kids.length)return y+ownDims.h;
     if(diagramGenIsChainGroup(idx)){
-      let curY=y+ownDims.h+DIAGRAM_GEN_GAP_Y;
+      const headerGap=diagramGenChainHeaderSuppressed(idx,nodeMeta)?DIAGRAM_GEN_GROUP_TITLE_GAP:DIAGRAM_GEN_GAP_Y;
+      let curY=y+ownDims.h+headerGap;
       kids.forEach(ci=>{
         const cd=dimsByIdx.get(ci);
         positions.set(ci,{x:left+w/2-cd.w/2,y:curY});
@@ -17338,6 +17376,19 @@ async function generateDiagramFromOutline(){
   const labels=new Map();
   scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
   const nodeMeta=guideline?guideline.nodeMeta:new Map();
+  // Tags win over whatever AI classified (or over nothing at all, when AI didn't run) — see
+  // DIAGRAM_GEN_TAG_SHAPE_MAP. Same "decision only sticks with a real 2+-child fork" guard the
+  // AI path already enforces just above nodeMeta's own validation — a #decision tag someone
+  // added doesn't guarantee the node still has two actual outcomes as children right now.
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx];
+    if(!Array.isArray(node.tags)||!node.tags.length)return;
+    let shape=null;
+    for(const tag of node.tags){ const mapped=DIAGRAM_GEN_TAG_SHAPE_MAP[String(tag||'').toLowerCase()]; if(mapped){ shape=mapped; break; } }
+    if(!shape)return;
+    if(shape==='decision'&&diagramGenChildIdxs(idx).length<2)return;
+    nodeMeta.set(node.id,{...(nodeMeta.get(node.id)||{}),shape});
+  });
   // Shapes are only known now (after the AI call resolves), so a decision node's label can't
   // be sized correctly until this point — a second, local pass on top of the generic trim
   // already done above.
@@ -17352,9 +17403,16 @@ async function generateDiagramFromOutline(){
   const dimsByIdx=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const meta=nodeMeta.get(nodes[idx].id);
-    dimsByIdx.set(idx,diagramGenAdjustDimsForShape(diagramGenBoxDims(labels.get(idx)),meta&&meta.shape));
+    const dims=diagramGenAdjustDimsForShape(diagramGenBoxDims(labels.get(idx)),meta&&meta.shape);
+    // A suppressed header (see diagramGenChainHeaderSuppressed) never gets its own box, so its
+    // "dims" from here on only need to be big enough for a compact title strip on the group's
+    // background — using it for column-width math still works fine (it's just rarely the
+    // widest thing in its column), and shrinking it here (not just the layout gap after it)
+    // is what actually tightens the group container's own top boundary around the title.
+    if(diagramGenChainHeaderSuppressed(idx,nodeMeta))dims.h=DIAGRAM_GEN_GROUP_TITLE_H;
+    dimsByIdx.set(idx,dims);
   });
-  const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx);
+  const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx,nodeMeta);
   let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
@@ -17397,11 +17455,7 @@ async function generateDiagramFromOutline(){
   // outcomes also happens to satisfy this same leaf-children structural pattern, but the
   // diamond shape itself is meaningful and stays a real, visible box, so its background here
   // stays unlabeled same as before rather than absorbing text a reader would then see twice.
-  const chainHeaderSuppressed=idx=>{
-    if(!diagramGenIsChainGroup(idx))return false;
-    const meta=nodeMeta.get(nodes[idx].id);
-    return !meta||meta.shape!=='decision';
-  };
+  const chainHeaderSuppressed=idx=>diagramGenChainHeaderSuppressed(idx,nodeMeta);
   scope.scopeIdxs.forEach(idx=>{
     if(!diagramGenIsChainGroup(idx))return;
     const suppressed=chainHeaderSuppressed(idx);
@@ -17421,7 +17475,12 @@ async function generateDiagramFromOutline(){
     // match how every box in this layout is already centered in its column, means the title
     // lands in the same visual spot the box used to, just without a border of its own now that
     // pass 2 below skips drawing that box.
-    const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=12;fontColor=${groupBase.font};spacingTop=10;`:'';
+    // Left-aligned rather than centered: the incoming flow edge travels straight down through
+    // the container's horizontal center (same column the boxes sit in) on its way to the first
+    // child, so a centered title sits directly in that line's path and visually reads as an
+    // arrow stabbing through the text. Tucking it into the top-left corner instead — the usual
+    // swimlane/pool-header convention — keeps it clear of the line entirely.
+    const titleStyle=suppressed?`verticalAlign=top;align=left;fontStyle=1;fontSize=12;fontColor=${groupBase.font};spacingTop=10;spacingLeft=14;`:'';
     const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${groupFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
     const value=suppressed?escXmlAttr(labels.get(idx)):'';
     cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
@@ -17446,19 +17505,22 @@ async function generateDiagramFromOutline(){
   const drawnPairs=new Set();
   function edgeCell(a,b,label,dashed){
     // A suppressed chain-group header has no box of its own anymore (see the group-background
-    // rendering above) — redirect any edge that would have pointed at it onto its first real
-    // step instead, the box that visually sits right under the container's new title. Applied
-    // here, once, rather than at every call site, so structural tree/numbered-sequence edges,
+    // rendering above) — an edge into or out of it should touch the tinted container's own
+    // boundary (its top/bottom edge, same as any other box's own edge) rather than reaching
+    // inside past that boundary to the first real step's own box, which read as the arrow
+    // piercing straight through the container and the (now-invisible) header. Applied here,
+    // once, rather than at every call site, so structural tree/numbered-sequence edges,
     // AI-suggested trigger edges, and layered-mode edges all pick it up the same way. A
     // decision-shaped header is never suppressed (see chainHeaderSuppressed above) so it's
     // untouched here — its edges still point at its own diamond box as always.
-    const entryIdx=i=>chainHeaderSuppressed(i)?diagramGenChildIdxs(i)[0]:i;
-    a=entryIdx(a); b=entryIdx(b);
-    // A header's own "header → first child" edge redirects both ends onto that same first
-    // child, collapsing to a self-loop — correctly dropped rather than drawn, since the
-    // container's title needs no incoming arrow from itself.
-    if(a===b)return '';
-    const key=a+'\u2192'+b;
+    const cellId=i=>chainHeaderSuppressed(i)?('gd-grp'+i):('gd-n'+i);
+    const srcId=cellId(a), tgtId=cellId(b);
+    // A header's own "header → first child" edge would otherwise draw a redundant stub arrow
+    // from the container's own boundary to a box already visually inside it — dropped rather
+    // than drawn (the container's boundary already reads as the entry point on its own; see
+    // the tree-mode edge loop below, which skips this call entirely for a suppressed header).
+    if(srcId===tgtId)return '';
+    const key=srcId+'\u2192'+tgtId;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
     // Every layout this feature produces flows top-to-bottom, so pinning exit/entry to
@@ -17468,7 +17530,7 @@ async function generateDiagramFromOutline(){
     // still draws a clean right-angle path when they're not, instead of a needless extra jog.
     const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;'+(dashed?'dashed=1;':'');
     const val=label?` value="${escXmlAttr(label)}"`:'';
-    return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
+    return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="${srcId}" target="${tgtId}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
   }
   if(mode==='layered'&&guideline.edges.length){
     // Layered mode draws exactly the connections AI gave us — a pure parent-child tree edge
@@ -17490,7 +17552,10 @@ async function generateDiagramFromOutline(){
       const kids=diagramGenChildIdxs(idx);
       if(!kids.length)return;
       if(diagramGenIsChainGroup(idx)){
-        cells+=edgeCell(idx,kids[0],null,isExcludedIdx(kids[0]));
+        // Suppressed: the container's own boundary already serves as the visual entry point
+        // (see edgeCell) — a further "header → first child" edge here would just be a
+        // redundant stub arrow immediately inside a container that already reads as one unit.
+        if(!chainHeaderSuppressed(idx))cells+=edgeCell(idx,kids[0],null,isExcludedIdx(kids[0]));
         for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1],null,isExcludedIdx(kids[k+1]));
       } else if(diagramGenIsNumberedSequence(idx)){
         // Connects from the PREVIOUS stage's own tail (its terminal box, found via
