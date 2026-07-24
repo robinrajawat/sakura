@@ -17567,25 +17567,24 @@ async function generateDiagramFromOutline(){
     const key=srcId+'\u2192'+tgtId;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
-    // Anchor side picked from where the two boxes actually ended up, rather than always
-    // assuming top-to-bottom — needed now that a horizontally-numbered chain (see
-    // diagramGenIsHorizontalChain) places its steps side by side instead of stacked, and their
-    // connecting edges need to exit/enter left-right instead of top-bottom. Whichever axis has
-    // the bigger gap between the two centers is the one that matters; the smaller axis is
-    // assumed already near-aligned (chain/tree layout guarantees this for a plain edge), so
-    // pinning to a fixed center-side keeps the line straight instead of leaving it to
-    // draw.io's own auto-router, which can jog unnecessarily even when dead straight is
-    // possible.
-    const rectOf=i=>chainHeaderSuppressed(i)?groupRect.get(i):finalRect.get(i);
-    const ra=rectOf(a), rb=rectOf(b);
+    // Horizontal anchors only for the specific case that needs them: two siblings inside the
+    // same horizontally-numbered chain (see diagramGenIsHorizontalChain), where they're
+    // deliberately placed side by side. Deciding this from raw geometry instead (e.g. "whichever
+    // axis has the bigger gap between centers") looked appealing but is wrong for the much more
+    // common case of an ordinary fan-out — a parent with 2+ side-by-side children can easily
+    // put an outer child's x-offset well past the ~50px row gap, which would have misclassified
+    // plain parent→child branch edges as horizontal too. Structural parent/sibling check avoids
+    // that entirely; every edge that isn't specifically this case stays the usual top-to-bottom.
+    const pa=getParentIndex(a), pb=getParentIndex(b);
+    const horizontal=pa>=0&&pa===pb&&diagramGenIsHorizontalChain(pa);
     let exitAnchor='exitX=0.5;exitY=1;', entryAnchor='entryX=0.5;entryY=0;';
-    if(ra&&rb){
-      const dx=(rb.x+rb.w/2)-(ra.x+ra.w/2), dy=(rb.y+rb.h/2)-(ra.y+ra.h/2);
-      if(Math.abs(dx)>Math.abs(dy)){
+    if(horizontal){
+      const rectOf=i=>chainHeaderSuppressed(i)?groupRect.get(i):finalRect.get(i);
+      const ra=rectOf(a), rb=rectOf(b);
+      if(ra&&rb){
+        const dx=(rb.x+rb.w/2)-(ra.x+ra.w/2);
         exitAnchor=dx>=0?'exitX=1;exitY=0.5;':'exitX=0;exitY=0.5;';
         entryAnchor=dx>=0?'entryX=0;entryY=0.5;':'entryX=1;entryY=0.5;';
-      } else if(dy<0){
-        exitAnchor='exitX=0.5;exitY=0;'; entryAnchor='entryX=0.5;entryY=1;';
       }
     }
     const style=`edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;${exitAnchor}exitDx=0;exitDy=0;${entryAnchor}entryDx=0;entryDy=0;`+(dashed?'dashed=1;':'');
