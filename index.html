@@ -628,6 +628,29 @@ body.no-word-wrap .node-row{min-width:max-content}
 #qa-insert-actions,#qa-import-actions{display:flex;justify-content:flex-end;gap:8px}
 #qa-insert-actions .btn,#qa-import-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
 #qa-import-textarea{width:100%;box-sizing:border-box;min-height:160px;resize:vertical;margin-bottom:14px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:400 12.5px/1.5 'Inter',sans-serif}
+/* Diagram generation review screen — classification is stored on the diagram record
+   (diagram.nodeMeta), never on the node/tags, so nothing here ever touches node.tags or
+   renders anywhere outside this modal. */
+#diagram-gen-review-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#diagram-gen-review-overlay.open{opacity:1;pointer-events:all}
+#diagram-gen-review-overlay.closing{opacity:0;pointer-events:none}
+#diagram-gen-review-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:20px 20px 16px;width:min(620px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#diagram-gen-review-overlay.open #diagram-gen-review-modal{transform:translateY(0) scale(1)}
+#diagram-gen-review-overlay.closing #diagram-gen-review-modal{transform:translateY(8px) scale(.97)}
+#diagram-gen-review-modal h2{margin:0 0 4px;font-size:16px;color:var(--fg)}
+#diagram-gen-review-sub{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.45}
+#diagram-gen-review-list{display:flex;flex-direction:column;gap:1px;max-height:min(50vh,440px);overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:9px;padding:4px}
+.dgr-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:12.5px}
+.dgr-row:hover{background:var(--hover)}
+.dgr-row-text{flex:1;min-width:0;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dgr-row-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.dgr-shape-select{appearance:none;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:500 11px 'Inter',sans-serif;padding:3px 6px;border-radius:6px;outline:none;max-width:110px}
+.dgr-shape-select:disabled,.dgr-toggle:disabled,.dgr-toggle:disabled+span{opacity:.4}
+.dgr-toggle-label{display:flex;align-items:center;gap:3px;font:500 10.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;white-space:nowrap}
+.dgr-toggle{margin:0;cursor:pointer}
+.dgr-dir-select{appearance:none;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:500 11px 'Inter',sans-serif;padding:3px 6px;border-radius:6px;outline:none}
+#diagram-gen-review-actions{display:flex;justify-content:flex-end;gap:8px}
+#diagram-gen-review-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
 #qa-import-textarea:focus{outline:none;border-color:var(--accent)}
 #qa-import-textarea::placeholder{color:var(--muted);opacity:.7}
 #why-sakura-brand{display:flex;align-items:center;gap:7px;margin-bottom:16px}
@@ -6870,6 +6893,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="qa-import-actions">
         <button id="qa-import-cancel" class="btn">Cancel</button>
         <button id="qa-import-continue" class="btn primary">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="diagram-gen-review-overlay" role="dialog" aria-modal="true" aria-labelledby="diagram-gen-review-heading">
+    <div id="diagram-gen-review-modal">
+      <h2 id="diagram-gen-review-heading">Review before generating</h2>
+      <p id="diagram-gen-review-sub">Shape, container, and flow direction for each node — adjust anything that guessed wrong, then generate. This never touches this document's own tags.</p>
+      <div id="diagram-gen-review-list"></div>
+      <div id="diagram-gen-review-actions">
+        <button id="diagram-gen-review-cancel" class="btn">Cancel</button>
+        <button id="diagram-gen-review-confirm" class="btn primary">Generate</button>
       </div>
     </div>
   </div>
@@ -16921,11 +16956,67 @@ Input:
 12|  Day Delivery
 13|  Night Delivery
 Correct "edges" for this input: [{"from":11,"to":12},{"from":11,"to":13}] — mode stays "tree" (this is still a linear write-up, not an architecture diagram), node 11 is NOT "decision" (it has zero children — 12 and 13 are its siblings), but the edges array is what actually shows that 11 is what produces both 12 and 13, since nothing else in tree mode can draw a connection between siblings.`;
+// ── Manual classification (nodeMeta) ─────────────────────────────────────
+// Replaces numbering-regex inference and (for now) the AI guideline pass above as the source of
+// truth for how a diagram is grouped. Lives entirely outside node.tags/.text — it's stored on
+// the DIAGRAM record itself (diagram.nodeMeta, a plain {nodeId:{shape,container,sequence,
+// direction}} object, JSON-safe for save/export), never on the node — so it never renders as a
+// tag chip in the outline, Presenter mode, or exports, and two diagrams generated from
+// overlapping scopes can classify the same node differently. Keyed by node id (stable across
+// edits/reorders), not index. AI_DIAGRAM_GEN_SYSTEM_PROMPT/diagramGenValidateGuideline above are
+// left in place, unused for now — a future AI pass can populate this exact same shape instead of
+// bypassing it, so nothing here has to change when that's wired back in.
+//
+// Four independent fields per node, all unset (false/null) until a person sets them via the
+// review screen:
+//   shape     — one of DIAGRAM_GEN_SHAPE_WHITELIST, or null for a plain box
+//   container — wrap this node's WHOLE subtree in one titled, tinted region; the node's own box
+//               is never drawn separately (its text becomes the region's title instead) — see
+//               diagramGenChainHeaderSuppressed. Mutually exclusive with shape in the review UI:
+//               a node can't be both a diamond and a title bar.
+//   sequence  — this node's direct children chain to each other (parent→c1→c2→…) instead of
+//               fanning out independently. Independent of container — a container's children can
+//               still fan out inside it (e.g. two unrelated sub-branches under one section).
+//   direction — 'vertical' (default) or 'horizontal'; only meaningful when sequence is true.
+function diagramGenIsContainer(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.container); }
+function diagramGenIsSequence(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.sequence); }
+function diagramGenIsHorizontal(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.direction==='horizontal'); }
+// Structural defaults, used only to seed the review screen's first proposal (never applied
+// silently at render time — everything downstream reads confirmed nodeMeta only). A flat run of
+// 2+ leaf children reads as one continuous sequence far more often than as parallel branches
+// (an actual branch usually has its own sub-detail), so it's proposed as sequence+container
+// pre-checked; nothing else gets a default, direction always proposes 'vertical'.
+function diagramGenProposeNodeMeta(scope,existingMeta){
+  const out=new Map();
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx];
+    const prev=existingMeta&&existingMeta.get(node.id);
+    if(prev){ out.set(node.id,{...prev}); return; }
+    const kids=diagramGenChildIdxs(idx);
+    const leafChain=diagramGenIsChainGroup(idx);
+    let shape=null;
+    if(Array.isArray(node.tags)){
+      for(const tag of node.tags){ const mapped=DIAGRAM_GEN_TAG_SHAPE_MAP[String(tag||'').toLowerCase()]; if(mapped){ shape=mapped; break; } }
+      if(shape==='decision'&&kids.length<2)shape=null; // same guard AI validation used — a claimed decision needs a real fork
+    }
+    out.set(node.id,{shape:(shape&&!leafChain)?shape:(shape||null),container:leafChain&&!shape,sequence:leafChain,direction:'vertical'});
+  });
+  return out;
+}
+function diagramGenNodeMetaFromPlain(obj){
+  const m=new Map();
+  if(obj&&typeof obj==='object')Object.keys(obj).forEach(k=>{ const id=Number(k); if(Number.isFinite(id))m.set(id,obj[k]); });
+  return m;
+}
+function diagramGenNodeMetaToPlain(map){
+  const out={}; if(map)map.forEach((v,k)=>{ out[k]=v; }); return out;
+}
 // Validates and sanitizes a raw AI response into a safe, ready-to-use guideline object — every
 // nodeId must exist in the current scope, shape/layer/mode must be in the fixed whitelists
 // above (anything else is silently dropped, never trusted verbatim), edges need two distinct
 // valid endpoints. Returns null on any parse failure or on a response with nothing usable,
-// which is the caller's signal to fall back to plain tree mode.
+// which is the caller's signal to fall back to plain tree mode. UNUSED for now — see the
+// nodeMeta block above; kept ready for when an AI pass is layered back on top.
 function diagramGenValidateGuideline(raw,scope){
   let parsed;
   try{ parsed=JSON.parse(String(raw||'').replace(/```json|```/gi,'').trim()); }catch(e){ return null; }
@@ -17146,7 +17237,7 @@ function pickDiagramGenScope(){
 // never drawn) so each top-level item still gets its own branch color. A tag on a node (or an
 // inherited one from a tagged ancestor) overrides branch color; an explicit node marker
 // outranks both, since it's the most deliberate signal of the three.
-function assignDiagramGenColors(scope){
+function assignDiagramGenColors(scope,nodeMeta){
   const colorByIdx=new Map();
   let branchCursor=0;
   function walk(idx,inheritedKey){
@@ -17157,17 +17248,14 @@ function assignDiagramGenColors(scope){
     const markerKey=node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker];
     if(markerKey)key=markerKey;
     colorByIdx.set(idx,key);
-    // A genuine fan-out below the top level — 2+ children that aren't just a flat run of
-    // sequential leaf steps (diagramGenIsChainGroup) — is a real branch point (alternate
-    // paths, not stages of one flow), and gets each path its own cycled color the same way
-    // the tree's very top level already does below. Without this, everything under a single
-    // top-level node inherited one flat color no matter how many real branches appeared
-    // further down — a document shaped like one root heading with all the actual structure
-    // several levels deep (a very ordinary shape) rendered as one solid color end to end, with
-    // zero AI involved to differentiate it another way. A chain group still inherits the
-    // parent's color unchanged — those steps are meant to read as one continuous sequence.
+    // A genuine fan-out below the top level — 2+ children that AREN'T a confirmed sequence — is
+    // a real branch point (alternate paths, not stages of one flow), and gets each path its own
+    // cycled color the same way the tree's very top level already does below. Without this,
+    // everything under a single top-level node inherited one flat color no matter how many real
+    // branches appeared further down. A confirmed sequence still inherits the parent's color
+    // unchanged — those steps are meant to read as one continuous flow.
     const kids=diagramGenChildIdxs(idx);
-    const isRealBranch=kids.length>1&&!diagramGenIsChainGroup(idx);
+    const isRealBranch=kids.length>1&&!diagramGenIsSequence(idx,nodeMeta);
     const end=getSubtreeEnd(idx);
     for(let i=idx+1;i<end;i++){
       if(nodes[i].depth===node.depth+1){
@@ -17315,90 +17403,40 @@ function diagramGenIsChainGroup(idx){
 // reserve less vertical space above a suppressed header than a real box would need) so the two
 // can never disagree about which nodes are suppressed.
 function diagramGenChainHeaderSuppressed(idx,nodeMeta){
-  if(!diagramGenIsChainGroup(idx))return false;
-  const meta=nodeMeta.get(nodes[idx].id);
-  return !meta||meta.shape!=='decision';
+  return diagramGenIsContainer(idx,nodeMeta);
 }
-// An explicit numbered list ("1. Webshop Layer", "2. ERP Layer", ...) is a person directly
-// saying "these siblings are stages of one flow, read top to bottom" — something
-// diagramGenIsChainGroup can't infer on its own here, since each numbered node has real
-// children of its own (it isn't a flat run of leaves). Requires EVERY sibling to be numbered,
-// not just some, so a single numbered aside among otherwise-ordinary children doesn't
-// accidentally pull the whole group into sequence mode. Covers common numbering styles beyond
-// a plain "1." — "1)", "1:", "1 · " (middle dot), "1 - " — since people number lists
-// differently and the actual character used isn't the meaningful part.
-const DIAGRAM_GEN_NUMBERED_RE=/^\d+\s*[.):·-](?!\d)/;
-function diagramGenIsNumberedSequence(idx){
-  const kids=diagramGenChildIdxs(idx);
-  return kids.length>1&&kids.every(ci=>DIAGRAM_GEN_NUMBERED_RE.test(getNodePlainText(nodes[ci])));
-}
-// A chain group (flat run of leaf steps) whose own steps are ALSO explicitly numbered reads as
-// "these are stages within this layer, read left to right" the same way an outer numbered
-// sequence reads as top-to-bottom — same signal, different level of the tree. Row layout
-// instead of the usual vertical column (see layoutDiagramGenTree); the actual arrow direction
-// between them comes for free from edgeCell's own geometry-based orientation below, so nothing
-// about edge-drawing needs to know this happened.
-function diagramGenIsHorizontalChain(idx){
-  if(!diagramGenIsChainGroup(idx))return false;
-  return diagramGenChildIdxs(idx).every(ci=>DIAGRAM_GEN_NUMBERED_RE.test(getNodePlainText(nodes[ci])));
-}
-// A numbered sequence whose stages have their OWN sub-detail (not pure leaves — otherwise
-// diagramGenIsHorizontalChain above already covers it automatically) is structurally identical
-// to a top-level phase sequence that should stay vertical ("1. Webshop Basket / 2. Integration
-// Layer / 3. ERP Backend", each with a whole subtree of their own) — there's no way to tell
-// "these are still-substantial parallel stages, lay them out as a row" from "these are ordered
-// phases, stack them top to bottom" by structure alone; it's a judgment call only the person
-// writing the outline can make. Tag the PARENT node #horizontal (or #row) to say so explicitly.
-function diagramGenHasHorizontalTag(idx){
-  const node=nodes[idx];
-  return Array.isArray(node.tags)&&node.tags.some(t=>{ const s=String(t||'').toLowerCase(); return s==='horizontal'||s==='row'; });
-}
-function diagramGenIsHorizontalNumberedSequence(idx){
-  return diagramGenIsNumberedSequence(idx)&&diagramGenHasHorizontalTag(idx);
-}
-// The terminal node of a chain-like subtree — the box a NEXT numbered stage's edge should
-// connect from, rather than from the stage's own header (which would skip over everything the
-// stage actually contains). Recurses through nested numbered sequences; a genuine fan-out has
-// no single "last" box to point from, so it falls back to the node itself.
-function diagramGenChainTailIdx(idx){
+// The terminal node of a sequence — the box a NEXT sibling's edge should connect from, rather
+// than from the stage's own header (which would skip over everything the stage actually
+// contains). Recurses through nested sequences; a fan-out (or a leaf) has no further "last" box
+// to point past, so it falls back to the node itself.
+function diagramGenChainTailIdx(idx,nodeMeta){
   const kids=diagramGenChildIdxs(idx);
   if(!kids.length)return idx;
-  if(diagramGenIsChainGroup(idx))return kids[kids.length-1];
-  if(diagramGenIsNumberedSequence(idx))return diagramGenChainTailIdx(kids[kids.length-1]);
-  return idx;
+  if(!diagramGenIsSequence(idx,nodeMeta))return idx;
+  return diagramGenChainTailIdx(kids[kids.length-1],nodeMeta);
 }
 // Bottom-up subtree-width computation, then top-down x/y assignment, using each node's own
 // (label-derived) box dims rather than one fixed size throughout. A chain group's column
 // width is the widest box among the group members, so shorter step boxes still center under
 // the parent rather than each sitting at a different offset.
+// Driven entirely by nodeMeta.sequence/.direction now (see diagramGenIsSequence/
+// diagramGenIsHorizontal above) — no more separate chain-group-vs-numbered-sequence code paths.
+// A sequence's width/placement always recurses into each child's own subtree via computeWidth/
+// place, which works identically whether that child is a bare leaf (recursion bottoms out
+// immediately, same result the old leaf-only fast path gave) or has its own further structure —
+// so one code path now covers both what used to be "chain group" and "numbered sequence".
 function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
   const widthByIdx=new Map();
   function computeWidth(idx){
     const kids=diagramGenChildIdxs(idx);
     const ownW=dimsByIdx.get(idx).w;
     if(!kids.length){ widthByIdx.set(idx,ownW); return ownW; }
-    if(diagramGenIsChainGroup(idx)){
-      // A horizontally-numbered chain (see diagramGenIsHorizontalChain) needs the SUM of its
-      // steps' widths plus the gaps between them, same as any left-to-right row — the usual
-      // vertical stack only ever needed the single widest box's width, since nothing sits
-      // beside anything else there.
-      if(diagramGenIsHorizontalChain(idx)){
-        let rowW=0; kids.forEach((ci,k)=>{ rowW+=dimsByIdx.get(ci).w; if(k>0)rowW+=DIAGRAM_GEN_GAP_X; });
-        const colW=Math.max(ownW,rowW);
-        widthByIdx.set(idx,colW); return colW;
-      }
-      const colW=Math.max(ownW,...kids.map(ci=>dimsByIdx.get(ci).w));
-      widthByIdx.set(idx,colW); return colW;
-    }
-    // A numbered sequence's column has to fit the WIDEST stage's own subtree (not just its
-    // header box) — computeWidth(ci) recurses into each numbered stage, which is usually
-    // itself a chain group with its own column width. Tagged #horizontal (see
-    // diagramGenIsHorizontalNumberedSequence): stages sit side by side instead, so the total
-    // width is the SUM of each stage's own column width plus the gaps between them, same as
-    // any other row — each stage still keeps its own full subtree underneath it, just arranged
-    // left to right instead of stacked.
-    if(diagramGenIsNumberedSequence(idx)){
-      if(diagramGenIsHorizontalNumberedSequence(idx)){
+    if(diagramGenIsSequence(idx,nodeMeta)){
+      // Horizontal: total width is the SUM of each child's own column width plus the gaps
+      // between them, same as any row — each child still keeps its own full subtree beneath
+      // it, just arranged left to right instead of stacked. Vertical: the column only needs
+      // to fit the WIDEST child's own column.
+      if(diagramGenIsHorizontal(idx,nodeMeta)){
         let rowW=0; kids.forEach((ci,k)=>{ rowW+=computeWidth(ci); if(k>0)rowW+=DIAGRAM_GEN_GAP_X; });
         const colW=Math.max(ownW,rowW);
         widthByIdx.set(idx,colW); return colW;
@@ -17406,63 +17444,43 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
       const colW=Math.max(ownW,...kids.map(ci=>computeWidth(ci)));
       widthByIdx.set(idx,colW); return colW;
     }
+    // Fan-out (the default: independent branches, not a sequence) — total width is the sum of
+    // every child's own subtree width, placed side by side.
     let sum=0; kids.forEach((ci,k)=>{ sum+=computeWidth(ci); if(k>0)sum+=DIAGRAM_GEN_GAP_X; });
     const w=Math.max(ownW,sum); widthByIdx.set(idx,w); return w;
   }
   const positions=new Map();
-  // y is passed as an absolute pixel row rather than depth*constant, since a chain group
-  // consumes extra vertical rows beyond its outline depth — render position and outline
-  // depth are no longer the same thing once a chain is in play. Returns the y-coordinate
-  // immediately below the bottom-most box this call placed, so a numbered sequence (or
-  // anything else that needs to know where a subtree actually ended) can stack the next
-  // thing after it without needing a separate height pass.
+  // y is passed as an absolute pixel row rather than depth*constant, since a suppressed
+  // (container) header consumes less vertical room than its outline depth would suggest —
+  // render position and outline depth are no longer the same thing once one is in play. Returns
+  // the y-coordinate immediately below the bottom-most box this call placed, so a sequence (or
+  // anything else that needs to know where a subtree actually ended) can stack the next thing
+  // after it without needing a separate height pass.
   function place(idx,left,y){
     const w=widthByIdx.get(idx), ownDims=dimsByIdx.get(idx);
     positions.set(idx,{x:left+w/2-ownDims.w/2,y});
     const kids=diagramGenChildIdxs(idx);
     if(!kids.length)return y+ownDims.h;
-    if(diagramGenIsChainGroup(idx)){
-      const headerGap=diagramGenChainHeaderSuppressed(idx,nodeMeta)?DIAGRAM_GEN_GROUP_TITLE_GAP:DIAGRAM_GEN_GAP_Y;
-      const rowY=y+ownDims.h+headerGap;
-      if(diagramGenIsHorizontalChain(idx)){
+    const headerGap=diagramGenChainHeaderSuppressed(idx,nodeMeta)?DIAGRAM_GEN_GROUP_TITLE_GAP:DIAGRAM_GEN_GAP_Y;
+    const rowY=y+ownDims.h+headerGap;
+    if(diagramGenIsSequence(idx,nodeMeta)){
+      // Each child keeps its own full subtree (itself + whatever's under it). Horizontal:
+      // placed side by side at the same starting row, each one still recursing through place()
+      // normally to lay out its own subtree beneath it. Vertical: stacked directly beneath the
+      // previous child's own bottom edge — read top to bottom as one flow, not parallel
+      // branches.
+      if(diagramGenIsHorizontal(idx,nodeMeta)){
         const rowW=widthByIdx.get(idx);
-        let cx=left+w/2-rowW/2, maxH=0;
-        kids.forEach(ci=>{
-          const cd=dimsByIdx.get(ci);
-          positions.set(ci,{x:cx,y:rowY});
-          cx+=cd.w+DIAGRAM_GEN_GAP_X;
-          maxH=Math.max(maxH,cd.h);
-        });
-        return rowY+maxH;
-      }
-      let curY=rowY;
-      kids.forEach(ci=>{
-        const cd=dimsByIdx.get(ci);
-        positions.set(ci,{x:left+w/2-cd.w/2,y:curY});
-        curY+=cd.h+DIAGRAM_GEN_GAP_Y;
-      });
-      return curY-DIAGRAM_GEN_GAP_Y;
-    }
-    // Each numbered stage keeps its own full subtree (header + whatever's under it), stacked
-    // directly beneath the previous stage's own bottom edge rather than fanned out beside it —
-    // this is the actual point of numbering siblings: read top to bottom as one flow, not
-    // parallel branches. Tagged #horizontal (see diagramGenIsHorizontalNumberedSequence):
-    // stages place side by side at the same starting row instead — each one still recurses
-    // through place() normally, laying out its own subtree beneath it exactly as it would
-    // vertically, just positioned in its own column of the row rather than stacked.
-    if(diagramGenIsNumberedSequence(idx)){
-      if(diagramGenIsHorizontalNumberedSequence(idx)){
-        const rowW=widthByIdx.get(idx);
-        let cx=left+w/2-rowW/2, maxBottom=y+ownDims.h;
+        let cx=left+w/2-rowW/2, maxBottom=rowY;
         kids.forEach(ci=>{
           const cw=widthByIdx.get(ci);
-          const bottom=place(ci,cx,y+ownDims.h+DIAGRAM_GEN_GAP_Y);
+          const bottom=place(ci,cx,rowY);
           maxBottom=Math.max(maxBottom,bottom);
           cx+=cw+DIAGRAM_GEN_GAP_X;
         });
         return maxBottom;
       }
-      let curY=y+ownDims.h+DIAGRAM_GEN_GAP_Y;
+      let curY=rowY;
       kids.forEach(ci=>{
         const cw=widthByIdx.get(ci);
         const bottom=place(ci,left+w/2-cw/2,curY);
@@ -17470,8 +17488,10 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
       });
       return curY-DIAGRAM_GEN_GAP_Y;
     }
-    let cursor=left, maxBottom=y+ownDims.h;
-    kids.forEach(ci=>{ const cw=widthByIdx.get(ci); const bottom=place(ci,cursor,y+ownDims.h+DIAGRAM_GEN_GAP_Y); maxBottom=Math.max(maxBottom,bottom); cursor+=cw+DIAGRAM_GEN_GAP_X; });
+    // Fan-out: children placed side by side, each starting at the same row (independent
+    // branches, not stages of one flow).
+    let cursor=left, maxBottom=rowY;
+    kids.forEach(ci=>{ const cw=widthByIdx.get(ci); const bottom=place(ci,cursor,rowY); maxBottom=Math.max(maxBottom,bottom); cursor+=cw+DIAGRAM_GEN_GAP_X; });
     return maxBottom;
   }
   if(scope.rootIdxs.length>1){
@@ -17483,91 +17503,67 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
   }
   return positions;
 }
+// Entry point (Generate button). No AI call here anymore — picks the scope, trims labels, seeds
+// a proposed classification (from the diagram's own saved nodeMeta on a regenerate, or
+// structural defaults on a first run — see diagramGenProposeNodeMeta), then hands off to the
+// review screen. The actual render only happens once the person confirms there — see
+// diagramGenFinishGenerate below. Nothing here mutates `diagrams` yet, so a person who backs out
+// of the review screen leaves everything, including an existing diagram, untouched.
 async function generateDiagramFromOutline(){
   if(!padDiagramsTabEnabled){ showToast('Diagrams is off — turn it back on in Settings → Features → Pad Panel'); return; }
   const scope=pickDiagramGenScope();
   if(!scope)return;
-  // Regenerate-in-place: if a diagram already exists for this exact scope (created by this
-  // same feature, tracked via genKey), offer to overwrite it instead of piling up a fresh
-  // duplicate on every click while iterating on the source outline. Declining leaves the
-  // existing diagram — and any manual draw.io edits on it — untouched.
+  // Regenerate-in-place: if a diagram already exists for this exact scope (created by this same
+  // feature, tracked via genKey), the review screen opens pre-filled from ITS saved nodeMeta
+  // instead of a blind overwrite confirmation — see diagramGenOpenReview.
   const existing=diagrams.find(d=>d.genKey===scope.genKey);
-  if(existing){
-    const ok=await sakuraConfirm({
-      icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',
-      title:'Regenerate this diagram?',
-      body:'A diagram was already generated for this scope. Regenerating replaces it — any changes made since inside draw.io will be lost.',
-      confirmLabel:'Regenerate',confirmCls:'primary',cancelLabel:'Cancel'
-    });
-    if(!ok){ showToast('Cancelled — the existing diagram wasn\u2019t changed'); return; }
-  }
-  // Spins the button's icon for the duration of this call — the previous toast alone
-  // disappears after a few seconds, which left no visible signal during a slow AI round-trip
-  // (a free-tier/reasoning model can easily take several seconds). Same ai-busy/ai-spin
-  // convention used by every other AI-triggering button in the app.
   const genBtn=el('dtb-generate'); if(genBtn)genBtn.classList.add('ai-busy');
   try{
-  showToast('Generating a rough diagram…');
-  const colorByIdx=assignDiagramGenColors(scope);
-  // All text reads happen synchronously, up front, before any await — the actual trim calls
-  // (each a real network round-trip when AI is needed) then run in parallel via Promise.all
-  // instead of one at a time. Previously a sequential for-of loop meant a diagram with several
-  // overlong labels paid a full round-trip per label; it also left the door open for a stale
-  // read if the outline changed mid-loop, since nodes[idx] was re-read after every individual
-  // await. Capturing every label's plain text before the first await removes that particular
-  // exposure — downstream layout still resolves nodes by index too, so an outline edited during
-  // generation can still shift things after this point, but the label-fetch phase itself is safe.
-  const rawTexts=scope.scopeIdxs.map(idx=>getNodePlainText(nodes[idx]));
-  const [trimmed,guideline]=await Promise.all([
-    Promise.all(rawTexts.map(t=>diagramGenTrimText(t))),
-    requestDiagramGenGuideline(scope)
-  ]);
-  const labels=new Map();
-  scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
-  const nodeMeta=guideline?guideline.nodeMeta:new Map();
-  // Tags win over whatever AI classified (or over nothing at all, when AI didn't run) — see
-  // DIAGRAM_GEN_TAG_SHAPE_MAP. Same "decision only sticks with a real 2+-child fork" guard the
-  // AI path already enforces just above nodeMeta's own validation — a #decision tag someone
-  // added doesn't guarantee the node still has two actual outcomes as children right now.
-  scope.scopeIdxs.forEach(idx=>{
-    const node=nodes[idx];
-    if(!Array.isArray(node.tags)||!node.tags.length)return;
-    let shape=null;
-    for(const tag of node.tags){ const mapped=DIAGRAM_GEN_TAG_SHAPE_MAP[String(tag||'').toLowerCase()]; if(mapped){ shape=mapped; break; } }
-    if(!shape)return;
-    if(shape==='decision'&&diagramGenChildIdxs(idx).length<2)return;
-    nodeMeta.set(node.id,{...(nodeMeta.get(node.id)||{}),shape});
-  });
-  // Shapes are only known now (after the AI call resolves), so a decision node's label can't
-  // be sized correctly until this point — a second, local pass on top of the generic trim
-  // already done above.
+    // All text reads happen synchronously, up front, before any await — the actual trim calls
+    // (each a real network round-trip when AI shortening is needed) then run in parallel via
+    // Promise.all instead of one at a time. Capturing every label's plain text before the first
+    // await removes the door-open-to-a-stale-read exposure a sequential loop would have.
+    const rawTexts=scope.scopeIdxs.map(idx=>getNodePlainText(nodes[idx]));
+    const trimmed=await Promise.all(rawTexts.map(t=>diagramGenTrimText(t)));
+    const labels=new Map();
+    scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
+    const existingMeta=existing&&existing.nodeMeta?diagramGenNodeMetaFromPlain(existing.nodeMeta):null;
+    const proposedMeta=diagramGenProposeNodeMeta(scope,existingMeta);
+    diagramGenOpenReview(scope,labels,proposedMeta,existing);
+  } finally{ if(genBtn)genBtn.classList.remove('ai-busy'); }
+}
+// The actual deterministic renderer — everything from here down only runs once a person has
+// confirmed nodeMeta from the review screen (see diagramGenOpenReview / diagramGenConfirmReview).
+// Colors, dims, and layout all read confirmed nodeMeta, never AI output or numbering regexes.
+function diagramGenFinishGenerate(scope,labels,nodeMeta,existing){
+  const colorByIdx=assignDiagramGenColors(scope,nodeMeta);
+  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,true);
+  // A decision node's label can't be sized correctly until its shape is known — a second, local
+  // pass on top of the generic trim already done in generateDiagramFromOutline.
   labels.forEach((text,idx)=>{
     const meta=nodeMeta.get(nodes[idx].id);
     if(meta&&meta.shape==='decision'&&text.length>DIAGRAM_GEN_DECISION_CHAR_BUDGET){
       labels.set(idx,diagramGenHardTruncate(text,DIAGRAM_GEN_DECISION_CHAR_BUDGET));
     }
   });
-  const mode=guideline?guideline.mode:'tree';
-  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,!!guideline);
   const dimsByIdx=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const meta=nodeMeta.get(nodes[idx].id);
     const dims=diagramGenAdjustDimsForShape(diagramGenBoxDims(labels.get(idx)),meta&&meta.shape);
-    // A suppressed header (see diagramGenChainHeaderSuppressed) never gets its own box, so its
-    // "dims" from here on only need to be big enough for a compact title strip on the group's
-    // background — using it for column-width math still works fine (it's just rarely the
-    // widest thing in its column), and shrinking it here (not just the layout gap after it)
-    // is what actually tightens the group container's own top boundary around the title.
+    // A suppressed (container) header never gets its own box, so its "dims" from here on only
+    // need to be big enough for a compact title strip on the container's background — using it
+    // for column-width math still works fine (it's just rarely the widest thing in its column),
+    // and shrinking it here (not just the layout gap after it) is what actually tightens the
+    // container's own top boundary around the title.
     if(diagramGenChainHeaderSuppressed(idx,nodeMeta))dims.h=DIAGRAM_GEN_GROUP_TITLE_H;
     dimsByIdx.set(idx,dims);
   });
-  const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx,nodeMeta);
+  const positions=layoutDiagramGenTree(scope,dimsByIdx,nodeMeta);
   let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
   // Every scope idx should have a position from the layout walk above — this guard is a
-  // last-resort safety net, not an expected path (see the #edge-label subtree-exclusion fix in
-  // pickDiagramGenScope for the actual bug this used to hit): skipping a genuinely position-less
-  // node here degrades to "that one node's missing from the diagram" rather than throwing and
-  // killing the whole generation.
+  // last-resort safety net, not an expected path: skipping a genuinely position-less node here
+  // degrades to "that one node's missing from the diagram" rather than throwing and killing the
+  // whole generation.
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
     if(!p||!d)return;
@@ -17575,9 +17571,9 @@ async function generateDiagramFromOutline(){
   });
   const snap10=n=>Math.round(n/10)*10;
   const offsetX=40-minX;
-  // Pass 1: the final rendered rect for every node, using the same center-preserving snap
-  // used everywhere else in this function — computed once so both the node's own box AND any
-  // chain-group container built from it (see below) agree exactly on where it actually sits.
+  // Pass 1: the final rendered rect for every node, using the same center-preserving snap used
+  // everywhere else in this function — computed once so both the node's own box AND any
+  // container built from it (see below) agree exactly on where it actually sits.
   const finalRect=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
@@ -17588,65 +17584,53 @@ async function generateDiagramFromOutline(){
     finalRect.set(idx,{x,y,w,h});
   });
   let cells='';
-  // A chain group (diagramGenIsChainGroup — a node whose children are all sequential leaf
-  // steps, not further branches) already reads as "one labeled group of steps" structurally;
-  // this makes that grouping visible on the page itself rather than only implied by shared
-  // color. Drawn first, before any node box, so it renders behind them (draw.io stacks cells
-  // in document order) — a plain, low-contrast background card rather than a dashed/dotted
-  // border, deliberately: 'excluded' (dotted) and 'external' (dashed) were made visually
-  // distinct from each other earlier this session specifically so a border style would mean
-  // one thing; adding a third dashed/dotted meaning here would undo that. Applies uniformly to
-  // every chain group regardless of what its own label says (not just ones literally worded
-  // "... Layer") — the structural pattern is what matters, not the wording.
+  // A container (nodeMeta.container — see the block above diagramGenValidateGuideline) reads as
+  // "one titled region" on the page rather than only being implied by shared color. Drawn first,
+  // before any node box, so it renders behind them (draw.io stacks cells in document order) — a
+  // plain, low-contrast background card rather than a dashed/dotted border, deliberately:
+  // 'excluded' (dotted) and 'external' (dashed) are visually distinct from each other, and a
+  // third dashed/dotted meaning here would undo that.
   //
-  // Tinted with the group's own color rather than one fixed neutral, so a pink actor group and
-  // a blue UI group each read as their own section instead of both sharing the same beige card.
+  // Tinted with the container's own color rather than one fixed neutral, so a pink actor
+  // container and a blue UI container each read as their own section instead of sharing one
+  // beige card.
   //
-  // The header's own text moves onto this background as a title instead of also getting its
-  // own box below (see chainHeaderSuppressed / pass 2) — except when AI classified the header
-  // itself as a genuine 'decision' diamond: a decision with exactly its Yes/No-style leaf
-  // outcomes also happens to satisfy this same leaf-children structural pattern, but the
-  // diamond shape itself is meaningful and stays a real, visible box, so its background here
-  // stays a plain unlabeled card same as before rather than absorbing text a reader would then
-  // see twice.
+  // Bounded by every scope node in the container's WHOLE subtree (not just its direct
+  // children), so a container can wrap arbitrarily deep, mixed content — a fan-out of several
+  // sub-branches, nested sequences, even nested containers — not just a flat run of leaves.
   //
-  // One flat card per suppressed header (its title text sits directly on top, centered — see
-  // the style below) or a plain unlabeled card for a decision header that keeps its own box.
-  // Centering the title is safe here: edges into/out of a suppressed group stop right at the
-  // container's own boundary instead of reaching inside (see edgeCell below), so nothing
-  // crosses through the title text's position.
+  // The header's own text moves onto this background as a title instead of also getting its own
+  // box below (see chainHeaderSuppressed / pass 2) — a container never keeps its own shape box
+  // (the review screen keeps shape and container mutually exclusive per node).
   const chainHeaderSuppressed=idx=>diagramGenChainHeaderSuppressed(idx,nodeMeta);
-  // A suppressed header's own bounding box, keyed by idx — edgeCell needs this to figure out
-  // which side of the container an edge should actually touch (top/bottom for a vertical
-  // approach, left/right for a horizontal one, e.g. a horizontally-numbered chain's group
-  // sitting beside something rather than below it), since gd-grp{idx} isn't a real node with
-  // its own entry in finalRect the way a normal box is.
+  // A container's own bounding box, keyed by idx — edgeCell needs this to figure out which side
+  // of the container an edge should actually touch (top/bottom for a vertical approach,
+  // left/right for a horizontal one), since gd-grp{idx} isn't a real node with its own entry in
+  // finalRect the way a normal box is.
   const groupRect=new Map();
   scope.scopeIdxs.forEach(idx=>{
-    if(!diagramGenIsChainGroup(idx))return;
-    const suppressed=chainHeaderSuppressed(idx);
+    if(!diagramGenIsContainer(idx,nodeMeta))return;
     const meta=nodeMeta.get(nodes[idx].id);
     const isNote=meta&&meta.shape==='note';
     const isExcluded=meta&&meta.shape==='excluded';
     const groupBase=isNote?DIAGRAM_GEN_NOTE_COLOR:(isExcluded?DIAGRAM_GEN_EXCLUDED_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray));
-    const kids=diagramGenChildIdxs(idx);
-    const rects=[idx,...kids].map(i=>finalRect.get(i));
+    const end=getSubtreeEnd(idx);
+    const rects=scope.scopeIdxs.filter(i=>i>=idx&&i<end).map(i=>finalRect.get(i)).filter(Boolean);
+    if(!rects.length)return;
     const pad=12;
     const gx=Math.min(...rects.map(r=>r.x))-pad, gy=Math.min(...rects.map(r=>r.y))-pad;
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
     groupRect.set(idx,{x:gx,y:gy,w:gx2-gx,h:gy2-gy});
     const bodyFill=diagramGenLighten(groupBase.fill,0.55);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
-    const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=13;fontColor=${groupBase.font};spacingTop=12;`:'';
+    const titleStyle=`verticalAlign=top;align=center;fontStyle=1;fontSize=13;fontColor=${groupBase.font};spacingTop=12;`;
     const style=`rounded=1;absoluteArcSize=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
-    const value=suppressed?escXmlAttr(labels.get(idx)):'';
-    cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
+    cells+=`<mxCell id="gd-grp${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
   });
-  // Pass 2: the actual node boxes, on top of any group container from pass 1. A chain-group
-  // header is skipped here when its text already rendered as the container's own title above
-  // (chainHeaderSuppressed) — drawing it again as a box too would just restate the same label
-  // twice for one node. A decision-shaped header is exempt (see chainHeaderSuppressed) and
-  // still gets its own diamond box normally.
+  // Pass 2: the actual node boxes, on top of any container background from pass 1. A container's
+  // own header is skipped here since its text already rendered as the container's own title
+  // above (chainHeaderSuppressed) — drawing it again as a box too would just restate the same
+  // label twice for one node.
   scope.scopeIdxs.forEach(idx=>{
     if(chainHeaderSuppressed(idx))return;
     const meta=nodeMeta.get(nodes[idx].id);
@@ -17661,35 +17645,29 @@ async function generateDiagramFromOutline(){
   let edgeCounter=0;
   const drawnPairs=new Set();
   function edgeCell(a,b,label,dashed){
-    // A suppressed chain-group header has no box of its own anymore (see the group-background
-    // rendering above) — an edge into or out of it should touch the tinted container's own
-    // boundary (its top/bottom edge, same as any other box's own edge) rather than reaching
-    // inside past that boundary to the first real step's own box, which read as the arrow
-    // piercing straight through the container and the (now-invisible) header. Applied here,
-    // once, rather than at every call site, so structural tree/numbered-sequence edges,
-    // AI-suggested trigger edges, and layered-mode edges all pick it up the same way. A
-    // decision-shaped header is never suppressed (see chainHeaderSuppressed above) so it's
-    // untouched here — its edges still point at its own diamond box as always.
+    // A container header has no box of its own anymore (see the group-background rendering
+    // above) — an edge into or out of it should touch the tinted container's own boundary (its
+    // top/bottom edge, same as any other box's own edge) rather than reaching inside past that
+    // boundary to the first real step's own box, which would read as the arrow piercing straight
+    // through the container and the (now-invisible) header.
     const cellId=i=>chainHeaderSuppressed(i)?('gd-grp'+i):('gd-n'+i);
     const srcId=cellId(a), tgtId=cellId(b);
     // A header's own "header → first child" edge would otherwise draw a redundant stub arrow
     // from the container's own boundary to a box already visually inside it — dropped rather
-    // than drawn (the container's boundary already reads as the entry point on its own; see
-    // the tree-mode edge loop below, which skips this call entirely for a suppressed header).
+    // than drawn (the container's boundary already reads as the entry point on its own; see the
+    // edge loop below, which skips this call entirely for a suppressed header).
     if(srcId===tgtId)return '';
     const key=srcId+'\u2192'+tgtId;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
     // Horizontal anchors only for the specific case that needs them: two siblings inside the
-    // same horizontally-numbered chain (see diagramGenIsHorizontalChain), where they're
-    // deliberately placed side by side. Deciding this from raw geometry instead (e.g. "whichever
-    // axis has the bigger gap between centers") looked appealing but is wrong for the much more
-    // common case of an ordinary fan-out — a parent with 2+ side-by-side children can easily
-    // put an outer child's x-offset well past the ~50px row gap, which would have misclassified
-    // plain parent→child branch edges as horizontal too. Structural parent/sibling check avoids
-    // that entirely; every edge that isn't specifically this case stays the usual top-to-bottom.
+    // same confirmed horizontal sequence, where they're deliberately placed side by side.
+    // Deciding this from raw geometry instead (e.g. "whichever axis has the bigger gap between
+    // centers") looked appealing but is wrong for the much more common case of an ordinary
+    // fan-out. The parent/sibling nodeMeta check avoids that entirely; every edge that isn't
+    // specifically this case stays the usual top-to-bottom.
     const pa=getParentIndex(a), pb=getParentIndex(b);
-    const horizontal=pa>=0&&pa===pb&&(diagramGenIsHorizontalChain(pa)||diagramGenIsHorizontalNumberedSequence(pa));
+    const horizontal=pa>=0&&pa===pb&&diagramGenIsSequence(pa,nodeMeta)&&diagramGenIsHorizontal(pa,nodeMeta);
     let exitAnchor='exitX=0.5;exitY=1;', entryAnchor='entryX=0.5;entryY=0;';
     if(horizontal){
       const rectOf=i=>chainHeaderSuppressed(i)?groupRect.get(i):finalRect.get(i);
@@ -17704,99 +17682,169 @@ async function generateDiagramFromOutline(){
     const val=label?` value="${escXmlAttr(label)}"`:'';
     return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="${srcId}" target="${tgtId}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
   }
-  if(mode==='layered'&&guideline.edges.length){
-    // Layered mode draws exactly the connections AI gave us — a pure parent-child tree edge
-    // set wouldn't express cross-layer calls or decision branches anyway, and AI saw the whole
-    // scope, so it's positioned to know what actually connects to what.
-    const idToIdx=new Map(scope.scopeIdxs.map(idx=>[nodes[idx].id,idx]));
-    guideline.edges.forEach(e=>{
-      const a=idToIdx.get(e.from), b=idToIdx.get(e.to);
-      if(a==null||b==null)return;
-      cells+=edgeCell(a,b,e.label,e.dashed);
-    });
-  } else {
-    // A tree-mode edge into an 'excluded' node is dashed automatically, the same visual cue
-    // the reference Day Delivery branch uses — the AI only had to mark the node itself, not
-    // separately think about edge style, and a plain tree layout still reads as "this path
-    // is out of scope" rather than just another equal step in the flow.
-    const isExcludedIdx=ci=>{ const m=nodeMeta.get(nodes[ci].id); return !!(m&&m.shape==='excluded'); };
-    scope.scopeIdxs.forEach(idx=>{
-      const kids=diagramGenChildIdxs(idx);
-      if(!kids.length)return;
-      // A #edge-label node sitting between two of idx's real children (see
-      // diagramGenEdgeLabelBefore) supplies the label for the edge arriving at whichever real
-      // child came right after it — computed once per idx and looked up by that child's own
-      // idx below, in all three edge shapes a node's children can produce.
-      const edgeLabels=diagramGenEdgeLabelBefore(idx);
-      if(diagramGenIsChainGroup(idx)){
-        // Suppressed: the container's own boundary already serves as the visual entry point
-        // (see edgeCell) — a further "header → first child" edge here would just be a
-        // redundant stub arrow immediately inside a container that already reads as one unit.
-        if(!chainHeaderSuppressed(idx))cells+=edgeCell(idx,kids[0],edgeLabels.get(kids[0])||null,isExcludedIdx(kids[0]));
-        for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1],edgeLabels.get(kids[k+1])||null,isExcludedIdx(kids[k+1]));
-      } else if(diagramGenIsNumberedSequence(idx)){
-        // Connects from the PREVIOUS stage's own tail (its terminal box, found via
-        // diagramGenChainTailIdx — usually the last step inside that stage) rather than from
-        // the stage's own header, so the arrow traces through everything the stage actually
-        // contains instead of jumping straight from "1. Webshop Layer" to "2. ERP Layer" as
-        // if nothing were between them. Each stage's own internal edges (its header down
-        // through its own steps) are handled separately, when this same loop reaches that
-        // stage's own idx on another iteration.
-        cells+=edgeCell(idx,kids[0],edgeLabels.get(kids[0])||null,isExcludedIdx(kids[0]));
-        for(let k=0;k<kids.length-1;k++)cells+=edgeCell(diagramGenChainTailIdx(kids[k]),kids[k+1],edgeLabels.get(kids[k+1])||null,isExcludedIdx(kids[k+1]));
-      } else {
-        kids.forEach(ci=>{ cells+=edgeCell(idx,ci,edgeLabels.get(ci)||null,isExcludedIdx(ci)); });
-      }
-    });
-    // Extra connections beyond the outline's own hierarchy — e.g. a trigger/precondition node
-    // whose text produces two or more outcomes described as its SIBLINGS rather than its
-    // children (exactly the "Eligible customers..." -> Day Delivery / Night Delivery case):
-    // the deterministic layout above has no way to draw that link at all, since it only walks
-    // parent-child pairs. Layered onto the same tree positions — nothing about box placement
-    // changes, this only adds lines. Deduped against edges already drawn (edgeCell no-ops on a
-    // repeat pair) so an AI edge that happens to restate a real parent-child link doesn't
-    // double up.
-    if(guideline&&guideline.edges&&guideline.edges.length){
-      const idToIdx=new Map(scope.scopeIdxs.map(idx=>[nodes[idx].id,idx]));
-      guideline.edges.forEach(e=>{
-        const a=idToIdx.get(e.from), b=idToIdx.get(e.to);
-        if(a==null||b==null)return;
-        cells+=edgeCell(a,b,e.label,e.dashed);
-      });
+  // An edge into an 'excluded' node is dashed automatically, the same visual cue the reference
+  // Day Delivery branch uses — a plain tree layout still reads as "this path is out of scope"
+  // rather than just another equal step in the flow.
+  const isExcludedIdx=ci=>{ const m=nodeMeta.get(nodes[ci].id); return !!(m&&m.shape==='excluded'); };
+  scope.scopeIdxs.forEach(idx=>{
+    const kids=diagramGenChildIdxs(idx);
+    if(!kids.length)return;
+    // A #edge-label node sitting between two of idx's real children (see
+    // diagramGenEdgeLabelBefore) supplies the label for the edge arriving at whichever real
+    // child came right after it — computed once per idx and looked up by that child's own idx
+    // below, in both edge shapes a node's children can produce.
+    const edgeLabels=diagramGenEdgeLabelBefore(idx);
+    if(diagramGenIsSequence(idx,nodeMeta)){
+      // Suppressed (container) header: the container's own boundary already serves as the
+      // visual entry point (see edgeCell) — a further "header → first child" edge here would
+      // just be a redundant stub arrow immediately inside a container that already reads as one
+      // unit. Connects from each PREVIOUS child's own tail (its terminal box, found via
+      // diagramGenChainTailIdx — usually its last step) rather than from its own header, so the
+      // arrow traces through everything that child actually contains instead of jumping straight
+      // over it.
+      if(!chainHeaderSuppressed(idx))cells+=edgeCell(idx,kids[0],edgeLabels.get(kids[0])||null,isExcludedIdx(kids[0]));
+      for(let k=0;k<kids.length-1;k++)cells+=edgeCell(diagramGenChainTailIdx(kids[k],nodeMeta),kids[k+1],edgeLabels.get(kids[k+1])||null,isExcludedIdx(kids[k+1]));
+    } else {
+      kids.forEach(ci=>{ cells+=edgeCell(idx,ci,edgeLabels.get(ci)||null,isExcludedIdx(ci)); });
     }
-  }
+  });
   const legendEntries=diagramGenLegendEntries(scope,nodeMeta);
   let legendW=0;
   if(legendEntries.length){
     cells+=diagramGenLegendCells(legendEntries,Math.round(maxX+offsetX+40),40);
     legendW=190;
   }
-  const genToastSuffix=guideline?' with AI-guided shapes':' — plain tree (no AI classification this run)';
   const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80+legendW)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
+  const nodeMetaPlain=diagramGenNodeMetaToPlain(nodeMeta);
   if(existing){
-    existing.xml=xml; existing.pageCount=splitMxfilePages(xml).length; existing.modifiedAt=Date.now();
+    existing.xml=xml; existing.pageCount=splitMxfilePages(xml).length; existing.modifiedAt=Date.now(); existing.nodeMeta=nodeMetaPlain;
     markDirty(); scheduleAutoSave();
     if(!padOpen)setPadOpen(true);
     setPadViewMode('diagrams');
     renderDiagramsList();
     regenerateDiagramThumbnail(existing.id);
-    showToast('Diagram regenerated'+genToastSuffix+' — refine it in draw.io');
+    showToast('Diagram regenerated — refine it in draw.io');
   } else {
     const d=addDiagramFromXml(xml);
     if(d){
       d.genKey=scope.genKey;
-      // Anchor explicitly to the scope's own root node rather than trusting
-      // addDiagramFromXml's ambient-selectedId guess, which can diverge from the actual
-      // scope root in a multi-select edge case (getSelectedIds() vs. the global selectedId).
-      // Whole-document scope has no single node to anchor to, so it stays unlinked.
+      d.nodeMeta=nodeMetaPlain;
+      // Anchor explicitly to the scope's own root node rather than trusting addDiagramFromXml's
+      // ambient-selectedId guess, which can diverge from the actual scope root in a multi-select
+      // edge case (getSelectedIds() vs. the global selectedId). Whole-document scope has no
+      // single node to anchor to, so it stays unlinked.
       if(scope.rootIdxs.length===1){
         const anchorId=nodes[scope.rootIdxs[0]].id;
         if(!diagrams.some(dg=>dg.id!==d.id&&dg.anchorNodeId===anchorId))d.anchorNodeId=anchorId;
       }
     }
-    showToast('Rough diagram generated'+genToastSuffix+' — refine it in draw.io');
+    showToast('Rough diagram generated — refine it in draw.io');
   }
-  }finally{ if(genBtn)genBtn.classList.remove('ai-busy'); }
+}
+// ── Review screen ──────────────────────────────────────────────────────────
+// Holds the in-progress scope/labels/proposed-nodeMeta/existing-diagram between opening the
+// review overlay and the person confirming it — nothing here is written to `diagrams` until
+// diagramGenConfirmReview calls diagramGenFinishGenerate. Closing/cancelling just drops this,
+// leaving any existing diagram (and its own saved nodeMeta) untouched.
+let _diagramGenReviewState=null;
+function diagramGenOpenReview(scope,labels,proposedMeta,existing){
+  _diagramGenReviewState={scope,labels,existing};
+  const ov=el('diagram-gen-review-overlay'), list=el('diagram-gen-review-list');
+  if(!ov||!list)return;
+  ov.classList.remove('closing');
+  const sub=el('diagram-gen-review-sub');
+  if(sub)sub.textContent=existing
+    ?'Pre-filled from this diagram\u2019s last generation — adjust anything that changed, then regenerate. This never touches this document\u2019s own tags.'
+    :'Shape, container, and flow direction for each node — adjust anything that guessed wrong, then generate. This never touches this document\u2019s own tags.';
+  const confirmBtn=el('diagram-gen-review-confirm'); if(confirmBtn)confirmBtn.textContent=existing?'Regenerate':'Generate';
+  list.innerHTML='';
+  const frag=document.createDocumentFragment();
+  scope.scopeIdxs.forEach(idx=>{
+    const node=nodes[idx];
+    const meta=proposedMeta.get(node.id)||{};
+    const depth=Math.max(0,(node.depth||0)-scope.baseDepth);
+    const kids=diagramGenChildIdxs(idx);
+    const canSequence=kids.length>1; // sequencing/direction is a no-op below this
+    const canContain=kids.length>0;  // a container needs a subtree to wrap
+    const row=document.createElement('div'); row.className='dgr-row'; row.dataset.nodeId=String(node.id);
+    row.style.paddingLeft=(6+depth*16)+'px';
+    const text=document.createElement('span'); text.className='dgr-row-text';
+    text.textContent=getNodePlainText(node).trim()||'(untitled)'; text.title=text.textContent;
+    row.appendChild(text);
+    const controls=document.createElement('div'); controls.className='dgr-row-controls';
+    const sel=document.createElement('select'); sel.className='dgr-shape-select';
+    const noneOpt=document.createElement('option'); noneOpt.value=''; noneOpt.textContent='Plain box'; sel.appendChild(noneOpt);
+    // 'decision' is left out entirely when this node doesn't have a real 2+-way fork under it —
+    // the same guard the old AI-validation path used to enforce after the fact (silently
+    // downgrading an invalid claim), now enforced up front so a diamond with no actual branch
+    // can never be picked in the first place.
+    DIAGRAM_GEN_SHAPE_WHITELIST.forEach(s=>{
+      if(s==='decision'&&!canSequence)return;
+      const o=document.createElement('option'); o.value=s; o.textContent=DIAGRAM_GEN_SHAPE_LABEL[s]||s; sel.appendChild(o);
+    });
+    sel.value=(meta.shape==='decision'&&!canSequence)?'':(meta.shape||'');
+    const contLbl=document.createElement('label'); contLbl.className='dgr-toggle-label'; contLbl.title=canContain?'Wrap this node\u2019s whole subtree in one titled region':'No children to wrap — nothing for a container to contain';
+    const contCb=document.createElement('input'); contCb.type='checkbox'; contCb.className='dgr-toggle'; contCb.checked=canContain&&!!meta.container;
+    contLbl.appendChild(contCb); contLbl.appendChild(document.createTextNode('Container'));
+    const seqLbl=document.createElement('label'); seqLbl.className='dgr-toggle-label'; seqLbl.title=canSequence?'Chain this node\u2019s children to each other instead of fanning out':'Fewer than 2 children — nothing to chain';
+    const seqCb=document.createElement('input'); seqCb.type='checkbox'; seqCb.className='dgr-toggle'; seqCb.checked=canSequence&&!!meta.sequence;
+    seqCb.disabled=!canSequence;
+    seqLbl.appendChild(seqCb); seqLbl.appendChild(document.createTextNode('Sequence'));
+    const dirSel=document.createElement('select'); dirSel.className='dgr-dir-select';
+    [['vertical','\u2193 Vertical'],['horizontal','\u2192 Horizontal']].forEach(([v,label])=>{ const o=document.createElement('option'); o.value=v; o.textContent=label; dirSel.appendChild(o); });
+    dirSel.value=meta.direction==='horizontal'?'horizontal':'vertical';
+    dirSel.disabled=!seqCb.checked;
+    // Shape and container are mutually exclusive per node (a container's own header always
+    // becomes the region's title, never a separate shaped box) — picking one clears/disables
+    // the other rather than letting both be set and silently picking a winner at render time.
+    // Container additionally stays disabled on a leaf regardless of shape, since there's no
+    // subtree for it to wrap.
+    function syncShapeVsContainer(){
+      sel.disabled=contCb.checked;
+      contCb.disabled=!canContain||!!sel.value;
+    }
+    sel.addEventListener('change',()=>{ if(sel.value)contCb.checked=false; syncShapeVsContainer(); });
+    contCb.addEventListener('change',()=>{ if(contCb.checked)sel.value=''; syncShapeVsContainer(); });
+    seqCb.addEventListener('change',()=>{ dirSel.disabled=!seqCb.checked; });
+    syncShapeVsContainer();
+    controls.appendChild(sel); controls.appendChild(contLbl); controls.appendChild(seqLbl); controls.appendChild(dirSel);
+    row.appendChild(controls);
+    frag.appendChild(row);
+  });
+  list.appendChild(frag);
+  ov.classList.add('open');
+}
+let _diagramGenReviewCloseTimer=null;
+function diagramGenCloseReview(){
+  const ov=el('diagram-gen-review-overlay'); if(!ov)return;
+  ov.classList.add('closing');
+  clearTimeout(_diagramGenReviewCloseTimer);
+  _diagramGenReviewCloseTimer=setTimeout(()=>{ ov.classList.remove('open','closing'); },220);
+  _diagramGenReviewState=null;
+}
+function diagramGenConfirmReview(){
+  if(!_diagramGenReviewState)return;
+  const {scope,labels,existing}=_diagramGenReviewState;
+  const list=el('diagram-gen-review-list');
+  const finalMeta=new Map();
+  (list?[...list.querySelectorAll('.dgr-row')]:[]).forEach(row=>{
+    const nodeId=Number(row.dataset.nodeId);
+    const sel=row.querySelector('.dgr-shape-select');
+    const toggles=row.querySelectorAll('.dgr-toggle');
+    const dirSel=row.querySelector('.dgr-dir-select');
+    if(!sel||toggles.length<2||!dirSel)return;
+    finalMeta.set(nodeId,{
+      shape:sel.value||null,
+      container:!!toggles[0].checked,
+      sequence:!!toggles[1].checked,
+      direction:dirSel.value==='horizontal'?'horizontal':'vertical'
+    });
+  });
+  const ov=el('diagram-gen-review-overlay'); if(ov)ov.classList.add('closing');
+  clearTimeout(_diagramGenReviewCloseTimer);
+  _diagramGenReviewCloseTimer=setTimeout(()=>{ if(ov)ov.classList.remove('open','closing'); },220);
+  _diagramGenReviewState=null;
+  diagramGenFinishGenerate(scope,labels,finalMeta,existing);
 }
 // Sibling of addDiagramFromXml for a diagram copied whole via the row's own Copy button
 // (see copyDiagramToClipboard) — the payload already carries title/status/note/pageSvgs, so
@@ -28882,6 +28930,11 @@ el('pad-notepad-export-toggle')?.addEventListener('click',()=>setPadNotepadExpor
 el('decisionlog-export-toggle')?.addEventListener('click',()=>setDecisionLogExportEnabled(!decisionLogExportEnabled));
 el('node-content-export-toggle')?.addEventListener('click',()=>setNodeContentExportEnabled(!nodeContentExportEnabled));
 el('diagram-export-toggle')?.addEventListener('click',()=>setDiagramExportEnabled(!diagramExportEnabled));
+el('diagram-gen-review-confirm')?.addEventListener('click',()=>diagramGenConfirmReview());
+el('diagram-gen-review-cancel')?.addEventListener('click',()=>diagramGenCloseReview());
+el('diagram-gen-review-overlay')?.addEventListener('click',e=>{
+  if(e.target===el('diagram-gen-review-overlay')) diagramGenCloseReview();
+});
 el('qa-insert-confirm')?.addEventListener('click',()=>confirmQaInsert());
 el('qa-insert-cancel')?.addEventListener('click',()=>closeQaInsert());
 el('qa-insert-overlay')?.addEventListener('click',e=>{
@@ -28895,6 +28948,7 @@ el('qa-import-overlay')?.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{
   if(el('why-sakura-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeWhySakura(); } return; }
   if(el('icon-library-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeIconLibrary(); } return; }
+  if(el('diagram-gen-review-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); diagramGenCloseReview(); } return; }
   if(el('qa-import-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaImport(); } return; }
   if(el('qa-insert-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaInsert(); } return; }
   if(el('qa-summary-modal-overlay')?.classList.contains('open')){ if(e.key==='Escape'){ e.stopPropagation(); closeQaSummaryModal(); } return; }
