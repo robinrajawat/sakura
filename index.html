@@ -16754,7 +16754,7 @@ const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',foll
 // stays 100% the existing deterministic code. Any AI response that fails validation, times
 // out, or simply isn't available (no key, feature off) falls back to exactly today's plain
 // tree behavior — the feature is never worse than what existed before this guideline layer.
-const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','external','actor','decision','note'];
+const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','external','actor','decision','note','excluded'];
 const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
 // Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
 // a trailing catch-all row instead of being dropped — an unclassified node still gets drawn.
@@ -16770,17 +16770,24 @@ const DIAGRAM_GEN_SHAPE_STYLE={
   backend:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
   actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;verticalLabelPosition=bottom;verticalAlign=top;overflow=visible;',
   external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
-  note:'shape=note;whiteSpace=wrap;html=1;size=14;'
+  note:'shape=note;whiteSpace=wrap;html=1;size=14;',
+  excluded:'rounded=1;whiteSpace=wrap;html=1;dashed=1;'
 };
 // Fixed (not cycled) hue per shape category, so the same category reads as the same color
 // across every diagram — the "webshop and another external system share a color because
 // they're both external" idea, at the category level (per-name identity coloring is parked).
 // Only applies to nodes AI actually classified; unclassified nodes keep today's tag/branch
-// coloring untouched. 'note' is deliberately excluded — it gets its own muted, non-palette
-// style below instead of competing for one of the system hues.
+// coloring untouched. 'note' and 'excluded' are deliberately excluded from this map — they
+// each get their own muted, non-palette style below instead of competing for one of the
+// system hues (an out-of-scope branch shouldn't visually compete with the actual flow for
+// attention any more than a note should).
 const DIAGRAM_GEN_SHAPE_COLOR={ui:'blue',service:'teal',middleware:'purple',backend:'coral',external:'gray',actor:'pink',decision:'amber'};
 const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
-const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',external:'External system',actor:'Actor',decision:'Decision',note:'Note'};
+// Deliberately flatter/greyer than DIAGRAM_GEN_NOTE_COLOR — a note is still active content
+// worth reading; an excluded branch is meant to visually recede (dashed outline + muted fill),
+// the same "current setup, no changes here" treatment as the reference Day Delivery box.
+const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F4F4F2',stroke:'#A6A49C',font:'#6B6A64'};
+const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
 const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'};
 const AI_DIAGRAM_GEN_SYSTEM_PROMPT=`You turn an outline tree into guidance for drawing a system/process architecture diagram. You do not draw anything yourself — you only classify and connect nodes; a separate deterministic renderer handles all layout, sizing, and color.
 
@@ -16794,8 +16801,8 @@ Schema:
 }
 
 Rules:
-- "mode": choose "layered" when the content describes a system/architecture or a process flow spanning distinct layers (UI, services, middleware, backend, external systems). Choose "tree" when the content is a genuine hierarchy/outline with no clear layering (e.g. a plain list of topics or requirements). If unsure, prefer "tree".
-- "shape" must be exactly one of: ui, service, middleware, backend, external, actor, decision, note. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box. Use "note" only for pure commentary/information, never for an actual system or step. Use "decision" only for a genuine branch point (e.g. "if X succeeds").
+- "mode": a sequence of steps that touches several systems is still usually a linear process, not an architecture diagram — keep it as "tree" and rely on per-node "shape" (below) to color each step by the system that owns it. Only choose "layered" when the content genuinely fans out or in (e.g. one UI calling several independent services in parallel, several sources feeding one backend, a real multi-actor architecture) — something a single top-to-bottom sequence can't represent. If a chain of steps just happens to hop from UI to service to backend in order, that's still "tree". If unsure, prefer "tree".
+- "shape" must be exactly one of: ui, service, middleware, backend, external, actor, decision, note, excluded. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box. Use "note" only for pure commentary/information, never for an actual system or step. Use "decision" only for a genuine branch point (e.g. "if X succeeds"). Use "excluded" for a branch that's explicitly out of scope, unaffected, or unchanged by whatever the rest of the content describes (e.g. "no impact", "current setup — unchanged", "not in scope") — it renders dashed and muted so it visibly recedes rather than competing with the real flow.
 - "layer" (only meaningful in "layered" mode) must be exactly one of: actor, ui, service, middleware, backend, external. Omit it if the node doesn't clearly belong to one of these.
 - "edges" (only used in "layered" mode) are extra connections beyond the outline's own parent-child links — e.g. a UI node calling a service, or a decision branching to two later steps. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
 - Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.`;
@@ -16867,15 +16874,15 @@ function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta){
 // Layered layout: buckets nodes into fixed-order rows by AI-given layer (anything unclassified
 // falls into one trailing catch-all row rather than being dropped), sizes each row to its
 // tallest box, vertically centers shorter boxes within their row, and keeps original outline
-// order left-to-right within a row so placement stays deterministic. Notes never occupy a
-// layer row — real anchoring-near-the-referenced-node is a follow-up; for now they're kept
-// visually distinct (their own shape/style) and collected into their own trailing row so they
-// never distort the height of a real system layer.
+// order left-to-right within a row so placement stays deterministic. Notes and excluded
+// (out-of-scope/unaffected) nodes never occupy a layer row — real anchoring-near-the-referenced-
+// node is a follow-up; for now they're kept visually distinct (their own shape/style) and
+// collected into their own trailing row so they never distort the height of a real system layer.
 function layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta){
-  const noteIdxs=[]; const rowsMap=new Map();
+  const asideIdxs=[]; const rowsMap=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const meta=nodeMeta.get(nodes[idx].id);
-    if(meta&&meta.shape==='note'){ noteIdxs.push(idx); return; }
+    if(meta&&(meta.shape==='note'||meta.shape==='excluded')){ asideIdxs.push(idx); return; }
     const layerKey=(meta&&meta.layer&&DIAGRAM_GEN_LAYER_ORDER.includes(meta.layer))?meta.layer:DIAGRAM_GEN_UNLAYERED_ROW;
     if(!rowsMap.has(layerKey))rowsMap.set(layerKey,[]);
     rowsMap.get(layerKey).push(idx);
@@ -16891,7 +16898,7 @@ function layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta){
   }
   let y=0;
   rowOrder.forEach(layerKey=>{ y+=placeRow(rowsMap.get(layerKey),y)+DIAGRAM_GEN_GAP_Y; });
-  if(noteIdxs.length)placeRow(noteIdxs,y);
+  if(asideIdxs.length)placeRow(asideIdxs,y);
   return positions;
 }
 // Which shape/marker categories actually appear in this diagram — the legend only ever shows
@@ -16904,9 +16911,9 @@ function diagramGenLegendEntries(scope,nodeMeta){
     if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])markersUsed.add(node.marker);
   });
   const entries=[];
-  DIAGRAM_GEN_LAYER_ORDER.concat(['decision','note']).forEach(k=>{
+  DIAGRAM_GEN_LAYER_ORDER.concat(['decision','note','excluded']).forEach(k=>{
     if(!shapesUsed.has(k))return;
-    entries.push({label:DIAGRAM_GEN_SHAPE_LABEL[k]||k,color:k==='note'?DIAGRAM_GEN_NOTE_COLOR:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_SHAPE_COLOR[k]||'gray']});
+    entries.push({label:DIAGRAM_GEN_SHAPE_LABEL[k]||k,color:k==='note'?DIAGRAM_GEN_NOTE_COLOR:(k==='excluded'?DIAGRAM_GEN_EXCLUDED_COLOR:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_SHAPE_COLOR[k]||'gray'])});
   });
   Object.keys(DIAGRAM_GEN_MARKER_LABEL).forEach(k=>{
     if(markersUsed.has(k))entries.push({label:DIAGRAM_GEN_MARKER_LABEL[k],color:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_MARKER_COLOR[k]]});
@@ -17159,7 +17166,8 @@ async function generateDiagramFromOutline(){
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx); const meta=nodeMeta.get(nodes[idx].id);
     const isNote=meta&&meta.shape==='note';
-    const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray);
+    const isExcluded=meta&&meta.shape==='excluded';
+    const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(isExcluded?DIAGRAM_GEN_EXCLUDED_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray));
     const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
     const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${snap10(p.x+offsetX)}" y="${snap10(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
@@ -17181,14 +17189,19 @@ async function generateDiagramFromOutline(){
       cells+=edgeCell(a,b,e.label,e.dashed);
     });
   } else {
+    // A tree-mode edge into an 'excluded' node is dashed automatically, the same visual cue
+    // the reference Day Delivery branch uses — the AI only had to mark the node itself, not
+    // separately think about edge style, and a plain tree layout still reads as "this path
+    // is out of scope" rather than just another equal step in the flow.
+    const isExcludedIdx=ci=>{ const m=nodeMeta.get(nodes[ci].id); return !!(m&&m.shape==='excluded'); };
     scope.scopeIdxs.forEach(idx=>{
       const kids=diagramGenChildIdxs(idx);
       if(!kids.length)return;
       if(diagramGenIsChainGroup(idx)){
-        cells+=edgeCell(idx,kids[0]);
-        for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1]);
+        cells+=edgeCell(idx,kids[0],null,isExcludedIdx(kids[0]));
+        for(let k=0;k<kids.length-1;k++)cells+=edgeCell(kids[k],kids[k+1],null,isExcludedIdx(kids[k+1]));
       } else {
-        kids.forEach(ci=>{ cells+=edgeCell(idx,ci); });
+        kids.forEach(ci=>{ cells+=edgeCell(idx,ci,null,isExcludedIdx(ci)); });
       }
     });
   }
