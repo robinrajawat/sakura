@@ -16864,12 +16864,12 @@ const DIAGRAM_GEN_SHAPE_STYLE={
   decision:'rhombus;whiteSpace=wrap;html=1;',
   datastore:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
   actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;verticalLabelPosition=bottom;verticalAlign=top;overflow=visible;',
-  external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
+  external:'rounded=1;absoluteArcSize=1;arcSize=6;whiteSpace=wrap;html=1;dashed=1;',
   note:'shape=note;whiteSpace=wrap;html=1;size=14;',
   // Dotted rather than external's dashed — the two were previously indistinguishable at a
   // glance (same dash style, near-identical muted gray), which let an in-scope external system
   // (nShift) read as though it might be another out-of-scope branch next to Day Delivery.
-  excluded:'rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=1 3;'
+  excluded:'rounded=1;absoluteArcSize=1;arcSize=6;whiteSpace=wrap;html=1;dashed=1;dashPattern=1 3;'
 };
 // Fixed (not cycled) hue per shape category, so the same category reads as the same color
 // across every diagram — the "webshop and another external system share a color because
@@ -17601,7 +17601,7 @@ async function generateDiagramFromOutline(){
     const bodyFill=diagramGenLighten(groupBase.fill,0.55);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
     const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=13;fontColor=${groupBase.font};spacingTop=12;`:'';
-    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
+    const style=`rounded=1;absoluteArcSize=1;arcSize=16;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
     const value=suppressed?escXmlAttr(labels.get(idx)):'';
     cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
   });
@@ -17616,7 +17616,7 @@ async function generateDiagramFromOutline(){
     const isNote=meta&&meta.shape==='note';
     const isExcluded=meta&&meta.shape==='excluded';
     const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(isExcluded?DIAGRAM_GEN_EXCLUDED_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray));
-    const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
+    const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;absoluteArcSize=1;arcSize=6;whiteSpace=wrap;html=1;';
     const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
     const {x,y,w,h}=finalRect.get(idx);
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" /></mxCell>\n`;
