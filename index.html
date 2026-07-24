@@ -16820,7 +16820,7 @@ Rules:
   - "datastore": ONLY when the node is literally describing persisted/stored data itself (a table, database, repository, "the record is saved to X") — not a process step that merely happens to touch a backend system. Renders as a cylinder, which specifically reads as "this is a data store" to anyone looking at the diagram, so misusing it on an ordinary process step is misleading. When in doubt between backend and datastore, use backend.
   - "excluded": a whole branch that is explicitly OUT OF SCOPE of whatever change/proposal the rest of the content describes — a sibling path that stays as-is and isn't part of what's being built (e.g. "Day Delivery — no impact, current setup unchanged" sitting next to a Night Delivery branch that IS the actual proposal). This is different from an ordinary in-scope step that merely says default/standard handling continues (see the "note" entry above) — that stays a normal step, not "excluded", because it's still part of the flow being proposed, just not a novel part of it. Only the branch that's genuinely irrelevant to the change gets "excluded".
 - "layer" (only meaningful in "layered" mode) must be exactly one of: actor, ui, service, middleware, backend, external. Omit it if the node doesn't clearly belong to one of these.
-- "edges" (only used in "layered" mode) are extra connections beyond the outline's own parent-child links — e.g. a UI node calling a service, or a decision branching to two later steps. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
+- "edges" are extra connections beyond the outline's own parent-child links, layered on top of whichever layout "mode" produces — in "layered" mode these are the main connections (a UI node calling a service, a decision branching to two later steps); in "tree" mode they're for the specific case where a node's own text is a trigger/precondition whose resulting outcomes are its SIBLINGS in the outline rather than its children (e.g. "customers will have two options: Day Delivery and Night Delivery" written as three sibling nodes) — give an edge from the trigger to each outcome so that relationship is actually visible, since tree mode's own layout can't otherwise draw a connection between siblings. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
 - Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.`;
 // Validates and sanitizes a raw AI response into a safe, ready-to-use guideline object — every
 // nodeId must exist in the current scope, shape/layer/mode must be in the fixed whitelists
@@ -16854,7 +16854,7 @@ function diagramGenValidateGuideline(raw,scope){
     });
   }
   const edges=[];
-  if(mode==='layered'&&Array.isArray(parsed.edges)){
+  if(Array.isArray(parsed.edges)){
     parsed.edges.forEach(e=>{
       if(!e)return;
       const from=Number(e.from), to=Number(e.to);
@@ -16863,7 +16863,9 @@ function diagramGenValidateGuideline(raw,scope){
     });
   }
   // Layered mode with nothing usable at all isn't worth the extra rendering complexity over
-  // plain tree mode — treat it the same as a failed/unavailable response.
+  // plain tree mode — treat it the same as a failed/unavailable response. Tree mode has no such
+  // requirement — it's already useful with zero extra edges, since its layout and edges both
+  // come from the outline structure regardless.
   if(mode==='layered'&&!edges.length&&![...nodeMeta.values()].some(m=>m.layer))return null;
   return {mode,nodeMeta,edges};
 }
@@ -17210,7 +17212,11 @@ async function generateDiagramFromOutline(){
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${snap10(p.x+offsetX)}" y="${snap10(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
   });
   let edgeCounter=0;
+  const drawnPairs=new Set();
   function edgeCell(a,b,label,dashed){
+    const key=a+'\u2192'+b;
+    if(drawnPairs.has(key))return '';
+    drawnPairs.add(key);
     const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;'+(dashed?'dashed=1;':'');
     const val=label?` value="${escXmlAttr(label)}"`:'';
     return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
@@ -17241,6 +17247,22 @@ async function generateDiagramFromOutline(){
         kids.forEach(ci=>{ cells+=edgeCell(idx,ci,null,isExcludedIdx(ci)); });
       }
     });
+    // Extra connections beyond the outline's own hierarchy — e.g. a trigger/precondition node
+    // whose text produces two or more outcomes described as its SIBLINGS rather than its
+    // children (exactly the "Eligible customers..." -> Day Delivery / Night Delivery case):
+    // the deterministic layout above has no way to draw that link at all, since it only walks
+    // parent-child pairs. Layered onto the same tree positions — nothing about box placement
+    // changes, this only adds lines. Deduped against edges already drawn (edgeCell no-ops on a
+    // repeat pair) so an AI edge that happens to restate a real parent-child link doesn't
+    // double up.
+    if(guideline&&guideline.edges&&guideline.edges.length){
+      const idToIdx=new Map(scope.scopeIdxs.map(idx=>[nodes[idx].id,idx]));
+      guideline.edges.forEach(e=>{
+        const a=idToIdx.get(e.from), b=idToIdx.get(e.to);
+        if(a==null||b==null)return;
+        cells+=edgeCell(a,b,e.label,e.dashed);
+      });
+    }
   }
   const legendEntries=diagramGenLegendEntries(scope,nodeMeta);
   let legendW=0;
