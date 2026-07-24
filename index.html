@@ -17060,9 +17060,23 @@ function assignDiagramGenColors(scope){
     const markerKey=node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker];
     if(markerKey)key=markerKey;
     colorByIdx.set(idx,key);
+    // A genuine fan-out below the top level — 2+ children that aren't just a flat run of
+    // sequential leaf steps (diagramGenIsChainGroup) — is a real branch point (alternate
+    // paths, not stages of one flow), and gets each path its own cycled color the same way
+    // the tree's very top level already does below. Without this, everything under a single
+    // top-level node inherited one flat color no matter how many real branches appeared
+    // further down — a document shaped like one root heading with all the actual structure
+    // several levels deep (a very ordinary shape) rendered as one solid color end to end, with
+    // zero AI involved to differentiate it another way. A chain group still inherits the
+    // parent's color unchanged — those steps are meant to read as one continuous sequence.
+    const kids=diagramGenChildIdxs(idx);
+    const isRealBranch=kids.length>1&&!diagramGenIsChainGroup(idx);
     const end=getSubtreeEnd(idx);
     for(let i=idx+1;i<end;i++){
-      if(nodes[i].depth===node.depth+1)walk(i,key);
+      if(nodes[i].depth===node.depth+1){
+        const childKey=isRealBranch?DIAGRAM_GEN_BRANCH_CYCLE[branchCursor++%DIAGRAM_GEN_BRANCH_CYCLE.length]:key;
+        walk(i,childKey);
+      }
     }
   }
   if(scope.rootIdxs.length>1){
