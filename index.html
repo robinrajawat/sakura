@@ -17246,13 +17246,29 @@ function diagramGenAllChildIdxs(idx){
   for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)out.push(i); }
   return out;
 }
+// Raw tag check, separated from diagramGenIsEdgeLabelNode's fuller "will this actually be
+// used" check below — kept separate so that check can safely look at a node's siblings without
+// recursing into itself.
+function diagramGenHasEdgeLabelTag(idx){
+  const node=nodes[idx];
+  return Array.isArray(node.tags)&&node.tags.some(t=>{ const s=String(t||'').toLowerCase(); return s==='edge-label'||s==='edgelabel'; });
+}
 // A node tagged #edge-label (or #edgelabel) contributes its text as a label for the edge
 // connecting the two real siblings around it, rather than rendering as a box of its own — see
 // diagramGenChildIdxs (which filters these out of every structural check) and
 // diagramGenEdgeLabelBefore (which maps a real child back to the label text that preceded it).
+// Only actually treated this way if a real (untagged) sibling follows it somewhere among the
+// same parent's children — otherwise there's nothing for its text to ever attach to as a label,
+// and excluding it from the diagram anyway would silently delete that node's content (and any
+// children under it) for no reason a person could see. Falls back to being an ordinary node in
+// that case, same as if it had never been tagged.
 function diagramGenIsEdgeLabelNode(idx){
-  const node=nodes[idx];
-  return Array.isArray(node.tags)&&node.tags.some(t=>{ const s=String(t||'').toLowerCase(); return s==='edge-label'||s==='edgelabel'; });
+  if(!diagramGenHasEdgeLabelTag(idx))return false;
+  const parentIdx=getParentIndex(idx);
+  if(parentIdx<0)return false;
+  const siblings=diagramGenAllChildIdxs(parentIdx);
+  const pos=siblings.indexOf(idx);
+  return siblings.slice(pos+1).some(si=>!diagramGenHasEdgeLabelTag(si));
 }
 // Filtered view of a node's children — every chain-group/numbered-sequence/layout/rendering
 // check below is built on this, so an #edge-label node between two real steps never counts as
