@@ -8060,23 +8060,51 @@ function tableCardsData(table){
     value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim()
   })).filter(d=>d.label!==''||d.value!=='');
 }
-// A small fixed icon set, cycled per card the same way chart series colors cycle — purely
-// decorative (there's no way to infer a card's meaning from its text), but it echoes the
-// visual rhythm of the reference layout (a circled icon beside each stat) rather than leaving
-// the cards as bare text. Colors reuse CHART_SERIES_COLOR_VARS so Cards stays in step with the
-// rest of the chart family's palette and the document's live theme/accent.
+// A keyword → icon lookup, checked against each card's own label+value text before falling
+// back to round-robin cycling — so a label like "Security Standard" reliably gets the shield
+// rather than whichever icon its row position happens to land on. This is text matching, not
+// real understanding of the data; it only recognizes the handful of KPI-card vocabularies
+// below and says nothing about a label phrased differently. Ordered most-specific first since
+// the first match wins (e.g. "response time" should read as speed, not time).
+const CARD_ICON_RULES=[
+  {keys:['secur','standard','complian','protect','risk','governance','privacy'],
+   path:'<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>'},
+  {keys:['speed','response','latency','fast','throughput','load time'],
+   path:'<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>'},
+  {keys:['time','duration','uptime','sla','deadline','schedule'],
+   path:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>'},
+  {keys:['scope','goal','target','coverage','objective','milestone'],
+   path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>'},
+  {keys:['cost','price','budget','revenue','saving','spend','roi'],
+   path:'<path d="M12 2v20"/><path d="M17 5.5H9.5a3.25 3.25 0 000 6.5h5a3.25 3.25 0 010 6.5H7"/>'},
+  {keys:['user','customer','client','team','staff','satisfaction','nps'],
+   path:'<circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M21.5 20c0-2.7-2-5-4.7-5.5"/>'},
+  {keys:['growth','increase','trend','improve','uplift'],
+   path:'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>'},
+  {keys:['clean','quality','resolved','complete','success','pass','accuracy','done','confirm','approve'],
+   path:'<path d="M20 6L9 17l-5-5"/>'}
+];
+// Fallback set — kept for cards whose text doesn't match any rule above, so those cards still
+// get some visual variety instead of all defaulting to the same generic icon. Colors reuse
+// CHART_SERIES_COLOR_VARS so Cards stays in step with the rest of the chart family's palette
+// and the document's live theme/accent.
 const CARD_ICONS=[
   '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>',
   '<path d="M20 6L9 17l-5-5"/>',
   '<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>',
   '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>'
 ];
+function pickCardIcon(label,value,fallbackIdx){
+  const text=(String(label||'')+' '+String(value||'')).toLowerCase();
+  const hit=CARD_ICON_RULES.find(rule=>rule.keys.some(k=>text.includes(k)));
+  return hit ? hit.path : CARD_ICONS[fallbackIdx%CARD_ICONS.length];
+}
 function renderCardsHtml(table){
   const data=tableCardsData(table);
   if(!data.length)return null;
   const cards=data.map((d,i)=>{
     const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
-    const icon=CARD_ICONS[i%CARD_ICONS.length];
+    const icon=pickCardIcon(d.label,d.value,i);
     return `<div class="pv-table-card">`
       +`<div class="pv-table-card-icon" style="color:${color};border-color:${color}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></div>`
       +`<div class="pv-table-card-value">${esc(d.value)}</div>`
