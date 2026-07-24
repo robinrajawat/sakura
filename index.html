@@ -17487,16 +17487,14 @@ async function generateDiagramFromOutline(){
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
     const bodyFill=diagramGenLighten(groupBase.fill,0.55);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
-    let style;
-    if(suppressed){
-      // startSize is the title bar's own height, measured from the container's top — same
-      // reserved band DIAGRAM_GEN_GROUP_TITLE_H already accounts for in the layout math above,
-      // so the divider line lands exactly where the title's own space already ends.
-      const titleFill=diagramGenLighten(groupBase.fill,0.18);
-      style=`swimlane;whiteSpace=wrap;html=1;startSize=${DIAGRAM_GEN_GROUP_TITLE_H};fillColor=${titleFill};swimlaneFillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1.5;connectable=0;fontStyle=1;fontSize=13;fontColor=${groupBase.font};align=center;verticalAlign=middle;collapsible=0;`;
-    } else {
-      style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;`;
-    }
+    // One flat card, same fill and border throughout — the title is just bold text sitting
+    // directly on top of it, not a separately-filled bar with its own divider line (that read
+    // as a box nested inside the container, per the reference this is matching). Centering is
+    // safe (it wasn't when this first shipped): edges into/out of a suppressed group now stop
+    // at the container's own boundary rather than reaching inside, so nothing crosses through
+    // the title text's position anymore.
+    const titleStyle=suppressed?`verticalAlign=top;align=center;fontStyle=1;fontSize=13;fontColor=${groupBase.font};spacingTop=12;`:'';
+    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
     const value=suppressed?escXmlAttr(labels.get(idx)):'';
     cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
   });
