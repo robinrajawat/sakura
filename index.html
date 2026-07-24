@@ -17116,8 +17116,17 @@ function pickDiagramGenScope(){
   // A node tagged #edge-label (see diagramGenIsEdgeLabelNode) contributes text for whichever
   // edge connects the two real siblings around it — it never gets a box or its own layout slot,
   // so it's dropped from scope here rather than counted toward the node cap or handed to the
-  // deterministic renderer as if it were content.
-  const scopeIdxs=[...scopeIdxSet].filter(i=>!diagramGenIsEdgeLabelNode(i)).sort((a,b)=>a-b);
+  // deterministic renderer as if it were content. Its entire subtree goes too, not just the
+  // node itself: an edge-label node isn't meant to have children, but nothing enforces that, and
+  // diagramGenChildIdxs' own filtering already makes any such children unreachable by the
+  // layout's recursive walk (their parent is skipped, cutting off recursion into them) — leaving
+  // them in scope but with no position ever computed for them crashed generation outright.
+  [...scopeIdxSet].forEach(i=>{
+    if(!diagramGenIsEdgeLabelNode(i))return;
+    const end=getSubtreeEnd(i);
+    for(let j=i;j<end;j++)scopeIdxSet.delete(j);
+  });
+  const scopeIdxs=[...scopeIdxSet].sort((a,b)=>a-b);
   const maxDepth=Math.max(...scopeIdxs.map(i=>nodes[i].depth))-baseDepth;
   if(scopeIdxs.length>DIAGRAM_GEN_MAX_NODES){
     showToast(`Too much to diagram at once (${scopeIdxs.length} nodes, max ${DIAGRAM_GEN_MAX_NODES}) — select a smaller section first`);
@@ -17501,8 +17510,14 @@ async function generateDiagramFromOutline(){
   });
   const positions=mode==='layered'?layoutDiagramGenLayered(scope,dimsByIdx,nodeMeta):layoutDiagramGenTree(scope,dimsByIdx,nodeMeta);
   let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
+  // Every scope idx should have a position from the layout walk above — this guard is a
+  // last-resort safety net, not an expected path (see the #edge-label subtree-exclusion fix in
+  // pickDiagramGenScope for the actual bug this used to hit): skipping a genuinely position-less
+  // node here degrades to "that one node's missing from the diagram" rather than throwing and
+  // killing the whole generation.
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
+    if(!p||!d)return;
     minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x+d.w); maxY=Math.max(maxY,p.y+d.h);
   });
   const snap10=n=>Math.round(n/10)*10;
@@ -17513,6 +17528,7 @@ async function generateDiagramFromOutline(){
   const finalRect=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const p=positions.get(idx), d=dimsByIdx.get(idx);
+    if(!p||!d)return;
     const w=Math.round(d.w), h=Math.round(d.h);
     const x=snap10(p.x+offsetX+d.w/2)-Math.round(w/2);
     const y=snap10(p.y+40);
