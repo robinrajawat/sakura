@@ -1761,6 +1761,11 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
 .pv-table-chartable table{cursor:context-menu}
+.pv-table-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;cursor:context-menu}
+.pv-table-card{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border)}
+.pv-table-card-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
+.pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 #note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
 #note-editor li{margin:2px 0;padding-left:2px}
 #note-editor li ul,#note-editor li ol{margin:2px 0}
@@ -5317,7 +5322,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>The Pad's default tab — a rich-text scratchpad for the whole document, using the same toolbar as per-node Notes</li>
 <li>Toolbar: <strong>B I U S</strong>, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered lists, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> link (with its own display-text field, separate from the URL), <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table insert with resizable columns, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> image paste/insert (click to select, drag the corner handle to resize, double-click to reset), and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite (rewrites the selection, or the whole Notepad if nothing's selected). No subtree-summarise here — there's no subtree at the document level. Settings → Pad → "Toolbar buttons" hides individual ones you don't use</li>
-<li><strong>Tables</strong> — the toolbar button inserts a 2×2 table with a real header row; <span class="help-kbd">Tab</span> inside any cell moves to the next one (spreadsheet-style), <span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> moves back, and tabbing forward from the very last cell appends a new row and lands in it. Right-click a cell for the full table menu: Add row below, Add column right, Delete row/column/table, and <strong>Toggle header row</strong> — flips the first row between a plain row and a real header (bold, repeats as a header in Word/PDF/PowerPoint), useful for a table pasted in from elsewhere that didn't arrive with one. Below that, a <strong>Presentation</strong> group: <strong>Feature under selected node</strong> links this table to whichever node is currently selected in the outline, so it appears (as a genuine, editable table) in that node's Preview, Presenter, PDF, Word, and PowerPoint output — an accent outline marks a featured table so it's clear at a glance, and re-running it against a different selected node re-links rather than duplicates. Once featured, <strong>Feature as chart</strong> becomes available (shown disabled with the reason on hover if the table's shape isn't chartable — 6+ columns, or no numeric column to plot) and swaps that node's output — in Preview, Presenter mode, PDF, and PowerPoint alike — from the table itself to a real chart built from it: column A is read as category labels and every column after it as its own data series (so 3-5 columns becomes a grouped/multi-line chart), except a single-column table, where the one column's own numeric values become the series and each row is labeled by its position. Toggle it again to go back to exporting as a plain table. Once charted, three more items appear for picking the chart's actual type — <strong>Bar</strong>, <strong>Line</strong>, or <strong>Pie</strong> (pie uses the first data column only, since a pie can't meaningfully represent more than one series) — the current one shown disabled rather than with a checkmark, same "already set" treatment used elsewhere in this menu. The same three options are also reachable by right-clicking the rendered chart itself in Preview or Presenter mode, without coming back to the Notepad first — that same right-click menu also has a <strong>Show as table</strong> item at the bottom, the same on/off flip as unchecking Feature as chart back in the Notepad</li>
+<li><strong>Tables</strong> — the toolbar button inserts a 2×2 table with a real header row; <span class="help-kbd">Tab</span> inside any cell moves to the next one (spreadsheet-style), <span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> moves back, and tabbing forward from the very last cell appends a new row and lands in it. Right-click a cell for the full table menu: Add row below, Add column right, Delete row/column/table, and <strong>Toggle header row</strong> — flips the first row between a plain row and a real header (bold, repeats as a header in Word/PDF/PowerPoint), useful for a table pasted in from elsewhere that didn't arrive with one. Below that, a <strong>Presentation</strong> group: <strong>Feature under selected node</strong> links this table to whichever node is currently selected in the outline, so it appears (as a genuine, editable table) in that node's Preview, Presenter, PDF, Word, and PowerPoint output — an accent outline marks a featured table so it's clear at a glance, and re-running it against a different selected node re-links rather than duplicates. Once featured, <strong>Feature as chart</strong> becomes available (shown disabled with the reason on hover if the table's shape isn't chartable — 6+ columns, or no numeric column to plot) and swaps that node's output — in Preview, Presenter mode, PDF, and PowerPoint alike — from the table itself to a real chart built from it: column A is read as category labels and every column after it as its own data series (so 3-5 columns becomes a grouped/multi-line chart), except a single-column table, where the one column's own numeric values become the series and each row is labeled by its position. Toggle it again to go back to exporting as a plain table. Once charted, more items appear for picking the chart's actual type — <strong>Bar</strong>, <strong>Line</strong>, or <strong>Pie</strong> (pie uses the first data column only, since a pie can't meaningfully represent more than one series), or <strong>Cards</strong>, which lays the table out as a row of stat cards — one per row, each showing its value alongside its label — instead of a plotted chart; like pie, it only applies to a single data column, and each value shows exactly as typed rather than being parsed as a number, so a non-numeric value like "&lt;2s" displays correctly. Cards is a Preview/Presenter/PDF-only display — PowerPoint export falls back to a real table for a Cards-featured table, since there's no native PowerPoint chart type for it. The current type is shown disabled rather than with a checkmark, same "already set" treatment used elsewhere in this menu. The same three options are also reachable by right-clicking the rendered chart itself in Preview or Presenter mode, without coming back to the Notepad first — that same right-click menu also has a <strong>Show as table</strong> item at the bottom, the same on/off flip as unchecking Feature as chart back in the Notepad</li>
 <li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Notepad, or paste one you've copied from your file manager — any of the three inserts a small chip (with a file-type icon — PDF, image, spreadsheet, doc, slides, archive, audio, video, or code, based on extension) showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
 <li>Running <strong>AI Rewrite</strong> with nothing selected replaces all of Notepad's content with plain rewritten text — which would silently remove any attachments, images, or tables it contains. A confirmation prompt now catches this case and tells you what would be lost before it happens; select just the text you want rewritten instead if you'd rather keep everything else untouched</li>
 <li>Highlight any text and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight (a yellow inline highlight, click again on already-highlighted text to remove it), Link, and Rewrite (AI, rewrites just the highlighted phrase — same underlying call as the toolbar's own AI Rewrite, just pre-scoped to the selection, with the same confirmation logic not applying since a selection is already guaranteed here). Settings → Editing → "Selection formatting popover" turns this off</li>
@@ -7925,8 +7930,13 @@ function setTableFeatureChart(table,on){
   markDirty(); scheduleAutoSave();
   if(previewActive)renderPreviewBody();
 }
-const CHART_TYPES=['bar','stackedBar','line','pie','doughnut'];
-const CHART_TYPE_LABELS={bar:'Bar chart',stackedBar:'Stacked bar chart',line:'Line chart',pie:'Pie chart',doughnut:'Doughnut chart'};
+const CHART_TYPES=['bar','stackedBar','line','pie','doughnut','cards'];
+const CHART_TYPE_LABELS={bar:'Bar chart',stackedBar:'Stacked bar chart',line:'Line chart',pie:'Pie chart',doughnut:'Doughnut chart',cards:'Cards'};
+// Cards is a Preview/Presenter/PDF-only display (see renderCardsHtml) — pptxgenjs's addChart
+// has no "card grid" chart type to hand it to, so PowerPoint export treats a Cards table like
+// any other unchartable one and falls back to a real, editable table instead of guessing at a
+// bar chart it was never meant to be.
+const PPTX_REAL_CHART_TYPES=['bar','stackedBar','line','pie','doughnut'];
 function getTableChartType(table){
   const t=table?.getAttribute('data-chart-type');
   return CHART_TYPES.includes(t)?t:'bar';
@@ -7954,7 +7964,12 @@ function tableChartTypeAvailability(table){
   const stackedAvail=seriesCount>=2
     ? {ok:true}
     : {ok:false,reason:'Stacking only means something with 2+ data columns — with just one, it\u2019s identical to a plain bar chart.'};
-  return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail};
+  // Same restriction as pie/doughnut and for the same reason — a card shows one label + one
+  // value per row, so it can't represent a second data column any more than a pie slice can.
+  const cardsAvail=seriesCount===1
+    ? {ok:true}
+    : {ok:false,reason:'Cards only work with a single data column — this table has '+seriesCount+'. Use Bar, Stacked bar, or Line instead.'};
+  return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail, cards:cardsAvail};
 }
 // Sets which chart shape a featured+charted table renders as. Read by every renderer that draws
 // this table as a chart: the inline SVG one used by Preview/Presenter/PDF (renderTableChartSvg)
@@ -8022,11 +8037,53 @@ function chartFormatAxisNum(v){
   return Number.isInteger(v)?String(v):v.toFixed(1);
 }
 function renderTableChartSvg(table){
+  const type=getTableChartType(table);
+  // Cards read the table's raw cell text, not pptxChartSeriesFromTable's parsed numbers — a
+  // card's value can be "<2s" or "90%", not just a plottable number, so it's kept as the
+  // person typed it rather than coerced to 0 the way a real chart series would need to.
+  if(type==='cards')return renderCardsHtml(table);
   const series=pptxChartSeriesFromTable(table);
   if(!series||!series.length)return null;
-  const type=getTableChartType(table);
   if(type==='pie'||type==='doughnut')return renderPieChartSvg(series,type==='doughnut');
   return renderCartesianChartSvg(series,type);
+}
+// Reads a table into {label,value} pairs for the Cards display — a KPI-style row of stat
+// cards rather than a plotted chart. Mirrors pptxChartSeriesFromTable's two chartable shapes
+// (single column vs label+value column) but keeps each value as its original cell text so a
+// non-numeric value like "<2s" still displays correctly instead of being parsed to 0.
+function tableCardsData(table){
+  const rows=Array.from(table?.querySelectorAll('tr')||[]);
+  if(rows.length<2)return [];
+  const singleCol=rows[0].cells.length===1;
+  return rows.slice(1).map((r,i)=>({
+    label: singleCol ? ('Row '+(i+1)) : (r.cells[0]?.textContent||'').trim(),
+    value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim()
+  })).filter(d=>d.label!==''||d.value!=='');
+}
+// A small fixed icon set, cycled per card the same way chart series colors cycle — purely
+// decorative (there's no way to infer a card's meaning from its text), but it echoes the
+// visual rhythm of the reference layout (a circled icon beside each stat) rather than leaving
+// the cards as bare text. Colors reuse CHART_SERIES_COLOR_VARS so Cards stays in step with the
+// rest of the chart family's palette and the document's live theme/accent.
+const CARD_ICONS=[
+  '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>',
+  '<path d="M20 6L9 17l-5-5"/>',
+  '<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>',
+  '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>'
+];
+function renderCardsHtml(table){
+  const data=tableCardsData(table);
+  if(!data.length)return null;
+  const cards=data.map((d,i)=>{
+    const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
+    const icon=CARD_ICONS[i%CARD_ICONS.length];
+    return `<div class="pv-table-card">`
+      +`<div class="pv-table-card-icon" style="color:${color};border-color:${color}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></div>`
+      +`<div class="pv-table-card-value">${esc(d.value)}</div>`
+      +`<div class="pv-table-card-label">${esc(d.label)}</div>`
+      +`</div>`;
+  }).join('');
+  return `<div class="pv-table-cards-grid">${cards}</div>`;
 }
 // Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
 // bar, and line) — everything but how each category's value(s) actually get drawn (grouped
@@ -18280,7 +18337,7 @@ async function pptxGatherSlidesData(){
     if(padNotepadExportEnabled){
       for(const t of featuredTablesForNode(node.id)){
         const rows=pptxTableRowsFromElement(t);
-        if(isTableFeaturedAsChart(t)&&tableChartability(t).ok){
+        if(isTableFeaturedAsChart(t)&&tableChartability(t).ok&&PPTX_REAL_CHART_TYPES.includes(getTableChartType(t))){
           const series=pptxChartSeriesFromTable(t);
           if(series){ tables.push({isChart:true,series,chartType:getTableChartType(t),rows}); continue; }
         }
@@ -19007,7 +19064,7 @@ async function buildPptxPresentation(slidesData){
         const rows=pptxTableRowsFromElement(table);
         if(!rows.length){ table.remove(); return; }
         let entry={rows,isChart:false};
-        if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
+        if(isTableFeaturedAsChart(table)&&tableChartability(table).ok&&PPTX_REAL_CHART_TYPES.includes(getTableChartType(table))){
           const series=pptxChartSeriesFromTable(table);
           if(series) entry={rows,isChart:true,chartType:getTableChartType(table),series};
         }
