@@ -390,6 +390,7 @@ body.feature-off-pad #editor-pad-toggle{display:none!important}
 body.feature-off-hovertoolbar #node-hover-rail{display:none!important}
 body.feature-off-quickassist #global-search-wrap{display:none!important}
 .ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
+#dtb-generate.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .report-ai-icon{display:inline-flex;align-items:center;vertical-align:-2px;margin-right:4px}
 #report-ai-summary-btn.ai-busy{pointer-events:none;opacity:.75}
 #report-ai-summary-btn.ai-busy .report-ai-icon{animation:report-ai-pulse 1.6s ease-in-out infinite}
@@ -17176,6 +17177,12 @@ async function generateDiagramFromOutline(){
     });
     if(!ok){ showToast('Cancelled — the existing diagram wasn\u2019t changed'); return; }
   }
+  // Spins the button's icon for the duration of this call — the previous toast alone
+  // disappears after a few seconds, which left no visible signal during a slow AI round-trip
+  // (a free-tier/reasoning model can easily take several seconds). Same ai-busy/ai-spin
+  // convention used by every other AI-triggering button in the app.
+  const genBtn=el('dtb-generate'); if(genBtn)genBtn.classList.add('ai-busy');
+  try{
   showToast('Generating a rough diagram…');
   const colorByIdx=assignDiagramGenColors(scope);
   // All text reads happen synchronously, up front, before any await — the actual trim calls
@@ -17225,7 +17232,12 @@ async function generateDiagramFromOutline(){
     const key=a+'\u2192'+b;
     if(drawnPairs.has(key))return '';
     drawnPairs.add(key);
-    const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;'+(dashed?'dashed=1;':'');
+    // Every layout this feature produces flows top-to-bottom, so pinning exit/entry to
+    // bottom-center/top-center (rather than leaving draw.io's auto-router to pick whichever
+    // side looks shortest) keeps a straight vertical line whenever two boxes are already
+    // center-aligned — which chain/tree layout guarantees for a plain parent-child edge — and
+    // still draws a clean right-angle path when they're not, instead of a needless extra jog.
+    const style='edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;'+(dashed?'dashed=1;':'');
     const val=label?` value="${escXmlAttr(label)}"`:'';
     return `<mxCell id="gd-e${edgeCounter++}"${val} style="${style}" edge="1" parent="1" source="gd-n${a}" target="gd-n${b}"><mxGeometry relative="1" as="geometry" /></mxCell>\n`;
   }
@@ -17303,6 +17315,7 @@ async function generateDiagramFromOutline(){
     }
     showToast('Rough diagram generated'+genToastSuffix+' — refine it in draw.io');
   }
+  }finally{ if(genBtn)genBtn.classList.remove('ai-busy'); }
 }
 // Sibling of addDiagramFromXml for a diagram copied whole via the row's own Copy button
 // (see copyDiagramToClipboard) — the payload already carries title/status/note/pageSvgs, so
