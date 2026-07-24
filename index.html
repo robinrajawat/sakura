@@ -16754,20 +16754,24 @@ const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',foll
 // stays 100% the existing deterministic code. Any AI response that fails validation, times
 // out, or simply isn't available (no key, feature off) falls back to exactly today's plain
 // tree behavior — the feature is never worse than what existed before this guideline layer.
-const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','external','actor','decision','note','excluded'];
+const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','datastore','external','actor','decision','note','excluded'];
 const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
 // Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
 // a trailing catch-all row instead of being dropped — an unclassified node still gets drawn.
 const DIAGRAM_GEN_LAYER_ORDER=['actor','ui','service','middleware','backend','external'];
 const DIAGRAM_GEN_UNLAYERED_ROW='__unlayered__';
 // Only shapes that have a real, meaningfully different draw.io geometry get an entry here —
-// ui/service/middleware/process all still render as the plain rounded box for now (shared with
-// every existing diagram); the more structural ones (decision/backend/actor/external/note) get
-// their own shape since that's where a real visual read (branch point, datastore, external
-// system, person, comment) actually helps.
+// ui/service/middleware/backend all still render as the plain rounded box for now (shared with
+// every existing diagram); the more structural ones (decision/datastore/actor/external/note) get
+// their own shape since that's where a real visual read (branch point, an actual persisted
+// store, external system, person, comment) actually helps. 'backend' deliberately does NOT get
+// cylinder geometry — most backend-classified nodes are process steps that happen to run inside
+// a backend/ERP system (e.g. "ERP determines the Night Route"), not literal data stores, and a
+// cylinder specifically reads as "database/table" to anyone looking at the diagram. Only
+// 'datastore' gets the cylinder, for a node that's genuinely describing stored data.
 const DIAGRAM_GEN_SHAPE_STYLE={
   decision:'rhombus;whiteSpace=wrap;html=1;',
-  backend:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
+  datastore:'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;',
   actor:'shape=umlActor;whiteSpace=wrap;html=1;outlineConnect=0;verticalLabelPosition=bottom;verticalAlign=top;overflow=visible;',
   external:'rounded=1;whiteSpace=wrap;html=1;dashed=1;',
   note:'shape=note;whiteSpace=wrap;html=1;size=14;',
@@ -16780,14 +16784,15 @@ const DIAGRAM_GEN_SHAPE_STYLE={
 // coloring untouched. 'note' and 'excluded' are deliberately excluded from this map — they
 // each get their own muted, non-palette style below instead of competing for one of the
 // system hues (an out-of-scope branch shouldn't visually compete with the actual flow for
-// attention any more than a note should).
-const DIAGRAM_GEN_SHAPE_COLOR={ui:'blue',service:'teal',middleware:'purple',backend:'coral',external:'gray',actor:'pink',decision:'amber'};
+// attention any more than a note should). 'datastore' shares 'backend'\u2019s hue — same system
+// family, just a different geometry for the literal-data-store case.
+const DIAGRAM_GEN_SHAPE_COLOR={ui:'blue',service:'teal',middleware:'purple',backend:'coral',datastore:'coral',external:'gray',actor:'pink',decision:'amber'};
 const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
 // Deliberately flatter/greyer than DIAGRAM_GEN_NOTE_COLOR — a note is still active content
 // worth reading; an excluded branch is meant to visually recede (dashed outline + muted fill),
 // the same "current setup, no changes here" treatment as the reference Day Delivery box.
 const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F4F4F2',stroke:'#A6A49C',font:'#6B6A64'};
-const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
+const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',datastore:'Data store',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
 const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up'};
 const AI_DIAGRAM_GEN_SYSTEM_PROMPT=`You turn an outline tree into guidance for drawing a system/process architecture diagram. You do not draw anything yourself — you only classify and connect nodes; a separate deterministic renderer handles all layout, sizing, and color.
 
@@ -16802,7 +16807,12 @@ Schema:
 
 Rules:
 - "mode": a sequence of steps that touches several systems is still usually a linear process, not an architecture diagram — keep it as "tree" and rely on per-node "shape" (below) to color each step by the system that owns it. Only choose "layered" when the content genuinely fans out or in (e.g. one UI calling several independent services in parallel, several sources feeding one backend, a real multi-actor architecture) — something a single top-to-bottom sequence can't represent. If a chain of steps just happens to hop from UI to service to backend in order, that's still "tree". If unsure, prefer "tree".
-- "shape" must be exactly one of: ui, service, middleware, backend, external, actor, decision, note, excluded. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box. Use "note" only for pure commentary/information, never for an actual system or step. Use "decision" only for a genuine branch point (e.g. "if X succeeds"). Use "excluded" for a branch that's explicitly out of scope, unaffected, or unchanged by whatever the rest of the content describes (e.g. "no impact", "current setup — unchanged", "not in scope") — it renders dashed and muted so it visibly recedes rather than competing with the real flow.
+- "shape" must be exactly one of: ui, service, middleware, backend, datastore, external, actor, decision, note, excluded. Omit "shape" (or the whole node entry) if none clearly fits — it will render as a plain box.
+  - "note": pure commentary/information, never an actual system or step. This includes anything phrased as an attributed aside or hedge — a name followed by a colon and a caveat ("Paul Peter: implementing this could be challenging..."), or language like "TBD", "to confirm", "risk:", "concern:", "open question" — even if it sits among real steps in the outline. If a node reads like someone's comment about the process rather than a step IN the process, it's a note.
+  - "decision": ONLY for a genuine fork — the node's own children (or what immediately follows it) are two or more clearly distinct outcomes/paths. A precondition or eligibility criterion ("customer must have X") is NOT a decision by itself unless the outline actually branches after it. A decision node's own text should stay short (a condition or question, a few words) — if the source text is a full sentence, classify a follow-up node instead of stretching the diamond to fit it; a diamond has much less usable interior space than a box.
+  - "backend": a step or process that happens to run inside a backend/ERP-type system (e.g. "ERP determines the Night Route", "delivery creation happens in ERP") — renders as a plain box, same geometry as ui/service/middleware, just colored differently.
+  - "datastore": ONLY when the node is literally describing persisted/stored data itself (a table, database, repository, "the record is saved to X") — not a process step that merely happens to touch a backend system. Renders as a cylinder, which specifically reads as "this is a data store" to anyone looking at the diagram, so misusing it on an ordinary process step is misleading. When in doubt between backend and datastore, use backend.
+  - "excluded": a branch that's explicitly out of scope, unaffected, or unchanged by whatever the rest of the content describes (e.g. "no impact", "current setup — unchanged", "not in scope") — renders dashed and muted so it visibly recedes rather than competing with the real flow.
 - "layer" (only meaningful in "layered" mode) must be exactly one of: actor, ui, service, middleware, backend, external. Omit it if the node doesn't clearly belong to one of these.
 - "edges" (only used in "layered" mode) are extra connections beyond the outline's own parent-child links — e.g. a UI node calling a service, or a decision branching to two later steps. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
 - Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.`;
@@ -16911,7 +16921,7 @@ function diagramGenLegendEntries(scope,nodeMeta){
     if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])markersUsed.add(node.marker);
   });
   const entries=[];
-  DIAGRAM_GEN_LAYER_ORDER.concat(['decision','note','excluded']).forEach(k=>{
+  DIAGRAM_GEN_LAYER_ORDER.concat(['decision','note','excluded','datastore']).forEach(k=>{
     if(!shapesUsed.has(k))return;
     entries.push({label:DIAGRAM_GEN_SHAPE_LABEL[k]||k,color:k==='note'?DIAGRAM_GEN_NOTE_COLOR:(k==='excluded'?DIAGRAM_GEN_EXCLUDED_COLOR:DIAGRAM_GEN_PALETTE[DIAGRAM_GEN_SHAPE_COLOR[k]||'gray'])});
   });
@@ -17035,9 +17045,9 @@ async function diagramGenTrimText(text){
 // label-fit box dims, only for the shapes that actually need geometry different from a plain
 // rectangle.
 function diagramGenAdjustDimsForShape(dims,shape){
-  if(shape==='decision')return {w:Math.round(dims.w*1.35),h:Math.round(dims.h*1.5)};
+  if(shape==='decision')return {w:Math.round(dims.w*1.45),h:Math.round(dims.h*1.6)};
   if(shape==='actor')return {w:70,h:86}; // fixed compact portrait size — label renders below the icon, not inside it
-  if(shape==='backend')return {w:dims.w,h:dims.h+16}; // cylinder's elliptical cap eats into the label area otherwise
+  if(shape==='datastore')return {w:dims.w,h:dims.h+16}; // cylinder's elliptical cap eats into the label area otherwise
   return dims;
 }
 // height only steps up to the two-line size if the label still needs to wrap at that width —
