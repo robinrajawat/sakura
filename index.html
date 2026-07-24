@@ -1752,8 +1752,8 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 #note-editor img.sakura-diagram-img{outline:2px solid var(--accent);outline-offset:2px}
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
-.pv-diagram-img{max-width:100%;max-height:70vh;display:block;margin:0 auto}
-.pv-diagram-row-multi .pv-diagram-img{max-height:42vh}
+.pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
+.pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
@@ -30442,6 +30442,7 @@ function openPreview(){
   previewOpenQaIds=new Set();
   previewSetLaser(false);
   renderPreviewBody();
+  updatePreviewDiagramMaxHeightVars();
   applyPresenterZoom();
   el('preview-overlay')?.classList.add('open');
   if(previewAutoPresenter){ previewSlideIndex=0; enterPresenterMode(); }
@@ -32551,6 +32552,21 @@ function setPreviewPresenterZoom(val,persist=true){
 // handler below (PREVIEW_ZOOM_MIN/MAX) — so Preview behaves like PowerPoint's own canvas zoom:
 // a baseline size, adjustable further at any time, in both regular Preview browsing and while
 // presenting, not just the latter.
+// pv-diagram-img's height cap used to be plain vh units (70vh / 42vh for the multi-diagram
+// row). vh is resolved against the real browser viewport and, unlike px, is NOT rescaled by
+// the CSS `zoom` property applied to #preview-body above — so a diagram image would stay
+// pinned at its real on-screen size while Ctrl+scroll/pinch zoom grew everything else around
+// it, looking like the diagram was shrinking relative to the rest of the zoomed slide. Setting
+// the equivalent px value as a CSS var instead means it lives inside the zoomed subtree like
+// any other px length, so it scales right along with text and everything else. Recomputed on
+// open and on resize (not on zoom change) since the *target* physical viewport size hasn't
+// moved — only the zoom level scaling everything below it has.
+function updatePreviewDiagramMaxHeightVars(){
+  const body=el('preview-body'); if(!body) return;
+  body.style.setProperty('--pv-diagram-max-h',(window.innerHeight*0.7)+'px');
+  body.style.setProperty('--pv-diagram-max-h-multi',(window.innerHeight*0.42)+'px');
+}
+window.addEventListener('resize',()=>{ if(previewActive)updatePreviewDiagramMaxHeightVars(); });
 function applyPresenterZoom(){
   const body=el('preview-body'); if(!body) return;
   if(!previewActive){ body.style.zoom=''; return; }
