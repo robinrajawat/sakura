@@ -16722,6 +16722,22 @@ const DIAGRAM_GEN_GAP_X=30, DIAGRAM_GEN_GAP_Y=50;
 // Two lines' worth of characters at max box width — only text longer than this (after
 // wrapping still wouldn't fit) goes through AI shortening at all.
 const DIAGRAM_GEN_CHAR_BUDGET=2*Math.floor((DIAGRAM_GEN_MAX_W-DIAGRAM_GEN_PAD)/DIAGRAM_GEN_CHAR_PX);
+// A rhombus's angled edges eat much further into its interior than a box's straight ones —
+// even with the extra 1.45x/1.6x sizing decision shapes already get (see
+// diagramGenAdjustDimsForShape), text sized to the normal DIAGRAM_GEN_CHAR_BUDGET still
+// overflows past the diamond's points. This budget is deliberately tighter, and applied as a
+// second, local pass (diagramGenHardTruncate below) after shapes are known — no extra AI
+// round-trip, since fitting a shape's geometry doesn't need the nuance-preserving rewrite
+// diagramGenTrimText does; a plain clip is fine here.
+const DIAGRAM_GEN_DECISION_CHAR_BUDGET=42;
+function diagramGenHardTruncate(text,budget){
+  const plain=String(text||'').trim();
+  if(plain.length<=budget)return plain;
+  let cut=plain.slice(0,budget-1);
+  const lastSpace=cut.lastIndexOf(' ');
+  if(lastSpace>15)cut=cut.slice(0,lastSpace);
+  return cut+'\u2026';
+}
 // Same stops (50 fill / 600 stroke / 800 text) as the c-{ramp} classes used elsewhere for
 // diagrams — kept as plain hex here since this XML has to render correctly outside any
 // Sakura-specific CSS, straight in draw.io.
@@ -16909,14 +16925,26 @@ async function requestDiagramGenGuideline(scope){
 // completely unchanged, and only repaints nodes AI actually classified with a shape that has a
 // fixed category color. A node with both a marker AND a shape keeps its marker color (a
 // deliberate per-node review flag should never be masked by an automatic category color).
-// 'note' and unclassified ('process') nodes are never touched here.
+// 'note' and 'excluded' get their own bespoke, non-palette color elsewhere and are untouched
+// here regardless.
+//
+// Once ANY node in this diagram got an AI shape classification, every other color on the page
+// needs to mean something too — the legend only ever documents AI-classified shape categories
+// (see diagramGenLegendEntries), so a node AI left unclassified but which still carries its
+// original branch-cycle hue (arbitrary, per-branch, never meant to be a category) reads as an
+// unexplained color next to ones that ARE explained. Once AI classification is active for this
+// scope, an unclassified node falls back to neutral gray instead of its branch color — with no
+// AI involved at all (nodeMeta empty), branch-cycle coloring is untouched exactly as before,
+// since there's no legend making a claim about what any color means in that case.
 function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta){
   if(!nodeMeta||!nodeMeta.size)return;
   scope.scopeIdxs.forEach(idx=>{
     const node=nodes[idx];
     if(node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker])return;
     const meta=nodeMeta.get(node.id);
-    if(meta&&meta.shape&&DIAGRAM_GEN_SHAPE_COLOR[meta.shape])colorByIdx.set(idx,DIAGRAM_GEN_SHAPE_COLOR[meta.shape]);
+    if(meta&&meta.shape&&DIAGRAM_GEN_SHAPE_COLOR[meta.shape]){ colorByIdx.set(idx,DIAGRAM_GEN_SHAPE_COLOR[meta.shape]); return; }
+    if(meta&&(meta.shape==='note'||meta.shape==='excluded'))return; // bespoke color, colorByIdx unused for these
+    colorByIdx.set(idx,'gray');
   });
 }
 // Layered layout: buckets nodes into fixed-order rows by AI-given layer (anything unclassified
@@ -17201,6 +17229,15 @@ async function generateDiagramFromOutline(){
   const labels=new Map();
   scope.scopeIdxs.forEach((idx,i)=>labels.set(idx,trimmed[i]));
   const nodeMeta=guideline?guideline.nodeMeta:new Map();
+  // Shapes are only known now (after the AI call resolves), so a decision node's label can't
+  // be sized correctly until this point — a second, local pass on top of the generic trim
+  // already done above.
+  labels.forEach((text,idx)=>{
+    const meta=nodeMeta.get(nodes[idx].id);
+    if(meta&&meta.shape==='decision'&&text.length>DIAGRAM_GEN_DECISION_CHAR_BUDGET){
+      labels.set(idx,diagramGenHardTruncate(text,DIAGRAM_GEN_DECISION_CHAR_BUDGET));
+    }
+  });
   const mode=guideline?guideline.mode:'tree';
   applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta);
   const dimsByIdx=new Map();
@@ -17224,7 +17261,16 @@ async function generateDiagramFromOutline(){
     const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(isExcluded?DIAGRAM_GEN_EXCLUDED_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray));
     const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
     const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
-    cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${snap10(p.x+offsetX)}" y="${snap10(p.y+40)}" width="${Math.round(d.w)}" height="${Math.round(d.h)}" as="geometry" /></mxCell>\n`;
+    // Snapping the CENTER (not the left edge) to the grid is what actually keeps a chain
+    // straight: two boxes meant to share a center (see layoutDiagramGenTree's chain-group
+    // placement, which centers every child in the column algebraically) still have that exact
+    // same center value here, so rounding it once produces the same snapped result for both —
+    // rounding the left edge instead, independently per box, doesn't, since two different
+    // widths round their own left edges by different amounts even from an identical center.
+    const w=Math.round(d.w), h=Math.round(d.h);
+    const x=snap10(p.x+offsetX+d.w/2)-Math.round(w/2);
+    const y=snap10(p.y+40);
+    cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" /></mxCell>\n`;
   });
   let edgeCounter=0;
   const drawnPairs=new Set();
