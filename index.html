@@ -16867,7 +16867,12 @@ async function requestDiagramGenGuideline(scope){
       const node=nodes[idx]; const relDepth=node.depth-scope.baseDepth;
       return node.id+'|'+'  '.repeat(relDepth)+getNodePlainText(node).slice(0,200);
     }).join('\n');
-    const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,1024);
+    // 1024 wasn't enough headroom for a reasoning model (e.g. Groq's openai/gpt-oss-20b) — it
+    // can spend the whole budget on internal "thinking" tokens and get cut off before ever
+    // emitting the actual JSON, which shows up as an HTTP-success call with empty content (see
+    // the warning below), not a thrown error. 4096 gives real reasoning room without being
+    // wasteful for non-reasoning models, which just stop early once they've written the JSON.
+    const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,4096);
     if(!raw){ console.warn('[sakura] Diagram generation: '+providerLabel+' returned HTTP success but no completion text (likely safety-filtered or an empty/truncated reply) — falling back to plain tree.'); return null; }
     const guideline=diagramGenValidateGuideline(raw,scope);
     if(!guideline)console.warn('[sakura] Diagram generation: '+providerLabel+' response failed validation — falling back to plain tree. Raw response:',raw);
