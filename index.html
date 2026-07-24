@@ -5373,7 +5373,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Open or close the tab with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">G</span>, same "press again to close" behavior as the other Pad tabs' shortcuts</li>
 <li>Turning Diagrams off (Settings → Features → Pad Panel) hides its tab, toolbar button, node dots, and keyboard shortcut — existing diagrams already in the document aren't deleted, just inaccessible (and left out of Preview/exports) until it's turned back on</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> — brings in an existing <span class="help-kbd">.drawio</span>/<span class="help-kbd">.xml</span> file: drag one onto the dropzone, or click it to browse. "Paste XML text instead" is there too for XML that's only sitting in your clipboard rather than saved as a file. Either way it's added to this list, linked to the selected node if it's free, with its thumbnail generated automatically. A small "Copy a prompt built from your outline" link is included for anyone who wants an AI assistant's help getting started — paste the prompt into whichever one you like, save or copy its reply, then bring that back in through Import</li>
-<li><strong>Generate</strong> — builds a rough flowchart directly from the outline instead of a blank canvas: a selected node's subtree, or the whole document if nothing's selected, becomes a real, editable draw.io diagram added straight to this list (capped at 30 nodes / 5 levels — a toast asks for a smaller section if you're over that). Layout, sizing, color, and the diagram's XML are always built by deterministic code — AI is only ever asked for a small, whitelisted <em>classification</em> of that same outline (never coordinates, never XML, never a restructured hierarchy), which the deterministic renderer then draws:
+<li><strong>Generate</strong> — builds a rough flowchart directly from the outline instead of a blank canvas: a selected node's subtree, or the whole document if nothing's selected, becomes a real, editable draw.io diagram added straight to this list (capped at 60 nodes / 5 levels — a toast asks for a smaller section if you're over that). Layout, sizing, color, and the diagram's XML are always built by deterministic code — AI is only ever asked for a small, whitelisted <em>classification</em> of that same outline (never coordinates, never XML, never a restructured hierarchy), which the deterministic renderer then draws:
   <ul>
   <li><strong>Structure</strong> — boxes tile top-down following the outline's own hierarchy. A node whose children are all childless (a flat list of steps rather than genuine sub-branches) renders as a single vertical chain with sequential arrows instead of fanning out sideways — keeps a long flat step-list narrow rather than blowing out the canvas width, and reads as one continuous sequence rather than alternate paths. A node with a real mix of children (some with sub-detail, some without) still fans out normally</li>
   <li><strong>Color</strong> — a branch color cycles through 8 hues at every genuine fan-out in the tree, not just the top level, so a real branch point several levels deep (not just the outline's own top-level headings) still gets visually distinct paths with zero AI involved; a chain group's steps stay one uniform color on purpose. An explicit node <strong>marker</strong> (Confirmed/Issue/Parked/Follow-up/N-A — each its own hue) outranks that, and a node's first <strong>tag</strong> outranks plain branch color — a tag deterministically hashes to one of 8 reserved hues, so the same tag text always recolors the same way without any keyword list to set up first. All three carry down to untagged, unmarked descendants. Once AI has classified anything in this diagram (see below), a node it left unclassified switches from its branch color to a neutral gray instead — a branch hue has no legend entry to explain it, so once other colors on the page <em>do</em> mean something, an unexplained one would read as a mistake rather than "nothing special here"</li>
@@ -16706,12 +16706,14 @@ function addDiagramFromXml(xml){
 }
 // ── "Generate rough diagram" ──────────────────────────────────────────────
 // Deterministic tree diagram from the outline: label-sized boxes, bottom-up subtree-width
-// layout, and a color algorithm (marker > tag > branch position) using the same subtle
-// fill/stroke/text weights across every hue — not a bright/saturated palette. AI is only
-// ever asked to shorten overlong node text; it never touches layout, color, or structure,
-// so a weak or unconfigured AI provider can only make a label less concise, never break
-// the diagram. Falls back to plain truncation if no AI key is set or the call fails.
-const DIAGRAM_GEN_MAX_NODES=30;
+// layout, and a color algorithm (marker > tag > branch position, cycling at every genuine
+// fan-out, not just the root). AI is layered on top as an optional classification pass (see
+// AI_DIAGRAM_GEN_SYSTEM_PROMPT below) — shape/layer/mode/extra-edges — but never touches the
+// actual layout math, box positions, or XML structure directly, so a weak, misbehaving, or
+// unconfigured AI provider can only leave nodes uncategorized, never break the diagram. Falls
+// back to the plain deterministic version above on no key, a locked vault, or a failed/invalid
+// AI response.
+const DIAGRAM_GEN_MAX_NODES=60;
 const DIAGRAM_GEN_MAX_DEPTH=5; // levels, root counted as depth 0
 // Box sizing: width grows with the label (capped), and a box that still needs more than one
 // wrapped line at max width gets extra height instead of immediately calling out to AI —
@@ -16923,9 +16925,11 @@ async function requestDiagramGenGuideline(scope){
     // 1024 wasn't enough headroom for a reasoning model (e.g. Groq's openai/gpt-oss-20b) — it
     // can spend the whole budget on internal "thinking" tokens and get cut off before ever
     // emitting the actual JSON, which shows up as an HTTP-success call with empty content (see
-    // the warning below), not a thrown error. 4096 gives real reasoning room without being
-    // wasteful for non-reasoning models, which just stop early once they've written the JSON.
-    const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,4096);
+    // the warning below), not a thrown error. 8192 gives real reasoning room, and enough space
+    // for the classification JSON itself to scale with DIAGRAM_GEN_MAX_NODES (60) — wasteful
+    // for neither a non-reasoning model nor a small scope, both of which just stop early once
+    // they've written the actual JSON.
+    const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,8192);
     if(!raw){ console.warn('[sakura] Diagram generation: '+providerLabel+' returned HTTP success but no completion text (likely safety-filtered or an empty/truncated reply) — falling back to plain tree.'); return null; }
     const guideline=diagramGenValidateGuideline(raw,scope);
     if(!guideline)console.warn('[sakura] Diagram generation: '+providerLabel+' response failed validation — falling back to plain tree. Raw response:',raw);
