@@ -5322,7 +5322,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>The Pad's default tab — a rich-text scratchpad for the whole document, using the same toolbar as per-node Notes</li>
 <li>Toolbar: <strong>B I U S</strong>, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered lists, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> link (with its own display-text field, separate from the URL), <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table insert with resizable columns, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> image paste/insert (click to select, drag the corner handle to resize, double-click to reset), and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite (rewrites the selection, or the whole Notepad if nothing's selected). No subtree-summarise here — there's no subtree at the document level. Settings → Pad → "Toolbar buttons" hides individual ones you don't use</li>
-<li><strong>Tables</strong> — the toolbar button inserts a 2×2 table with a real header row; <span class="help-kbd">Tab</span> inside any cell moves to the next one (spreadsheet-style), <span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> moves back, and tabbing forward from the very last cell appends a new row and lands in it. Right-click a cell for the full table menu: Add row below, Add column right, Delete row/column/table, and <strong>Toggle header row</strong> — flips the first row between a plain row and a real header (bold, repeats as a header in Word/PDF/PowerPoint), useful for a table pasted in from elsewhere that didn't arrive with one. Below that, a <strong>Presentation</strong> group: <strong>Feature under selected node</strong> links this table to whichever node is currently selected in the outline, so it appears (as a genuine, editable table) in that node's Preview, Presenter, PDF, Word, and PowerPoint output — an accent outline marks a featured table so it's clear at a glance, and re-running it against a different selected node re-links rather than duplicates. Once featured, <strong>Feature as chart</strong> becomes available (shown disabled with the reason on hover if the table's shape isn't chartable — 6+ columns, or no numeric column to plot) and swaps that node's output — in Preview, Presenter mode, PDF, and PowerPoint alike — from the table itself to a real chart built from it: column A is read as category labels and every column after it as its own data series (so 3-5 columns becomes a grouped/multi-line chart), except a single-column table, where the one column's own numeric values become the series and each row is labeled by its position. Toggle it again to go back to exporting as a plain table. Once charted, more items appear for picking the chart's actual type — <strong>Bar</strong>, <strong>Line</strong>, or <strong>Pie</strong> (pie uses the first data column only, since a pie can't meaningfully represent more than one series), or <strong>Cards</strong>, which lays the table out as a row of stat cards — one per row, each showing its value alongside its label — instead of a plotted chart; like pie, it only applies to a single data column, and each value shows exactly as typed rather than being parsed as a number, so a non-numeric value like "&lt;2s" displays correctly. Cards is a Preview/Presenter/PDF-only display — PowerPoint export falls back to a real table for a Cards-featured table, since there's no native PowerPoint chart type for it. The current type is shown disabled rather than with a checkmark, same "already set" treatment used elsewhere in this menu. The same three options are also reachable by right-clicking the rendered chart itself in Preview or Presenter mode, without coming back to the Notepad first — that same right-click menu also has a <strong>Show as table</strong> item at the bottom, the same on/off flip as unchecking Feature as chart back in the Notepad</li>
+<li><strong>Tables</strong> — the toolbar button inserts a 2×2 table with a real header row; <span class="help-kbd">Tab</span> inside any cell moves to the next one (spreadsheet-style), <span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> moves back, and tabbing forward from the very last cell appends a new row and lands in it. Right-click a cell for the full table menu: Add row below, Add column right, Delete row/column/table, and <strong>Toggle header row</strong> — flips the first row between a plain row and a real header (bold, repeats as a header in Word/PDF/PowerPoint), useful for a table pasted in from elsewhere that didn't arrive with one. Below that, a <strong>Presentation</strong> group: <strong>Feature under selected node</strong> links this table to whichever node is currently selected in the outline, so it appears (as a genuine, editable table) in that node's Preview, Presenter, PDF, Word, and PowerPoint output — an accent outline marks a featured table so it's clear at a glance, and re-running it against a different selected node re-links rather than duplicates. Once featured, <strong>Feature as chart</strong> becomes available (shown disabled with the reason on hover if the table's shape isn't chartable — 6+ columns, or no numeric column to plot) and swaps that node's output — in Preview, Presenter mode, PDF, and PowerPoint alike — from the table itself to a real chart built from it: column A is read as category labels and every column after it as its own data series (so 3-5 columns becomes a grouped/multi-line chart), except a single-column table, where the one column's own numeric values become the series and each row is labeled by its position. Toggle it again to go back to exporting as a plain table. Once charted, more items appear for picking the chart's actual type — <strong>Bar</strong>, <strong>Line</strong>, or <strong>Pie</strong> (pie uses the first data column only, since a pie can't meaningfully represent more than one series), or <strong>Cards</strong>, which lays the table out as a row of stat cards — one per row, each showing its value alongside its label — instead of a plotted chart; like pie, it only applies to a single data column, and each value shows exactly as typed rather than being parsed as a number, so a non-numeric value like "&lt;2s" displays correctly. Cards is a Preview/Presenter/PDF-only display — PowerPoint export falls back to a real table for a Cards-featured table, since there's no native PowerPoint chart type for it. Once showing as Cards, a <strong>Suggest icons with AI</strong> item appears, which sends every card's label and value to the AI in a single request and picks one icon per card from a small fixed set (security, speed, time, scope, cost, people, growth, quality) based on what each card is actually about, rather than the plain keyword match Cards falls back to automatically when nothing's been suggested yet. The current type is shown disabled rather than with a checkmark, same "already set" treatment used elsewhere in this menu. The same three options are also reachable by right-clicking the rendered chart itself in Preview or Presenter mode, without coming back to the Notepad first — that same right-click menu also has a <strong>Show as table</strong> item at the bottom, the same on/off flip as unchecking Feature as chart back in the Notepad</li>
 <li><strong>File attachments</strong> — click the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span> paperclip toolbar button and pick any file, drag a file straight onto the Notepad, or paste one you've copied from your file manager — any of the three inserts a small chip (with a file-type icon — PDF, image, spreadsheet, doc, slides, archive, audio, video, or code, based on extension) showing the filename and size, which stays inline with your notes. Click the chip to download that file again; hover it for a remove button. Each file is capped at 5 MB, since it's stored as part of the Pad's own saved content (same as pasted images) rather than uploaded anywhere — which also means it's included automatically in every existing backup path (local safety copy, auto-backup-to-file, export/import), with no separate attachment backup to think about</li>
 <li>Running <strong>AI Rewrite</strong> with nothing selected replaces all of Notepad's content with plain rewritten text — which would silently remove any attachments, images, or tables it contains. A confirmation prompt now catches this case and tells you what would be lost before it happens; select just the text you want rewritten instead if you'd rather keep everything else untouched</li>
 <li>Highlight any text and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight (a yellow inline highlight, click again on already-highlighted text to remove it), Link, and Rewrite (AI, rewrites just the highlighted phrase — same underlying call as the toolbar's own AI Rewrite, just pre-scoped to the selection, with the same confirmation logic not applying since a selection is already guaranteed here). Settings → Editing → "Selection formatting popover" turns this off</li>
@@ -8060,51 +8060,66 @@ function tableCardsData(table){
     value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim()
   })).filter(d=>d.label!==''||d.value!=='');
 }
+// Icon catalog, keyed by a short id — the single source of truth for a card icon's SVG path,
+// used by both the keyword heuristic below and the AI batch-assignment path (suggestCard
+// IconsWithAi), so a category means the same icon whichever way it got picked.
+const CARD_ICON_CATALOG={
+  shield:{path:'<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>', desc:'security, compliance, standards, risk, governance'},
+  bolt:{path:'<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>', desc:'speed, response time, performance, latency'},
+  clock:{path:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', desc:'duration, uptime, SLAs, deadlines, schedules'},
+  target:{path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>', desc:'scope, goals, coverage, objectives, milestones'},
+  dollar:{path:'<path d="M12 2v20"/><path d="M17 5.5H9.5a3.25 3.25 0 000 6.5h5a3.25 3.25 0 010 6.5H7"/>', desc:'cost, price, budget, revenue, savings'},
+  people:{path:'<circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M21.5 20c0-2.7-2-5-4.7-5.5"/>', desc:'users, customers, team, satisfaction'},
+  trend:{path:'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>', desc:'growth, increase, improvement, trends'},
+  check:{path:'<path d="M20 6L9 17l-5-5"/>', desc:'quality, resolved, completion, success, accuracy'},
+  generic:{path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>', desc:'anything that doesn\u2019t fit another category'}
+};
 // A keyword → icon lookup, checked against each card's own label+value text before falling
 // back to round-robin cycling — so a label like "Security Standard" reliably gets the shield
 // rather than whichever icon its row position happens to land on. This is text matching, not
-// real understanding of the data; it only recognizes the handful of KPI-card vocabularies
-// below and says nothing about a label phrased differently. Ordered most-specific first since
-// the first match wins (e.g. "response time" should read as speed, not time).
+// real understanding of the data — see suggestCardIconsWithAi below for the AI-driven version
+// of this same assignment, which this remains the offline/no-key fallback for. Ordered
+// most-specific first since the first match wins (e.g. "response time" should read as speed,
+// not time).
 const CARD_ICON_RULES=[
-  {keys:['secur','standard','complian','protect','risk','governance','privacy'],
-   path:'<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>'},
-  {keys:['speed','response','latency','fast','throughput','load time'],
-   path:'<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>'},
-  {keys:['time','duration','uptime','sla','deadline','schedule'],
-   path:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>'},
-  {keys:['scope','goal','target','coverage','objective','milestone'],
-   path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>'},
-  {keys:['cost','price','budget','revenue','saving','spend','roi'],
-   path:'<path d="M12 2v20"/><path d="M17 5.5H9.5a3.25 3.25 0 000 6.5h5a3.25 3.25 0 010 6.5H7"/>'},
-  {keys:['user','customer','client','team','staff','satisfaction','nps'],
-   path:'<circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6"/><circle cx="17.5" cy="9" r="2.3"/><path d="M21.5 20c0-2.7-2-5-4.7-5.5"/>'},
-  {keys:['growth','increase','trend','improve','uplift'],
-   path:'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>'},
-  {keys:['clean','quality','resolved','complete','success','pass','accuracy','done','confirm','approve'],
-   path:'<path d="M20 6L9 17l-5-5"/>'}
+  {id:'shield',keys:['secur','standard','complian','protect','risk','governance','privacy']},
+  {id:'bolt',keys:['speed','response','latency','fast','throughput','load time']},
+  {id:'clock',keys:['time','duration','uptime','sla','deadline','schedule']},
+  {id:'target',keys:['scope','goal','target','coverage','objective','milestone']},
+  {id:'dollar',keys:['cost','price','budget','revenue','saving','spend','roi']},
+  {id:'people',keys:['user','customer','client','team','staff','satisfaction','nps']},
+  {id:'trend',keys:['growth','increase','trend','improve','uplift']},
+  {id:'check',keys:['clean','quality','resolved','complete','success','pass','accuracy','done','confirm','approve']}
 ];
-// Fallback set — kept for cards whose text doesn't match any rule above, so those cards still
-// get some visual variety instead of all defaulting to the same generic icon. Colors reuse
-// CHART_SERIES_COLOR_VARS so Cards stays in step with the rest of the chart family's palette
-// and the document's live theme/accent.
-const CARD_ICONS=[
-  '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/>',
-  '<path d="M20 6L9 17l-5-5"/>',
-  '<path d="M13 2L4 14h6l-1 8 9-12h-6z" fill="currentColor" stroke="none"/>',
-  '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>'
-];
-function pickCardIcon(label,value,fallbackIdx){
+// Fallback cycle — kept for cards whose text doesn't match any keyword rule (and that have no
+// cached AI result either), so those cards still get some visual variety instead of all
+// defaulting to the same generic icon.
+const CARD_ICON_FALLBACK_CYCLE=['shield','check','bolt','generic'];
+function pickCardIconId(label,value,fallbackIdx){
   const text=(String(label||'')+' '+String(value||'')).toLowerCase();
   const hit=CARD_ICON_RULES.find(rule=>rule.keys.some(k=>text.includes(k)));
-  return hit ? hit.path : CARD_ICONS[fallbackIdx%CARD_ICONS.length];
+  return hit ? hit.id : CARD_ICON_FALLBACK_CYCLE[fallbackIdx%CARD_ICON_FALLBACK_CYCLE.length];
+}
+// Reads back whatever suggestCardIconsWithAi last cached on this table (see there for the
+// shape) — an array of catalog ids, one per card, in the same order tableCardsData produces.
+// Only trusted if its length still matches the table's current row count, so an AI assignment
+// from before a row was added/removed doesn't silently mislabel the wrong card.
+function getCardIconIds(table,count){
+  try{
+    const raw=table?.getAttribute('data-card-icons');
+    if(!raw)return null;
+    const ids=JSON.parse(raw);
+    return (Array.isArray(ids)&&ids.length===count)?ids:null;
+  }catch(e){ return null; }
 }
 function renderCardsHtml(table){
   const data=tableCardsData(table);
   if(!data.length)return null;
+  const aiIds=getCardIconIds(table,data.length);
   const cards=data.map((d,i)=>{
     const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
-    const icon=pickCardIcon(d.label,d.value,i);
+    const id=(aiIds&&CARD_ICON_CATALOG[aiIds[i]])?aiIds[i]:pickCardIconId(d.label,d.value,i);
+    const icon=CARD_ICON_CATALOG[id].path;
     return `<div class="pv-table-card">`
       +`<div class="pv-table-card-icon" style="color:${color};border-color:${color}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></div>`
       +`<div class="pv-table-card-value">${esc(d.value)}</div>`
@@ -8112,6 +8127,58 @@ function renderCardsHtml(table){
       +`</div>`;
   }).join('');
   return `<div class="pv-table-cards-grid">${cards}</div>`;
+}
+// AI icon assignment — one batch call covering every card in the table (chunked only if a
+// table has more rows than AI_BATCH_CHUNK_SIZE, the same threshold callAiIconBatch uses),
+// rather than a call per row. Reuses callAiRaw, the same low-level call every other AI feature
+// in the app goes through (so it honors the configured provider/key/model and the existing
+// error handling), and picks from the same CARD_ICON_CATALOG the keyword fallback draws from —
+// the two are meant to feel like the same feature, one just reads the data instead of guessing
+// from keywords. Results are cached on the table itself (data-card-icons) rather than
+// re-requested on every render: a render can happen many times a second while presenting, and
+// nothing about the table's content changes between those renders.
+const AI_CARD_ICON_CATEGORY_IDS=Object.keys(CARD_ICON_CATALOG).filter(id=>id!=='generic');
+const AI_CARD_ICON_SYSTEM_PROMPT='You assign exactly one icon category to each KPI stat card below, based on its label and value together. Categories: '
+  +AI_CARD_ICON_CATEGORY_IDS.map(id=>id+' ('+CARD_ICON_CATALOG[id].desc+')').join('; ')
+  +'; generic (anything that doesn\u2019t fit another category). You will receive a numbered list of "label: value" pairs. Reply with ONLY a numbered list in the exact same format [1], [2], etc., each line followed by exactly one category id from the list above and nothing else — no words, no punctuation, no explanation.';
+async function callAiCardIconBatchChunk(cards){
+  const numbered=cards.map((d,i)=>`[${i+1}] ${d.label||'(untitled)'}: ${d.value||''}`).join('\n');
+  const prompt=AI_CARD_ICON_SYSTEM_PROMPT+'\n\nCards:\n'+numbered;
+  const raw=await callAiRaw(prompt,Math.min(4096,cards.length*10+100));
+  const results=new Array(cards.length).fill('');
+  const regex=/\[(\d+)\]\s*([\s\S]*?)(?=\n\[\d+\]|$)/g;
+  let m; while((m=regex.exec(raw))!==null){
+    const i=parseInt(m[1],10)-1;
+    if(i>=0&&i<cards.length){
+      const id=(m[2].trim().split(/\s+/)[0]||'').toLowerCase().replace(/[^a-z]/g,'');
+      results[i]=CARD_ICON_CATALOG[id]?id:'';
+    }
+  }
+  return results;
+}
+async function callAiCardIconBatch(cards){
+  if(cards.length<=AI_BATCH_CHUNK_SIZE)return await callAiCardIconBatchChunk(cards);
+  const all=new Array(cards.length).fill('');
+  for(let start=0;start<cards.length;start+=AI_BATCH_CHUNK_SIZE){
+    const chunk=cards.slice(start,start+AI_BATCH_CHUNK_SIZE);
+    const chunkResults=await callAiCardIconBatchChunk(chunk);
+    for(let i=0;i<chunkResults.length;i++)all[start+i]=chunkResults[i];
+  }
+  return all;
+}
+async function suggestCardIconsWithAi(table){
+  if(!table)return;
+  const data=tableCardsData(table);
+  if(!data.length){ showToast('Nothing to assign icons to yet'); return; }
+  showToast('Assigning icons with AI\u2026 \u2726');
+  try{
+    const ids=await callAiCardIconBatch(data);
+    if(!ids.some(Boolean))throw new Error('AI didn\u2019t return any usable icon categories');
+    table.setAttribute('data-card-icons',JSON.stringify(ids));
+    markDirty(); scheduleAutoSave();
+    if(previewActive)renderPreviewBody();
+    showToast('Icons assigned');
+  }catch(err){ showAiErrorModal(aiProvider,err); }
 }
 // Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
 // bar, and line) — everything but how each category's value(s) actually get drawn (grouped
@@ -8253,8 +8320,12 @@ function openChartCtxMenu(table,x,y){
     return `<div class="${cls}" data-chart-type="${type}" title="${title}"><span>${esc(CHART_TYPE_LABELS[type])}</span><span class="pv-ctx-check">${isChart&&type===current?'✓':''}</span></div>`;
   }).join('');
   // "Show as table" only makes sense once it's actually shown as a chart — right-clicking a
-  // table that's still a plain table has nothing to flip back from.
-  menu.innerHTML=typeItems+(isChart?`<div class="pv-ctx-divider"></div><div class="pv-ctx-item" data-show-as-table="1"><span>Show as table</span></div>`:'');
+  // table that's still a plain table has nothing to flip back from. The AI icon suggestion
+  // item is scoped tighter still — only once it's actually showing as Cards, since the other
+  // chart types have no per-card icon to assign.
+  const aiIconItem=(isChart&&current==='cards')
+    ?`<div class="pv-ctx-divider"></div><div class="pv-ctx-item" data-suggest-card-icons="1"><span>Suggest icons with AI</span></div>`:'';
+  menu.innerHTML=typeItems+(isChart?`<div class="pv-ctx-divider"></div><div class="pv-ctx-item" data-show-as-table="1"><span>Show as table</span></div>`:'')+aiIconItem;
   menu.querySelectorAll('.chart-type-item:not(.disabled)').forEach(item=>{
     item.addEventListener('mousedown',e=>{
       e.preventDefault();
@@ -8266,6 +8337,11 @@ function openChartCtxMenu(table,x,y){
   menu.querySelector('[data-show-as-table]')?.addEventListener('mousedown',e=>{
     e.preventDefault();
     setTableFeatureChart(table,false);
+    closeChartCtxMenu();
+  });
+  menu.querySelector('[data-suggest-card-icons]')?.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    suggestCardIconsWithAi(table);
     closeChartCtxMenu();
   });
   menu.classList.add('open');
@@ -33748,6 +33824,15 @@ el('pad-editor')?.addEventListener('contextmenu', e => {
           if(isCurrent||!avail.ok){ typeBtn.disabled=true; if(!avail.ok)typeBtn.title=avail.reason; }
           menu.appendChild(typeBtn);
         });
+        // Only meaningful once actually showing as Cards — the other chart types have no
+        // per-card icon to assign in the first place.
+        if(_curType==='cards'){
+          menu.appendChild(_noteCtxItem(
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 5.9 6.5 1-4.7 4.6 1.1 6.5L12 17l-5.8 3 1.1-6.5-4.7-4.6 6.5-1Z"/></svg>',
+            'Suggest icons with AI', false,
+            () => { suggestCardIconsWithAi(_featTable); }
+          ));
+        }
       }
       menu.appendChild(_noteCtxItem(
         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>',
