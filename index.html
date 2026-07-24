@@ -16853,8 +16853,12 @@ function diagramGenValidateGuideline(raw,scope){
   return {mode,nodeMeta,edges};
 }
 // One JSON call for the whole scope (not per-node) — fast, and matches how the rest of this
-// feature already caps scope size. Silent fallback (returns null) on no key, a locked vault,
-// a provider error, or a response that fails validation — same discipline as diagramGenTrimText.
+// feature already caps scope size. Falls back to null (plain tree/branch-color behavior) on no
+// key, a locked vault, a provider error, or a response that fails validation — same discipline
+// as diagramGenTrimText. The fallback itself is never surfaced as an error to the person (it's
+// a normal, working mode of this feature, not a broken state) — but *why* it fell back is worth
+// having in the console, since the resulting diagram looks identical whether AI was never tried
+// or was tried and failed, and that difference is otherwise undiagnosable from the outside.
 async function requestDiagramGenGuideline(scope){
   if(!featureAiEnabled)return null;
   try{
@@ -16863,9 +16867,11 @@ async function requestDiagramGenGuideline(scope){
       return node.id+'|'+'  '.repeat(relDepth)+getNodePlainText(node).slice(0,200);
     }).join('\n');
     const raw=await callAiApiWithPrompt(AI_DIAGRAM_GEN_SYSTEM_PROMPT,outlineText,1024);
-    if(!raw)return null;
-    return diagramGenValidateGuideline(raw,scope);
-  }catch(e){ return null; }
+    if(!raw){ console.warn('[sakura] Diagram generation: AI returned no response — falling back to plain tree.'); return null; }
+    const guideline=diagramGenValidateGuideline(raw,scope);
+    if(!guideline)console.warn('[sakura] Diagram generation: AI response failed validation — falling back to plain tree. Raw response:',raw);
+    return guideline;
+  }catch(e){ console.warn('[sakura] Diagram generation: AI call failed — falling back to plain tree.',e); return null; }
 }
 // Additive override on top of the existing marker>tag>branch color algorithm — runs after it,
 // completely unchanged, and only repaints nodes AI actually classified with a shape that has a
@@ -17221,6 +17227,7 @@ async function generateDiagramFromOutline(){
     cells+=diagramGenLegendCells(legendEntries,Math.round(maxX+offsetX+40),40);
     legendW=190;
   }
+  const genToastSuffix=guideline?' with AI-guided shapes':' — plain tree (no AI classification this run)';
   const xml=`<mxfile host="app.diagrams.net"><diagram name="Generated from outline" id="gd-${Date.now()}"><mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${Math.round(maxX-minX+80+legendW)}" pageHeight="${Math.round(maxY+80)}" math="0" shadow="0"><root><mxCell id="0" /><mxCell id="1" parent="0" />\n${cells}</root></mxGraphModel></diagram></mxfile>`;
   if(existing){
     existing.xml=xml; existing.pageCount=splitMxfilePages(xml).length; existing.modifiedAt=Date.now();
@@ -17229,7 +17236,7 @@ async function generateDiagramFromOutline(){
     setPadViewMode('diagrams');
     renderDiagramsList();
     regenerateDiagramThumbnail(existing.id);
-    showToast('Diagram regenerated — refine it in draw.io');
+    showToast('Diagram regenerated'+genToastSuffix+' — refine it in draw.io');
   } else {
     const d=addDiagramFromXml(xml);
     if(d){
@@ -17243,7 +17250,7 @@ async function generateDiagramFromOutline(){
         if(!diagrams.some(dg=>dg.id!==d.id&&dg.anchorNodeId===anchorId))d.anchorNodeId=anchorId;
       }
     }
-    showToast('Rough diagram generated — refine it in draw.io');
+    showToast('Rough diagram generated'+genToastSuffix+' — refine it in draw.io');
   }
 }
 // Sibling of addDiagramFromXml for a diagram copied whole via the row's own Copy button
