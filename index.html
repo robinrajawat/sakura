@@ -16821,7 +16821,15 @@ Rules:
   - "excluded": a whole branch that is explicitly OUT OF SCOPE of whatever change/proposal the rest of the content describes — a sibling path that stays as-is and isn't part of what's being built (e.g. "Day Delivery — no impact, current setup unchanged" sitting next to a Night Delivery branch that IS the actual proposal). This is different from an ordinary in-scope step that merely says default/standard handling continues (see the "note" entry above) — that stays a normal step, not "excluded", because it's still part of the flow being proposed, just not a novel part of it. Only the branch that's genuinely irrelevant to the change gets "excluded".
 - "layer" (only meaningful in "layered" mode) must be exactly one of: actor, ui, service, middleware, backend, external. Omit it if the node doesn't clearly belong to one of these.
 - "edges" are extra connections beyond the outline's own parent-child links, layered on top of whichever layout "mode" produces — in "layered" mode these are the main connections (a UI node calling a service, a decision branching to two later steps); in "tree" mode they're for the specific case where a node's own text is a trigger/precondition whose resulting outcomes are its SIBLINGS in the outline rather than its children (e.g. "customers will have two options: Day Delivery and Night Delivery" written as three sibling nodes) — give an edge from the trigger to each outcome so that relationship is actually visible, since tree mode's own layout can't otherwise draw a connection between siblings. Every "from"/"to" must be an id from the input list. Keep labels short or omit them.
-- Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.`;
+- Never invent an id that wasn't given to you. When unsure about a node, leave it unclassified rather than guessing.
+
+Example — a trigger node whose outcomes are written as its siblings, not its children:
+Input:
+10|Solution Proposal
+11|  Eligible customers who change address will have two options: Day Delivery and Night Delivery.
+12|  Day Delivery
+13|  Night Delivery
+Correct "edges" for this input: [{"from":11,"to":12},{"from":11,"to":13}] — mode stays "tree" (this is still a linear write-up, not an architecture diagram), node 11 is NOT "decision" (it has zero children — 12 and 13 are its siblings), but the edges array is what actually shows that 11 is what produces both 12 and 13, since nothing else in tree mode can draw a connection between siblings.`;
 // Validates and sanitizes a raw AI response into a safe, ready-to-use guideline object — every
 // nodeId must exist in the current scope, shape/layer/mode must be in the fixed whitelists
 // above (anything else is silently dropped, never trusted verbatim), edges need two distinct
