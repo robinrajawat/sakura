@@ -16746,7 +16746,7 @@ const DIAGRAM_GEN_GAP_X=30, DIAGRAM_GEN_GAP_Y=50;
 // room than a real box once its text becomes the container's title instead — reserving the same
 // full box height plus standard gap left a wide, mostly-empty band above the first real step
 // that read as a missing box rather than a compact section title.
-const DIAGRAM_GEN_GROUP_TITLE_H=30, DIAGRAM_GEN_GROUP_TITLE_GAP=22;
+const DIAGRAM_GEN_GROUP_TITLE_H=32, DIAGRAM_GEN_GROUP_TITLE_GAP=22;
 // Two lines' worth of characters at max box width — only text longer than this (after
 // wrapping still wouldn't fit) goes through AI shortening at all.
 const DIAGRAM_GEN_CHAR_BUDGET=2*Math.floor((DIAGRAM_GEN_MAX_W-DIAGRAM_GEN_PAD)/DIAGRAM_GEN_CHAR_PX);
@@ -16824,19 +16824,19 @@ const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','datast
 // trusting over (or filling in for) a probabilistic AI guess, and worth having even when AI
 // classification never ran at all (no key configured, a failed call, AI Capabilities off),
 // rather than every node falling back to one plain shape regardless of what it's tagged.
-// Several spellings map to the same shape since tagging conventions vary person to person;
-// first match in a node's own tag list wins if it happens to have more than one mapped tag.
+// Deliberately narrow: covers only the shapes someone would tag with an unambiguous word for
+// this exact purpose (decision/database/excluded). Broader dev-role words like "ui", "service",
+// "backend", "external", "actor", or "note" were tried here too, but they're common enough as
+// ordinary project tags for entirely unrelated reasons that one incidental match anywhere in a
+// document would misclassify that node's shape AND — since any classified node makes every
+// OTHER node's color mean something too (see applyDiagramGenShapeColorOverrides) — flatten the
+// whole diagram's branch-color variety to gray over a single unrelated tag. Several spellings
+// map to the same shape since tagging conventions vary person to person; first match in a
+// node's own tag list wins if it happens to have more than one mapped tag.
 const DIAGRAM_GEN_TAG_SHAPE_MAP={
   decision:'decision', decisions:'decision',
-  database:'datastore', db:'datastore', datastore:'datastore', 'data-store':'datastore', data:'datastore',
-  external:'external', thirdparty:'external', '3rdparty':'external',
-  actor:'actor', user:'actor', persona:'actor',
-  excluded:'excluded', 'out-of-scope':'excluded', outofscope:'excluded',
-  note:'note', caveat:'note',
-  ui:'ui', frontend:'ui', 'front-end':'ui',
-  service:'service', api:'service',
-  middleware:'middleware', integration:'middleware',
-  backend:'backend', 'back-end':'backend'
+  database:'datastore', datastore:'datastore', 'data-store':'datastore', db:'datastore',
+  excluded:'excluded', 'out-of-scope':'excluded', outofscope:'excluded'
 };
 const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
 // Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
@@ -16990,21 +16990,25 @@ async function requestDiagramGenGuideline(scope){
   }catch(e){ console.warn('[sakura] Diagram generation: '+providerLabel+' call failed — falling back to plain tree.',e); return null; }
 }
 // Additive override on top of the existing marker>tag>branch color algorithm — runs after it,
-// completely unchanged, and only repaints nodes AI actually classified with a shape that has a
-// fixed category color. A node with both a marker AND a shape keeps its marker color (a
+// completely unchanged, and only repaints nodes with a shape that has a fixed category color —
+// whether that shape came from AI or from an explicit tag (see diagramGenApplyTagShapeOverrides
+// above nodeMeta's own setup). A node with both a marker AND a shape keeps its marker color (a
 // deliberate per-node review flag should never be masked by an automatic category color).
 // 'note' and 'excluded' get their own bespoke, non-palette color elsewhere and are untouched
 // here regardless.
 //
-// Once ANY node in this diagram got an AI shape classification, every other color on the page
-// needs to mean something too — the legend only ever documents AI-classified shape categories
-// (see diagramGenLegendEntries), so a node AI left unclassified but which still carries its
-// original branch-cycle hue (arbitrary, per-branch, never meant to be a category) reads as an
-// unexplained color next to ones that ARE explained. Once AI classification is active for this
-// scope, an unclassified node falls back to neutral gray instead of its branch color — with no
-// AI involved at all (nodeMeta empty), branch-cycle coloring is untouched exactly as before,
-// since there's no legend making a claim about what any color means in that case.
-function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta){
+// Once AI ran a genuine, deliberate pass over the WHOLE scope, every other color on the page
+// needs to mean something too — the legend only ever documents classified shape categories (see
+// diagramGenLegendEntries), so a node AI left unclassified but which still carries its original
+// branch-cycle hue (arbitrary, per-branch, never meant to be a category) reads as an unexplained
+// color next to ones that ARE explained, so it falls back to neutral gray instead. A tag match
+// is different: it's an incidental hit on whichever one or two nodes happen to carry that tag,
+// not a considered judgment about the whole diagram — collapsing every OTHER node's branch color
+// to gray just because one unrelated node happened to be tagged "database" would be a surprising
+// disproportionate side effect of an ordinary tag. So only `aiRan` (guideline!=null) triggers
+// the gray fallback; tag-only classification still recolors the specific tagged node(s) but
+// leaves everything else's branch-cycle color alone, same as if nothing were classified at all.
+function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,aiRan){
   if(!nodeMeta||!nodeMeta.size)return;
   scope.scopeIdxs.forEach(idx=>{
     const node=nodes[idx];
@@ -17012,7 +17016,7 @@ function applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta){
     const meta=nodeMeta.get(node.id);
     if(meta&&meta.shape&&DIAGRAM_GEN_SHAPE_COLOR[meta.shape]){ colorByIdx.set(idx,DIAGRAM_GEN_SHAPE_COLOR[meta.shape]); return; }
     if(meta&&(meta.shape==='note'||meta.shape==='excluded'))return; // bespoke color, colorByIdx unused for these
-    colorByIdx.set(idx,'gray');
+    if(aiRan)colorByIdx.set(idx,'gray');
   });
 }
 // Layered layout: buckets nodes into fixed-order rows by AI-given layer (anything unclassified
@@ -17399,7 +17403,7 @@ async function generateDiagramFromOutline(){
     }
   });
   const mode=guideline?guideline.mode:'tree';
-  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta);
+  applyDiagramGenShapeColorOverrides(scope,colorByIdx,nodeMeta,!!guideline);
   const dimsByIdx=new Map();
   scope.scopeIdxs.forEach(idx=>{
     const meta=nodeMeta.get(nodes[idx].id);
@@ -17445,16 +17449,23 @@ async function generateDiagramFromOutline(){
   //
   // Tinted with the group's own color rather than one fixed neutral, so a pink actor group and
   // a blue UI group each read as their own section instead of both sharing the same beige card.
-  // The fill is a lightened version of the box's own fill (a further step toward white, still
-  // clearly the same hue); the border is a more moderately lightened version of the box's own
-  // stroke, muted but still visible enough to actually read as an edge.
   //
   // The header's own text moves onto this background as a title instead of also getting its
   // own box below (see chainHeaderSuppressed / pass 2) — except when AI classified the header
   // itself as a genuine 'decision' diamond: a decision with exactly its Yes/No-style leaf
   // outcomes also happens to satisfy this same leaf-children structural pattern, but the
   // diamond shape itself is meaningful and stays a real, visible box, so its background here
-  // stays unlabeled same as before rather than absorbing text a reader would then see twice.
+  // stays a plain unlabeled card same as before rather than absorbing text a reader would then
+  // see twice.
+  //
+  // Rendered as draw.io's own `swimlane` shape for a suppressed header — a real title bar
+  // (its own more saturated fill, `startSize` tall) with a divider line separating it from a
+  // lighter-tinted body underneath, rather than one flat-tone rectangle with a label floating
+  // in a corner. Safe to center the title in that bar now (it wasn't when this first shipped —
+  // see edgeCell above): edges into/out of a suppressed group now stop right at the container's
+  // own boundary instead of reaching inside, so nothing crosses through the title bar itself
+  // anymore. An unsuppressed (decision) background keeps the older plain single-tone card,
+  // since it has no title to give a bar to.
   const chainHeaderSuppressed=idx=>diagramGenChainHeaderSuppressed(idx,nodeMeta);
   scope.scopeIdxs.forEach(idx=>{
     if(!diagramGenIsChainGroup(idx))return;
@@ -17468,20 +17479,18 @@ async function generateDiagramFromOutline(){
     const pad=12;
     const gx=Math.min(...rects.map(r=>r.x))-pad, gy=Math.min(...rects.map(r=>r.y))-pad;
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
-    const groupFill=diagramGenLighten(groupBase.fill,0.40);
-    const groupStroke=diagramGenLighten(groupBase.stroke,0.60);
-    // The header's own rect (first in `rects` above) is exactly the space its box used to
-    // occupy at the top of the group — labeling the container itself there, center-aligned to
-    // match how every box in this layout is already centered in its column, means the title
-    // lands in the same visual spot the box used to, just without a border of its own now that
-    // pass 2 below skips drawing that box.
-    // Left-aligned rather than centered: the incoming flow edge travels straight down through
-    // the container's horizontal center (same column the boxes sit in) on its way to the first
-    // child, so a centered title sits directly in that line's path and visually reads as an
-    // arrow stabbing through the text. Tucking it into the top-left corner instead — the usual
-    // swimlane/pool-header convention — keeps it clear of the line entirely.
-    const titleStyle=suppressed?`verticalAlign=top;align=left;fontStyle=1;fontSize=12;fontColor=${groupBase.font};spacingTop=10;spacingLeft=14;`:'';
-    const style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${groupFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;${titleStyle}`;
+    const bodyFill=diagramGenLighten(groupBase.fill,0.55);
+    const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
+    let style;
+    if(suppressed){
+      // startSize is the title bar's own height, measured from the container's top — same
+      // reserved band DIAGRAM_GEN_GROUP_TITLE_H already accounts for in the layout math above,
+      // so the divider line lands exactly where the title's own space already ends.
+      const titleFill=diagramGenLighten(groupBase.fill,0.18);
+      style=`swimlane;whiteSpace=wrap;html=1;startSize=${DIAGRAM_GEN_GROUP_TITLE_H};fillColor=${titleFill};swimlaneFillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1.5;connectable=0;fontStyle=1;fontSize=13;fontColor=${groupBase.font};align=center;verticalAlign=middle;`;
+    } else {
+      style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;`;
+    }
     const value=suppressed?escXmlAttr(labels.get(idx)):'';
     cells+=`<mxCell id="gd-grp${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${gx}" y="${gy}" width="${gx2-gx}" height="${gy2-gy}" as="geometry" /></mxCell>\n`;
   });
