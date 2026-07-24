@@ -17443,15 +17443,18 @@ function diagramGenIsPassthrough(idx,nodeMeta){
 // structure: the node must be the ONLY real (non-edge-label) child its parent has, it must
 // itself be a leaf (no grandchildren to lose), it must carry no shape/container/edge-label
 // classification of its own (that would be a distinct, meaningful box to keep), and its parent
-// must not itself be a container (a container's own header is already a title, not a box, so
-// there's no box here for the child to fold into).
+// must actually draw a box of its own for it to fold INTO — a container (its own header is
+// already a title, not a box), a passthrough node (draws no box at all — merging into one would
+// silently drop this node's text with nothing left to hold it), or a confirmed edge-label parent
+// (same reason, defensively, though a childful edge-label node should be rare in practice) are
+// all disqualified for that same underlying reason.
 function diagramGenIsMergeCandidate(idx,nodeMeta){
   const meta=nodeMeta&&nodeMeta.get(nodes[idx].id);
   if(meta&&(meta.shape||meta.container))return false;
   if(diagramGenAllChildIdxs(idx).length>0)return false;
   const parentIdx=getParentIndex(idx);
   if(parentIdx<0)return false;
-  if(diagramGenIsContainer(parentIdx,nodeMeta))return false;
+  if(diagramGenIsContainer(parentIdx,nodeMeta)||diagramGenIsPassthrough(parentIdx,nodeMeta)||diagramGenIsConfirmedEdgeLabel(parentIdx,nodeMeta))return false;
   const realSiblings=diagramGenAllChildIdxs(parentIdx).filter(si=>!diagramGenIsConfirmedEdgeLabel(si,nodeMeta));
   return realSiblings.length===1&&realSiblings[0]===idx;
 }
@@ -17969,13 +17972,35 @@ function diagramGenOpenReview(scope,labels,proposedMeta,existing){
 function diagramGenWireReviewToolbar(list){
   const selectAll=el('diagram-gen-review-select-all');
   const rows=()=>[...list.querySelectorAll('.dgr-row')];
+  const selectedRows=()=>rows().filter(r=>r.querySelector('.dgr-select-cb').checked);
+  // Keeps "Select all" honest when rows are checked/unchecked one at a time instead of via the
+  // header checkbox itself — none checked, all checked, and the in-between state (native
+  // indeterminate, the same visual browsers already use for exactly this) all stay in sync with
+  // whatever the individual rows actually show. One delegated listener on the list rather than
+  // one per row, since rows are rebuilt wholesale on every diagramGenOpenReview call anyway.
+  function syncSelectAll(){
+    if(!selectAll)return;
+    const all=rows(), checked=all.filter(r=>r.querySelector('.dgr-select-cb').checked);
+    selectAll.checked=all.length>0&&checked.length===all.length;
+    selectAll.indeterminate=checked.length>0&&checked.length<all.length;
+  }
+  list.addEventListener('change',e=>{ if(e.target.classList.contains('dgr-select-cb'))syncSelectAll(); });
   if(selectAll){
     selectAll.checked=false; selectAll.indeterminate=false;
-    selectAll.onchange=()=>{ rows().forEach(r=>{ r.querySelector('.dgr-select-cb').checked=selectAll.checked; }); };
+    selectAll.onchange=()=>{ rows().forEach(r=>{ r.querySelector('.dgr-select-cb').checked=selectAll.checked; }); selectAll.indeterminate=false; };
+  }
+  // A bulk action clicked with nothing selected would otherwise just silently do nothing — easy
+  // to read as "the button's broken" rather than "nothing was selected". Same one-line guard in
+  // front of every bulk action below.
+  function requireSelection(){
+    if(selectedRows().length)return true;
+    showToast('Select at least one row first');
+    return false;
   }
   const bulkShape=el('diagram-gen-review-bulk-shape');
   const applyShape=el('diagram-gen-review-bulk-apply-shape');
   if(applyShape)applyShape.onclick=()=>{
+    if(!requireSelection())return;
     const val=bulkShape?bulkShape.value:'';
     rows().forEach(r=>{
       if(!r.querySelector('.dgr-select-cb').checked)return;
@@ -17987,6 +18012,7 @@ function diagramGenWireReviewToolbar(list){
   const setContainer=el('diagram-gen-review-bulk-container-set'), clearContainer=el('diagram-gen-review-bulk-container-clear');
   const setSeq=el('diagram-gen-review-bulk-sequence-set'), clearSeq=el('diagram-gen-review-bulk-sequence-clear');
   function bulkToggle(cls,checked){
+    if(!requireSelection())return;
     rows().forEach(r=>{
       if(!r.querySelector('.dgr-select-cb').checked)return;
       const toggles=r.querySelectorAll('.dgr-toggle');
