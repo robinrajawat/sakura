@@ -17479,7 +17479,7 @@ async function generateDiagramFromOutline(){
     const pad=12;
     const gx=Math.min(...rects.map(r=>r.x))-pad, gy=Math.min(...rects.map(r=>r.y))-pad;
     const gx2=Math.max(...rects.map(r=>r.x+r.w))+pad, gy2=Math.max(...rects.map(r=>r.y+r.h))+pad;
-    const bodyFill=diagramGenLighten(groupBase.fill,0.55);
+    const bodyFill=diagramGenLighten(groupBase.fill,0.72);
     const groupStroke=diagramGenLighten(groupBase.stroke,0.35);
     let style;
     if(suppressed){
@@ -17487,7 +17487,7 @@ async function generateDiagramFromOutline(){
       // reserved band DIAGRAM_GEN_GROUP_TITLE_H already accounts for in the layout math above,
       // so the divider line lands exactly where the title's own space already ends.
       const titleFill=diagramGenLighten(groupBase.fill,0.18);
-      style=`swimlane;whiteSpace=wrap;html=1;startSize=${DIAGRAM_GEN_GROUP_TITLE_H};fillColor=${titleFill};swimlaneFillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1.5;connectable=0;fontStyle=1;fontSize=13;fontColor=${groupBase.font};align=center;verticalAlign=middle;`;
+      style=`swimlane;whiteSpace=wrap;html=1;startSize=${DIAGRAM_GEN_GROUP_TITLE_H};fillColor=${titleFill};swimlaneFillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1.5;connectable=0;fontStyle=1;fontSize=13;fontColor=${groupBase.font};align=center;verticalAlign=middle;collapsible=0;`;
     } else {
       style=`rounded=1;whiteSpace=wrap;html=1;fillColor=${bodyFill};strokeColor=${groupStroke};strokeWidth=1;connectable=0;`;
     }
@@ -17506,7 +17506,17 @@ async function generateDiagramFromOutline(){
     const isExcluded=meta&&meta.shape==='excluded';
     const c=isNote?DIAGRAM_GEN_NOTE_COLOR:(isExcluded?DIAGRAM_GEN_EXCLUDED_COLOR:(DIAGRAM_GEN_PALETTE[colorByIdx.get(idx)]||DIAGRAM_GEN_PALETTE.gray));
     const baseStyle=(meta&&DIAGRAM_GEN_SHAPE_STYLE[meta.shape])||'rounded=1;whiteSpace=wrap;html=1;';
-    const style=`${baseStyle}fillColor=${c.fill};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
+    // A box sitting inside a chain-group container already has a tinted background behind it
+    // (the group's own card — see pass 1) — filling the box itself with that same tint too
+    // just stacks two layers of the same color with no contrast between them, reading as one
+    // flat, heavy mass rather than a distinct step. White keeps the crisp separation the
+    // reference design has, while the border/text stay colored so the category is still clear
+    // at a glance. A standalone box with nothing behind it keeps its usual tinted fill —
+    // that's still the right look when there's no background card to separate it from.
+    const parentIdx=getParentIndex(idx);
+    const insideGroup=parentIdx>=0&&diagramGenIsChainGroup(parentIdx);
+    const fillColor=insideGroup?'#FFFFFF':c.fill;
+    const style=`${baseStyle}fillColor=${fillColor};strokeColor=${c.stroke};fontColor=${c.font};fontSize=12;strokeWidth=1.5;`;
     const {x,y,w,h}=finalRect.get(idx);
     cells+=`<mxCell id="gd-n${idx}" value="${escXmlAttr(labels.get(idx))}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" /></mxCell>\n`;
   });
