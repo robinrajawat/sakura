@@ -16824,19 +16824,25 @@ const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','datast
 // trusting over (or filling in for) a probabilistic AI guess, and worth having even when AI
 // classification never ran at all (no key configured, a failed call, AI Capabilities off),
 // rather than every node falling back to one plain shape regardless of what it's tagged.
-// Deliberately narrow: covers only the shapes someone would tag with an unambiguous word for
-// this exact purpose (decision/database/excluded). Broader dev-role words like "ui", "service",
-// "backend", "external", "actor", or "note" were tried here too, but they're common enough as
-// ordinary project tags for entirely unrelated reasons that one incidental match anywhere in a
-// document would misclassify that node's shape AND — since any classified node makes every
-// OTHER node's color mean something too (see applyDiagramGenShapeColorOverrides) — flatten the
-// whole diagram's branch-color variety to gray over a single unrelated tag. Several spellings
-// map to the same shape since tagging conventions vary person to person; first match in a
-// node's own tag list wins if it happens to have more than one mapped tag.
+// Covers every shape in DIAGRAM_GEN_SHAPE_WHITELIST — this used to be narrowed to just
+// decision/database/excluded after a generic tag ("data") on one node cascaded into graying
+// out the WHOLE diagram's branch colors, but that cascade was its own separate bug (see
+// applyDiagramGenShapeColorOverrides — it now only grays out unclassified nodes when AI
+// actually ran a whole-scope pass, never from an isolated tag hit), so a stray match here now
+// costs at most one node's own shape/color rather than the whole page. Several spellings map
+// to the same shape since tagging conventions vary person to person; first match in a node's
+// own tag list wins if it happens to have more than one mapped tag.
 const DIAGRAM_GEN_TAG_SHAPE_MAP={
   decision:'decision', decisions:'decision',
   database:'datastore', datastore:'datastore', 'data-store':'datastore', db:'datastore',
-  excluded:'excluded', 'out-of-scope':'excluded', outofscope:'excluded'
+  excluded:'excluded', 'out-of-scope':'excluded', outofscope:'excluded',
+  ui:'ui', frontend:'ui', 'front-end':'ui',
+  service:'service', api:'service',
+  middleware:'middleware', integration:'middleware',
+  backend:'backend', 'back-end':'backend',
+  external:'external', thirdparty:'external', '3rdparty':'external', 'third-party':'external',
+  actor:'actor', persona:'actor',
+  note:'note', caveat:'note'
 };
 const DIAGRAM_GEN_LAYER_WHITELIST=['actor','ui','service','middleware','backend','external'];
 // Top-to-bottom row order for "layered" mode. Anything without a valid/given layer lands in
