@@ -17762,7 +17762,14 @@ function diagramGenFinishGenerate(scope,labels,nodeMeta,existing){
     // relies on this shape's own style already carrying html=1 (true for every entry in
     // DIAGRAM_GEN_SHAPE_STYLE and the plain-box default alike) so <b>/<br> actually render as
     // real formatting rather than literal text.
-    const value=mergedCi!=null?`<b>${escXmlAttr(labels.get(idx))}</b><br>${escXmlAttr(labels.get(mergedCi))}`:escXmlAttr(labels.get(idx));
+    // The mxCell value is an XML ATTRIBUTE, so even the <b>/<br> markup itself has to be
+    // written as escaped entities (&lt;b&gt; etc.), same as the title/detail text — a raw,
+    // unescaped '<' in an attribute value is invalid XML and fails to parse entirely (not just
+    // a rendering glitch). Once the XML parser unescapes the attribute back to a real string,
+    // draw.io's own html=1 rendering (already part of every shape's style) is what turns THAT
+    // string's <b>/<br> into actual bold text and a line break — the entity-escaping here and
+    // the HTML-rendering there are two separate, unrelated layers, both required.
+    const value=mergedCi!=null?`&lt;b&gt;${escXmlAttr(labels.get(idx))}&lt;/b&gt;&lt;br&gt;${escXmlAttr(labels.get(mergedCi))}`:escXmlAttr(labels.get(idx));
     const {x,y,w,h}=rect;
     cells+=`<mxCell id="gd-n${idx}" value="${value}" style="${style}" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" /></mxCell>\n`;
   });
