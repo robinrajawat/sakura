@@ -17557,16 +17557,23 @@ function layoutDiagramGenTree(scope,dimsByIdx,nodeMeta){
     const rowY=y+ownDims.h+headerGap;
     if(diagramGenIsSequence(idx,nodeMeta)){
       // Each child keeps its own full subtree (itself + whatever's under it). Horizontal:
-      // placed side by side at the same starting row, each one still recursing through place()
-      // normally to lay out its own subtree beneath it. Vertical: stacked directly beneath the
-      // previous child's own bottom edge — read top to bottom as one flow, not parallel
-      // branches.
+      // placed side by side, each one still recursing through place() normally to lay out its
+      // own subtree beneath it. Vertical: stacked directly beneath the previous child's own
+      // bottom edge — read top to bottom as one flow, not parallel branches.
       if(diagramGenIsHorizontal(idx,nodeMeta)){
         const rowW=widthByIdx.get(idx);
+        // Centered on the row's OWN tallest box (not top-aligned) — two boxes of different
+        // heights placed at the same top Y have DIFFERENT vertical centers, and since edges
+        // connect at each box's own 0.5/0.5 (middle) anchor, that mismatch is exactly what
+        // makes an orthogonal connector jog sideways to bridge the offset instead of running
+        // straight across. Centering every child's own box on the tallest one in the row keeps
+        // every connector between them a clean straight line regardless of how their text
+        // wraps.
+        const rowMaxOwnH=Math.max(...kids.map(ci=>dimsByIdx.get(ci).h));
         let cx=left+w/2-rowW/2, maxBottom=rowY;
         kids.forEach(ci=>{
-          const cw=widthByIdx.get(ci);
-          const bottom=place(ci,cx,rowY);
+          const cw=widthByIdx.get(ci), ch=dimsByIdx.get(ci).h;
+          const bottom=place(ci,cx,rowY+(rowMaxOwnH-ch)/2);
           maxBottom=Math.max(maxBottom,bottom);
           cx+=cw+DIAGRAM_GEN_GAP_X;
         });
