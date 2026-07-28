@@ -280,7 +280,7 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
 .code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
 #demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body,#mindmap-node-anchor-suggest,#mindmap-tab-body,#debug-log-view,#report-modal-body
+#diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body,#mindmap-node-anchor-suggest,#mindmap-tab-body,#debug-log-view,#report-modal-body,#files-anchor-suggest,#files-tab-body
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Fira Code',Consolas,'Courier New',monospace}
@@ -380,7 +380,7 @@ body.feature-off-padnotepad #pad-tab-notes,body.feature-off-padnotepad #presente
 body.feature-off-padqa #pad-tab-qa,body.feature-off-padqa #presenter-notes-tab-qa{display:none!important}
 body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .node-diagram-dot,body.feature-off-paddiagrams #presenter-whiteboard-btn,body.feature-off-paddiagrams #preview-ctx-whiteboard-item{display:none!important}
 body.feature-off-padmindmap #pad-tab-mindmap,body.feature-off-padmindmap #presenter-mindmap-btn,body.feature-off-padmindmap #preview-ctx-mindmap-item{display:none!important}
-body.feature-off-padfiles #pad-tab-files{display:none!important}
+body.feature-off-padfiles #pad-tab-files,body.feature-off-padfiles .node-file-dot{display:none!important}
 body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
 body.feature-off-backlinks #bl-panel,body.feature-off-backlinks #note-panel-bl-badge{display:none!important}
@@ -3194,6 +3194,14 @@ body.pad-files-mode #files-tab-body{display:flex}
 .file-row-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .file-row:hover .file-row-remove{opacity:1}
 .file-row-remove:hover{color:var(--sem-alert,#b85450);background:var(--bg)}
+.file-row-meta{display:flex;align-items:center;gap:8px;margin-top:2px}
+.file-row-anchor{appearance:none;border:none;background:none;color:var(--hint);font:400 11px 'Inter',sans-serif;padding:2px 6px;border-radius:5px;cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto}
+.file-row-anchor:hover{background:var(--hover);color:var(--fg)}
+.file-row-anchor.file-row-anchor-orphaned{color:var(--sem-alert,#b85450)}
+.file-row-anchor.file-row-anchor-orphaned:hover{background:var(--sem-alert,#b85450);color:var(--bg)}
+.file-row-note-input,.file-row-author-input{appearance:none;border:none;background:none;color:var(--hint);font:400 11px 'Inter',sans-serif;padding:2px 4px;border-radius:5px;min-width:0;flex:1 1 auto}
+.file-row-note-input:hover,.file-row-author-input:hover{background:var(--hover)}
+.file-row-note-input:focus,.file-row-author-input:focus{outline:none;background:var(--hover);color:var(--fg)}
 #files-empty{display:none;padding:24px 10px;text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif;line-height:1.6}
 #files-empty.show{display:block}
 body:not(.pad-files-mode) .files-only-btn{display:none}
@@ -3309,8 +3317,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
-#diagram-anchor-suggest,#decision-anchor-suggest,#mindmap-node-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
-#diagram-anchor-suggest.open,#decision-anchor-suggest.open,#mindmap-node-anchor-suggest.open{display:flex}
+#diagram-anchor-suggest,#decision-anchor-suggest,#mindmap-node-anchor-suggest,#files-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
+#diagram-anchor-suggest.open,#decision-anchor-suggest.open,#mindmap-node-anchor-suggest.open,#files-anchor-suggest.open{display:flex}
 .anchor-suggest-search{flex:0 0 auto;width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);border-radius:6px;padding:5px 8px;font:400 12px 'Inter',sans-serif;margin-bottom:4px}
 .anchor-suggest-search:focus{outline:none;border-color:var(--accent)}
 .anchor-suggest-results{flex:1 1 auto;overflow-y:auto;min-height:0}
@@ -3612,6 +3620,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-meeting-chip-remove:hover{opacity:1;color:var(--fc-red);background:var(--hover)}
 .todo-row.qa-flash{animation:todo-flash 1.1s ease}
 .qa-row.qa-flash{animation:todo-flash 1.1s ease}
+.file-row.qa-flash{animation:todo-flash 1.1s ease}
 @keyframes todo-flash{0%{background:color-mix(in srgb,var(--accent) 28%,transparent)}100%{background:transparent}}
 /* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
 #todos-panel.actions-fixed .todo-row{transition:background .12s}
@@ -6047,6 +6056,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <div id="files-list-body"></div>
     <div id="files-empty">No files attached yet.<br>Click + or drag a file anywhere onto this tab — up to 5&nbsp;MB each.</div>
   </div>
+  <div id="files-anchor-suggest"><input type="text" id="files-anchor-search" class="anchor-suggest-search" placeholder="Search nodes…" autocomplete="off" spellcheck="false" /><div id="files-anchor-results" class="anchor-suggest-results"></div></div>
 </div>
 <div id="pad-ctx-menu" class="note-ctx-menu" role="menu" aria-label="Pad editor actions"></div>
 </div><!-- /editor-row -->
@@ -8904,7 +8914,7 @@ function trimPadHtmlForRevision(html){
 // version of this feature already made.
 function trimAttachmentsForRevision(arr){
   if(!Array.isArray(arr))return [];
-  return arr.map(a=>({id:a.id,name:a.name||'attachment',size:a.size||0,addedAt:a.addedAt||Date.now(),_notKept:true}));
+  return arr.map(a=>({id:a.id,name:a.name||'attachment',size:a.size||0,addedAt:a.addedAt||Date.now(),mimeType:a.mimeType||'',anchorNodeId:a.anchorNodeId??null,addedBy:a.addedBy||'',note:a.note||'',_notKept:true}));
 }
 async function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
@@ -9709,15 +9719,17 @@ function safeNextId(nds){ return nds.reduce((m,n)=>Math.max(m,(Number(n.id)||0)+
 // UI (diagramIsOrphaned, decision-row-node-warn) already surfaces it — but silently, so someone
 // restoring a version has no reason to go looking for it. This builds a short suffix naming how
 // many, if any, so the "Version restored" toast says so up front instead of staying quiet about it.
-function describeOrphanedLinksAfterRestore(nodeList,diagramList,decisionLogList){
+function describeOrphanedLinksAfterRestore(nodeList,diagramList,decisionLogList,attachmentList){
   const nodeIds=new Set((nodeList||[]).map(n=>n.id));
   const orphanedDiagrams=(diagramList||[]).filter(d=>d.anchorNodeId!=null&&!nodeIds.has(d.anchorNodeId)).length;
   const orphanedLogs=(decisionLogList||[]).filter(dl=>dl.anchorNodeId!=null&&!nodeIds.has(dl.anchorNodeId)).length;
-  if(!orphanedDiagrams&&!orphanedLogs)return '';
+  const orphanedFiles=(attachmentList||[]).filter(a=>a.anchorNodeId!=null&&!nodeIds.has(a.anchorNodeId)).length;
+  if(!orphanedDiagrams&&!orphanedLogs&&!orphanedFiles)return '';
   const parts=[];
   if(orphanedDiagrams)parts.push(orphanedDiagrams+' diagram'+(orphanedDiagrams===1?'':'s'));
   if(orphanedLogs)parts.push(orphanedLogs+' decision log'+(orphanedLogs===1?'':'s'));
-  return ' — '+parts.join(' and ')+' no longer linked to a node (see the Diagrams/Decision Log tab to re-anchor)';
+  if(orphanedFiles)parts.push(orphanedFiles+' file'+(orphanedFiles===1?'':'s'));
+  return ' — '+parts.join(', ')+' no longer linked to a node (see the Diagrams/Decision Log/Files tab to re-anchor)';
 }
 async function restoreDocRevision(docId,ts){
   const revisions=await loadDocRevisions(docId);
@@ -9772,7 +9784,7 @@ async function restoreDocRevision(docId,ts){
     if('docStatus' in rev)setDocStatus(rev.docStatus||'',false);
     titleAutoSyncEnabled=!String(rev.title||'').trim(); lastAutoTitle=String(rev.title||'').trim();
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
-    restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,decisionLogs);
+    restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,decisionLogs,attachments);
   } else {
     let prevQa=[]; let prevPad=''; let prevDiagramsCurrent=[]; let prevDecisionLogsCurrent=[]; let prevDocStatusCurrent=''; let prevAttachmentsCurrent=[];
     try{
@@ -9837,7 +9849,7 @@ async function restoreDocRevision(docId,ts){
     }
     const restoredDocStatus='docStatus' in rev?(rev.docStatus||''):prevDocStatusCurrent;
     const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,pad:restoredPad,qa:restoredQa,diagrams:restoredDiagramsMeta,decisionLogs:restoredDecisionLogs,attachments:prevAttachmentsCurrent};
-    restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredDecisionLogs);
+    restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredDecisionLogs,prevAttachmentsCurrent);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
@@ -13605,11 +13617,12 @@ function todoRefsForWholeDoc(docId){
 // logs, diagrams, Q&A, mind maps) only resolves for whichever document is actually loaded right
 // now — there's no way to inspect another document's content without opening it first.
 function collectLinkedContentForNodeIds(nodeIds){
-  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[]};
+  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[],files:[]};
   if(!nodeIds||!nodeIds.length)return out;
   const idSet=new Set(nodeIds);
   if(featureDecisionLogEnabled)out.decisionLogs=decisionLogs.filter(dl=>dl.anchorNodeId!=null&&idSet.has(dl.anchorNodeId));
   if(padDiagramsTabEnabled&&Array.isArray(diagrams))out.diagrams=diagrams.filter(d=>d.anchorNodeId!=null&&idSet.has(d.anchorNodeId));
+  if(padFilesTabEnabled&&Array.isArray(attachments))out.files=attachments.filter(a=>a.anchorNodeId!=null&&idSet.has(a.anchorNodeId));
   nodeIds.forEach(id=>{
     out.meetings.push(...meetingRefsForNode(id));
     out.todos.push(...todoRefsForNode(id));
@@ -13619,7 +13632,7 @@ function collectLinkedContentForNodeIds(nodeIds){
   return out;
 }
 function linkedContentTotalCount(bundle){
-  return bundle.decisionLogs.length+bundle.diagrams.length+bundle.meetings.length+bundle.todos.length+bundle.qa.length+bundle.mindmap.length;
+  return bundle.decisionLogs.length+bundle.diagrams.length+bundle.meetings.length+bundle.todos.length+bundle.qa.length+bundle.mindmap.length+(bundle.files?bundle.files.length:0);
 }
 // Plain-English pieces like "2 decision logs" / "1 meeting" — callers join however fits (comma
 // list for a popover heading, a full sentence for a delete-confirmation warning).
@@ -13631,6 +13644,7 @@ function linkedContentSummaryParts(bundle){
   if(bundle.todos.length)parts.push(`${bundle.todos.length} to-do${bundle.todos.length===1?'':'s'}`);
   if(bundle.qa.length)parts.push(`${bundle.qa.length} Q&A question${bundle.qa.length===1?'':'s'}`);
   if(bundle.mindmap.length)parts.push(`${bundle.mindmap.length} mind map idea${bundle.mindmap.length===1?'':'s'}`);
+  if(bundle.files&&bundle.files.length)parts.push(`${bundle.files.length} file${bundle.files.length===1?'':'s'}`);
   return parts;
 }
 function joinSummaryParts(parts){
@@ -13648,12 +13662,12 @@ function joinSummaryParts(parts){
 // blob, which isn't loaded. Rather than silently under-reporting, the caller is told which case
 // it got via `complete`, so a "some content couldn't be checked" caveat can be shown honestly.
 function collectLinkedContentForDocument(docId){
-  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[],complete:false};
+  const out={decisionLogs:[],diagrams:[],meetings:[],todos:[],qa:[],mindmap:[],files:[],complete:false};
   if(!docId)return out;
   if(docId===currentDocId){
     const allIds=nodes.map(n=>n.id);
     const perNode=collectLinkedContentForNodeIds(allIds);
-    out.decisionLogs=perNode.decisionLogs; out.diagrams=perNode.diagrams; out.qa=perNode.qa; out.mindmap=perNode.mindmap;
+    out.decisionLogs=perNode.decisionLogs; out.diagrams=perNode.diagrams; out.qa=perNode.qa; out.mindmap=perNode.mindmap; out.files=perNode.files;
     out.meetings=meetingRefsForWholeDoc(docId).concat(perNode.meetings);
     out.todos=todoRefsForWholeDoc(docId).concat(perNode.todos);
     out.complete=true;
@@ -13733,7 +13747,7 @@ function openRefJumpPopover(anchorEl, meetingRefs, todoRefs, title){
   _refJumpOpen=true;
 }
 document.addEventListener('mousedown',e=>{
-  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('.node-mindmap-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
+  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-meeting-dot')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('.node-mindmap-dot')&&!e.target.closest('.node-file-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
 },true);
 // A single match jumps straight there (no extra click through a one-item popover); more than
 // one opens the popover, since there's no longer a single unambiguous target to jump to.
@@ -13793,6 +13807,7 @@ function jumpToNodeQaRefs(refs){
 }
 const DECISION_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
 const DIAGRAM_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>';
+const FILE_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
 // "Where used" — the one place all six reference types (Decision Log, Diagrams, Meetings,
 // To-Dos, Q&A, Mind Map) show up together, instead of having to notice and click through each
 // dot separately. Reuses the same #ref-jump-popover element/styling the individual dots already
@@ -13808,7 +13823,7 @@ function openWhereUsedPopover(anchorEl,nodeIds,title){
   list.innerHTML='';
   if(!total){
     const empty=document.createElement('div'); empty.className='ref-jump-empty';
-    empty.textContent='No decision logs, diagrams, meetings, to-dos, Q&A, or mind map ideas are linked here.';
+    empty.textContent='No decision logs, diagrams, meetings, to-dos, Q&A, mind map ideas, or files are linked here.';
     list.appendChild(empty);
   } else {
     bundle.decisionLogs.forEach(dl=>{
@@ -13846,6 +13861,12 @@ function openWhereUsedPopover(anchorEl,nodeIds,title){
       const item=document.createElement('div'); item.className='ref-jump-item';
       item.innerHTML=mindmapDotIconSvg(12)+`<span>${esc((r.text||'').trim()||'(untitled idea)')} — ${esc(r.mapTitle)}</span>`;
       item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); openMindMapOverlay(r.mapId); setTimeout(()=>mmCenterOnNode(r.mindNodeId),60); });
+      list.appendChild(item);
+    });
+    (bundle.files||[]).forEach(a=>{
+      const item=document.createElement('div'); item.className='ref-jump-item';
+      item.innerHTML=FILE_DOT_SVG+`<span>${esc(a.name||'attachment')}</span>`;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); flashFileRow(a.id); });
       list.appendChild(item);
     });
   }
@@ -15610,7 +15631,7 @@ function handleAtInput(inputEl, nodeId) {
 
 function render(){ensureSelection(); pruneCollapsedIds(); pruneFocus(); autoSyncTitleFromFirstNode(); if(typeof hideHoverRailNow==='function')hideHoverRailNow();
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?(nodes[focusIdx].depth+1):0; const focusEnd=focusActive?getSubtreeEnd(focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Tab</kbd> after adding a sibling, or just start typing below this node, to add one.</div>'; pane.appendChild(empty);} else if(!nodes.length){const empty=document.createElement('div'); empty.className='empty-state doc-empty'; const hasTemplates=loadTemplatesIndex().length>0||hasCustomDefaultTemplate(); const hint=hasTemplates?'Load a <a href="#" style="color:var(--accent);text-decoration:none" id="es-load-tpl">template</a>, paste a tree, or just start typing.':'Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — paste a tree, or load a template.'; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><path d="M13.78,63.42 C13.66,62.95 12.99,61.55 13.08,60.61 C13.17,59.67 13.89,58.74 14.34,57.80 C14.79,56.86 15.26,55.92 15.75,54.98 C16.24,54.04 16.79,53.11 17.30,52.17 C17.82,51.23 18.30,50.30 18.84,49.36 C19.38,48.42 19.92,47.49 20.53,46.55 C21.14,45.61 21.77,44.67 22.50,43.73 C23.23,42.79 24.21,41.69 24.89,40.92 C25.57,40.15 25.62,40.03 26.58,39.09 C27.54,38.15 29.58,36.40 30.66,35.30 C31.74,34.20 32.23,33.42 33.05,32.48 C33.87,31.54 34.74,30.61 35.58,29.67 C36.42,28.73 37.34,27.68 38.11,26.86 C38.88,26.04 38.84,25.97 40.22,24.75 C41.60,23.53 46.13,19.52 46.41,19.52 C46.69,19.52 42.99,23.53 41.91,24.75 C40.83,25.97 40.69,26.04 39.94,26.86 C39.19,27.68 38.21,28.73 37.41,29.67 C36.61,30.61 35.91,31.54 35.16,32.48 C34.41,33.42 33.82,34.20 32.91,35.30 C31.99,36.40 30.52,38.15 29.67,39.09 C28.83,40.03 28.54,40.15 27.84,40.92 C27.14,41.69 26.15,42.79 25.45,43.73 C24.75,44.67 24.21,45.61 23.62,46.55 C23.04,47.49 22.48,48.42 21.94,49.36 C21.40,50.30 20.88,51.23 20.39,52.17 C19.90,53.11 19.43,54.04 18.98,54.98 C18.54,55.92 18.12,56.86 17.72,57.80 C17.32,58.74 17.06,59.67 16.59,60.61 C16.12,61.55 15.19,62.95 14.91,63.42 Z" fill="color-mix(in srgb,var(--accent) 45%,transparent)"/><path d="M46.41,19.52 C46.85,19.13 48.26,17.92 49.08,17.16 C49.90,16.40 50.37,15.61 51.33,14.98 C52.29,14.35 54.26,13.63 54.84,13.36" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.3" stroke-linecap="round"/><path d="M41.06,24.75 C42.33,24.33 46.36,22.41 48.66,22.22 C50.96,22.03 53.06,23.15 54.84,23.62 C56.62,24.09 58.59,24.80 59.34,25.03" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.1" stroke-linecap="round"/><path d="M28.83,38.67 C29.41,38.74 31.01,38.57 32.34,39.09 C33.68,39.61 35.48,40.95 36.84,41.77 C38.20,42.59 39.89,43.65 40.50,44.02" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.5" stroke-linecap="round"/><circle cx="45.87" cy="19.52" r="1.3" fill="color-mix(in srgb,var(--accent) 40%,transparent)"/><circle cx="59.67" cy="25.12" r="1.5" fill="color-mix(in srgb,var(--accent) 40%,transparent)"/><circle cx="56.10" cy="8.70" r="2.70" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="0.40"/><circle cx="60.09" cy="11.60" r="2.70" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="58.57" cy="16.30" r="2.70" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="53.63" cy="16.30" r="2.70" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="52.11" cy="11.60" r="2.70" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="56.10" cy="12.90" r="1.65" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="0.45"/><circle cx="41.68" cy="40.59" r="2.55" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="0.40"/><circle cx="45.45" cy="43.33" r="2.55" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="44.01" cy="47.77" r="2.55" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="39.35" cy="47.77" r="2.55" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="37.91" cy="43.33" r="2.55" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="41.68" cy="44.56" r="1.56" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="0.45"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">Nothing here yet</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${hint}</div><div class="empty-state-actions"><button class="btn primary" id="es-new-doc-btn">New document</button>${hasTemplates?'<button class="btn" id="es-browse-tpl-btn">Browse templates</button>':''}<button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const tplLink=document.getElementById('es-load-tpl'); if(tplLink)tplLink.addEventListener('click',e=>{e.preventDefault(); loadTemplateById('__default__')}); const newDocBtn=document.getElementById('es-new-doc-btn'); if(newDocBtn)newDocBtn.addEventListener('click',()=>createDoc()); const browseTplBtn=document.getElementById('es-browse-tpl-btn'); if(browseTplBtn)browseTplBtn.addEventListener('click',()=>revealTemplatesInSidebar());
-const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.textContent=nodeMarkerGlyph(node.marker); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.slideDivider){const sdot=document.createElement('span'); sdot.className='node-slide-divider-badge'; sdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>'; sdot.dataset.tip='Slide divider — forces a new slide here in Presenter mode regardless of depth. Right-click to remove.'; sdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault();}); sdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); toggleSlideDivider(node.id);}); row.appendChild(sdot)} if(decisionLogInPad&&decisionLogForNode(node.id)){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} const dl=decisionLogForNode(node.id); if(!dl)return; setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList()}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} {const mFeatureOn=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled()); const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const mRefs=mFeatureOn?meetingRefsForNode(node.id):[]; if(mRefs.length){const mdot=document.createElement('span'); mdot.className='node-note-dot node-meeting-dot'; mdot.innerHTML=meetingDotIconSvg(11); mdot.dataset.tip=mRefs.length>1?'Referenced by '+mRefs.length+' meetings — click to view':'Referenced by meeting: '+esc(mRefs[0].title||'Untitled meeting'); mdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMeetingRefs(mdot,mRefs)}); row.appendChild(mdot)} const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=padQaTabEnabled?qaRefsForNode(node.id):[]; if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to view':'Linked to a Q&A question — click to view'; qdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeQaRefs(qRefs)}); row.appendChild(qdot)} const mmRefs=padMindmapTabEnabled?mindMapNodeRefsForNode(node.id):[]; if(mmRefs.length){const mmdot=document.createElement('span'); mmdot.className='node-note-dot node-mindmap-dot'; mmdot.innerHTML=mindmapDotIconSvg(11); mmdot.dataset.tip=mmRefs.length>1?'Referenced by '+mmRefs.length+' mind map ideas — click to view':'Referenced by a mind map idea: '+esc((mmRefs[0].text||'').trim()||'(untitled idea)'); mmdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMindMapRefs(mmdot,mmRefs)}); row.appendChild(mmdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren&&subtreeHasMeetingRef(idx)){ const msub=document.createElement('span'); msub.className='node-dlog-dot node-meeting-dot'; msub.innerHTML=meetingDotIconSvg(11); msub.dataset.tip='This collapsed branch is referenced by a meeting'; row.appendChild(msub) } if(folded&&hasChildren&&subtreeHasTodoRef(idx)){ const tsub=document.createElement('span'); tsub.className='node-dlog-dot node-todo-dot'; tsub.innerHTML=todoDotIconSvg(11); tsub.dataset.tip='This collapsed branch is referenced by a to-do'; row.appendChild(tsub) } if(folded&&hasChildren&&padQaTabEnabled&&subtreeHasQaRef(idx)){ const qsub=document.createElement('span'); qsub.className='node-dlog-dot node-qa-dot'; qsub.innerHTML=qaDotIconSvg(11); qsub.dataset.tip='This collapsed branch has a linked Q&A question'; row.appendChild(qsub) } if(folded&&hasChildren&&padMindmapTabEnabled&&!mindMapNodeRefsForNode(node.id).length&&subtreeHasMindMapRef(idx)){ const mmsub=document.createElement('span'); mmsub.className='node-dlog-dot node-mindmap-dot'; mmsub.innerHTML=mindmapDotIconSvg(11); mmsub.dataset.tip='This collapsed branch is referenced by a mind map idea'; row.appendChild(mmsub) } if(folded&&hasChildren&&!nodeHasQuote(node)&&subtreeHasQuote(idx)){ const qtsub=document.createElement('span'); qtsub.className='node-dlog-dot node-quote-dot'; qtsub.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h4v6H8c0 2-1 3-3 3v2c4 0 6-2 6-5V7z"/><path d="M15 7h4v6h-3c0 2-1 3-3 3v2c4 0 6-2 6-5V7z"/></svg>'; qtsub.dataset.tip='This collapsed branch contains a quote'; row.appendChild(qtsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); const prefix=focusActive?buildPrefix(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildPrefix(idx,0,nodes); if(hideTreeLines){if(!depthGuideLines){prefix.vert=prefix.vert.replace(/[│]/g,' ')} prefix.conn=''} const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span${hideTreeLines&&depthGuideLines?' class="node-vert-faint"':''}>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx); if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){const input=document.createElement('textarea'); input.className='node-input'; input.id='in-'+node.id; input.rows=1; input.value=node.text||''; input.spellcheck=spellcheckEnabled; input.addEventListener('keydown',onEditorKeyDown); input.addEventListener('input',(e)=>{const i=getIndex(node.id); if(i>=0){nodes[i].text=input.value; nodes[i].modifiedAt=Date.now();} if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true; autosizeNodeInput(input); handleAtInput(input,node.id);}); input.addEventListener('blur',()=>{closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); const fadeDepth=hideTreeLines?Math.max(0,depth-1):depth; const depthColor=nodeDepthFadeEnabled?(fadeDepth<=0?'var(--node-fg)':(fadeDepth===1?'color-mix(in srgb,var(--node-fg) 68%, var(--muted) 32%)':(fadeDepth===2?'color-mix(in srgb,var(--node-fg) 38%, var(--muted) 62%)':'var(--muted)'))):'var(--node-fg)'; lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':depthColor)); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.textContent=nodeMarkerGlyph(node.marker); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.slideDivider){const sdot=document.createElement('span'); sdot.className='node-slide-divider-badge'; sdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>'; sdot.dataset.tip='Slide divider — forces a new slide here in Presenter mode regardless of depth. Right-click to remove.'; sdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault();}); sdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); toggleSlideDivider(node.id);}); row.appendChild(sdot)} if(decisionLogInPad&&decisionLogForNode(node.id)){const ddot=document.createElement('span'); ddot.className='node-note-dot'; ddot.style.color='var(--accent)'; ddot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; ddot.dataset.tip='This node has a decision log — click to open'; ddot.addEventListener('click',e=>{e.stopPropagation(); if(!featureDecisionLogEnabled){showToast('Decision Log is off — turn it back on in Settings → Features → Pad Panel'); return;} const dl=decisionLogForNode(node.id); if(!dl)return; setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); decisionExpandedId=dl.id; setPadViewMode('decision'); renderDecisionLogsList()}); row.appendChild(ddot)} if(padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'; gdot.style.color='var(--accent)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to open':'This node has a diagram — click to open'; gdot.addEventListener('click',e=>{e.stopPropagation(); setSingleSelection(node.id); render(); if(!padOpen)setPadOpen(true); setPadViewMode('diagrams'); if(nodeDiagrams.length===1)openDiagramEditor(nodeDiagrams[0].id);}); row.appendChild(gdot)}} if(padFilesTabEnabled&&Array.isArray(attachments)&&attachments.length){const nodeFiles=attachments.filter(a=>a.anchorNodeId===node.id); if(nodeFiles.length){const fdot=document.createElement('span'); fdot.className='node-note-dot node-file-dot'; fdot.style.color='var(--accent)'; fdot.innerHTML=FILE_DOT_SVG; fdot.dataset.tip=nodeFiles.length>1?'This node has '+nodeFiles.length+' files — click to view':'This node has a file: '+esc(nodeFiles[0].name||'attachment'); fdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeFileRefs(fdot,nodeFiles)}); row.appendChild(fdot)}} {const mFeatureOn=(typeof window.sakuraMeetingsFeatureEnabled!=='function'||window.sakuraMeetingsFeatureEnabled()); const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const mRefs=mFeatureOn?meetingRefsForNode(node.id):[]; if(mRefs.length){const mdot=document.createElement('span'); mdot.className='node-note-dot node-meeting-dot'; mdot.innerHTML=meetingDotIconSvg(11); mdot.dataset.tip=mRefs.length>1?'Referenced by '+mRefs.length+' meetings — click to view':'Referenced by meeting: '+esc(mRefs[0].title||'Untitled meeting'); mdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMeetingRefs(mdot,mRefs)}); row.appendChild(mdot)} const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=padQaTabEnabled?qaRefsForNode(node.id):[]; if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to view':'Linked to a Q&A question — click to view'; qdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeQaRefs(qRefs)}); row.appendChild(qdot)} const mmRefs=padMindmapTabEnabled?mindMapNodeRefsForNode(node.id):[]; if(mmRefs.length){const mmdot=document.createElement('span'); mmdot.className='node-note-dot node-mindmap-dot'; mmdot.innerHTML=mindmapDotIconSvg(11); mmdot.dataset.tip=mmRefs.length>1?'Referenced by '+mmRefs.length+' mind map ideas — click to view':'Referenced by a mind map idea: '+esc((mmRefs[0].text||'').trim()||'(untitled idea)'); mmdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeMindMapRefs(mmdot,mmRefs)}); row.appendChild(mmdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren&&subtreeHasDecisionLog(idx)){ const dlog=document.createElement('span'); dlog.className='node-dlog-dot'; dlog.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'; dlog.dataset.tip='This collapsed branch contains a decision log'; row.appendChild(dlog) } if(folded&&hasChildren&&padDiagramsTabEnabled&&Array.isArray(diagrams)&&diagrams.length&&subtreeHasDiagram(idx)){ const gsub=document.createElement('span'); gsub.className='node-dlog-dot node-diagram-dot'; gsub.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gsub.dataset.tip='This collapsed branch contains a diagram'; row.appendChild(gsub) } if(folded&&hasChildren&&padFilesTabEnabled&&Array.isArray(attachments)&&attachments.length&&subtreeHasFile(idx)){ const fsub=document.createElement('span'); fsub.className='node-dlog-dot node-file-dot'; fsub.innerHTML=FILE_DOT_SVG; fsub.dataset.tip='This collapsed branch has a file attached'; row.appendChild(fsub) } if(folded&&hasChildren&&subtreeHasMeetingRef(idx)){ const msub=document.createElement('span'); msub.className='node-dlog-dot node-meeting-dot'; msub.innerHTML=meetingDotIconSvg(11); msub.dataset.tip='This collapsed branch is referenced by a meeting'; row.appendChild(msub) } if(folded&&hasChildren&&subtreeHasTodoRef(idx)){ const tsub=document.createElement('span'); tsub.className='node-dlog-dot node-todo-dot'; tsub.innerHTML=todoDotIconSvg(11); tsub.dataset.tip='This collapsed branch is referenced by a to-do'; row.appendChild(tsub) } if(folded&&hasChildren&&padQaTabEnabled&&subtreeHasQaRef(idx)){ const qsub=document.createElement('span'); qsub.className='node-dlog-dot node-qa-dot'; qsub.innerHTML=qaDotIconSvg(11); qsub.dataset.tip='This collapsed branch has a linked Q&A question'; row.appendChild(qsub) } if(folded&&hasChildren&&padMindmapTabEnabled&&!mindMapNodeRefsForNode(node.id).length&&subtreeHasMindMapRef(idx)){ const mmsub=document.createElement('span'); mmsub.className='node-dlog-dot node-mindmap-dot'; mmsub.innerHTML=mindmapDotIconSvg(11); mmsub.dataset.tip='This collapsed branch is referenced by a mind map idea'; row.appendChild(mmsub) } if(folded&&hasChildren&&!nodeHasQuote(node)&&subtreeHasQuote(idx)){ const qtsub=document.createElement('span'); qtsub.className='node-dlog-dot node-quote-dot'; qtsub.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h4v6H8c0 2-1 3-3 3v2c4 0 6-2 6-5V7z"/><path d="M15 7h4v6h-3c0 2-1 3-3 3v2c4 0 6-2 6-5V7z"/></svg>'; qtsub.dataset.tip='This collapsed branch contains a quote'; row.appendChild(qtsub) } if(folded&&hasChildren){ const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(idx); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s'); badge.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated decision-log/diagram/meeting/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -34438,9 +34459,23 @@ const PAD_ATTACH_ICON_SVG={
   code:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
   generic:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
 };
-function padAttachmentIconSvg(name){
+function padAttachmentIconSvg(name,mimeType){
   const ext=String(name).split('.').pop().toLowerCase();
   for(const cat in PAD_ATTACH_ICON_EXT){ if(PAD_ATTACH_ICON_EXT[cat].includes(ext)) return PAD_ATTACH_ICON_SVG[cat]; }
+  // Extension lookup missed — e.g. an extensionless file, or an extension we don't recognize —
+  // fall back to the browser-reported MIME type before giving up to the generic icon, since
+  // "image/png" is just as good a signal as ".png" was and often the only one available.
+  if(mimeType){
+    if(mimeType==='application/pdf')return PAD_ATTACH_ICON_SVG.pdf;
+    if(mimeType.startsWith('image/'))return PAD_ATTACH_ICON_SVG.image;
+    if(mimeType.startsWith('audio/'))return PAD_ATTACH_ICON_SVG.audio;
+    if(mimeType.startsWith('video/'))return PAD_ATTACH_ICON_SVG.video;
+    if(mimeType.startsWith('text/'))return PAD_ATTACH_ICON_SVG.doc;
+    if(/zip|compressed|archive|tar|rar|7z/.test(mimeType))return PAD_ATTACH_ICON_SVG.archive;
+    if(/spreadsheet|excel|csv/.test(mimeType))return PAD_ATTACH_ICON_SVG.spreadsheet;
+    if(/presentation|powerpoint/.test(mimeType))return PAD_ATTACH_ICON_SVG.slides;
+    if(/word|document/.test(mimeType))return PAD_ATTACH_ICON_SVG.doc;
+  }
   return PAD_ATTACH_ICON_SVG.generic;
 }
 // Files tab: attachments live in their own array (`attachments`), same tier as
@@ -34448,6 +34483,13 @@ function padAttachmentIconSvg(name){
 // Kept in-memory only here; saveToStorage/applyTabSnapshot/etc. persist `attachments` per doc.
 let filesNextLocalId=1;
 function newFileAttachmentId(){ return 'f'+Date.now().toString(36)+(filesNextLocalId++); }
+function filesAnchorLabel(a){
+  if(a.anchorNodeId==null)return 'Not linked to a node';
+  const node=nodes.find(n=>n.id===a.anchorNodeId);
+  if(!node)return 'Linked node no longer exists';
+  const text=stripSemanticMarkers(node.text||'').trim();
+  return 'Under: '+(text?text.slice(0,60):'(untitled node)');
+}
 function renderFilesList(){
   const list=el('files-list-body'); const empty=el('files-empty');
   el('pad-tab-files')?.classList.toggle('has-files',attachments.length>0);
@@ -34457,18 +34499,49 @@ function renderFilesList(){
   if(empty)empty.classList.remove('show');
   attachments.forEach(a=>{
     const row=document.createElement('div'); row.className='file-row'; row.dataset.id=a.id;
-    const icon=document.createElement('span'); icon.className='file-row-icon'; icon.innerHTML=padAttachmentIconSvg(a.name);
+    const icon=document.createElement('span'); icon.className='file-row-icon'; icon.innerHTML=padAttachmentIconSvg(a.name,a.mimeType);
     const info=document.createElement('div'); info.className='file-row-info';
     const nameEl=document.createElement('a'); nameEl.className='file-row-name'; nameEl.href=a.dataUrl; nameEl.download=a.name; nameEl.textContent=a.name; nameEl.dataset.tip='Download '+a.name; nameEl.style.textDecoration='none'; nameEl.style.color='inherit';
     const sizeEl=document.createElement('span'); sizeEl.className='file-row-size'; sizeEl.textContent=formatAttachSize(a.size);
     info.appendChild(nameEl); info.appendChild(sizeEl);
+    const metaRow=document.createElement('div'); metaRow.className='file-row-meta';
+    const anchorBtn=document.createElement('button'); anchorBtn.type='button'; anchorBtn.className='file-row-anchor';
+    const isOrphaned=a.anchorNodeId!=null&&!nodes.some(n=>n.id===a.anchorNodeId);
+    if(isOrphaned)anchorBtn.classList.add('file-row-anchor-orphaned');
+    const anchorLabel=filesAnchorLabel(a);
+    anchorBtn.textContent=anchorLabel; anchorBtn.title=anchorLabel;
+    anchorBtn.dataset.tip=isOrphaned?'The node this was linked to was deleted — click to pick a new one (or clear the link)':'Click to change which node this file appears under';
+    anchorBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(_filesAnchorOpen&&_filesAnchorTarget===a){ closeFilesAnchorSuggest(); return; }
+      renderFilesAnchorSuggest('',a,anchorBtn);
+    });
+    metaRow.appendChild(anchorBtn);
+    const authorInput=document.createElement('input'); authorInput.type='text'; authorInput.className='file-row-author-input';
+    authorInput.value=a.addedBy||''; authorInput.placeholder='+ Added by'; authorInput.maxLength=100; authorInput.spellcheck=false;
+    authorInput.addEventListener('mousedown',e=>e.stopPropagation());
+    authorInput.addEventListener('click',e=>e.stopPropagation());
+    authorInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); authorInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); authorInput.value=a.addedBy||''; authorInput.blur(); } });
+    authorInput.addEventListener('blur',()=>{ const val=authorInput.value.trim(); if(val===(a.addedBy||''))return; a.addedBy=val; markDirty(); scheduleAutoSave(); });
+    metaRow.appendChild(authorInput);
+    info.appendChild(metaRow);
+    const noteInput=document.createElement('input'); noteInput.type='text'; noteInput.className='file-row-note-input';
+    noteInput.value=a.note||''; noteInput.placeholder='+ Note to yourself'; noteInput.maxLength=200; noteInput.spellcheck=false;
+    noteInput.addEventListener('mousedown',e=>e.stopPropagation());
+    noteInput.addEventListener('click',e=>e.stopPropagation());
+    noteInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); noteInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); noteInput.value=a.note||''; noteInput.blur(); } });
+    noteInput.addEventListener('blur',()=>{ const val=noteInput.value.trim(); if(val===(a.note||''))return; a.note=val; markDirty(); scheduleAutoSave(); });
+    info.appendChild(noteInput);
     const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='file-row-remove'; removeBtn.setAttribute('aria-label','Remove attachment'); removeBtn.dataset.tip='Remove attachment';
     removeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    removeBtn.addEventListener('click',()=>{ attachments=attachments.filter(x=>x.id!==a.id); renderFilesList(); markDirty(); });
+    removeBtn.addEventListener('click',()=>{ attachments=attachments.filter(x=>x.id!==a.id); renderFilesList(); render(); markDirty(); scheduleAutoSave(); });
     row.appendChild(icon); row.appendChild(info); row.appendChild(removeBtn);
     list.appendChild(row);
   });
 }
+// Marks a just-attached file's uploader without prompting — same "prefill from the last thing
+// typed, don't interrupt with a dialog" approach as Q&A's recentAnswerers, just simpler since
+// there's no per-answer autocomplete list here, just a single default.
 function addFileAttachment(file){
   if(!file) return Promise.resolve();
   if(file.size>PAD_ATTACH_MAX_BYTES){
@@ -34478,15 +34551,117 @@ function addFileAttachment(file){
   return new Promise(resolve=>{
     const reader=new FileReader();
     reader.onload=evt=>{
-      attachments.push({id:newFileAttachmentId(),name:file.name,size:file.size,dataUrl:evt.target.result,addedAt:Date.now()});
+      attachments.push({id:newFileAttachmentId(),name:file.name,size:file.size,dataUrl:evt.target.result,addedAt:Date.now(),mimeType:file.type||'',anchorNodeId:selectedId??null,addedBy:defaultAuthorName||'',note:''});
       renderFilesList();
+      render();
       markDirty();
+      scheduleAutoSave();
       resolve();
     };
     reader.onerror=()=>resolve();
     reader.readAsDataURL(file);
   });
 }
+let _filesAnchorOpen=false;
+let _filesAnchorTarget=null; // the attachment object currently being (re)anchored
+let _filesAnchorBtn=null; // the trigger button, remembered so the search input's own typing (which has no button of its own) can still re-render/reposition correctly
+function getFilesAnchorCandidates(query){
+  const q=String(query||'').trim().toLowerCase();
+  const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',depth:n.depth||0}));
+  const filtered=q?list.filter(n=>n.text.toLowerCase().includes(q)):list;
+  return filtered.slice().sort((a,b)=>a.depth-b.depth).slice(0,50);
+}
+function renderFilesAnchorSuggest(query,a,btn,isFilterUpdate){
+  const pop=el('files-anchor-suggest'); if(!pop||!a)return;
+  if(!btn)btn=_filesAnchorBtn; if(!btn)return;
+  _filesAnchorTarget=a; _filesAnchorBtn=btn;
+  const results=el('files-anchor-results'); if(!results)return;
+  const candidates=getFilesAnchorCandidates(query);
+  results.innerHTML='';
+  const noneItem=document.createElement('div');
+  noneItem.className='diagram-anchor-item diagram-anchor-item-none';
+  noneItem.textContent='Not linked to a node';
+  noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setFilesAnchor(a,null); });
+  results.appendChild(noneItem);
+  if(!candidates.length){
+    const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching nodes';
+    results.appendChild(empty);
+  }
+  candidates.forEach(n=>{
+    const item=document.createElement('div');
+    item.className='diagram-anchor-item';
+    item.style.paddingLeft=(8+Math.min(n.depth,6)*10)+'px';
+    item.textContent=n.text;
+    item.addEventListener('mousedown',e=>{ e.preventDefault(); setFilesAnchor(a,n.id); });
+    results.appendChild(item);
+  });
+  if(!isFilterUpdate){
+    const search=el('files-anchor-search');
+    if(search)search.value=query||'';
+    const r=btn.getBoundingClientRect();
+    pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+    pop.style.top=(r.bottom+4)+'px';
+    pop.classList.add('open');
+    _filesAnchorOpen=true;
+    setTimeout(()=>{ el('files-anchor-search')?.focus(); },30);
+  }
+}
+function closeFilesAnchorSuggest(){
+  const pop=el('files-anchor-suggest'); if(pop)pop.classList.remove('open');
+  _filesAnchorOpen=false;
+  _filesAnchorTarget=null;
+  _filesAnchorBtn=null;
+}
+el('files-anchor-search')?.addEventListener('input',e=>{
+  if(!_filesAnchorTarget)return;
+  renderFilesAnchorSuggest(e.target.value,_filesAnchorTarget,null,true);
+});
+el('files-anchor-search')?.addEventListener('mousedown',e=>e.stopPropagation());
+function setFilesAnchor(a,nodeId){
+  a.anchorNodeId=nodeId;
+  markDirty(); scheduleAutoSave();
+  closeFilesAnchorSuggest();
+  renderFilesList();
+  render();
+}
+document.addEventListener('mousedown',e=>{
+  if(_filesAnchorOpen&&!e.target.closest('#files-anchor-suggest')&&!e.target.closest('.file-row-anchor'))closeFilesAnchorSuggest();
+},true);
+// Node-level dot (see the big node-row renderer) — same "single match jumps straight there,
+// several open a picker" rule the meeting/to-do/mind-map dots already use, reusing the shared
+// #ref-jump-popover rather than inventing a fourth popover element.
+function flashFileRow(id){
+  if(!padFilesTabEnabled){ showToast('Files is off — turn it back on in Settings → Features → Pad Panel'); return; }
+  if(!padOpen)setPadOpen(true);
+  setPadViewMode('files');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const row=document.querySelector(`.file-row[data-id="${id}"]`);
+    if(row){ row.scrollIntoView({block:'center',behavior:'smooth'}); row.classList.add('qa-flash'); setTimeout(()=>row.classList.remove('qa-flash'),1100); }
+  }));
+}
+function openFileRefJumpPopover(anchorEl,refs){
+  const pop=el('ref-jump-popover'); const list=el('ref-jump-popover-list'); const titleEl=el('ref-jump-popover-title');
+  if(!pop||!list||!anchorEl)return;
+  if(titleEl)titleEl.textContent=refs.length+' files are linked to this node';
+  list.innerHTML='';
+  refs.forEach(a=>{
+    const item=document.createElement('div'); item.className='ref-jump-item';
+    item.innerHTML=FILE_DOT_SVG+`<span>${esc(a.name||'attachment')}</span>`;
+    item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); flashFileRow(a.id); });
+    list.appendChild(item);
+  });
+  const r=anchorEl.getBoundingClientRect();
+  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+  pop.style.top=(r.bottom+4)+'px';
+  pop.classList.add('open');
+  _refJumpOpen=true;
+}
+function jumpToNodeFileRefs(anchorEl,refs){
+  if(!refs.length)return;
+  if(refs.length===1){ flashFileRow(refs[0].id); return; }
+  openFileRefJumpPopover(anchorEl,refs);
+}
+function subtreeHasFile(idx){if(!Array.isArray(attachments)||!attachments.length)return false; const end=getSubtreeEnd(idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return attachments.some(a=>ids.has(a.anchorNodeId))}
 el('ftb-add')?.addEventListener('click', () => {
   const input=document.createElement('input');
   input.type='file';
