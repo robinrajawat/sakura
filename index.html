@@ -9047,6 +9047,14 @@ function saveToStorage(){
     // Only bump updatedAt when content is actually dirty; title changes always persist title
     if(dirty) touchDocIndex(currentDocId,titleForIndex);
     else touchDocIndexTitleOnly(currentDocId,titleForIndex);
+    // The write above just landed, so whatever made this save fire (an edit, or the 450ms
+    // autosave debounce in scheduleAutoSave) is now actually persisted — clear the dirty flag so
+    // the tab-strip dot and the "• Sakura" title prefix reflect that. Past this line nothing else
+    // in this function reads `dirty`, so it's safe to drop it now rather than leaving it set for
+    // the rest of the session (which is what happened before: resetDirty() was previously only
+    // ever called once, at app startup, so the indicator would light up on the first edit and
+    // then never turn back off even though autosave kept saving every change underneath it).
+    resetDirty();
     // The sidebar's doc list and the tab strip both read from the index above, not from `nodes`,
     // so they need an explicit re-render whenever the displayed title OR status actually changes
     // — otherwise a row keeps showing stale info until something else (switching docs, opening a
