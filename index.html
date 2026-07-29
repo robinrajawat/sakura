@@ -3223,23 +3223,29 @@ body.pad-remarks-mode #remarks-tab-body{display:flex}
 #remarks-empty.show{display:block}
 body:not(.pad-remarks-mode) .remarks-only-btn{display:none}
 body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-clear-btn),body.pad-remarks-mode #pad-toolbar>.note-tb-sep{display:none}
-.remark-card{border:1px solid var(--border);border-radius:9px;padding:12px 14px;background:var(--chip);display:flex;flex-direction:column;gap:6px;position:relative}
+.remark-card{border:1px solid var(--border);border-radius:9px;padding:13px 15px;background:var(--chip);display:flex;flex-direction:column;gap:8px;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .remark-card-head{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .12s}
 .remark-card:hover .remark-card-head,.remark-card:focus-within .remark-card-head{opacity:1}
-.remark-text-input{width:100%;resize:none;overflow:hidden;min-height:28px;appearance:none;border:none;background:none;color:var(--sem-quote);font:italic 400 14px/1.55 'Inter',sans-serif;padding:1px 2px 1px 14px;border-radius:4px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
+.remark-tb-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.remark-tb-btn:hover{color:var(--fg);background:var(--bg)}
+.remark-tb-btn.active{color:var(--accent)}
+.remark-tb-btn.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
+.remark-text-input{width:100%;outline:none;color:var(--sem-quote);font:italic 400 14px/1.55 'Inter',sans-serif;font-family:var(--content-font);padding:1px 2px 1px 16px;border-radius:4px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent);min-height:1.55em}
 .remark-text-input:hover,.remark-text-input:focus{background:var(--hover)}
-.remark-text-input:focus{outline:none}
-.remark-text-input::placeholder{color:var(--hint);font-style:italic}
-.remark-byline{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;padding-left:14px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
+.remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
+.remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
+.remark-text-input li{margin:1px 0}
+.remark-byline{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 .remark-byline-dash{color:var(--hint);flex:0 0 auto}
 .remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;width:auto;min-width:12ch;flex:0 1 auto}
 .remark-person-input:hover,.remark-person-input:focus{background:var(--hover)}
 .remark-person-input:focus{outline:none}
 .remark-byline-sep{color:var(--border);flex:0 0 auto}
-.remark-date-input{appearance:none;border:none;background:none;color:var(--hint);font:400 11.5px 'Inter',sans-serif;padding:1px 2px;border-radius:4px;flex:0 0 auto;width:112px}
-.remark-date-input:hover,.remark-date-input:focus{background:var(--hover);color:var(--fg)}
+.remark-date-display{appearance:none;border:none;background:none;color:var(--hint);font:400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;flex:0 0 auto;cursor:pointer}
+.remark-date-display:hover{background:var(--hover);color:var(--fg)}
+.remark-date-input{appearance:none;border:none;background:var(--hover);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;flex:0 0 auto}
 .remark-date-input:focus{outline:none}
-.remark-context-input{flex:1 1 80px;min-width:60px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 11.5px 'Inter',sans-serif;padding:1px 3px;border-radius:4px}
+.remark-context-input{flex:1 1 80px;min-width:60px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px}
 .remark-context-input:hover,.remark-context-input:focus{background:var(--hover);color:var(--fg);font-style:normal}
 .remark-context-input:focus{outline:none}
 .remark-context-input::placeholder{font-style:italic}
@@ -5480,7 +5486,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Remarks</h4>
 <ul>
 <li>One of the Pad's tabs — a record of things people said, worth keeping track of separately from the document's own content: each entry is a small card with who said it, the remark itself, a date, an optional short context line, and an optional link to a specific node in the outline</li>
-<li>Click the + toolbar button to add a card — it's added at the top (newest first) and the Person field is focused immediately. Every field commits on blur (click elsewhere, or press Enter); Escape while a field is focused reverts that field's edit without touching the rest of the card</li>
+<li>Click the + toolbar button to add a card — it's added at the top (newest first) and the Person field is focused immediately. Person/Date/Context commit on blur (click elsewhere, or press Enter); Escape while one of those is focused reverts that field's edit without touching the rest of the card</li>
+<li>The remark text itself is a real editable field, not a plain text box — hover or focus the card for two small buttons above it: a bulleted list toggle, and Rewrite with AI (same one-field-at-a-time rewrite Decision Log's fields use, with an Undo toast after). Paste formatting works too, same as Notepad</li>
 <li>The date defaults to today when a card is created but is freely editable — useful for logging something you're writing down after the fact, not just in the moment</li>
 <li>Linking a card to a node works the same as Files and Diagrams: a new remark auto-links to whichever node is currently selected in the outline; click the card's node label to change or clear that link via a searchable picker. A small accent-colored dot appears on a linked node — click it to jump straight to that remark (or, if a node has several, pick which one from a small list first)</li>
 <li>Deleting a node that has a remark linked to it warns about the orphaned link first, same as it already does for Files/Diagrams/Decision Log; if a link does go stale (e.g. from restoring an older version of the document), the node label turns red and offers to re-link or clear it</li>
@@ -34878,6 +34885,20 @@ function subtreeHasFile(idx){if(!Array.isArray(attachments)||!attachments.length
 let remarksNextLocalId=1;
 function newRemarkId(){ return 'r'+Date.now().toString(36)+(remarksNextLocalId++); }
 function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// A native <input type=date> always renders in the browser/OS's own font and date format —
+// clashes visually against everything else in the byline being set in the app's own Inter type.
+// So the date is shown as a small plain-text span by default (formatted ourselves, consistent
+// with the rest of the byline) and only swaps to the real <input type=date> while it's actively
+// being edited, then swaps back once it's done.
+function formatRemarkDateDisplay(dateStr){
+  const s=dateStr||todayDateStr();
+  const parts=s.split('-').map(Number);
+  if(parts.length!==3||parts.some(n=>!Number.isFinite(n)))return s;
+  const d=new Date(parts[0],parts[1]-1,parts[2]);
+  const thisYear=new Date().getFullYear();
+  const opts=d.getFullYear()===thisYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'};
+  return d.toLocaleDateString(undefined,opts);
+}
 function remarksAnchorLabel(r){
   if(r.anchorNodeId==null)return 'Not linked to a node';
   const node=nodes.find(n=>n.id===r.anchorNodeId);
@@ -34898,6 +34919,12 @@ function renderRemarksList(){
   sorted.forEach(r=>{
     const card=document.createElement('div'); card.className='remark-card'; card.dataset.id=r.id;
     const head=document.createElement('div'); head.className='remark-card-head';
+    const bulletBtn=document.createElement('button'); bulletBtn.type='button'; bulletBtn.className='remark-tb-btn'; bulletBtn.dataset.tip='Bulleted list';
+    bulletBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>';
+    head.appendChild(bulletBtn);
+    const rewriteBtn=document.createElement('button'); rewriteBtn.type='button'; rewriteBtn.className='remark-tb-btn'; rewriteBtn.dataset.tip='Rewrite with AI';
+    rewriteBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
+    head.appendChild(rewriteBtn);
     const anchorBtn=document.createElement('button'); anchorBtn.type='button'; anchorBtn.className='remark-anchor-btn';
     const isOrphaned=r.anchorNodeId!=null&&!nodes.some(n=>n.id===r.anchorNodeId);
     if(isOrphaned)anchorBtn.classList.add('remark-anchor-btn-orphaned');
@@ -34920,12 +34947,29 @@ function renderRemarksList(){
     // border) so this reads as "something someone said" at a glance, not a form field waiting
     // to be filled in. Who/when/where follows underneath as a small byline, same convention a
     // pulled-quote or testimonial uses, rather than every field carrying equal visual weight.
-    const textInput=document.createElement('textarea'); textInput.className='remark-text-input'; textInput.rows=1;
-    textInput.value=r.text||''; textInput.placeholder='What did they say?'; textInput.spellcheck=true;
-    const resizeRemarkTextarea=()=>{ textInput.style.height='auto'; textInput.style.height=textInput.scrollHeight+'px'; };
-    textInput.addEventListener('input',resizeRemarkTextarea);
-    textInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); textInput.value=r.text||''; resizeRemarkTextarea(); textInput.blur(); } });
-    textInput.addEventListener('blur',()=>{ const val=textInput.value.trim(); if(val===(r.text||''))return; r.text=val; markDirty(); scheduleAutoSave(); });
+    // A real contenteditable (like Decision Log's fields), not a plain textarea — so it supports
+    // bulleted lists and AI rewrite the same way every other substantial text field in Sakura does.
+    const textInput=document.createElement('div'); textInput.className='remark-text-input'; textInput.contentEditable='true';
+    textInput.dataset.placeholder='What did they say?'; textInput.spellcheck=true;
+    textInput.innerHTML=sakuraSanitizeRichHtml(r.text||'');
+    const snapshotHtml=()=>textInput.innerHTML;
+    let textEditSnapshot=snapshotHtml();
+    textInput.addEventListener('focus',()=>{ textEditSnapshot=snapshotHtml(); });
+    textInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); textInput.innerHTML=r.text||''; textInput.blur(); } });
+    textInput.addEventListener('blur',()=>{
+      const html=sakuraSanitizeRichHtml(textInput.innerHTML);
+      if(html===(r.text||''))return;
+      r.text=html; markDirty(); scheduleAutoSave();
+    });
+    bulletBtn.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      textInput.focus();
+      document.execCommand('insertUnorderedList');
+      bulletBtn.classList.toggle('active',document.queryCommandState('insertUnorderedList'));
+      const html=sakuraSanitizeRichHtml(textInput.innerHTML);
+      if(html!==(r.text||'')){ r.text=html; markDirty(); scheduleAutoSave(); }
+    });
+    rewriteBtn.addEventListener('click',()=>rewriteRemarkText(r,textInput,rewriteBtn));
     card.appendChild(textInput);
     const byline=document.createElement('div'); byline.className='remark-byline';
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
@@ -34939,10 +34983,29 @@ function renderRemarksList(){
     byline.appendChild(personInput);
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
     byline.appendChild(sep1);
-    const dateInput=document.createElement('input'); dateInput.type='date'; dateInput.className='remark-date-input';
+    const dateDisplay=document.createElement('button'); dateDisplay.type='button'; dateDisplay.className='remark-date-display';
+    dateDisplay.textContent=formatRemarkDateDisplay(r.date);
+    dateDisplay.dataset.tip='Click to change the date';
+    const dateInput=document.createElement('input'); dateInput.type='date'; dateInput.className='remark-date-input'; dateInput.style.display='none';
     dateInput.value=r.date||todayDateStr();
-    dateInput.addEventListener('change',()=>{ const val=dateInput.value||todayDateStr(); if(val===(r.date||''))return; r.date=val; markDirty(); scheduleAutoSave(); });
+    dateDisplay.addEventListener('click',e=>{
+      e.stopPropagation();
+      dateDisplay.style.display='none';
+      dateInput.style.display='';
+      dateInput.focus();
+      if(typeof dateInput.showPicker==='function'){ try{ dateInput.showPicker(); }catch(e2){} }
+    });
     dateInput.addEventListener('mousedown',e=>e.stopPropagation());
+    const commitDate=()=>{
+      const val=dateInput.value||todayDateStr();
+      if(val!==(r.date||'')){ r.date=val; markDirty(); scheduleAutoSave(); }
+      dateDisplay.textContent=formatRemarkDateDisplay(r.date);
+      dateInput.style.display='none';
+      dateDisplay.style.display='';
+    };
+    dateInput.addEventListener('change',commitDate);
+    dateInput.addEventListener('blur',commitDate);
+    byline.appendChild(dateDisplay);
     byline.appendChild(dateInput);
     const sep2=document.createElement('span'); sep2.className='remark-byline-sep'; sep2.textContent='·';
     byline.appendChild(sep2);
@@ -34953,8 +35016,37 @@ function renderRemarksList(){
     byline.appendChild(contextInput);
     card.appendChild(byline);
     list.appendChild(card);
-    resizeRemarkTextarea();
   });
+}
+// Same idea as Decision Log's per-field rewrite, adapted for a list of cards instead of one
+// expanded card — closures over this specific remark/element rather than a global "which field"
+// key, since any number of these can exist on screen and be mid-edit at once.
+async function rewriteRemarkText(r,textInput,btn){
+  const text=(textInput.textContent||'').trim();
+  if(!text){ showToast('Nothing to rewrite yet'); return; }
+  const originalHtml=r.text||'';
+  btn.classList.add('ai-busy');
+  try{
+    const result=await callAiApi(text);
+    if(!result)throw new Error('Empty response from AI');
+    // Same in-flight-edit race as Decision Log's rewrite — this field can be edited (or the
+    // whole list re-rendered from an unrelated edit elsewhere) while the request is pending.
+    if(aiSnapshotChanged(originalHtml,r.text||'')){
+      showToast('You edited this remark — AI rewrite discarded so it wouldn\'t overwrite it');
+      return;
+    }
+    textInput.textContent=result;
+    r.text=sakuraSanitizeRichHtml(textInput.innerHTML);
+    markDirty(); scheduleAutoSave();
+    renderRemarksList();
+    showActionToast('Remark rewritten','Undo',()=>{
+      const it=remarks.find(x=>x.id===r.id); if(!it)return;
+      it.text=originalHtml;
+      markDirty(); scheduleAutoSave();
+      renderRemarksList();
+    });
+  }catch(e){ showToast('Rewrite failed — '+(e.message||'try again')); }
+  finally{ btn.classList.remove('ai-busy'); }
 }
 function addRemark(){
   const r={id:newRemarkId(),person:'',text:'',date:todayDateStr(),context:'',anchorNodeId:selectedId??null,createdAt:Date.now()};
