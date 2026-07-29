@@ -2864,6 +2864,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-cap-head-actions .pv-qm-btn{width:24px;height:24px}
 .pv-cap-head-actions .pv-qm-save:hover{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
 .pv-capture-input{width:100%;box-sizing:border-box;resize:none;min-height:64px;padding:0;border:none;background:transparent;color:var(--fg);font:400 13.5px/1.5 'Inter',sans-serif;outline:none;margin-bottom:2px}
+.pv-capture-person{width:100%;box-sizing:border-box;padding:0 0 6px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;outline:none;margin-bottom:6px}
+.pv-capture-person::placeholder{font-weight:400;color:var(--hint)}
 .pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
@@ -4624,6 +4626,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-ai-icon" /> Suggest icon</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-note" /> Note…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-qa" /> Add question…</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-remark" /> Add remark…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-where-used" /> Where used…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-codeblock" /> Code block…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-date-time" /> Insert date/time</label>
@@ -7502,6 +7505,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-ai-icon-all" checked /> Suggest icons for all nodes</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-note" checked /> Note…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-qa" checked /> Add question…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-remark" checked /> Add remark…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-where-used" checked /> Where used…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-codeblock" checked /> Code block…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxh-date-time" checked /> Insert date/time</label>
@@ -31163,7 +31167,7 @@ function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const cur=node.marker||'';
   const mkBtn=(m)=>`<button type="button" class="pv-qm-btn pv-qm-mark${cur===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`;
-  const html=`<div class="pv-qm-row">${mkBtn('confirmed')}${mkBtn('issue')}${mkBtn('parked')}${mkBtn('followup')}${mkBtn('na')}<span class="pv-qm-sep"></span><button type="button" class="pv-qm-btn" data-action="edit" data-tip="Edit text">${markIconSvg('edit')}</button><button type="button" class="pv-qm-btn" data-action="comment" data-tip="Note…">${markIconSvg('comment')}</button><button type="button" class="pv-qm-btn" data-action="question" data-tip="Question…">${markIconSvg('question')}</button></div>`;
+  const html=`<div class="pv-qm-row">${mkBtn('confirmed')}${mkBtn('issue')}${mkBtn('parked')}${mkBtn('followup')}${mkBtn('na')}<span class="pv-qm-sep"></span><button type="button" class="pv-qm-btn" data-action="edit" data-tip="Edit text">${markIconSvg('edit')}</button><button type="button" class="pv-qm-btn" data-action="comment" data-tip="Note…">${markIconSvg('comment')}</button><button type="button" class="pv-qm-btn" data-action="question" data-tip="Question…">${markIconSvg('question')}</button><button type="button" class="pv-qm-btn" data-action="remark" data-tip="Remark…"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></button></div>`;
   openPreviewPopover(triggerEl,html,'pv-marker-popover',atPoint);
   previewPopoverEl?.querySelectorAll('.pv-qm-mark').forEach(b=>{
     b.addEventListener('click',()=>{
@@ -31172,14 +31176,16 @@ function openNodeMarkerPopover(triggerEl,nodeId,atPoint){
       renderPreviewBody();
     });
   });
-  // Comment/Question/Edit swap this same popover's own content in place rather than closing it
-  // and opening a separate full-screen modal (sakuraPrompt) — for something that's genuinely
-  // only ever a line or two of text, a modal that takes over the whole screen is a lot of
-  // interruption for not much content. Same position, same dismiss behavior (outside click/
-  // Escape/scroll, all already wired by openPreviewPopover above), just different content inside.
+  // Comment/Question/Remark/Edit swap this same popover's own content in place rather than
+  // closing it and opening a separate full-screen modal (sakuraPrompt) or the whole Pad panel —
+  // for something that's genuinely only ever a line or two of text, taking over the screen mid-
+  // presentation is a lot of interruption for not much content. Same position, same dismiss
+  // behavior (outside click/Escape/scroll, all already wired by openPreviewPopover above), just
+  // different content inside.
   previewPopoverEl?.querySelector('[data-action="edit"]')?.addEventListener('click',()=>{ closePreviewPopover(); startInlineNodeEdit(nodeId); });
   previewPopoverEl?.querySelector('[data-action="comment"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'comment'); });
   previewPopoverEl?.querySelector('[data-action="question"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'question'); });
+  previewPopoverEl?.querySelector('[data-action="remark"]')?.addEventListener('click',()=>{ showPopoverCaptureForm(nodeId,'remark'); });
 }
 // Editing a line's own text happens right on the slide — no popover at all — since it's just
 // swapping the rendered text for a plain <input> prefilled with the same value, in the exact
@@ -31245,13 +31251,16 @@ function showPopoverCaptureForm(nodeId,kind){
   const node=nodes.find(n=>n.id===nodeId); const pop=previewPopoverEl; if(!node||!pop)return;
   pop.classList.remove('pv-marker-popover');
   pop.classList.add('pv-popover-capture');
-  const label=kind==='comment'?'Note':'Q&amp;A';
-  const placeholder=kind==='comment'?'Type your note… ("- " for a bullet)':'Type your question…';
+  const label=kind==='comment'?'Note':(kind==='question'?'Q&amp;A':'Remark');
+  const placeholder=kind==='comment'?'Type your note… ("- " for a bullet)':(kind==='question'?'Type your question…':'What did they say?');
   // Both start blank and fold a short read-only preview of the node's text into the header line
   // itself (label · preview), confirming which line you're capturing against without a whole
   // extra row for it — neither copies that text into what actually gets saved.
   const preview=_nodeCommentPreview(node);
-  const fieldHtml=`<textarea class="pv-capture-input" placeholder="${placeholder}" rows="3"></textarea>`;
+  // Remark needs one more field than Note/Question — who said it — so it gets its own small
+  // input above the textarea rather than trying to encode "Person: text" into one field.
+  const personFieldHtml=kind==='remark'?`<input type="text" class="pv-capture-person" placeholder="Who said it" maxlength="80" spellcheck="false" />`:'';
+  const fieldHtml=`${personFieldHtml}<textarea class="pv-capture-input" placeholder="${placeholder}" rows="3"></textarea>`;
   // Delete only appears for Note, and only when the node already has note content — Question
   // always creates a brand-new row here rather than editing an existing one.
   const showDelete=kind==='comment'&&!!(node.note&&node.note.trim());
@@ -31269,14 +31278,25 @@ function showPopoverCaptureForm(nodeId,kind){
     :`<span class="pv-cap-head-label">${label}</span>`;
   pop.innerHTML=`<div class="pv-cap-head"><div class="pv-cap-head-line">${headLineHtml}</div>${actionsHtml}</div>${fieldHtml}`;
   clampPreviewPopoverToViewport();
+  const personInput=pop.querySelector('.pv-capture-person');
   const ta=pop.querySelector('.pv-capture-input');
-  ta?.focus();
+  (personInput||ta)?.focus();
   autoGrowTextarea(ta);
   clampPreviewPopoverToViewport();
   ta?.addEventListener('input',()=>autoGrowTextarea(ta));
+  personInput?.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); ta?.focus(); } });
   const doSave=()=>{
     const text=(ta?.value||'').trim();
+    const person=(personInput?.value||'').trim();
     closePreviewPopover();
+    if(kind==='remark'){
+      if(!text&&!person)return;
+      remarks.push({id:newRemarkId(),person,text:esc(text),date:todayDateStr(),context:'',anchorNodeId:nodeId,createdAt:Date.now()});
+      markDirty(); scheduleAutoSave();
+      if(padOpen&&padViewMode==='remarks')renderRemarksList();
+      renderPreviewBody();
+      return;
+    }
     if(!text)return;
     if(kind==='comment')saveNodeComment(nodeId,text); else saveNodeQuestion(nodeId,text);
     // Neither save function touches the Presenter/Preview DOM itself (saveNodeComment doesn't
@@ -35135,13 +35155,13 @@ function renderRemarksList(){
     // long linked-node name or a long remark can never visually collide with anything else.
     // A real contenteditable (like Decision Log's fields), not a plain textarea — so it supports
     // bulleted lists and AI rewrite the same way every other substantial text field in Sakura does.
-    const textInput=document.createElement('div'); textInput.className='remark-text-input'; textInput.contentEditable='true';
+    const textInput=document.createElement('div'); textInput.className='remark-text-input'; textInput.contentEditable='true'; textInput.id='remark-text-'+r.id;
     textInput.dataset.placeholder='What did they say?'; textInput.spellcheck=true;
     textInput.innerHTML=sakuraSanitizeRichHtml(r.text||'');
     const snapshotHtml=()=>textInput.innerHTML;
     let textEditSnapshot=snapshotHtml();
     textInput.addEventListener('focus',()=>{ textEditSnapshot=snapshotHtml(); });
-    textInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); textInput.innerHTML=r.text||''; textInput.blur(); } });
+    textInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,textInput))return; if(e.key==='Escape'){ e.preventDefault(); textInput.innerHTML=r.text||''; textInput.blur(); } });
     textInput.addEventListener('blur',()=>{
       const html=sakuraSanitizeRichHtml(textInput.innerHTML);
       if(html===(r.text||''))return;
@@ -35164,7 +35184,7 @@ function renderRemarksList(){
     personInput.value=r.person||''; personInput.placeholder='Who said it'; personInput.maxLength=80; personInput.spellcheck=false;
     personInput.style.width=Math.max(9,(r.person||'Who said it').length+1)+'ch';
     personInput.addEventListener('input',()=>{ personInput.style.width=Math.max(9,personInput.value.length+1)+'ch'; });
-    personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; personInput.blur(); } });
+    personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; personInput.blur(); } });
     personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); });
     byline.appendChild(personInput);
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
@@ -35181,7 +35201,7 @@ function renderRemarksList(){
     byline.appendChild(sep2);
     const contextInput=document.createElement('input'); contextInput.type='text'; contextInput.className='remark-context-input';
     contextInput.value=r.context||''; contextInput.placeholder='+ context'; contextInput.maxLength=140; contextInput.spellcheck=false;
-    contextInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
+    contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
     contextInput.addEventListener('blur',()=>{ const val=contextInput.value.trim(); if(val===(r.context||''))return; r.context=val; markDirty(); scheduleAutoSave(); });
     byline.appendChild(contextInput);
     const controls=document.createElement('div'); controls.className='remark-byline-controls';
@@ -41093,10 +41113,32 @@ let _selectionFmtEditorId=null;
 function selectionFmtEditorFor(node){
   let n=node;
   while(n){
-    if(n.nodeType===1&&SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
+    if(n.nodeType===1){
+      if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
+      // Remarks aren't a singleton editor like Pad/Note — there's one of these per remark, each
+      // with its own generated id (see renderRemarksList) — so this checks the class instead of
+      // a fixed id list, then returns that element's own real id, which every el(editorId)
+      // lookup downstream can resolve correctly since it's still a genuine unique DOM id.
+      if(n.classList&&n.classList.contains('remark-text-input')&&n.id)return n.id;
+    }
     n=n.parentNode;
   }
   return null;
+}
+// Bold/Italic/Link/etc. from the selection popover only explicitly persist for the editors this
+// system was originally built around (Pad/Note/meeting fields, via the mfKey/editorId branches
+// throughout) — everything else relies on that field's own blur handler eventually firing, which
+// is fine for a field whose blur handler already exists but leaves a real (if narrow) data-loss
+// window: apply Bold, then switch documents or close the tab before ever blurring the field, and
+// the change was never marked dirty or autosaved. This closes that gap specifically for remarks
+// by syncing and persisting immediately after any command, rather than waiting on blur.
+function syncRemarkTextFromEditorIfApplicable(editor){
+  if(!editor||!editor.classList||!editor.classList.contains('remark-text-input'))return;
+  const rId=editor.id.replace(/^remark-text-/,'');
+  const r=remarks.find(x=>x.id===rId); if(!r)return;
+  const html=sakuraSanitizeRichHtml(editor.innerHTML);
+  if(html===(r.text||''))return;
+  r.text=html; markDirty(); scheduleAutoSave();
 }
 function hideSelectionFmtPopover(){
   const pop=el('selection-fmt-popover'); if(pop)pop.classList.remove('open');
@@ -41208,6 +41250,8 @@ async function runSelectionFmtRewrite(editorId,btn){
       markDirty();
     } else if(mfKey){
       meetingFieldSyncModel(mfKey,editor);
+    } else {
+      syncRemarkTextFromEditorIfApplicable(editor);
     }
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦','success');
   }catch(err){
@@ -41243,6 +41287,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
         const text=(result.text||'').trim()||url;
         document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
         if(mfKey)meetingFieldSyncModel(mfKey,editor);
+        else syncRemarkTextFromEditorIfApplicable(editor);
       }
       hideSelectionFmtPopover();
     });
@@ -41253,6 +41298,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     if(mfKey)checkpointMeetingField(mfKey);
     document.execCommand('hiliteColor',false,selectionIsHighlighted()?'transparent':SELECTION_HIGHLIGHT_COLOR);
     if(mfKey)meetingFieldSyncModel(mfKey,editor);
+    else syncRemarkTextFromEditorIfApplicable(editor);
     updateSelectionFmtButtonStates();
     return;
   }
@@ -41264,6 +41310,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   if(mfKey)checkpointMeetingField(mfKey);
   document.execCommand(cmd,false,null);
   if(mfKey)meetingFieldSyncModel(mfKey,editor);
+  else syncRemarkTextFromEditorIfApplicable(editor);
   updateSelectionFmtButtonStates();
 });
 
