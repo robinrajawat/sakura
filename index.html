@@ -10950,6 +10950,29 @@ function getDiagramAnchorCandidates(query){
   // whole branches become unreachable from this picker.
   return filtered.slice().sort((a,b)=>a.depth-b.depth).slice(0,50);
 }
+// Shared by the four node-anchor pickers that open from a real button (Diagrams/Decision Log/
+// Files/Remarks — Mind Map's own picker opens from a canvas click point instead, not a button,
+// so it positions itself separately). Previously each one clamped left against window width but
+// never checked vertical space at all, so a button near the bottom of a scrolled list — exactly
+// where Remarks' anchor button now lives, inline in each card rather than fixed to a corner —
+// could open a popover that ran off the bottom of the screen with no way to reach it. This
+// measures the popover's real rendered size (after content is populated) and clamps both axes,
+// flipping to open upward when there isn't room below.
+function positionAnchorSuggestPopover(pop,btn){
+  const margin=8;
+  const r=btn.getBoundingClientRect();
+  pop.classList.add('open');
+  const pr=pop.getBoundingClientRect();
+  let left=Math.min(r.left,window.innerWidth-pr.width-margin);
+  left=Math.max(margin,left);
+  let top=r.bottom+4;
+  if(top+pr.height>window.innerHeight-margin){
+    const aboveTop=r.top-4-pr.height;
+    top=aboveTop>=margin?aboveTop:Math.max(margin,window.innerHeight-pr.height-margin);
+  }
+  pop.style.left=left+'px';
+  pop.style.top=top+'px';
+}
 // `isFilterUpdate` distinguishes a fresh open (repositions the popover under `btn`, resets and
 // focuses the search box) from a re-render triggered by typing in that search box (which has no
 // `btn` of its own — reuses the remembered `_diagramAnchorBtn` — and must leave the input alone
@@ -10981,10 +11004,7 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('diagram-anchor-search');
     if(search)search.value=query||'';
-    const r=btn.getBoundingClientRect();
-    pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
-    pop.style.top=(r.bottom+4)+'px';
-    pop.classList.add('open');
+    positionAnchorSuggestPopover(pop,btn);
     _diagramAnchorOpen=true;
     setTimeout(()=>{ el('diagram-anchor-search')?.focus(); },30);
   }
@@ -13898,7 +13918,7 @@ function jumpToNodeQaRefs(refs){
 const DECISION_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
 const DIAGRAM_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>';
 const FILE_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
-const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>';
 // "Where used" — the one place all six reference types (Decision Log, Diagrams, Meetings,
 // To-Dos, Q&A, Mind Map) show up together, instead of having to notice and click through each
 // dot separately. Reuses the same #ref-jump-popover element/styling the individual dots already
@@ -27987,10 +28007,7 @@ function renderDecisionAnchorSuggest(query,dl,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('decision-anchor-search');
     if(search)search.value=query||'';
-    const r=btn.getBoundingClientRect();
-    pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
-    pop.style.top=(r.bottom+4)+'px';
-    pop.classList.add('open');
+    positionAnchorSuggestPopover(pop,btn);
     _decisionAnchorOpen=true;
     setTimeout(()=>{ el('decision-anchor-search')?.focus(); },30);
   }
@@ -34814,10 +34831,7 @@ function renderFilesAnchorSuggest(query,a,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('files-anchor-search');
     if(search)search.value=query||'';
-    const r=btn.getBoundingClientRect();
-    pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
-    pop.style.top=(r.bottom+4)+'px';
-    pop.classList.add('open');
+    positionAnchorSuggestPopover(pop,btn);
     _filesAnchorOpen=true;
     setTimeout(()=>{ el('files-anchor-search')?.focus(); },30);
   }
@@ -34939,7 +34953,7 @@ function renderRemarksList(){
     });
     const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='remark-row-remove'; removeBtn.setAttribute('aria-label','Delete remark'); removeBtn.dataset.tip='Delete remark';
     removeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    removeBtn.addEventListener('click',()=>{ remarks=remarks.filter(x=>x.id!==r.id); renderRemarksList(); render(); markDirty(); scheduleAutoSave(); });
+    removeBtn.addEventListener('click',()=>deleteRemark(r.id));
     // The remark itself leads — styled like the Notepad's own Quote blocks (italic, left accent
     // border), sitting directly on the panel background with no card box around it, same minimal
     // treatment Notepad's quotes get. Who/when/where — and the small action buttons — follow
@@ -35052,6 +35066,18 @@ async function rewriteRemarkText(r,textInput,btn){
   }catch(e){ showToast('Rewrite failed — '+(e.message||'try again')); }
   finally{ btn.classList.remove('ai-busy'); }
 }
+function deleteRemark(id){
+  if(!remarks.some(x=>x.id===id))return;
+  const snapshot=remarks.slice();
+  remarks=remarks.filter(x=>x.id!==id);
+  renderRemarksList(); render();
+  markDirty(); scheduleAutoSave();
+  showActionToast('Remark deleted','Undo',()=>{
+    remarks=snapshot;
+    renderRemarksList(); render();
+    markDirty(); scheduleAutoSave();
+  });
+}
 function addRemark(){
   const r={id:newRemarkId(),person:'',text:'',date:todayDateStr(),context:'',anchorNodeId:selectedId??null,createdAt:Date.now()};
   remarks.push(r);
@@ -35099,10 +35125,7 @@ function renderRemarksAnchorSuggest(query,r,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('remarks-anchor-search');
     if(search)search.value=query||'';
-    const rect=btn.getBoundingClientRect();
-    pop.style.left=Math.min(rect.left,window.innerWidth-330)+'px';
-    pop.style.top=(rect.bottom+4)+'px';
-    pop.classList.add('open');
+    positionAnchorSuggestPopover(pop,btn);
     _remarksAnchorOpen=true;
     setTimeout(()=>{ el('remarks-anchor-search')?.focus(); },30);
   }
