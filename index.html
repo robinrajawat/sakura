@@ -26662,6 +26662,9 @@ el('ntb-link')?.addEventListener('mousedown', e => {
       sel.removeAllRanges(); sel.addRange(range);
     }
     const url = (result.url || '').trim();
+    // execCommand('unlink'/'insertHTML') doesn't reliably fire beforeinput — measured directly —
+    // so the idle-debounce checkpoint below never captures a pre-edit state for either branch.
+    pushNoteSessionUndo();
     if (!url) {
       document.execCommand('unlink', false, null);
     } else {
@@ -26814,6 +26817,9 @@ el('ntb-image')?.addEventListener('click', () => {
     const reader = new FileReader();
     reader.onload = evt => {
       el('note-editor')?.focus();
+      // execCommand('insertImage') doesn't reliably fire beforeinput — measured directly — so
+      // the idle-debounce checkpoint never captures a pre-edit state for it.
+      pushNoteSessionUndo();
       document.execCommand('insertImage', false, evt.target.result);
       input.remove();
     };
@@ -26859,6 +26865,7 @@ el('note-editor')?.addEventListener('paste', e => {
       if (!file) continue;
       const reader = new FileReader();
       reader.onload = evt => {
+        pushNoteSessionUndo();
         document.execCommand('insertImage', false, evt.target.result);
       };
       reader.readAsDataURL(file);
@@ -34392,6 +34399,9 @@ el('ptb-link')?.addEventListener('mousedown', e=>{
       sel.removeAllRanges(); sel.addRange(range);
     }
     const url=(result.url||'').trim();
+    // execCommand('unlink'/'insertHTML') doesn't reliably fire beforeinput — measured directly —
+    // so the idle-debounce checkpoint below never captures a pre-edit state for either branch.
+    pushPadUndo();
     if(!url){
       document.execCommand('unlink', false, null);
     } else {
@@ -34522,6 +34532,9 @@ el('ptb-image')?.addEventListener('click', () => {
     const reader=new FileReader();
     reader.onload=evt=>{
       el('pad-editor')?.focus();
+      // execCommand('insertImage') doesn't reliably fire beforeinput — measured directly — so
+      // the idle-debounce checkpoint never captures a pre-edit state for it.
+      pushPadUndo();
       document.execCommand('insertImage', false, evt.target.result);
       input.remove();
       markDirty();
@@ -34851,7 +34864,7 @@ el('pad-editor')?.addEventListener('paste', e => {
       const file=item.getAsFile();
       if(!file) continue;
       const reader=new FileReader();
-      reader.onload=evt=>{ document.execCommand('insertImage', false, evt.target.result); markDirty(); };
+      reader.onload=evt=>{ pushPadUndo(); document.execCommand('insertImage', false, evt.target.result); markDirty(); };
       reader.readAsDataURL(file);
       return;
     }
@@ -40566,6 +40579,10 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       const url=(result.url||'').trim();
       if(url){
         if(mfKey)checkpointMeetingField(mfKey);
+        // Same gap as the toolbar's own Link button — execCommand('insertHTML') doesn't
+        // reliably fire beforeinput, so Pad/Note's idle-debounce checkpoint never catches it.
+        else if(editorId==='pad-editor'&&typeof pushPadUndo==='function')pushPadUndo();
+        else if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
         const text=(result.text||'').trim()||url;
         document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
         if(mfKey)meetingFieldSyncModel(mfKey,editor);
