@@ -3217,19 +3217,19 @@ body.pad-files-mode #pad-toolbar>.note-tb-btn:not(.files-only-btn):not(#pad-clea
    Files' single-line rows, since each entry carries several pieces of structured data rather
    than one download link. */
 body.pad-remarks-mode #pad-editor{display:none}
-#remarks-tab-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 12px;gap:10px}
+#remarks-tab-body{display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 12px}
 body.pad-remarks-mode #remarks-tab-body{display:flex}
 #remarks-empty{display:none;padding:24px 10px;text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif;line-height:1.6}
 #remarks-empty.show{display:block}
 body:not(.pad-remarks-mode) .remarks-only-btn{display:none}
 body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-clear-btn),body.pad-remarks-mode #pad-toolbar>.note-tb-sep{display:none}
-.remark-card{border:1px solid var(--border);border-radius:9px;padding:13px 15px;background:var(--chip);display:flex;flex-direction:column;gap:8px;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.remark-card-head{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .12s}
-.remark-card:hover .remark-card-head,.remark-card:focus-within .remark-card-head{opacity:1}
-.remark-tb-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.remark-tb-btn:hover{color:var(--fg);background:var(--bg)}
-.remark-tb-btn.active{color:var(--accent)}
-.remark-tb-btn.ai-busy{color:var(--accent);animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
+.remark-card{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid var(--border)}
+.remark-card:last-child{border-bottom:none}
+.remark-tb-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
+.remark-card:hover .remark-tb-btn,.remark-card:focus-within .remark-tb-btn,.remark-card:hover .remark-row-remove,.remark-card:focus-within .remark-row-remove{opacity:1}
+.remark-tb-btn:hover{color:var(--fg);background:var(--hover)}
+.remark-tb-btn.active{color:var(--accent);opacity:1}
+.remark-tb-btn.ai-busy{color:var(--accent);opacity:1;animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
 .remark-text-input{width:100%;outline:none;color:var(--sem-quote);font:italic 400 14px/1.55 'Inter',sans-serif;font-family:var(--content-font);padding:1px 2px 1px 16px;border-radius:4px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent);min-height:1.55em}
 .remark-text-input:hover,.remark-text-input:focus{background:var(--hover)}
 .remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
@@ -3245,12 +3245,13 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-date-display:hover{background:var(--hover);color:var(--fg)}
 .remark-date-input{appearance:none;border:none;background:var(--hover);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;flex:0 0 auto}
 .remark-date-input:focus{outline:none}
-.remark-context-input{flex:1 1 80px;min-width:60px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px}
+.remark-context-input{flex:1 1 60px;min-width:50px;max-width:220px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px}
 .remark-context-input:hover,.remark-context-input:focus{background:var(--hover);color:var(--fg);font-style:normal}
 .remark-context-input:focus{outline:none}
 .remark-context-input::placeholder{font-style:italic}
-.remark-row-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.remark-row-remove:hover{color:var(--sem-alert,#b85450);background:var(--bg)}
+.remark-byline-controls{display:flex;align-items:center;gap:1px;margin-left:auto;flex:0 0 auto}
+.remark-row-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
+.remark-row-remove:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .remark-anchor-btn{appearance:none;border:none;background:none;color:var(--hint);font:400 10.5px 'Inter',sans-serif;padding:3px 5px;border-radius:5px;cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;gap:3px}
 .remark-anchor-btn:hover{background:var(--bg);color:var(--fg)}
 .remark-anchor-btn.remark-anchor-btn-orphaned{color:var(--sem-alert,#b85450)}
@@ -34918,13 +34919,10 @@ function renderRemarksList(){
   const sorted=remarks.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   sorted.forEach(r=>{
     const card=document.createElement('div'); card.className='remark-card'; card.dataset.id=r.id;
-    const head=document.createElement('div'); head.className='remark-card-head';
     const bulletBtn=document.createElement('button'); bulletBtn.type='button'; bulletBtn.className='remark-tb-btn'; bulletBtn.dataset.tip='Bulleted list';
     bulletBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>';
-    head.appendChild(bulletBtn);
     const rewriteBtn=document.createElement('button'); rewriteBtn.type='button'; rewriteBtn.className='remark-tb-btn'; rewriteBtn.dataset.tip='Rewrite with AI';
     rewriteBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
-    head.appendChild(rewriteBtn);
     const anchorBtn=document.createElement('button'); anchorBtn.type='button'; anchorBtn.className='remark-anchor-btn';
     const isOrphaned=r.anchorNodeId!=null&&!nodes.some(n=>n.id===r.anchorNodeId);
     if(isOrphaned)anchorBtn.classList.add('remark-anchor-btn-orphaned');
@@ -34937,16 +34935,14 @@ function renderRemarksList(){
       if(_remarksAnchorOpen&&_remarksAnchorTarget===r){ closeRemarksAnchorSuggest(); return; }
       renderRemarksAnchorSuggest('',r,anchorBtn);
     });
-    head.appendChild(anchorBtn);
     const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='remark-row-remove'; removeBtn.setAttribute('aria-label','Delete remark'); removeBtn.dataset.tip='Delete remark';
     removeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     removeBtn.addEventListener('click',()=>{ remarks=remarks.filter(x=>x.id!==r.id); renderRemarksList(); render(); markDirty(); scheduleAutoSave(); });
-    head.appendChild(removeBtn);
-    card.appendChild(head);
     // The remark itself leads — styled like the Notepad's own Quote blocks (italic, left accent
-    // border) so this reads as "something someone said" at a glance, not a form field waiting
-    // to be filled in. Who/when/where follows underneath as a small byline, same convention a
-    // pulled-quote or testimonial uses, rather than every field carrying equal visual weight.
+    // border), sitting directly on the panel background with no card box around it, same minimal
+    // treatment Notepad's quotes get. Who/when/where — and the small action buttons — follow
+    // underneath in the byline, in normal document flow rather than floated over the text, so a
+    // long linked-node name or a long remark can never visually collide with anything else.
     // A real contenteditable (like Decision Log's fields), not a plain textarea — so it supports
     // bulleted lists and AI rewrite the same way every other substantial text field in Sakura does.
     const textInput=document.createElement('div'); textInput.className='remark-text-input'; textInput.contentEditable='true';
@@ -35014,6 +35010,12 @@ function renderRemarksList(){
     contextInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
     contextInput.addEventListener('blur',()=>{ const val=contextInput.value.trim(); if(val===(r.context||''))return; r.context=val; markDirty(); scheduleAutoSave(); });
     byline.appendChild(contextInput);
+    const controls=document.createElement('div'); controls.className='remark-byline-controls';
+    controls.appendChild(bulletBtn);
+    controls.appendChild(rewriteBtn);
+    controls.appendChild(anchorBtn);
+    controls.appendChild(removeBtn);
+    byline.appendChild(controls);
     card.appendChild(byline);
     list.appendChild(card);
   });
