@@ -3232,8 +3232,9 @@ body.pad-remarks-mode #remarks-tab-body{display:flex}
 #remarks-empty.show{display:block}
 body:not(.pad-remarks-mode) .remarks-only-btn{display:none}
 body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-clear-btn),body.pad-remarks-mode #pad-toolbar>.note-tb-sep{display:none}
-.remark-card{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid var(--border)}
+.remark-card{position:relative;display:flex;flex-direction:column;gap:3px;padding:10px 34px 10px 0;border-bottom:1px solid var(--border)}
 .remark-card:last-child{border-bottom:none}
+.remark-controls-corner{position:absolute;top:8px;right:0;display:flex;align-items:center;gap:1px}
 .remark-tb-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
 .remark-card:hover .remark-tb-btn,.remark-card:focus-within .remark-tb-btn,.remark-card:hover .remark-row-remove,.remark-card:focus-within .remark-row-remove{opacity:1}
 .remark-tb-btn:hover{color:var(--fg);background:var(--hover)}
@@ -3244,7 +3245,9 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
 .remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
 .remark-text-input li{margin:1px 0}
-.remark-byline{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
+/* Row 1: identity — just who and when. Short and low-variance by design, so it doesn't need
+   the width gymnastics the old single-line version required. */
+.remark-byline{display:flex;align-items:baseline;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 .remark-byline-dash{color:var(--hint);flex:0 0 auto}
 .remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;width:auto;min-width:12ch;flex:0 1 auto}
 .remark-person-input:hover,.remark-person-input:focus{background:var(--hover)}
@@ -3253,14 +3256,21 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-date-display{appearance:none;border:none;background:none;color:var(--hint);font:400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;flex:0 0 auto;cursor:pointer}
 .remark-date-display:hover{background:var(--hover);color:var(--fg)}
 .remark-date-input:focus{outline:none}
-.remark-context-input{flex:0 1 50px;min-width:50px;max-width:50px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px}
+/* Row 2: everything variable-length — context and the linked node, if either is set. Its own
+   row with nothing else competing for space, so it can wrap freely without ever pushing on
+   row 1's identity line or the corner controls. Empty by default (no permanently-reserved
+   input taking up space for a "+ context" placeholder nobody's filled in). */
+.remark-meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding-left:16px}
+.remark-add-context-btn{appearance:none;border:none;background:none;color:var(--hint);font:italic 400 11.5px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;cursor:pointer;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.remark-card:hover .remark-add-context-btn,.remark-card:focus-within .remark-add-context-btn{opacity:1}
+.remark-add-context-btn:hover{color:var(--fg);background:var(--hover)}
+.remark-context-input{flex:1 1 auto;min-width:60px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px}
 .remark-context-input:hover,.remark-context-input:focus{background:var(--hover);color:var(--fg);font-style:normal}
 .remark-context-input:focus{outline:none}
 .remark-context-input::placeholder{font-style:italic}
-.remark-byline-controls{display:flex;align-items:center;gap:1px;margin-left:auto;flex:0 0 auto}
 .remark-row-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
 .remark-row-remove:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
-.remark-anchor-btn{appearance:none;border:none;background:none;color:var(--hint);font:400 10.5px 'Inter',sans-serif;padding:3px 5px;border-radius:5px;cursor:pointer;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;gap:3px}
+.remark-anchor-btn{appearance:none;border:none;background:none;color:var(--hint);font:400 10.5px 'Inter',sans-serif;padding:3px 5px;border-radius:5px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;display:inline-flex;align-items:center;gap:3px}
 .remark-anchor-btn:hover{background:var(--bg);color:var(--fg)}
 .remark-anchor-btn.remark-anchor-btn-orphaned{color:var(--sem-alert,#b85450)}
 .remark-anchor-btn.remark-anchor-btn-orphaned:hover{background:var(--sem-alert,#b85450);color:var(--bg)}
@@ -35411,6 +35421,11 @@ function subtreeHasFile(idx){if(!Array.isArray(attachments)||!attachments.length
 // context, node link) rather than one download link. Stored the same tier as attachments/
 // diagrams/decisionLogs: a plain array, persisted per document.
 let remarksNextLocalId=1;
+// Which remarks currently have their context field open for editing - transient, UI-only,
+// not persisted. A remark with a real r.context value always shows its input regardless of
+// this set; this only covers the in-between state of clicking "+ Add context" on a remark
+// that doesn't have one yet, before anything's been typed.
+let remarksContextEditingIds=new Set();
 function newRemarkId(){ return 'r'+Date.now().toString(36)+(remarksNextLocalId++); }
 function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 // A native <input type=date> always renders in the browser/OS's own font and date format —
@@ -35424,6 +35439,11 @@ function formatRemarkDateDisplay(dateStr){
   const parts=s.split('-').map(Number);
   if(parts.length!==3||parts.some(n=>!Number.isFinite(n)))return s;
   const d=new Date(parts[0],parts[1]-1,parts[2]);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dCopy=new Date(d); dCopy.setHours(0,0,0,0);
+  const dayDiff=Math.round((today-dCopy)/86400000);
+  if(dayDiff===0)return 'Today';
+  if(dayDiff===1)return 'Yesterday';
   const thisYear=new Date().getFullYear();
   const opts=d.getFullYear()===thisYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'};
   return d.toLocaleDateString(undefined,opts);
@@ -35502,7 +35522,14 @@ function renderRemarksList(){
       if(html!==(r.text||'')){ r.text=html; markDirty(); scheduleAutoSave(); }
     });
     rewriteBtn.addEventListener('click',()=>rewriteRemarkText(r,textInput,rewriteBtn));
+    const controlsCorner=document.createElement('div'); controlsCorner.className='remark-controls-corner';
+    controlsCorner.appendChild(bulletBtn);
+    controlsCorner.appendChild(rewriteBtn);
+    controlsCorner.appendChild(removeBtn);
+    card.appendChild(controlsCorner);
     card.appendChild(textInput);
+    // Row 1 — identity only: who and when. Kept short and separate from row 2 on purpose (see
+    // the CSS comment above) so this line's width almost never has to fight anything.
     const byline=document.createElement('div'); byline.className='remark-byline';
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
     byline.appendChild(dash);
@@ -35523,20 +35550,33 @@ function renderRemarksList(){
       openRemarksDateEditor(dateDisplay,r);
     });
     byline.appendChild(dateDisplay);
-    const sep2=document.createElement('span'); sep2.className='remark-byline-sep'; sep2.textContent='·';
-    byline.appendChild(sep2);
-    const contextInput=document.createElement('input'); contextInput.type='text'; contextInput.className='remark-context-input';
-    contextInput.value=r.context||''; contextInput.placeholder='+ context'; contextInput.maxLength=140; contextInput.spellcheck=false;
-    contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
-    contextInput.addEventListener('blur',()=>{ const val=contextInput.value.trim(); if(val===(r.context||''))return; r.context=val; markDirty(); scheduleAutoSave(); });
-    byline.appendChild(contextInput);
-    const controls=document.createElement('div'); controls.className='remark-byline-controls';
-    controls.appendChild(bulletBtn);
-    controls.appendChild(rewriteBtn);
-    controls.appendChild(anchorBtn);
-    controls.appendChild(removeBtn);
-    byline.appendChild(controls);
     card.appendChild(byline);
+    // Row 2 — everything variable-length: context (if any) and the linked node (if any). Its
+    // own row, wraps freely, never touches row 1. Context starts as a small "+ Add context"
+    // link rather than a permanently-reserved empty input - most remarks don't have one, so
+    // there's no reason to spend width on it until someone actually wants to add it.
+    const metaRow=document.createElement('div'); metaRow.className='remark-meta-row';
+    const hasContext=!!(r.context&&r.context.trim());
+    if(hasContext||remarksContextEditingIds.has(r.id)){
+      const contextInput=document.createElement('input'); contextInput.type='text'; contextInput.className='remark-context-input';
+      contextInput.value=r.context||''; contextInput.placeholder='+ context'; contextInput.maxLength=140; contextInput.spellcheck=false;
+      contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
+      contextInput.addEventListener('blur',()=>{
+        const val=contextInput.value.trim();
+        remarksContextEditingIds.delete(r.id);
+        if(val===(r.context||'')){ if(!val)renderRemarksList(); return; }
+        r.context=val; markDirty(); scheduleAutoSave();
+        if(!val)renderRemarksList();
+      });
+      metaRow.appendChild(contextInput);
+      if(remarksContextEditingIds.has(r.id)&&!hasContext)setTimeout(()=>contextInput.focus(),0);
+    } else {
+      const addContextBtn=document.createElement('button'); addContextBtn.type='button'; addContextBtn.className='remark-add-context-btn'; addContextBtn.textContent='+ Add context';
+      addContextBtn.addEventListener('click',e=>{ e.stopPropagation(); remarksContextEditingIds.add(r.id); renderRemarksList(); });
+      metaRow.appendChild(addContextBtn);
+    }
+    metaRow.appendChild(anchorBtn);
+    card.appendChild(metaRow);
     list.appendChild(card);
   });
 }
