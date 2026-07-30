@@ -3234,25 +3234,22 @@ body:not(.pad-remarks-mode) .remarks-only-btn{display:none}
 body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-clear-btn),body.pad-remarks-mode #pad-toolbar>.note-tb-sep{display:none}
 .remark-card{position:relative;display:block;padding:10px 0;border-bottom:1px solid var(--border)}
 .remark-card:last-child{border-bottom:none}
-.remark-controls-corner{float:right;margin:8px 0 0 8px;display:flex;align-items:center;gap:1px}
 .remark-tb-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
 .remark-card:hover .remark-tb-btn,.remark-card:focus-within .remark-tb-btn,.remark-card:hover .remark-row-remove,.remark-card:focus-within .remark-row-remove{opacity:1}
 .remark-tb-btn:hover{color:var(--fg);background:var(--hover)}
 .remark-tb-btn.active{color:var(--accent);opacity:1}
 .remark-tb-btn.ai-busy{color:var(--accent);opacity:1;animation:qa-pulse 1s ease-in-out infinite;pointer-events:none}
+/* The quote text is now just a plain full-width block - no reserved padding, no float, nothing
+   to fight over. Everything that isn't the remark itself (who/when/context/node, and the small
+   action icons) lives together in one footer row below instead of hovering near the text. */
 .remark-text-input{width:100%;outline:none;color:var(--sem-quote);font:400 13px/1.55 'Inter',sans-serif;font-family:var(--content-font);padding:1px 2px 1px 16px;border-radius:4px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent);min-height:1.55em;margin-bottom:3px}
 .remark-text-input:hover,.remark-text-input:focus{background:var(--hover)}
 .remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
 .remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
 .remark-text-input li{margin:1px 0}
-/* One row, not artificially split. flex-wrap:wrap means typical short content (a name, a
-   date, maybe a short context/node link) sits on one line naturally, and only wraps to a
-   second line when it genuinely doesn't fit - the browser figures that out from real content
-   width, not from a pixel budget I have to keep re-guessing. Nothing here has a fixed or
-   max width; that's what kept breaking earlier. */
-.remark-byline{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint);clear:right}
+.remark-byline{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 .remark-byline-dash{color:var(--hint);flex:0 0 auto}
-.remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;width:auto;min-width:12ch;flex:0 1 auto}
+.remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;flex:0 0 auto}
 .remark-person-input:hover,.remark-person-input:focus{background:var(--hover)}
 .remark-person-input:focus{outline:none}
 .remark-byline-sep{color:var(--border);flex:0 0 auto}
@@ -3262,7 +3259,7 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-add-context-btn{appearance:none;border:none;background:none;color:var(--hint);font:italic 400 11.5px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;cursor:pointer;opacity:0;transition:opacity .12s,color .12s,background .12s;flex:0 0 auto}
 .remark-card:hover .remark-add-context-btn,.remark-card:focus-within .remark-add-context-btn{opacity:1}
 .remark-add-context-btn:hover{color:var(--fg);background:var(--hover)}
-.remark-context-input{flex:0 1 auto;min-width:9ch;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px}
+.remark-context-input{flex:0 0 auto;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px}
 .remark-context-input:hover,.remark-context-input:focus{background:var(--hover);color:var(--fg);font-style:normal}
 .remark-context-input:focus{outline:none}
 .remark-context-input::placeholder{font-style:italic}
@@ -3274,6 +3271,7 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-anchor-btn:hover{background:var(--bg);color:var(--fg)}
 .remark-anchor-btn.remark-anchor-btn-orphaned{color:var(--sem-alert,#b85450)}
 .remark-anchor-btn.remark-anchor-btn-orphaned:hover{background:var(--sem-alert,#b85450);color:var(--bg)}
+.remark-byline-actions{display:flex;align-items:center;gap:1px;margin-left:auto;flex:0 0 auto}
 .remark-card.qa-flash{animation:todo-flash 1.1s ease}
 .mindmap-row{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:8px;cursor:pointer;transition:background .12s}
 .mindmap-row:hover{background:var(--hover)}
@@ -35439,6 +35437,25 @@ let remarksNextLocalId=1;
 let remarksContextEditingIds=new Set();
 function newRemarkId(){ return 'r'+Date.now().toString(36)+(remarksNextLocalId++); }
 function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// Sizing an input to its content with ch units (input.style.width = N+'ch') estimates against
+// the "0" glyph's width, which overestimates for most letters in a proportional font - visibly
+// so for a bold 12px name field, where it was leaving a noticeable gap before the next byline
+// item. This measures actual rendered pixel width instead, via one shared hidden mirror span
+// (reused across every call rather than creating/destroying a new one each time).
+let _inlineAutosizeMirror=null;
+function autosizeInlineInput(input,fallbackText){
+  if(!_inlineAutosizeMirror){
+    _inlineAutosizeMirror=document.createElement('span');
+    _inlineAutosizeMirror.style.cssText='position:absolute;visibility:hidden;white-space:pre;top:-9999px;left:-9999px;';
+    document.body.appendChild(_inlineAutosizeMirror);
+  }
+  const mirror=_inlineAutosizeMirror;
+  const cs=getComputedStyle(input);
+  mirror.style.font=cs.font;
+  mirror.style.letterSpacing=cs.letterSpacing;
+  mirror.textContent=input.value||fallbackText||'';
+  input.style.width=(mirror.getBoundingClientRect().width+10)+'px';
+}
 // A native <input type=date> always renders in the browser/OS's own font and date format —
 // clashes visually against everything else in the byline being set in the app's own Inter type,
 // and doesn't match the app's own calendar widget (Todo's due date, etc.) either. So the date is
@@ -35538,24 +35555,21 @@ function renderRemarksList(){
       if(html!==(r.text||'')){ r.text=html; markDirty(); scheduleAutoSave(); }
     });
     rewriteBtn.addEventListener('click',()=>rewriteRemarkText(r,textInput,rewriteBtn));
-    const controlsCorner=document.createElement('div'); controlsCorner.className='remark-controls-corner';
-    controlsCorner.appendChild(bulletBtn);
-    controlsCorner.appendChild(rewriteBtn);
-    controlsCorner.appendChild(removeBtn);
-    card.appendChild(controlsCorner);
     card.appendChild(textInput);
-    // One row, not artificially split (see the CSS comment above) - who/when/context/node-link
-    // all together, wrapping naturally only when real content genuinely doesn't fit.
+    // One row: who/when/context/node-link, AND the action icons at the end - everything that
+    // isn't the remark itself, together, wrapping naturally only when real content genuinely
+    // doesn't fit. The quote text above is a plain full-width block now; nothing floats near
+    // it or reserves space in it anymore.
     const byline=document.createElement('div'); byline.className='remark-byline';
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
     byline.appendChild(dash);
     const personInput=document.createElement('input'); personInput.type='text'; personInput.className='remark-person-input';
     personInput.value=r.person||''; personInput.placeholder='Who said it'; personInput.maxLength=80; personInput.spellcheck=false;
-    personInput.style.width=Math.max(9,(r.person||'Who said it').length+1)+'ch';
-    personInput.addEventListener('input',()=>{ personInput.style.width=Math.max(9,personInput.value.length+1)+'ch'; });
-    personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; personInput.blur(); } });
-    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); });
     byline.appendChild(personInput);
+    autosizeInlineInput(personInput,'Who said it');
+    personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
+    personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
+    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); });
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
     byline.appendChild(sep1);
     const dateDisplay=document.createElement('button'); dateDisplay.type='button'; dateDisplay.className='remark-date-display';
@@ -35567,17 +35581,18 @@ function renderRemarksList(){
     });
     byline.appendChild(dateDisplay);
     // Context: a small "+ Add context" link when there isn't one yet (most remarks don't have
-    // one, so no reason to permanently reserve space for it) - becomes a real input, sized to
-    // its own content the same way personInput is, once clicked or once it has a value.
+    // one, so no reason to permanently reserve space for it) - becomes a real input, precisely
+    // sized to its own content, once clicked or once it has a value.
     const hasContext=!!(r.context&&r.context.trim());
     if(hasContext||remarksContextEditingIds.has(r.id)){
       const sep2=document.createElement('span'); sep2.className='remark-byline-sep'; sep2.textContent='·';
       byline.appendChild(sep2);
       const contextInput=document.createElement('input'); contextInput.type='text'; contextInput.className='remark-context-input';
       contextInput.value=r.context||''; contextInput.placeholder='+ context'; contextInput.maxLength=140; contextInput.spellcheck=false;
-      contextInput.style.width=Math.max(9,(r.context||'+ context').length+1)+'ch';
-      contextInput.addEventListener('input',()=>{ contextInput.style.width=Math.max(9,contextInput.value.length+1)+'ch'; });
-      contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
+      byline.appendChild(contextInput);
+      autosizeInlineInput(contextInput,'+ context');
+      contextInput.addEventListener('input',()=>autosizeInlineInput(contextInput,'+ context'));
+      contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; autosizeInlineInput(contextInput,'+ context'); contextInput.blur(); } });
       contextInput.addEventListener('blur',()=>{
         const val=contextInput.value.trim();
         remarksContextEditingIds.delete(r.id);
@@ -35585,7 +35600,6 @@ function renderRemarksList(){
         r.context=val; markDirty(); scheduleAutoSave();
         if(!val)renderRemarksList();
       });
-      byline.appendChild(contextInput);
       if(remarksContextEditingIds.has(r.id)&&!hasContext)setTimeout(()=>contextInput.focus(),0);
     } else {
       const addContextBtn=document.createElement('button'); addContextBtn.type='button'; addContextBtn.className='remark-add-context-btn'; addContextBtn.textContent='+ Add context';
@@ -35593,6 +35607,11 @@ function renderRemarksList(){
       byline.appendChild(addContextBtn);
     }
     byline.appendChild(anchorBtn);
+    const actions=document.createElement('div'); actions.className='remark-byline-actions';
+    actions.appendChild(bulletBtn);
+    actions.appendChild(rewriteBtn);
+    actions.appendChild(removeBtn);
+    byline.appendChild(actions);
     card.appendChild(byline);
     list.appendChild(card);
   });
@@ -35745,7 +35764,10 @@ function renderRemarksAnchorSuggest(query,r,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('remarks-anchor-search');
     if(search)search.value=query||'';
-    remarksAnchorCollapsedIds=new Set();
+    // Default to folded, not fully expanded - only root-level (depth 0) nodes show until you
+    // expand a branch, same idea as a file tree starting collapsed rather than dumping every
+    // file at once.
+    remarksAnchorCollapsedIds=new Set(nodes.filter((n,i)=>nodeHasChildren(i)).map(n=>n.id));
     positionAnchorSuggestPopover(pop,btn);
     _remarksAnchorOpen=true;
     setTimeout(()=>{ el('remarks-anchor-search')?.focus(); },30);
