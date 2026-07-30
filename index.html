@@ -35789,6 +35789,7 @@ function renderRemarksAnchorSuggest(query,r,btn,isFilterUpdate){
   const results=el('remarks-anchor-results'); if(!results)return;
   const q=String(query||'').trim();
   results.innerHTML='';
+  if(!isFilterUpdate)remarksAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
   noneItem.textContent='Not linked to a node';
@@ -35829,7 +35830,6 @@ function renderRemarksAnchorSuggest(query,r,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('remarks-anchor-search');
     if(search)search.value=query||'';
-    remarksAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
     positionAnchorSuggestPopover(pop,btn);
     _remarksAnchorOpen=true;
     setTimeout(()=>{ el('remarks-anchor-search')?.focus(); },30);
