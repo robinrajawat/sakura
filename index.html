@@ -12832,12 +12832,12 @@ function noteBlockLines(html){
   return text.split(marker).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
 }
 function getDocNodesForSearch(docId,indexEntry){
-  if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor'))};
+  if(docId===currentDocId)return {docNodes:nodes,docTitle:el('header-title')?.value||indexEntry?.title||'Untitled',docPad:cleanEditorHtml(el('pad-editor')),docQa:qaItems,docDiagrams:diagrams,docRemarks:remarks};
   const openTab=findOpenTab(docId);
-  if(openTab)return {docNodes:openTab.nodes,docTitle:openTab.title||indexEntry?.title||'Untitled',docPad:openTab.pad||''};
+  if(openTab)return {docNodes:openTab.nodes,docTitle:openTab.title||indexEntry?.title||'Untitled',docPad:openTab.pad||'',docQa:openTab.qa||[],docDiagrams:openTab.diagrams||[],docRemarks:openTab.remarks||[]};
   const stored=loadTabFromStorageObj(docId);
-  if(stored)return {docNodes:stored.nodes,docTitle:stored.title||indexEntry?.title||'Untitled',docPad:stored.pad||''};
-  return {docNodes:null,docTitle:indexEntry?.title||'Untitled',docPad:''};
+  if(stored)return {docNodes:stored.nodes,docTitle:stored.title||indexEntry?.title||'Untitled',docPad:stored.pad||'',docQa:stored.qa||[],docDiagrams:stored.diagrams||[],docRemarks:stored.remarks||[]};
+  return {docNodes:null,docTitle:indexEntry?.title||'Untitled',docPad:'',docQa:[],docDiagrams:[],docRemarks:[]};
 }
 function collectNodeTextMatches(q){
   const out=[]; const tokens=qaTokenizeQuery(q);
@@ -13004,6 +13004,100 @@ function collectPadMatches(q){
   if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
   return out;
 }
+// Pad's other three sub-tabs — Q&A, Diagrams, Remarks — were never covered by search at all
+// (collectPadMatches above only ever looked at the Notepad tab's free text). Same shape as
+// collectPadMatches: scan the lightweight per-doc index via getDocNodesForSearch (now extended
+// to also expose docQa/docDiagrams/docRemarks), budget-limited, trash included on the same
+// terms as everything else here.
+function collectQaMatches(q){
+  const out=[]; const tokens=qaTokenizeQuery(q);
+  if(!padQaTabEnabled)return out;
+  function scan(docsIdx,isTrash){
+    for(const d of docsIdx){
+      if(out.length>=4)break;
+      const {docQa,docTitle}=getDocNodesForSearch(d.id,d);
+      if(!Array.isArray(docQa))continue;
+      for(const item of docQa){
+        if(out.length>=4)break;
+        if(item.type==='section')continue;
+        const hay=(item.question||'')+' '+(item.answer||'');
+        if(!qaHayMatches(hay,tokens))continue;
+        const label=(item.question||'').trim()||'(untitled question)';
+        out.push(isTrash?{
+          group:'Q&A', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:'In Trash · '+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
+        }:{
+          group:'Q&A', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); if(d.id!==currentDocId)switchDoc(d.id); if(padEnabled&&!padOpen)setPadOpen(true,false); setPadViewMode('qa');}
+        });
+      }
+    }
+  }
+  scan(loadActiveDocsIndex(),false);
+  if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
+  return out;
+}
+function collectDiagramMatches(q){
+  const out=[]; const tokens=qaTokenizeQuery(q);
+  if(!padDiagramsTabEnabled)return out;
+  function scan(docsIdx,isTrash){
+    for(const d of docsIdx){
+      if(out.length>=4)break;
+      const {docDiagrams,docTitle}=getDocNodesForSearch(d.id,d);
+      if(!Array.isArray(docDiagrams))continue;
+      for(const dg of docDiagrams){
+        if(out.length>=4)break;
+        const hay=(dg.title||'')+' '+(dg.note||'');
+        if(!qaHayMatches(hay,tokens))continue;
+        const label=(dg.title||'').trim()||'(untitled diagram)';
+        out.push(isTrash?{
+          group:'Diagrams', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:'In Trash · '+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
+        }:{
+          group:'Diagrams', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); const dgId=dg.id; if(d.id!==currentDocId)switchDoc(d.id); if(padEnabled&&!padOpen)setPadOpen(true,false); setPadViewMode('diagrams'); setTimeout(()=>openDiagramEditor(dgId),30);}
+        });
+      }
+    }
+  }
+  scan(loadActiveDocsIndex(),false);
+  if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
+  return out;
+}
+function collectRemarkMatches(q){
+  const out=[]; const tokens=qaTokenizeQuery(q);
+  if(!padRemarksTabEnabled)return out;
+  function scan(docsIdx,isTrash){
+    for(const d of docsIdx){
+      if(out.length>=4)break;
+      const {docRemarks,docTitle}=getDocNodesForSearch(d.id,d);
+      if(!Array.isArray(docRemarks))continue;
+      for(const r of docRemarks){
+        if(out.length>=4)break;
+        const plainText=stripHtmlToText(r.text||'');
+        const hay=plainText+' '+(r.person||'')+' '+(r.context||'');
+        if(!qaHayMatches(hay,tokens))continue;
+        const label=plainText.trim()||'(empty remark)';
+        out.push(isTrash?{
+          group:'Remarks', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:'In Trash · '+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
+        }:{
+          group:'Remarks', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          meta:(r.person?r.person+' · ':'')+(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); if(d.id!==currentDocId)switchDoc(d.id); if(padEnabled&&!padOpen)setPadOpen(true,false); setPadViewMode('remarks');}
+        });
+      }
+    }
+  }
+  scan(loadActiveDocsIndex(),false);
+  if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
+  return out;
+}
 // Opens (or switches to) the target doc, then reuses the existing find-in-document machinery
 // (searchMatches/searchIndex/scrollToNode) to land on and highlight the matching node.
 function jumpToNodeInDoc(docId,nodeId,query){
@@ -13043,6 +13137,9 @@ function collectSearchGroups(q){
     {name:'Code',items:collectCodeMatches(q)},
     {name:'Tags',items:collectTagMatches(q)},
     {name:'Pad',items:collectPadMatches(q)},
+    {name:'Q&A',items:collectQaMatches(q)},
+    {name:'Diagrams',items:collectDiagramMatches(q)},
+    {name:'Remarks',items:collectRemarkMatches(q)},
     {name:'To-Dos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
     {name:'Meetings',items:(typeof collectMeetingMatches==='function'?collectMeetingMatches(q):[])},
     {name:'Journal',items:(typeof collectJournalMatches==='function'?collectJournalMatches(q):[])},
@@ -13325,6 +13422,9 @@ const QA_SEARCH_CATEGORIES=[
   {key:'code',group:'Code'},
   {key:'tags',group:'Tags'},
   {key:'pad',group:'Pad'},
+  {key:'qa',group:'Q&A'},
+  {key:'diagrams',group:'Diagrams'},
+  {key:'remarks',group:'Remarks'},
   {key:'todos',group:'To-Dos'},
   {key:'meetings',group:'Meetings'},
   {key:'journal',group:'Journal'},
@@ -13348,6 +13448,9 @@ const QA_CATEGORY_PREFIXES={
   code:'code',
   tag:'tags', tags:'tags',
   pad:'pad',
+  qa:'qa', question:'qa', questions:'qa',
+  diagram:'diagrams', diagrams:'diagrams',
+  remark:'remarks', remarks:'remarks',
   todo:'todos', todos:'todos',
   meeting:'meetings', meetings:'meetings',
   journal:'journal', journals:'journal',
