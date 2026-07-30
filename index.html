@@ -3965,6 +3965,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #library-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
 #library-body.is-empty #library-empty{display:block}
 #library-body.is-empty #library-list{display:none}
+#library-no-results-msg{color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
+#library-tag-filter-chip{appearance:none;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font:600 10.5px 'Inter',sans-serif;padding:3px 6px 3px 9px;border-radius:99px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-left:6px}
+#library-tag-filter-chip:hover{background:color-mix(in srgb,var(--accent) 20%,transparent)}
 .library-row{display:flex;align-items:flex-start;gap:8px;padding:8px 8px;margin:0 -2px 2px;border-radius:8px;cursor:pointer;transition:background .12s;position:relative}
 .library-row:hover{background:var(--hover)}
 .library-row.expanded{background:var(--hover)}
@@ -3972,10 +3975,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .library-row-main{flex:1;min-width:0;padding-right:20px}
 .library-row-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .library-row-title:empty::before{content:'Untitled';color:var(--hint);font-style:italic}
-.library-row-url{font:400 11px 'Inter',sans-serif;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.library-row-url{font:400 11px 'Inter',sans-serif;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;display:block;text-decoration:none;width:fit-content;max-width:100%}
+.library-row-url:hover{text-decoration:underline}
 .library-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .library-row-tags{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap}
-.library-row-tag{font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:2px 8px;border-radius:99px}
+.library-row-tag{appearance:none;font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:2px 8px;border-radius:99px;cursor:pointer;transition:background .12s}
+.library-row-tag:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}
+.library-row-tag.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .library-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;position:absolute;top:6px;right:6px;transition:opacity .12s,color .12s,background .12s}
 .library-row:hover .library-row-delete{opacity:1}
 .library-row-delete:hover{color:var(--fc-red);background:var(--hover)}
@@ -42243,6 +42249,7 @@ let libraryPanelOpen=false;
 let libraryExpandedId=null;
 let librarySearchOpen=false;
 let librarySearchQuery='';
+let libraryTagFilter=null;
 
 function libUid(){ return 'lib'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
@@ -42385,15 +42392,44 @@ function librarySearchMatches(item,q){
   const hay=(item.title+' '+item.url+' '+(item.urlLabel||'')+' '+stripHtmlToSnippet(item.body)+' '+(item.tags||[]).join(' ')).toLowerCase();
   return hay.includes(q.toLowerCase());
 }
+function setLibraryTagFilter(tag){
+  libraryTagFilter=(libraryTagFilter===tag)?null:tag; // clicking the active filter again clears it
+  renderLibraryList();
+}
 function renderLibraryList(){
   const wrap=el('library-list'); const body=el('library-body');
   if(!wrap||!body)return;
   wrap.innerHTML='';
   const q=librarySearchQuery.trim();
-  const visible=libraryItems.filter(it=>librarySearchMatches(it,q))
+  const visible=libraryItems.filter(it=>librarySearchMatches(it,q)&&(!libraryTagFilter||(it.tags||[]).includes(libraryTagFilter)))
     .slice().sort((a,b)=>(b.modifiedAt||0)-(a.modifiedAt||0));
-  body.classList.toggle('is-empty',libraryItems.length===0);
+  const noEntriesAtAll=libraryItems.length===0;
+  const noResultsForFilter=!noEntriesAtAll&&visible.length===0;
+  body.classList.toggle('is-empty',noEntriesAtAll);
+  body.classList.toggle('no-results',noResultsForFilter);
   const countLabel=el('library-count-label'); if(countLabel)countLabel.textContent=libraryItems.length?String(libraryItems.length):'';
+  // Active tag filter shows as a dismissible chip in the toolbar, same idea as the outline's
+  // own tag-filter chip elsewhere in the app - independent of the search box, so both can be
+  // active together (AND'd, see the filter() call above).
+  let filterChip=el('library-tag-filter-chip');
+  if(libraryTagFilter){
+    if(!filterChip){
+      filterChip=document.createElement('button'); filterChip.type='button'; filterChip.id='library-tag-filter-chip';
+      el('library-toolbar-row')?.insertBefore(filterChip, el('library-count-label'));
+    }
+    filterChip.innerHTML='#'+esc(libraryTagFilter)+' <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    filterChip.onclick=()=>setLibraryTagFilter(libraryTagFilter);
+  } else if(filterChip){
+    filterChip.remove();
+  }
+  if(noResultsForFilter){
+    const msg=document.createElement('div'); msg.id='library-no-results-msg';
+    msg.textContent=q&&libraryTagFilter?`No entries match "${q}" with #${libraryTagFilter}.`
+      :q?`No entries match "${q}".`
+      :`No entries tagged #${libraryTagFilter}.`;
+    wrap.appendChild(msg);
+    return;
+  }
   visible.forEach(it=>{
     const row=document.createElement('div'); row.className='library-row'; row.dataset.libraryId=it.id;
     const icon=document.createElement('div'); icon.className='library-row-icon';
@@ -42401,12 +42437,24 @@ function renderLibraryList(){
     const main=document.createElement('div'); main.className='library-row-main';
     const title=document.createElement('div'); title.className='library-row-title'; title.textContent=it.title||'';
     main.appendChild(title);
-    if(it.url){ const u=document.createElement('div'); u.className='library-row-url'; u.textContent=it.urlLabel||it.url; main.appendChild(u); }
+    if(it.url){
+      // Clickable straight to the link - no need to open the entry first just to follow it.
+      // Still stops propagation so it doesn't also open the detail card underneath.
+      const u=document.createElement('a'); u.className='library-row-url'; u.textContent=it.urlLabel||it.url;
+      let href=it.url; if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(href))href='https://'+href;
+      u.href=href; u.target='_blank'; u.rel='noopener';
+      u.addEventListener('click',e=>{ e.stopPropagation(); });
+      main.appendChild(u);
+    }
     const snippet=stripHtmlToSnippet(it.body);
     if(snippet){ const s=document.createElement('div'); s.className='library-row-snippet'; s.textContent=snippet; main.appendChild(s); }
     if((it.tags||[]).length){
       const tagsRow=document.createElement('div'); tagsRow.className='library-row-tags';
-      it.tags.forEach(tag=>{ const t=document.createElement('span'); t.className='library-row-tag'; t.textContent='#'+tag; tagsRow.appendChild(t); });
+      it.tags.forEach(tag=>{
+        const t=document.createElement('button'); t.type='button'; t.className='library-row-tag'+(libraryTagFilter===tag?' active':''); t.textContent='#'+tag;
+        t.addEventListener('click',e=>{ e.stopPropagation(); setLibraryTagFilter(tag); });
+        tagsRow.appendChild(t);
+      });
       main.appendChild(tagsRow);
     }
     const del=document.createElement('button'); del.type='button'; del.className='library-row-delete'; del.setAttribute('aria-label','Delete entry');
