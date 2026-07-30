@@ -3245,9 +3245,12 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
 .remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
 .remark-text-input li{margin:1px 0}
-/* Row 1: identity — just who and when. Short and low-variance by design, so it doesn't need
-   the width gymnastics the old single-line version required. */
-.remark-byline{display:flex;align-items:baseline;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
+/* One row, not artificially split. flex-wrap:wrap means typical short content (a name, a
+   date, maybe a short context/node link) sits on one line naturally, and only wraps to a
+   second line when it genuinely doesn't fit - the browser figures that out from real content
+   width, not from a pixel budget I have to keep re-guessing. Nothing here has a fixed or
+   max width; that's what kept breaking earlier. */
+.remark-byline{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 .remark-byline-dash{color:var(--hint);flex:0 0 auto}
 .remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;width:auto;min-width:12ch;flex:0 1 auto}
 .remark-person-input:hover,.remark-person-input:focus{background:var(--hover)}
@@ -3256,15 +3259,10 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-date-display{appearance:none;border:none;background:none;color:var(--hint);font:400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;flex:0 0 auto;cursor:pointer}
 .remark-date-display:hover{background:var(--hover);color:var(--fg)}
 .remark-date-input:focus{outline:none}
-/* Row 2: everything variable-length — context and the linked node, if either is set. Its own
-   row with nothing else competing for space, so it can wrap freely without ever pushing on
-   row 1's identity line or the corner controls. Empty by default (no permanently-reserved
-   input taking up space for a "+ context" placeholder nobody's filled in). */
-.remark-meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding-left:16px}
-.remark-add-context-btn{appearance:none;border:none;background:none;color:var(--hint);font:italic 400 11.5px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;cursor:pointer;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.remark-add-context-btn{appearance:none;border:none;background:none;color:var(--hint);font:italic 400 11.5px 'Inter',sans-serif;padding:1px 4px;border-radius:4px;cursor:pointer;opacity:0;transition:opacity .12s,color .12s,background .12s;flex:0 0 auto}
 .remark-card:hover .remark-add-context-btn,.remark-card:focus-within .remark-add-context-btn{opacity:1}
 .remark-add-context-btn:hover{color:var(--fg);background:var(--hover)}
-.remark-context-input{flex:1 1 auto;min-width:60px;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px}
+.remark-context-input{flex:0 1 auto;min-width:9ch;appearance:none;border:none;background:none;color:var(--hint);font:italic 400 12px 'Inter',sans-serif;padding:1px 4px;border-radius:4px}
 .remark-context-input:hover,.remark-context-input:focus{background:var(--hover);color:var(--fg);font-style:normal}
 .remark-context-input:focus{outline:none}
 .remark-context-input::placeholder{font-style:italic}
@@ -6174,18 +6172,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="qa-progress" class="qa-only-btn" data-tip="Show unanswered only" aria-pressed="false"></button>
     <button type="button" id="qa-unlinked" class="qa-only-btn" data-tip="Show unlinked rows only" aria-pressed="false" style="display:none"></button>
     <button type="button" id="qa-followup-count" class="qa-only-btn" data-tip="Show follow-up rows only" aria-pressed="false" style="display:none"></button>
-    <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai" style="display:none"></span>
-    <div class="todo-dd-wrap qa-only-btn" id="qa-ai-dd-wrap">
-      <button type="button" class="todo-dd-trigger" id="qa-ai-dd-trigger" data-tip="AI actions for Q&amp;A" aria-label="AI actions" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
-      <div class="todo-dd-menu" id="qa-ai-dd-menu" role="menu">
-        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-answer-all" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg><span>Draft answers for unanswered</span></button>
-        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-group" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/></svg><span>Group into sections</span></button>
-        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-summary" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Q&amp;A summary</span></button>
-      </div>
-    </div>
-    <button class="note-tb-btn qa-only-btn" id="qtb-qa-group" data-tip="AI: Group questions into sections" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
     <button type="button" class="note-tb-btn qa-only-btn" id="qtb-qa-select-toggle" data-tip="Drag to reorder or select rows" aria-label="Drag to reorder or select rows" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg></button>
     <span class="note-tb-sep qa-only-btn qa-bulk-btn" id="qtb-sep-bulk"></span>
     <span id="qa-bulk-count" class="qa-only-btn qa-bulk-btn"></span>
@@ -6218,8 +6204,20 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="diagram-bulk-count" class="diagrams-only-btn diagram-bulk-btn"></span>
     <button class="note-tb-btn diagrams-only-btn diagram-bulk-btn" id="dtb-bulk-delete" data-tip="Delete selected diagrams"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
+    <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai" style="display:none"></span>
+    <div class="todo-dd-wrap qa-only-btn" id="qa-ai-dd-wrap">
+      <button type="button" class="todo-dd-trigger" id="qa-ai-dd-trigger" data-tip="AI actions for Q&amp;A" aria-label="AI actions" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M9 3l1.4 4.2L14.6 8.6l-4.2 1.4L9 14.2l-1.4-4.2L3.4 8.6l4.2-1.4Z" fill="currentColor"/><path d="M17.5 12.5l0.9 2.6 2.6 0.9-2.6 0.9-0.9 2.6-0.9-2.6-2.6-0.9 2.6-0.9Z" fill="currentColor"/></svg></button>
+      <div class="todo-dd-menu" id="qa-ai-dd-menu" role="menu">
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-answer-all" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg><span>Draft answers for unanswered</span></button>
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-group" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/></svg><span>Group into sections</span></button>
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-summary" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Q&amp;A summary</span></button>
+      </div>
+    </div>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-group" data-tip="AI: Group questions into sections" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
     <div class="todo-dd-wrap qa-only-btn" id="qa-export-dd-wrap">
-      <button type="button" class="todo-dd-trigger" id="qa-export-dd-trigger" data-tip="Copy or export Q&amp;A" aria-label="Copy or export Q&amp;A" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      <button type="button" class="todo-dd-trigger" id="qa-export-dd-trigger" data-tip="Copy or export Q&amp;A" aria-label="Copy or export Q&amp;A" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
       <div class="todo-dd-menu" id="qa-export-dd-menu" role="menu">
         <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-export-dd-copy" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy all as text</span></button>
         <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-export-dd-pdf" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Export as PDF</span></button>
@@ -35528,8 +35526,8 @@ function renderRemarksList(){
     controlsCorner.appendChild(removeBtn);
     card.appendChild(controlsCorner);
     card.appendChild(textInput);
-    // Row 1 — identity only: who and when. Kept short and separate from row 2 on purpose (see
-    // the CSS comment above) so this line's width almost never has to fight anything.
+    // One row, not artificially split (see the CSS comment above) - who/when/context/node-link
+    // all together, wrapping naturally only when real content genuinely doesn't fit.
     const byline=document.createElement('div'); byline.className='remark-byline';
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
     byline.appendChild(dash);
@@ -35550,16 +35548,17 @@ function renderRemarksList(){
       openRemarksDateEditor(dateDisplay,r);
     });
     byline.appendChild(dateDisplay);
-    card.appendChild(byline);
-    // Row 2 — everything variable-length: context (if any) and the linked node (if any). Its
-    // own row, wraps freely, never touches row 1. Context starts as a small "+ Add context"
-    // link rather than a permanently-reserved empty input - most remarks don't have one, so
-    // there's no reason to spend width on it until someone actually wants to add it.
-    const metaRow=document.createElement('div'); metaRow.className='remark-meta-row';
+    // Context: a small "+ Add context" link when there isn't one yet (most remarks don't have
+    // one, so no reason to permanently reserve space for it) - becomes a real input, sized to
+    // its own content the same way personInput is, once clicked or once it has a value.
     const hasContext=!!(r.context&&r.context.trim());
     if(hasContext||remarksContextEditingIds.has(r.id)){
+      const sep2=document.createElement('span'); sep2.className='remark-byline-sep'; sep2.textContent='·';
+      byline.appendChild(sep2);
       const contextInput=document.createElement('input'); contextInput.type='text'; contextInput.className='remark-context-input';
       contextInput.value=r.context||''; contextInput.placeholder='+ context'; contextInput.maxLength=140; contextInput.spellcheck=false;
+      contextInput.style.width=Math.max(9,(r.context||'+ context').length+1)+'ch';
+      contextInput.addEventListener('input',()=>{ contextInput.style.width=Math.max(9,contextInput.value.length+1)+'ch'; });
       contextInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,contextInput))return; if(e.key==='Enter'){ e.preventDefault(); contextInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); contextInput.value=r.context||''; contextInput.blur(); } });
       contextInput.addEventListener('blur',()=>{
         const val=contextInput.value.trim();
@@ -35568,15 +35567,15 @@ function renderRemarksList(){
         r.context=val; markDirty(); scheduleAutoSave();
         if(!val)renderRemarksList();
       });
-      metaRow.appendChild(contextInput);
+      byline.appendChild(contextInput);
       if(remarksContextEditingIds.has(r.id)&&!hasContext)setTimeout(()=>contextInput.focus(),0);
     } else {
       const addContextBtn=document.createElement('button'); addContextBtn.type='button'; addContextBtn.className='remark-add-context-btn'; addContextBtn.textContent='+ Add context';
       addContextBtn.addEventListener('click',e=>{ e.stopPropagation(); remarksContextEditingIds.add(r.id); renderRemarksList(); });
-      metaRow.appendChild(addContextBtn);
+      byline.appendChild(addContextBtn);
     }
-    metaRow.appendChild(anchorBtn);
-    card.appendChild(metaRow);
+    byline.appendChild(anchorBtn);
+    card.appendChild(byline);
     list.appendChild(card);
   });
 }
