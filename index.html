@@ -3985,6 +3985,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .library-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;position:absolute;top:6px;right:6px;transition:opacity .12s,color .12s,background .12s}
 .library-row:hover .library-row-delete{opacity:1}
 .library-row-delete:hover{color:var(--fc-red);background:var(--hover)}
+.library-row-favorite{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;position:absolute;top:6px;right:26px;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.library-row:hover .library-row-favorite{opacity:1}
+.library-row-favorite.active{opacity:1;color:#e0a020}
+.library-row-favorite.active svg{fill:currentColor}
+.library-row-favorite:hover{color:#e0a020;background:var(--hover)}
+#library-favorite-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
+#library-favorite-btn:hover{color:#e0a020;background:var(--hover)}
+#library-favorite-btn[aria-pressed="true"]{color:#e0a020}
+#library-favorite-btn[aria-pressed="true"] svg{fill:currentColor}
 #library-card{display:none;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:16px 18px 14px;margin-top:2px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
 #library-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 #library-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
@@ -7364,6 +7373,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="library-toolbar-row">
     <button type="button" id="library-add-btn" data-tip="New library entry"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
     <button type="button" id="library-search-toggle" data-tip="Find an entry" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <button type="button" id="library-favorites-toggle" data-tip="Show favorites only" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg></button>
     <span id="library-count-label"></span>
     <span class="dock-toolbar-spacer"></span>
     <button id="library-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
@@ -7380,6 +7390,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="library-card-top-row">
         <button type="button" id="library-back-btn" data-tip="Back to list" aria-label="Back to list"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
         <input id="library-title-input" type="text" placeholder="Title" maxlength="160" autocomplete="off" />
+        <button type="button" id="library-favorite-btn" data-tip="Favorite this entry" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg></button>
         <button type="button" id="library-delete-btn" data-tip="Delete this entry"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div>
       <div id="library-url-row">
@@ -42250,6 +42261,7 @@ let libraryExpandedId=null;
 let librarySearchOpen=false;
 let librarySearchQuery='';
 let libraryTagFilter=null;
+let libraryFavoritesOnly=false;
 
 function libUid(){ return 'lib'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 
@@ -42262,6 +42274,7 @@ function normalizeLibraryItem(it){
     urlLabel:(it&&typeof it.urlLabel==='string')?it.urlLabel:'',
     body:(it&&typeof it.body==='string')?it.body:'',
     tags:(it&&Array.isArray(it.tags))?it.tags.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim()):[],
+    favorite:!!(it&&it.favorite),
     createdAt:(it&&Number.isFinite(it.createdAt))?it.createdAt:now,
     modifiedAt:(it&&Number.isFinite(it.modifiedAt))?it.modifiedAt:now
   };
@@ -42401,8 +42414,8 @@ function renderLibraryList(){
   if(!wrap||!body)return;
   wrap.innerHTML='';
   const q=librarySearchQuery.trim();
-  const visible=libraryItems.filter(it=>librarySearchMatches(it,q)&&(!libraryTagFilter||(it.tags||[]).includes(libraryTagFilter)))
-    .slice().sort((a,b)=>(b.modifiedAt||0)-(a.modifiedAt||0));
+  const visible=libraryItems.filter(it=>librarySearchMatches(it,q)&&(!libraryTagFilter||(it.tags||[]).includes(libraryTagFilter))&&(!libraryFavoritesOnly||it.favorite))
+    .slice().sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0)||(b.modifiedAt||0)-(a.modifiedAt||0));
   const noEntriesAtAll=libraryItems.length===0;
   const noResultsForFilter=!noEntriesAtAll&&visible.length===0;
   body.classList.toggle('is-empty',noEntriesAtAll);
@@ -42424,9 +42437,8 @@ function renderLibraryList(){
   }
   if(noResultsForFilter){
     const msg=document.createElement('div'); msg.id='library-no-results-msg';
-    msg.textContent=q&&libraryTagFilter?`No entries match "${q}" with #${libraryTagFilter}.`
-      :q?`No entries match "${q}".`
-      :`No entries tagged #${libraryTagFilter}.`;
+    const parts=[]; if(q)parts.push(`"${q}"`); if(libraryTagFilter)parts.push(`#${libraryTagFilter}`); if(libraryFavoritesOnly)parts.push('favorites only');
+    msg.textContent=parts.length?`No entries match ${parts.join(' + ')}.`:'No entries found.';
     wrap.appendChild(msg);
     return;
   }
@@ -42457,13 +42469,26 @@ function renderLibraryList(){
       });
       main.appendChild(tagsRow);
     }
+    const fav=document.createElement('button'); fav.type='button'; fav.className='library-row-favorite'+(it.favorite?' active':''); fav.setAttribute('aria-label',it.favorite?'Remove from favorites':'Add to favorites');
+    fav.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg>';
+    fav.addEventListener('click',e=>{ e.stopPropagation(); toggleLibraryFavorite(it.id); });
     const del=document.createElement('button'); del.type='button'; del.className='library-row-delete'; del.setAttribute('aria-label','Delete entry');
     del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
     del.addEventListener('click',e=>{ e.stopPropagation(); deleteLibraryItemWithConfirm(it.id); });
-    row.appendChild(icon); row.appendChild(main); row.appendChild(del);
+    row.appendChild(icon); row.appendChild(main); row.appendChild(fav); row.appendChild(del);
     row.addEventListener('click',()=>openLibraryItem(it.id));
     wrap.appendChild(row);
   });
+}
+function toggleLibraryFavorite(id){
+  const it=findLibraryItem(id); if(!it)return;
+  it.favorite=!it.favorite; it.modifiedAt=Date.now();
+  saveLibraryItems();
+  renderLibraryList();
+  if(libraryExpandedId===id){
+    const btn=el('library-favorite-btn');
+    if(btn){ btn.setAttribute('aria-pressed',String(it.favorite)); btn.dataset.tip=it.favorite?'Remove from favorites':'Favorite this entry'; }
+  }
 }
 function refreshLibraryRowInList(){ if(libraryPanelOpen)renderLibraryList(); }
 
@@ -42503,10 +42528,16 @@ function deleteLibraryItemWithConfirm(id){
 el('library-delete-btn')?.addEventListener('click',()=>{ if(libraryExpandedId)deleteLibraryItemWithConfirm(libraryExpandedId); });
 el('library-add-btn')?.addEventListener('click',createLibraryItem);
 el('library-back-btn')?.addEventListener('click',()=>{ libraryExpandedId=null; showLibraryCardView(false); renderLibraryList(); });
+el('library-favorites-toggle')?.addEventListener('click',()=>{
+  libraryFavoritesOnly=!libraryFavoritesOnly;
+  el('library-favorites-toggle')?.setAttribute('aria-pressed',String(libraryFavoritesOnly));
+  renderLibraryList();
+});
 
 // ── Card population ──
 function populateLibraryCard(it){
   const titleInput=el('library-title-input'); if(titleInput)titleInput.value=it.title||'';
+  const favBtn=el('library-favorite-btn'); if(favBtn){ favBtn.setAttribute('aria-pressed',String(!!it.favorite)); favBtn.dataset.tip=it.favorite?'Remove from favorites':'Favorite this entry'; }
   const urlInput=el('library-url-input'); if(urlInput)urlInput.value=it.url||'';
   const openBtn=el('library-url-open-btn'); if(openBtn)openBtn.style.display=it.url?'inline-flex':'none';
   const labelRow=el('library-url-label-row'); if(labelRow)labelRow.style.display=it.url?'block':'none';
@@ -42520,6 +42551,10 @@ el('library-title-input')?.addEventListener('input',e=>{
   const it=findLibraryItem(libraryExpandedId); if(!it)return;
   it.title=e.target.value; it.modifiedAt=Date.now();
   saveLibraryItems(); refreshLibraryRowInList();
+});
+el('library-favorite-btn')?.addEventListener('click',()=>{
+  if(!libraryExpandedId)return;
+  toggleLibraryFavorite(libraryExpandedId);
 });
 el('library-url-input')?.addEventListener('input',e=>{
   if(!libraryExpandedId)return;
