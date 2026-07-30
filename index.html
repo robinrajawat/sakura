@@ -3397,6 +3397,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-anchor-item-disabled{color:var(--hint);cursor:not-allowed;font-style:italic}
 .diagram-anchor-item-disabled:hover{background:none;color:var(--hint)}
 .diagram-anchor-item-empty{padding:10px 9px;color:var(--hint);font-style:italic;font:400 12px 'Inter',sans-serif;text-align:center}
+.remark-anchor-tree-item{display:flex;align-items:center;gap:4px}
+.remark-anchor-tree-fold{flex:0 0 auto;width:12px;text-align:center;color:var(--hint);cursor:pointer;font-size:10px;line-height:1;border-radius:3px}
+.remark-anchor-tree-fold:hover{color:var(--fg);background:var(--border)}
+.remark-anchor-tree-fold-spacer{cursor:default}
+.remark-anchor-tree-fold-spacer:hover{background:none}
 #ref-jump-popover{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:200px;max-width:320px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 #ref-jump-popover.open{display:block}
 #ref-jump-popover-title{padding:5px 9px 6px;font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint)}
@@ -35648,39 +35653,99 @@ el('rtb-add')?.addEventListener('click', addRemark);
 let _remarksAnchorOpen=false;
 let _remarksAnchorTarget=null;
 let _remarksAnchorBtn=null;
+// Transient per-popup-open fold state for the tree browser below - resets fresh each time the
+// popup opens rather than persisting, so it's always a predictable "everything expanded" start.
+let remarksAnchorCollapsedIds=new Set();
 function getRemarksAnchorCandidates(query){
   const q=String(query||'').trim().toLowerCase();
   const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',depth:n.depth||0}));
   const filtered=q?list.filter(n=>n.text.toLowerCase().includes(q)):list;
   return filtered.slice().sort((a,b)=>a.depth-b.depth).slice(0,50);
 }
+// Real document order (not grouped by depth like the flat search-match list above), skipping
+// any subtree whose root is currently folded - same skip-forward pattern the main outline's
+// own render() already uses for its fold state, just against this popup's separate transient
+// collapse set instead of the document's real collapsedIds.
+function buildRemarksAnchorTree(){
+  const out=[]; let skipDepth=null;
+  for(let i=0;i<nodes.length;i++){
+    const n=nodes[i];
+    if(skipDepth!==null){
+      if(n.depth>skipDepth)continue;
+      skipDepth=null;
+    }
+    const hasChildren=nodeHasChildren(i);
+    const collapsed=remarksAnchorCollapsedIds.has(n.id);
+    out.push({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',depth:n.depth||0,hasChildren,collapsed});
+    if(hasChildren&&collapsed)skipDepth=n.depth;
+  }
+  return out.slice(0,300);
+}
 function renderRemarksAnchorSuggest(query,r,btn,isFilterUpdate){
   const pop=el('remarks-anchor-suggest'); if(!pop||!r)return;
   if(!btn)btn=_remarksAnchorBtn; if(!btn)return;
   _remarksAnchorTarget=r; _remarksAnchorBtn=btn;
   const results=el('remarks-anchor-results'); if(!results)return;
-  const candidates=getRemarksAnchorCandidates(query);
+  const q=String(query||'').trim();
   results.innerHTML='';
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
   noneItem.textContent='Not linked to a node';
   noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setRemarksAnchor(r,null); });
   results.appendChild(noneItem);
-  if(!candidates.length){
-    const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching nodes';
-    results.appendChild(empty);
+  if(!q){
+    // Browsing with nothing typed: a real folded tree in document order, not a flat list
+    // grouped by depth - matches how the outline itself actually looks, and a long document
+    // stays manageable by collapsing branches you don't need instead of scrolling past them.
+    const tree=buildRemarksAnchorTree();
+    if(!tree.length){
+      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No nodes yet';
+      results.appendChild(empty);
+    }
+    tree.forEach(n=>{
+      const item=document.createElement('div');
+      item.className='diagram-anchor-item remark-anchor-tree-item';
+      item.style.paddingLeft=(4+Math.min(n.depth,6)*14)+'px';
+      if(n.hasChildren){
+        const fold=document.createElement('span'); fold.className='remark-anchor-tree-fold';
+        fold.textContent=n.collapsed?'▸':'▾';
+        fold.addEventListener('mousedown',e=>{
+          e.preventDefault(); e.stopPropagation();
+          if(remarksAnchorCollapsedIds.has(n.id))remarksAnchorCollapsedIds.delete(n.id);
+          else remarksAnchorCollapsedIds.add(n.id);
+          renderRemarksAnchorSuggest('',r,btn,true);
+        });
+        item.appendChild(fold);
+      } else {
+        const spacer=document.createElement('span'); spacer.className='remark-anchor-tree-fold remark-anchor-tree-fold-spacer';
+        item.appendChild(spacer);
+      }
+      const label=document.createElement('span'); label.textContent=n.text;
+      item.appendChild(label);
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); setRemarksAnchor(r,n.id); });
+      results.appendChild(item);
+    });
+  } else {
+    // Typing a search: back to a flat relevance list, same as before - folding a tree stops
+    // being useful once you're filtering by text match instead of browsing structure.
+    const candidates=getRemarksAnchorCandidates(q);
+    if(!candidates.length){
+      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching nodes';
+      results.appendChild(empty);
+    }
+    candidates.forEach(n=>{
+      const item=document.createElement('div');
+      item.className='diagram-anchor-item';
+      item.style.paddingLeft=(8+Math.min(n.depth,6)*10)+'px';
+      item.textContent=n.text;
+      item.addEventListener('mousedown',e=>{ e.preventDefault(); setRemarksAnchor(r,n.id); });
+      results.appendChild(item);
+    });
   }
-  candidates.forEach(n=>{
-    const item=document.createElement('div');
-    item.className='diagram-anchor-item';
-    item.style.paddingLeft=(8+Math.min(n.depth,6)*10)+'px';
-    item.textContent=n.text;
-    item.addEventListener('mousedown',e=>{ e.preventDefault(); setRemarksAnchor(r,n.id); });
-    results.appendChild(item);
-  });
   if(!isFilterUpdate){
     const search=el('remarks-anchor-search');
     if(search)search.value=query||'';
+    remarksAnchorCollapsedIds=new Set();
     positionAnchorSuggestPopover(pop,btn);
     _remarksAnchorOpen=true;
     setTimeout(()=>{ el('remarks-anchor-search')?.focus(); },30);
