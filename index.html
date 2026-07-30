@@ -1553,6 +1553,7 @@ body.pad-decision-mode #pad-toolbar>.note-tb-btn:not(.decision-only-btn):not(#pa
 body.pad-diagrams-mode #pad-toolbar>.note-tb-btn:not(.diagrams-only-btn),body.pad-diagrams-mode #pad-toolbar>.note-tb-sep{display:none}
 body.pad-mindmap-mode #pad-toolbar>.note-tb-btn:not(.mindmap-only-btn),body.pad-mindmap-mode #pad-toolbar>.note-tb-sep{display:none}
 body:not(.pad-decision-mode) .decision-only-btn{display:none}
+body.pad-qa-mode #pad-clear-btn{display:none}
 body:not(.pad-qa-mode) .qa-only-btn{display:none}
 body:not(.pad-diagrams-mode) .diagrams-only-btn{display:none}
 body:not(.pad-mindmap-mode) .mindmap-only-btn{display:none}
@@ -2214,7 +2215,7 @@ body.zen-mode:not(.zen-hide-statusbar) #sb-author-divider{display:none!important
 #demo-pad-body{flex:1;padding:10px 12px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5;overflow:auto;white-space:pre-wrap}
 .demo-qa-row{white-space:normal}
 .demo-qa-q{font-weight:600;color:var(--fg);margin-bottom:6px}
-.demo-qa-a{padding-left:10px;border-left:2px solid var(--accent);color:var(--muted);min-height:16px}
+.demo-qa-a{padding-left:10px;color:var(--muted);min-height:16px}
 .demo-diagram-card{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);margin-bottom:7px;white-space:normal}
 .demo-diagram-thumb{width:26px;height:26px;border-radius:6px;background:var(--hover);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:0 0 auto}
 .demo-diagram-whiteboard{color:var(--accent)}
@@ -2616,6 +2617,7 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 #preview-overlay.pv-presenting #preview-head{display:none}
 #preview-overlay.pv-presenting #pv-doc-header{display:none}
 #preview-overlay.pv-presenting #pv-qa-section{display:none}
+#preview-overlay.pv-presenting #pv-remarks-section{display:none}
 #preview-overlay.pv-presenting #preview-doc{max-width:min(860px,90%)}
 /* Presenter mode used to reach a ~150% bigger look via a "Presenter zoom" CSS `zoom` setting
    (removed — zoom applied to #preview-body doesn't reliably rescale diagram <img> elements
@@ -2758,7 +2760,6 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-qa-row:last-child{border-bottom:none}
 .pv-qa-q{font:600 14px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px}
 .pv-qa-a{font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
-.pv-qa-a:not(.pv-qa-a-empty){border-left:2px solid var(--accent);padding-left:9px}
 .pv-qa-a-empty{color:var(--hint)}
 @media print{#pv-qa-section{break-inside:avoid-page}.pv-qa-row{break-inside:avoid-page}.pv-remarks-section-item{break-inside:avoid-page}.pv-remark{break-inside:avoid-page}}
 #preview-overlay.pv-presenting #pv-notepad-section{display:none}
@@ -2933,11 +2934,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-qa-tag-a{background:var(--chip);color:var(--muted)}
 .pv-inline-qa-question{font-weight:600;color:var(--fg)}
 .pv-inline-qa-answer{color:var(--fg);margin-top:2px}
-.pv-inline-qa-answer:not(.pv-inline-qa-unanswered){border-left:2px solid var(--accent);padding-left:8px}
 .pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
 .pv-inline-qa-answer-input{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;border-left:2px solid var(--border);background:transparent;padding:0 0 0 8px;margin-top:2px;color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45;transition:border-left-color .12s}
 .pv-inline-qa-answer-input:focus{outline:none;border-left-color:var(--accent)}
-.pv-inline-qa-answer-input:not(:placeholder-shown){border-left-color:var(--accent)}
 .pv-inline-qa-answer-input::placeholder{color:var(--hint);font-style:italic}
 
 
@@ -3469,6 +3468,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
 .todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
 .todo-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s}
+.todo-dd-item.todo-dd-item-icon{justify-content:flex-start}
+.todo-dd-item svg{flex-shrink:0;color:var(--hint)}
 .todo-dd-item:hover{background:var(--hover)}
 .todo-dd-item:active{background:var(--sel)}
 .todo-dd-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
@@ -3999,6 +4000,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #library-title-input:hover{background:var(--hover)}
 #library-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
 #library-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
+#library-back-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;display:inline-flex;transition:color .12s,background .12s}
+#library-back-btn:hover{color:var(--fg);background:var(--hover)}
 #library-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
 #library-url-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:0 2px}
 #library-url-row svg{flex-shrink:0;color:var(--hint)}
@@ -6161,10 +6164,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <button type="button" id="qa-progress" class="qa-only-btn" data-tip="Show unanswered only" aria-pressed="false"></button>
     <button type="button" id="qa-unlinked" class="qa-only-btn" data-tip="Show unlinked rows only" aria-pressed="false" style="display:none"></button>
     <button type="button" id="qa-followup-count" class="qa-only-btn" data-tip="Show follow-up rows only" aria-pressed="false" style="display:none"></button>
-    <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai"></span>
-    <button class="note-tb-btn qa-only-btn" id="qtb-qa-group" data-tip="AI: Group questions into sections"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
+    <span class="note-tb-sep qa-only-btn" id="qtb-sep-ai" style="display:none"></span>
+    <div class="todo-dd-wrap qa-only-btn" id="qa-ai-dd-wrap">
+      <button type="button" class="todo-dd-trigger" id="qa-ai-dd-trigger" data-tip="AI actions for Q&amp;A" aria-label="AI actions" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
+      <div class="todo-dd-menu" id="qa-ai-dd-menu" role="menu">
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-answer-all" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg><span>Draft answers for unanswered</span></button>
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-group" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/></svg><span>Group into sections</span></button>
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-ai-dd-summary" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Q&amp;A summary</span></button>
+      </div>
+    </div>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-group" data-tip="AI: Group questions into sections" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-ai-answer-all" data-tip="AI: Draft answers for unanswered rows" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-summary" data-tip="Q&amp;A summary (AI)" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5" stroke-width="1.6"/></svg></button>
     <button type="button" class="note-tb-btn qa-only-btn" id="qtb-qa-select-toggle" data-tip="Drag to reorder or select rows" aria-label="Drag to reorder or select rows" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg></button>
     <span class="note-tb-sep qa-only-btn qa-bulk-btn" id="qtb-sep-bulk"></span>
     <span id="qa-bulk-count" class="qa-only-btn qa-bulk-btn"></span>
@@ -6197,8 +6208,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     <span id="diagram-bulk-count" class="diagrams-only-btn diagram-bulk-btn"></span>
     <button class="note-tb-btn diagrams-only-btn diagram-bulk-btn" id="dtb-bulk-delete" data-tip="Delete selected diagrams"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
     <button class="note-tb-btn" id="pad-clear-btn" data-tip="Clear pad"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-qa-copy" data-tip="Copy all Q&amp;A as text — paste into another document's Q&amp;A via Import"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as PDF"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+    <div class="todo-dd-wrap qa-only-btn" id="qa-export-dd-wrap">
+      <button type="button" class="todo-dd-trigger" id="qa-export-dd-trigger" data-tip="Copy or export Q&amp;A" aria-label="Copy or export Q&amp;A" aria-haspopup="true" aria-expanded="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+      <div class="todo-dd-menu" id="qa-export-dd-menu" role="menu">
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-export-dd-copy" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy all as text</span></button>
+        <button type="button" class="todo-dd-item todo-dd-item-icon" id="qa-export-dd-pdf" role="menuitem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Export as PDF</span></button>
+      </div>
+    </div>
+    <button class="note-tb-btn qa-only-btn" id="qtb-qa-copy" data-tip="Copy all Q&amp;A as text — paste into another document's Q&amp;A via Import" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+    <button class="note-tb-btn qa-only-btn" id="qtb-export-txt" data-tip="Export Q&amp;A as PDF" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
   </div>
   <div id="pad-editor" contenteditable="true" spellcheck="true" data-placeholder="Notes for the whole document… Paste images, format text, add links."></div>
   <div id="qa-body">
@@ -11266,6 +11284,37 @@ document.querySelectorAll('#diagram-sort-menu .todo-dd-item').forEach(item=>{
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#diagram-sort-wrap'))el('diagram-sort-menu')?.classList.remove('open');
 });
+// Q&A toolbar consolidation: AI actions and Copy/Export were five separate always-visible
+// icons; grouped into two dropdowns using the same todo-dd-* component diagram-sort already
+// uses. Each menu item forwards a real 'mousedown' event to its original button (kept in the
+// DOM, just hidden) rather than duplicating logic - one of the five (qtb-qa-copy) is inline
+// logic, not a single function call, so dispatching the same event type its listener is
+// actually bound to is the one approach that works uniformly for all five without touching
+// any of their existing handlers.
+function forwardQaToolbarAction(originalBtnId){
+  const btn=el(originalBtnId); if(!btn)return;
+  btn.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));
+}
+function wireQaToolbarDropdown(triggerId,menuId,wrapId){
+  el(triggerId)?.addEventListener('click',e=>{
+    e.stopPropagation();
+    const menu=el(menuId); if(!menu)return;
+    const isOpen=menu.classList.contains('open');
+    document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
+    menu.classList.toggle('open',!isOpen);
+    e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
+  });
+  document.addEventListener('mousedown',e=>{
+    if(!e.target.closest('#'+wrapId))el(menuId)?.classList.remove('open');
+  });
+}
+wireQaToolbarDropdown('qa-ai-dd-trigger','qa-ai-dd-menu','qa-ai-dd-wrap');
+wireQaToolbarDropdown('qa-export-dd-trigger','qa-export-dd-menu','qa-export-dd-wrap');
+el('qa-ai-dd-answer-all')?.addEventListener('click',()=>{ el('qa-ai-dd-menu')?.classList.remove('open'); forwardQaToolbarAction('qtb-ai-answer-all'); });
+el('qa-ai-dd-group')?.addEventListener('click',()=>{ el('qa-ai-dd-menu')?.classList.remove('open'); forwardQaToolbarAction('qtb-qa-group'); });
+el('qa-ai-dd-summary')?.addEventListener('click',()=>{ el('qa-ai-dd-menu')?.classList.remove('open'); forwardQaToolbarAction('qtb-qa-summary'); });
+el('qa-export-dd-copy')?.addEventListener('click',()=>{ el('qa-export-dd-menu')?.classList.remove('open'); forwardQaToolbarAction('qtb-qa-copy'); });
+el('qa-export-dd-pdf')?.addEventListener('click',()=>{ el('qa-export-dd-menu')?.classList.remove('open'); forwardQaToolbarAction('qtb-export-txt'); });
 el('doc-status-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
   const menu=el('doc-status-menu'); if(!menu)return;
