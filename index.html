@@ -3094,7 +3094,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
 .anchor-suggest-results::-webkit-scrollbar,#meetings-body::-webkit-scrollbar,#meeting-link-results::-webkit-scrollbar,#meetings-template-menu::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
-#debug-log-view::-webkit-scrollbar,#report-modal-body::-webkit-scrollbar
+#debug-log-view::-webkit-scrollbar,#report-modal-body::-webkit-scrollbar,#library-body::-webkit-scrollbar,#journal-body::-webkit-scrollbar
 {width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
@@ -3103,7 +3103,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#meetings-body::-webkit-scrollbar-thumb,#meeting-link-results::-webkit-scrollbar-thumb,#meetings-template-menu::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
-#debug-log-view::-webkit-scrollbar-thumb,#report-modal-body::-webkit-scrollbar-thumb
+#debug-log-view::-webkit-scrollbar-thumb,#report-modal-body::-webkit-scrollbar-thumb,#library-body::-webkit-scrollbar-thumb,#journal-body::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
@@ -3973,7 +3973,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .library-row-url{font:400 11px 'Inter',sans-serif;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .library-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .library-row-tags{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap}
-.library-row-tag{font:500 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:1px 6px;border-radius:99px}
+.library-row-tag{font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:2px 8px;border-radius:99px}
 .library-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;position:absolute;top:6px;right:6px;transition:opacity .12s,color .12s,background .12s}
 .library-row:hover .library-row-delete{opacity:1}
 .library-row-delete:hover{color:var(--fc-red);background:var(--hover)}
@@ -3992,7 +3992,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #library-url-open-btn:hover{color:var(--accent);background:var(--hover)}
 #library-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
 #library-tag-chips{display:flex;flex-wrap:wrap;gap:5px}
-.library-tag-chip{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:var(--hover);border:1px solid var(--border);padding:3px 4px 3px 9px;border-radius:99px}
+.library-tag-chip{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:3px 4px 3px 9px;border-radius:99px}
 .library-tag-chip button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:1px;display:inline-flex;border-radius:50%}
 .library-tag-chip button:hover{color:var(--fc-red)}
 #library-tag-input{flex:1;min-width:90px;appearance:none;border:none;background:none;color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 2px;outline:none}
@@ -42498,7 +42498,8 @@ el('library-tag-input')?.addEventListener('keydown',e=>{
     const input=e.currentTarget; const val=input.value.trim().replace(/^#/,'');
     if(!val||!libraryExpandedId)return;
     const it=findLibraryItem(libraryExpandedId); if(!it)return;
-    if(!it.tags.includes(val))it.tags.push(val);
+    if(!it.tags.includes(val)){ it.tags.push(val); showLibraryToast('Tag added'); }
+    else{ showLibraryToast('Tag already added'); }
     it.modifiedAt=Date.now();
     saveLibraryItems();
     renderLibraryTags(it); refreshLibraryRowInList();
