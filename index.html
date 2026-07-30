@@ -3992,6 +3992,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #library-url-input::placeholder{color:var(--hint);font-style:italic}
 #library-url-open-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px;border-radius:5px;flex-shrink:0;display:inline-flex;transition:color .12s,background .12s}
 #library-url-open-btn:hover{color:var(--accent);background:var(--hover)}
+#library-url-label-row{padding:0 2px 8px 21px;margin-top:-6px}
+#library-url-label-input{width:100%;box-sizing:border-box;appearance:none;border:none;background:none;color:var(--muted);font:400 11.5px 'Inter',sans-serif;outline:none;padding:2px 0}
+#library-url-label-input::placeholder{color:var(--hint);font-style:italic}
+#library-url-label-input:focus{color:var(--fg)}
 #library-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
 #library-tag-chips{display:flex;flex-wrap:wrap;gap:5px}
 .library-tag-chip{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:3px 4px 3px 9px;border-radius:99px}
@@ -7376,6 +7380,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         <input id="library-url-input" type="url" placeholder="Add a URL (optional)" autocomplete="off" maxlength="2000" />
         <button type="button" id="library-url-open-btn" data-tip="Open link" aria-label="Open link" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
+      </div>
+      <div id="library-url-label-row" style="display:none">
+        <input id="library-url-label-input" type="text" placeholder="Label for this link (optional)" autocomplete="off" maxlength="120" />
       </div>
       <div id="library-tags-row">
         <div id="library-tag-chips"></div>
@@ -42245,6 +42252,7 @@ function normalizeLibraryItem(it){
     id:(it&&typeof it.id==='string')?it.id:libUid(),
     title:(it&&typeof it.title==='string')?it.title:'',
     url:(it&&typeof it.url==='string')?it.url:'',
+    urlLabel:(it&&typeof it.urlLabel==='string')?it.urlLabel:'',
     body:(it&&typeof it.body==='string')?it.body:'',
     tags:(it&&Array.isArray(it.tags))?it.tags.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim()):[],
     createdAt:(it&&Number.isFinite(it.createdAt))?it.createdAt:now,
@@ -42374,7 +42382,7 @@ function stripHtmlToSnippet(html){
 // ── List rendering ──
 function librarySearchMatches(item,q){
   if(!q)return true;
-  const hay=(item.title+' '+item.url+' '+stripHtmlToSnippet(item.body)+' '+(item.tags||[]).join(' ')).toLowerCase();
+  const hay=(item.title+' '+item.url+' '+(item.urlLabel||'')+' '+stripHtmlToSnippet(item.body)+' '+(item.tags||[]).join(' ')).toLowerCase();
   return hay.includes(q.toLowerCase());
 }
 function renderLibraryList(){
@@ -42395,7 +42403,7 @@ function renderLibraryList(){
     const main=document.createElement('div'); main.className='library-row-main';
     const title=document.createElement('div'); title.className='library-row-title'; title.textContent=it.title||'';
     main.appendChild(title);
-    if(it.url){ const u=document.createElement('div'); u.className='library-row-url'; u.textContent=it.url; main.appendChild(u); }
+    if(it.url){ const u=document.createElement('div'); u.className='library-row-url'; u.textContent=it.urlLabel||it.url; main.appendChild(u); }
     const snippet=stripHtmlToSnippet(it.body);
     if(snippet){ const s=document.createElement('div'); s.className='library-row-snippet'; s.textContent=snippet; main.appendChild(s); }
     if((it.tags||[]).length){
@@ -42455,6 +42463,8 @@ function populateLibraryCard(it){
   const titleInput=el('library-title-input'); if(titleInput)titleInput.value=it.title||'';
   const urlInput=el('library-url-input'); if(urlInput)urlInput.value=it.url||'';
   const openBtn=el('library-url-open-btn'); if(openBtn)openBtn.style.display=it.url?'inline-flex':'none';
+  const labelRow=el('library-url-label-row'); if(labelRow)labelRow.style.display=it.url?'block':'none';
+  const labelInput=el('library-url-label-input'); if(labelInput)labelInput.value=it.urlLabel||'';
   const bodyField=el('library-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(it.body||'');
   renderLibraryTags(it);
   const ts=el('library-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(it.modifiedAt);
@@ -42470,6 +42480,13 @@ el('library-url-input')?.addEventListener('input',e=>{
   const it=findLibraryItem(libraryExpandedId); if(!it)return;
   it.url=e.target.value.trim(); it.modifiedAt=Date.now();
   const openBtn=el('library-url-open-btn'); if(openBtn)openBtn.style.display=it.url?'inline-flex':'none';
+  const labelRow=el('library-url-label-row'); if(labelRow)labelRow.style.display=it.url?'block':'none';
+  saveLibraryItems(); refreshLibraryRowInList();
+});
+el('library-url-label-input')?.addEventListener('input',e=>{
+  if(!libraryExpandedId)return;
+  const it=findLibraryItem(libraryExpandedId); if(!it)return;
+  it.urlLabel=e.target.value; it.modifiedAt=Date.now();
   saveLibraryItems(); refreshLibraryRowInList();
 });
 el('library-url-open-btn')?.addEventListener('click',()=>{
@@ -42686,14 +42703,14 @@ window.collectLibraryMatches=function(q){
   for(const it of sorted){
     if(out.length>=6) break;
     const bodyText=stripHtmlToText(it.body||'');
-    const hay=[it.title,it.url,(it.tags||[]).join(' '),bodyText].join(' ');
+    const hay=[it.title,it.url,it.urlLabel,(it.tags||[]).join(' '),bodyText].join(' ');
     if(!hayMatch(hay, tokens)) continue;
     const label=(it.title.trim()||bodyText.trim()||'Untitled').slice(0,80);
     out.push({
       group:'Library',
       label,
       labelHtml:snippet(label,q),
-      meta: it.url||(it.tags||[]).map(t=>'#'+t).join(' ')||'',
+      meta: (it.urlLabel||it.url)||(it.tags||[]).map(t=>'#'+t).join(' ')||'',
       action:()=>{ if(typeof closeAllPanelsExceptGlobalSearch==='function') closeAllPanelsExceptGlobalSearch(); window.sakuraOpenLibraryFromRef(it.id); }
     });
   }
