@@ -3269,6 +3269,8 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-row-remove{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s}
 .remark-row-remove:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .remark-anchor-btn{appearance:none;border:none;background:none;color:var(--hint);font:400 10.5px 'Inter',sans-serif;padding:3px 5px;border-radius:5px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;display:inline-flex;align-items:center;gap:3px}
+.remark-anchor-btn.remark-anchor-btn-unset{opacity:0;transition:opacity .12s,color .12s,background .12s}
+.remark-card:hover .remark-anchor-btn.remark-anchor-btn-unset,.remark-card:focus-within .remark-anchor-btn.remark-anchor-btn-unset{opacity:1}
 .remark-anchor-btn:hover{background:var(--bg);color:var(--fg)}
 .remark-anchor-btn.remark-anchor-btn-orphaned{color:var(--sem-alert,#b85450)}
 .remark-anchor-btn.remark-anchor-btn-orphaned:hover{background:var(--sem-alert,#b85450);color:var(--bg)}
@@ -5072,6 +5074,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Generate questions</span><span class="settings-row-desc">Adds a button in the Q&amp;A toolbar that reads the document and suggests relevant questions worth asking about it — not just nodes that already end in "?" (that's the separate Scan button). Uses whatever's selected in the outline as its scope (a single node's whole section, or exactly the nodes in a multi-select) — with nothing selected, it reads the whole document. Opens the same review checklist as Scan, so nothing is added until you confirm.</span></div><button id="qa-ai-generate-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Generate questions"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Group into sections</span><span class="settings-row-desc">Adds a button in the Q&amp;A toolbar that reads every question in the list and organizes them into a small number of named sections by topic, using the section-header rows already available from the + menu. Replaces any existing section groupings with a fresh one built from scratch, rather than layering on top of them — every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change. Undo restores the previous arrangement in one step.</span></div><button id="qa-ai-group-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Group into sections"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Draft answers</span><span class="settings-row-desc">Adds a button that finds every unanswered question in the list and drafts an answer for each from the document's own content, in one pass. Skips anything already answered. Each AI-drafted answer gets the same "AI draft" follow-up flag a person can set by hand, so drafted answers are easy to find and review later rather than looking identical to ones you wrote yourself. Off by default — off until you turn it on here.</span></div><button id="qa-ai-bulk-answer-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Enable Draft answers"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Q&amp;A summary</span><span class="settings-row-desc">Adds a button that sends the whole question/answer list to AI and returns a condensed summary in a modal — every question, whether answered or not, with a note of how many are still unanswered. A Regenerate button in that modal re-runs it without needing to reopen the toolbar. Off by default — off until you turn it on here.</span></div><button id="qa-ai-summary-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Enable Q&amp;A summary"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="features" id="settings-section-features">
@@ -33769,6 +33773,10 @@ function setQaAiGenerateEnabled(on, persist=true){
 }
 el('qa-ai-generate-toggle')?.addEventListener('click',()=>setQaAiGenerateEnabled(!qaAiGenerateEnabled));
 el('qa-ai-generate-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaAiGenerateEnabled(!qaAiGenerateEnabled);}});
+el('qa-ai-bulk-answer-toggle')?.addEventListener('click',()=>setQaAiBulkAnswerEnabled(!qaAiBulkAnswerEnabled));
+el('qa-ai-bulk-answer-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaAiBulkAnswerEnabled(!qaAiBulkAnswerEnabled);}});
+el('qa-ai-summary-toggle')?.addEventListener('click',()=>setQaAiSummaryEnabled(!qaAiSummaryEnabled));
+el('qa-ai-summary-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setQaAiSummaryEnabled(!qaAiSummaryEnabled);}});
 function setQaAiGroupEnabled(on, persist=true){
   qaAiGroupEnabled=!!on;
   const toggle=el('qa-ai-group-toggle'); if(toggle){ toggle.classList.toggle('on', qaAiGroupEnabled); toggle.setAttribute('aria-checked', String(qaAiGroupEnabled)); }
@@ -35480,6 +35488,11 @@ function renderRemarksList(){
     const anchorBtn=document.createElement('button'); anchorBtn.type='button'; anchorBtn.className='remark-anchor-btn';
     const isOrphaned=r.anchorNodeId!=null&&!nodes.some(n=>n.id===r.anchorNodeId);
     if(isOrphaned)anchorBtn.classList.add('remark-anchor-btn-orphaned');
+    // Same reveal-on-hover pattern Q&A's "Answered by" field already uses: hover-only while
+    // there's nothing to show yet, always visible once it actually holds something. An
+    // orphaned link (was linked, node got deleted) stays visible either way - that's a warning
+    // state worth surfacing, not something to tuck away.
+    if(r.anchorNodeId==null)anchorBtn.classList.add('remark-anchor-btn-unset');
     const anchorLabel=remarksAnchorLabel(r);
     anchorBtn.innerHTML=(r.anchorNodeId!=null?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>':'')+`<span>${esc(isOrphaned?'Relink':(r.anchorNodeId!=null?anchorLabel.replace(/^Under: /,''):'Link to node'))}</span>`;
     anchorBtn.title=anchorLabel;
