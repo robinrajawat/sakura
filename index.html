@@ -15195,6 +15195,37 @@ el('editor-pane')?.addEventListener('keyup',e=>{
 });
 
 function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+// Standard mirror-div technique: clones the textarea's exact text-layout styles (width, font,
+// padding, wrapping) into a hidden div so the browser wraps the text identically, then measures
+// where a marker lands to get the true visual line index -- this is the only reliable way to know
+// whether the caret is on the wrapped paragraph's first/last line, since character offset alone
+// (e.g. selectionStart===0) can't distinguish "start of line 1" from "on line 1, but not at column 0".
+const _CARET_MIRROR_PROPS=['boxSizing','width','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','fontFamily','fontSize','fontWeight','fontStyle','letterSpacing','lineHeight','wordSpacing','wordBreak'];
+function _buildCaretMirror(textarea){
+  const cs=getComputedStyle(textarea); const mirror=document.createElement('div');
+  _CARET_MIRROR_PROPS.forEach(p=>{ mirror.style[p]=cs[p] });
+  mirror.style.position='absolute'; mirror.style.visibility='hidden'; mirror.style.height='auto'; mirror.style.top='0'; mirror.style.left='-9999px'; mirror.style.whiteSpace='pre-wrap'; mirror.style.overflowWrap='break-word';
+  return mirror
+}
+function caretVisualLineIndex(textarea){
+  const mirror=_buildCaretMirror(textarea);
+  mirror.textContent=textarea.value.substring(0,textarea.selectionStart);
+  const marker=document.createElement('span'); marker.textContent='\u200b'; mirror.appendChild(marker);
+  document.body.appendChild(mirror);
+  const lh=parseFloat(getComputedStyle(textarea).lineHeight)||16;
+  const idx=Math.round(marker.offsetTop/lh);
+  document.body.removeChild(mirror);
+  return idx
+}
+function caretVisualLineCount(textarea){
+  const mirror=_buildCaretMirror(textarea);
+  mirror.textContent=textarea.value||'\u200b';
+  document.body.appendChild(mirror);
+  const lh=parseFloat(getComputedStyle(textarea).lineHeight)||16;
+  const lines=Math.max(1,Math.round(mirror.offsetHeight/lh));
+  document.body.removeChild(mirror);
+  return lines
+}
 // Places the caret at a specific offset rather than just start/end -- used by single-click-to-edit
 // below, so clicking mid-sentence doesn't force the caret to jump to one end of the line first.
 function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
@@ -21207,21 +21238,17 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
   // caret movement across wrapped lines within a long paragraph is left untouched, since the browser
   // already can't move further at that point anyway.
   if(e.key==='ArrowUp'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
-    const ta=e.target; const beforeStart=ta.selectionStart, beforeEnd=ta.selectionEnd;
-    setTimeout(()=>{
-      if(ta.selectionStart!==beforeStart||ta.selectionEnd!==beforeEnd)return; // caret moved within the wrapped text -- normal navigation, nothing to do
-      const curIdx=getIndex(id); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(curIdx);
-      if(pos>0){ const prevId=nodes[vis[pos-1]].id; const wantCol=_lastArrowCol??beforeStart; const targetLen=(nodes[getIndex(prevId)].text||'').length; commitEdit(); beginEditAt(prevId,Math.min(wantCol,targetLen)); _lastArrowCol=wantCol }
-    },0);
+    const ta=e.target;
+    if(caretVisualLineIndex(ta)>0)return; // caret is below the first wrapped line -- let the browser move up within the paragraph normally
+    const curIdx=getIndex(id); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(curIdx);
+    if(pos>0){ e.preventDefault(); const prevId=nodes[vis[pos-1]].id; const wantCol=_lastArrowCol??ta.selectionStart; const targetLen=(nodes[getIndex(prevId)].text||'').length; commitEdit(); beginEditAt(prevId,Math.min(wantCol,targetLen)); _lastArrowCol=wantCol }
     return
   }
   if(e.key==='ArrowDown'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
-    const ta=e.target; const beforeStart=ta.selectionStart, beforeEnd=ta.selectionEnd;
-    setTimeout(()=>{
-      if(ta.selectionStart!==beforeStart||ta.selectionEnd!==beforeEnd)return;
-      const curIdx=getIndex(id); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(curIdx);
-      if(pos>=0&&pos<vis.length-1){ const nextId=nodes[vis[pos+1]].id; const wantCol=_lastArrowCol??beforeStart; const targetLen=(nodes[getIndex(nextId)].text||'').length; commitEdit(); beginEditAt(nextId,Math.min(wantCol,targetLen)); _lastArrowCol=wantCol }
-    },0);
+    const ta=e.target;
+    if(caretVisualLineIndex(ta)<caretVisualLineCount(ta)-1)return; // not on the last wrapped line yet -- let the browser move down normally
+    const curIdx=getIndex(id); const vis=getVisibleNodeIndexes(); const pos=vis.indexOf(curIdx);
+    if(pos>=0&&pos<vis.length-1){ e.preventDefault(); const nextId=nodes[vis[pos+1]].id; const wantCol=_lastArrowCol??ta.selectionStart; const targetLen=(nodes[getIndex(nextId)].text||'').length; commitEdit(); beginEditAt(nextId,Math.min(wantCol,targetLen)); _lastArrowCol=wantCol }
     return
   }
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'){ _lastArrowCol=null }
