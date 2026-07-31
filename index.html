@@ -35521,12 +35521,12 @@ function autosizeInlineInput(input,fallbackText){
 // clicking it opens the same real calendar popover component Todo's due date uses (see
 // openRemarksDateEditor below) rather than the browser's native picker.
 const REMARK_AVATAR_PALETTE=[
-  {bg:'#dae8fc',fg:'#6c8ebf'}, // blue
-  {bg:'#d5e8d4',fg:'#82b366'}, // green
-  {bg:'#e1d5e7',fg:'#9673a6'}, // purple
-  {bg:'#f8cecc',fg:'#b85450'}, // red-pink
-  {bg:'#ffe6cc',fg:'#d79b00'}, // amber
-  {bg:'#d4f0f0',fg:'#3a9e9e'}, // teal
+  {bg:'#dae8fc',fg:'#6c8ebf',avatarBg:'#567299'}, // blue
+  {bg:'#d5e8d4',fg:'#82b366',avatarBg:'#5b7d47'}, // green
+  {bg:'#e1d5e7',fg:'#9673a6',avatarBg:'#876795'}, // purple
+  {bg:'#f8cecc',fg:'#b85450',avatarBg:'#b85450'}, // red-pink
+  {bg:'#ffe6cc',fg:'#d79b00',avatarBg:'#966c00'}, // amber
+  {bg:'#d4f0f0',fg:'#3a9e9e',avatarBg:'#2e7e7e'}, // teal
 ];
 function remarkAuthorInitials(name){
   const words=String(name||'').trim().split(/\s+/).filter(Boolean);
@@ -35536,6 +35536,7 @@ function remarkAuthorInitials(name){
 }
 function remarkAuthorColor(name){
   const s=String(name||'').trim().toLowerCase();
+  if(!s)return {bg:'#e8e6e0',fg:'#8a8780',avatarBg:'#75736d'};
   let hash=0;
   for(let i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))|0;
   return REMARK_AVATAR_PALETTE[Math.abs(hash)%REMARK_AVATAR_PALETTE.length];
@@ -35642,7 +35643,7 @@ function renderRemarksList(){
     // it or reserves space in it anymore.
     const byline=document.createElement('div'); byline.className='remark-byline';
     const avatar=document.createElement('span'); avatar.className='remark-avatar';
-    avatar.style.background=avColor.bg; avatar.style.color=avColor.fg;
+    avatar.style.background=avColor.avatarBg; avatar.style.color='#fff';
     avatar.textContent=remarkAuthorInitials(r.person);
     byline.appendChild(avatar);
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
@@ -35653,7 +35654,7 @@ function renderRemarksList(){
     autosizeInlineInput(personInput,'Who said it');
     personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
     personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
-    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.bg; avatar.style.color=c.fg; avatar.textContent=remarkAuthorInitials(val); textInput.style.borderLeftColor=c.fg; });
+    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.avatarBg; avatar.style.color='#fff'; avatar.textContent=remarkAuthorInitials(val); textInput.style.borderLeftColor=c.fg; });
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
     byline.appendChild(sep1);
     const dateDisplay=document.createElement('button'); dateDisplay.type='button'; dateDisplay.className='remark-date-display';
