@@ -3248,6 +3248,7 @@ body.pad-remarks-mode #pad-toolbar>.note-tb-btn:not(.remarks-only-btn):not(#pad-
 .remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
 .remark-text-input li{margin:1px 0}
 .remark-byline{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding-left:16px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
+.remark-avatar{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;font:600 8.5px 'Inter',sans-serif;flex:0 0 auto;letter-spacing:.2px}
 .remark-byline-dash{color:var(--hint);flex:0 0 auto}
 .remark-person-input{appearance:none;border:none;background:none;color:var(--fg);font:600 12px 'Inter',sans-serif;padding:1px 3px;border-radius:4px;flex:0 0 auto}
 .remark-person-input:hover,.remark-person-input:focus{background:var(--hover)}
@@ -35519,6 +35520,26 @@ function autosizeInlineInput(input,fallbackText){
 // shown as a small plain-text span, formatted consistently with the rest of the byline, and
 // clicking it opens the same real calendar popover component Todo's due date uses (see
 // openRemarksDateEditor below) rather than the browser's native picker.
+const REMARK_AVATAR_PALETTE=[
+  {bg:'#dae8fc',fg:'#6c8ebf'}, // blue
+  {bg:'#d5e8d4',fg:'#82b366'}, // green
+  {bg:'#e1d5e7',fg:'#9673a6'}, // purple
+  {bg:'#f8cecc',fg:'#b85450'}, // red-pink
+  {bg:'#ffe6cc',fg:'#d79b00'}, // amber
+  {bg:'#d4f0f0',fg:'#3a9e9e'}, // teal
+];
+function remarkAuthorInitials(name){
+  const words=String(name||'').trim().split(/\s+/).filter(Boolean);
+  if(!words.length)return '?';
+  if(words.length===1)return words[0].slice(0,2).toUpperCase();
+  return (words[0][0]+words[words.length-1][0]).toUpperCase();
+}
+function remarkAuthorColor(name){
+  const s=String(name||'').trim().toLowerCase();
+  let hash=0;
+  for(let i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))|0;
+  return REMARK_AVATAR_PALETTE[Math.abs(hash)%REMARK_AVATAR_PALETTE.length];
+}
 function formatRemarkDateDisplay(dateStr){
   const s=dateStr||todayDateStr();
   const parts=s.split('-').map(Number);
@@ -35618,6 +35639,11 @@ function renderRemarksList(){
     // doesn't fit. The quote text above is a plain full-width block now; nothing floats near
     // it or reserves space in it anymore.
     const byline=document.createElement('div'); byline.className='remark-byline';
+    const avatar=document.createElement('span'); avatar.className='remark-avatar';
+    const avColor=remarkAuthorColor(r.person);
+    avatar.style.background=avColor.bg; avatar.style.color=avColor.fg;
+    avatar.textContent=remarkAuthorInitials(r.person);
+    byline.appendChild(avatar);
     const dash=document.createElement('span'); dash.className='remark-byline-dash'; dash.textContent='—';
     byline.appendChild(dash);
     const personInput=document.createElement('input'); personInput.type='text'; personInput.className='remark-person-input';
@@ -35626,7 +35652,7 @@ function renderRemarksList(){
     autosizeInlineInput(personInput,'Who said it');
     personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
     personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
-    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); });
+    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.bg; avatar.style.color=c.fg; avatar.textContent=remarkAuthorInitials(val); });
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
     byline.appendChild(sep1);
     const dateDisplay=document.createElement('button'); dateDisplay.type='button'; dateDisplay.className='remark-date-display';
