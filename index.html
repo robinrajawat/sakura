@@ -35581,6 +35581,7 @@ function renderRemarksList(){
   });
   sorted.forEach(r=>{
     const card=document.createElement('div'); card.className='remark-card'; card.dataset.id=r.id;
+    const avColor=remarkAuthorColor(r.person);
     const bulletBtn=document.createElement('button'); bulletBtn.type='button'; bulletBtn.className='remark-tb-btn'; bulletBtn.dataset.tip='Bulleted list';
     bulletBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>';
     const rewriteBtn=document.createElement('button'); rewriteBtn.type='button'; rewriteBtn.className='remark-tb-btn'; rewriteBtn.dataset.tip='Rewrite with AI';
@@ -35613,6 +35614,7 @@ function renderRemarksList(){
     // A real contenteditable (like Decision Log's fields), not a plain textarea — so it supports
     // bulleted lists and AI rewrite the same way every other substantial text field in Sakura does.
     const textInput=document.createElement('div'); textInput.className='remark-text-input'; textInput.contentEditable='true'; textInput.id='remark-text-'+r.id;
+    textInput.style.borderLeftColor=avColor.fg;
     textInput.dataset.placeholder='What did they say?'; textInput.spellcheck=true;
     textInput.innerHTML=sakuraSanitizeRichHtml(r.text||'');
     const snapshotHtml=()=>textInput.innerHTML;
@@ -35640,7 +35642,6 @@ function renderRemarksList(){
     // it or reserves space in it anymore.
     const byline=document.createElement('div'); byline.className='remark-byline';
     const avatar=document.createElement('span'); avatar.className='remark-avatar';
-    const avColor=remarkAuthorColor(r.person);
     avatar.style.background=avColor.bg; avatar.style.color=avColor.fg;
     avatar.textContent=remarkAuthorInitials(r.person);
     byline.appendChild(avatar);
@@ -35652,7 +35653,7 @@ function renderRemarksList(){
     autosizeInlineInput(personInput,'Who said it');
     personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
     personInput.addEventListener('keydown',e=>{ if(handleGenericQaKeydown(e,personInput))return; if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
-    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.bg; avatar.style.color=c.fg; avatar.textContent=remarkAuthorInitials(val); });
+    personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.bg; avatar.style.color=c.fg; avatar.textContent=remarkAuthorInitials(val); textInput.style.borderLeftColor=c.fg; });
     const sep1=document.createElement('span'); sep1.className='remark-byline-sep'; sep1.textContent='·';
     byline.appendChild(sep1);
     const dateDisplay=document.createElement('button'); dateDisplay.type='button'; dateDisplay.className='remark-date-display';
