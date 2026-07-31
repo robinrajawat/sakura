@@ -11216,6 +11216,7 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
   const results=el('diagram-anchor-results'); if(!results)return;
   const q=String(query||'').trim();
   results.innerHTML='';
+  if(!isFilterUpdate)diagramAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
   noneItem.textContent='Not linked to a node';
@@ -11251,7 +11252,6 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('diagram-anchor-search');
     if(search)search.value=query||'';
-    diagramAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
     positionAnchorSuggestPopover(pop,btn);
     _diagramAnchorOpen=true;
     setTimeout(()=>{ el('diagram-anchor-search')?.focus(); },30);
@@ -28473,6 +28473,7 @@ function renderDecisionAnchorSuggest(query,dl,btn,isFilterUpdate){
   const results=el('decision-anchor-results'); if(!results)return;
   const q=String(query||'').trim();
   results.innerHTML='';
+  if(!isFilterUpdate)decisionAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
   noneItem.textContent='Not linked to a node';
@@ -28513,7 +28514,6 @@ function renderDecisionAnchorSuggest(query,dl,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('decision-anchor-search');
     if(search)search.value=query||'';
-    decisionAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
     positionAnchorSuggestPopover(pop,btn);
     _decisionAnchorOpen=true;
     setTimeout(()=>{ el('decision-anchor-search')?.focus(); },30);
@@ -35382,6 +35382,7 @@ function renderFilesAnchorSuggest(query,a,btn,isFilterUpdate){
   const results=el('files-anchor-results'); if(!results)return;
   const q=String(query||'').trim();
   results.innerHTML='';
+  if(!isFilterUpdate)filesAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
   noneItem.textContent='Not linked to a node';
@@ -35417,7 +35418,6 @@ function renderFilesAnchorSuggest(query,a,btn,isFilterUpdate){
   if(!isFilterUpdate){
     const search=el('files-anchor-search');
     if(search)search.value=query||'';
-    filesAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
     positionAnchorSuggestPopover(pop,btn);
     _filesAnchorOpen=true;
     setTimeout(()=>{ el('files-anchor-search')?.focus(); },30);
@@ -44294,6 +44294,7 @@ function renderMindMapAnchorSuggest(query,isFilterUpdate){
   const results=el('mindmap-node-anchor-results'); if(!results)return;
   const q=String(query||'').trim();
   results.innerHTML='';
+  if(!isFilterUpdate)mindMapAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   if(_mmAnchorMode==='link'){
     const noneItem=document.createElement('div');
     noneItem.className='diagram-anchor-item diagram-anchor-item-none';
@@ -44335,7 +44336,6 @@ function renderMindMapAnchorSuggest(query,isFilterUpdate){
   }
   if(!isFilterUpdate){
     const search=el('mindmap-node-anchor-search'); if(search)search.value=query||'';
-    mindMapAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
     const p=_mmAnchorScreenPos||{x:100,y:100};
     pop.style.left=Math.max(8,Math.min(p.x,window.innerWidth-330))+'px';
     pop.style.top=Math.max(8,Math.min(p.y+6,window.innerHeight-330))+'px';
