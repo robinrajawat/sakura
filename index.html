@@ -7755,7 +7755,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
 </div>
 <script>
-const VERSION='v1.0.0'; const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_v001_meta'; const PREFS_KEY='sakura_v001_prefs';
+const VERSION='v1.0.0'; const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_v001_meta';
+const REMARK_AVATAR_PALETTE=[
+  {bg:'#dae8fc',fg:'#6c8ebf',avatarBg:'#567299'}, // blue
+  {bg:'#d5e8d4',fg:'#82b366',avatarBg:'#5b7d47'}, // green
+  {bg:'#e1d5e7',fg:'#9673a6',avatarBg:'#876795'}, // purple
+  {bg:'#f8cecc',fg:'#b85450',avatarBg:'#b85450'}, // red-pink
+  {bg:'#ffe6cc',fg:'#d79b00',avatarBg:'#966c00'}, // amber
+  {bg:'#d4f0f0',fg:'#3a9e9e',avatarBg:'#2e7e7e'}, // teal
+]; const PREFS_KEY='sakura_v001_prefs';
 // Recent-answerer autocomplete history (Q&A "Answered by", Decision Log "Decided by") lives
 // in its own key rather than PREFS_KEY — it's accumulated usage data, not a setting a person
 // chooses, so it shouldn't be wiped by a settings reset/restore or bundled into an exported
@@ -35712,14 +35720,6 @@ function autosizeInlineInput(input,fallbackText){
 // shown as a small plain-text span, formatted consistently with the rest of the byline, and
 // clicking it opens the same real calendar popover component Todo's due date uses (see
 // openRemarksDateEditor below) rather than the browser's native picker.
-const REMARK_AVATAR_PALETTE=[
-  {bg:'#dae8fc',fg:'#6c8ebf',avatarBg:'#567299'}, // blue
-  {bg:'#d5e8d4',fg:'#82b366',avatarBg:'#5b7d47'}, // green
-  {bg:'#e1d5e7',fg:'#9673a6',avatarBg:'#876795'}, // purple
-  {bg:'#f8cecc',fg:'#b85450',avatarBg:'#b85450'}, // red-pink
-  {bg:'#ffe6cc',fg:'#d79b00',avatarBg:'#966c00'}, // amber
-  {bg:'#d4f0f0',fg:'#3a9e9e',avatarBg:'#2e7e7e'}, // teal
-];
 function remarkAuthorInitials(name){
   const words=String(name||'').trim().split(/\s+/).filter(Boolean);
   if(!words.length)return '?';
