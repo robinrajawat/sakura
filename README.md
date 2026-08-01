@@ -140,7 +140,8 @@ AI features are entirely optional and require your own API key for one of the bu
 - **Chrome background** — five presets (Default, Slate, Sand, Ink, Rose) that recolor the toolbar, file explorer, status bar, app bar, and menus, independent of both the accent color and the Light/Dark theme. The editor/canvas writing surface is untouched by this.
 - **Node text color** — four presets (Default, Black, Charcoal, Slate) for node text specifically, separate from both the accent color and Chrome background.
 - **Editor's Choice preset** (Settings → Appearance, or Quick Assist → "editor's choice") — one click reconfigures the toolbar, file explorer, Pad, hover toolbar, status bar, and app bar into a curated, leaner, writing-focused layout. Doesn't touch accent or node text color. Applying it from Quick Assist gives a one-click Undo that restores every setting it touched.
-- Further layout controls: hide tree lines, row selection style (Fill/Outline/Left bar/Dot), compact rows, text size (85–140%), branch indent width, and collapse depth.
+- Further layout controls: hide tree lines, depth guide lines (faint vertical line per indent level, only visible when tree lines are hidden), row selection style (Fill/Outline/Left bar/Dot), compact rows, text size (85–140%), branch indent width, and collapse depth.
+- **Inline note/remark previews** (Settings → Editing, off by default) — shows a node's Note, and any Remarks anchored to it, as their own lines directly underneath the node in the editor tree — clamped to 2 lines when collapsed, expanding while you're actively editing one. Editable right there (including a remark's person/date), so quick text changes don't need the Pad open; the note dot still opens the full Note panel for anything inline editing can't do, like images.
 
 ## Installing as an App (PWA)
 
