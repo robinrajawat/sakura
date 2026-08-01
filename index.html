@@ -16289,7 +16289,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   const iColor=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:(node.styles.highlight?'var(--node-fg)':iDepthColor));
   const input=document.createElement('div'); input.className='node-input'+stCls; input.contentEditable='true'; input.style.color=iColor;
   input.id='in-'+node.id; input.spellcheck=spellcheckEnabled;
-  input.innerHTML=parseStyledText(node.text||'')||'<br>';
+  const hlWrap=h=>node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${h}</span>`:h;
+  input.innerHTML=hlWrap(parseStyledText(node.text||'')||'<br>');
   input.addEventListener('keydown',onEditorKeyDown);
   input.addEventListener('input',(e)=>{
     const i=getIndex(node.id); const plain=input.textContent||'';
@@ -16299,7 +16300,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // just typed -- caret position is preserved across the innerHTML rebuild via plain-text
     // offset, not DOM node identity, since the rebuild replaces the DOM nodes each time.
     const caret=getEditableCaretOffset(input);
-    input.innerHTML=parseStyledText(plain)||'<br>';
+    input.innerHTML=hlWrap(parseStyledText(plain)||'<br>');
     if(caret!=null)setEditableCaretOffset(input,caret);
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
