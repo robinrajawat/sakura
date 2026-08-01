@@ -7760,6 +7760,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div>
 <script>
 const VERSION='v1.0.0'; const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_v001_meta';
+let _inlineAutosizeMirror=null;
 const REMARK_AVATAR_PALETTE=[
   {bg:'#dae8fc',fg:'#6c8ebf',avatarBg:'#567299'}, // blue
   {bg:'#d5e8d4',fg:'#82b366',avatarBg:'#5b7d47'}, // green
@@ -35782,7 +35783,6 @@ function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d
 // so for a bold 12px name field, where it was leaving a noticeable gap before the next byline
 // item. This measures actual rendered pixel width instead, via one shared hidden mirror span
 // (reused across every call rather than creating/destroying a new one each time).
-let _inlineAutosizeMirror=null;
 function autosizeInlineInput(input,fallbackText){
   if(!_inlineAutosizeMirror){
     _inlineAutosizeMirror=document.createElement('span');
