@@ -1899,9 +1899,12 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-note-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;color:var(--muted);opacity:.85;cursor:text;padding-top:1px;padding-bottom:3px;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-note-line:hover{opacity:1}
 .node-note-line:focus{opacity:1;color:var(--fg);-webkit-line-clamp:unset;overflow:visible}
-.node-remark-line{display:flex;align-items:flex-start;gap:6px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:0.82em;line-height:1.4}
+.node-remark-line{display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:0.82em;line-height:1.4}
 .node-remark-avatar{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;margin-top:1px}
-.node-remark-meta{flex:0 0 auto;color:var(--muted);opacity:.75;white-space:nowrap;padding-top:1px}
+.node-remark-person-inline{appearance:none;border:none;background:none;color:var(--fg);font:600 1em 'Public Sans','Inter',sans-serif;padding:0 2px;border-radius:4px;flex:0 0 auto;min-width:20px}
+.node-remark-person-inline:hover,.node-remark-person-inline:focus{background:var(--hover);outline:none}
+.node-remark-date-inline{flex:0 0 auto;color:var(--hint);cursor:pointer;padding:0 2px;border-radius:4px;white-space:nowrap}
+.node-remark-date-inline:hover{background:var(--hover);color:var(--fg)}
 .node-remark-text-inline{flex:1;min-width:0;color:var(--muted);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .node-remark-text-inline:hover{opacity:1}
 .node-remark-text-inline:focus{opacity:1;color:var(--fg);-webkit-line-clamp:unset;overflow:visible}
@@ -16297,7 +16300,16 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       rLine.style.paddingLeft=hideTreeLines?(rDepth*18+8*editorScale+24)+'px':(8*editorScale+24)+'px';
       const c=remarkAuthorColor(r.person);
       const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
-      const meta=document.createElement('span'); meta.className='node-remark-meta'; meta.textContent=(r.person||'Someone')+' · '+formatRemarkDateDisplay(r.date);
+      const personInput=document.createElement('input'); personInput.type='text'; personInput.className='node-remark-person-inline'; personInput.value=r.person||''; personInput.placeholder='Who said it'; personInput.maxLength=80; personInput.spellcheck=false;
+      personInput.addEventListener('mousedown',e=>e.stopPropagation());
+      personInput.addEventListener('click',e=>e.stopPropagation());
+      autosizeInlineInput(personInput,'Who said it');
+      personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
+      personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
+      personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
+      const dateSpan=document.createElement('span'); dateSpan.className='node-remark-date-inline'; dateSpan.textContent=formatRemarkDateDisplay(r.date); dateSpan.dataset.tip='Click to change the date';
+      dateSpan.addEventListener('mousedown',e=>e.stopPropagation());
+      dateSpan.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(dateSpan,r); });
       const textEl=document.createElement('div'); textEl.className='node-remark-text-inline'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id;
       textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
       textEl.dataset.tip='Remark — click to edit inline';
@@ -16305,7 +16317,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.addEventListener('click',e=>{e.stopPropagation()});
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
-      rLine.appendChild(avatar); rLine.appendChild(meta); rLine.appendChild(textEl);
+      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
       frag.appendChild(rLine)
     })
   }
