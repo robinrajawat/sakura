@@ -15288,6 +15288,20 @@ function setEditableCaretOffset(el,offset){
   const range=document.createRange(); if(last){ range.setStart(last,last.textContent.length) } else { range.selectNodeContents(el) } range.collapse(true);
   const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
 }
+// Selects a plain-text RANGE (not just a collapsed caret point) -- used by AI-rewrite-of-selection
+// to select the newly-inserted result text afterward, same as the original textarea version did.
+function setEditableSelectionRange(el,start,end){
+  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); let node,idx=0,startNode=null,startOff=0,endNode=null,endOff=0;
+  while((node=walker.nextNode())){
+    const len=node.textContent.length;
+    if(startNode===null && idx+len>=start){ startNode=node; startOff=start-idx }
+    if(idx+len>=end){ endNode=node; endOff=end-idx; break }
+    idx+=len;
+  }
+  if(!startNode||!endNode)return;
+  const range=document.createRange(); range.setStart(startNode,Math.max(0,startOff)); range.setEnd(endNode,Math.max(0,endOff));
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+}
 // Places the caret at a specific offset rather than just start/end -- used by single-click-to-edit
 // below, so clicking mid-sentence doesn't force the caret to jump to one end of the line first.
 function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
@@ -16226,7 +16240,7 @@ function renderAtSuggest() {
     });
   }
   // Position below the caret (not the textarea's top-left)
-  const caret = getCaretClientRect(inputEl);
+  const caret = getCaretClientRectGeneric(inputEl);
   pop.style.left = Math.min(caret.left, window.innerWidth - 330) + 'px';
   pop.style.top = (caret.top + caret.height + 4) + 'px';
   pop.classList.add('open');
@@ -16235,23 +16249,24 @@ function renderAtSuggest() {
 function commitAtSuggest(node) {
   if (!_atState) return;
   const {inputEl, nodeId, atPos} = _atState;
-  const val = inputEl.value;
+  const val = inputEl.textContent||'';
   const before = val.slice(0, atPos);
   const afterAt = val.slice(atPos + 1); // skip the @
   // strip the query (chars typed after @)
   const queryLen = _atState.query.length;
   const after = afterAt.slice(queryLen);
   const inserted = '[[' + node.text + ']]';
-  inputEl.value = before + inserted + after;
+  const newVal = before + inserted + after;
+  inputEl.textContent = newVal;
   // update node text immediately
   const idx = getIndex(nodeId);
-  if (idx >= 0) nodes[idx].text = inputEl.value;
+  if (idx >= 0) nodes[idx].text = newVal;
   // move cursor after inserted text
   const newPos = before.length + inserted.length;
   closeAtSuggest();
   // Set text on node, exit edit mode, render
   const nidx = getIndex(nodeId);
-  if (nidx >= 0) nodes[nidx].text = inputEl.value;
+  if (nidx >= 0) nodes[nidx].text = newVal;
   editingId = null;
   markDirty();
   render();
@@ -16260,8 +16275,8 @@ function commitAtSuggest(node) {
 function handleAtInput(inputEl, nodeId) {
   closeNodeQuickAssist();
   if (!backlinksEnabled) { closeAtSuggest(); return; }
-  const val = inputEl.value;
-  const pos = inputEl.selectionStart;
+  const val = inputEl.textContent||'';
+  const pos = getEditableCaretOffset(inputEl) ?? val.length;
   // Find last @ before cursor that isn't part of [[...]]
   let atPos = -1;
   for (let i = pos - 1; i >= 0; i--) {
@@ -21306,7 +21321,7 @@ function renderNodeQuickAssist(){
       if(nqaIconOnly&&i===_nqaActiveIdx)requestAnimationFrame(()=>item.scrollIntoView({block:'nearest',inline:'nearest'}));
     });
   }
-  const rect=getCaretClientRect(inputEl);
+  const rect=getCaretClientRectGeneric(inputEl);
   pop.style.left=Math.min(rect.left,window.innerWidth-260)+'px';
   pop.style.top=(rect.top+rect.height+4)+'px';
   pop.classList.add('open');
@@ -23532,9 +23547,10 @@ async function suggestIconsForAllNodes(){
 
 async function rewriteSubTextSelection(){
   const input=getEditingInput(); if(!input)return;
-  const start=input.selectionStart; const end=input.selectionEnd;
-  if(start===end){showToast('Select some text first'); return;}
-  const selected=input.value.slice(start,end);
+  const range=getEditableSelectionRange(input);
+  if(!range||range.start===range.end){showToast('Select some text first'); return;}
+  const {start,end}=range;
+  const selected=(input.textContent||'').slice(start,end);
   if(!selected.trim())return;
   const btn=el('qb-ai-rewrite'); if(btn)btn.classList.add('ai-busy');
   try{
@@ -23543,10 +23559,11 @@ async function rewriteSubTextSelection(){
     sakuraLog('ai','sub-text rewrite complete',{selectedLength:selected.length,resultLength:result.length});
     const idx=getIndex(editingId); if(idx<0)return;
     pushUndo();
-    const before=input.value.slice(0,start); const after=input.value.slice(end);
+    const full=input.textContent||''; const before=full.slice(0,start); const after=full.slice(end);
     const newText=before+result+after;
-    nodes[idx].text=newText; input.value=newText;
-    input.setSelectionRange(start,start+result.length);
+    nodes[idx].text=newText; input.textContent=newText;
+    input.dispatchEvent(new Event('input'));
+    setEditableSelectionRange(input,start,start+result.length);
     scheduleAutoSave(); if(!callAiByShapeWithFallback._toastShown)showToast('Selection rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{if(btn)btn.classList.remove('ai-busy');}
@@ -23733,7 +23750,7 @@ function insertAiOutline(parsed){
 
 el('qb-ai-rewrite').addEventListener('click',()=>{
   // Priority 1: sub-text selection in an active edit
-  if(editingId!==null){const inp=getEditingInput(); if(inp&&inp.selectionStart!==inp.selectionEnd){rewriteSubTextSelection(); return;}}
+  if(editingId!==null){const inp=getEditingInput(); const rg=inp?getEditableSelectionRange(inp):null; if(rg&&rg.start!==rg.end){rewriteSubTextSelection(); return;}}
   // Priority 2: multi-selected nodes
   if(multiSelectedIds.length>1){rewriteMultipleNodes(multiSelectedIds); return;}
   // Priority 3: single selected node
