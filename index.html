@@ -16335,7 +16335,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   if(inlineNotePreviewEnabled&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.style.position='relative';
-    const noteLine=document.createElement('div'); noteLine.className='node-note-line'; noteLine.contentEditable='true'; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id);
+    const noteLine=document.createElement('div'); noteLine.className='node-note-line'; noteLine.contentEditable='true'; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
     noteLine.style.paddingLeft=hideTreeLines?(noteDepth*18+8*editorScale+24)+'px':(8*editorScale+24)+'px';
     noteLine.innerHTML=sakuraSanitizeRichHtml(node.note||'');
     noteLine.dataset.tip='Note — click to edit inline, or use the note icon above for images/diagrams';
@@ -16344,7 +16344,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(noteLine.textContent||'').trim(); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(noteLine.textContent||'').trim())doDelete(); },0); });
     noteLine.addEventListener('input',()=>{ const i=getIndex(node.id); if(i>=0){nodes[i].note=noteLine.innerHTML; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&noteLine.textContent.trim())forceInlineNoteId=null; });
     noteLine.addEventListener('blur',()=>{ if(noteLine.dataset.deleting)return; const html=sakuraSanitizeRichHtml(noteLine.innerHTML); const i=getIndex(node.id); if(i>=0)nodes[i].note=html; if(forceInlineNoteId===node.id&&!noteLine.textContent.trim()){ forceInlineNoteId=null; render(); } });
-    noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id); });
+    noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
     noteWrap.appendChild(noteLine);
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildVertFlags(idx,0,nodes); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*18+8*editorScale+8.25)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*18+8*editorScale+8.25)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
@@ -16365,7 +16365,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const dateSpan=document.createElement('span'); dateSpan.className='node-remark-date-inline'; dateSpan.textContent=formatRemarkDateDisplay(r.date); dateSpan.dataset.tip='Click to change the date';
       dateSpan.addEventListener('mousedown',e=>e.stopPropagation());
       dateSpan.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(dateSpan,r); });
-      const textEl=document.createElement('div'); textEl.className='node-remark-text-inline'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id;
+      const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
       textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
       textEl.dataset.tip='Remark — click to edit inline';
       textEl.addEventListener('mousedown',e=>{e.stopPropagation()});
@@ -16374,7 +16374,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
       rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
-      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id); });
+      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
       if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildVertFlags(idx,0,nodes); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*18+8*editorScale+8.25)+'px'; rLine.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*18+8*editorScale+8.25)+'px'; rLine.appendChild(vgOwn) } }
       frag.appendChild(rLine)
     })
@@ -41976,6 +41976,7 @@ function selectionFmtEditorFor(node){
   while(n){
     if(n.nodeType===1){
       if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
+      if(n.classList&&n.classList.contains('node-note-line')&&n.id)return n.id;
       // Remarks aren't a singleton editor like Pad/Note — there's one of these per remark, each
       // with its own generated id (see renderRemarksList) — so this checks the class instead of
       // a fixed id list, then returns that element's own real id, which every el(editorId)
@@ -41995,7 +41996,7 @@ function selectionFmtEditorFor(node){
 // by syncing and persisting immediately after any command, rather than waiting on blur.
 function syncRemarkTextFromEditorIfApplicable(editor){
   if(!editor||!editor.classList||!editor.classList.contains('remark-text-input'))return;
-  const rId=editor.id.replace(/^remark-text-/,'');
+  const rId=editor.id.replace(/^(inline-)?remark-text-/,'');
   const r=remarks.find(x=>x.id===rId); if(!r)return;
   const html=sakuraSanitizeRichHtml(editor.innerHTML);
   if(html===(r.text||''))return;
