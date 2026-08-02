@@ -50,7 +50,7 @@ Key capabilities:
 
 ## Core Editing
 
-- **Enter** — new sibling node below; **Shift+Enter** — split the node at the cursor (text after the cursor becomes a new sibling below); **Ctrl/Cmd+Enter** — new child node
+- **Enter** — new sibling node below; **Shift+Enter** — split the node at the cursor (text after the cursor becomes a new sibling below) — or, if Inline note/remark previews is on (Settings → Layout), adds/focuses an inline note for the node instead; **Ctrl/Cmd+Enter** — new child node
 - **Tab / Shift+Tab** — indent / outdent the selected node
 - **Drag a row** — drop above/below to reorder, or onto the middle of another row to nest it as a child
 - **Right-click a node with children** — sort children A→Z, Z→A, or by depth
@@ -141,7 +141,7 @@ AI features are entirely optional and require your own API key for one of the bu
 - **Node text color** — four presets (Default, Black, Charcoal, Slate) for node text specifically, separate from both the accent color and Chrome background.
 - **Editor's Choice preset** (Settings → Appearance, or Quick Assist → "editor's choice") — one click reconfigures the toolbar, file explorer, Pad, hover toolbar, status bar, and app bar into a curated, leaner, writing-focused layout. Doesn't touch accent or node text color. Applying it from Quick Assist gives a one-click Undo that restores every setting it touched.
 - Further layout controls: hide tree lines, depth guide lines (faint vertical line per indent level, only visible when tree lines are hidden), row selection style (Fill/Outline/Left bar/Dot), compact rows, text size (85–140%), branch indent width, and collapse depth.
-- **Inline note/remark previews** (Settings → Editing, off by default) — shows a node's Note, and any Remarks anchored to it, as their own lines directly underneath the node in the editor tree — clamped to 2 lines when collapsed, expanding while you're actively editing one. Editable right there (including a remark's person/date), so quick text changes don't need the Pad open; the note dot still opens the full Note panel for anything inline editing can't do, like images.
+- **Inline note/remark previews** (Settings → Layout, off by default) — shows a node's Note, and any Remarks anchored to it, as their own lines directly underneath the node in the editor tree — clamped to 2 lines when collapsed, expanding while you're actively editing one. Editable right there (including a remark's person/date), so quick text changes don't need the Pad open; the note dot still opens the full Note panel for anything inline editing can't do, like images. With this on, `Shift+Enter` while editing a node's text adds/focuses an inline note for it instead of splitting the node (unchanged when the setting is off). Backspace on an empty inline note or remark deletes it and returns you to the node's own text — same as backspacing an empty node.
 
 ## Installing as an App (PWA)
 
@@ -199,7 +199,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 |---|---|
 | Edit node | Enter / F2 |
 | New sibling below | Enter |
-| Split node at cursor | Shift+Enter |
+| Split node at cursor | Shift+Enter (adds/focuses an inline note instead, if Inline note/remark previews is on) |
 | New child | Ctrl/Cmd+Enter |
 | Indent / Outdent | Tab / Shift+Tab |
 | Move node up/down | Alt+↑ / Alt+↓ |
