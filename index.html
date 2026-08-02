@@ -16340,7 +16340,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.dataset.tip='Note — click to edit inline, or use the note icon above for images/diagrams';
     noteLine.addEventListener('mousedown',e=>{e.stopPropagation()});
     noteLine.addEventListener('click',e=>{e.stopPropagation()});
-    noteLine.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(noteLine.textContent||'').trim()){ e.preventDefault(); const i=getIndex(node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} markDirty(); scheduleAutoSave(); beginEdit(node.id,true); } });
+    noteLine.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(noteLine.textContent||'').trim(); const doDelete=()=>{ const i=getIndex(node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(noteLine.textContent||'').trim())doDelete(); },0); });
     noteLine.addEventListener('input',()=>{ const i=getIndex(node.id); if(i>=0){nodes[i].note=noteLine.innerHTML; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&noteLine.textContent.trim())forceInlineNoteId=null; });
     noteLine.addEventListener('blur',()=>{ const html=sakuraSanitizeRichHtml(noteLine.innerHTML); const i=getIndex(node.id); if(i>=0)nodes[i].note=html; if(forceInlineNoteId===node.id&&!noteLine.textContent.trim()){ forceInlineNoteId=null; render(); } });
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(idx-focusIdx-1,-focusBaseDepth,nodes.slice(focusIdx+1,focusEnd)):buildVertFlags(idx,0,nodes); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*18+8*editorScale+8.25)+'px'; noteLine.appendChild(vg) } }) }
@@ -16367,7 +16367,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.dataset.tip='Remark — click to edit inline';
       textEl.addEventListener('mousedown',e=>{e.stopPropagation()});
       textEl.addEventListener('click',e=>{e.stopPropagation()});
-      textEl.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(textEl.textContent||'').trim()){ e.preventDefault(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); } });
+      textEl.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(textEl.textContent||'').trim(); const doDelete=()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(textEl.textContent||'').trim())doDelete(); },0); });
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
       rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
