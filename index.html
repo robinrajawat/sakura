@@ -16353,9 +16353,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const personInput=document.createElement('input'); personInput.type='text'; personInput.className='node-remark-person-inline'; personInput.value=r.person||''; personInput.placeholder='Who said it'; personInput.maxLength=80; personInput.spellcheck=false;
       personInput.addEventListener('mousedown',e=>e.stopPropagation());
       personInput.addEventListener('click',e=>e.stopPropagation());
-      autosizeInlineInput(personInput,'Who said it');
-      personInput.addEventListener('input',()=>autosizeInlineInput(personInput,'Who said it'));
-      personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.blur(); } });
+      autosizeInlineInput(personInput,'Who said it'); personInput.style.width=(parseFloat(personInput.style.width)-6)+'px';
+      personInput.addEventListener('input',()=>{autosizeInlineInput(personInput,'Who said it'); personInput.style.width=(parseFloat(personInput.style.width)-6)+'px'});
+      personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.value=r.person||''; autosizeInlineInput(personInput,'Who said it'); personInput.style.width=(parseFloat(personInput.style.width)-6)+'px'; personInput.blur(); } });
       personInput.addEventListener('blur',()=>{ const val=personInput.value.trim(); if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
       const dateSpan=document.createElement('span'); dateSpan.className='node-remark-date-inline'; dateSpan.textContent=formatRemarkDateDisplay(r.date); dateSpan.dataset.tip='Click to change the date';
       dateSpan.addEventListener('mousedown',e=>e.stopPropagation());
