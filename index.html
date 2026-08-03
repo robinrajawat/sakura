@@ -15161,7 +15161,7 @@ function replaceCurrentMatch(){if(!searchMatches.length||searchIndex<0)return; c
 function replaceAllMatches(){const q=searchQuery.trim(); if(!q||!searchMatches.length)return; const replacement=el('replace-input')?.value??''; pushUndo(); let count=0; searchMatches.forEach(id=>{const idx=getIndex(id); if(idx<0)return; const before=nodes[idx].text; const after=replaceTextInNode(before,q,replacement); if(after!==before){nodes[idx].text=after; count++}}); markDirty(); computeSearchMatches(); render(); showToast(count?`Replaced ${count} match${count===1?'':'es'}`:'No matches replaced')}
 function scrollToNode(id){requestAnimationFrame(()=>{const row=document.querySelector(`.node-row[data-id="${id}"]`); if(row)row.scrollIntoView({block:'center'})})}
 function focusPane(){el('editor-pane').focus()} function getEditingInput(){return editingId!==null?document.getElementById('in-'+editingId):null}
-function autosizeNodeInput(input){if(!input)return; input.style.height='auto'; input.style.height=input.scrollHeight+'px'}
+function autosizeNodeInput(input){/* no-op: .node-input is a contenteditable div now, which sizes itself naturally -- explicitly forcing style.height via scrollHeight (a <textarea>-era necessity) was introducing a small but measurable height mismatch against .node-label, which has no explicit height at all */}
 
 // ===== Typewriter mode =====
 // Keeps the actively-edited line pinned at a fixed vertical position (~40% down the
