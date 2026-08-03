@@ -1348,7 +1348,8 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sb-bulk-bar .sb-icon-btn{color:var(--fg)}
 .sdoc-item.sb-multi-selected{background:color-mix(in srgb,var(--accent) 18%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent)}
 /* Search bar */
-#sidebar-search-wrap{padding:6px 8px 4px;flex-shrink:0;position:relative}
+#sidebar-search-wrap{padding:6px 8px 4px;flex-shrink:0;display:flex;align-items:center;gap:4px}
+#sidebar-search-input-wrap{position:relative;flex:1;min-width:0}
 #sidebar-search{width:100%;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 26px 5px 28px;border-radius:7px;outline:none;transition:border-color .12s,box-shadow .12s}
 #sidebar-search::placeholder{color:var(--hint)}
 #sidebar-search:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 24%,transparent)}
@@ -1450,11 +1451,11 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 /* Empty / no-match states */
 .sb-empty{padding:4px 8px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
 /* Sidebar toggle button in appbar */
-#activity-rail{flex:0 0 44px;width:44px;display:flex;flex-direction:column;align-items:center;padding-top:6px;gap:4px;background:var(--tb-bg)}
-#sidebar-toggle{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:7px;cursor:pointer;color:var(--muted);transition:color .12s,background .12s;flex-shrink:0;position:relative}
+#sidebar-toggle{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--muted);transition:color .12s,background .12s;flex-shrink:0}
 #sidebar-toggle:hover{color:var(--fg);background:var(--hover)}
 #sidebar-toggle svg{display:block}
-#sidebar-toggle:not(.is-collapsed){color:var(--fg);background:var(--sel)}
+#sidebar-reopen-btn{width:26px;height:26px;align-self:center;margin:3px 2px 0 6px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--muted);transition:color .12s,background .12s;flex-shrink:0}
+#sidebar-reopen-btn:hover{color:var(--fg);background:var(--hover)}
 /* Hide old docs/templates toolbar dropdowns */
 .docs-wrap{display:none !important}
 /* Adjust editor wrap */
@@ -5883,21 +5884,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
   </div>
   <div id="app-layout">
-  <!-- Activity rail — persistent regardless of sidebar/appbar/tab-bar visibility, since it's
-       the one place the sidebar toggle always lives. -->
-  <div id="activity-rail">
-    <button id="sidebar-toggle" data-tip="Toggle file explorer" aria-label="Toggle file explorer" aria-pressed="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-    </button>
-  </div>
   <!-- Sidebar -->
   <div id="sidebar">
     <div id="sidebar-inner">
       <!-- Search -->
       <div id="sidebar-search-wrap">
+        <button id="sidebar-toggle" data-tip="Toggle file explorer" aria-label="Toggle file explorer" aria-pressed="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </button>
+        <div id="sidebar-search-input-wrap">
         <span id="sidebar-search-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
         <input id="sidebar-search" type="text" placeholder="Filter docs &amp; templates…" autocomplete="off" spellcheck="false" />
         <button id="sidebar-search-clear" data-tip="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+        </div>
       </div>
       <div id="sb-hint-bar" class="sb-hint-bar">
         <span class="sb-hint-text">Right‑click a folder or doc for more options. Drag rows to move or reorder them.</span>
@@ -5972,6 +5971,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <!-- Main content column -->
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
   <div id="doc-tab-strip-row">
+    <button id="sidebar-reopen-btn" data-tip="Show file explorer" aria-label="Show file explorer" style="display:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    </button>
     <div id="doc-tab-strip" role="tablist" aria-label="Open documents"></div>
     <button id="doc-tab-add-btn" class="doc-tab-add" data-tip="New document in a new tab" aria-label="New document">+</button>
     <div class="doc-tab-overview-wrap" id="doc-tab-overview-wrap">
@@ -25098,7 +25100,7 @@ function toggleAllFolders(){
 
 // --- Sidebar toggle ---
 function setSidebarOpen(open){
-  sidebarOpen=open; const sb=el('sidebar'); if(sb)sb.classList.toggle('collapsed',!open); const tg=el('sidebar-toggle'); if(tg){tg.classList.toggle('is-collapsed',!open); tg.setAttribute('aria-pressed',String(open))} saveSidebarState();
+  sidebarOpen=open; const sb=el('sidebar'); if(sb)sb.classList.toggle('collapsed',!open); const tg=el('sidebar-toggle'); if(tg){tg.classList.toggle('is-collapsed',!open); tg.setAttribute('aria-pressed',String(open))} const rb=el('sidebar-reopen-btn'); if(rb)rb.style.display=open?'none':'inline-flex'; saveSidebarState();
 }
 
 // Opens the sidebar if it's collapsed and scrolls the Templates section into view —
@@ -25223,6 +25225,7 @@ el('sb-templates-menu-btn').addEventListener('click',e=>{
   ]);
 });
 el('sidebar-toggle').addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
+el('sidebar-reopen-btn')?.addEventListener('click',()=>setSidebarOpen(true));
 el('sb-locate-doc-btn')?.addEventListener('click',()=>{ if(currentDocId!==null)revealDocInSidebar(currentDocId); else showToast('No document open'); });
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+E)':'Maximize editor (hide File Explorer & chrome) (Ctrl/Cmd+Shift+E)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   // Apply per-panel zen defaults on entry, and restore on exit — but only restore a
