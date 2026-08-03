@@ -56,7 +56,7 @@ Sakura v1.0.0 — see LICENSE for terms.
   and is the preferred fix if/when that's set up — see the PowerPoint export comment near the
   pptxgenjs <script> tag for the current reasoning on why it's still CDN-hosted.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
 <!--
   Referrer-Policy: the app links out to several external sites (SAP Notes via me.sap.com,
   GitHub token pages, Azure/Google Cloud consoles, provider key pages, draw.io/diagrams.net).
@@ -4319,7 +4319,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div id="account-email" style="font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
               </div>
             </div>
-            <div id="account-sync-status" class="muted-help" style="margin:0 0 8px">Sync coming soon — signed in for now, nothing synced yet.</div>
+            <div id="account-sync-status" class="muted-help" style="margin:0 0 8px"></div>
             <button class="export-item" id="account-signout-btn" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px">Sign out</button>
           </div>
         </div>
@@ -9144,7 +9144,7 @@ function contextualRedo(){
 function genDocId(){return 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function docKey(id){return DOC_KEY_PREFIX+id}
 function loadDocsIndex(){try{const raw=localStorage.getItem(DOCS_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
-function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list))}catch(e){}}
+function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list)); markMetaChanged('docsIndex');}catch(e){}}
 function touchDocIndex(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); const entry=i>=0?{...list[i],title:title||'Untitled',updatedAt:Date.now()}:{id,title:title||'Untitled',updatedAt:Date.now()}; if(i>=0)list[i]=entry; else list.push(entry); saveDocsIndex(list); return list}
 // Update title only — does NOT change updatedAt (prevents list from re-sorting on every autosave)
 function touchDocIndexTitleOnly(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],title:title||'Untitled'}; saveDocsIndex(list);} return list}
@@ -9466,6 +9466,7 @@ function saveToStorage(){
     // Only bump updatedAt when content is actually dirty; title changes always persist title
     if(dirty) touchDocIndex(currentDocId,titleForIndex);
     else touchDocIndexTitleOnly(currentDocId,titleForIndex);
+    queueSync('doc',currentDocId);
     // The write above just landed, so whatever made this save fire (an edit, or the 450ms
     // autosave debounce in scheduleAutoSave) is now actually persisted — clear the dirty flag so
     // the tab-strip dot and the "• Sakura" title prefix reflect that. Past this line nothing else
@@ -11594,7 +11595,7 @@ function renderDocsList(){
 function genTemplateId(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function templateKey(id){return TEMPLATE_KEY_PREFIX+id}
 function loadTemplatesIndex(){try{const raw=localStorage.getItem(TEMPLATES_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
-function saveTemplatesIndex(list){try{localStorage.setItem(TEMPLATES_INDEX_KEY,JSON.stringify(list)); lastAnyDataChangeAt=Date.now(); if(typeof scheduleBackupWrite==='function')scheduleBackupWrite();}catch(e){}}
+function saveTemplatesIndex(list){try{localStorage.setItem(TEMPLATES_INDEX_KEY,JSON.stringify(list)); lastAnyDataChangeAt=Date.now(); if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); markMetaChanged('templatesIndex');}catch(e){}}
 function setTemplateIcon(id,icon){const list=loadTemplatesIndex(); const i=list.findIndex(t=>t.id===id); if(i>=0){list[i]={...list[i],icon:icon||null}; saveTemplatesIndex(list);} return list}
 const BUILTIN_TPL_FOLDER_ID='tf_builtin_v1';
 const SAP_TPL_FOLDER_ID='tf_sap_v1';
@@ -11901,6 +11902,7 @@ async function saveCurrentAsTemplate(){
   const id=genTemplateId();
   const payload={nodes:nodes.map(n=>({text:n.text,depth:n.depth,styles:n.styles}))};
   try{localStorage.setItem(templateKey(id),JSON.stringify(payload))}catch(e){showToast('Could not save template'); return}
+  queueSync('tpl',id);
   touchTemplateIndex(id,trimmed);
   renderTemplatesList();
   renderSidebar();
@@ -11922,6 +11924,7 @@ async function duplicateTemplate(id){
     const newTitle=baseTitle+' (copy)';
     const newId=genTemplateId();
     localStorage.setItem(templateKey(newId), raw);
+    queueSync('tpl',newId);
     touchTemplateIndex(newId,newTitle);
     renderTemplatesList(); renderSidebar();
     showToast('Template duplicated');
@@ -12118,6 +12121,7 @@ function savePrefs(){
     if(readBack!==json){
       console.warn('[sakura] savePrefs: localStorage read-back did not match what was just written. statusbarHiddenItems written as:',payload.statusbarHiddenItems,'read back as:',(()=>{try{return JSON.parse(readBack||'{}').statusbarHiddenItems}catch(e){return '(unparseable)'}})());
     }
+    if(typeof markMetaChanged==='function')markMetaChanged('prefs');
   }catch(e){
     // NOTE: this fires on every page load's very first automatic save (triggered by
     // setTheme() during startup) because previewSlideDepth and other later-declared
@@ -12541,6 +12545,7 @@ async function signInWithGoogleAccount(){
     updateAccountUI(result.user);
     el('account-menu')?.classList.remove('open');
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
+    pullAndMergeFromCloud();
   }catch(e){
     // Popup dismissed by the person themselves isn't an error worth surfacing.
     if(e && e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request'){
@@ -12570,11 +12575,197 @@ function restoreAccountSessionIfNeeded(){
   if(!wasActive)return;
   loadFirebaseMods().then(({auth,authMod})=>{
     authMod.onAuthStateChanged(auth,user=>{
-      if(user){ updateAccountUI(user); }
+      if(user){ updateAccountUI(user); pullAndMergeFromCloud(); }
       else{ try{localStorage.removeItem('sakura_account_active')}catch(e){} updateAccountUI(null); }
     });
   }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); });
 }
+
+// === Cloud sync (Phase 2: push + pull/merge — no live cross-device listener yet, that's
+// Phase 3). Runs only while signed in; every hook below is a no-op the instant currentUser is
+// null, so the whole engine costs nothing for anyone not using the feature.
+//
+// Firestore layout, all nested under a single per-user root so the security rule stays a
+// one-liner ("only uid === request.auth.uid"):
+//   users/{uid}/docs/{docId}       mirrors sakura_doc_v1_{docId}, plus a numeric updatedAt (ms)
+//   users/{uid}/templates/{tplId}  mirrors sakura_template_v1_{tplId}, plus updatedAt
+//   users/{uid}/meta/{metaKey}     { value: <parsed JSON of the local key below>, updatedAt }
+//
+// Deliberately excluded from sync:
+//  - Diagram XML/thumbnail blobs. They live in IndexedDB locally specifically because they can
+//    be large; Firestore documents cap out at 1MB and this would silently start failing on any
+//    document with a non-trivial diagram. Only the lightweight per-doc fields already in the
+//    localStorage payload (title, nodes, status, etc.) sync — same fields saveToStorage() keeps
+//    inline vs. offloads, minus the offloaded ones.
+//  - AI_PREFS_KEY (provider API keys). "Settings" sync covers PREFS_KEY only — credentials
+//    don't belong in Firestore even under a locked-down security rule; that's a different risk
+//    profile than the rest of the app's settings.
+function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,templatesIndex:TEMPLATES_INDEX_KEY,tplFolders:TPL_FOLDERS_KEY,tplFolderMap:TPL_FOLDER_MAP_KEY,prefs:PREFS_KEY};}
+const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
+function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
+function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
+// Meta keys (folders, doc order, prefs, etc.) have no per-item updatedAt of their own the way
+// docs/templates do (via their index entries) — this is the only extra bookkeeping sync needs:
+// one timestamp per meta key, stamped whenever that key's own save*() function runs.
+function markMetaChanged(metaKey){
+  if(!getSyncMetaKeys()[metaKey])return;
+  const m=_loadSyncLocalTs(); m[metaKey]=Date.now(); _saveSyncLocalTs(m);
+  queueSync('meta',metaKey);
+}
+
+let firestoreMods=null;
+async function loadFirestoreMods(){
+  if(firestoreMods)return firestoreMods;
+  const [fsMod,{app}]=await Promise.all([
+    import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-firestore.js`),
+    loadFirebaseMods()
+  ]);
+  const db=fsMod.getFirestore(app);
+  firestoreMods={mod:fsMod,db};
+  return firestoreMods;
+}
+
+let _syncPushQueue=new Map();
+let _syncPushTimer=null;
+function queueSync(kind,id){
+  if(!currentUser)return;
+  _syncPushQueue.set(kind+':'+id,{kind,id});
+  clearTimeout(_syncPushTimer);
+  _syncPushTimer=setTimeout(flushSyncQueue,1500);
+}
+function updateSyncStatusUI(status){
+  const el2=el('account-sync-status'); if(!el2)return;
+  if(status==='syncing')el2.textContent='Syncing…';
+  else if(status==='synced')el2.textContent='Synced just now';
+  else if(status==='error')el2.textContent='Sync error — will retry on your next change';
+  else el2.textContent='';
+}
+async function flushSyncQueue(){
+  if(!currentUser||_syncPushQueue.size===0)return;
+  const items=[..._syncPushQueue.values()]; _syncPushQueue.clear();
+  updateSyncStatusUI('syncing');
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    for(const {kind,id} of items){
+      if(kind==='doc')await pushDocToCloud(mod,db,id);
+      else if(kind==='tpl')await pushTemplateToCloud(mod,db,id);
+      else if(kind==='meta')await pushMetaToCloud(mod,db,id);
+    }
+    updateSyncStatusUI('synced');
+  }catch(e){
+    console.warn('[sakura] cloud sync push failed:',e);
+    updateSyncStatusUI('error');
+  }
+}
+async function pushDocToCloud(mod,db,docId){
+  const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
+  let data; try{data=JSON.parse(raw)}catch(e){return}
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:Date.now()});
+}
+async function pushTemplateToCloud(mod,db,tplId){
+  const raw=localStorage.getItem(templateKey(tplId)); if(raw===null)return;
+  let data; try{data=JSON.parse(raw)}catch(e){return}
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'templates',tplId),{...data,updatedAt:Date.now()});
+}
+async function pushMetaToCloud(mod,db,metaKey){
+  const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
+  const raw=localStorage.getItem(localKeyName);
+  let value=null; if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey),{value,updatedAt:Date.now()});
+}
+// Pulls everything from the cloud, compares timestamps against local, and applies whichever
+// side is newer per item (last-write-wins, not a field-level merge). Anything local that the
+// cloud doesn't have yet gets queued to push up, so a first sign-in seeds the cloud rather than
+// wiping a fresh account's local data. Runs on sign-in, session restore, and tab refocus.
+//
+// Deliberate safety exclusion: the document currently open in the editor is skipped, even if
+// the cloud has a newer version. Overwriting localStorage for a doc that ISN'T loaded into
+// memory is safe — the next time it's opened, it reads the fresh copy. Overwriting the one
+// that IS currently loaded would either get silently clobbered by the next autosave (losing
+// the cloud edit) or require hot-swapping live editor state mid-edit (real risk of losing
+// whatever's being typed right now). Left as a known gap rather than solved riskily — the
+// live cross-device case is Phase 3's job, with a real-time listener instead of this periodic
+// pull.
+let _lastPullAt=0;
+async function pullAndMergeFromCloud(){
+  if(!currentUser)return;
+  const now=Date.now(); if(now-_lastPullAt<15000)return; // throttle: focus-spam guard
+  _lastPullAt=now;
+  updateSyncStatusUI('syncing');
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const localTs=_loadSyncLocalTs();
+    const syncMetaKeys=getSyncMetaKeys();
+    for(const metaKey of Object.keys(syncMetaKeys)){
+      const localKeyName=syncMetaKeys[metaKey];
+      let snap; try{ snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey)); }catch(e){ continue; }
+      if(snap.exists()){
+        const cloud=snap.data(); const cloudTs=Number(cloud.updatedAt)||0; const localT=Number(localTs[metaKey])||0;
+        if(cloudTs>localT){
+          if(cloud.value===null||cloud.value===undefined) localStorage.removeItem(localKeyName);
+          else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
+          localTs[metaKey]=cloudTs;
+        }else if(localT>cloudTs){
+          queueSync('meta',metaKey);
+        }
+      }else if(localStorage.getItem(localKeyName)!==null){
+        queueSync('meta',metaKey);
+      }
+    }
+    _saveSyncLocalTs(localTs);
+
+    const localIndex=loadDocsIndex();
+    const localById=new Map(localIndex.map(d=>[d.id,d]));
+    let cloudDocsSnap=null; try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); }catch(e){}
+    const cloudIds=new Set();
+    if(cloudDocsSnap){
+      for(const docSnap of cloudDocsSnap.docs){
+        const id=docSnap.id; cloudIds.add(id);
+        if(id===currentDocId)continue; // skip the actively-open doc — see note above
+        const cloud=docSnap.data(); const cloudTs=Number(cloud.updatedAt)||0;
+        const localEntry=localById.get(id); const localTsDoc=localEntry?Number(localEntry.updatedAt)||0:0;
+        if(!localEntry||cloudTs>localTsDoc){
+          const {updatedAt,...docData}=cloud;
+          localStorage.setItem(docKey(id),JSON.stringify(docData));
+          touchDocIndex(id,docData.title||'Untitled');
+        }
+      }
+    }
+    for(const entry of localIndex){ if(!cloudIds.has(entry.id))queueSync('doc',entry.id); }
+
+    const localTplIndex=loadTemplatesIndex();
+    const localTplById=new Map(localTplIndex.map(t=>[t.id,t]));
+    let cloudTplSnap=null; try{ cloudTplSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'templates')); }catch(e){}
+    const cloudTplIds=new Set();
+    if(cloudTplSnap){
+      for(const docSnap of cloudTplSnap.docs){
+        const id=docSnap.id; cloudTplIds.add(id);
+        const cloud=docSnap.data(); const cloudTs=Number(cloud.updatedAt)||0;
+        const localEntry=localTplById.get(id); const localTsT=localEntry?Number(localEntry.updatedAt)||0:0;
+        if(!localEntry||cloudTs>localTsT){
+          const {updatedAt,...tplData}=cloud;
+          localStorage.setItem(templateKey(id),JSON.stringify(tplData));
+          const idxEntry=loadTemplatesIndex().find(t=>t.id===id);
+          touchTemplateIndex(id,idxEntry?.title||'Untitled template');
+        }
+      }
+    }
+    for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id))queueSync('tpl',entry.id); }
+
+    loadPrefs();
+    renderSidebar();
+    if(typeof renderDocsList==='function')renderDocsList();
+    if(typeof renderTemplatesList==='function')renderTemplatesList();
+    updateSyncStatusUI('synced');
+  }catch(e){
+    console.warn('[sakura] cloud sync pull failed:',e);
+    updateSyncStatusUI('error');
+  }
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&currentUser)pullAndMergeFromCloud();
+});
+
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
 function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; const strip=el('doc-tab-strip'); const activeRow=strip?strip.querySelector('.doc-tab.active'):null; if(activeRow)activeRow.classList.toggle('is-dirty',dirty)}
@@ -24286,18 +24477,18 @@ function setFolderDefaultCollapsed(on,persist=true){
 
 // --- Folder storage ---
 function loadFolders(){ try{ const r=localStorage.getItem(FOLDERS_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[];} catch(e){return [];}}
-function saveFolders(list){ try{localStorage.setItem(FOLDERS_KEY,JSON.stringify(list));}catch(e){}}
+function saveFolders(list){ try{localStorage.setItem(FOLDERS_KEY,JSON.stringify(list)); markMetaChanged('folders');}catch(e){}}
 function loadDocFolderMap(){ try{ const r=localStorage.getItem(DOC_FOLDER_KEY); return r?JSON.parse(r):{};} catch(e){return {};}}
-function saveDocFolderMap(m){ try{localStorage.setItem(DOC_FOLDER_KEY,JSON.stringify(m));}catch(e){}}
+function saveDocFolderMap(m){ try{localStorage.setItem(DOC_FOLDER_KEY,JSON.stringify(m)); markMetaChanged('docFolderMap');}catch(e){}}
 function genFolderId(){ return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function getFolderForDoc(docId){ return loadDocFolderMap()[docId]||null; }
 function setFolderForDoc(docId,folderId){ const m=loadDocFolderMap(); if(folderId===null) delete m[docId]; else m[docId]=folderId; saveDocFolderMap(m);}
 
 // --- Template folders (single-level grouping only; templates don't support nesting or manual reorder) ---
 function loadTplFolders(){ try{ const r=localStorage.getItem(TPL_FOLDERS_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; } catch(e){ return []; } }
-function saveTplFolders(list){ try{ localStorage.setItem(TPL_FOLDERS_KEY,JSON.stringify(list)); }catch(e){} }
+function saveTplFolders(list){ try{ localStorage.setItem(TPL_FOLDERS_KEY,JSON.stringify(list)); markMetaChanged('tplFolders'); }catch(e){} }
 function loadTplFolderMap(){ try{ const r=localStorage.getItem(TPL_FOLDER_MAP_KEY); return r?JSON.parse(r):{}; } catch(e){ return {}; } }
-function saveTplFolderMap(m){ try{ localStorage.setItem(TPL_FOLDER_MAP_KEY,JSON.stringify(m)); }catch(e){} }
+function saveTplFolderMap(m){ try{ localStorage.setItem(TPL_FOLDER_MAP_KEY,JSON.stringify(m)); markMetaChanged('tplFolderMap'); }catch(e){} }
 function genTplFolderId(){ return 'tf'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function getFolderForTemplate(tplId){ return loadTplFolderMap()[tplId]||null; }
 function setFolderForTemplate(tplId, folderId){ const m=loadTplFolderMap(); if(folderId===null) delete m[tplId]; else m[tplId]=folderId; saveTplFolderMap(m); }
@@ -24378,7 +24569,7 @@ function folderSubtreeDocCount(folder, folders, allDocs, folderMap){
 
 // --- Manual doc ordering (within a folder/unfiled bucket) ---
 function loadDocOrderMap(){ try{ const r=localStorage.getItem(DOC_ORDER_KEY); return r?JSON.parse(r):{};} catch(e){return {};}}
-function saveDocOrderMap(m){ try{localStorage.setItem(DOC_ORDER_KEY,JSON.stringify(m));}catch(e){}}
+function saveDocOrderMap(m){ try{localStorage.setItem(DOC_ORDER_KEY,JSON.stringify(m)); markMetaChanged('docOrder');}catch(e){}}
 // Sort a bucket's docs: if any doc in the bucket has a manual order, sort by it (docs lacking
 // an order fall back to their updatedAt-based position at the end); otherwise default to updatedAt desc.
 function sortDocsForBucket(docs){

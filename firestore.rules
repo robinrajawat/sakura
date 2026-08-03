@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Sakura cloud sync — every synced document, template, and settings blob lives under
+// users/{uid}/..., so the rule is a single check: you can only read/write your own subtree,
+// and only while actually signed in as that uid. No other access pattern is used by the app,
+// so nothing else needs to be opened up.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
