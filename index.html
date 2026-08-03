@@ -21752,7 +21752,7 @@ el('editor-pane').addEventListener('dragleave',e=>{const pane=el('editor-pane');
 let hideNodeTooltip=function(){};
 (function(){
   const tip=el('node-timestamp-tip'); if(!tip)return;
-  const TIMESTAMP_SEL='.node-prefix,.node-dot';
+  const TIMESTAMP_SEL='.node-prefix,.node-dot,.fold-dot,.fold-toggle';
   const GENERIC_SEL='[data-tip]';
   const TRIGGER_SEL=TIMESTAMP_SEL+','+GENERIC_SEL;
   let hoveredEl=null;
@@ -21772,10 +21772,15 @@ let hideNodeTooltip=function(){};
     const isTimestamp=trg.matches(TIMESTAMP_SEL);
     let text;
     if(isTimestamp){
-      if(!nodeTimestampHoverEnabled)return;
-      const row=trg.closest('.node-row'); const id=row?Number(row.dataset.id):NaN; const idx=getIndex(id);
-      if(idx<0)return;
-      text=nodeTimestampTooltip(nodes[idx]);
+      if(nodeTimestampHoverEnabled){
+        const row=trg.closest('.node-row'); const id=row?Number(row.dataset.id):NaN; const idx=getIndex(id);
+        if(idx<0)return;
+        text=nodeTimestampTooltip(nodes[idx]);
+      } else if(trg.dataset.tip){
+        text=trg.dataset.tip;
+      } else {
+        return;
+      }
     } else {
       text=trg.dataset.tip||'';
       if(!text)return;
