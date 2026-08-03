@@ -21545,6 +21545,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='note'){
     if(selectedId===null)return;
     if(inlineNotePreviewEnabled){
+      expandNode(selectedId);
       forceInlineNoteId=selectedId;
       render();
       requestAnimationFrame(()=>{
@@ -21572,6 +21573,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     setSingleSelection(_ctxNodeId);
     render();
     if(inlineRemarksPreviewEnabled){
+      expandNode(_ctxNodeId);
       addRemark(true);
     } else {
       if(!padOpen)setPadOpen(true);
