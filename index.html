@@ -16369,7 +16369,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       dateSpan.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(dateSpan,r); });
       const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
       textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-      textEl.dataset.tip='Remark — click to edit inline';
+      textEl.dataset.tip='Remark — click to edit inline'; textEl.dataset.placeholder='Add a remark…';
       textEl.addEventListener('mousedown',e=>{e.stopPropagation()});
       textEl.addEventListener('focus',()=>{ _pendingInlineFocus={kind:'remarkText',remarkId:r.id}; });
       textEl.addEventListener('click',e=>{e.stopPropagation()});
