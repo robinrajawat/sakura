@@ -42117,6 +42117,13 @@ document.addEventListener('selectionchange',()=>{
   updateSelectionFmtPopover._tm=setTimeout(updateSelectionFmtPopover,0);
 });
 document.addEventListener('scroll',()=>{ if(el('selection-fmt-popover')?.classList.contains('open'))hideSelectionFmtPopover(); },true);
+document.addEventListener('focusin',e=>{
+  if(!_pendingInlineFocus)return;
+  const t=e.target;
+  if(t===document.body||t===document.documentElement)return; // transient focus-reversion during a render's DOM teardown -- ignore, let render's own restore logic run
+  const isTrackedInline=t.classList&&(t.classList.contains('node-note-line')||t.classList.contains('node-remark-text-inline')||t.classList.contains('node-qa-question')||t.classList.contains('node-qa-answer'));
+  if(!isTrackedInline)_pendingInlineFocus=null;
+});
 document.addEventListener('mousedown',e=>{
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&!pop.contains(e.target))hideSelectionFmtPopover();
