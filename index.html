@@ -4298,6 +4298,32 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
       <div id="appbar-qa-slot"></div>
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Meetings, Journal, Library &amp; Recap" aria-label="Open Hub">Hub</button>
+      <div class="export-wrap" id="account-wrap">
+        <button class="btn" id="account-toggle" data-tip="Account &amp; sync">
+          <img id="account-toggle-avatar" width="16" height="16" style="border-radius:50%;vertical-align:-3px;margin-right:5px;display:none" alt="" />
+          <span id="account-toggle-label">Sign in</span>
+        </button>
+        <div class="export-menu" id="account-menu">
+          <div id="account-signed-out" style="padding:12px 12px 8px">
+            <div class="muted-help" style="margin:0 0 10px">Sign in with Google to sync your documents, settings, and templates across devices. Fully optional — everything keeps working locally if you skip this.</div>
+            <button class="export-item" id="account-google-signin-btn" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+              <svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:6px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Sign in with Google
+            </button>
+          </div>
+          <div id="account-signed-in" style="display:none;padding:12px 12px 8px">
+            <div style="display:flex;align-items:center;gap:8px;padding:2px 2px 10px">
+              <img id="account-avatar" width="30" height="30" style="border-radius:50%;flex-shrink:0" alt="" />
+              <div style="min-width:0">
+                <div id="account-name" style="font:600 12.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                <div id="account-email" style="font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              </div>
+            </div>
+            <div id="account-sync-status" class="muted-help" style="margin:0 0 8px">Sync coming soon — signed in for now, nothing synced yet.</div>
+            <button class="export-item" id="account-signout-btn" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px">Sign out</button>
+          </div>
+        </div>
+      </div>
       <div class="settings-wrap">
         <button class="btn" id="settings-toggle" data-tip="Settings">Settings</button>
         <div class="settings-panel" id="settings-panel">
@@ -4318,7 +4344,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 </button>
                 <div id="settings-about-popover" role="dialog" aria-modal="false" aria-label="About Sakura" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:280px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:14px;z-index:60">
                   <div style="font-weight:600;margin-bottom:6px">Sakura <span id="about-version"></span></div>
-                  <div class="muted-help" style="margin-top:0">A single-file outliner and knowledge-management workspace. No backend, no build step, no account required to use it — your data stays in this browser unless you export it or connect an optional cloud backup yourself.</div>
+                  <div class="muted-help" style="margin-top:0">A single-file outliner and knowledge-management workspace. No backend, no build step, no account required to use it — your data stays in this browser unless you export it or sign in with the optional Google account feature to sync across devices.</div>
                   <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></div>
                 <div class="muted-help">Import/export features use three open-source libraries — SheetJS, mammoth.js, and PptxGenJS — and diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">Full attribution →</a></div>
               </div>
@@ -12460,6 +12486,96 @@ function formatNow(){const d=new Date(); if(dateTimeFormat==='iso'){const pad=n=
 function formatTimestamp(ts){if(!Number.isFinite(ts))return '—'; const d=new Date(ts); if(dateTimeFormat==='iso'){const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`} if(dateTimeFormat==='eu'){const pad=n=>String(n).padStart(2,'0'); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`} const date=d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'}); const time=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); return `${date}, ${time}`}
 function nodeTimestampTooltip(node){return `Created at ${formatTimestamp(node.createdAt)}\nLast edited at ${formatTimestamp(node.modifiedAt)}`}
 function el(id){return document.getElementById(id)}
+
+// === Account & Sync (Phase 1: Google Sign-In only — no document/settings syncing yet) ===
+// Deliberately opt-in end to end: the Firebase SDK is never fetched, and no network call to
+// Firebase is ever made, unless the person explicitly clicks "Sign in with Google" this
+// session, or already signed in on this device previously (sakura_account_active flag below).
+// Everyone who never touches this feature pays zero cost for it — no extra script load, no
+// background requests. This config is safe to have in client-side code: it's a public client
+// identifier, not a secret — the actual access boundary is the Firestore security rules on the
+// project itself, not this object.
+const FIREBASE_CONFIG={apiKey:"AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0",authDomain:"sakura-4cdae.firebaseapp.com",projectId:"sakura-4cdae",storageBucket:"sakura-4cdae.firebasestorage.app",messagingSenderId:"547935562547",appId:"1:547935562547:web:50ddb56ab0db0089452c46",measurementId:"G-KSBVB732SJ"};
+const FIREBASE_SDK_VERSION="10.14.1";
+let currentUser=null;
+let _firebaseModsPromise=null;
+function loadFirebaseMods(){
+  if(_firebaseModsPromise)return _firebaseModsPromise;
+  _firebaseModsPromise=(async()=>{
+    const [appMod,authMod]=await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`)
+    ]);
+    const app=appMod.initializeApp(FIREBASE_CONFIG);
+    const auth=authMod.getAuth(app);
+    return {app,auth,authMod};
+  })();
+  return _firebaseModsPromise;
+}
+function updateAccountUI(user){
+  currentUser=user;
+  const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
+  const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar');
+  if(user){
+    if(signedOutEl)signedOutEl.style.display='none';
+    if(signedInEl)signedInEl.style.display='';
+    const nameEl=el('account-name'); if(nameEl)nameEl.textContent=user.displayName||user.email||'Signed in';
+    const emailEl=el('account-email'); if(emailEl)emailEl.textContent=user.email||'';
+    const avatarEl=el('account-avatar'); if(avatarEl)avatarEl.src=user.photoURL||'';
+    if(toggleLabel)toggleLabel.textContent=(user.displayName||user.email||'Account').split(' ')[0];
+    if(toggleAvatar){ if(user.photoURL){toggleAvatar.src=user.photoURL; toggleAvatar.style.display='inline-block';}else{toggleAvatar.style.display='none';} }
+  }else{
+    if(signedOutEl)signedOutEl.style.display='';
+    if(signedInEl)signedInEl.style.display='none';
+    if(toggleLabel)toggleLabel.textContent='Sign in';
+    if(toggleAvatar)toggleAvatar.style.display='none';
+  }
+}
+async function signInWithGoogleAccount(){
+  const btn=el('account-google-signin-btn'); if(btn){btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='default';}
+  try{
+    const {auth,authMod}=await loadFirebaseMods();
+    const provider=new authMod.GoogleAuthProvider();
+    const result=await authMod.signInWithPopup(auth,provider);
+    try{localStorage.setItem('sakura_account_active','true')}catch(e){}
+    updateAccountUI(result.user);
+    el('account-menu')?.classList.remove('open');
+    showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
+  }catch(e){
+    // Popup dismissed by the person themselves isn't an error worth surfacing.
+    if(e && e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request'){
+      console.warn('[sakura] Google sign-in failed:',e);
+      showToast('Sign-in failed — please try again');
+    }
+  }finally{
+    if(btn){btn.disabled=false; btn.style.opacity=''; btn.style.cursor='';}
+  }
+}
+async function signOutOfAccount(){
+  try{
+    const {auth,authMod}=await loadFirebaseMods();
+    await authMod.signOut(auth);
+  }catch(e){ console.warn('[sakura] sign-out error:',e); }
+  try{localStorage.removeItem('sakura_account_active')}catch(e){}
+  updateAccountUI(null);
+  el('account-menu')?.classList.remove('open');
+  showToast('Signed out');
+}
+// Silently restores a previous session on boot — but ONLY if this device has actually signed
+// in before, so first-time and never-opted-in visitors never trigger a Firebase load or
+// network call at all.
+function restoreAccountSessionIfNeeded(){
+  let wasActive=false;
+  try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
+  if(!wasActive)return;
+  loadFirebaseMods().then(({auth,authMod})=>{
+    authMod.onAuthStateChanged(auth,user=>{
+      if(user){ updateAccountUI(user); }
+      else{ try{localStorage.removeItem('sakura_account_active')}catch(e){} updateAccountUI(null); }
+    });
+  }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); });
+}
+
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
 function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; const strip=el('doc-tab-strip'); const activeRow=strip?strip.querySelector('.doc-tab.active'):null; if(activeRow)activeRow.classList.toggle('is-dirty',dirty)}
 function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(i))collapsedIds.add(n.id)}); scheduleAutoSave(); render(); showToast('All collapsed')}
@@ -21712,6 +21828,9 @@ el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontC
 el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
 el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus()}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('more-menu').classList.toggle('open')}); el('docs-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); const wasOpen=el('docs-menu').classList.contains('open'); if(!wasOpen){renderDocsList()} el('docs-menu').classList.toggle('open')});
+el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('docs-menu').classList.remove('open'); el('templates-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu').classList.toggle('open')});
+el('account-google-signin-btn')?.addEventListener('click',e=>{e.stopPropagation(); signInWithGoogleAccount()});
+el('account-signout-btn')?.addEventListener('click',e=>{e.stopPropagation(); signOutOfAccount()});
 el('templates-toggle').addEventListener('click',e=>{e.stopPropagation(); const wasOpen=el('templates-menu').classList.contains('open'); if(wasOpen){el('templates-menu').classList.remove('open')} else {openTemplatesMenu()}});
 el('templates-save-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); saveCurrentAsTemplate()});
 el('templates-set-default-btn').addEventListener('click',e=>{e.stopPropagation(); el('templates-menu').classList.remove('open'); setCurrentAsDefaultTemplate()});
@@ -21732,7 +21851,7 @@ document.addEventListener('click',e=>{
   // AI fallback warning ran into: clicking the password prompt's own button silently closed the
   // Settings panel behind it, only visible once the prompt itself closed a moment later.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
+  const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),more=el('more-menu'),moreToggle=el('more-toggle'),docs=el('docs-menu'),docsToggle=el('docs-toggle'),templates=el('templates-menu'),templatesToggle=el('templates-toggle'),context=el('context-menu'),scalePop=el('scale-popover'),scaleToggle=el('sb-scale'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(!more.contains(e.target)&&e.target!==moreToggle)more.classList.remove('open'); if(!docs.contains(e.target)&&e.target!==docsToggle)docs.classList.remove('open'); if(templates&&!templates.contains(e.target)&&e.target!==templatesToggle)templates.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(scalePop&&!scalePop.contains(e.target)&&e.target!==scaleToggle)scalePop.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
 },true);
 // Dedicated capture-phase listener for Quick Insert's outside-click dismissal.
 // Deliberately NOT folded into the bubble-phase listener above: at least 47 buttons in this
@@ -24134,7 +24253,7 @@ function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHid
 const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
 function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
 
-loadPrefs(); loadRecentAnswerers(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setInlineRemarksPreviewEnabled(inlineRemarksPreviewEnabled,false); setInlineQaPreviewEnabled(inlineQaPreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setRemarksExportEnabled(remarksExportEnabled,false); setDiagramGenSkipReviewEnabled(diagramGenSkipReviewEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList();
+loadPrefs(); loadRecentAnswerers(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setInlineNotePreviewEnabled(inlineNotePreviewEnabled,false); setInlineRemarksPreviewEnabled(inlineRemarksPreviewEnabled,false); setInlineQaPreviewEnabled(inlineQaPreviewEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setRemarksExportEnabled(remarksExportEnabled,false); setDiagramGenSkipReviewEnabled(diagramGenSkipReviewEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList(); restoreAccountSessionIfNeeded();
 { const _aboutVersionEl=el('about-version'); if(_aboutVersionEl)_aboutVersionEl.textContent=VERSION; }
 
 /* === Sidebar === */
