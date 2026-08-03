@@ -6160,7 +6160,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
 <div id="cross-tab-banner" class="cross-tab-banner" hidden>
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>
-  <span class="cross-tab-banner-text" id="cross-tab-banner-text">This document changed in another tab.</span>
+  <span class="cross-tab-banner-text" id="cross-tab-banner-text">This document was updated elsewhere — in another tab, or on another device.</span>
   <button class="cross-tab-banner-btn" id="cross-tab-reload-btn">Reload latest</button>
   <button class="cross-tab-banner-dismiss" id="cross-tab-dismiss-btn" data-tip="Dismiss">×</button>
 </div>
@@ -12546,6 +12546,7 @@ async function signInWithGoogleAccount(){
     el('account-menu')?.classList.remove('open');
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
     pullAndMergeFromCloud();
+    startRealtimeSync();
   }catch(e){
     // Popup dismissed by the person themselves isn't an error worth surfacing.
     if(e && e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request'){
@@ -12557,6 +12558,7 @@ async function signInWithGoogleAccount(){
   }
 }
 async function signOutOfAccount(){
+  stopRealtimeSync();
   try{
     const {auth,authMod}=await loadFirebaseMods();
     await authMod.signOut(auth);
@@ -12575,7 +12577,7 @@ function restoreAccountSessionIfNeeded(){
   if(!wasActive)return;
   loadFirebaseMods().then(({auth,authMod})=>{
     authMod.onAuthStateChanged(auth,user=>{
-      if(user){ updateAccountUI(user); pullAndMergeFromCloud(); }
+      if(user){ updateAccountUI(user); pullAndMergeFromCloud(); startRealtimeSync(); }
       else{ try{localStorage.removeItem('sakura_account_active')}catch(e){} updateAccountUI(null); }
     });
   }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); });
@@ -12627,6 +12629,15 @@ async function loadFirestoreMods(){
 
 let _syncPushQueue=new Map();
 let _syncPushTimer=null;
+// Tracks the exact timestamp WE last pushed for each item. Firestore's onSnapshot fires for a
+// device's own writes too (an "echo"), and since pushDocToCloud/etc. stamp updatedAt at push
+// time — not save time — that echoed timestamp can legitimately be newer than whatever local
+// bookkeeping (docsIndex updatedAt, the meta local-ts map) was stamped a moment earlier at save
+// time. Without this guard, every self-triggered echo would look like a genuine newer remote
+// change, which for the realtime listener (unlike the polling pull) means the cross-tab-banner
+// firing on your OWN currently-open document after every edit — comparing against this map
+// instead catches "this is just my own write coming back" before that ever happens.
+let _lastPushedTs={};
 function queueSync(kind,id){
   if(!currentUser)return;
   _syncPushQueue.set(kind+':'+id,{kind,id});
@@ -12660,20 +12671,74 @@ async function flushSyncQueue(){
 async function pushDocToCloud(mod,db,docId){
   const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:Date.now()});
+  const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:ts});
 }
 async function pushTemplateToCloud(mod,db,tplId){
   const raw=localStorage.getItem(templateKey(tplId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'templates',tplId),{...data,updatedAt:Date.now()});
+  const ts=Date.now(); _lastPushedTs['tpl:'+tplId]=ts;
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'templates',tplId),{...data,updatedAt:ts});
 }
 async function pushMetaToCloud(mod,db,metaKey){
   const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
   const raw=localStorage.getItem(localKeyName);
   let value=null; if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey),{value,updatedAt:Date.now()});
+  const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts;
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey),{value,updatedAt:ts});
 }
-// Pulls everything from the cloud, compares timestamps against local, and applies whichever
+// Shared "should this incoming item overwrite what's local, and how" logic — used by both the
+// periodic pullAndMergeFromCloud() below and the realtime onSnapshot listeners further down, so
+// the two paths can't drift into different conflict-resolution behavior. Returns true if the
+// item was applied locally.
+//
+// viaRealtime distinguishes the two callers' different handling of the CURRENTLY OPEN document:
+// polling silently skips it (the original Phase 2 safety choice — no interruption, catches up
+// next time the doc is reopened); realtime instead surfaces the existing cross-tab-banner (the
+// same UI already used for the same-browser-other-tab case) so the person can choose to reload
+// rather than staying silently stale indefinitely while the app is open live.
+function applyIncomingDocData(id,cloud,viaRealtime){
+  const cloudTs=Number(cloud.updatedAt)||0;
+  if(_lastPushedTs['doc:'+id]===cloudTs)return false; // our own echo
+  const localIndex=loadDocsIndex();
+  const localEntry=localIndex.find(d=>d.id===id);
+  const localTsDoc=localEntry?Number(localEntry.updatedAt)||0:0;
+  if(localEntry&&cloudTs<=localTsDoc)return false; // local is at least as new
+  if(id===currentDocId){
+    if(!viaRealtime)return false; // polling: leave the active doc alone entirely
+    const {updatedAt,...docData}=cloud;
+    localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
+    if(crossTabWarningDocId!==currentDocId){ crossTabWarningDocId=currentDocId; showCrossTabWarning(); }
+    return true;
+  }
+  const {updatedAt,...docData}=cloud;
+  localStorage.setItem(docKey(id),JSON.stringify(docData));
+  touchDocIndex(id,docData.title||'Untitled');
+  return true;
+}
+function applyIncomingTemplateData(id,cloud){
+  const cloudTs=Number(cloud.updatedAt)||0;
+  if(_lastPushedTs['tpl:'+id]===cloudTs)return false;
+  const localEntry=loadTemplatesIndex().find(t=>t.id===id);
+  const localTsT=localEntry?Number(localEntry.updatedAt)||0:0;
+  if(localEntry&&cloudTs<=localTsT)return false;
+  const {updatedAt,...tplData}=cloud;
+  localStorage.setItem(templateKey(id),JSON.stringify(tplData));
+  touchTemplateIndex(id,tplData?.title||localEntry?.title||'Untitled template');
+  return true;
+}
+function applyIncomingMetaData(metaKey,cloud){
+  const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return false;
+  const cloudTs=Number(cloud.updatedAt)||0;
+  if(_lastPushedTs['meta:'+metaKey]===cloudTs)return false;
+  const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
+  if(cloudTs<=localT)return false;
+  if(cloud.value===null||cloud.value===undefined)localStorage.removeItem(localKeyName);
+  else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
+  localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
+  return true;
+}
+
 // side is newer per item (last-write-wins, not a field-level merge). Anything local that the
 // cloud doesn't have yet gets queued to push up, so a first sign-in seeds the cloud rather than
 // wiping a fresh account's local data. Runs on sign-in, session restore, and tab refocus.
@@ -12694,60 +12759,40 @@ async function pullAndMergeFromCloud(){
   updateSyncStatusUI('syncing');
   try{
     const {mod,db}=await loadFirestoreMods();
-    const localTs=_loadSyncLocalTs();
     const syncMetaKeys=getSyncMetaKeys();
     for(const metaKey of Object.keys(syncMetaKeys)){
       const localKeyName=syncMetaKeys[metaKey];
       let snap; try{ snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey)); }catch(e){ continue; }
       if(snap.exists()){
-        const cloud=snap.data(); const cloudTs=Number(cloud.updatedAt)||0; const localT=Number(localTs[metaKey])||0;
-        if(cloudTs>localT){
-          if(cloud.value===null||cloud.value===undefined) localStorage.removeItem(localKeyName);
-          else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
-          localTs[metaKey]=cloudTs;
-        }else if(localT>cloudTs){
-          queueSync('meta',metaKey);
+        const cloud=snap.data();
+        const applied=applyIncomingMetaData(metaKey,cloud);
+        if(!applied){
+          const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0; const cloudTs=Number(cloud.updatedAt)||0;
+          if(localT>cloudTs)queueSync('meta',metaKey); // local is newer — make sure it's queued to push
         }
       }else if(localStorage.getItem(localKeyName)!==null){
         queueSync('meta',metaKey);
       }
     }
-    _saveSyncLocalTs(localTs);
 
     const localIndex=loadDocsIndex();
-    const localById=new Map(localIndex.map(d=>[d.id,d]));
     let cloudDocsSnap=null; try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); }catch(e){}
     const cloudIds=new Set();
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
-        if(id===currentDocId)continue; // skip the actively-open doc — see note above
-        const cloud=docSnap.data(); const cloudTs=Number(cloud.updatedAt)||0;
-        const localEntry=localById.get(id); const localTsDoc=localEntry?Number(localEntry.updatedAt)||0:0;
-        if(!localEntry||cloudTs>localTsDoc){
-          const {updatedAt,...docData}=cloud;
-          localStorage.setItem(docKey(id),JSON.stringify(docData));
-          touchDocIndex(id,docData.title||'Untitled');
-        }
+        applyIncomingDocData(id,docSnap.data(),false);
       }
     }
     for(const entry of localIndex){ if(!cloudIds.has(entry.id))queueSync('doc',entry.id); }
 
     const localTplIndex=loadTemplatesIndex();
-    const localTplById=new Map(localTplIndex.map(t=>[t.id,t]));
     let cloudTplSnap=null; try{ cloudTplSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'templates')); }catch(e){}
     const cloudTplIds=new Set();
     if(cloudTplSnap){
       for(const docSnap of cloudTplSnap.docs){
         const id=docSnap.id; cloudTplIds.add(id);
-        const cloud=docSnap.data(); const cloudTs=Number(cloud.updatedAt)||0;
-        const localEntry=localTplById.get(id); const localTsT=localEntry?Number(localEntry.updatedAt)||0:0;
-        if(!localEntry||cloudTs>localTsT){
-          const {updatedAt,...tplData}=cloud;
-          localStorage.setItem(templateKey(id),JSON.stringify(tplData));
-          const idxEntry=loadTemplatesIndex().find(t=>t.id===id);
-          touchTemplateIndex(id,idxEntry?.title||'Untitled template');
-        }
+        applyIncomingTemplateData(id,docSnap.data());
       }
     }
     for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id))queueSync('tpl',entry.id); }
@@ -12765,6 +12810,56 @@ async function pullAndMergeFromCloud(){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&currentUser)pullAndMergeFromCloud();
 });
+
+// === Phase 3: realtime cross-device sync ===
+// onSnapshot listeners on the docs/templates collections and each meta doc — the live
+// counterpart to pullAndMergeFromCloud's periodic catch-up. Started after sign-in (fresh or
+// restored) and stopped on sign-out so nothing keeps listening for a session that's over.
+let _syncUnsubscribers=[];
+async function startRealtimeSync(){
+  if(!currentUser)return;
+  stopRealtimeSync();
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const uid=currentUser.uid;
+
+    const docsUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'docs'),snapshot=>{
+      let changed=false;
+      snapshot.docChanges().forEach(change=>{
+        if(change.type==='removed')return; // this app never deletes cloud doc records from a listener path
+        if(applyIncomingDocData(change.doc.id,change.doc.data(),true))changed=true;
+      });
+      if(changed){ renderSidebar(); if(typeof renderDocsList==='function')renderDocsList(); }
+    },err=>console.warn('[sakura] docs realtime listener error:',err));
+
+    const tplUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'templates'),snapshot=>{
+      let changed=false;
+      snapshot.docChanges().forEach(change=>{
+        if(change.type==='removed')return;
+        if(applyIncomingTemplateData(change.doc.id,change.doc.data()))changed=true;
+      });
+      if(changed){ renderSidebar(); if(typeof renderTemplatesList==='function')renderTemplatesList(); }
+    },err=>console.warn('[sakura] templates realtime listener error:',err));
+
+    const metaUnsubs=Object.keys(getSyncMetaKeys()).map(metaKey=>
+      mod.onSnapshot(mod.doc(db,'users',uid,'meta',metaKey),snap=>{
+        if(!snap.exists())return;
+        if(applyIncomingMetaData(metaKey,snap.data())){
+          if(metaKey==='prefs')loadPrefs();
+          renderSidebar();
+        }
+      },err=>console.warn('[sakura] meta realtime listener error ('+metaKey+'):',err))
+    );
+
+    _syncUnsubscribers=[docsUnsub,tplUnsub,...metaUnsubs];
+  }catch(e){
+    console.warn('[sakura] could not start realtime sync:',e);
+  }
+}
+function stopRealtimeSync(){
+  _syncUnsubscribers.forEach(fn=>{ try{fn()}catch(e){} });
+  _syncUnsubscribers=[];
+}
 
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
