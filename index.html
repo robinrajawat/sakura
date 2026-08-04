@@ -12553,7 +12553,22 @@ function updateAccountUI(user){
     if(signedInEl)signedInEl.style.display='';
     const nameEl=el('account-name'); if(nameEl)nameEl.textContent=user.displayName||user.email||'Signed in';
     const emailEl=el('account-email'); if(emailEl)emailEl.textContent=user.email||'';
-    const avatarEl=el('account-avatar'); if(avatarEl)avatarEl.src=user.photoURL||'';
+    const avatarEl=el('account-avatar');
+    if(avatarEl){
+      if(user.photoURL){ avatarEl.src=user.photoURL; avatarEl.style.display='block'; avatarEl.style.background=''; }
+      else{
+        avatarEl.removeAttribute('src'); avatarEl.style.display='none';
+        let fallback=avatarEl.nextElementSibling;
+        if(!fallback||!fallback.classList||!fallback.classList.contains('account-avatar-fallback')){
+          fallback=document.createElement('div'); fallback.className='account-avatar-fallback';
+          fallback.style.cssText='width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font:600 15px \'Inter\',sans-serif;flex-shrink:0;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--border)';
+          avatarEl.insertAdjacentElement('afterend',fallback);
+        }
+        fallback.textContent=(user.displayName||user.email||'?').trim().charAt(0).toUpperCase();
+        fallback.style.display='flex';
+      }
+    }
+    const existingFallback=document.querySelector('.account-avatar-fallback'); if(existingFallback&&user.photoURL)existingFallback.style.display='none';
     if(toggleLabel)toggleLabel.style.display='none';
     if(toggleAvatar&&toggleAvatarWrap){
       toggleAvatarWrap.style.display='inline-block';
