@@ -4302,7 +4302,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div id="header-actions">
       <div id="appbar-qa-slot"></div>
-      <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Meetings, Journal, Library &amp; Recap" aria-label="Open Hub">Hub</button>
+      <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Meetings, Journal, Library &amp; Recap" aria-label="Open Hub"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
       <div class="export-wrap" id="appbar-more-wrap">
         <button class="btn" id="appbar-more-toggle" data-tip="Import, Export &amp; Print">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -4315,8 +4315,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
       <div class="export-wrap" id="account-wrap">
         <button class="btn" id="account-toggle" data-tip="Account &amp; sync">
-          <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-3px;margin-right:5px">
-            <img id="account-toggle-avatar" width="16" height="16" style="border-radius:50%;display:block" alt="" />
+          <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-5px">
+            <img id="account-toggle-avatar" width="20" height="20" style="border-radius:50%;display:block" alt="" />
             <span id="account-toggle-status-dot" class="account-status-dot"></span>
           </span>
           <span id="account-toggle-label">Sign in</span>
@@ -12549,16 +12549,17 @@ function updateAccountUI(user){
     const nameEl=el('account-name'); if(nameEl)nameEl.textContent=user.displayName||user.email||'Signed in';
     const emailEl=el('account-email'); if(emailEl)emailEl.textContent=user.email||'';
     const avatarEl=el('account-avatar'); if(avatarEl)avatarEl.src=user.photoURL||'';
-    if(toggleLabel)toggleLabel.textContent=(user.displayName||user.email||'Account').split(' ')[0];
+    if(toggleLabel)toggleLabel.style.display='none';
     if(toggleAvatar&&toggleAvatarWrap){
       toggleAvatarWrap.style.display='inline-block';
+      toggleAvatarWrap.style.marginRight='0';
       if(user.photoURL){ toggleAvatar.src=user.photoURL; toggleAvatar.style.display='block'; toggleAvatarWrap.style.background=''; }
-      else{ toggleAvatar.style.display='none'; toggleAvatarWrap.style.background='var(--muted)'; toggleAvatarWrap.style.borderRadius='50%'; toggleAvatarWrap.style.width='16px'; toggleAvatarWrap.style.height='16px'; }
+      else{ toggleAvatar.style.display='none'; toggleAvatarWrap.style.background='var(--muted)'; toggleAvatarWrap.style.borderRadius='50%'; toggleAvatarWrap.style.width='20px'; toggleAvatarWrap.style.height='20px'; }
     }
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none';
-    if(toggleLabel)toggleLabel.textContent='Sign in';
+    if(toggleLabel){toggleLabel.textContent='Sign in'; toggleLabel.style.display='';}
     if(toggleAvatarWrap)toggleAvatarWrap.style.display='none';
     updateSyncStatusUI('idle');
   }
