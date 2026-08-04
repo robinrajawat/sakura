@@ -40489,7 +40489,7 @@ function _addTagPopoverFromInput(){
 
   // ── Quick Assist / Global Search integration ────────────────────────────
   function qaFlashTodo(id){
-    openTodosPanel();
+    if(typeof openDockTab==='function')openDockTab('todos'); else openTodosPanel();
     setTimeout(()=>{
       const row=document.querySelector(`#todos-body .todo-row[data-id="${id}"]`);
       if(row){
@@ -43051,7 +43051,7 @@ window.sakuraMeetingRefsForDocAnyNode=function(docId){
 };
 window.sakuraOpenMeetingFromRef=function(meetingId){
   const m=findMeeting(meetingId); if(!m)return false;
-  openMeetingsPanel();
+  if(typeof openDockTab==='function')openDockTab('meetings'); else openMeetingsPanel();
   meetingExpandedId=m.id;
   renderMeetingsList();
   setTimeout(()=>{ document.querySelector(`.meeting-row[data-meeting-id="${m.id}"]`)?.scrollIntoView({block:'nearest'}); },30);
