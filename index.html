@@ -711,7 +711,7 @@ body.no-word-wrap .node-row{min-width:max-content}
    take up space or a visible slot in the row. Real accessibility trade-off worth stating: these
    remain in the tab order as legitimate, if invisible, buttons — a screen reader user tabbing
    through would still reach them directly, which is fine; nothing here is display:none. */
-#settings-toggle,#help-toggle,#import-toggle,#print-btn{position:absolute;opacity:0;pointer-events:none;top:0;right:0;width:1px;height:1px;overflow:hidden;padding:0;border:none}
+#settings-toggle,#help-toggle,#import-toggle,#print-btn,#export-toggle{position:absolute;opacity:0;pointer-events:none;top:0;right:0;width:1px;height:1px;overflow:hidden;padding:0;border:none}
 /* Notion-style visual pass: appbar buttons read as plain text by default, chrome only
    appears on hover, instead of every action sitting inside its own bordered pill all the
    time. Scoped to #appbar specifically so toolbars/modals elsewhere keep their existing
@@ -4304,12 +4304,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div id="appbar-qa-slot"></div>
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Meetings, Journal, Library &amp; Recap" aria-label="Open Hub">Hub</button>
       <div class="export-wrap" id="appbar-more-wrap">
-        <button class="btn" id="appbar-more-toggle" data-tip="More">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
+        <button class="btn" id="appbar-more-toggle" data-tip="Import, Export &amp; Print">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
         <div class="export-menu" id="appbar-more-menu">
-          <button class="export-item" id="appbar-more-settings-btn">Settings</button>
-          <button class="export-item" id="appbar-more-help-btn">Help</button>
+          <button class="export-item" id="appbar-more-export-btn">Export</button>
           <button class="export-item" id="appbar-more-import-btn">Import</button>
           <button class="export-item" id="appbar-more-print-btn">Print</button>
         </div>
@@ -4341,6 +4340,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="account-sync-status" class="muted-help" style="margin:0 0 8px"></div>
             <button class="export-item" id="account-signout-btn" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px">Sign out</button>
           </div>
+          <div class="export-divider"></div>
+          <button class="export-item" id="account-settings-btn">Settings</button>
+          <button class="export-item" id="account-help-btn">Help</button>
         </div>
       </div>
       <div class="settings-wrap">
@@ -12142,7 +12144,7 @@ function savePrefs(){
     if(readBack!==json){
       console.warn('[sakura] savePrefs: localStorage read-back did not match what was just written. statusbarHiddenItems written as:',payload.statusbarHiddenItems,'read back as:',(()=>{try{return JSON.parse(readBack||'{}').statusbarHiddenItems}catch(e){return '(unparseable)'}})());
     }
-    if(typeof markMetaChanged==='function')markMetaChanged('prefs');
+    if(typeof markMetaChanged==='function'){ try{ markMetaChanged('prefs'); }catch(e){ console.warn('[sakura] markMetaChanged(prefs) failed (likely an early-boot call before all consts are initialized) — the prefs save itself still succeeded:',e); } }
   }catch(e){
     // NOTE: this fires on every page load's very first automatic save (triggered by
     // setTheme() during startup) because previewSlideDepth and other later-declared
@@ -22181,10 +22183,11 @@ el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('more-menu').classList.toggle('open')});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu').classList.toggle('open')});
 el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu')?.classList.remove('open'); el('appbar-more-menu').classList.toggle('open')});
-el('appbar-more-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); el('settings-toggle').click()});
-el('appbar-more-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); el('help-toggle').click()});
-el('appbar-more-import-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); el('import-toggle').click()});
-el('appbar-more-print-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); el('print-btn').click()});
+el('appbar-more-export-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); setTimeout(()=>el('export-toggle').click(),0)});
+el('appbar-more-import-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); setTimeout(()=>el('import-toggle').click(),0)});
+el('appbar-more-print-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('appbar-more-menu').classList.remove('open'); setTimeout(()=>el('print-btn').click(),0)});
+el('account-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu').classList.remove('open'); setTimeout(()=>el('settings-toggle').click(),0)});
+el('account-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu').classList.remove('open'); setTimeout(()=>el('help-toggle').click(),0)});
 el('account-google-signin-btn')?.addEventListener('click',e=>{e.stopPropagation(); signInWithGoogleAccount()});
 el('account-signout-btn')?.addEventListener('click',e=>{e.stopPropagation(); signOutOfAccount()});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
