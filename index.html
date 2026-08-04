@@ -414,6 +414,11 @@ body.feature-off-quickassist #global-search-wrap{display:none!important}
 .export-menu-rich{padding:6px}
 .export-menu-rich .export-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px 4px}
 .export-menu-rich .export-item{display:flex;align-items:center;gap:10px;border-radius:8px;margin:0 2px;padding:8px 10px;width:auto}
+.account-status-dot{position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--bg);background:transparent;transition:background .15s}
+.account-status-dot.syncing{background:var(--accent);animation:accountDotPulse 1s ease-in-out infinite}
+.account-status-dot.synced{background:#2fa84f}
+.account-status-dot.error{background:#e5484d}
+@keyframes accountDotPulse{0%,100%{opacity:1}50%{opacity:.35}}
 .export-menu-rich .export-item:hover{background:var(--hover)}
 .export-menu-rich .export-item:active{background:var(--sel)}
 .export-menu-rich .export-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
@@ -4300,7 +4305,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Meetings, Journal, Library &amp; Recap" aria-label="Open Hub">Hub</button>
       <div class="export-wrap" id="account-wrap">
         <button class="btn" id="account-toggle" data-tip="Account &amp; sync">
-          <img id="account-toggle-avatar" width="16" height="16" style="border-radius:50%;vertical-align:-3px;margin-right:5px;display:none" alt="" />
+          <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-3px;margin-right:5px">
+            <img id="account-toggle-avatar" width="16" height="16" style="border-radius:50%;display:block" alt="" />
+            <span id="account-toggle-status-dot" class="account-status-dot"></span>
+          </span>
           <span id="account-toggle-label">Sign in</span>
         </button>
         <div class="export-menu" id="account-menu">
@@ -12519,7 +12527,7 @@ function loadFirebaseMods(){
 function updateAccountUI(user){
   currentUser=user;
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
-  const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar');
+  const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
   if(user){
     if(signedOutEl)signedOutEl.style.display='none';
     if(signedInEl)signedInEl.style.display='';
@@ -12527,12 +12535,17 @@ function updateAccountUI(user){
     const emailEl=el('account-email'); if(emailEl)emailEl.textContent=user.email||'';
     const avatarEl=el('account-avatar'); if(avatarEl)avatarEl.src=user.photoURL||'';
     if(toggleLabel)toggleLabel.textContent=(user.displayName||user.email||'Account').split(' ')[0];
-    if(toggleAvatar){ if(user.photoURL){toggleAvatar.src=user.photoURL; toggleAvatar.style.display='inline-block';}else{toggleAvatar.style.display='none';} }
+    if(toggleAvatar&&toggleAvatarWrap){
+      toggleAvatarWrap.style.display='inline-block';
+      if(user.photoURL){ toggleAvatar.src=user.photoURL; toggleAvatar.style.display='block'; toggleAvatarWrap.style.background=''; }
+      else{ toggleAvatar.style.display='none'; toggleAvatarWrap.style.background='var(--muted)'; toggleAvatarWrap.style.borderRadius='50%'; toggleAvatarWrap.style.width='16px'; toggleAvatarWrap.style.height='16px'; }
+    }
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none';
     if(toggleLabel)toggleLabel.textContent='Sign in';
-    if(toggleAvatar)toggleAvatar.style.display='none';
+    if(toggleAvatarWrap)toggleAvatarWrap.style.display='none';
+    updateSyncStatusUI('idle');
   }
 }
 async function signInWithGoogleAccount(){
@@ -12545,7 +12558,7 @@ async function signInWithGoogleAccount(){
     updateAccountUI(result.user);
     el('account-menu')?.classList.remove('open');
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
-    pullAndMergeFromCloud();
+    pullAndMergeFromCloud(true);
     startRealtimeSync();
   }catch(e){
     // Popup dismissed by the person themselves isn't an error worth surfacing.
@@ -12577,7 +12590,7 @@ function restoreAccountSessionIfNeeded(){
   if(!wasActive)return;
   loadFirebaseMods().then(({auth,authMod})=>{
     authMod.onAuthStateChanged(auth,user=>{
-      if(user){ updateAccountUI(user); pullAndMergeFromCloud(); startRealtimeSync(); }
+      if(user){ updateAccountUI(user); pullAndMergeFromCloud(true); startRealtimeSync(); }
       else{ try{localStorage.removeItem('sakura_account_active')}catch(e){} updateAccountUI(null); }
     });
   }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); });
@@ -12638,18 +12651,29 @@ let _syncPushTimer=null;
 // firing on your OWN currently-open document after every edit — comparing against this map
 // instead catches "this is just my own write coming back" before that ever happens.
 let _lastPushedTs={};
+let _syncErrorToastShown=false;
 function queueSync(kind,id){
   if(!currentUser)return;
   _syncPushQueue.set(kind+':'+id,{kind,id});
   clearTimeout(_syncPushTimer);
   _syncPushTimer=setTimeout(flushSyncQueue,1500);
 }
+let _syncDotFadeTimer=null;
 function updateSyncStatusUI(status){
-  const el2=el('account-sync-status'); if(!el2)return;
-  if(status==='syncing')el2.textContent='Syncing…';
-  else if(status==='synced')el2.textContent='Synced just now';
-  else if(status==='error')el2.textContent='Sync error — will retry on your next change';
-  else el2.textContent='';
+  const el2=el('account-sync-status'); if(el2){
+    if(status==='syncing')el2.textContent='Syncing…';
+    else if(status==='synced')el2.textContent='Synced just now';
+    else if(status==='error')el2.textContent='Sync error — will retry on your next change';
+    else el2.textContent='';
+  }
+  const dot=el('account-toggle-status-dot'); if(!dot)return;
+  clearTimeout(_syncDotFadeTimer);
+  dot.classList.remove('syncing','synced','error');
+  if(status==='syncing'){ dot.classList.add('syncing'); }
+  else if(status==='synced'){
+    dot.classList.add('synced');
+    _syncDotFadeTimer=setTimeout(()=>dot.classList.remove('synced'),4000); // brief confirmation, then fades — not a permanent green light
+  }else if(status==='error'){ dot.classList.add('error'); } // persists until the next successful sync, unlike 'synced'
 }
 async function flushSyncQueue(){
   if(!currentUser||_syncPushQueue.size===0)return;
@@ -12663,9 +12687,11 @@ async function flushSyncQueue(){
       else if(kind==='meta')await pushMetaToCloud(mod,db,id);
     }
     updateSyncStatusUI('synced');
+    _syncErrorToastShown=false;
   }catch(e){
     console.warn('[sakura] cloud sync push failed:',e);
     updateSyncStatusUI('error');
+    if(!_syncErrorToastShown){ _syncErrorToastShown=true; showToast('Sync ran into a problem — will keep retrying quietly'); }
   }
 }
 async function pushDocToCloud(mod,db,docId){
@@ -12708,7 +12734,11 @@ function applyIncomingDocData(id,cloud,viaRealtime){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
     const {updatedAt,...docData}=cloud;
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
-    if(crossTabWarningDocId!==currentDocId){ crossTabWarningDocId=currentDocId; showCrossTabWarning(); }
+    if(crossTabWarningDocId!==currentDocId){
+      crossTabWarningDocId=currentDocId;
+      const txt=el('cross-tab-banner-text'); if(txt)txt.textContent='This document was just updated on another device.';
+      showCrossTabWarning();
+    }
     return true;
   }
   const {updatedAt,...docData}=cloud;
@@ -12752,11 +12782,12 @@ function applyIncomingMetaData(metaKey,cloud){
 // live cross-device case is Phase 3's job, with a real-time listener instead of this periodic
 // pull.
 let _lastPullAt=0;
-async function pullAndMergeFromCloud(){
+async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
-  const now=Date.now(); if(now-_lastPullAt<15000)return; // throttle: focus-spam guard
+  const now=Date.now(); if(!isInitial&&now-_lastPullAt<15000)return; // throttle: focus-spam guard (initial sign-in pull always runs)
   _lastPullAt=now;
   updateSyncStatusUI('syncing');
+  let pulledInCount=0, pushedUpCount=0;
   try{
     const {mod,db}=await loadFirestoreMods();
     const syncMetaKeys=getSyncMetaKeys();
@@ -12781,10 +12812,10 @@ async function pullAndMergeFromCloud(){
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
-        applyIncomingDocData(id,docSnap.data(),false);
+        if(applyIncomingDocData(id,docSnap.data(),false))pulledInCount++;
       }
     }
-    for(const entry of localIndex){ if(!cloudIds.has(entry.id))queueSync('doc',entry.id); }
+    for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} }
 
     const localTplIndex=loadTemplatesIndex();
     let cloudTplSnap=null; try{ cloudTplSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'templates')); }catch(e){}
@@ -12792,19 +12823,26 @@ async function pullAndMergeFromCloud(){
     if(cloudTplSnap){
       for(const docSnap of cloudTplSnap.docs){
         const id=docSnap.id; cloudTplIds.add(id);
-        applyIncomingTemplateData(id,docSnap.data());
+        if(applyIncomingTemplateData(id,docSnap.data()))pulledInCount++;
       }
     }
-    for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id))queueSync('tpl',entry.id); }
+    for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} }
 
     loadPrefs();
     renderSidebar();
     if(typeof renderDocsList==='function')renderDocsList();
     if(typeof renderTemplatesList==='function')renderTemplatesList();
     updateSyncStatusUI('synced');
+    _syncErrorToastShown=false;
+    if(isInitial&&(pulledInCount>0||pushedUpCount>0)){
+      if(pulledInCount>0&&pushedUpCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account, sent up ${pushedUpCount} from this device`);
+      else if(pulledInCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account`);
+      else showToast(`Synced: sent ${pushedUpCount} item${pushedUpCount===1?'':'s'} from this device to your account`);
+    }
   }catch(e){
     console.warn('[sakura] cloud sync pull failed:',e);
     updateSyncStatusUI('error');
+    if(!_syncErrorToastShown){ _syncErrorToastShown=true; showToast('Sync ran into a problem — will keep retrying quietly'); }
   }
 }
 document.addEventListener('visibilitychange',()=>{
@@ -26219,7 +26257,11 @@ window.addEventListener('storage', e=>{
     if(openTab.docId===currentDocId){
       // The document on screen right now just changed underneath us. Warn rather than
       // silently reload — the person may have unsaved edits here worth keeping instead.
-      if(crossTabWarningDocId!==currentDocId){ crossTabWarningDocId=currentDocId; showCrossTabWarning(); }
+      if(crossTabWarningDocId!==currentDocId){
+        crossTabWarningDocId=currentDocId;
+        const txt=el('cross-tab-banner-text'); if(txt)txt.textContent='This document changed in another tab.';
+        showCrossTabWarning();
+      }
     } else {
       // A background tab (open here, but not the one being looked at) changed elsewhere.
       // Nothing unsaved to protect, so just quietly refresh the cached copy — otherwise
