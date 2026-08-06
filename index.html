@@ -12903,11 +12903,22 @@ async function startRealtimeSync(){
     const {mod,db}=await loadFirestoreMods();
     const uid=currentUser.uid;
 
+    // Firestore fires onSnapshot's first callback with the entire current result set (every
+    // doc as a change), not just genuine live edits — that's just how a fresh listener catches
+    // up. _lastPushedTs is empty on a fresh page load, so that initial burst can't be recognized
+    // as "our own echo" there, and since cloud updatedAt (stamped at push time) is almost always
+    // a hair newer than the local index's updatedAt (stamped at save time), treating that first
+    // burst as a real live change made the cross-tab-banner fire on the currently-open doc on
+    // nearly every load/sign-in — not because anything changed elsewhere. Treat this first
+    // snapshot like the polling pull (viaRealtime=false, silently skips the open doc); only
+    // snapshots after it reflect actual real-time changes worth surfacing.
+    let _docsFirstSnapshot=true;
     const docsUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'docs'),snapshot=>{
+      const isLive=!_docsFirstSnapshot; _docsFirstSnapshot=false;
       let changed=false;
       snapshot.docChanges().forEach(change=>{
         if(change.type==='removed')return; // this app never deletes cloud doc records from a listener path
-        if(applyIncomingDocData(change.doc.id,change.doc.data(),true))changed=true;
+        if(applyIncomingDocData(change.doc.id,change.doc.data(),isLive))changed=true;
       });
       if(changed){ renderSidebar(); if(typeof renderDocsList==='function')renderDocsList(); }
     },err=>console.warn('[sakura] docs realtime listener error:',err));
