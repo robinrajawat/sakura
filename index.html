@@ -610,6 +610,14 @@ body.no-word-wrap .node-row{min-width:max-content}
 
 #why-sakura-overlay.open #why-sakura-modal{transform:translateY(0) scale(1)}
 #why-sakura-overlay.closing #why-sakura-modal{transform:translateY(8px) scale(.97)}
+#sakura-landing-overlay{position:fixed;inset:0;z-index:3000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+#sakura-landing-card{width:min(380px,calc(100vw - 32px));text-align:center;font-family:'Inter',sans-serif}
+#sakura-landing-brand{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:22px}
+#sakura-landing-brand-icon{font-size:30px;line-height:1;display:inline-flex}
+#sakura-landing-brand-name{font:700 18px 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
+#sakura-landing-heading{font:700 21px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
+#sakura-landing-sub{font:400 13.5px 'Inter',sans-serif;color:var(--muted);line-height:1.5;margin:0 0 24px}
+#sakura-landing-google-signin-btn:hover{background:var(--hover)}
 #icon-library-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
 #icon-library-overlay.open{opacity:1;pointer-events:all}
 #icon-library-overlay.closing{opacity:0;pointer-events:none}
@@ -4298,6 +4306,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     document.documentElement.classList.add('sakura-audience-boot');
   }
   </script>
+  <div id="sakura-landing-overlay" role="dialog" aria-modal="true" aria-labelledby="sakura-landing-heading" style="display:none">
+    <div id="sakura-landing-card">
+      <div id="sakura-landing-brand">
+        <span id="sakura-landing-brand-icon"><svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><path d="M13.78,63.42 C13.66,62.95 12.99,61.55 13.08,60.61 C13.17,59.67 13.89,58.74 14.34,57.80 C14.79,56.86 15.26,55.92 15.75,54.98 C16.24,54.04 16.79,53.11 17.30,52.17 C17.82,51.23 18.30,50.30 18.84,49.36 C19.38,48.42 19.92,47.49 20.53,46.55 C21.14,45.61 21.77,44.67 22.50,43.73 C23.23,42.79 24.21,41.69 24.89,40.92 C25.57,40.15 25.62,40.03 26.58,39.09 C27.54,38.15 29.58,36.40 30.66,35.30 C31.74,34.20 32.23,33.42 33.05,32.48 C33.87,31.54 34.74,30.61 35.58,29.67 C36.42,28.73 37.34,27.68 38.11,26.86 C38.88,26.04 38.84,25.97 40.22,24.75 C41.60,23.53 46.13,19.52 46.41,19.52 C46.69,19.52 42.99,23.53 41.91,24.75 C40.83,25.97 40.69,26.04 39.94,26.86 C39.19,27.68 38.21,28.73 37.41,29.67 C36.61,30.61 35.91,31.54 35.16,32.48 C34.41,33.42 33.82,34.20 32.91,35.30 C31.99,36.40 30.52,38.15 29.67,39.09 C28.83,40.03 28.54,40.15 27.84,40.92 C27.14,41.69 26.15,42.79 25.45,43.73 C24.75,44.67 24.21,45.61 23.62,46.55 C23.04,47.49 22.48,48.42 21.94,49.36 C21.40,50.30 20.88,51.23 20.39,52.17 C19.90,53.11 19.43,54.04 18.98,54.98 C18.54,55.92 18.12,56.86 17.72,57.80 C17.32,58.74 17.06,59.67 16.59,60.61 C16.12,61.55 15.19,62.95 14.91,63.42 Z" fill="color-mix(in srgb,var(--accent) 45%,transparent)"/><path d="M46.41,19.52 C46.85,19.13 48.26,17.92 49.08,17.16 C49.90,16.40 50.37,15.61 51.33,14.98 C52.29,14.35 54.26,13.63 54.84,13.36" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.3" stroke-linecap="round"/><path d="M41.06,24.75 C42.33,24.33 46.36,22.41 48.66,22.22 C50.96,22.03 53.06,23.15 54.84,23.62 C56.62,24.09 58.59,24.80 59.34,25.03" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.1" stroke-linecap="round"/><path d="M28.83,38.67 C29.41,38.74 31.01,38.57 32.34,39.09 C33.68,39.61 35.48,40.95 36.84,41.77 C38.20,42.59 39.89,43.65 40.50,44.02" fill="none" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1.5" stroke-linecap="round"/><circle cx="45.87" cy="19.52" r="1.3" fill="color-mix(in srgb,var(--accent) 40%,transparent)"/><circle cx="59.67" cy="25.12" r="1.5" fill="color-mix(in srgb,var(--accent) 40%,transparent)"/><circle cx="56.10" cy="8.70" r="2.70" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="0.40"/><circle cx="60.09" cy="11.60" r="2.70" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="58.57" cy="16.30" r="2.70" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="53.63" cy="16.30" r="2.70" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="52.11" cy="11.60" r="2.70" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="56.10" cy="12.90" r="1.65" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="0.45"/><circle cx="41.68" cy="40.59" r="2.55" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="0.40"/><circle cx="45.45" cy="43.33" r="2.55" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="44.01" cy="47.77" r="2.55" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 47%,transparent)" stroke-width="0.40"/><circle cx="39.35" cy="47.77" r="2.55" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="37.91" cy="43.33" r="2.55" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 39%,transparent)" stroke-width="0.40"/><circle cx="41.68" cy="44.56" r="1.56" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="0.45"/></g></svg></span>
+        <span id="sakura-landing-brand-name">Sakura</span>
+      </div>
+      <h1 id="sakura-landing-heading">Your outline, wherever you go</h1>
+      <p id="sakura-landing-sub">Sign in to sync documents, settings, and templates across devices. Fully optional — everything keeps working locally if you skip this.</p>
+      <button type="button" id="sakura-landing-google-signin-btn" class="btn" style="border:1px solid var(--border);border-radius:8px;padding:10px 16px;width:100%;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <button type="button" id="sakura-landing-continue-btn" style="background:none;border:none;color:var(--muted);font-size:13px;margin-top:14px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Continue without signing in</button>
+    </div>
+  </div>
   <div id="appbar">
     <div id="app-brand">
       <span id="app-name">SAKURA</span>
@@ -12584,8 +12607,34 @@ function updateAccountUI(user){
     updateSyncStatusUI('idle');
   }
 }
+// === Landing/sign-in screen ===
+// Shown at the top of every load until the person either signs in or explicitly dismisses it
+// for this tab session (sessionStorage, not localStorage — so it's back on the next full
+// reload/new tab, same as the person answered). Sign-in stays fully optional: dismissing just
+// uncovers the normal editor underneath, which has already been booting the whole time.
+function shouldShowLandingOverlay(){
+  if(currentUser)return false;
+  try{ if(sessionStorage.getItem('sakura_landing_dismissed')==='true')return false; }catch(e){}
+  return true;
+}
+function showLandingOverlay(){
+  const ov=el('sakura-landing-overlay'); if(ov)ov.style.display='flex';
+}
+function hideLandingOverlay(){
+  const ov=el('sakura-landing-overlay'); if(ov)ov.style.display='none';
+}
+function dismissLandingOverlay(){
+  try{sessionStorage.setItem('sakura_landing_dismissed','true')}catch(e){}
+  hideLandingOverlay();
+}
+el('sakura-landing-continue-btn')?.addEventListener('click',dismissLandingOverlay);
+el('sakura-landing-google-signin-btn')?.addEventListener('click',()=>signInWithGoogleAccount());
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('sakura-landing-overlay')?.style.display==='flex')dismissLandingOverlay();
+});
 async function signInWithGoogleAccount(){
-  const btn=el('account-google-signin-btn'); if(btn){btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='default';}
+  const btns=[el('account-google-signin-btn'),el('sakura-landing-google-signin-btn')].filter(Boolean);
+  btns.forEach(btn=>{btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='default';});
   try{
     const {auth,authMod}=await loadFirebaseMods();
     const provider=new authMod.GoogleAuthProvider();
@@ -12593,6 +12642,7 @@ async function signInWithGoogleAccount(){
     try{localStorage.setItem('sakura_account_active','true')}catch(e){}
     updateAccountUI(result.user);
     el('account-menu')?.classList.remove('open');
+    hideLandingOverlay();
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
     pullAndMergeFromCloud(true);
     startRealtimeSync();
@@ -12603,7 +12653,7 @@ async function signInWithGoogleAccount(){
       showToast('Sign-in failed — please try again');
     }
   }finally{
-    if(btn){btn.disabled=false; btn.style.opacity=''; btn.style.cursor='';}
+    btns.forEach(btn=>{btn.disabled=false; btn.style.opacity=''; btn.style.cursor='';});
   }
 }
 async function signOutOfAccount(){
@@ -12623,13 +12673,25 @@ async function signOutOfAccount(){
 function restoreAccountSessionIfNeeded(){
   let wasActive=false;
   try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
-  if(!wasActive)return;
+  if(!wasActive){
+    // Never signed in on this device — no Firebase call needed to know that, so decide on the
+    // landing overlay immediately rather than waiting on anything async.
+    if(shouldShowLandingOverlay())showLandingOverlay();
+    return;
+  }
   loadFirebaseMods().then(({auth,authMod})=>{
     authMod.onAuthStateChanged(auth,user=>{
-      if(user){ updateAccountUI(user); pullAndMergeFromCloud(true); startRealtimeSync(); }
-      else{ try{localStorage.removeItem('sakura_account_active')}catch(e){} updateAccountUI(null); }
+      if(user){ updateAccountUI(user); hideLandingOverlay(); pullAndMergeFromCloud(true); startRealtimeSync(); }
+      else{
+        try{localStorage.removeItem('sakura_account_active')}catch(e){}
+        updateAccountUI(null);
+        // Only now — once the restore attempt has actually resolved to signed-out — do we
+        // decide to show the overlay, so a normal returning signed-in visitor never sees it
+        // flash while the async Firebase round-trip is still in flight.
+        if(shouldShowLandingOverlay())showLandingOverlay();
+      }
     });
-  }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); });
+  }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); if(shouldShowLandingOverlay())showLandingOverlay(); });
 }
 
 // === Cloud sync (Phase 2: push + pull/merge — no live cross-device listener yet, that's
@@ -12651,7 +12713,15 @@ function restoreAccountSessionIfNeeded(){
 //  - AI_PREFS_KEY (provider API keys). "Settings" sync covers PREFS_KEY only — credentials
 //    don't belong in Firestore even under a locked-down security rule; that's a different risk
 //    profile than the rest of the app's settings.
-function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,templatesIndex:TEMPLATES_INDEX_KEY,tplFolders:TPL_FOLDERS_KEY,tplFolderMap:TPL_FOLDER_MAP_KEY,prefs:PREFS_KEY};}
+function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,templatesIndex:TEMPLATES_INDEX_KEY,tplFolders:TPL_FOLDERS_KEY,tplFolderMap:TPL_FOLDER_MAP_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1'};}
+// Hub items (Meeting Notes/Journal/Library) whose primary store is IndexedDB, not localStorage
+// — their bodies can hold pasted images/long text with no size cap there, unlike localStorage.
+// Synced with the exact same push/pull/realtime machinery as the localStorage-backed meta keys
+// above, just read/written via idbGet/idbSet instead of localStorage.getItem/setItem. Same
+// Firestore 1MB-per-document risk as everything else in this sync engine (see the docs
+// exclusion note above for diagrams) — a very large Meeting Notes/Journal/Library history could
+// in principle hit that ceiling; not handled here, same as it isn't for docs.
+function getIdbSyncMetaKeys(){return {meetings:MEETINGS_KEY,journal:JOURNAL_KEY,library:LIBRARY_KEY};}
 const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
 function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
 function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
@@ -12659,7 +12729,7 @@ function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.st
 // docs/templates do (via their index entries) — this is the only extra bookkeeping sync needs:
 // one timestamp per meta key, stamped whenever that key's own save*() function runs.
 function markMetaChanged(metaKey){
-  if(!getSyncMetaKeys()[metaKey])return;
+  if(!getSyncMetaKeys()[metaKey]&&!getIdbSyncMetaKeys()[metaKey])return;
   const m=_loadSyncLocalTs(); m[metaKey]=Date.now(); _saveSyncLocalTs(m);
   queueSync('meta',metaKey);
 }
@@ -12749,9 +12819,15 @@ async function pushTemplateToCloud(mod,db,tplId){
   await mod.setDoc(mod.doc(db,'users',currentUser.uid,'templates',tplId),{...data,updatedAt:ts});
 }
 async function pushMetaToCloud(mod,db,metaKey){
-  const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
-  const raw=localStorage.getItem(localKeyName);
-  let value=null; if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
+  const idbKeyName=getIdbSyncMetaKeys()[metaKey];
+  let value=null;
+  if(idbKeyName){
+    try{ const v=await idbGet(idbKeyName); value=(v===undefined)?null:v; }catch(e){ value=null; }
+  }else{
+    const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
+    const raw=localStorage.getItem(localKeyName);
+    if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
+  }
   const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts;
   await mod.setDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey),{value,updatedAt:ts});
 }
@@ -12799,16 +12875,37 @@ function applyIncomingTemplateData(id,cloud){
   touchTemplateIndex(id,tplData?.title||localEntry?.title||'Untitled template');
   return true;
 }
-function applyIncomingMetaData(metaKey,cloud){
-  const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return false;
+async function applyIncomingMetaData(metaKey,cloud){
+  const idbKeyName=getIdbSyncMetaKeys()[metaKey];
+  const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
+  if(!idbKeyName&&!localKeyName)return false;
   const cloudTs=Number(cloud.updatedAt)||0;
   if(_lastPushedTs['meta:'+metaKey]===cloudTs)return false;
   const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
   if(cloudTs<=localT)return false;
-  if(cloud.value===null||cloud.value===undefined)localStorage.removeItem(localKeyName);
-  else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
+  if(idbKeyName){
+    if(cloud.value===null||cloud.value===undefined){ try{await idbDelete(idbKeyName)}catch(e){} }
+    else{ try{await idbSet(idbKeyName,cloud.value)}catch(e){return false} }
+  }else{
+    if(cloud.value===null||cloud.value===undefined)localStorage.removeItem(localKeyName);
+    else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
+  }
   localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
   return true;
+}
+// Hub panels (Todos/Meetings/Journal/Library) keep their data in an in-memory array/module
+// state loaded once at startup — unlike prefs/folders, which are read fresh from localStorage
+// on every use. Applying an incoming sync change to storage alone would leave an already-open
+// panel showing stale data until the next reload, so each of these needs its module state
+// reloaded and its list re-rendered after a successful apply. No-ops harmlessly if the relevant
+// panel code hasn't wired up its reload hook (e.g. loaded but feature disabled).
+async function refreshHubPanelAfterSync(metaKey){
+  try{
+    if(metaKey==='todos'){ if(typeof window.sakuraTodosReloadFromStorage==='function')window.sakuraTodosReloadFromStorage(); }
+    else if(metaKey==='meetings'){ await loadMeetingNotes(); if(typeof renderMeetingsList==='function')renderMeetingsList(); }
+    else if(metaKey==='journal'){ await loadJournalEntries(); if(typeof renderJournalList==='function')renderJournalList(); }
+    else if(metaKey==='library'){ await loadLibraryItems(); if(typeof renderLibraryList==='function')renderLibraryList(); }
+  }catch(e){ console.warn('[sakura] Hub panel refresh after sync failed:',e); }
 }
 
 // side is newer per item (last-write-wins, not a field-level merge). Anything local that the
@@ -12832,19 +12929,26 @@ async function pullAndMergeFromCloud(isInitial=false){
   let pulledInCount=0, pushedUpCount=0;
   try{
     const {mod,db}=await loadFirestoreMods();
-    const syncMetaKeys=getSyncMetaKeys();
+    const idbSyncMetaKeys=getIdbSyncMetaKeys();
+    const syncMetaKeys={...getSyncMetaKeys(),...idbSyncMetaKeys};
     for(const metaKey of Object.keys(syncMetaKeys)){
+      const idbKeyName=idbSyncMetaKeys[metaKey];
       const localKeyName=syncMetaKeys[metaKey];
       let snap; try{ snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey)); }catch(e){ continue; }
       if(snap.exists()){
         const cloud=snap.data();
-        const applied=applyIncomingMetaData(metaKey,cloud);
-        if(!applied){
+        const applied=await applyIncomingMetaData(metaKey,cloud);
+        if(applied){
+          await refreshHubPanelAfterSync(metaKey);
+        }else{
           const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0; const cloudTs=Number(cloud.updatedAt)||0;
           if(localT>cloudTs)queueSync('meta',metaKey); // local is newer — make sure it's queued to push
         }
-      }else if(localStorage.getItem(localKeyName)!==null){
-        queueSync('meta',metaKey);
+      }else{
+        let existsLocally;
+        if(idbKeyName){ let v; try{v=await idbGet(idbKeyName)}catch(e){v=undefined} existsLocally=(v!==undefined&&v!==null); }
+        else existsLocally=localStorage.getItem(localKeyName)!==null;
+        if(existsLocally)queueSync('meta',metaKey);
       }
     }
 
@@ -12932,13 +13036,17 @@ async function startRealtimeSync(){
       if(changed){ renderSidebar(); if(typeof renderTemplatesList==='function')renderTemplatesList(); }
     },err=>console.warn('[sakura] templates realtime listener error:',err));
 
-    const metaUnsubs=Object.keys(getSyncMetaKeys()).map(metaKey=>
+    const allMetaKeys={...getSyncMetaKeys(),...getIdbSyncMetaKeys()};
+    const metaUnsubs=Object.keys(allMetaKeys).map(metaKey=>
       mod.onSnapshot(mod.doc(db,'users',uid,'meta',metaKey),snap=>{
         if(!snap.exists())return;
-        if(applyIncomingMetaData(metaKey,snap.data())){
-          if(metaKey==='prefs')loadPrefs();
-          renderSidebar();
-        }
+        applyIncomingMetaData(metaKey,snap.data()).then(applied=>{
+          if(applied){
+            if(metaKey==='prefs')loadPrefs();
+            refreshHubPanelAfterSync(metaKey);
+            renderSidebar();
+          }
+        });
       },err=>console.warn('[sakura] meta realtime listener error ('+metaKey+'):',err))
     );
 
@@ -37933,6 +38041,7 @@ function _addTagPopoverFromInput(){
       // accumulated with no copy anywhere but this one localStorage write.
       lastAnyDataChangeAt=Date.now();
       scheduleBackupWrite();
+      markMetaChanged('todos');
     }catch(e){
       // Previously silent — a full localStorage quota (or private-browsing restrictions in some
       // browsers) meant a change looked like it worked for the rest of the session but quietly
@@ -40407,6 +40516,10 @@ function _addTagPopoverFromInput(){
     return todos.filter(t=>t.nodeRef&&t.nodeRef.docId===docId);
   };
   window.sakuraTodosSetFeatureEnabled=setTodosFeatureEnabled;
+  // Cloud sync hook: after an incoming To-Dos change is written to storage, reload this
+  // module's in-memory `todos` array from it and re-render — otherwise an open Todos panel
+  // would keep showing stale data until the next full reload.
+  window.sakuraTodosReloadFromStorage=function(){ loadTodos(); renderTodos(); };
   function applyTodosActionsMode(){
     const panel=document.getElementById('todos-panel');
     if(panel) panel.classList.toggle('actions-fixed', settings.rowActionsMode==='fixed');
@@ -41325,6 +41438,7 @@ function saveMeetingNotes(){
     // real data accumulated.
     lastAnyDataChangeAt=Date.now();
     scheduleBackupWrite();
+    markMetaChanged('meetings');
   }
   catch(e){ showMeetingsToast('Storage full — this change was not saved'); }
 }
@@ -43213,6 +43327,7 @@ function saveJournalEntries(){
     idbSet(JOURNAL_KEY, journalEntries).catch(()=>{ showJournalToast('Storage full — this change was not saved'); });
     lastAnyDataChangeAt=Date.now();
     scheduleBackupWrite();
+    markMetaChanged('journal');
   }
   catch(e){ showJournalToast('Storage full — this change was not saved'); }
 }
@@ -43614,6 +43729,7 @@ function saveLibraryItems(){
     // lastSavedAt or triggers the backup-write scheduler.
     lastAnyDataChangeAt=Date.now();
     scheduleBackupWrite();
+    markMetaChanged('library');
   }catch(e){ showLibraryToast('Storage full — this change was not saved'); }
 }
 function findLibraryItem(id){ return libraryItems.find(i=>i.id===id)||null; }
