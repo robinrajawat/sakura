@@ -1437,6 +1437,12 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .move-folder-menu{position:absolute;z-index:80;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:4px;min-width:150px;font-family:'Inter',sans-serif}
 .move-folder-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);border:none;background:none;width:100%;text-align:left}
 .move-folder-item:hover{background:var(--hover)}
+.folder-picker-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:15vh}
+.folder-picker-panel{width:300px;max-height:60vh;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 20px 48px rgba(0,0,0,.22);overflow:hidden}
+.folder-picker-search-wrap{padding:10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.folder-picker-search{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--edit-bg);color:var(--fg);font:400 13px 'Inter',sans-serif}
+.folder-picker-list{overflow-y:auto;padding:4px}
+.folder-picker-empty{padding:16px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif}
 .sdoc-icon{cursor:pointer;border-radius:5px;transition:background .12s}
 .sdoc-icon:hover{background:var(--hover)}
 .doc-icon-menu{position:fixed;z-index:80;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px;width:184px;font-family:'Inter',sans-serif}
@@ -25195,8 +25201,8 @@ function sbDocContextItems(d, folders){
   if(folders.length){
     items.push({divider:true});
     const curF=getFolderForDoc(d.id);
-    items.push({label:'No folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', onClick: async()=>{ setFolderForDoc(d.id,null); renderSidebar(); }});
-    flattenFolderTree(folders).forEach(({folder:f,depth})=>{ if(f.id!==curF) items.push({label:(depth>0?'　'.repeat(depth):'')+'Move to "'+(f.name||'Unnamed')+'"', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', onClick: async()=>{ setFolderForDoc(d.id,f.id); renderSidebar(); }}); });
+    if(curF!==null)items.push({label:'Remove from folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', onClick: async()=>{ setFolderForDoc(d.id,null); renderSidebar(); }});
+    items.push({label:'Move to folder…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', onClick: async()=>{ openFolderPicker(d.id, folders); }});
   }
   items.push({divider:true});
   items.push({label:'Move to Trash', icon:TRASH_ICON.replace('width="24" height="24"','width="13" height="13"').replace('stroke-width="1.8"','stroke-width="2"'), danger:true, onClick: async()=>{ await deleteDoc(d.id); renderSidebar(); }});
@@ -25410,6 +25416,55 @@ function showMoveMenu(e, docId, folders){
   menu.style.top=(rect.bottom+4)+'px';
   menu.style.left=Math.min(rect.left, window.innerWidth-160)+'px';
   setTimeout(()=>document.addEventListener('click', closeMoveMenu, true), 0);
+}
+
+// Compact searchable folder picker — replaces the old approach of listing every folder
+// directly in the right-click context menu (which got unreadable fast once you had more
+// than a handful of folders, since drag-and-drop already covers the common case of moving
+// a document to a visible folder). This is for the remaining case: the target folder is
+// off-screen, deeply nested, or you'd rather type its name than scroll/drag to find it.
+let _folderPickerEl=null;
+function closeFolderPicker(){
+  if(_folderPickerEl){ _folderPickerEl.remove(); _folderPickerEl=null; }
+  document.removeEventListener('keydown', _folderPickerKeyHandler, true);
+}
+function _folderPickerKeyHandler(e){ if(e.key==='Escape'){ e.preventDefault(); closeFolderPicker(); } }
+function openFolderPicker(docId, folders){
+  closeSbContextMenu(); closeMoveMenu(); closeFolderPicker();
+  const currentFId=getFolderForDoc(docId);
+  const flat=flattenFolderTree(folders);
+  const overlay=document.createElement('div'); overlay.className='folder-picker-overlay'; _folderPickerEl=overlay;
+  overlay.addEventListener('click',e=>{ if(e.target===overlay)closeFolderPicker(); });
+  const panel=document.createElement('div'); panel.className='folder-picker-panel'; panel.addEventListener('click',e=>e.stopPropagation());
+  const searchWrap=document.createElement('div'); searchWrap.className='folder-picker-search-wrap';
+  const search=document.createElement('input'); search.type='text'; search.className='folder-picker-search'; search.placeholder='Search folders…'; search.autocomplete='off'; search.spellcheck=false;
+  searchWrap.appendChild(search); panel.appendChild(searchWrap);
+  const list=document.createElement('div'); list.className='folder-picker-list'; panel.appendChild(list);
+  function renderList(){
+    const q=search.value.trim().toLowerCase();
+    list.innerHTML=''; let any=false;
+    if(!q||'no folder'.includes(q)){
+      const noItem=document.createElement('button'); noItem.className='move-folder-item';
+      noItem.innerHTML='<span style="opacity:.5;display:inline-flex;vertical-align:-2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span> No folder'+(currentFId===null?' ✓':'');
+      noItem.addEventListener('click',()=>{ setFolderForDoc(docId,null); renderSidebar(); closeFolderPicker(); });
+      list.appendChild(noItem); any=true;
+    }
+    flat.forEach(({folder:f,depth})=>{
+      if(q && !(f.name||'').toLowerCase().includes(q))return;
+      const fi=document.createElement('button'); fi.className='move-folder-item';
+      fi.style.paddingLeft=(10+depth*14)+'px';
+      fi.innerHTML=`<span style="display:inline-flex;vertical-align:-2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> ${esc(f.name||'Unnamed')}`+(currentFId===f.id?' ✓':'');
+      fi.addEventListener('click',()=>{ setFolderForDoc(docId,f.id); renderSidebar(); closeFolderPicker(); });
+      list.appendChild(fi); any=true;
+    });
+    if(!any){ const empty=document.createElement('div'); empty.className='folder-picker-empty'; empty.textContent='No matching folders'; list.appendChild(empty); }
+  }
+  search.addEventListener('input',renderList);
+  search.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const first=list.querySelector('.move-folder-item'); if(first)first.click(); } });
+  renderList();
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  setTimeout(()=>{ search.focus(); document.addEventListener('keydown', _folderPickerKeyHandler, true); },0);
 }
 
 // --- Main render ---
