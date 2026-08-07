@@ -12847,7 +12847,7 @@ function restoreAccountSessionIfNeeded(){
 //  - AI_PREFS_KEY (provider API keys). "Settings" sync covers PREFS_KEY only — credentials
 //    don't belong in Firestore even under a locked-down security rule; that's a different risk
 //    profile than the rest of the app's settings.
-function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,templatesIndex:TEMPLATES_INDEX_KEY,tplFolders:TPL_FOLDERS_KEY,tplFolderMap:TPL_FOLDER_MAP_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1'};}
+function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,templatesIndex:TEMPLATES_INDEX_KEY,tplFolders:TPL_FOLDERS_KEY,tplFolderMap:TPL_FOLDER_MAP_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1',defaultTemplate:CUSTOM_DEFAULT_KEY,todosSettings:'sakura_todos_settings_v1',todosRevisions:'sakura_todos_revisions_v1',meetingsSettings:MEETINGS_SETTINGS_KEY,journalSettings:JOURNAL_SETTINGS_KEY,librarySettings:LIBRARY_SETTINGS_KEY,reportSettings:REPORT_SETTINGS_KEY};}
 // Hub items (Meeting Notes/Journal/Library) whose primary store is IndexedDB, not localStorage
 // — their bodies can hold pasted images/long text with no size cap there, unlike localStorage.
 // Synced with the exact same push/pull/realtime machinery as the localStorage-backed meta keys
@@ -12855,7 +12855,7 @@ function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,
 // Firestore 1MB-per-document risk as everything else in this sync engine (see the docs
 // exclusion note above for diagrams) — a very large Meeting Notes/Journal/Library history could
 // in principle hit that ceiling; not handled here, same as it isn't for docs.
-function getIdbSyncMetaKeys(){return {meetings:MEETINGS_KEY,journal:JOURNAL_KEY,library:LIBRARY_KEY};}
+function getIdbSyncMetaKeys(){return {meetings:MEETINGS_KEY,journal:JOURNAL_KEY,library:LIBRARY_KEY,meetingsRevisions:MEETINGS_REVISION_KEY,journalRevisions:JOURNAL_REVISION_KEY,libraryRevisions:LIBRARY_REVISION_KEY};}
 const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
 function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
 function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
@@ -13039,6 +13039,16 @@ async function refreshHubPanelAfterSync(metaKey){
     else if(metaKey==='meetings'){ await loadMeetingNotes(); if(typeof renderMeetingsList==='function')renderMeetingsList(); }
     else if(metaKey==='journal'){ await loadJournalEntries(); if(typeof renderJournalList==='function')renderJournalList(); }
     else if(metaKey==='library'){ await loadLibraryItems(); if(typeof renderLibraryList==='function')renderLibraryList(); }
+    // Settings/revision keys: just refresh in-memory state, no list re-render needed beyond
+    // what each loader's own side effects (feature toggle visibility, etc.) already do. Revision
+    // history lists are read on-demand when the version-history panel opens, so no live reload
+    // hook is needed for those — the fresh copy in storage is enough.
+    else if(metaKey==='todosSettings'){ if(typeof window.sakuraTodosReloadSettingsFromStorage==='function')window.sakuraTodosReloadSettingsFromStorage(); }
+    else if(metaKey==='meetingsSettings'){ if(typeof loadMeetingsSettings==='function')loadMeetingsSettings(); }
+    else if(metaKey==='journalSettings'){ if(typeof loadJournalSettings==='function')loadJournalSettings(); }
+    else if(metaKey==='librarySettings'){ if(typeof loadLibrarySettings==='function')loadLibrarySettings(); }
+    else if(metaKey==='reportSettings'){ if(typeof loadReportSettings==='function')loadReportSettings(); }
+    else if(metaKey==='defaultTemplate'){ if(typeof renderTemplatesList==='function')renderTemplatesList(); renderSidebar(); }
   }catch(e){ console.warn('[sakura] Hub panel refresh after sync failed:',e); }
 }
 
@@ -17272,6 +17282,7 @@ async function setCurrentAsDefaultTemplate(){
   if(!ok)return;
   const payload={nodes:nodes.map(n=>({text:n.text,depth:n.depth,styles:n.styles}))};
   try{localStorage.setItem(CUSTOM_DEFAULT_KEY,JSON.stringify(payload))}catch(e){showToast('Could not save default template'); return}
+  markMetaChanged('defaultTemplate');
   renderTemplatesList();
   renderSidebar();
   showToast('Default template updated');
@@ -17281,6 +17292,7 @@ async function resetDefaultTemplate(){
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset Default Template',body:'This will revert the default template back to the original built-in template.',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   try{localStorage.removeItem(CUSTOM_DEFAULT_KEY)}catch(e){}
+  markMetaChanged('defaultTemplate');
   renderTemplatesList();
   renderSidebar();
   showToast('Default template reset');
@@ -38253,7 +38265,7 @@ function _addTagPopoverFromInput(){
   const TODOS_REVISION_MAX=20;
   const TODOS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as document revisions
   function loadTodosRevisions(){ try{ const raw=localStorage.getItem(TODOS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
-  function saveTodosRevisions(list){ try{ localStorage.setItem(TODOS_REVISION_KEY,JSON.stringify(list)) }catch(e){} }
+  function saveTodosRevisions(list){ try{ localStorage.setItem(TODOS_REVISION_KEY,JSON.stringify(list)) }catch(e){} if(typeof markMetaChanged==='function')markMetaChanged('todosRevisions'); }
   function recordTodosRevision(snapshotTodos,reason){
     if(!Array.isArray(snapshotTodos))return;
     const list=loadTodosRevisions();
@@ -38299,6 +38311,7 @@ function _addTagPopoverFromInput(){
   }
   function saveSettings(){
     try{ localStorage.setItem(TODOS_SETTINGS_KEY, JSON.stringify(settings)); }catch(e){}
+    if(typeof markMetaChanged==='function')markMetaChanged('todosSettings');
   }
 
   // ── Cap & expiry enforcement ────────────────────────────────────────────
@@ -40709,6 +40722,8 @@ function _addTagPopoverFromInput(){
   // module's in-memory `todos` array from it and re-render — otherwise an open Todos panel
   // would keep showing stale data until the next full reload.
   window.sakuraTodosReloadFromStorage=function(){ loadTodos(); renderTodos(); };
+  // Same idea for an incoming Settings change (filters/toggles) from another device.
+  window.sakuraTodosReloadSettingsFromStorage=function(){ loadSettings(); renderTodos(); applyTodosActionsMode(); };
   function applyTodosActionsMode(){
     const panel=document.getElementById('todos-panel');
     if(panel) panel.classList.toggle('actions-fixed', settings.rowActionsMode==='fixed');
@@ -41739,7 +41754,7 @@ async function loadMeetingsRevisions(){
   }catch(e){}
   return [];
 }
-async function saveMeetingsRevisions(list){ try{ await idbSet(MEETINGS_REVISION_KEY,list) }catch(e){} }
+async function saveMeetingsRevisions(list){ try{ await idbSet(MEETINGS_REVISION_KEY,list) }catch(e){} markMetaChanged('meetingsRevisions'); }
 async function recordMeetingsRevision(snapshotNotes,reason){
   if(!Array.isArray(snapshotNotes))return;
   const list=await loadMeetingsRevisions();
@@ -43223,6 +43238,7 @@ function loadMeetingsSettings(){
 }
 function saveMeetingsSettings(){
   try{ localStorage.setItem(MEETINGS_SETTINGS_KEY, JSON.stringify({featureEnabled:meetingsFeatureEnabled,expiryDays:meetingsExpiryDays,capMax:meetingsCapMax,pastCollapsedByDefault:meetingsPastCollapsedByDefault})); }catch(e){}
+  markMetaChanged('meetingsSettings');
 }
 // Shared between this module and To-Dos' own applyTodosLocation — all four dock buttons
 // share one floating rail wrapper (#status-util-group, fixed to the right edge, no longer
@@ -43548,7 +43564,7 @@ async function loadJournalRevisions(){
   }catch(e){}
   return [];
 }
-async function saveJournalRevisions(list){ try{ await idbSet(JOURNAL_REVISION_KEY,list) }catch(e){} }
+async function saveJournalRevisions(list){ try{ await idbSet(JOURNAL_REVISION_KEY,list) }catch(e){} markMetaChanged('journalRevisions'); }
 async function recordJournalRevision(snapshotEntries,reason){
   if(!Array.isArray(snapshotEntries))return;
   const list=await loadJournalRevisions();
@@ -43931,7 +43947,7 @@ async function loadLibraryRevisions(){
   try{ const existing=await idbGet(LIBRARY_REVISION_KEY); if(Array.isArray(existing))return existing; }catch(e){}
   return [];
 }
-async function saveLibraryRevisions(list){ try{ await idbSet(LIBRARY_REVISION_KEY,list) }catch(e){} }
+async function saveLibraryRevisions(list){ try{ await idbSet(LIBRARY_REVISION_KEY,list) }catch(e){} markMetaChanged('libraryRevisions'); }
 async function recordLibraryRevision(snapshotItems,reason){
   if(!Array.isArray(snapshotItems))return;
   const list=await loadLibraryRevisions();
@@ -44363,7 +44379,7 @@ window.sakuraLibraryFeatureEnabled=function(){ return libraryFeatureEnabled; };
 function loadLibrarySettings(){
   try{ const raw=localStorage.getItem(LIBRARY_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); libraryFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
 }
-function saveLibrarySettings(){ try{ localStorage.setItem(LIBRARY_SETTINGS_KEY, JSON.stringify({featureEnabled:libraryFeatureEnabled})); }catch(e){} }
+function saveLibrarySettings(){ try{ localStorage.setItem(LIBRARY_SETTINGS_KEY, JSON.stringify({featureEnabled:libraryFeatureEnabled})); }catch(e){} markMetaChanged('librarySettings'); }
 function applyLibraryLocation(){
   const dockBtn=el('library-toggle');
   const hideAll=!libraryFeatureEnabled;
@@ -44557,7 +44573,7 @@ window.sakuraJournalFeatureEnabled=function(){ return journalFeatureEnabled; };
 function loadJournalSettings(){
   try{ const raw=localStorage.getItem(JOURNAL_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); journalFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
 }
-function saveJournalSettings(){ try{ localStorage.setItem(JOURNAL_SETTINGS_KEY, JSON.stringify({featureEnabled:journalFeatureEnabled})); }catch(e){} }
+function saveJournalSettings(){ try{ localStorage.setItem(JOURNAL_SETTINGS_KEY, JSON.stringify({featureEnabled:journalFeatureEnabled})); }catch(e){} markMetaChanged('journalSettings'); }
 function applyJournalLocation(){
   const dockBtn=el('journal-toggle');
   const hideAll=!journalFeatureEnabled;
@@ -47043,7 +47059,7 @@ window.sakuraReportFeatureEnabled=function(){ return reportFeatureEnabled; };
 function loadReportSettings(){
   try{ const raw=localStorage.getItem(REPORT_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); reportFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
 }
-function saveReportSettings(){ try{ localStorage.setItem(REPORT_SETTINGS_KEY, JSON.stringify({featureEnabled:reportFeatureEnabled})); }catch(e){} }
+function saveReportSettings(){ try{ localStorage.setItem(REPORT_SETTINGS_KEY, JSON.stringify({featureEnabled:reportFeatureEnabled})); }catch(e){} markMetaChanged('reportSettings'); }
 function applyReportLocation(){
   const dockBtn=el('report-toggle');
   const hideAll=!reportFeatureEnabled;
