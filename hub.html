@@ -12,8 +12,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!--
-  Sakura Hub — a separate, purpose-built mobile page. NOT a cut-down copy of index.html's
-  code; a from-scratch, small implementation.
+  Sakura Hub — a separate, purpose-built mobile page, rebuilt around mobile-native
+  interaction patterns rather than a shrunk desktop layout: swipe-left-to-delete on list
+  rows, and a full bottom-sheet detail view (not a cramped inline accordion) for editing a
+  task or a journal entry. Only two gestures to learn — tap a row to open it, swipe a row to
+  delete it — used consistently for both To-Dos and Journal.
 
   ACCOUNTS ARE REQUIRED HERE, unlike index.html. This page only exists to be opened on a
   phone — a different browser from whatever desktop/laptop the person normally uses — and a
@@ -21,27 +24,25 @@
   data no matter how identical the two pages' storage code is. Local storage never crosses
   devices; only a signed-in account (synced through the exact same users/{uid}/meta/todos and
   users/{uid}/meta/journal Firestore documents index.html's own cloud sync already writes)
-  actually bridges them. So: no sign-in, no data, by design — there is no useful local-only
-  mode for a page whose entire reason to exist is showing you data that almost certainly
-  lives on a different device's storage right now.
+  actually bridges them. So: no sign-in, no data, by design.
 
   Sync model, deliberately simple for this scope: pull once on sign-in (newer of cloud/local
   wins, by updatedAt), then push after every local change. No realtime listener — this is a
   short-session mobile page, not something left open for hours the way index.html can be.
 
-  Scope, deliberately: To-Dos and Journal only, and only their core actions (add, edit,
-  complete, delete). Meeting Notes, Library, Recap, AI features, PDF export, and version
-  history all stay desktop-only for now — the sign-in screen says so and points anyone who
-  needs them to a computer instead. There's no in-app link to index.html from here: the full
-  editor genuinely isn't designed for a phone-sized screen, and offering a link to it as an
-  escape hatch was actively misleading rather than helpful.
+  Scope, deliberately: To-Dos and Journal only. Meeting Notes, Library, Recap, AI features,
+  PDF export, and version history all stay desktop-only for now — the sign-in screen says so
+  and points anyone who needs them to a computer instead. There's no in-app link to index.html
+  from here: the full editor genuinely isn't designed for a phone-sized screen.
 -->
 <style>
-:root{--radius:10px}
+:root{--radius:14px}
 *{box-sizing:border-box}
 body.theme-light{color-scheme:light;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--hover:#f1f0ec;--sel:#eae8e2;--edit-bg:#ffffff;--chip:#eceae4;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-gray:#6f6b63}
 body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 14px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+
+/* ---------- Header ---------- */
 header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
 #hub-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 #hub-brand{display:flex;align-items:center;gap:8px}
@@ -63,55 +64,183 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
 #account-coffee-btn:active{transform:scale(.98)}
 
-/* Bottom navigation — thumb-reachable section switcher, the mobile-native pattern this
-   deserves rather than top tabs modeled on a desktop segmented control. */
+/* ---------- Bottom nav ---------- */
 #hub-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:var(--edit-bg);border-top:1px solid var(--border);padding:6px 10px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.05)}
 .hub-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 4px;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:10px}
 .hub-nav-btn svg{transition:transform .12s ease}
 .hub-nav-btn.active{color:var(--accent)}
 .hub-nav-btn.active svg{transform:translateY(-1px)}
 .hub-nav-btn span{font:600 10.5px 'Inter',sans-serif}
-main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+
+/* ---------- Layout ---------- */
+main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 .hub-view{display:none}
 .hub-view.active{display:block;animation:hub-fade-in .18s ease}
 @keyframes hub-fade-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .hub-empty{color:var(--hint);font-size:13px;text-align:center;padding:44px 20px}
 .hub-empty svg{color:var(--border);margin-bottom:10px}
 .hub-empty-title{font:600 13.5px 'Inter',sans-serif;color:var(--muted);margin-bottom:3px}
+.hub-section-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:22px 4px 10px}
+.hub-section-label:first-child{margin-top:2px}
 
-/* Reusable modal + toast, replacing native confirm()/prompt()/alert() — those look like the
-   browser interrupted you; these look like part of the app. */
+/* ---------- Swipeable list rows (To-Dos + past Journal entries) ---------- */
+.swipe-list{border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.swipe-row{position:relative;overflow:hidden}
+.swipe-row + .swipe-row{border-top:1px solid var(--border)}
+.swipe-delete-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;background:#c0392b}
+.swipe-delete-btn{width:64px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.swipe-content{position:relative;background:var(--edit-bg);transform:translateX(0);touch-action:pan-y;user-select:none}
+.swipe-row.dragging .swipe-content{transition:none}
+.swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.swipe-row.swiped .swipe-content{box-shadow:-6px 0 12px -6px rgba(0,0,0,.15)}
+
+/* ---------- To-Do rows ---------- */
+.todo-row{display:flex;align-items:flex-start;gap:12px;padding:14px 14px;cursor:pointer}
+.todo-check{width:24px;height:24px;flex-shrink:0;margin-top:1px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
+.todo-check:active{transform:scale(.9)}
+.todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.todo-row-main{flex:1;min-width:0;padding-top:1px}
+.todo-row-text{font:400 14.5px/1.4 inherit;color:var(--fg);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.todo-row-text.done{color:var(--hint);text-decoration:line-through}
+.todo-row-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px;font-size:11px;font-weight:600;color:var(--muted)}
+.todo-row-meta .dot{opacity:.5}
+.todo-row-meta .overdue{color:var(--fc-red)}
+#todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;margin-top:22px}
+#todo-completed-toggle svg{transition:transform .15s ease}
+#todo-completed-toggle.open svg{transform:rotate(90deg)}
+#todo-completed-list{display:none;margin-top:10px}
+#todo-completed-list.open{display:block;animation:hub-fade-in .15s ease}
+.todo-completed-row{display:flex;align-items:center;gap:12px;padding:11px 14px}
+.todo-completed-row .todo-row-text{-webkit-line-clamp:1}
+
+/* ---------- Compose bar (To-Dos quick add) ---------- */
+#todo-compose{position:fixed;left:0;right:0;bottom:calc(52px + env(safe-area-inset-bottom));z-index:14;display:flex;gap:8px;padding:10px 14px;background:linear-gradient(to top,var(--bg) 60%,transparent)}
+#todo-compose-input{flex:1;min-width:0;padding:12px 16px;border:1px solid var(--border);border-radius:999px;background:var(--edit-bg);color:var(--fg);font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+#todo-compose-input::placeholder{color:var(--hint)}
+#todo-compose-btn{width:44px;height:44px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(194,85,61,.35)}
+#todo-compose-btn:active{transform:scale(.94)}
+
+/* ---------- Greeting header ---------- */
+#todo-greeting{margin:2px 4px 18px}
+#todo-greeting-title{font:700 22px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg)}
+#todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* ---------- Journal: Today card + feed rows ---------- */
+.jn-today-card{border-radius:var(--radius);background:var(--edit-bg);box-shadow:0 2px 10px rgba(0,0,0,.05);padding:16px;cursor:pointer;display:flex;gap:12px;align-items:center}
+.jn-today-card:active{background:var(--hover)}
+.jn-mood-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.jn-mood-badge svg{width:22px;height:22px}
+.jn-mood-badge[data-mood="great"]{background:var(--fc-green);color:#fff}
+.jn-mood-badge[data-mood="good"]{background:var(--fc-blue);color:#fff}
+.jn-mood-badge[data-mood="neutral"]{background:var(--fc-gray);color:#fff}
+.jn-mood-badge[data-mood="low"]{background:var(--fc-orange);color:#fff}
+.jn-mood-badge[data-mood="rough"]{background:var(--fc-red);color:#fff}
+.jn-today-main{flex:1;min-width:0}
+.jn-today-title{font:700 15px 'Inter',sans-serif}
+.jn-today-preview{font-size:12.5px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.jn-today-chevron{color:var(--hint);flex-shrink:0}
+.jn-feed-row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer}
+.jn-feed-main{flex:1;min-width:0}
+.jn-feed-date{font:600 13px 'Inter',sans-serif}
+.jn-feed-preview{font-size:12.5px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.jn-feed-tags{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
+.jn-feed-tag{font:600 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:2px 7px}
+
+/* ---------- Reusable bottom-sheet detail view ---------- */
 .hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;padding:0}
 .hub-modal-overlay.open{display:flex}
-.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:16px 16px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 28px rgba(0,0,0,.18);animation:hub-modal-up .2s ease}
-@media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:16px}}
-@keyframes hub-modal-up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:20px 20px 0 0;box-shadow:0 -8px 28px rgba(0,0,0,.18);animation:hub-modal-up .22s cubic-bezier(.2,.9,.25,1)}
+@media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:20px}}
+@keyframes hub-modal-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.hub-modal-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer}
+.hub-modal-btn.danger{background:none;border-color:var(--border);color:#c0392b}
+.hub-modal-btn:active{opacity:.7}
 .hub-modal-title{font:700 15px 'Inter',sans-serif;margin-bottom:6px}
 .hub-modal-body{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px}
 .hub-modal-actions{display:flex;gap:10px}
-.hub-modal-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer}
-.hub-modal-btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
-.hub-modal-btn:active{opacity:.75}
-#about-modal-version{color:var(--muted);font-weight:500}
 .hub-modal-text{font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 10px}
 .hub-modal-text a{color:var(--accent)}
+.hub-modal.compact{padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
+#about-modal-version{color:var(--muted);font-weight:500}
 #feedback-message-input{width:100%;box-sizing:border-box;min-height:100px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg);font:400 13.5px/1.5 inherit;resize:vertical;margin-bottom:8px}
 #feedback-email-input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg);font-size:13px;font-family:inherit;margin-bottom:6px}
 #feedback-modal-status{font-size:11.5px;color:var(--muted);min-height:14px;margin-bottom:10px}
+
+.hub-sheet{max-height:88vh;display:flex;flex-direction:column}
+.hub-sheet-handle{width:36px;height:4px;border-radius:999px;background:var(--border);margin:10px auto 2px}
+.hub-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 8px 10px 20px;flex-shrink:0}
+.hub-sheet-date-title{font:700 15px 'Inter',sans-serif}
+.hub-sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--chip);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hub-sheet-close:active{background:var(--hover)}
+.hub-sheet-body{overflow-y:auto;padding:6px 20px 10px;flex:1;-webkit-overflow-scrolling:touch}
+.hub-sheet-foot{padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0}
+.hub-sheet-foot .hub-modal-btn{width:100%}
+
+/* Task sheet */
+#task-sheet-overlay .hub-sheet-head{padding-left:14px}
+#task-detail-text{width:100%;border:none;background:none;color:var(--fg);font:600 17px/1.4 inherit;padding:8px 0 14px;resize:none;overflow:hidden}
+#task-detail-text:focus{outline:none}
+.todo-detail-label{font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);margin:16px 0 8px}
+.todo-detail-label:first-of-type{margin-top:0}
+.todo-status-row{display:flex;gap:6px;flex-wrap:wrap}
+.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:600 11.5px 'Inter',sans-serif;padding:6px 12px;border-radius:999px;cursor:pointer}
+.todo-status-pill.sel{color:#fff;border-color:transparent}
+.todo-status-pill[data-status="waiting"].sel{background:var(--fc-gray)}
+.todo-status-pill[data-status="progress"].sel{background:var(--fc-blue)}
+.todo-status-pill[data-status="blocked"].sel{background:var(--fc-red)}
+.todo-status-pill[data-status="review"].sel{background:var(--fc-orange)}
+.todo-due-row{display:flex;align-items:center;gap:8px}
+.todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 13px 'Inter',sans-serif;padding:7px 10px}
+.todo-due-clear{border:none;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;text-decoration:underline}
+.todo-subtask-row{display:flex;align-items:center;gap:9px;padding:7px 0}
+.todo-subtask-check{width:19px;height:19px;flex-shrink:0;border:1.5px solid var(--border);border-radius:5px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.todo-subtask-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.todo-subtask-text{flex:1;font-size:13.5px;color:var(--fg)}
+.todo-subtask-text.done{color:var(--hint);text-decoration:line-through}
+.todo-subtask-del{border:none;background:none;color:var(--border);font-size:15px;cursor:pointer;padding:2px 4px}
+.todo-subtask-add{display:flex;gap:6px;margin-top:8px}
+.todo-subtask-add input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font-size:13px;padding:7px 10px;font-family:inherit}
+.todo-subtask-add button{border:none;background:var(--chip);color:var(--accent);border-radius:8px;padding:7px 13px;font:600 12.5px 'Inter',sans-serif;cursor:pointer}
+
+/* Entry sheet — mood + tags reused between the sheet and nowhere else now (feed cards use
+   the smaller badge/chip variants above), so these are scoped to the sheet only. */
+.jn-moods{display:flex;justify-content:space-between;gap:2px;margin:4px 0 6px}
+.jn-mood{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex:1}
+.jn-mood-dot{width:44px;height:44px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s ease,box-shadow .15s ease}
+.jn-mood-dot svg{width:23px;height:23px}
+.jn-mood span{font:600 9.5px 'Inter',sans-serif;height:12px;opacity:0;transition:opacity .12s ease}
+.jn-mood:active .jn-mood-dot{transform:scale(.92)}
+.jn-mood.sel .jn-mood-dot{transform:scale(1.1)}
+.jn-mood.sel span{opacity:1}
+.jn-mood[data-mood="great"]{color:var(--fc-green)}
+.jn-mood[data-mood="good"]{color:var(--fc-blue)}
+.jn-mood[data-mood="neutral"]{color:var(--fc-gray)}
+.jn-mood[data-mood="low"]{color:var(--fc-orange)}
+.jn-mood[data-mood="rough"]{color:var(--fc-red)}
+.jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg);box-shadow:0 4px 16px -2px currentColor}
+#entry-detail-body{width:100%;min-height:160px;border:none;background:none;color:var(--fg);font:400 14.5px/1.65 inherit;padding:10px 0;resize:vertical}
+#entry-detail-body:focus{outline:none}
+#entry-detail-body::placeholder{color:var(--hint)}
+.jn-tags{display:flex;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--border)}
+.jn-tag{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:4px 6px 4px 10px}
+.jn-tag button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;padding:0 2px;font-size:12px;line-height:1}
+.jn-tag button:active{opacity:1}
+.jn-tag-add{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--muted);background:var(--chip);border:1px dashed var(--border);border-radius:999px;padding:4px 10px;cursor:pointer}
+.jn-tag-input{width:84px;font:600 11px 'Inter',sans-serif;color:var(--fg);background:var(--chip);border:1px solid var(--accent);border-radius:999px;padding:4px 10px}
+#entry-detail-save-hint{font-size:10.5px;color:var(--hint);margin-top:6px;min-height:13px;text-align:right}
+
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
 #hub-toast.show{opacity:1;transform:translate(-50%,0)}
 #hub-app{display:none}
 
-/* Loading — shown while a saved session is being silently restored, and again after sign-in
-   while the initial cloud pull is in flight, so there's never a moment of "is this broken?"
-   silence or a flash of an empty list before real data (or a genuine empty state) appears. */
+/* ---------- Loading ---------- */
 #hub-loading{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:14px}
 #hub-loading.show{display:flex}
 .hub-spinner{width:30px;height:30px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:hub-spin .7s linear infinite}
 @keyframes hub-spin{to{transform:rotate(360deg)}}
 #hub-loading-text{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 
-/* Auth gate */
+/* ---------- Auth gate ---------- */
 #auth-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 #auth-card{width:100%;max-width:360px;text-align:center}
 #auth-logo{margin-bottom:12px}
@@ -132,113 +261,6 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 #auth-email-mode-toggle,#auth-email-forgot{background:none;border:none;color:var(--muted);font-size:10.5px;cursor:pointer;padding:0;font-family:inherit}
 #auth-email-links{display:flex;justify-content:space-between;margin-top:8px;gap:8px}
 #auth-status{font-size:12px;color:var(--muted);margin-top:16px;min-height:15px}
-
-/* To-Dos */
-#todo-compose{position:fixed;left:0;right:0;bottom:calc(52px + env(safe-area-inset-bottom));z-index:14;display:flex;gap:8px;padding:10px 14px;background:linear-gradient(to top,var(--bg) 60%,transparent)}
-#todo-compose-input{flex:1;min-width:0;padding:12px 16px;border:1px solid var(--border);border-radius:999px;background:var(--edit-bg);color:var(--fg);font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
-#todo-compose-input::placeholder{color:var(--hint)}
-#todo-compose-btn{width:44px;height:44px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(194,85,61,.35)}
-#todo-compose-btn:active{transform:scale(.94)}
-#todo-greeting{margin:2px 4px 18px}
-#todo-greeting-title{font:700 21px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg)}
-#todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
-#todo-open-list,#todo-completed-list{background:var(--edit-bg);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);overflow:hidden}
-.todo-item + .todo-item{border-top:1px solid var(--border)}
-.todo-row{display:flex;align-items:flex-start;gap:10px;padding:13px 14px}
-.todo-check{width:23px;height:23px;flex-shrink:0;margin-top:2px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
-.todo-check:active{transform:scale(.9)}
-.todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
-.todo-main{flex:1;min-width:0;padding-top:2px}
-.todo-text{display:block;width:100%;border:none;background:none;color:var(--fg);font:400 14.5px/1.45 inherit;padding:0;resize:none;overflow:hidden}
-.todo-text:focus{outline:none}
-.todo-text.done{color:var(--hint);text-decoration:line-through}
-.todo-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.todo-chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px 2px 6px}
-.todo-chip.overdue{color:var(--fc-red)}
-.todo-chip[data-status="waiting"]{color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 16%,transparent)}
-.todo-chip[data-status="progress"]{color:var(--fc-blue);background:color-mix(in srgb,var(--fc-blue) 16%,transparent)}
-.todo-chip[data-status="blocked"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 16%,transparent)}
-.todo-chip[data-status="review"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 16%,transparent)}
-.todo-row-actions{display:flex;align-items:center;flex-shrink:0;margin-top:1px}
-.todo-del{border:none;background:none;color:var(--border);font-size:16px;line-height:1;cursor:pointer;padding:4px 4px}
-.todo-del:active{color:var(--fc-red)}
-.todo-expand{border:none;background:none;color:var(--hint);cursor:pointer;padding:4px 2px 4px 6px;display:flex}
-.todo-expand svg{transition:transform .15s ease}
-.todo-item.open .todo-expand svg{transform:rotate(90deg)}
-.todo-detail{display:none;padding:2px 14px 16px 47px}
-.todo-item.open .todo-detail{display:block;animation:hub-fade-in .15s ease}
-.todo-detail-label{font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);margin:10px 0 6px}
-.todo-detail-label:first-child{margin-top:0}
-.todo-status-row{display:flex;gap:6px;flex-wrap:wrap}
-.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:600 11px 'Inter',sans-serif;padding:5px 11px;border-radius:999px;cursor:pointer}
-.todo-status-pill.sel{color:#fff;border-color:transparent}
-.todo-status-pill[data-status="waiting"].sel{background:var(--fc-gray)}
-.todo-status-pill[data-status="progress"].sel{background:var(--fc-blue)}
-.todo-status-pill[data-status="blocked"].sel{background:var(--fc-red)}
-.todo-status-pill[data-status="review"].sel{background:var(--fc-orange)}
-.todo-due-row{display:flex;align-items:center;gap:8px}
-.todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;padding:6px 9px}
-.todo-due-clear{border:none;background:none;color:var(--muted);font-size:11.5px;cursor:pointer;padding:4px 6px;text-decoration:underline}
-.todo-subtask-row{display:flex;align-items:center;gap:8px;padding:5px 0}
-.todo-subtask-check{width:17px;height:17px;flex-shrink:0;border:1.5px solid var(--border);border-radius:5px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
-.todo-subtask-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
-.todo-subtask-text{flex:1;font-size:12.5px;color:var(--fg)}
-.todo-subtask-text.done{color:var(--hint);text-decoration:line-through}
-.todo-subtask-del{border:none;background:none;color:var(--border);font-size:14px;cursor:pointer;padding:2px 4px}
-.todo-subtask-add{display:flex;gap:6px;margin-top:6px}
-.todo-subtask-add input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font-size:12.5px;padding:6px 9px;font-family:inherit}
-.todo-subtask-add button{border:none;background:var(--chip);color:var(--accent);border-radius:8px;padding:6px 11px;font:600 12px 'Inter',sans-serif;cursor:pointer}
-#todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:16px 4px 8px;cursor:pointer}
-#todo-completed-toggle svg{transition:transform .15s ease}
-#todo-completed-toggle.open svg{transform:rotate(90deg)}
-#todo-completed-list{display:none;margin-top:2px}
-#todo-completed-list.open{display:block;animation:hub-fade-in .15s ease}
-
-/* Journal */
-.jn-card{border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px;background:var(--edit-bg);box-shadow:0 2px 10px rgba(0,0,0,.04)}
-.jn-date{font:700 15px 'Inter',sans-serif;margin-bottom:2px}
-.jn-date-sub{font-size:11.5px;color:var(--hint);margin-bottom:14px}
-.jn-moods{display:flex;justify-content:space-between;gap:2px;margin-bottom:6px}
-.jn-mood{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex:1}
-.jn-mood-dot{width:42px;height:42px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s ease,box-shadow .15s ease}
-.jn-mood-dot svg{width:22px;height:22px}
-.jn-mood span{font:600 9.5px 'Inter',sans-serif;height:12px;opacity:0;transition:opacity .12s ease}
-.jn-mood:active .jn-mood-dot{transform:scale(.92)}
-.jn-mood.sel .jn-mood-dot{transform:scale(1.12)}
-.jn-mood.sel span{opacity:1}
-.jn-mood[data-mood="great"]{color:var(--fc-green)}
-.jn-mood[data-mood="good"]{color:var(--fc-blue)}
-.jn-mood[data-mood="neutral"]{color:var(--fc-gray)}
-.jn-mood[data-mood="low"]{color:var(--fc-orange)}
-.jn-mood[data-mood="rough"]{color:var(--fc-red)}
-.jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg);box-shadow:0 4px 16px -2px currentColor}
-.jn-body{width:100%;min-height:100px;border:none;background:none;color:var(--fg);font:400 14px/1.65 inherit;padding:0;resize:vertical}
-.jn-body:focus{outline:none}
-.jn-body::placeholder{color:var(--hint)}
-.jn-save-hint{font-size:10.5px;color:var(--hint);margin-top:8px;min-height:13px;text-align:right}
-.jn-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
-.jn-tag{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:4px 6px 4px 10px}
-.jn-tag button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;padding:0 2px;font-size:12px;line-height:1}
-.jn-tag button:active{opacity:1}
-.jn-tag-add{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--muted);background:var(--chip);border:1px dashed var(--border);border-radius:999px;padding:4px 10px;cursor:pointer}
-.jn-tag-input{width:84px;font:600 11px 'Inter',sans-serif;color:var(--fg);background:var(--chip);border:1px solid var(--accent);border-radius:999px;padding:4px 10px}
-#jn-past-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:4px 4px 10px}
-.jn-past-item{border-radius:12px;background:var(--edit-bg);border:1px solid var(--border);margin-bottom:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
-.jn-past-row{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer;border-left:3px solid var(--border)}
-.jn-past-item[data-mood="great"] .jn-past-row{border-left-color:var(--fc-green)}
-.jn-past-item[data-mood="good"] .jn-past-row{border-left-color:var(--fc-blue)}
-.jn-past-item[data-mood="neutral"] .jn-past-row{border-left-color:var(--fc-gray)}
-.jn-past-item[data-mood="low"] .jn-past-row{border-left-color:var(--fc-orange)}
-.jn-past-item[data-mood="rough"] .jn-past-row{border-left-color:var(--fc-red)}
-.jn-past-chevron{color:var(--hint);flex-shrink:0;transition:transform .15s ease}
-.jn-past-item.open .jn-past-chevron{transform:rotate(90deg)}
-.jn-past-edit{display:none;padding:2px 15px 16px}
-.jn-past-item.open .jn-past-edit{display:block;animation:hub-fade-in .16s ease}
-.jn-past-main{flex:1;min-width:0}
-.jn-past-date{font:600 12.5px 'Inter',sans-serif}
-.jn-past-preview{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.jn-past-del{border:none;background:none;color:var(--border);font-size:15px;cursor:pointer;padding:4px 4px}
-.jn-past-del:active{color:var(--fc-red)}
 </style>
 </head>
 <body>
@@ -299,7 +321,7 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
       <div id="todo-greeting-title"></div>
       <div id="todo-greeting-sub"></div>
     </div>
-    <div id="todo-open-list"></div>
+    <div id="todo-list" class="swipe-list"></div>
     <div id="todo-open-empty" class="hub-empty" style="display:none">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <div class="hub-empty-title">All clear</div>
@@ -309,19 +331,13 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
       <span id="todo-completed-count"></span>
     </button>
-    <div id="todo-completed-list"></div>
+    <div id="todo-completed-list" class="swipe-list"></div>
   </section>
   <section id="view-journal" class="hub-view">
-    <div class="jn-card">
-      <div class="jn-date" id="jn-today-date"></div>
-      <div class="jn-date-sub">How was today?</div>
-      <div class="jn-moods" id="jn-today-moods"></div>
-      <textarea class="jn-body" id="jn-today-body" placeholder="Write about today…" rows="4"></textarea>
-      <div class="jn-tags" id="jn-today-tags"></div>
-      <div class="jn-save-hint" id="jn-today-hint"></div>
-    </div>
-    <div id="jn-past-label">Past entries</div>
-    <div id="jn-past-list"></div>
+    <div class="hub-section-label">Today</div>
+    <div id="jn-today-card" class="jn-today-card"></div>
+    <div class="hub-section-label">Past entries</div>
+    <div id="jn-feed-list" class="swipe-list"></div>
     <div id="jn-past-empty" class="hub-empty" style="display:none">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       <div class="hub-empty-title">Nothing here yet</div>
@@ -345,8 +361,56 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 </nav>
 </div>
 
+<div id="task-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Task details">
+  <div class="hub-modal hub-sheet">
+    <div class="hub-sheet-handle"></div>
+    <div class="hub-sheet-head">
+      <button id="task-detail-check" class="todo-check" type="button" aria-label="Mark done"></button>
+      <button id="task-sheet-close" class="hub-sheet-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="hub-sheet-body">
+      <textarea id="task-detail-text" rows="1" placeholder="Task"></textarea>
+      <div class="todo-detail-label">Status</div>
+      <div class="todo-status-row" id="task-detail-status"></div>
+      <div class="todo-detail-label">Due date</div>
+      <div class="todo-due-row">
+        <input type="date" id="task-detail-due" class="todo-due-input">
+        <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
+      </div>
+      <div class="todo-detail-label">Subtasks</div>
+      <div id="task-detail-subtasks"></div>
+      <div class="todo-subtask-add">
+        <input type="text" id="task-detail-subtask-input" placeholder="Add subtask…" maxlength="300">
+        <button type="button" id="task-detail-subtask-add-btn">Add</button>
+      </div>
+    </div>
+    <div class="hub-sheet-foot">
+      <button id="task-detail-delete" class="hub-modal-btn danger" type="button">Delete Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="entry-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Journal entry">
+  <div class="hub-modal hub-sheet">
+    <div class="hub-sheet-handle"></div>
+    <div class="hub-sheet-head">
+      <div id="entry-detail-date" class="hub-sheet-date-title"></div>
+      <button id="entry-sheet-close" class="hub-sheet-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="hub-sheet-body">
+      <div class="jn-moods" id="entry-detail-moods"></div>
+      <textarea id="entry-detail-body" placeholder="Write about this day…"></textarea>
+      <div class="jn-tags" id="entry-detail-tags"></div>
+      <div id="entry-detail-save-hint"></div>
+    </div>
+    <div class="hub-sheet-foot">
+      <button id="entry-detail-delete" class="hub-modal-btn danger" type="button">Delete Entry</button>
+    </div>
+  </div>
+</div>
+
 <div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
-  <div class="hub-modal">
+  <div class="hub-modal compact">
     <div class="hub-modal-title">Sakura <span id="about-modal-version"></span></div>
     <p class="hub-modal-text">A single-file outliner and knowledge-management workspace. This page is its lighter mobile companion — To-Dos and Journal, signed in.</p>
     <p class="hub-modal-text">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></p>
@@ -358,7 +422,7 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 </div>
 
 <div id="feedback-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
-  <div class="hub-modal">
+  <div class="hub-modal compact">
     <div class="hub-modal-title">Send Feedback</div>
     <p class="hub-modal-text">Goes straight to Robin — bugs, ideas, or just a hello.</p>
     <textarea id="feedback-message-input" placeholder="What's on your mind?" maxlength="6000"></textarea>
@@ -372,12 +436,12 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 </div>
 
 <div id="hub-confirm-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
-  <div class="hub-modal">
+  <div class="hub-modal compact">
     <div class="hub-modal-title" id="hub-confirm-title"></div>
     <div class="hub-modal-body" id="hub-confirm-body"></div>
     <div class="hub-modal-actions">
       <button class="hub-modal-btn" id="hub-confirm-cancel" type="button">Cancel</button>
-      <button class="hub-modal-btn danger" id="hub-confirm-ok" type="button">Delete</button>
+      <button class="hub-modal-btn danger" id="hub-confirm-ok" type="button" style="background:#c0392b;border-color:#c0392b;color:#fff">Delete</button>
     </div>
   </div>
 </div>
@@ -404,6 +468,7 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
   document.body.className='theme-'+theme;
 })();
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function autoGrow(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 
 // ============================================================================
 // UI helpers — a styled confirm modal and toast in place of the browser's own
@@ -434,6 +499,73 @@ function showToast(msg){
   t.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer=setTimeout(function(){ t.classList.remove('show'); },2200);
+}
+
+// ============================================================================
+// Swipe-to-delete + tap-to-open, shared by the To-Dos list and the Journal
+// past-entries feed. Pointer Events (not touch events) so the same code
+// handles touch, mouse, and pen uniformly. touch-action:pan-y on the row
+// content (see CSS) is what lets the browser keep native vertical scrolling
+// while this code owns horizontal drags — without it, iOS Safari in
+// particular tends to fight the page for gesture ownership mid-swipe.
+// ============================================================================
+function initSwipeList(listEl,opts){
+  var OPEN_X=-72;
+  var state=null;
+  function setX(row,x,animate){
+    row.classList.toggle('dragging',!animate);
+    row.querySelector('.swipe-content').style.transform = x ? 'translateX('+x+'px)' : '';
+  }
+  function closeRow(row,animate){ row.classList.remove('swiped'); setX(row,0,animate); }
+  function closeAllExcept(except){
+    listEl.querySelectorAll('.swipe-row.swiped').forEach(function(r){ if(r!==except)closeRow(r,true); });
+  }
+  listEl.addEventListener('pointerdown',function(e){
+    if(e.target.closest('.swipe-delete-btn'))return;
+    if(e.target.closest('[data-action="toggle"]'))return;
+    var row=e.target.closest('.swipe-row'); if(!row)return;
+    state={row:row,startX:e.clientX,startY:e.clientY,decided:null,wasSwiped:row.classList.contains('swiped'),lastX:0};
+    closeAllExcept(row);
+  });
+  listEl.addEventListener('pointermove',function(e){
+    if(!state)return;
+    var dx=e.clientX-state.startX, dy=e.clientY-state.startY;
+    if(!state.decided){
+      if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+      state.decided = Math.abs(dx)>Math.abs(dy) ? 'h' : 'v';
+    }
+    if(state.decided!=='h')return;
+    if(e.cancelable)e.preventDefault();
+    var base=state.wasSwiped?OPEN_X:0;
+    var x=Math.max(OPEN_X-24,Math.min(0,base+dx));
+    setX(state.row,x,false);
+    state.lastX=x;
+  });
+  function finish(){
+    if(!state)return;
+    var s=state; state=null;
+    s.row.classList.remove('dragging');
+    if(s.decided==='h'){
+      if(s.lastX<OPEN_X/2){ s.row.classList.add('swiped'); setX(s.row,OPEN_X,true); }
+      else{ closeRow(s.row,true); }
+    }else{
+      if(s.wasSwiped){ closeRow(s.row,true); }
+      else if(opts.onTap){ opts.onTap(s.row.dataset.id); }
+    }
+  }
+  listEl.addEventListener('pointerup',finish);
+  listEl.addEventListener('pointercancel',finish);
+  listEl.addEventListener('click',function(e){
+    var delBtn=e.target.closest('.swipe-delete-btn'); if(!delBtn)return;
+    var row=e.target.closest('.swipe-row'); if(!row)return;
+    if(opts.onDelete)opts.onDelete(row.dataset.id);
+  });
+}
+function swipeRowShell(id,innerHtml){
+  return '<div class="swipe-row" data-id="'+esc(id)+'">'
+    +'<div class="swipe-delete-bg"><button type="button" class="swipe-delete-btn" aria-label="Delete"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>'
+    +'<div class="swipe-content">'+innerHtml+'</div>'
+    +'</div>';
 }
 
 // ============================================================================
@@ -635,16 +767,10 @@ document.getElementById('feedback-modal-send').addEventListener('click',function
     }
   });
 });
-document.addEventListener('keydown',function(e){
-  if(e.key!=='Escape')return;
-  if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
-  if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
-});
 
-// Silently restores a previous session on load — but only if this exact device has signed
-// in before (same flag index.html itself sets/checks), so a phone that's never been used
-// for this before pays zero Firebase cost and lands straight on the sign-in gate instead of
-// waiting on a network round-trip it already knows will fail.
+// ============================================================================
+// Session restore / loading
+// ============================================================================
 function showHubLoading(text){
   document.getElementById('hub-loading-text').textContent=text||'Loading…';
   document.getElementById('hub-loading').classList.add('show');
@@ -655,7 +781,7 @@ function hideHubLoading(){
 function boot(){
   var wasActive=false;
   try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
-  if(!wasActive)return; // sign-in gate is already the default visible state — nothing more to do
+  if(!wasActive)return;
   document.getElementById('auth-gate').style.display='none';
   showHubLoading('Signing in…');
   loadFirebaseMods().then(function(f){
@@ -678,8 +804,6 @@ function boot(){
 // Storage layer — mirrors index.html's own key names, IndexedDB database/store,
 // and data shapes exactly for local caching, PLUS pushes/pulls the same
 // users/{uid}/meta/{todos,journal} Firestore docs index.html's cloud sync uses.
-// This dual layer (local cache + cloud source of truth) is what makes this
-// page actually useful across devices instead of just matching a schema.
 // ============================================================================
 var SAKURA_BACKUP_DB='sakura_backup_db', SAKURA_BACKUP_STORE='kv';
 var TODOS_KEY='sakura_todos_v1';
@@ -721,11 +845,6 @@ function idbSet(key,value){
 function loadSyncLocalTs(){ try{ var r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}; }catch(e){ return {}; } }
 function saveSyncLocalTs(m){ try{ localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m)); }catch(e){} }
 function bumpSyncTimestamp(metaKey){ var m=loadSyncLocalTs(); m[metaKey]=Date.now(); saveSyncLocalTs(m); }
-// Best-effort direct push to Firestore, same shape as index.html's pushMetaToCloud
-// (users/{uid}/meta/{key} = {value, updatedAt}). Failures (offline, etc.) are silent here —
-// the local copy (already saved before this is called) stays the safe fallback, and the
-// bumped local timestamp means index.html's own sync will pick this change up and push it
-// properly the next time that's open, same as any other locally-made-while-offline edit.
 function pushMetaToCloud(metaKey,value){
   if(!currentUser)return;
   var ts=Date.now();
@@ -733,9 +852,6 @@ function pushMetaToCloud(metaKey,value){
     return f.mod.setDoc(f.mod.doc(f.db,'users',currentUser.uid,'meta',metaKey),{value:value,updatedAt:ts});
   }).catch(function(e){ console.warn('[sakura hub] cloud push failed for',metaKey,e); });
 }
-// Pulls users/{uid}/meta/{key}; newer of cloud vs. this device's own last-known-changed
-// timestamp wins (mirrors index.html's own pull/merge comparison, simplified to a single
-// per-key decision instead of the fuller multi-collection reconciliation index.html does).
 function pullMetaFromCloud(metaKey){
   if(!currentUser)return Promise.resolve(undefined);
   return loadFirestoreMods().then(function(f){
@@ -746,13 +862,9 @@ function pullMetaFromCloud(metaKey){
     var localTs=Number(loadSyncLocalTs()[metaKey])||0;
     var cloudTs=Number(cloud.updatedAt)||0;
     if(cloudTs>localTs)return cloud.value;
-    return undefined; // local is at least as new — keep what's already here, and it'll get pushed below
+    return undefined;
   }).catch(function(e){ console.warn('[sakura hub] cloud pull failed for',metaKey,e); return undefined; });
 }
-// Same write-only /feedback collection index.html's own submitFeedback writes to (see
-// firestore.rules — create is open to anyone, read/update/delete are denied to every
-// client). Reuses the Firestore connection already loaded for To-Dos/Journal sync, so
-// there's no extra SDK load just for this.
 function submitFeedback(opts){
   var trimmed=(opts.message||'').trim();
   if(!trimmed)return Promise.resolve({ok:false,error:'Enter a message first.'});
@@ -778,13 +890,14 @@ function jnUid(){ return 'jn'+Date.now().toString(36)+Math.random().toString(36)
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 // ============================================================================
-// To-Dos — same shape as index.html's loadTodos()/saveTodos(). Loaded whole
-// (every field, not just the ones this page edits) and written back whole, so
-// fields only the desktop app understands (subtasks, link, nodeRef, meetingRef,
-// repeat, priority, status) survive a round trip through this page untouched.
+// To-Dos
 // ============================================================================
 var todos=[];
 var todoCompletedOpen=false;
+var TODO_STATUSES=['waiting','progress','blocked','review'];
+var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
+var CHECK_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
 function loadTodosLocal(){
   try{
     var raw=localStorage.getItem(TODOS_KEY);
@@ -808,80 +921,7 @@ function newTodo(text){
     nodeRef:null, meetingRef:null, repeat:null, subtasks:[], subtasksOpen:true
   };
 }
-var TODO_STATUSES=['waiting','progress','blocked','review'];
-var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
-var todoExpandedId=null;
-function renderTodos(){
-  var openList=document.getElementById('todo-open-list');
-  var openEmpty=document.getElementById('todo-open-empty');
-  var doneList=document.getElementById('todo-completed-list');
-  var doneToggle=document.getElementById('todo-completed-toggle');
-  var doneCount=document.getElementById('todo-completed-count');
-  var open=todos.filter(function(t){return !t.done});
-  var done=todos.filter(function(t){return t.done});
-  var CHECK_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  var CHECK_SVG_SM='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  var CAL_SVG='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  var CHEVRON_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-  openEmpty.style.display=open.length?'none':'';
-  var today=todayStr();
-  openList.innerHTML=open.map(function(t){
-    var overdue=t.dueDate && t.dueDate<today;
-    var subtasks=t.subtasks||[];
-    var subDone=subtasks.filter(function(s){return s.done}).length;
-    var chips=[];
-    if(t.dueDate)chips.push('<span class="todo-chip'+(overdue?' overdue':'')+'">'+CAL_SVG+esc(t.dueDate)+'</span>');
-    if(t.status&&t.status!=='none')chips.push('<span class="todo-chip" data-status="'+t.status+'">'+TODO_STATUS_LABEL[t.status]+'</span>');
-    if(subtasks.length)chips.push('<span class="todo-chip">'+CHECK_SVG_SM+' '+subDone+'/'+subtasks.length+'</span>');
-    var statusPills=TODO_STATUSES.map(function(s){
-      return '<button type="button" class="todo-status-pill'+(t.status===s?' sel':'')+'" data-status="'+s+'" data-action="status-set">'+TODO_STATUS_LABEL[s]+'</button>';
-    }).join('');
-    var subtaskRows=subtasks.map(function(s){
-      return '<div class="todo-subtask-row" data-sub-id="'+esc(s.id)+'">'
-        +'<button type="button" class="todo-subtask-check'+(s.done?' done':'')+'" data-action="sub-toggle">'+(s.done?CHECK_SVG_SM:'')+'</button>'
-        +'<span class="todo-subtask-text'+(s.done?' done':'')+'">'+esc(s.text)+'</span>'
-        +'<button type="button" class="todo-subtask-del" data-action="sub-delete" aria-label="Delete subtask">×</button>'
-        +'</div>';
-    }).join('');
-    var open_=t.id===todoExpandedId;
-    return '<div class="todo-item'+(open_?' open':'')+'" data-id="'+esc(t.id)+'">'
-      +'<div class="todo-row">'
-        +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
-        +'<div class="todo-main"><textarea class="todo-text" data-action="edit" rows="1">'+esc(t.text)+'</textarea>'
-        +(chips.length?'<div class="todo-meta">'+chips.join('')+'</div>':'')
-        +'</div>'
-        +'<div class="todo-row-actions">'
-          +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
-          +'<button class="todo-expand" data-action="expand" aria-label="Task details">'+CHEVRON_SVG+'</button>'
-        +'</div>'
-      +'</div>'
-      +'<div class="todo-detail">'
-        +'<div class="todo-detail-label">Status</div>'
-        +'<div class="todo-status-row">'+statusPills+'</div>'
-        +'<div class="todo-detail-label">Due date</div>'
-        +'<div class="todo-due-row"><input type="date" class="todo-due-input" data-action="due-input" value="'+esc(t.dueDate||'')+'">'
-        +(t.dueDate?'<button type="button" class="todo-due-clear" data-action="due-clear">Clear</button>':'')
-        +'</div>'
-        +'<div class="todo-detail-label">Subtasks</div>'
-        +subtaskRows
-        +'<div class="todo-subtask-add"><input type="text" placeholder="Add subtask…" data-action="sub-add-input" maxlength="300"><button type="button" data-action="sub-add-btn">Add</button></div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
-  doneToggle.classList.toggle('open',todoCompletedOpen);
-  doneCount.textContent='Completed ('+done.length+')';
-  doneToggle.style.display=done.length?'':'none';
-  doneList.className=todoCompletedOpen?'open':'';
-  doneList.innerHTML=done.slice().sort(function(a,b){return (b.completedAt||0)-(a.completedAt||0)}).map(function(t){
-    return '<div class="todo-item" data-id="'+esc(t.id)+'"><div class="todo-row">'
-      +'<button class="todo-check done" data-action="toggle" aria-label="Mark not done">'+CHECK_SVG+'</button>'
-      +'<div class="todo-main"><span class="todo-text done">'+esc(t.text)+'</span></div>'
-      +'<div class="todo-row-actions"><button class="todo-del" data-action="delete" aria-label="Delete task">×</button></div>'
-      +'</div></div>';
-  }).join('');
-  openList.querySelectorAll('.todo-text').forEach(autoGrowTodoText);
-  renderTodoGreeting(open.length,done.length);
-}
+function findTodo(id){ return todos.find(function(t){return t.id===id}); }
 function renderTodoGreeting(openCount,completedCount){
   var hour=new Date().getHours();
   var greeting=hour<5?'Still up?':hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
@@ -891,11 +931,44 @@ function renderTodoGreeting(openCount,completedCount){
   else sub=openCount+' task'+(openCount===1?'':'s')+' open';
   document.getElementById('todo-greeting-sub').textContent=sub;
 }
-function autoGrowTodoText(el){
-  el.style.height='auto';
-  el.style.height=el.scrollHeight+'px';
+function todoRowInnerHtml(t){
+  var today=todayStr();
+  var overdue=t.dueDate && t.dueDate<today;
+  var subtasks=t.subtasks||[];
+  var subDone=subtasks.filter(function(s){return s.done}).length;
+  var metaBits=[];
+  if(t.dueDate)metaBits.push('<span class="'+(overdue?'overdue':'')+'">'+esc(t.dueDate)+'</span>');
+  if(t.status&&t.status!=='none')metaBits.push('<span>'+TODO_STATUS_LABEL[t.status]+'</span>');
+  if(subtasks.length)metaBits.push('<span>'+subDone+'/'+subtasks.length+' subtasks</span>');
+  var meta=metaBits.length?'<div class="todo-row-meta">'+metaBits.join('<span class="dot">·</span>')+'</div>':'';
+  return '<div class="todo-row">'
+    +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
+    +'<div class="todo-row-main"><div class="todo-row-text">'+esc(t.text)+'</div>'+meta+'</div>'
+    +'</div>';
 }
-function findTodo(id){ return todos.find(function(t){return t.id===id}); }
+function renderTodos(){
+  var list=document.getElementById('todo-list');
+  var openEmpty=document.getElementById('todo-open-empty');
+  var doneList=document.getElementById('todo-completed-list');
+  var doneToggle=document.getElementById('todo-completed-toggle');
+  var doneCount=document.getElementById('todo-completed-count');
+  var open=todos.filter(function(t){return !t.done});
+  var done=todos.filter(function(t){return t.done});
+  openEmpty.style.display=open.length?'none':'';
+  list.style.display=open.length?'':'none';
+  list.innerHTML=open.map(function(t){ return swipeRowShell(t.id,todoRowInnerHtml(t)); }).join('');
+  doneToggle.classList.toggle('open',todoCompletedOpen);
+  doneCount.textContent='Completed ('+done.length+')';
+  doneToggle.style.display=done.length?'':'none';
+  doneList.className='swipe-list'+(todoCompletedOpen?' open':'');
+  doneList.innerHTML=done.slice().sort(function(a,b){return (b.completedAt||0)-(a.completedAt||0)}).map(function(t){
+    return '<div class="todo-completed-row" data-id="'+esc(t.id)+'">'
+      +'<button class="todo-check done" data-action="toggle" aria-label="Mark not done">'+CHECK_SVG+'</button>'
+      +'<div class="todo-row-text done" style="flex:1">'+esc(t.text)+'</div>'
+      +'</div>';
+  }).join('');
+  renderTodoGreeting(open.length,done.length);
+}
 document.getElementById('todo-compose-btn').addEventListener('click',addTodoFromInput);
 document.getElementById('todo-compose-input').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addTodoFromInput(); } });
 function addTodoFromInput(){
@@ -909,90 +982,146 @@ function addTodoFromInput(){
 document.getElementById('todo-completed-toggle').addEventListener('click',function(){
   todoCompletedOpen=!todoCompletedOpen; renderTodos();
 });
-function addSubtaskFromItem(item,t){
-  var input=item.querySelector('[data-action="sub-add-input"]');
-  var text=input.value.trim();
-  if(!text)return;
-  if(!Array.isArray(t.subtasks))t.subtasks=[];
-  t.subtasks.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text.slice(0,300),done:false});
-  saveTodos(); renderTodos();
-}
-function todoListClick(e){
-  var item=e.target.closest('.todo-item'); if(!item)return;
-  var id=item.dataset.id; var t=findTodo(id); if(!t)return;
-  var actionEl=e.target.closest('[data-action]'); if(!actionEl)return;
-  var action=actionEl.dataset.action;
-  if(action==='toggle'){
-    t.done=!t.done;
-    t.completedAt=t.done?Date.now():null;
-    saveTodos(); renderTodos();
-  }else if(action==='delete'){
+// Open list: swipe-to-delete + tap-to-open-detail, plus a direct click handler for the
+// checkbox (excluded from the swipe/tap gesture state machine — see initSwipeList).
+initSwipeList(document.getElementById('todo-list'),{
+  onTap:function(id){ openTaskDetail(id); },
+  onDelete:function(id){
+    var t=findTodo(id); if(!t)return;
     hubConfirm('Delete this task?',t.text,'Delete').then(function(ok){
-      if(!ok)return;
+      if(!ok){ renderTodos(); return; } // re-render to snap the swiped row shut
       todos=todos.filter(function(x){return x.id!==id});
-      if(todoExpandedId===id)todoExpandedId=null;
       saveTodos(); renderTodos();
     });
-  }else if(action==='expand'){
-    todoExpandedId = (todoExpandedId===id) ? null : id;
-    renderTodos();
-  }else if(action==='status-set'){
-    var s=actionEl.dataset.status;
-    t.status = (t.status===s) ? 'none' : s;
-    saveTodos(); renderTodos();
-  }else if(action==='due-clear'){
-    t.dueDate=null;
-    saveTodos(); renderTodos();
-  }else if(action==='sub-toggle'){
-    var subRow=e.target.closest('.todo-subtask-row'); if(!subRow)return;
-    var sub=(t.subtasks||[]).find(function(s){return s.id===subRow.dataset.subId}); if(!sub)return;
-    sub.done=!sub.done;
-    saveTodos(); renderTodos();
-  }else if(action==='sub-delete'){
-    var subRow2=e.target.closest('.todo-subtask-row'); if(!subRow2)return;
-    t.subtasks=(t.subtasks||[]).filter(function(s){return s.id!==subRow2.dataset.subId});
-    saveTodos(); renderTodos();
-  }else if(action==='sub-add-btn'){
-    addSubtaskFromItem(item,t);
   }
-}
-document.getElementById('todo-open-list').addEventListener('click',todoListClick);
-document.getElementById('todo-completed-list').addEventListener('click',todoListClick);
-document.getElementById('todo-open-list').addEventListener('keydown',function(e){
-  if(e.key!=='Enter')return;
-  var actionEl=e.target.closest('[data-action="sub-add-input"]'); if(!actionEl)return;
-  e.preventDefault();
-  var item=e.target.closest('.todo-item'); var t=findTodo(item.dataset.id); if(!t)return;
-  addSubtaskFromItem(item,t);
 });
-document.getElementById('todo-open-list').addEventListener('input',function(e){
-  if(e.target.dataset.action==='edit')autoGrowTodoText(e.target);
+document.getElementById('todo-list').addEventListener('click',function(e){
+  if(!e.target.closest('[data-action="toggle"]'))return;
+  var row=e.target.closest('.swipe-row'); if(!row)return;
+  var t=findTodo(row.dataset.id); if(!t)return;
+  t.done=true; t.completedAt=Date.now();
+  saveTodos(); renderTodos();
 });
-document.getElementById('todo-open-list').addEventListener('change',function(e){
-  var item=e.target.closest('.todo-item'); if(!item)return;
-  var t=findTodo(item.dataset.id); if(!t)return;
-  if(e.target.dataset.action==='edit'){
-    var val=e.target.value.trim();
-    if(!val){ e.target.value=t.text; autoGrowTodoText(e.target); return; }
-    t.text=val;
-    saveTodos();
-  }else if(e.target.dataset.action==='due-input'){
-    t.dueDate=e.target.value||null;
+document.getElementById('todo-completed-list').addEventListener('click',function(e){
+  var row=e.target.closest('.todo-completed-row'); if(!row)return;
+  var t=findTodo(row.dataset.id); if(!t)return;
+  if(e.target.closest('[data-action="toggle"]')){
+    t.done=false; t.completedAt=null;
     saveTodos(); renderTodos();
+  }else{
+    openTaskDetail(t.id);
   }
 });
 
+// ---------- Task detail sheet ----------
+var taskDetailId=null;
+function openTaskDetail(id){
+  taskDetailId=id;
+  renderTaskDetail();
+  document.getElementById('task-sheet-overlay').classList.add('open');
+}
+function closeTaskDetail(){
+  document.getElementById('task-sheet-overlay').classList.remove('open');
+  taskDetailId=null;
+}
+function saveAndRefreshTask(){
+  saveTodos(); renderTodos(); renderTaskDetail();
+}
+function renderTaskDetail(){
+  var t=findTodo(taskDetailId);
+  if(!t){ closeTaskDetail(); return; }
+  var checkBtn=document.getElementById('task-detail-check');
+  checkBtn.classList.toggle('done',t.done);
+  checkBtn.innerHTML=t.done?CHECK_SVG:'';
+  var textEl=document.getElementById('task-detail-text');
+  if(document.activeElement!==textEl)textEl.value=t.text;
+  autoGrow(textEl);
+  document.getElementById('task-detail-status').innerHTML=TODO_STATUSES.map(function(s){
+    return '<button type="button" class="todo-status-pill'+(t.status===s?' sel':'')+'" data-status="'+s+'">'+TODO_STATUS_LABEL[s]+'</button>';
+  }).join('');
+  document.getElementById('task-detail-due').value=t.dueDate||'';
+  document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
+  document.getElementById('task-detail-subtasks').innerHTML=(t.subtasks||[]).map(function(s){
+    return '<div class="todo-subtask-row" data-sub-id="'+esc(s.id)+'">'
+      +'<button type="button" class="todo-subtask-check'+(s.done?' done':'')+'" data-action="sub-toggle">'+(s.done?CHECK_SVG:'')+'</button>'
+      +'<span class="todo-subtask-text'+(s.done?' done':'')+'">'+esc(s.text)+'</span>'
+      +'<button type="button" class="todo-subtask-del" data-action="sub-delete" aria-label="Delete subtask">×</button>'
+      +'</div>';
+  }).join('');
+}
+document.getElementById('task-sheet-close').addEventListener('click',closeTaskDetail);
+document.getElementById('task-sheet-overlay').addEventListener('click',function(e){
+  if(e.target.id==='task-sheet-overlay')closeTaskDetail();
+});
+document.getElementById('task-detail-check').addEventListener('click',function(){
+  var t=findTodo(taskDetailId); if(!t)return;
+  t.done=!t.done; t.completedAt=t.done?Date.now():null;
+  saveAndRefreshTask();
+});
+document.getElementById('task-detail-text').addEventListener('input',function(e){ autoGrow(e.target); });
+document.getElementById('task-detail-text').addEventListener('change',function(e){
+  var t=findTodo(taskDetailId); if(!t)return;
+  var val=e.target.value.trim();
+  if(!val){ e.target.value=t.text; autoGrow(e.target); return; }
+  t.text=val;
+  saveTodos(); renderTodos();
+});
+document.getElementById('task-detail-status').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-status]'); if(!btn)return;
+  var t=findTodo(taskDetailId); if(!t)return;
+  var s=btn.dataset.status;
+  t.status = (t.status===s) ? 'none' : s;
+  saveAndRefreshTask();
+});
+document.getElementById('task-detail-due').addEventListener('change',function(e){
+  var t=findTodo(taskDetailId); if(!t)return;
+  t.dueDate=e.target.value||null;
+  saveAndRefreshTask();
+});
+document.getElementById('task-detail-due-clear').addEventListener('click',function(){
+  var t=findTodo(taskDetailId); if(!t)return;
+  t.dueDate=null;
+  saveAndRefreshTask();
+});
+document.getElementById('task-detail-subtasks').addEventListener('click',function(e){
+  var t=findTodo(taskDetailId); if(!t)return;
+  var subRow=e.target.closest('.todo-subtask-row'); if(!subRow)return;
+  var sub=(t.subtasks||[]).find(function(s){return s.id===subRow.dataset.subId}); if(!sub)return;
+  if(e.target.closest('[data-action="sub-toggle"]')){ sub.done=!sub.done; saveAndRefreshTask(); }
+  else if(e.target.closest('[data-action="sub-delete"]')){
+    t.subtasks=t.subtasks.filter(function(s){return s.id!==sub.id});
+    saveAndRefreshTask();
+  }
+});
+function addSubtaskToDetailTask(){
+  var t=findTodo(taskDetailId); if(!t)return;
+  var input=document.getElementById('task-detail-subtask-input');
+  var text=input.value.trim(); if(!text)return;
+  if(!Array.isArray(t.subtasks))t.subtasks=[];
+  t.subtasks.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text.slice(0,300),done:false});
+  input.value='';
+  saveAndRefreshTask();
+  document.getElementById('task-detail-subtask-input').focus();
+}
+document.getElementById('task-detail-subtask-add-btn').addEventListener('click',addSubtaskToDetailTask);
+document.getElementById('task-detail-subtask-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){ e.preventDefault(); addSubtaskToDetailTask(); }
+});
+document.getElementById('task-detail-delete').addEventListener('click',function(){
+  var t=findTodo(taskDetailId); if(!t)return;
+  hubConfirm('Delete this task?',t.text,'Delete').then(function(ok){
+    if(!ok)return;
+    todos=todos.filter(function(x){return x.id!==t.id});
+    closeTaskDetail();
+    saveTodos(); renderTodos();
+  });
+});
+
 // ============================================================================
-// Journal — same shape as index.html's normalizeJournalEntry()/loadJournalEntries()/
-// saveJournalEntries(). Body is stored as plain text here (index.html's own rich-text
-// editor renders it as HTML; a plain-text save from this page still displays fine there,
-// just without formatting — this page never attempts rich text editing).
+// Journal
 // ============================================================================
 var JOURNAL_MOODS=['great','good','neutral','low','rough'];
 var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
-// Small monoline face icons, one per mood tier — eyes as filled dots, mouth as a single
-// curve. All draw in currentColor, so they automatically flip to a light color once their
-// button is selected and its background fills solid (see .jn-mood.sel .jn-mood-dot in CSS).
 var JOURNAL_MOOD_ICON={
   great:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7 13.5c1 4 3.5 6 5 6s4-2 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   good:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7.5 14.5c1 2.3 2.7 3.5 4.5 3.5s3.5-1.2 4.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
@@ -1000,8 +1129,9 @@ var JOURNAL_MOOD_ICON={
   low:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7.5 17.5c1-2.3 2.7-3.5 4.5-3.5s3.5 1.2 4.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   rough:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7 19c1-4 3.5-6 5-6s4 2 5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 };
+var JOURNAL_NEUTRAL_ICON='<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.1" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.1" fill="currentColor"/><path d="M9 15.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 var journalEntries=[];
-var jnSaveTimer=null;
+
 function normalizeJournalEntry(j){
   var now=Date.now();
   return {
@@ -1031,15 +1161,20 @@ function loadJournalLocal(){
   }).catch(function(){ journalEntries=[]; });
 }
 function saveJournalEntries(){
-  idbSet(JOURNAL_KEY,journalEntries).then(function(ok){
+  return idbSet(JOURNAL_KEY,journalEntries).then(function(ok){
     if(ok){ bumpSyncTimestamp('journal'); pushMetaToCloud('journal',journalEntries); }
-    else{ document.getElementById('jn-today-hint').textContent='Storage full — this change was not saved.'; }
+    else{ showToast('Storage full — this change was not saved.'); }
   });
 }
 function findJournalEntry(date){ return journalEntries.find(function(j){return j.date===date}); }
 function formatJournalDateLabel(dateStr){
   var d=new Date(dateStr+'T00:00:00');
   return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+}
+function pruneIfEmpty(entry){
+  if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
+    journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
+  }
 }
 function renderTagsHtml(tags,addingActive){
   var chips=(tags||[]).map(function(tag){
@@ -1052,211 +1187,175 @@ function renderTagsHtml(tags,addingActive){
 }
 function renderJournalToday(){
   var date=todayStr();
-  var entry=findJournalEntry(date)||normalizeJournalEntry({date:date});
-  document.getElementById('jn-today-date').textContent=formatJournalDateLabel(date)+' · Today';
-  document.getElementById('jn-today-moods').innerHTML=JOURNAL_MOODS.map(function(m){
-    return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
-  }).join('');
-  document.getElementById('jn-today-body').value=entry.body;
-  document.getElementById('jn-today-tags').innerHTML=renderTagsHtml(entry.tags,jnTodayAddingTag);
-  if(jnTodayAddingTag)document.querySelector('#jn-today-tags [data-action="tag-input"]').focus();
-}
-document.getElementById('jn-today-moods').addEventListener('click',function(e){
-  var btn=e.target.closest('.jn-mood'); if(!btn)return;
-  var date=todayStr();
-  var mood=btn.dataset.mood;
   var entry=findJournalEntry(date);
-  var body=document.getElementById('jn-today-body').value;
-  if(!entry){
-    if(!body.trim() && !mood)return;
-    entry=normalizeJournalEntry({date:date}); journalEntries.push(entry);
-  }
-  entry.mood = entry.mood===mood ? '' : mood;
-  entry.modifiedAt=Date.now();
-  if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
-    journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
-  }
-  saveJournalEntries(); renderJournalToday(); renderJournalPast();
-});
-var jnTagSuppressCommit=false;
-var jnTodayAddingTag=false;
-document.getElementById('jn-today-tags').addEventListener('click',function(e){
-  var btn=e.target.closest('[data-action]'); if(!btn)return;
-  var date=todayStr();
-  if(btn.dataset.action==='tag-add-start'){
-    jnTodayAddingTag=true;
-    renderJournalToday();
-  }else if(btn.dataset.action==='tag-remove'){
-    var entry=findJournalEntry(date); if(!entry)return;
-    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==btn.dataset.tag});
-    entry.modifiedAt=Date.now();
-    if(!entry.body.trim() && !entry.mood && !entry.tags.length){
-      journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
-    }
-    saveJournalEntries(); renderJournalToday(); renderJournalPast();
-  }
-});
-function commitTodayTagInput(input){
-  jnTagSuppressCommit=true;
-  jnTodayAddingTag=false;
-  var val=input.value.trim();
-  if(!val){ renderJournalToday(); return; }
-  var date=todayStr();
-  var entry=findJournalEntry(date);
-  if(!entry){ entry=normalizeJournalEntry({date:date}); journalEntries.push(entry); }
-  if(!Array.isArray(entry.tags))entry.tags=[];
-  if(entry.tags.indexOf(val)===-1)entry.tags.push(val);
-  entry.modifiedAt=Date.now();
-  saveJournalEntries(); renderJournalToday(); renderJournalPast();
+  var card=document.getElementById('jn-today-card');
+  var mood=entry?entry.mood:'';
+  var preview=entry&&entry.body.trim()?entry.body.replace(/\s+/g,' ').trim().slice(0,90):'Tap to write today\u2019s entry';
+  card.innerHTML=
+    '<div class="jn-mood-badge" data-mood="'+esc(mood)+'">'+(mood?JOURNAL_MOOD_ICON[mood]:JOURNAL_NEUTRAL_ICON)+'</div>'
+    +'<div class="jn-today-main"><div class="jn-today-title">Today</div><div class="jn-today-preview">'+esc(preview)+'</div></div>'
+    +'<svg class="jn-today-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 }
-document.getElementById('jn-today-tags').addEventListener('keydown',function(e){
-  if(e.target.dataset.action!=='tag-input')return;
-  if(e.key==='Enter'){ e.preventDefault(); commitTodayTagInput(e.target); }
-  else if(e.key==='Escape'){ jnTagSuppressCommit=true; jnTodayAddingTag=false; renderJournalToday(); }
-});
-document.getElementById('jn-today-tags').addEventListener('focusout',function(e){
-  if(e.target.dataset.action!=='tag-input')return;
-  if(jnTagSuppressCommit){ jnTagSuppressCommit=false; return; }
-  commitTodayTagInput(e.target);
-});
-document.getElementById('jn-today-body').addEventListener('input',function(e){
-  clearTimeout(jnSaveTimer);
-  var hint=document.getElementById('jn-today-hint');
-  hint.textContent='Saving…';
-  jnSaveTimer=setTimeout(function(){
-    var date=todayStr();
-    var body=e.target.value;
-    var entry=findJournalEntry(date);
-    if(!entry){
-      if(!body.trim())return;
-      entry=normalizeJournalEntry({date:date}); journalEntries.push(entry);
-    }
-    entry.body=body;
-    entry.modifiedAt=Date.now();
-    if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
-      journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
-    }
-    saveJournalEntries();
-    hint.textContent='Saved';
-    renderJournalPast();
-  },500);
-});
-var jnExpandedId=null;
-var jnPastAddingTagId=null;
-function renderJournalPast(){
-  var list=document.getElementById('jn-past-list');
+document.getElementById('jn-today-card').addEventListener('click',function(){ openEntryDetail(todayStr()); });
+function journalFeedRowInnerHtml(j){
+  var preview=(j.body||'').replace(/\s+/g,' ').trim().slice(0,90)||'(no notes)';
+  var tags=(j.tags||[]).slice(0,3).map(function(t){return '<span class="jn-feed-tag">'+esc(t)+'</span>';}).join('');
+  return '<div class="jn-feed-row">'
+    +'<div class="jn-mood-badge" data-mood="'+esc(j.mood)+'">'+(j.mood?JOURNAL_MOOD_ICON[j.mood]:JOURNAL_NEUTRAL_ICON)+'</div>'
+    +'<div class="jn-feed-main"><div class="jn-feed-date">'+esc(formatJournalDateLabel(j.date))+'</div>'
+    +'<div class="jn-feed-preview">'+esc(preview)+'</div>'
+    +(tags?'<div class="jn-feed-tags">'+tags+'</div>':'')
+    +'</div>'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--hint);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
+    +'</div>';
+}
+function renderJournalFeed(){
+  var list=document.getElementById('jn-feed-list');
   var empty=document.getElementById('jn-past-empty');
   var today=todayStr();
   var past=journalEntries.filter(function(j){return j.date!==today}).sort(function(a,b){return b.date.localeCompare(a.date)});
   empty.style.display=past.length?'none':'';
-  list.innerHTML=past.map(function(j){
-    var preview=(j.body||'').replace(/\s+/g,' ').trim().slice(0,80)||'(no notes)';
-    var open=j.id===jnExpandedId;
-    var moods=JOURNAL_MOODS.map(function(m){
-      return '<button type="button" class="jn-mood'+(j.mood===m?' sel':'')+'" data-past-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
-    }).join('');
-    return '<div class="jn-past-item'+(open?' open':'')+'" data-id="'+esc(j.id)+'" data-mood="'+esc(j.mood)+'">'
-      +'<div class="jn-past-row" data-action="expand">'
-      +'<svg class="jn-past-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>'
-      +'<div class="jn-past-main"><div class="jn-past-date">'+esc(formatJournalDateLabel(j.date))+'</div>'
-      +'<div class="jn-past-preview">'+esc(preview)+'</div></div>'
-      +'<button class="jn-past-del" data-action="delete" aria-label="Delete entry">×</button>'
-      +'</div>'
-      +'<div class="jn-past-edit"><div class="jn-moods">'+moods+'</div>'
-      +'<textarea class="jn-body" data-past-body rows="4">'+esc(j.body)+'</textarea>'
-      +'<div class="jn-tags">'+renderTagsHtml(j.tags,j.id===jnPastAddingTagId)+'</div></div>'
-      +'</div>';
-  }).join('');
-  if(jnPastAddingTagId){
-    var input=document.querySelector('.jn-past-item[data-id="'+CSS.escape(jnPastAddingTagId)+'"] [data-action="tag-input"]');
-    if(input)input.focus();
-  }
+  list.style.display=past.length?'':'none';
+  list.innerHTML=past.map(function(j){ return swipeRowShell(j.id,journalFeedRowInnerHtml(j)); }).join('');
 }
-function updateJnPastRowSummary(id){
-  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
-  var item=document.querySelector('.jn-past-item[data-id="'+CSS.escape(id)+'"]'); if(!item)return;
-  var preview=(entry.body||'').replace(/\s+/g,' ').trim().slice(0,80)||'(no notes)';
-  var prevEl=item.querySelector('.jn-past-preview'); if(prevEl)prevEl.textContent=preview;
-}
-var jnPastSaveTimer=null;
-document.getElementById('jn-past-list').addEventListener('click',function(e){
-  var item=e.target.closest('.jn-past-item'); if(!item)return;
-  var id=item.dataset.id;
-  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
-  if(e.target.closest('[data-action="delete"]')){
+initSwipeList(document.getElementById('jn-feed-list'),{
+  onTap:function(id){
+    var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
+    openEntryDetail(entry.date);
+  },
+  onDelete:function(id){
+    var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
     hubConfirm('Delete this entry?',formatJournalDateLabel(entry.date),'Delete').then(function(ok){
-      if(!ok)return;
+      if(!ok){ renderJournalFeed(); return; }
       journalEntries=journalEntries.filter(function(j){return j.id!==id});
-      if(jnExpandedId===id)jnExpandedId=null;
-      saveJournalEntries(); renderJournalPast();
+      saveJournalEntries().then(renderJournalFeed);
     });
-    return;
-  }
-  var moodBtn=e.target.closest('[data-past-mood]');
-  if(moodBtn){
-    var mood=moodBtn.dataset.pastMood;
-    entry.mood = entry.mood===mood ? '' : mood;
-    entry.modifiedAt=Date.now();
-    saveJournalEntries(); renderJournalPast();
-    return;
-  }
-  if(e.target.closest('[data-action="expand"]')){
-    jnExpandedId = (jnExpandedId===id) ? null : id;
-    renderJournalPast();
-    return;
-  }
-  var tagBtn=e.target.closest('[data-action]');
-  if(tagBtn&&tagBtn.dataset.action==='tag-add-start'){
-    jnPastAddingTagId=id;
-    renderJournalPast();
-  }else if(tagBtn&&tagBtn.dataset.action==='tag-remove'){
-    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==tagBtn.dataset.tag});
-    entry.modifiedAt=Date.now();
-    if(!entry.body.trim() && !entry.mood && !entry.tags.length){
-      journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
-      if(jnExpandedId===id)jnExpandedId=null;
-    }
-    saveJournalEntries(); renderJournalPast();
   }
 });
-function commitPastTagInput(input,id){
-  jnTagSuppressCommit=true;
-  jnPastAddingTagId=null;
+
+// ---------- Entry detail sheet ----------
+var entryDetailDate=null;
+function openEntryDetail(date){
+  entryDetailDate=date;
+  renderEntryDetail();
+  document.getElementById('entry-detail-save-hint').textContent='';
+  document.getElementById('entry-sheet-overlay').classList.add('open');
+}
+function closeEntryDetail(){
+  document.getElementById('entry-sheet-overlay').classList.remove('open');
+  entryDetailDate=null;
+}
+function currentEntryDraft(){
+  return findJournalEntry(entryDetailDate) || {mood:'',tags:[],body:''};
+}
+function renderEntryDetail(){
+  var date=entryDetailDate;
+  var entry=currentEntryDraft();
+  var isToday=date===todayStr();
+  document.getElementById('entry-detail-date').textContent=formatJournalDateLabel(date)+(isToday?' · Today':'');
+  document.getElementById('entry-detail-moods').innerHTML=JOURNAL_MOODS.map(function(m){
+    return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
+  }).join('');
+  var bodyEl=document.getElementById('entry-detail-body');
+  if(document.activeElement!==bodyEl)bodyEl.value=entry.body;
+  document.getElementById('entry-detail-tags').innerHTML=renderTagsHtml(entry.tags,entryAddingTag);
+  if(entryAddingTag){
+    var input=document.querySelector('#entry-detail-tags [data-action="tag-input"]');
+    if(input)input.focus();
+  }
+  document.getElementById('entry-detail-delete').style.display=findJournalEntry(date)?'':'none';
+}
+function getOrCreateEntryForDetail(){
+  var entry=findJournalEntry(entryDetailDate);
+  if(!entry){ entry=normalizeJournalEntry({date:entryDetailDate}); journalEntries.push(entry); }
+  return entry;
+}
+document.getElementById('entry-sheet-close').addEventListener('click',closeEntryDetail);
+document.getElementById('entry-sheet-overlay').addEventListener('click',function(e){
+  if(e.target.id==='entry-sheet-overlay')closeEntryDetail();
+});
+document.getElementById('entry-detail-moods').addEventListener('click',function(e){
+  var btn=e.target.closest('.jn-mood'); if(!btn)return;
+  var mood=btn.dataset.mood;
+  var entry=getOrCreateEntryForDetail();
+  entry.mood = entry.mood===mood ? '' : mood;
+  entry.modifiedAt=Date.now();
+  pruneIfEmpty(entry);
+  saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
+});
+var entryBodySaveTimer=null;
+document.getElementById('entry-detail-body').addEventListener('input',function(e){
+  clearTimeout(entryBodySaveTimer);
+  var hint=document.getElementById('entry-detail-save-hint');
+  hint.textContent='Saving…';
+  var val=e.target.value;
+  entryBodySaveTimer=setTimeout(function(){
+    if(!val.trim() && !findJournalEntry(entryDetailDate)){ hint.textContent=''; return; }
+    var entry=getOrCreateEntryForDetail();
+    entry.body=val; entry.modifiedAt=Date.now();
+    pruneIfEmpty(entry);
+    saveJournalEntries().then(function(){
+      hint.textContent='Saved';
+      document.getElementById('entry-detail-delete').style.display=findJournalEntry(entryDetailDate)?'':'none';
+      renderJournalToday(); renderJournalFeed();
+    });
+  },500);
+});
+var entryAddingTag=false;
+var entryTagSuppressCommit=false;
+document.getElementById('entry-detail-tags').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-action]'); if(!btn)return;
+  if(btn.dataset.action==='tag-add-start'){
+    entryAddingTag=true;
+    renderEntryDetail();
+  }else if(btn.dataset.action==='tag-remove'){
+    var entry=findJournalEntry(entryDetailDate); if(!entry)return;
+    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==btn.dataset.tag});
+    entry.modifiedAt=Date.now();
+    pruneIfEmpty(entry);
+    saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
+  }
+});
+function commitEntryTagInput(input){
+  entryTagSuppressCommit=true;
+  entryAddingTag=false;
   var val=input.value.trim();
-  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return renderJournalPast();
-  if(!val)return renderJournalPast();
+  if(!val){ renderEntryDetail(); return; }
+  var entry=getOrCreateEntryForDetail();
   if(!Array.isArray(entry.tags))entry.tags=[];
   if(entry.tags.indexOf(val)===-1)entry.tags.push(val);
   entry.modifiedAt=Date.now();
-  saveJournalEntries(); renderJournalPast();
+  saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
 }
-document.getElementById('jn-past-list').addEventListener('keydown',function(e){
+document.getElementById('entry-detail-tags').addEventListener('keydown',function(e){
   if(e.target.dataset.action!=='tag-input')return;
-  var item=e.target.closest('.jn-past-item'); if(!item)return;
-  if(e.key==='Enter'){ e.preventDefault(); commitPastTagInput(e.target,item.dataset.id); }
-  else if(e.key==='Escape'){ jnTagSuppressCommit=true; jnPastAddingTagId=null; renderJournalPast(); }
+  if(e.key==='Enter'){ e.preventDefault(); commitEntryTagInput(e.target); }
+  else if(e.key==='Escape'){ entryTagSuppressCommit=true; entryAddingTag=false; renderEntryDetail(); }
 });
-document.getElementById('jn-past-list').addEventListener('focusout',function(e){
+document.getElementById('entry-detail-tags').addEventListener('focusout',function(e){
   if(e.target.dataset.action!=='tag-input')return;
-  if(jnTagSuppressCommit){ jnTagSuppressCommit=false; return; }
-  var item=e.target.closest('.jn-past-item'); if(!item)return;
-  commitPastTagInput(e.target,item.dataset.id);
+  if(entryTagSuppressCommit){ entryTagSuppressCommit=false; return; }
+  commitEntryTagInput(e.target);
 });
-document.getElementById('jn-past-list').addEventListener('input',function(e){
-  if(!e.target.matches('[data-past-body]'))return;
-  var item=e.target.closest('.jn-past-item'); var id=item.dataset.id;
-  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
-  clearTimeout(jnPastSaveTimer);
-  jnPastSaveTimer=setTimeout(function(){
-    entry.body=e.target.value; entry.modifiedAt=Date.now();
-    saveJournalEntries();
-    updateJnPastRowSummary(id); // targeted update — avoids re-rendering the textarea mid-type
-  },500);
+document.getElementById('entry-detail-delete').addEventListener('click',function(){
+  var entry=findJournalEntry(entryDetailDate); if(!entry)return;
+  hubConfirm('Delete this entry?',formatJournalDateLabel(entry.date),'Delete').then(function(ok){
+    if(!ok)return;
+    journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
+    closeEntryDetail();
+    saveJournalEntries().then(function(){ renderJournalToday(); renderJournalFeed(); });
+  });
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
+  if(document.getElementById('entry-sheet-overlay').classList.contains('open')){ closeEntryDetail(); return; }
+  if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
+  if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
 });
 
 // ============================================================================
-// Sign-in → pull → render. This is the ONLY path into the Hub UI — there is no
-// local-only fallback (see the file header comment for why).
+// Sign-in → pull → render
 // ============================================================================
 function onSignedIn(user){
   currentUser=user;
@@ -1275,7 +1374,7 @@ function onSignedIn(user){
       localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
       bumpSyncTimestamp('todos');
     }else{
-      pushMetaToCloud('todos',todos); // local was at least as new — make sure cloud has it too
+      pushMetaToCloud('todos',todos);
     }
     if(Array.isArray(cloudJournal)){
       journalEntries=cloudJournal.map(normalizeJournalEntry);
@@ -1288,13 +1387,13 @@ function onSignedIn(user){
   }).finally(function(){
     renderTodos();
     renderJournalToday();
-    renderJournalPast();
+    renderJournalFeed();
     hideHubLoading();
   });
 }
 
 // ============================================================================
-// Tabs & misc
+// Tabs
 // ============================================================================
 document.getElementById('hub-bottom-nav').addEventListener('click',function(e){
   var btn=e.target.closest('.hub-nav-btn'); if(!btn)return;
