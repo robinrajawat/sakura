@@ -96,14 +96,28 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 
 /* ---------- To-Do rows ---------- */
-.todo-row{display:flex;align-items:flex-start;gap:14px;padding:15px 4px;cursor:pointer}
-.todo-check{width:23px;height:23px;flex-shrink:0;margin-top:2px;border:1.5px solid var(--muted);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s ease,border-color .15s ease,transform .1s cubic-bezier(.34,1.56,.64,1)}
-.todo-check:active{transform:scale(.88)}
-.todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
-.todo-row-main{flex:1;min-width:0;padding-top:1px}
-.todo-row-text{font:450 16px/1.4 inherit;color:var(--fg);letter-spacing:-.01px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.todo-row-text.done{color:var(--hint);text-decoration:line-through}
-.todo-row-meta{margin-top:3px;font-size:12.5px;color:var(--hint)}
+.todo-row{display:flex;align-items:flex-start;gap:14px;padding:16px 4px;cursor:pointer}
+/* ---------- Premium check control ----------
+   A morphing circle rather than a form checkbox: an empty ring with an inset shadow for
+   depth, a gradient-filled, glowing disc on completion, and a checkmark that draws itself
+   stroke-by-stroke instead of just appearing. A short pulse ring on the moment of completion
+   (gated to .just-completed, set only by the direct toggle/swipe handlers so a plain re-
+   render of already-done rows never replays it) gives the "confirmed" feeling premium task
+   apps use instead of a flat tick. */
+.todo-check{width:25px;height:25px;flex-shrink:0;margin-top:2px;border:1.75px solid var(--border);border-radius:50%;background:var(--edit-bg);box-shadow:inset 0 1px 2px rgba(0,0,0,.04);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;position:relative;transition:background .25s ease,border-color .25s ease,box-shadow .3s ease,transform .18s cubic-bezier(.34,1.56,.64,1)}
+.todo-check:hover{border-color:var(--accent)}
+.todo-check:active{transform:scale(.86)}
+.todo-check svg{opacity:0;transform:scale(.4);transition:opacity .15s ease}
+.todo-check.done{border-color:transparent;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 10%));box-shadow:0 3px 9px color-mix(in srgb,var(--accent) 45%, transparent),inset 0 1px 1px rgba(255,255,255,.4);color:#fff;transform:scale(1.05)}
+.todo-check.done svg{opacity:1;transform:scale(1)}
+.todo-check.done svg polyline{stroke-dasharray:22;stroke-dashoffset:22;animation:todo-check-draw .3s cubic-bezier(.65,0,.35,1) .05s forwards}
+@keyframes todo-check-draw{to{stroke-dashoffset:0}}
+.todo-check.just-completed::after{content:'';position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--accent);animation:todo-check-pulse .5s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes todo-check-pulse{from{transform:scale(.55);opacity:.55}to{transform:scale(1.55);opacity:0}}
+.todo-row-main{flex:1;min-width:0;padding-top:2px}
+.todo-row-text{font:440 16px/1.42 inherit;color:var(--fg);letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color .3s ease}
+.todo-row-text.done{color:var(--hint);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--hint) 60%, transparent)}
+.todo-row-meta{margin-top:4px;font:600 11.5px 'Inter',sans-serif;letter-spacing:.01em;color:var(--hint)}
 .todo-row-meta .overdue{color:var(--fc-red)}
 #todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;margin-top:22px}
 #todo-completed-toggle svg{transition:transform .15s ease}
@@ -119,14 +133,15 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 #todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
 
 /* ---------- Reusable bottom-sheet detail view ---------- */
-.hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;padding:0}
+.hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:flex-end;justify-content:center;padding:0}
 .hub-modal-overlay.open{display:flex}
-.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:20px 20px 0 0;box-shadow:0 -8px 28px rgba(0,0,0,.18);animation:hub-modal-up .22s cubic-bezier(.2,.9,.25,1)}
+.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 36px rgba(0,0,0,.22);animation:hub-modal-up .26s cubic-bezier(.16,.9,.24,1)}
 @media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:20px}}
 @keyframes hub-modal-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
-.hub-modal-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer}
-.hub-modal-btn.danger{background:none;border-color:var(--border);color:#c0392b}
-.hub-modal-btn:active{opacity:.7}
+.hub-modal-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:background .15s ease,transform .12s ease}
+.hub-modal-btn.danger{background:none;border-color:color-mix(in srgb,#c0392b 30%, var(--border));color:#c0392b}
+.hub-modal-btn.danger:active{background:color-mix(in srgb,#c0392b 10%, transparent)}
+.hub-modal-btn:active{transform:scale(.98);opacity:.85}
 .hub-modal-title{font:700 15px 'Inter',sans-serif;margin-bottom:6px}
 .hub-modal-body{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px}
 .hub-modal-actions{display:flex;gap:10px}
@@ -145,21 +160,35 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .hub-sheet-close{width:36px;height:36px;border-radius:50%;border:none;background:var(--chip);color:var(--muted);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hub-sheet-close:active{background:var(--hover)}
 .hub-sheet-body{overflow-y:auto;padding:6px 20px 10px;flex:1;-webkit-overflow-scrolling:touch}
-.hub-sheet-foot{padding:12px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0}
+.hub-sheet-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0}
 .hub-sheet-foot .hub-modal-btn{width:100%}
 
-/* Task sheet */
-#task-sheet-overlay .hub-sheet-head{padding-left:14px}
-#task-detail-text{width:100%;border:none;background:none;color:var(--fg);font:600 17px/1.4 inherit;padding:8px 0 14px;resize:none;overflow:hidden}
+/* ---------- Task detail sheet ----------
+   Roomier and quieter than a form: a large, weightless text field carries the task itself,
+   each field group gets real breathing space, and controls read as considered objects
+   (icon + label, soft depth, color-coded state) rather than default form widgets. */
+#task-sheet-overlay .hub-sheet-head{padding-left:16px}
+#task-detail-text{width:100%;border:none;background:none;color:var(--fg);font:650 19px/1.4 'Inter',sans-serif;letter-spacing:-.015em;padding:10px 0 16px;resize:none;overflow:hidden}
 #task-detail-text:focus{outline:none}
-.todo-detail-label{font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);margin:16px 0 8px}
-.todo-detail-label:first-of-type{margin-top:0}
-.todo-status-row{display:flex;gap:6px;flex-wrap:wrap}
-.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:500 12.5px 'Inter',sans-serif;padding:6px 13px;border-radius:999px;cursor:pointer}
-.todo-status-pill.sel{color:var(--accent);border-color:var(--accent)}
-.todo-due-row{display:flex;align-items:center;gap:8px}
-.todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 13px 'Inter',sans-serif;padding:7px 10px}
-.todo-due-clear{border:none;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;text-decoration:underline}
+.todo-detail-label{display:flex;align-items:center;gap:6px;font:700 10.5px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);margin:20px 0 10px}
+.todo-detail-label:first-of-type{margin-top:2px}
+.todo-detail-label svg{color:var(--hint);opacity:.8}
+.todo-status-row{display:flex;gap:7px;flex-wrap:wrap}
+.todo-status-pill{display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 12.5px 'Inter',sans-serif;padding:7px 14px 7px 11px;border-radius:999px;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease,transform .12s ease,box-shadow .18s ease}
+.todo-status-pill:active{transform:scale(.96)}
+.todo-status-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex-shrink:0}
+.todo-status-pill[data-status="waiting"]{color:var(--fc-gray)}
+.todo-status-pill[data-status="progress"]{color:var(--fc-blue)}
+.todo-status-pill[data-status="blocked"]{color:var(--fc-red)}
+.todo-status-pill[data-status="review"]{color:var(--fc-orange)}
+.todo-status-pill.sel{border-color:currentColor;background:color-mix(in srgb,currentColor 12%, var(--bg));box-shadow:0 2px 8px color-mix(in srgb,currentColor 22%, transparent)}
+.todo-status-pill.sel::before{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 20%, transparent)}
+.todo-due-row{display:flex;align-items:center;gap:10px}
+.todo-due-input-wrap{position:relative;flex:1}
+.todo-due-input{width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--fg);font:600 13.5px 'Inter',sans-serif;padding:10px 12px;transition:border-color .18s ease}
+.todo-due-input:focus{outline:none;border-color:var(--accent)}
+.todo-due-clear{border:none;background:var(--chip);color:var(--muted);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:9px 13px;border-radius:11px;flex-shrink:0}
+.todo-due-clear:active{background:var(--hover)}
 
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
 #hub-toast.show{opacity:1;transform:translate(-50%,0)}
@@ -279,16 +308,16 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
     </div>
     <div class="hub-sheet-body">
       <textarea id="task-detail-text" rows="1" placeholder="Task"></textarea>
-      <div class="todo-detail-label">Status</div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>Status</div>
       <div class="todo-status-row" id="task-detail-status"></div>
-      <div class="todo-detail-label">Due date</div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Due date</div>
       <div class="todo-due-row">
-        <input type="date" id="task-detail-due" class="todo-due-input">
+        <div class="todo-due-input-wrap"><input type="date" id="task-detail-due" class="todo-due-input"></div>
         <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
       </div>
     </div>
     <div class="hub-sheet-foot">
-      <button id="task-detail-delete" class="hub-modal-btn danger" type="button">Delete Task</button>
+      <button id="task-detail-delete" class="hub-modal-btn danger" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>Delete Task</button>
     </div>
   </div>
 </div>
@@ -944,6 +973,7 @@ function completeTaskAnimated(id){
   var t=findTodo(id); if(!t)return;
   var checkBtn=row.querySelector('.todo-check');
   checkBtn.classList.add('done'); checkBtn.innerHTML=CHECK_SVG;
+  void checkBtn.offsetWidth; checkBtn.classList.add('just-completed');
   row.querySelector('.todo-row-text').classList.add('done');
   row.style.transition='opacity .28s ease, transform .28s ease';
   row.style.opacity='0'; row.style.transform='scale(.97)';
@@ -1018,6 +1048,7 @@ document.getElementById('task-sheet-overlay').addEventListener('click',function(
 document.getElementById('task-detail-check').addEventListener('click',function(){
   var t=findTodo(taskDetailId); if(!t)return;
   t.done=!t.done; t.completedAt=t.done?Date.now():null;
+  if(t.done){ this.classList.remove('just-completed'); void this.offsetWidth; this.classList.add('just-completed'); }
   saveAndRefreshTask();
 });
 document.getElementById('task-detail-text').addEventListener('input',function(e){ autoGrow(e.target); });
