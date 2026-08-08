@@ -64,18 +64,16 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
 #account-coffee-btn:active{transform:scale(.98)}
 
-/* ---------- Bottom nav ---------- */
-#hub-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:var(--bg);border-top:1px solid var(--border);padding:6px 10px calc(6px + env(safe-area-inset-bottom));transition:transform .15s ease}
-.hub-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 4px;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:10px}
-.hub-nav-btn svg{transition:transform .12s ease}
-.hub-nav-btn.active{color:var(--accent)}
-.hub-nav-btn.active svg{transform:translateY(-1px)}
-.hub-nav-btn span{font:600 10.5px 'Inter',sans-serif}
+/* ---------- Sticky top bar: inline add + account — the only persistent chrome ---------- */
+#todo-bar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+#todo-add-toggle{display:flex;align-items:center;gap:7px;flex:1;min-width:0;border:none;background:none;color:var(--muted);font:500 15px 'Inter',sans-serif;cursor:pointer;padding:6px 2px}
+#todo-add-toggle svg{color:var(--accent);flex-shrink:0}
+#todo-inline-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font-size:15px;padding:6px 2px}
+#todo-inline-input::placeholder{color:var(--hint)}
+#todo-inline-input:focus{outline:none}
 
 /* ---------- Layout ---------- */
-main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
-.hub-view{display:none}
-.hub-view.active{display:block;animation:hub-fade-in .18s ease}
+main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 @keyframes hub-fade-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .hub-empty{color:var(--hint);font-size:13px;text-align:center;padding:44px 20px}
 .hub-empty svg{color:var(--border);margin-bottom:10px}
@@ -115,40 +113,10 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .todo-completed-row{display:flex;align-items:center;gap:12px;padding:11px 14px}
 .todo-completed-row .todo-row-text{-webkit-line-clamp:1}
 
-/* ---------- Compose bar (To-Dos quick add) ---------- */
-#todo-compose{position:fixed;left:0;right:0;bottom:calc(53px + env(safe-area-inset-bottom));z-index:14;display:flex;gap:10px;padding:12px 16px;background:var(--bg);border-top:1px solid var(--border);transition:transform .15s ease}
-#todo-compose-input{flex:1;min-width:0;padding:11px 4px;border:none;border-bottom:1.5px solid var(--border);background:none;color:var(--fg);font-size:15px}
-#todo-compose-input::placeholder{color:var(--hint)}
-#todo-compose-input:focus{outline:none;border-bottom-color:var(--accent)}
-#todo-compose-btn{width:38px;height:38px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#todo-compose-btn:active{transform:scale(.94)}
-
 /* ---------- Greeting header ---------- */
-#todo-greeting{margin:2px 4px 18px}
-#todo-greeting-title{font:700 22px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg)}
+#todo-greeting{margin:26px 4px 22px}
+#todo-greeting-title{font:700 30px 'Inter',sans-serif;letter-spacing:-.02em;color:var(--fg)}
 #todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
-
-/* ---------- Journal: Today card + feed rows ---------- */
-.jn-today-card{border-radius:var(--radius);background:var(--edit-bg);box-shadow:0 2px 10px rgba(0,0,0,.05);padding:16px;cursor:pointer;display:flex;gap:12px;align-items:center}
-.jn-today-card:active{background:var(--hover)}
-.jn-mood-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.jn-mood-badge svg{width:22px;height:22px}
-.jn-mood-badge[data-mood="great"]{background:var(--fc-green);color:#fff}
-.jn-mood-badge[data-mood="good"]{background:var(--fc-blue);color:#fff}
-.jn-mood-badge[data-mood="neutral"]{background:var(--fc-gray);color:#fff}
-.jn-mood-badge[data-mood="low"]{background:var(--fc-orange);color:#fff}
-.jn-mood-badge[data-mood="rough"]{background:var(--fc-red);color:#fff}
-.jn-today-main{flex:1;min-width:0}
-.jn-today-title{font:700 15px 'Inter',sans-serif;display:flex;align-items:center;gap:7px}
-.jn-streak-badge{display:inline-flex;align-items:center;gap:3px;font:700 11px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:999px;padding:2px 8px 2px 5px}
-.jn-today-preview{font:400 12.5px/1.4 'Lora',serif;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.jn-today-chevron{color:var(--hint);flex-shrink:0}
-.jn-feed-row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer}
-.jn-feed-main{flex:1;min-width:0}
-.jn-feed-date{font:600 13px 'Inter',sans-serif}
-.jn-feed-preview{font:400 12.5px/1.4 'Lora',serif;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.jn-feed-tags{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
-.jn-feed-tag{font:600 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:2px 7px}
 
 /* ---------- Reusable bottom-sheet detail view ---------- */
 .hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;padding:0}
@@ -192,33 +160,6 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .todo-due-row{display:flex;align-items:center;gap:8px}
 .todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 13px 'Inter',sans-serif;padding:7px 10px}
 .todo-due-clear{border:none;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;text-decoration:underline}
-
-/* Entry sheet — mood + tags reused between the sheet and nowhere else now (feed cards use
-   the smaller badge/chip variants above), so these are scoped to the sheet only. */
-.jn-moods{display:flex;justify-content:space-between;gap:2px;margin:4px 0 6px}
-.jn-mood{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex:1}
-.jn-mood-dot{width:44px;height:44px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s ease,box-shadow .15s ease}
-.jn-mood-dot svg{width:23px;height:23px}
-.jn-mood span{font:600 9.5px 'Inter',sans-serif;height:12px;opacity:0;transition:opacity .12s ease}
-.jn-mood:active .jn-mood-dot{transform:scale(.92)}
-.jn-mood.sel .jn-mood-dot{transform:scale(1.1)}
-.jn-mood.sel span{opacity:1}
-.jn-mood[data-mood="great"]{color:var(--fc-green)}
-.jn-mood[data-mood="good"]{color:var(--fc-blue)}
-.jn-mood[data-mood="neutral"]{color:var(--fc-gray)}
-.jn-mood[data-mood="low"]{color:var(--fc-orange)}
-.jn-mood[data-mood="rough"]{color:var(--fc-red)}
-.jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg);box-shadow:0 4px 16px -2px currentColor}
-#entry-detail-body{width:100%;min-height:160px;border:none;background:none;color:var(--fg);font:400 16.5px/1.75 'Lora',serif;padding:10px 0;resize:vertical;letter-spacing:.1px}
-#entry-detail-body:focus{outline:none}
-#entry-detail-body::placeholder{color:var(--hint);font-style:italic}
-.jn-tags{display:flex;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--border)}
-.jn-tag{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:4px 6px 4px 10px}
-.jn-tag button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;padding:0 2px;font-size:12px;line-height:1}
-.jn-tag button:active{opacity:1}
-.jn-tag-add{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--muted);background:var(--chip);border:1px dashed var(--border);border-radius:999px;padding:4px 10px;cursor:pointer}
-.jn-tag-input{width:84px;font:600 11px 'Inter',sans-serif;color:var(--fg);background:var(--chip);border:1px solid var(--accent);border-radius:999px;padding:4px 10px}
-#entry-detail-save-hint{font-size:10.5px;color:var(--hint);margin-top:6px;min-height:13px;text-align:right}
 
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
 #hub-toast.show{opacity:1;transform:translate(-50%,0)}
@@ -290,68 +231,43 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 </div>
 
 <div id="hub-app">
-<header>
-  <div id="hub-title-row">
-    <div id="hub-brand"><img src="icon-192.png" alt=""><div id="hub-title">Sakura Hub</div></div>
-    <div id="account-menu-wrap">
-      <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
-      <div id="account-dropdown">
-        <div id="account-dropdown-name"></div>
-        <div id="account-dropdown-email"></div>
-        <div id="account-dropdown-divider"></div>
-        <button id="account-signout-btn" type="button">Sign out</button>
-        <div class="account-item-divider"></div>
-        <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
-        <button class="account-item-btn" id="account-about-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button>
-        <button id="account-coffee-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button>
-      </div>
+<div id="todo-bar">
+  <button id="todo-add-toggle" type="button">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Add a task</span>
+  </button>
+  <input id="todo-inline-input" type="text" placeholder="New task" maxlength="2000" autocomplete="off" style="display:none">
+  <div id="account-menu-wrap">
+    <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
+    <div id="account-dropdown">
+      <div id="account-dropdown-name"></div>
+      <div id="account-dropdown-email"></div>
+      <div id="account-dropdown-divider"></div>
+      <button id="account-signout-btn" type="button">Sign out</button>
+      <div class="account-item-divider"></div>
+      <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
+      <button class="account-item-btn" id="account-about-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button>
+      <button id="account-coffee-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button>
     </div>
   </div>
-</header>
-<main>
-  <section id="view-todos" class="hub-view active">
-    <div id="todo-greeting">
-      <div id="todo-greeting-title"></div>
-      <div id="todo-greeting-sub"></div>
-    </div>
-    <div id="todo-list"></div>
-    <div id="todo-open-empty" class="hub-empty" style="display:none">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      <div class="hub-empty-title">All clear</div>
-      Add a task with the bar below.
-    </div>
-    <button id="todo-completed-toggle" type="button">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-      <span id="todo-completed-count"></span>
-    </button>
-    <div id="todo-completed-list" class="swipe-list"></div>
-  </section>
-  <section id="view-journal" class="hub-view">
-    <div class="hub-section-label">Today</div>
-    <div id="jn-today-card" class="jn-today-card"></div>
-    <div class="hub-section-label">Past entries</div>
-    <div id="jn-feed-list" class="swipe-list"></div>
-    <div id="jn-past-empty" class="hub-empty" style="display:none">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <div class="hub-empty-title">Nothing here yet</div>
-      Your past entries will show up once you write one.
-    </div>
-  </section>
-</main>
-<div id="todo-compose">
-  <input id="todo-compose-input" type="text" placeholder="Add a task…" maxlength="2000" autocomplete="off" />
-  <button id="todo-compose-btn" type="button" aria-label="Add task"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
 </div>
-<nav id="hub-bottom-nav">
-  <button class="hub-nav-btn active" data-view="todos" id="tab-todos" type="button">
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-    <span>To-Dos</span>
+<main>
+  <div id="todo-greeting">
+    <div id="todo-greeting-title"></div>
+    <div id="todo-greeting-sub"></div>
+  </div>
+  <div id="todo-list"></div>
+  <div id="todo-open-empty" class="hub-empty" style="display:none">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <div class="hub-empty-title">All clear</div>
+    Add a task up top.
+  </div>
+  <button id="todo-completed-toggle" type="button">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    <span id="todo-completed-count"></span>
   </button>
-  <button class="hub-nav-btn" data-view="journal" id="tab-journal" type="button">
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    <span>Journal</span>
-  </button>
-</nav>
+  <div id="todo-completed-list" class="swipe-list"></div>
+</main>
 </div>
 
 <div id="task-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Task details">
@@ -373,25 +289,6 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
     </div>
     <div class="hub-sheet-foot">
       <button id="task-detail-delete" class="hub-modal-btn danger" type="button">Delete Task</button>
-    </div>
-  </div>
-</div>
-
-<div id="entry-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Journal entry">
-  <div class="hub-modal hub-sheet">
-    <div class="hub-sheet-handle"></div>
-    <div class="hub-sheet-head">
-      <div id="entry-detail-date" class="hub-sheet-date-title"></div>
-      <button id="entry-sheet-close" class="hub-sheet-close" type="button" aria-label="Close">×</button>
-    </div>
-    <div class="hub-sheet-body">
-      <div class="jn-moods" id="entry-detail-moods"></div>
-      <textarea id="entry-detail-body" placeholder="Write about this day…"></textarea>
-      <div class="jn-tags" id="entry-detail-tags"></div>
-      <div id="entry-detail-save-hint"></div>
-    </div>
-    <div class="hub-sheet-foot">
-      <button id="entry-detail-delete" class="hub-modal-btn danger" type="button">Delete Entry</button>
     </div>
   </div>
 </div>
@@ -583,25 +480,6 @@ function nudgeFirstRowOnce(){
       firstRow._nudgeTimers.push(setTimeout(function(){ content.style.transition=''; },420));
     },420));
   },500));
-}
-// Fixed bottom bars (the compose bar, the nav) are a known trouble spot on mobile web:
-// position:fixed is relative to the layout viewport, but the on-screen keyboard shrinks
-// the *visual* viewport, and on iOS Safari especially the two can drift apart — a fixed
-// bar can end up hidden behind the keyboard, or floating above content that's no longer
-// there. The VisualViewport API reports the actual visible area, so nudging both bars up
-// by exactly the gap keeps them pinned just above the keyboard instead of guessing at it.
-if(window.visualViewport){
-  var _kbBars=['todo-compose','hub-bottom-nav'];
-  function adjustForKeyboard(){
-    var vv=window.visualViewport;
-    var offset=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
-    _kbBars.forEach(function(id){
-      var el=document.getElementById(id);
-      if(el)el.style.transform=offset>2?'translateY(-'+offset+'px)':'';
-    });
-  }
-  window.visualViewport.addEventListener('resize',adjustForKeyboard);
-  window.visualViewport.addEventListener('scroll',adjustForKeyboard);
 }
 
 // ============================================================================
@@ -1031,16 +909,31 @@ function renderTodos(){
   }).join('');
   renderTodoGreeting(open.length,done.length);
 }
-document.getElementById('todo-compose-btn').addEventListener('click',addTodoFromInput);
-document.getElementById('todo-compose-input').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); addTodoFromInput(); } });
-function addTodoFromInput(){
-  var input=document.getElementById('todo-compose-input');
-  var text=input.value.trim();
-  if(!text)return;
-  todos.push(newTodo(text));
-  input.value='';
-  saveTodos(); renderTodos();
+function showInlineAdd(){
+  document.getElementById('todo-add-toggle').style.display='none';
+  var input=document.getElementById('todo-inline-input');
+  input.style.display='block';
+  input.focus();
 }
+function closeInlineAdd(){
+  document.getElementById('todo-inline-input').style.display='none';
+  document.getElementById('todo-add-toggle').style.display='flex';
+}
+function commitInlineAdd(){
+  var input=document.getElementById('todo-inline-input');
+  var text=input.value.trim();
+  if(text){ todos.push(newTodo(text)); saveTodos(); renderTodos(); }
+  input.value='';
+}
+document.getElementById('todo-add-toggle').addEventListener('click',showInlineAdd);
+document.getElementById('todo-inline-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){ e.preventDefault(); commitInlineAdd(); this.focus(); }
+  else if(e.key==='Escape'){ this.value=''; this.blur(); }
+});
+document.getElementById('todo-inline-input').addEventListener('blur',function(){
+  commitInlineAdd();
+  closeInlineAdd();
+});
 document.getElementById('todo-completed-toggle').addEventListener('click',function(){
   todoCompletedOpen=!todoCompletedOpen; renderTodos();
 });
@@ -1164,265 +1057,9 @@ document.getElementById('task-detail-delete').addEventListener('click',function(
   });
 });
 
-// ============================================================================
-// Journal
-// ============================================================================
-var JOURNAL_MOODS=['great','good','neutral','low','rough'];
-var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
-var JOURNAL_MOOD_ICON={
-  great:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7 13.5c1 4 3.5 6 5 6s4-2 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  good:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7.5 14.5c1 2.3 2.7 3.5 4.5 3.5s3.5-1.2 4.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  neutral:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M8 15.5h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  low:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7.5 17.5c1-2.3 2.7-3.5 4.5-3.5s3.5 1.2 4.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  rough:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7 19c1-4 3.5-6 5-6s4 2 5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-};
-var JOURNAL_NEUTRAL_ICON='<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.1" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.1" fill="currentColor"/><path d="M9 15.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-var journalEntries=[];
-
-function normalizeJournalEntry(j){
-  var now=Date.now();
-  return {
-    id:(j&&typeof j.id==='string')?j.id:jnUid(),
-    date:(j&&typeof j.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(j.date))?j.date:todayStr(),
-    mood:(j&&JOURNAL_MOODS.indexOf(j.mood)!==-1)?j.mood:'',
-    tags:(j&&Array.isArray(j.tags))?j.tags:[],
-    body:(j&&typeof j.body==='string')?j.body:'',
-    createdAt:(j&&isFinite(j.createdAt))?j.createdAt:now,
-    modifiedAt:(j&&isFinite(j.modifiedAt))?j.modifiedAt:now
-  };
-}
-function loadJournalLocal(){
-  return idbGet(JOURNAL_KEY).then(function(idbEntries){
-    if(Array.isArray(idbEntries)){ journalEntries=idbEntries.map(normalizeJournalEntry); return; }
-    try{
-      var raw=localStorage.getItem(JOURNAL_KEY);
-      if(raw){
-        var data=JSON.parse(raw);
-        if(Array.isArray(data)){
-          journalEntries=data.map(normalizeJournalEntry);
-          idbSet(JOURNAL_KEY,journalEntries);
-          localStorage.removeItem(JOURNAL_KEY);
-        }
-      }
-    }catch(e){}
-  }).catch(function(){ journalEntries=[]; });
-}
-function saveJournalEntries(){
-  return idbSet(JOURNAL_KEY,journalEntries).then(function(ok){
-    if(ok){ bumpSyncTimestamp('journal'); pushMetaToCloud('journal',journalEntries); }
-    else{ showToast('Storage full — this change was not saved.'); }
-  });
-}
-function findJournalEntry(date){ return journalEntries.find(function(j){return j.date===date}); }
-function formatJournalDateLabel(dateStr){
-  var d=new Date(dateStr+'T00:00:00');
-  return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
-}
-function pruneIfEmpty(entry){
-  if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
-    journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
-  }
-}
-function renderTagsHtml(tags,addingActive){
-  var chips=(tags||[]).map(function(tag){
-    return '<span class="jn-tag">'+esc(tag)+'<button type="button" data-action="tag-remove" data-tag="'+esc(tag)+'" aria-label="Remove tag">×</button></span>';
-  }).join('');
-  var adder=addingActive
-    ? '<input type="text" class="jn-tag-input" data-action="tag-input" maxlength="40" placeholder="tag…">'
-    : '<button type="button" class="jn-tag-add" data-action="tag-add-start">+ Tag</button>';
-  return chips+adder;
-}
-var JOURNAL_FLAME_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 2.2c1.1 3.4-1.8 4.9-2.9 7.2-.9 1.9-.5 3.7.7 4.9-1.6-.4-2.8-1.8-2.8-3.5 0-.5.1-1 .3-1.4-1.6 1.4-2.6 3.5-2.6 5.8 0 4 3.2 6.8 7 6.8s7-2.9 7-6.8c0-4.4-2.9-6.7-6.7-13z"/></svg>';
-// Counts backward from today (or yesterday, if today has nothing yet — a streak isn't
-// broken until the day actually ends) through consecutive days with a real entry (some
-// mood or body text, not just an empty placeholder date). Mirrors the "keep it alive"
-// convention every streak-based app uses: writing today doesn't require having also
-// written in the last hour, just on each day in the run.
-function computeJournalStreak(){
-  var dates={};
-  journalEntries.forEach(function(j){ if(j.body.trim()||j.mood)dates[j.date]=true; });
-  var d=new Date();
-  if(!dates[todayStr()])d.setDate(d.getDate()-1);
-  var streak=0;
-  while(true){
-    var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    if(!dates[ds])break;
-    streak++; d.setDate(d.getDate()-1);
-  }
-  return streak;
-}
-function renderJournalToday(){
-  var date=todayStr();
-  var entry=findJournalEntry(date);
-  var card=document.getElementById('jn-today-card');
-  var mood=entry?entry.mood:'';
-  var preview=entry&&entry.body.trim()?entry.body.replace(/\s+/g,' ').trim().slice(0,90):'Tap to write today\u2019s entry';
-  var streak=computeJournalStreak();
-  var streakBadge=streak>=2?'<span class="jn-streak-badge">'+JOURNAL_FLAME_SVG+' '+streak+'</span>':'';
-  card.innerHTML=
-    '<div class="jn-mood-badge" data-mood="'+esc(mood)+'">'+(mood?JOURNAL_MOOD_ICON[mood]:JOURNAL_NEUTRAL_ICON)+'</div>'
-    +'<div class="jn-today-main"><div class="jn-today-title">Today'+streakBadge+'</div><div class="jn-today-preview">'+esc(preview)+'</div></div>'
-    +'<svg class="jn-today-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-}
-document.getElementById('jn-today-card').addEventListener('click',function(){ openEntryDetail(todayStr()); });
-function journalFeedRowInnerHtml(j){
-  var preview=(j.body||'').replace(/\s+/g,' ').trim().slice(0,90)||'(no notes)';
-  var tags=(j.tags||[]).slice(0,3).map(function(t){return '<span class="jn-feed-tag">'+esc(t)+'</span>';}).join('');
-  return '<div class="jn-feed-row">'
-    +'<div class="jn-mood-badge" data-mood="'+esc(j.mood)+'">'+(j.mood?JOURNAL_MOOD_ICON[j.mood]:JOURNAL_NEUTRAL_ICON)+'</div>'
-    +'<div class="jn-feed-main"><div class="jn-feed-date">'+esc(formatJournalDateLabel(j.date))+'</div>'
-    +'<div class="jn-feed-preview">'+esc(preview)+'</div>'
-    +(tags?'<div class="jn-feed-tags">'+tags+'</div>':'')
-    +'</div>'
-    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--hint);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>'
-    +'</div>';
-}
-function renderJournalFeed(){
-  var list=document.getElementById('jn-feed-list');
-  var empty=document.getElementById('jn-past-empty');
-  var today=todayStr();
-  var past=journalEntries.filter(function(j){return j.date!==today}).sort(function(a,b){return b.date.localeCompare(a.date)});
-  empty.style.display=past.length?'none':'';
-  list.style.display=past.length?'':'none';
-  list.innerHTML=past.map(function(j){ return swipeRowShell(j.id,journalFeedRowInnerHtml(j)); }).join('');
-}
-initSwipeList(document.getElementById('jn-feed-list'),{
-  onTap:function(id){
-    var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
-    openEntryDetail(entry.date);
-  },
-  onSwipeLeft:function(id){
-    var idx=journalEntries.findIndex(function(j){return j.id===id}); if(idx===-1)return;
-    var removed=journalEntries[idx];
-    journalEntries.splice(idx,1);
-    saveJournalEntries().then(renderJournalFeed);
-    showUndoToast('Entry deleted',function(){
-      journalEntries.splice(Math.min(idx,journalEntries.length),0,removed);
-      saveJournalEntries().then(renderJournalFeed);
-    });
-  }
-});
-
-// ---------- Entry detail sheet ----------
-var entryDetailDate=null;
-function openEntryDetail(date){
-  entryDetailDate=date;
-  renderEntryDetail();
-  document.getElementById('entry-detail-save-hint').textContent='';
-  document.getElementById('entry-sheet-overlay').classList.add('open');
-}
-function closeEntryDetail(){
-  document.getElementById('entry-sheet-overlay').classList.remove('open');
-  entryDetailDate=null;
-}
-function currentEntryDraft(){
-  return findJournalEntry(entryDetailDate) || {mood:'',tags:[],body:''};
-}
-function renderEntryDetail(){
-  var date=entryDetailDate;
-  var entry=currentEntryDraft();
-  var isToday=date===todayStr();
-  document.getElementById('entry-detail-date').textContent=formatJournalDateLabel(date)+(isToday?' · Today':'');
-  document.getElementById('entry-detail-moods').innerHTML=JOURNAL_MOODS.map(function(m){
-    return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
-  }).join('');
-  var bodyEl=document.getElementById('entry-detail-body');
-  if(document.activeElement!==bodyEl)bodyEl.value=entry.body;
-  document.getElementById('entry-detail-tags').innerHTML=renderTagsHtml(entry.tags,entryAddingTag);
-  if(entryAddingTag){
-    var input=document.querySelector('#entry-detail-tags [data-action="tag-input"]');
-    if(input)input.focus();
-  }
-  document.getElementById('entry-detail-delete').style.display=findJournalEntry(date)?'':'none';
-}
-function getOrCreateEntryForDetail(){
-  var entry=findJournalEntry(entryDetailDate);
-  if(!entry){ entry=normalizeJournalEntry({date:entryDetailDate}); journalEntries.push(entry); }
-  return entry;
-}
-document.getElementById('entry-sheet-close').addEventListener('click',closeEntryDetail);
-document.getElementById('entry-sheet-overlay').addEventListener('click',function(e){
-  if(e.target.id==='entry-sheet-overlay')closeEntryDetail();
-});
-document.getElementById('entry-detail-moods').addEventListener('click',function(e){
-  var btn=e.target.closest('.jn-mood'); if(!btn)return;
-  var mood=btn.dataset.mood;
-  var entry=getOrCreateEntryForDetail();
-  entry.mood = entry.mood===mood ? '' : mood;
-  entry.modifiedAt=Date.now();
-  pruneIfEmpty(entry);
-  saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
-});
-var entryBodySaveTimer=null;
-document.getElementById('entry-detail-body').addEventListener('input',function(e){
-  clearTimeout(entryBodySaveTimer);
-  var hint=document.getElementById('entry-detail-save-hint');
-  hint.textContent='Saving…';
-  var val=e.target.value;
-  entryBodySaveTimer=setTimeout(function(){
-    if(!val.trim() && !findJournalEntry(entryDetailDate)){ hint.textContent=''; return; }
-    var entry=getOrCreateEntryForDetail();
-    entry.body=val; entry.modifiedAt=Date.now();
-    pruneIfEmpty(entry);
-    saveJournalEntries().then(function(){
-      hint.textContent='Saved';
-      document.getElementById('entry-detail-delete').style.display=findJournalEntry(entryDetailDate)?'':'none';
-      renderJournalToday(); renderJournalFeed();
-    });
-  },500);
-});
-var entryAddingTag=false;
-var entryTagSuppressCommit=false;
-document.getElementById('entry-detail-tags').addEventListener('click',function(e){
-  var btn=e.target.closest('[data-action]'); if(!btn)return;
-  if(btn.dataset.action==='tag-add-start'){
-    entryAddingTag=true;
-    renderEntryDetail();
-  }else if(btn.dataset.action==='tag-remove'){
-    var entry=findJournalEntry(entryDetailDate); if(!entry)return;
-    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==btn.dataset.tag});
-    entry.modifiedAt=Date.now();
-    pruneIfEmpty(entry);
-    saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
-  }
-});
-function commitEntryTagInput(input){
-  entryTagSuppressCommit=true;
-  entryAddingTag=false;
-  var val=input.value.trim();
-  if(!val){ renderEntryDetail(); return; }
-  var entry=getOrCreateEntryForDetail();
-  if(!Array.isArray(entry.tags))entry.tags=[];
-  if(entry.tags.indexOf(val)===-1)entry.tags.push(val);
-  entry.modifiedAt=Date.now();
-  saveJournalEntries().then(function(){ renderEntryDetail(); renderJournalToday(); renderJournalFeed(); });
-}
-document.getElementById('entry-detail-tags').addEventListener('keydown',function(e){
-  if(e.target.dataset.action!=='tag-input')return;
-  if(e.key==='Enter'){ e.preventDefault(); commitEntryTagInput(e.target); }
-  else if(e.key==='Escape'){ entryTagSuppressCommit=true; entryAddingTag=false; renderEntryDetail(); }
-});
-document.getElementById('entry-detail-tags').addEventListener('focusout',function(e){
-  if(e.target.dataset.action!=='tag-input')return;
-  if(entryTagSuppressCommit){ entryTagSuppressCommit=false; return; }
-  commitEntryTagInput(e.target);
-});
-document.getElementById('entry-detail-delete').addEventListener('click',function(){
-  var entry=findJournalEntry(entryDetailDate); if(!entry)return;
-  var idx=journalEntries.findIndex(function(j){return j.id===entry.id}); if(idx===-1)return;
-  var removed=journalEntries[idx];
-  journalEntries.splice(idx,1);
-  closeEntryDetail();
-  saveJournalEntries().then(function(){ renderJournalToday(); renderJournalFeed(); });
-  showUndoToast('Entry deleted',function(){
-    journalEntries.splice(Math.min(idx,journalEntries.length),0,removed);
-    saveJournalEntries().then(function(){ renderJournalToday(); renderJournalFeed(); });
-  });
-});
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
   if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
-  if(document.getElementById('entry-sheet-overlay').classList.contains('open')){ closeEntryDetail(); return; }
   if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
   if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
 });
@@ -1438,10 +1075,7 @@ function onSignedIn(user){
   setAuthStatus('');
   renderAccountButton(user);
   loadTodosLocal();
-  return loadJournalLocal().then(function(){
-    return Promise.all([pullMetaFromCloud('todos'),pullMetaFromCloud('journal')]);
-  }).then(function(results){
-    var cloudTodos=results[0], cloudJournal=results[1];
+  return pullMetaFromCloud('todos').then(function(cloudTodos){
     if(Array.isArray(cloudTodos)){
       todos=cloudTodos;
       localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
@@ -1449,33 +1083,14 @@ function onSignedIn(user){
     }else{
       pushMetaToCloud('todos',todos);
     }
-    if(Array.isArray(cloudJournal)){
-      journalEntries=cloudJournal.map(normalizeJournalEntry);
-      return idbSet(JOURNAL_KEY,journalEntries).then(function(){ bumpSyncTimestamp('journal'); });
-    }else{
-      pushMetaToCloud('journal',journalEntries);
-    }
   }).catch(function(e){
     console.warn('[sakura hub] cloud pull failed, showing local cache instead:',e);
   }).finally(function(){
     renderTodos();
-    renderJournalToday();
-    renderJournalFeed();
     hideHubLoading();
     nudgeFirstRowOnce();
   });
 }
-
-// ============================================================================
-// Tabs
-// ============================================================================
-document.getElementById('hub-bottom-nav').addEventListener('click',function(e){
-  var btn=e.target.closest('.hub-nav-btn'); if(!btn)return;
-  document.querySelectorAll('.hub-nav-btn').forEach(function(b){b.classList.toggle('active',b===btn)});
-  var view=btn.dataset.view;
-  document.querySelectorAll('.hub-view').forEach(function(v){v.classList.toggle('active',v.id==='view-'+view)});
-  document.getElementById('todo-compose').style.display=(view==='todos')?'flex':'none';
-});
 
 boot();
 </script>
