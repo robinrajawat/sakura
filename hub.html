@@ -46,9 +46,9 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
 #hub-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 #hub-brand{display:flex;align-items:center;gap:8px}
-#hub-brand img{width:26px;height:26px;border-radius:7px;display:block;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+#hub-brand img{width:26px;height:26px;border-radius:7px;display:block}
 #hub-title{font:700 16px/1 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
-#account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
 #account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:250px;background:var(--edit-bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
@@ -65,7 +65,7 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #account-coffee-btn:active{transform:scale(.98)}
 
 /* ---------- Bottom nav ---------- */
-#hub-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:var(--edit-bg);border-top:1px solid var(--border);padding:6px 10px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.05);transition:transform .15s ease}
+#hub-bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;background:var(--bg);border-top:1px solid var(--border);padding:6px 10px calc(6px + env(safe-area-inset-bottom));transition:transform .15s ease}
 .hub-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 4px;border:none;background:none;color:var(--hint);cursor:pointer;border-radius:10px}
 .hub-nav-btn svg{transition:transform .12s ease}
 .hub-nav-btn.active{color:var(--accent)}
@@ -83,29 +83,29 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .hub-section-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:22px 4px 10px}
 .hub-section-label:first-child{margin-top:2px}
 
-/* ---------- Swipeable list rows (To-Dos + past Journal entries) ---------- */
-.swipe-list{border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+/* ---------- Swipeable list rows (To-Dos + past Journal entries) ----------
+   Flat, on the page background — a row list, not a stack of shadowed cards.
+   The only elevation in the whole screen is the swipe reveal itself. ---------- */
+.swipe-list{}
 .swipe-row{position:relative;overflow:hidden}
 .swipe-row + .swipe-row{border-top:1px solid var(--border)}
 .swipe-bg{position:absolute;inset:0;display:flex;align-items:center}
 .swipe-bg-start{justify-content:flex-start;background:var(--fc-green)}
 .swipe-bg-end{justify-content:flex-end;background:#c0392b}
 .swipe-action-btn{width:76px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.swipe-content{position:relative;background:var(--edit-bg);transform:translateX(0);touch-action:pan-y;user-select:none}
+.swipe-content{position:relative;background:var(--bg);transform:translateX(0);touch-action:pan-y;user-select:none}
 .swipe-row.dragging .swipe-content{transition:none}
 .swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
-.swipe-row.open-start .swipe-content,.swipe-row.open-end .swipe-content{box-shadow:0 0 12px -4px rgba(0,0,0,.15)}
 
 /* ---------- To-Do rows ---------- */
-.todo-row{display:flex;align-items:flex-start;gap:12px;padding:14px 14px;cursor:pointer}
-.todo-check{width:24px;height:24px;flex-shrink:0;margin-top:1px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
-.todo-check:active{transform:scale(.9)}
+.todo-row{display:flex;align-items:flex-start;gap:14px;padding:15px 4px;cursor:pointer}
+.todo-check{width:23px;height:23px;flex-shrink:0;margin-top:2px;border:1.5px solid var(--muted);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s ease,border-color .15s ease,transform .1s cubic-bezier(.34,1.56,.64,1)}
+.todo-check:active{transform:scale(.88)}
 .todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
 .todo-row-main{flex:1;min-width:0;padding-top:1px}
-.todo-row-text{font:400 14.5px/1.4 inherit;color:var(--fg);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.todo-row-text{font:450 16px/1.4 inherit;color:var(--fg);letter-spacing:-.01px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .todo-row-text.done{color:var(--hint);text-decoration:line-through}
-.todo-row-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px;font-size:11px;font-weight:600;color:var(--muted)}
-.todo-row-meta .dot{opacity:.5}
+.todo-row-meta{margin-top:3px;font-size:12.5px;color:var(--hint)}
 .todo-row-meta .overdue{color:var(--fc-red)}
 #todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;margin-top:22px}
 #todo-completed-toggle svg{transition:transform .15s ease}
@@ -116,10 +116,11 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .todo-completed-row .todo-row-text{-webkit-line-clamp:1}
 
 /* ---------- Compose bar (To-Dos quick add) ---------- */
-#todo-compose{position:fixed;left:0;right:0;bottom:calc(52px + env(safe-area-inset-bottom));z-index:14;display:flex;gap:8px;padding:10px 14px;background:linear-gradient(to top,var(--bg) 60%,transparent);transition:transform .15s ease}
-#todo-compose-input{flex:1;min-width:0;padding:12px 16px;border:1px solid var(--border);border-radius:999px;background:var(--edit-bg);color:var(--fg);font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+#todo-compose{position:fixed;left:0;right:0;bottom:calc(53px + env(safe-area-inset-bottom));z-index:14;display:flex;gap:10px;padding:12px 16px;background:var(--bg);border-top:1px solid var(--border);transition:transform .15s ease}
+#todo-compose-input{flex:1;min-width:0;padding:11px 4px;border:none;border-bottom:1.5px solid var(--border);background:none;color:var(--fg);font-size:15px}
 #todo-compose-input::placeholder{color:var(--hint)}
-#todo-compose-btn{width:44px;height:44px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(194,85,61,.35)}
+#todo-compose-input:focus{outline:none;border-bottom-color:var(--accent)}
+#todo-compose-btn{width:38px;height:38px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
 #todo-compose-btn:active{transform:scale(.94)}
 
 /* ---------- Greeting header ---------- */
@@ -186,12 +187,8 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .todo-detail-label{font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);margin:16px 0 8px}
 .todo-detail-label:first-of-type{margin-top:0}
 .todo-status-row{display:flex;gap:6px;flex-wrap:wrap}
-.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:600 11.5px 'Inter',sans-serif;padding:6px 12px;border-radius:999px;cursor:pointer}
-.todo-status-pill.sel{color:#fff;border-color:transparent}
-.todo-status-pill[data-status="waiting"].sel{background:var(--fc-gray)}
-.todo-status-pill[data-status="progress"].sel{background:var(--fc-blue)}
-.todo-status-pill[data-status="blocked"].sel{background:var(--fc-red)}
-.todo-status-pill[data-status="review"].sel{background:var(--fc-orange)}
+.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:500 12.5px 'Inter',sans-serif;padding:6px 13px;border-radius:999px;cursor:pointer}
+.todo-status-pill.sel{color:var(--accent);border-color:var(--accent)}
 .todo-due-row{display:flex;align-items:center;gap:8px}
 .todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 13px 'Inter',sans-serif;padding:7px 10px}
 .todo-due-clear{border:none;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;text-decoration:underline}
