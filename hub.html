@@ -467,11 +467,11 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 </div>
 </div>
 <main>
-  <div id="todos-view">
   <div id="todo-greeting">
     <div id="todo-greeting-title"></div>
     <div id="todo-greeting-sub"></div>
   </div>
+  <div id="todos-view">
   <div id="todo-list"></div>
   <div id="todo-open-empty" class="hub-empty" style="display:none">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -1185,6 +1185,7 @@ function switchHubView(view){
   document.getElementById('hub-tab-journal').classList.toggle('sel',view==='journal');
   document.getElementById('todos-view').style.display=view==='todos'?'':'none';
   document.getElementById('journal-view').style.display=view==='journal'?'':'none';
+  renderGreeting();
   var fab=document.getElementById('todo-fab');
   if(view==='journal'){
     fab.innerHTML=FAB_PENCIL_SVG;
@@ -1225,7 +1226,7 @@ function firstNameOf(user){
   if(!user||!user.displayName)return '';
   return user.displayName.trim().split(/\s+/)[0]||'';
 }
-function renderTodoGreeting(openCount,completedCount){
+function renderGreeting(){
   var hour=new Date().getHours();
   var name=firstNameOf(currentUser);
   var greeting;
@@ -1234,10 +1235,17 @@ function renderTodoGreeting(openCount,completedCount){
   else if(hour<18)greeting = name?('Good afternoon, '+name):'Good afternoon';
   else greeting = name?('Good evening, '+name):'Good evening';
   document.getElementById('todo-greeting-title').textContent=greeting;
+  var subEl=document.getElementById('todo-greeting-sub');
+  if(currentHubView==='journal'){
+    subEl.textContent='';
+    return;
+  }
+  var openCount=todos.filter(function(t){return !t.done;}).length;
+  var completedCount=todos.filter(function(t){return t.done;}).length;
   var sub;
   if(openCount===0)sub=completedCount?'Everything\u2019s done \u2014 nice work.':'Nothing on your list yet.';
   else sub=openCount+' task'+(openCount===1?'':'s')+' open';
-  document.getElementById('todo-greeting-sub').textContent=sub;
+  subEl.textContent=sub;
 }
 function todoRowInnerHtml(t,dateDisplay,isOverdue){
   var metaParts=[];
@@ -1319,7 +1327,7 @@ function renderTodos(){
       +'<div class="todo-row-text done" style="flex:1">'+esc(t.text)+'</div>'
       +'</div>';
   }).join('');
-  renderTodoGreeting(open.length,done.length);
+  renderGreeting();
 }
 // ---------- Add-task FAB + quick-add bar ----------
 // Kept above the on-screen keyboard via visualViewport: iOS/Android keyboards overlay the
