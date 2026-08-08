@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Sakura Hub</title>
 <meta name="theme-color" content="#c2553d">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!--
   Sakura Hub — a separate, purpose-built mobile page. NOT a cut-down copy of index.html's
   code; a from-scratch, small implementation.
@@ -33,27 +38,53 @@
 *{box-sizing:border-box}
 body.theme-light{color-scheme:light;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--hover:#f1f0ec;--sel:#eae8e2;--edit-bg:#ffffff;--chip:#eceae4;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-gray:#6f6b63}
 body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,sans-serif;-webkit-tap-highlight-color:transparent;padding-bottom:env(safe-area-inset-bottom)}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 14px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;padding-bottom:env(safe-area-inset-bottom)}
 header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top)) 14px 0}
 #hub-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-#hub-title{font:700 15px/1 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
-#hub-title span{color:var(--accent)}
-#hub-header-actions{display:flex;align-items:center;gap:8px}
-#hub-header-actions a,#hub-header-actions button{font-size:11.5px;color:var(--muted);text-decoration:none;white-space:nowrap;padding:5px 8px;border:1px solid var(--border);border-radius:999px;background:none;cursor:pointer;font-family:inherit}
-#hub-header-actions button:active,#hub-header-actions a:active{background:var(--hover)}
+#hub-brand{display:flex;align-items:center;gap:8px}
+#hub-brand img{width:24px;height:24px;border-radius:7px;display:block}
+#hub-title{font:700 15px/1 'Inter',sans-serif;letter-spacing:.03em;color:var(--fg)}
+#account-btn{width:32px;height:32px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
+#account-btn img{width:100%;height:100%;object-fit:cover;display:block}
+#account-menu-wrap{position:relative}
+#account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:220px;background:var(--edit-bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
+#account-dropdown.open{display:block}
+#account-dropdown-name{font:600 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#account-dropdown-email{font-size:11.5px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#account-dropdown-divider{height:1px;background:var(--border);margin:10px 0}
+#account-signout-btn{width:100%;text-align:left;background:none;border:none;color:#c0392b;font:500 13px 'Inter',sans-serif;padding:7px 2px;cursor:pointer;border-radius:6px}
+#account-signout-btn:active{background:var(--hover)}
 #hub-tabs{display:flex;gap:4px;padding-bottom:8px}
 .hub-tab{flex:1;text-align:center;padding:9px 4px;border-radius:8px 8px 0 0;font:600 13px 'Inter',sans-serif;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent}
 .hub-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 main{padding:14px;max-width:640px;margin:0 auto}
 .hub-view{display:none}
-.hub-view.active{display:block}
+.hub-view.active{display:block;animation:hub-fade-in .18s ease}
+@keyframes hub-fade-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .hub-empty{color:var(--hint);font-size:13px;text-align:center;padding:28px 10px}
+
+/* Reusable modal + toast, replacing native confirm()/prompt()/alert() — those look like the
+   browser interrupted you; these look like part of the app. */
+.hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center;padding:0}
+.hub-modal-overlay.open{display:flex}
+.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:16px 16px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 28px rgba(0,0,0,.18);animation:hub-modal-up .2s ease}
+@media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:16px}}
+@keyframes hub-modal-up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.hub-modal-title{font:700 15px 'Inter',sans-serif;margin-bottom:6px}
+.hub-modal-body{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px}
+.hub-modal-actions{display:flex;gap:10px}
+.hub-modal-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer}
+.hub-modal-btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
+.hub-modal-btn:active{opacity:.75}
+#hub-toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+#hub-toast.show{opacity:1;transform:translate(-50%,0)}
 #hub-app{display:none}
 
 /* Auth gate */
 #auth-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 #auth-card{width:100%;max-width:360px;text-align:center}
-#auth-logo{font-size:38px;margin-bottom:4px}
+#auth-logo{margin-bottom:12px}
+#auth-logo img{width:52px;height:52px;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
 #auth-title{font:700 18px 'Inter',sans-serif;margin-bottom:6px}
 #auth-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
 #auth-google-btn{width:100%;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--edit-bg);color:var(--fg);font:500 13.5px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
@@ -100,7 +131,12 @@ main{padding:14px;max-width:640px;margin:0 auto}
 .jn-mood[data-mood="rough"].sel{background:var(--fc-red)}
 .jn-body{width:100%;min-height:90px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 13.5px/1.6 inherit;padding:9px 11px;resize:vertical}
 .jn-save-hint{font-size:10.5px;color:var(--hint);margin-top:6px;min-height:13px}
-.jn-past-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer}
+.jn-past-item{border-bottom:1px solid var(--border)}
+.jn-past-row{display:flex;align-items:center;gap:10px;padding:10px 4px;cursor:pointer}
+.jn-past-chevron{color:var(--hint);flex-shrink:0;transition:transform .15s ease}
+.jn-past-item.open .jn-past-chevron{transform:rotate(90deg)}
+.jn-past-edit{display:none;padding:2px 4px 14px 22px}
+.jn-past-item.open .jn-past-edit{display:block;animation:hub-fade-in .16s ease}
 .jn-past-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .jn-past-dot[data-mood="great"]{background:var(--fc-green)}
 .jn-past-dot[data-mood="good"]{background:var(--fc-blue)}
@@ -118,7 +154,7 @@ main{padding:14px;max-width:640px;margin:0 auto}
 
 <div id="auth-gate">
   <div id="auth-card">
-    <div id="auth-logo">🌸</div>
+    <div id="auth-logo"><img src="icon-192.png" alt="Sakura" width="52" height="52"></div>
     <div id="auth-title">Sign in to Sakura Hub</div>
     <div id="auth-sub">This page needs your account to find your To-Dos and Journal — they live on your other device until you sign in here too.</div>
     <button id="auth-google-btn" type="button">
@@ -144,10 +180,15 @@ main{padding:14px;max-width:640px;margin:0 auto}
 <div id="hub-app">
 <header>
   <div id="hub-title-row">
-    <div id="hub-title">🌸 <span>SAKURA</span> Hub</div>
-    <div id="hub-header-actions">
-      <button id="sign-out-btn" type="button">Sign out</button>
-      <a href="#" id="open-full-app">Open full app →</a>
+    <div id="hub-brand"><img src="icon-192.png" alt="" width="24" height="24"><div id="hub-title">Sakura Hub</div></div>
+    <div id="account-menu-wrap">
+      <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
+      <div id="account-dropdown">
+        <div id="account-dropdown-name"></div>
+        <div id="account-dropdown-email"></div>
+        <div id="account-dropdown-divider"></div>
+        <button id="account-signout-btn" type="button">Sign out</button>
+      </div>
     </div>
   </div>
   <div id="hub-tabs">
@@ -179,6 +220,18 @@ main{padding:14px;max-width:640px;margin:0 auto}
 </main>
 </div>
 
+<div id="hub-confirm-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+  <div class="hub-modal">
+    <div class="hub-modal-title" id="hub-confirm-title"></div>
+    <div class="hub-modal-body" id="hub-confirm-body"></div>
+    <div class="hub-modal-actions">
+      <button class="hub-modal-btn" id="hub-confirm-cancel" type="button">Cancel</button>
+      <button class="hub-modal-btn danger" id="hub-confirm-ok" type="button">Delete</button>
+    </div>
+  </div>
+</div>
+<div id="hub-toast"></div>
+
 <script>
 // ============================================================================
 // Theme — read the same preference index.html saves (Settings → Appearance),
@@ -200,6 +253,37 @@ main{padding:14px;max-width:640px;margin:0 auto}
   document.body.className='theme-'+theme;
 })();
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+// ============================================================================
+// UI helpers — a styled confirm modal and toast in place of the browser's own
+// confirm()/alert(), which look and feel like an interruption rather than part
+// of the app, especially on mobile.
+// ============================================================================
+var _confirmResolve=null;
+function hubConfirm(title,body,confirmLabel){
+  document.getElementById('hub-confirm-title').textContent=title;
+  document.getElementById('hub-confirm-body').textContent=body;
+  document.getElementById('hub-confirm-ok').textContent=confirmLabel||'Delete';
+  document.getElementById('hub-confirm-overlay').classList.add('open');
+  return new Promise(function(resolve){ _confirmResolve=resolve; });
+}
+function _closeHubConfirm(result){
+  document.getElementById('hub-confirm-overlay').classList.remove('open');
+  if(_confirmResolve){ _confirmResolve(result); _confirmResolve=null; }
+}
+document.getElementById('hub-confirm-ok').addEventListener('click',function(){ _closeHubConfirm(true); });
+document.getElementById('hub-confirm-cancel').addEventListener('click',function(){ _closeHubConfirm(false); });
+document.getElementById('hub-confirm-overlay').addEventListener('click',function(e){
+  if(e.target.id==='hub-confirm-overlay')_closeHubConfirm(false);
+});
+var _toastTimer=null;
+function showToast(msg){
+  var t=document.getElementById('hub-toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(function(){ t.classList.remove('show'); },2200);
+}
 
 // ============================================================================
 // Firebase — same config/SDK version/lazy-load pattern as index.html, so this
@@ -323,7 +407,17 @@ document.getElementById('auth-email-forgot').addEventListener('click',function()
     errEl.textContent=emailAuthErrorMessage(e); errEl.style.display='block';
   });
 });
-document.getElementById('sign-out-btn').addEventListener('click',function(){
+document.getElementById('account-btn').addEventListener('click',function(){
+  var dd=document.getElementById('account-dropdown');
+  var open=dd.classList.toggle('open');
+  this.setAttribute('aria-expanded',String(open));
+});
+document.addEventListener('click',function(e){
+  var wrap=document.getElementById('account-menu-wrap');
+  if(!wrap.contains(e.target))document.getElementById('account-dropdown').classList.remove('open');
+});
+document.getElementById('account-signout-btn').addEventListener('click',function(){
+  document.getElementById('account-dropdown').classList.remove('open');
   loadFirebaseMods().then(function(f){ return f.authMod.signOut(f.auth); }).catch(function(){}).finally(function(){
     try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
     currentUser=null;
@@ -332,6 +426,13 @@ document.getElementById('sign-out-btn').addEventListener('click',function(){
     setAuthStatus('Signed out.');
   });
 });
+function renderAccountButton(user){
+  var btn=document.getElementById('account-btn');
+  var initial=(user.displayName||user.email||'?').trim().charAt(0).toUpperCase();
+  btn.innerHTML=user.photoURL?'<img src="'+esc(user.photoURL)+'" alt="">':esc(initial);
+  document.getElementById('account-dropdown-name').textContent=user.displayName||'Signed in';
+  document.getElementById('account-dropdown-email').textContent=user.email||'';
+}
 
 // Silently restores a previous session on load — but only if this exact device has signed
 // in before (same flag index.html itself sets/checks), so a phone that's never been used
@@ -453,7 +554,7 @@ function saveTodos(){
     bumpSyncTimestamp('todos');
     pushMetaToCloud('todos',todos);
   }catch(e){
-    alert("Could not save — your device storage may be full.");
+    showToast('Could not save — your device storage may be full.');
   }
 }
 function newTodo(text){
@@ -517,9 +618,11 @@ function todoListClick(e){
     t.completedAt=t.done?Date.now():null;
     saveTodos(); renderTodos();
   }else if(action==='delete'){
-    if(!confirm('Delete this task?'))return;
-    todos=todos.filter(function(x){return x.id!==id});
-    saveTodos(); renderTodos();
+    hubConfirm('Delete this task?',t.text,'Delete').then(function(ok){
+      if(!ok)return;
+      todos=todos.filter(function(x){return x.id!==id});
+      saveTodos(); renderTodos();
+    });
   }
 }
 document.getElementById('todo-open-list').addEventListener('click',todoListClick);
@@ -630,6 +733,7 @@ document.getElementById('jn-today-body').addEventListener('input',function(e){
     renderJournalPast();
   },500);
 });
+var jnExpandedId=null;
 function renderJournalPast(){
   var list=document.getElementById('jn-past-list');
   var empty=document.getElementById('jn-past-empty');
@@ -638,28 +742,66 @@ function renderJournalPast(){
   empty.style.display=past.length?'none':'';
   list.innerHTML=past.map(function(j){
     var preview=(j.body||'').replace(/\s+/g,' ').trim().slice(0,80)||'(no notes)';
-    return '<div class="jn-past-row" data-id="'+esc(j.id)+'">'
+    var open=j.id===jnExpandedId;
+    var moods=JOURNAL_MOODS.map(function(m){
+      return '<button type="button" class="jn-mood'+(j.mood===m?' sel':'')+'" data-past-mood="'+m+'">'+JOURNAL_MOOD_LABEL[m]+'</button>';
+    }).join('');
+    return '<div class="jn-past-item'+(open?' open':'')+'" data-id="'+esc(j.id)+'">'
+      +'<div class="jn-past-row" data-action="expand">'
+      +'<svg class="jn-past-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>'
       +'<span class="jn-past-dot" data-mood="'+esc(j.mood)+'"></span>'
       +'<div class="jn-past-main"><div class="jn-past-date">'+esc(formatJournalDateLabel(j.date))+'</div>'
       +'<div class="jn-past-preview">'+esc(preview)+'</div></div>'
       +'<button class="jn-past-del" data-action="delete" aria-label="Delete entry">×</button>'
+      +'</div>'
+      +'<div class="jn-past-edit"><div class="jn-moods">'+moods+'</div>'
+      +'<textarea class="jn-body" data-past-body rows="4">'+esc(j.body)+'</textarea></div>'
       +'</div>';
   }).join('');
 }
-document.getElementById('jn-past-list').addEventListener('click',function(e){
-  var row=e.target.closest('.jn-past-row'); if(!row)return;
-  var id=row.dataset.id;
+function updateJnPastRowSummary(id){
   var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
-  if(e.target.dataset.action==='delete'){
-    if(!confirm('Delete the journal entry for '+formatJournalDateLabel(entry.date)+'?'))return;
-    journalEntries=journalEntries.filter(function(j){return j.id!==id});
+  var item=document.querySelector('.jn-past-item[data-id="'+CSS.escape(id)+'"]'); if(!item)return;
+  var preview=(entry.body||'').replace(/\s+/g,' ').trim().slice(0,80)||'(no notes)';
+  var prevEl=item.querySelector('.jn-past-preview'); if(prevEl)prevEl.textContent=preview;
+}
+var jnPastSaveTimer=null;
+document.getElementById('jn-past-list').addEventListener('click',function(e){
+  var item=e.target.closest('.jn-past-item'); if(!item)return;
+  var id=item.dataset.id;
+  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
+  if(e.target.closest('[data-action="delete"]')){
+    hubConfirm('Delete this entry?',formatJournalDateLabel(entry.date),'Delete').then(function(ok){
+      if(!ok)return;
+      journalEntries=journalEntries.filter(function(j){return j.id!==id});
+      if(jnExpandedId===id)jnExpandedId=null;
+      saveJournalEntries(); renderJournalPast();
+    });
+    return;
+  }
+  var moodBtn=e.target.closest('[data-past-mood]');
+  if(moodBtn){
+    var mood=moodBtn.dataset.pastMood;
+    entry.mood = entry.mood===mood ? '' : mood;
+    entry.modifiedAt=Date.now();
     saveJournalEntries(); renderJournalPast();
     return;
   }
-  var newBody=prompt(formatJournalDateLabel(entry.date), entry.body);
-  if(newBody===null)return;
-  entry.body=newBody; entry.modifiedAt=Date.now();
-  saveJournalEntries(); renderJournalPast();
+  if(e.target.closest('[data-action="expand"]')){
+    jnExpandedId = (jnExpandedId===id) ? null : id;
+    renderJournalPast();
+  }
+});
+document.getElementById('jn-past-list').addEventListener('input',function(e){
+  if(!e.target.matches('[data-past-body]'))return;
+  var item=e.target.closest('.jn-past-item'); var id=item.dataset.id;
+  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
+  clearTimeout(jnPastSaveTimer);
+  jnPastSaveTimer=setTimeout(function(){
+    entry.body=e.target.value; entry.modifiedAt=Date.now();
+    saveJournalEntries();
+    updateJnPastRowSummary(id); // targeted update — avoids re-rendering the textarea mid-type
+  },500);
 });
 
 // ============================================================================
@@ -671,6 +813,7 @@ function onSignedIn(user){
   document.getElementById('auth-gate').style.display='none';
   document.getElementById('hub-app').style.display='block';
   setAuthStatus('');
+  renderAccountButton(user);
   loadTodosLocal();
   return loadJournalLocal().then(function(){
     return Promise.all([pullMetaFromCloud('todos'),pullMetaFromCloud('journal')]);
@@ -706,11 +849,6 @@ document.getElementById('hub-tabs').addEventListener('click',function(e){
   document.querySelectorAll('.hub-tab').forEach(function(b){b.classList.toggle('active',b===btn)});
   var view=btn.dataset.view;
   document.querySelectorAll('.hub-view').forEach(function(v){v.classList.toggle('active',v.id==='view-'+view)});
-});
-document.getElementById('open-full-app').addEventListener('click',function(e){
-  e.preventDefault();
-  try{ sessionStorage.setItem('sakura_skip_mobile_redirect','true'); }catch(err){}
-  window.location.href='index.html';
 });
 
 boot();
