@@ -43,7 +43,8 @@ body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--m
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 
 /* ---------- Sticky top bar: wordmark + account, the only persistent chrome ---------- */
-#todo-bar{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
+#hub-sticky-header{position:sticky;top:0;z-index:15;background:var(--bg);border-bottom:1px solid var(--border)}
+#todo-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
 #hub-brand{display:flex;align-items:center;gap:8px}
 #hub-brand img{width:25px;height:25px;border-radius:7px;display:block;box-shadow:0 1px 4px rgba(0,0,0,.16)}
 #hub-brand-word{font:800 18px/1 'Inter',sans-serif;letter-spacing:.04em;color:var(--fg)}
@@ -84,7 +85,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
    task", since it sits where a thumb already rests instead of a stretch to the top corner),
    opening a compose bar that docks above it rather than a bare unstyled input inline in the
    header. ---------- */
-#todo-fab{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 8%));color:#fff;box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 40%, transparent),0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
+#todo-fab{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 8%));color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
 #todo-fab:active{transform:scale(.9)}
 #todo-fab.hide{transform:scale(0);box-shadow:none;pointer-events:none}
 #todo-quickadd-overlay{position:fixed;inset:0;z-index:29;display:none;background:rgba(0,0,0,.14)}
@@ -101,11 +102,12 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #todo-quickadd-send:disabled{opacity:.35;pointer-events:none}
 
 /* ---------- Hub tabs: To-Dos / Journal ----------
-   Deliberately NOT sticky like the header above it — #todo-bar already owns position:sticky
-   top:0, and a second independently-sticky element at the same top offset would just stack
-   on top of (or fight with) the first rather than sitting below it. Scrolling away with the
-   content is the simpler, safer choice here. */
-#hub-tabs{display:flex;gap:8px;padding:14px 16px 4px;max-width:640px;margin:0 auto}
+   Sticky along with the brand/account row above it — both live inside one shared
+   #hub-sticky-header wrapper rather than each being independently position:sticky, since two
+   sticky elements at the same top offset would just stack on each other instead of sitting
+   one below the other. This is primary navigation between the page's two sections, not a
+   one-time-use control, so it needs to stay reachable while scrolled deep into either list. */
+#hub-tabs{display:flex;gap:8px;padding:10px 16px 12px;max-width:640px;margin:0 auto}
 .hub-tab{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;border:1.5px solid var(--border);background:var(--edit-bg);color:var(--muted);font:600 13px 'Inter',sans-serif;padding:9px 0;border-radius:12px;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease}
 .hub-tab.sel{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%, var(--edit-bg))}
 .hub-tab:active{transform:scale(.98)}
@@ -394,6 +396,7 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 </div>
 
 <div id="hub-app">
+<div id="hub-sticky-header">
 <div id="todo-bar">
   <div id="hub-brand"><img src="icon-192.png" alt="" width="25" height="25"><span id="hub-brand-word">SAKURA</span><span id="hub-brand-sub">Hub</span></div>
   <div id="account-menu-wrap">
@@ -431,6 +434,7 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   <button type="button" class="hub-tab" id="hub-tab-journal" data-view="journal">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Journal
   </button>
+</div>
 </div>
 <main>
   <div id="todos-view">
