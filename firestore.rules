@@ -1,13 +1,38 @@
 rules_version = '2';
 
-// Sakura cloud sync — every synced document, template, and settings blob lives under
-// users/{uid}/..., so the rule is a single check: you can only read/write your own subtree,
-// and only while actually signed in as that uid. No other access pattern is used by the app,
-// so nothing else needs to be opened up.
+// Firestore Security Rules for Sakura.
+//
+// This file is not auto-deployed — paste it into Firebase Console → Firestore Database → Rules
+// → Publish. Keeping it in the repo is so the actual access-control model has a diff history,
+// instead of living only as tribal knowledge in the console.
+//
+// Two collections, two different trust models:
+//   1. /users/{uid}/...  — cloud sync. Every synced document, template, and settings blob lives
+//      under here, so the rule is a single check: you can only read/write your own subtree, and
+//      only while actually signed in as that uid.
+//   2. /feedback/{id}    — a write-only mailbox for manual feedback and automatic crash reports
+//      (see submitFeedback/reportErrorAuto in index.html). See the rule's own comment below.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ---------------------------------------------------------------------
+    // Feedback & automatic error reports — a write-only mailbox. Anyone (signed in or not,
+    // since an error can happen before sign-in and feedback shouldn't require an account) can
+    // file one; NO client can ever read, list, update, or delete ANY of them, including their
+    // own — this is deliberately one-directional, like dropping a letter in a mailbox slot.
+    // Robin reads these directly in the Firebase Console (Console access isn't bound by these
+    // rules at all). Basic shape validation only: a non-empty, size-capped message and a known
+    // kind, so this can't be used to dump arbitrary large blobs.
+    // ---------------------------------------------------------------------
+    match /feedback/{feedbackId} {
+      allow create: if request.resource.data.kind in ['feedback', 'error']
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() < 6000;
+      allow read, update, delete: if false;
     }
   }
 }

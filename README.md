@@ -167,6 +167,12 @@ Every Restore action — from a backup file, the Local safety copy, or a Backup 
 
 **Recommended workflow when moving to a new copy of this file:** Export from the old copy, open the new copy, then Import immediately.
 
+## Feedback & Crash Reports
+
+**Send Feedback** (Account menu, or Settings → Data) opens a small form — a message and an optional email — that goes straight to a write-only mailbox only Robin can read; nobody, including you, can read it back through the app. This is a deliberate, one-time exception to the no-network-call-to-Firebase-unless-you-sign-in principle above: sending it is its own explicit consent, the same as clicking Sign in with Google is.
+
+**Automatic crash reports** (Settings → Data, off by default) does the same thing without asking each time: if something throws an uncaught error, it silently files a short report — the error message, the last few console errors leading up to it, and basic environment info (browser, URL) — capped at 10 reports per session with duplicates skipped. It's off by default specifically because it's the one thing in this app that would otherwise phone home without you asking; turning it on is that ask. Either path never includes document, note, or task content — only the error itself and where it happened.
+
 ## Settings Reference
 
 Selected settings worth knowing about (Settings panel, organized by section):
