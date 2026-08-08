@@ -193,13 +193,12 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-priority-chip.pr-low{color:#6c9bd1}
 .todo-priority-chip.pr-med{color:#d1a23a}
 .todo-priority-chip.pr-high{color:#c2553d}
-#todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;margin-top:22px}
+#todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;font:700 11px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:4px;cursor:pointer;margin:26px 0 12px}
 #todo-completed-toggle svg{transition:transform .15s ease}
 #todo-completed-toggle.open svg{transform:rotate(90deg)}
 #todo-completed-list{display:none;margin-top:10px}
 #todo-completed-list.open{display:flex;animation:hub-fade-in .15s ease}
-.todo-completed-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:16px;background:var(--edit-bg);box-shadow:0 1px 2px rgba(0,0,0,.03),0 4px 12px -8px rgba(0,0,0,.10);opacity:.86}
-.todo-completed-row .todo-row-text{-webkit-line-clamp:1}
+.todo-completed-when{color:var(--hint);font:600 11.5px 'Inter',sans-serif}
 
 /* ---------- Greeting header ---------- */
 #todo-greeting{margin:26px 4px 22px}
@@ -744,6 +743,7 @@ function initSwipeList(listEl,opts){
   }
   listEl.addEventListener('pointerdown',function(e){
     if(e.target.closest('.swipe-action-btn'))return;
+    if(e.target.closest('[data-action="toggle"]'))return;
     var row=e.target.closest('.swipe-row'); if(!row)return;
     if(row._nudgeTimers){
       row._nudgeTimers.forEach(clearTimeout); row._nudgeTimers=null;
@@ -1322,13 +1322,39 @@ function renderTodos(){
   doneToggle.style.display=done.length?'':'none';
   doneList.className='swipe-list'+(todoCompletedOpen?' open':'');
   doneList.innerHTML=done.slice().sort(function(a,b){return (b.completedAt||0)-(a.completedAt||0)}).map(function(t){
-    return '<div class="todo-completed-row" data-id="'+esc(t.id)+'">'
-      +'<button class="todo-check done" data-action="toggle" aria-label="Mark not done">'+CHECK_SVG+'</button>'
-      +'<div class="todo-row-text done" style="flex:1">'+esc(t.text)+'</div>'
-      +'</div>';
+    return swipeRowShell(t.id,completedRowInnerHtml(t),false);
   }).join('');
   renderGreeting();
 }
+function relativeCompletedLabel(ts){
+  if(!ts)return '';
+  var days=Math.floor((Date.now()-ts)/86400000);
+  if(days<=0)return 'Completed today';
+  if(days===1)return 'Completed yesterday';
+  if(days<7)return 'Completed '+days+' days ago';
+  return 'Completed '+new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+function completedRowInnerHtml(t){
+  var when=relativeCompletedLabel(t.completedAt);
+  var meta=when?('<div class="todo-row-meta"><span class="todo-completed-when">'+when+'</span></div>'):'';
+  return '<div class="todo-row">'
+    +'<button class="todo-check done" data-action="toggle" aria-label="Mark not done">'+CHECK_SVG+'</button>'
+    +'<div class="todo-row-main"><div class="todo-row-text done">'+esc(t.text)+'</div>'+meta+'</div>'
+    +'</div>';
+}
+initSwipeList(document.getElementById('todo-completed-list'),{
+  onTap:function(id){ openTaskDetail(id); },
+  onSwipeLeft:function(id){
+    var idx=todos.findIndex(function(t){return t.id===id;}); if(idx===-1)return;
+    var removed=todos[idx];
+    todos.splice(idx,1);
+    saveTodos(); renderTodos();
+    showUndoToast('Task deleted',function(){
+      todos.splice(Math.min(idx,todos.length),0,removed);
+      saveTodos(); renderTodos();
+    });
+  }
+});
 // ---------- Add-task FAB + quick-add bar ----------
 // Kept above the on-screen keyboard via visualViewport: iOS/Android keyboards overlay the
 // layout viewport rather than shrinking it, so a plain position:fixed bar can end up
@@ -1418,14 +1444,11 @@ initSwipeList(document.getElementById('todo-list'),{
   }
 });
 document.getElementById('todo-completed-list').addEventListener('click',function(e){
-  var row=e.target.closest('.todo-completed-row'); if(!row)return;
+  if(!e.target.closest('[data-action="toggle"]'))return;
+  var row=e.target.closest('.swipe-row'); if(!row)return;
   var t=findTodo(row.dataset.id); if(!t)return;
-  if(e.target.closest('[data-action="toggle"]')){
-    t.done=false; t.completedAt=null;
-    saveTodos(); renderTodos();
-  }else{
-    openTaskDetail(t.id);
-  }
+  t.done=false; t.completedAt=null;
+  saveTodos(); renderTodos();
 });
 
 // ---------- Task detail sheet ----------
