@@ -83,14 +83,16 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #todo-fab{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 8%));color:#fff;box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 40%, transparent),0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
 #todo-fab:active{transform:scale(.9)}
 #todo-fab.hide{transform:scale(0);box-shadow:none;pointer-events:none}
-#todo-quickadd-overlay{position:fixed;inset:0;z-index:29;display:none;background:rgba(0,0,0,.28);backdrop-filter:blur(1px)}
+#todo-quickadd-overlay{position:fixed;inset:0;z-index:29;display:none;background:rgba(0,0,0,.14)}
 #todo-quickadd-overlay.open{display:block;animation:hub-fade-in .15s ease}
-#todo-quickadd-bar{position:fixed;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:31;display:flex;align-items:flex-end;gap:8px;background:var(--edit-bg);border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.22);padding:8px 8px 8px 18px;transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;transition:transform .2s cubic-bezier(.2,.9,.25,1),opacity .18s ease}
+#todo-quickadd-bar{position:fixed;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:31;background:var(--edit-bg);border-radius:20px;box-shadow:0 16px 38px rgba(0,0,0,.24),0 1px 2px rgba(0,0,0,.06);padding:14px 8px 10px 18px;transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;transition:transform .2s cubic-bezier(.2,.9,.25,1),opacity .18s ease,bottom .15s ease}
 #todo-quickadd-bar.open{transform:none;opacity:1;pointer-events:auto}
-#todo-quickadd-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15.5px/1.4 'Inter',sans-serif;padding:10px 0;resize:none;max-height:110px}
+#todo-quickadd-label{font:700 10px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:0 0 6px}
+#todo-quickadd-row{display:flex;align-items:flex-end;gap:8px}
+#todo-quickadd-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 16px/1.4 'Inter',sans-serif;padding:4px 0 10px;resize:none;max-height:110px}
 #todo-quickadd-input::placeholder{color:var(--hint)}
 #todo-quickadd-input:focus{outline:none}
-#todo-quickadd-send{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:none;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s cubic-bezier(.34,1.56,.64,1),opacity .15s ease}
+#todo-quickadd-send{width:38px;height:38px;flex-shrink:0;margin-bottom:2px;border-radius:50%;border:none;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s cubic-bezier(.34,1.56,.64,1),opacity .15s ease}
 #todo-quickadd-send:active{transform:scale(.88)}
 #todo-quickadd-send:disabled{opacity:.35;pointer-events:none}
 
@@ -125,9 +127,11 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-row.pressing::before{background:var(--accent);transition:background .3s ease}
 .swipe-row.completing::after{content:'';position:absolute;inset:0;background:var(--fc-green);opacity:0;animation:todo-complete-flash .3s ease forwards;pointer-events:none;z-index:2}
 @keyframes todo-complete-flash{0%{opacity:0}35%{opacity:.16}100%{opacity:.16}}
-.swipe-bg{position:absolute;inset:0;display:flex;align-items:center}
-.swipe-bg-start{justify-content:flex-start;background:var(--fc-green)}
+.swipe-bg{position:absolute;inset:0;display:flex;align-items:center;opacity:0}
+.swipe-bg-start{justify-content:flex-start;background:#1f8a4c}
 .swipe-bg-end{justify-content:flex-end;background:#c0392b}
+.swipe-row.reveal-start .swipe-bg-start{opacity:1}
+.swipe-row.reveal-end .swipe-bg-end{opacity:1}
 .swipe-action-btn{width:76px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .swipe-content{position:relative;background:var(--edit-bg);transform:translateX(0);touch-action:pan-y;user-select:none}
 .swipe-row.dragging .swipe-content{transition:none}
@@ -351,8 +355,11 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 
 <div id="todo-quickadd-overlay"></div>
 <div id="todo-quickadd-bar">
-  <textarea id="todo-quickadd-input" rows="1" placeholder="New task" maxlength="2000"></textarea>
-  <button id="todo-quickadd-send" type="button" aria-label="Add task" disabled><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg></button>
+  <div id="todo-quickadd-label">New task</div>
+  <div id="todo-quickadd-row">
+    <textarea id="todo-quickadd-input" rows="1" placeholder="What do you need to do?" maxlength="2000"></textarea>
+    <button id="todo-quickadd-send" type="button" aria-label="Add task" disabled><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg></button>
+  </div>
 </div>
 <button id="todo-fab" type="button" aria-label="Add a task">
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -521,6 +528,8 @@ function initSwipeList(listEl,opts){
   var state=null;
   function setX(row,x,animate){
     row.classList.toggle('dragging',!animate);
+    row.classList.toggle('reveal-start',x>0);
+    row.classList.toggle('reveal-end',x<0);
     row.querySelector('.swipe-content').style.transform = x ? 'translateX('+x+'px)' : '';
   }
   function closeRow(row,animate){ row.classList.remove('open-start','open-end'); setX(row,0,animate); }
@@ -1057,10 +1066,28 @@ function renderTodos(){
   renderTodoGreeting(open.length,done.length);
 }
 // ---------- Add-task FAB + quick-add bar ----------
+// Kept above the on-screen keyboard via visualViewport: iOS/Android keyboards overlay the
+// layout viewport rather than shrinking it, so a plain position:fixed bar can end up
+// rendered behind the keyboard the instant it's focused. Recomputing `bottom` from the
+// live visual viewport on every resize/scroll keeps it pinned just above the keyboard
+// instead of behind it.
+function syncQuickAddPosition(){
+  var bar=document.getElementById('todo-quickadd-bar');
+  var vv=window.visualViewport;
+  var baseGap=22; // matches the CSS default (22px + safe-area) when no keyboard is showing
+  if(!vv){ bar.style.bottom=''; return; }
+  var keyboardInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  bar.style.bottom = Math.max(baseGap, keyboardInset + 12) + 'px';
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',syncQuickAddPosition);
+  window.visualViewport.addEventListener('scroll',syncQuickAddPosition);
+}
 function openQuickAdd(){
   document.getElementById('todo-fab').classList.add('hide');
   document.getElementById('todo-quickadd-overlay').classList.add('open');
   document.getElementById('todo-quickadd-bar').classList.add('open');
+  syncQuickAddPosition();
   var input=document.getElementById('todo-quickadd-input');
   input.focus();
 }
