@@ -185,8 +185,12 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .todo-status-pill.sel::before{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 20%, transparent)}
 .todo-due-row{display:flex;align-items:center;gap:10px}
 .todo-due-input-wrap{position:relative;flex:1}
-.todo-due-input{width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--fg);font:600 13.5px 'Inter',sans-serif;padding:10px 12px;transition:border-color .18s ease}
-.todo-due-input:focus{outline:none;border-color:var(--accent)}
+.todo-due-display{display:flex;align-items:center;gap:9px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--fg);font:600 13.5px 'Inter',sans-serif;padding:10px 12px;transition:border-color .18s ease}
+.todo-due-display svg{color:var(--accent);flex-shrink:0}
+.todo-due-display.empty{color:var(--hint);font-weight:500}
+.todo-due-display.empty svg{color:var(--hint)}
+.todo-due-input-wrap:active .todo-due-display{border-color:var(--accent)}
+.todo-due-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;padding:0;border:none}
 .todo-due-clear{border:none;background:var(--chip);color:var(--muted);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:9px 13px;border-radius:11px;flex-shrink:0}
 .todo-due-clear:active{background:var(--hover)}
 
@@ -312,7 +316,10 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
       <div class="todo-status-row" id="task-detail-status"></div>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Due date</div>
       <div class="todo-due-row">
-        <div class="todo-due-input-wrap"><input type="date" id="task-detail-due" class="todo-due-input"></div>
+        <div class="todo-due-input-wrap">
+          <div class="todo-due-display" id="task-detail-due-display"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span id="task-detail-due-text">Add due date</span></div>
+          <input type="date" id="task-detail-due" class="todo-due-input">
+        </div>
         <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
       </div>
     </div>
@@ -890,6 +897,15 @@ function formatShortDueDate(dueDate){
   var d=new Date(dueDate+'T00:00:00');
   return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
 }
+function formatDueDisplay(dueDate){
+  var today=todayStr();
+  if(dueDate===today)return 'Today';
+  var d=new Date(dueDate+'T00:00:00'), t=new Date(today+'T00:00:00');
+  var days=Math.round((d-t)/86400000);
+  if(days===1)return 'Tomorrow';
+  if(days===-1)return 'Yesterday';
+  return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+}
 // Sectioned by urgency rather than one flat list — this is the single biggest thing that
 // makes a task list feel considered instead of just a container of rows: which section a
 // task is in already tells you what matters, so individual rows can stay minimal (just the
@@ -1040,6 +1056,9 @@ function renderTaskDetail(){
   }).join('');
   document.getElementById('task-detail-due').value=t.dueDate||'';
   document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
+  var dueDisplay=document.getElementById('task-detail-due-display');
+  dueDisplay.classList.toggle('empty',!t.dueDate);
+  document.getElementById('task-detail-due-text').textContent=t.dueDate?formatDueDisplay(t.dueDate):'Add due date';
 }
 document.getElementById('task-sheet-close').addEventListener('click',closeTaskDetail);
 document.getElementById('task-sheet-overlay').addEventListener('click',function(e){
