@@ -106,17 +106,15 @@ Sakura v1.0.0 — see LICENSE for terms.
 // ---------- Mobile redirect ----------
 // The very first thing this page does, before anything else executes: below the breakpoint,
 // send the person straight to hub.html — a separate, purpose-built mobile page (To-Dos +
-// Journal only for now) that reads/writes the exact same localStorage/IndexedDB data as this
-// file, so nothing needs syncing between them. Checked once, on load, not on resize — a
-// mid-session resize (narrowing a desktop window, or opening/closing dev tools) never yanks
-// the editor away from someone actively using it, only a fresh load below the breakpoint does.
-// hub.html's own "Open full app" link sets sakura_skip_mobile_redirect in sessionStorage
-// first, so someone who genuinely wants the full editor on a phone isn't bounced right back;
-// that flag is intentionally session-scoped (not persisted to localStorage) so the next fresh
-// visit defaults to the mobile page again rather than remembering a one-off exception forever.
+// Journal only, sign-in required) that reads/writes the exact same Firestore-backed data as
+// this file. Checked once, on load, not on resize — a mid-session resize (narrowing a desktop
+// window, or opening/closing dev tools) never yanks the editor away from someone actively
+// using it, only a fresh load below the breakpoint does. There is deliberately no escape
+// hatch back to this full editor from a phone-sized screen — it isn't designed for one, and
+// hub.html's own sign-in screen says so and points to a computer instead.
 (function(){
   try{
-    if(window.innerWidth<768 && sessionStorage.getItem('sakura_skip_mobile_redirect')!=='true'){
+    if(window.innerWidth<768){
       var qs=window.location.search||'';
       window.location.replace('hub.html'+qs);
     }
