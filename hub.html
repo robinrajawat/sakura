@@ -1499,8 +1499,19 @@ function formatJournalDate(dateStr,style){
   var d=new Date(dateStr+'T00:00:00');
   return d.toLocaleDateString(undefined,style||{weekday:'short',month:'short',day:'numeric'});
 }
+// Old entries created on desktop store rich HTML (index.html's journal field is
+// contenteditable, with bullet lists / bold via sakuraSanitizeRichHtml) — mobile edits stay
+// plain text, but display always strips markup first so a synced desktop entry never shows
+// raw tags here. The regex fast-path skips entries that are already plain text.
+function stripJournalHtml(html){
+  if(!html)return '';
+  if(!/<[a-z][\s\S]*>/i.test(html))return html;
+  var tmp=document.createElement('div');
+  tmp.innerHTML=html.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li)>/gi,'\n');
+  return (tmp.textContent||'').replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'');
+}
 function journalSnippet(body){
-  var s=(body||'').replace(/\s+/g,' ').trim();
+  var s=stripJournalHtml(body).replace(/\s+/g,' ').trim();
   return s.length>100?s.slice(0,100)+'\u2026':s;
 }
 function journalRowInnerHtml(j){
@@ -1574,7 +1585,7 @@ function renderJournalDetail(){
   }).join('');
   renderJournalTags(j);
   var bodyEl=document.getElementById('journal-detail-body');
-  if(document.activeElement!==bodyEl)bodyEl.value=j.body;
+  if(document.activeElement!==bodyEl)bodyEl.value=stripJournalHtml(j.body);
   autoGrow(bodyEl);
   document.getElementById('journal-detail-timestamp').textContent=(j.body||j.mood||j.tags.length)?('Last edited '+new Date(j.modifiedAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):'';
 }
