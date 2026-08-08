@@ -103,6 +103,25 @@ Sakura v1.0.0 — see LICENSE for terms.
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
 <script>
+// ---------- Mobile redirect ----------
+// The very first thing this page does, before anything else executes: below the breakpoint,
+// send the person straight to hub.html — a separate, purpose-built mobile page (To-Dos +
+// Journal only for now) that reads/writes the exact same localStorage/IndexedDB data as this
+// file, so nothing needs syncing between them. Checked once, on load, not on resize — a
+// mid-session resize (narrowing a desktop window, or opening/closing dev tools) never yanks
+// the editor away from someone actively using it, only a fresh load below the breakpoint does.
+// hub.html's own "Open full app" link sets sakura_skip_mobile_redirect in sessionStorage
+// first, so someone who genuinely wants the full editor on a phone isn't bounced right back;
+// that flag is intentionally session-scoped (not persisted to localStorage) so the next fresh
+// visit defaults to the mobile page again rather than remembering a one-off exception forever.
+(function(){
+  try{
+    if(window.innerWidth<768 && sessionStorage.getItem('sakura_skip_mobile_redirect')!=='true'){
+      var qs=window.location.search||'';
+      window.location.replace('hub.html'+qs);
+    }
+  }catch(e){}
+})();
 // ---------- Error capture: rolling console buffer (local only) ----------
 // Installed as the very first statement in the app so nothing that runs afterward can throw
 // before this is in place. Purely in-memory and local — nothing here is ever sent anywhere on
@@ -4032,19 +4051,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    base rules above (not just have higher specificity) to reliably win the cascade — same
    ID-selector specificity either way, so whichever comes later in the file wins. */
 #report-panel,#todos-panel,#meetings-panel,#journal-panel,#library-panel{top:48px;right:0;bottom:0;max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
-/* Mobile Hub-only mode — auto-applied below (max-width:768px) via body.sakura-mobile-hub-mode.
-   Hides the outliner (sidebar, doc tabs, editor) and status bar, leaving the app bar (Hub,
-   Import/Export, Account/Settings/Help) and the Hub panel itself as the only reachable UI.
-   The Hub panel's own X/close buttons are hidden too, since closing it would stand up an
-   empty page with no way back in short of resizing above the breakpoint or reloading. */
-body.sakura-mobile-hub-mode #app-layout,
-body.sakura-mobile-hub-mode #statusbar{display:none!important}
-body.sakura-mobile-hub-mode #todos-panel-close,
-body.sakura-mobile-hub-mode #meetings-panel-close,
-body.sakura-mobile-hub-mode #journal-panel-close,
-body.sakura-mobile-hub-mode #library-panel-close,
-body.sakura-mobile-hub-mode #report-panel-close,
-body.sakura-mobile-hub-mode #dock-tabstrip-close{display:none!important}
 #journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #journal-panel.dragging{user-select:none}
 #journal-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -41422,7 +41428,7 @@ function _addTagPopoverFromInput(){
   });
   document.addEventListener('keydown',e=>{
     const panel=document.getElementById('todos-panel');
-    if(e.key==='Escape'&&panel&&panel.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
+    if(e.key==='Escape'&&panel&&panel.classList.contains('open')){
       const summaryModal=document.getElementById('todos-summary-modal-overlay');
       if(summaryModal&&summaryModal.classList.contains('open')) return; // that modal's own Escape handler closes it instead
       if(document.getElementById('todos-history-overlay')?.classList.contains('open')) return; // same reason — its own Escape handler closes it instead
@@ -43384,7 +43390,7 @@ el('meetings-search-clear-btn')?.addEventListener('click',()=>{
   renderMeetingsList();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('meetings-history-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('meetings-history-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
     closeMeetingsPanel();
   }
@@ -44741,7 +44747,7 @@ el('dock-rail-collapse-btn')?.addEventListener('click',(e)=>{
   e.currentTarget.blur();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('journal-history-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
+  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('journal-history-overlay')?.classList.contains('open')){
     if(document.activeElement&&document.activeElement.closest('#journal-card'))return;
     closeJournalPanel();
   }
@@ -47024,7 +47030,7 @@ window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-
 // shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
 // same rail/app-bar chip again.
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
+  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')){
     e.preventDefault(); e.stopPropagation(); closeActivityReport();
   }
 });
@@ -47160,38 +47166,6 @@ document.getElementById('dock-panel-appbar-toggle')?.addEventListener('click',(e
   toggleDockTab(dockActiveTab||dockLastTab);
   e.currentTarget.blur();
 });
-
-// === Mobile Hub-only mode ===
-// Below the breakpoint, the outliner (sidebar/tabs/editor) and status bar are hidden via
-// CSS (body.sakura-mobile-hub-mode) and the Hub panel is forced open + maximized so it's
-// the only reachable surface. Auto-detected only — nothing persisted, no settings toggle;
-// resizing back above the breakpoint (or reloading wide) restores the normal app instantly.
-const MOBILE_HUB_MQ=window.matchMedia('(max-width:768px)');
-// Tracks whether entering mobile mode is what maximized the panel, so leaving mobile mode
-// only un-maximizes if we're the ones who forced it — a panel the person maximized
-// themselves (on desktop, or by hand while in mobile mode) is left alone either way.
-let _mobileHubForcedMaximize=false;
-function applyMobileHubMode(active){
-  document.body.classList.toggle('sakura-mobile-hub-mode',active);
-  if(active){
-    const tab=dockActiveTab||dockLastTab;
-    if(!dockPanelIsOpen(tab))openDockTab(tab);
-    const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
-    if(panel&&!panel.classList.contains('maximized')){
-      _mobileHubForcedMaximize=true;
-      document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
-    }
-  }else if(_mobileHubForcedMaximize){
-    _mobileHubForcedMaximize=false;
-    const tab=dockActiveTab;
-    const panel=tab?document.getElementById(DOCK_TAB_PANEL_ID[tab]):null;
-    if(panel&&panel.classList.contains('maximized')){
-      document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
-    }
-  }
-}
-MOBILE_HUB_MQ.addEventListener('change',e=>applyMobileHubMode(e.matches));
-applyMobileHubMode(MOBILE_HUB_MQ.matches);
 
 
 // === Recap: AI bullet summary ===
