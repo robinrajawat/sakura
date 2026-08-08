@@ -100,7 +100,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #todo-quickadd-send:disabled{opacity:.35;pointer-events:none}
 
 /* ---------- Layout ---------- */
-main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 @keyframes hub-fade-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .hub-empty{color:var(--hint);font-size:13px;text-align:center;padding:44px 20px}
 .hub-empty svg{color:var(--border);margin-bottom:10px}
@@ -179,8 +179,8 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 #todo-completed-toggle svg{transition:transform .15s ease}
 #todo-completed-toggle.open svg{transform:rotate(90deg)}
 #todo-completed-list{display:none;margin-top:10px}
-#todo-completed-list.open{display:block;animation:hub-fade-in .15s ease}
-.todo-completed-row{display:flex;align-items:center;gap:12px;padding:11px 14px}
+#todo-completed-list.open{display:flex;animation:hub-fade-in .15s ease}
+.todo-completed-row{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:16px;background:var(--edit-bg);box-shadow:0 1px 2px rgba(0,0,0,.03),0 4px 12px -8px rgba(0,0,0,.10);opacity:.86}
 .todo-completed-row .todo-row-text{-webkit-line-clamp:1}
 
 /* ---------- Greeting header ---------- */
@@ -1005,9 +1005,18 @@ function newTodo(text){
   };
 }
 function findTodo(id){ return todos.find(function(t){return t.id===id}); }
+function firstNameOf(user){
+  if(!user||!user.displayName)return '';
+  return user.displayName.trim().split(/\s+/)[0]||'';
+}
 function renderTodoGreeting(openCount,completedCount){
   var hour=new Date().getHours();
-  var greeting=hour<5?'Still up?':hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  var name=firstNameOf(currentUser);
+  var greeting;
+  if(hour<5)greeting = name?('Still up, '+name+'?'):'Still up?';
+  else if(hour<12)greeting = name?('Good morning, '+name):'Good morning';
+  else if(hour<18)greeting = name?('Good afternoon, '+name):'Good afternoon';
+  else greeting = name?('Good evening, '+name):'Good evening';
   document.getElementById('todo-greeting-title').textContent=greeting;
   var sub;
   if(openCount===0)sub=completedCount?'Everything\u2019s done \u2014 nice work.':'Nothing on your list yet.';
