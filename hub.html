@@ -100,6 +100,16 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #todo-quickadd-send:active{transform:scale(.88)}
 #todo-quickadd-send:disabled{opacity:.35;pointer-events:none}
 
+/* ---------- Hub tabs: To-Dos / Journal ----------
+   Deliberately NOT sticky like the header above it — #todo-bar already owns position:sticky
+   top:0, and a second independently-sticky element at the same top offset would just stack
+   on top of (or fight with) the first rather than sitting below it. Scrolling away with the
+   content is the simpler, safer choice here. */
+#hub-tabs{display:flex;gap:8px;padding:14px 16px 4px;max-width:640px;margin:0 auto}
+.hub-tab{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;border:1.5px solid var(--border);background:var(--edit-bg);color:var(--muted);font:600 13px 'Inter',sans-serif;padding:9px 0;border-radius:12px;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease}
+.hub-tab.sel{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%, var(--edit-bg))}
+.hub-tab:active{transform:scale(.98)}
+
 /* ---------- Layout ---------- */
 main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 @keyframes hub-fade-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -176,6 +186,11 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-status-chip.st-progress{color:var(--fc-blue)}
 .todo-status-chip.st-blocked{color:var(--fc-red)}
 .todo-status-chip.st-review{color:var(--fc-orange)}
+.todo-priority-chip{display:inline-flex;align-items:center;gap:4px;font:700 10.5px 'Inter',sans-serif;padding:3.5px 9px 3.5px 8px;border-radius:999px;background:color-mix(in srgb,currentColor 13%, var(--bg))}
+.todo-priority-chip svg{width:9px;height:9px;flex-shrink:0}
+.todo-priority-chip.pr-low{color:#6c9bd1}
+.todo-priority-chip.pr-med{color:#d1a23a}
+.todo-priority-chip.pr-high{color:#c2553d}
 #todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;margin-top:22px}
 #todo-completed-toggle svg{transition:transform .15s ease}
 #todo-completed-toggle.open svg{transform:rotate(90deg)}
@@ -188,6 +203,61 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #todo-greeting{margin:26px 4px 22px}
 #todo-greeting-title{font:700 30px 'Inter',sans-serif;letter-spacing:-.02em;color:var(--fg)}
 #todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* ---------- Journal ----------
+   Today gets one deliberately prominent card (journal is one entry per day, not a growing
+   list the way tasks are) rather than sitting as just another row — tapping it always opens
+   today, creating the entry on first write. Past entries reuse the exact same swipe-row card
+   list To-Dos already established, right down to swipe-left-to-delete, matching this page's
+   original design intent: one list pattern shared by both sections. */
+#journal-today-card{display:block;width:100%;text-align:left;border:none;cursor:pointer;margin:22px 0 20px;padding:20px 20px 22px;border-radius:20px;background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 13%, var(--edit-bg)),var(--edit-bg));box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 26px -14px rgba(0,0,0,.18);position:relative;overflow:hidden}
+#journal-today-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+#journal-today-label{font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+#journal-today-date{font:700 20px 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);margin-top:3px}
+#journal-today-row{display:flex;align-items:flex-start;gap:9px;margin-top:10px}
+.journal-today-mood-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:3px;background:var(--border)}
+.journal-today-mood-dot.mood-great{background:var(--fc-green)}
+.journal-today-mood-dot.mood-good{background:var(--fc-blue)}
+.journal-today-mood-dot.mood-neutral{background:var(--fc-gray)}
+.journal-today-mood-dot.mood-low{background:var(--fc-orange)}
+.journal-today-mood-dot.mood-rough{background:var(--fc-red)}
+#journal-today-snippet{font:450 14.5px/1.5 'Inter',sans-serif;color:var(--fg)}
+#journal-today-snippet.empty{color:var(--hint);font-style:italic}
+#journal-past-label{margin-top:24px}
+.journal-row-mobile{display:flex;align-items:flex-start;gap:12px;padding:16px}
+.journal-row-mood-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px;background:var(--border)}
+.journal-row-mood-dot.mood-great{background:var(--fc-green)}
+.journal-row-mood-dot.mood-good{background:var(--fc-blue)}
+.journal-row-mood-dot.mood-neutral{background:var(--fc-gray)}
+.journal-row-mood-dot.mood-low{background:var(--fc-orange)}
+.journal-row-mood-dot.mood-rough{background:var(--fc-red)}
+.journal-row-date{font:650 14.5px 'Inter',sans-serif;letter-spacing:-.005em;color:var(--fg)}
+.journal-row-snippet{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.journal-row-snippet.empty{font-style:italic;color:var(--hint)}
+.journal-row-tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.journal-row-tag{font:600 10.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%, transparent);padding:2.5px 8px;border-radius:999px}
+/* Journal detail sheet */
+.journal-mood-row{display:flex;gap:6px}
+.journal-mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 10.5px 'Inter',sans-serif;padding:9px 2px 8px;border-radius:12px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .12s ease}
+.journal-mood-btn:active{transform:scale(.95)}
+.journal-mood-btn::before{content:'';width:11px;height:11px;border-radius:50%;background:var(--border)}
+.journal-mood-btn.mood-great::before{background:var(--fc-green)}
+.journal-mood-btn.mood-good::before{background:var(--fc-blue)}
+.journal-mood-btn.mood-neutral::before{background:var(--fc-gray)}
+.journal-mood-btn.mood-low::before{background:var(--fc-orange)}
+.journal-mood-btn.mood-rough::before{background:var(--fc-red)}
+.journal-mood-btn.sel{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 10%, var(--bg))}
+.journal-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1.5px solid var(--border);border-radius:12px;padding:8px 10px;background:var(--bg)}
+.journal-tag-chip{display:inline-flex;align-items:center;gap:5px;font:600 11.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%, transparent);padding:4px 5px 4px 10px;border-radius:999px}
+.journal-tag-chip button{border:none;background:none;color:inherit;opacity:.7;cursor:pointer;padding:1px;display:inline-flex;font-size:13px;line-height:1}
+.journal-tag-chip button:active{opacity:1}
+#journal-tag-input{flex:1;min-width:80px;border:none;background:none;color:var(--fg);font:500 13px 'Inter',sans-serif;padding:3px 2px}
+#journal-tag-input:focus{outline:none}
+#journal-tag-input::placeholder{color:var(--hint)}
+#journal-detail-body{width:100%;border:none;background:none;color:var(--fg);font:450 15px/1.6 'Inter',sans-serif;padding:12px 0 6px;resize:none;overflow:hidden;min-height:80px}
+#journal-detail-body:focus{outline:none}
+#journal-detail-body::placeholder{color:var(--hint)}
+#journal-detail-timestamp{font-size:11px;color:var(--hint);text-align:right;margin-top:4px}
 
 /* ---------- Reusable bottom-sheet detail view ---------- */
 .hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:flex-end;justify-content:center;padding:0}
@@ -238,6 +308,9 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-status-pill[data-status="progress"]{color:var(--fc-blue)}
 .todo-status-pill[data-status="blocked"]{color:var(--fc-red)}
 .todo-status-pill[data-status="review"]{color:var(--fc-orange)}
+.todo-status-pill[data-priority="low"]{color:#6c9bd1}
+.todo-status-pill[data-priority="med"]{color:#d1a23a}
+.todo-status-pill[data-priority="high"]{color:#c2553d}
 .todo-status-pill.sel{border-color:currentColor;background:color-mix(in srgb,currentColor 12%, var(--bg));box-shadow:0 2px 8px color-mix(in srgb,currentColor 22%, transparent)}
 .todo-status-pill.sel::before{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 20%, transparent)}
 .todo-due-row{display:flex;align-items:center;gap:10px}
@@ -351,7 +424,16 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     </div>
   </div>
 </div>
+<div id="hub-tabs">
+  <button type="button" class="hub-tab sel" id="hub-tab-todos" data-view="todos">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>To-Dos
+  </button>
+  <button type="button" class="hub-tab" id="hub-tab-journal" data-view="journal">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Journal
+  </button>
+</div>
 <main>
+  <div id="todos-view">
   <div id="todo-greeting">
     <div id="todo-greeting-title"></div>
     <div id="todo-greeting-sub"></div>
@@ -367,6 +449,24 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     <span id="todo-completed-count"></span>
   </button>
   <div id="todo-completed-list" class="swipe-list"></div>
+  </div>
+  <div id="journal-view" style="display:none">
+    <button id="journal-today-card" type="button">
+      <div id="journal-today-label">Today</div>
+      <div id="journal-today-date"></div>
+      <div id="journal-today-row">
+        <span id="journal-today-mood" class="journal-today-mood-dot"></span>
+        <div id="journal-today-snippet"></div>
+      </div>
+    </button>
+    <div class="hub-section-label" id="journal-past-label" style="display:none">Past Entries</div>
+    <div id="journal-list" class="swipe-list"></div>
+    <div id="journal-empty" class="hub-empty" style="display:none">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <div class="hub-empty-title">No past entries</div>
+      Write today's entry above to get started.
+    </div>
+  </div>
 </main>
 </div>
 
@@ -382,6 +482,30 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 
+<div id="journal-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Journal entry">
+  <div class="hub-modal hub-sheet">
+    <div class="hub-sheet-handle"></div>
+    <div class="hub-sheet-head">
+      <div id="journal-detail-date" class="hub-sheet-date-title"></div>
+      <button id="journal-sheet-close" class="hub-sheet-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="hub-sheet-body">
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>Mood</div>
+      <div id="journal-detail-mood-row" class="journal-mood-row"></div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 12 22l-9-9 8.59-8.59A2 2 0 0 1 13 4h6a1 1 0 0 1 1 1v6a2 2 0 0 1-.41 1.41Z"/><circle cx="16.5" cy="7.5" r="1"/></svg>Tags</div>
+      <div id="journal-detail-tags-row" class="journal-tags-row">
+        <input type="text" id="journal-tag-input" placeholder="Add tag" maxlength="30">
+      </div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Entry</div>
+      <textarea id="journal-detail-body" rows="1" placeholder="What's on your mind?"></textarea>
+      <div id="journal-detail-timestamp"></div>
+    </div>
+    <div class="hub-sheet-foot">
+      <button id="journal-detail-delete" class="hub-modal-btn danger" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>Delete Entry</button>
+    </div>
+  </div>
+</div>
+
 <div id="task-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Task details">
   <div class="hub-modal hub-sheet">
     <div class="hub-sheet-handle"></div>
@@ -393,6 +517,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
       <textarea id="task-detail-text" rows="1" placeholder="Task"></textarea>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>Status</div>
       <div class="todo-status-row" id="task-detail-status"></div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 4h13l-2.5 4.5L17 13H4"/></svg>Priority</div>
+      <div class="todo-status-row" id="task-detail-priority"></div>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Due date</div>
       <div class="todo-due-row">
         <div class="todo-due-input-wrap">
@@ -980,7 +1106,37 @@ var todos=[];
 var todoCompletedOpen=false;
 var TODO_STATUSES=['waiting','progress','blocked','review'];
 var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
+var TODO_PRIORITIES=['low','med','high'];
+var TODO_PRIORITY_LABEL={low:'Low',med:'Medium',high:'High'};
 var CHECK_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+var FAB_PLUS_SVG='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+var FAB_PENCIL_SVG='<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+
+// ============================================================================
+// Hub tabs — To-Dos / Journal, the page's two promised sections (the sign-in
+// screen has said "To-Dos and Journal" from the start; this wires up the
+// second half). Not sticky, see the CSS comment for why. The FAB's icon and
+// action swap with the active tab: "+" opens quick-add on To-Dos, a pencil
+// opens today's journal entry on Journal.
+// ============================================================================
+var currentHubView='todos';
+function switchHubView(view){
+  currentHubView=view;
+  document.getElementById('hub-tab-todos').classList.toggle('sel',view==='todos');
+  document.getElementById('hub-tab-journal').classList.toggle('sel',view==='journal');
+  document.getElementById('todos-view').style.display=view==='todos'?'':'none';
+  document.getElementById('journal-view').style.display=view==='journal'?'':'none';
+  var fab=document.getElementById('todo-fab');
+  if(view==='journal'){
+    fab.innerHTML=FAB_PENCIL_SVG;
+    fab.setAttribute('aria-label',"Write today's entry");
+  }else{
+    fab.innerHTML=FAB_PLUS_SVG;
+    fab.setAttribute('aria-label','Add a task');
+  }
+}
+document.getElementById('hub-tab-todos').addEventListener('click',function(){ switchHubView('todos'); });
+document.getElementById('hub-tab-journal').addEventListener('click',function(){ switchHubView('journal'); });
 
 function loadTodosLocal(){
   try{
@@ -1027,6 +1183,7 @@ function renderTodoGreeting(openCount,completedCount){
 function todoRowInnerHtml(t,dateDisplay,isOverdue){
   var metaParts=[];
   if(dateDisplay)metaParts.push(dateDisplay);
+  if(t.priority && t.priority!=='none')metaParts.push('<span class="todo-priority-chip pr-'+t.priority+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V4"/><path fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 4h13l-2.5 4.5L17 13H4z"/></svg>'+TODO_PRIORITY_LABEL[t.priority]+'</span>');
   if(t.status && t.status!=='none')metaParts.push('<span class="todo-status-chip st-'+t.status+'">'+TODO_STATUS_LABEL[t.status]+'</span>');
   var meta = metaParts.length ? '<div class="todo-row-meta">'+metaParts.join('')+'</div>' : '';
   var dot = isOverdue ? '<span class="todo-dot"></span>' : '';
@@ -1144,7 +1301,10 @@ function commitQuickAdd(){
 function updateQuickAddSendState(){
   document.getElementById('todo-quickadd-send').disabled = !document.getElementById('todo-quickadd-input').value.trim();
 }
-document.getElementById('todo-fab').addEventListener('click',openQuickAdd);
+document.getElementById('todo-fab').addEventListener('click',function(){
+  if(currentHubView==='journal'){ openJournalDetail(todayStr()); }
+  else{ openQuickAdd(); }
+});
 document.getElementById('todo-quickadd-overlay').addEventListener('click',closeQuickAdd);
 document.getElementById('todo-quickadd-input').addEventListener('input',function(e){ autoGrow(e.target); updateQuickAddSendState(); });
 document.getElementById('todo-quickadd-input').addEventListener('keydown',function(e){
@@ -1229,6 +1389,9 @@ function renderTaskDetail(){
   document.getElementById('task-detail-status').innerHTML=TODO_STATUSES.map(function(s){
     return '<button type="button" class="todo-status-pill'+(t.status===s?' sel':'')+'" data-status="'+s+'">'+TODO_STATUS_LABEL[s]+'</button>';
   }).join('');
+  document.getElementById('task-detail-priority').innerHTML=TODO_PRIORITIES.map(function(p){
+    return '<button type="button" class="todo-status-pill'+(t.priority===p?' sel':'')+'" data-priority="'+p+'">'+TODO_PRIORITY_LABEL[p]+'</button>';
+  }).join('');
   document.getElementById('task-detail-due').value=t.dueDate||'';
   document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
   var dueDisplay=document.getElementById('task-detail-due-display');
@@ -1260,6 +1423,13 @@ document.getElementById('task-detail-status').addEventListener('click',function(
   t.status = (t.status===s) ? 'none' : s;
   saveAndRefreshTask();
 });
+document.getElementById('task-detail-priority').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-priority]'); if(!btn)return;
+  var t=findTodo(taskDetailId); if(!t)return;
+  var p=btn.dataset.priority;
+  t.priority = (t.priority===p) ? 'none' : p;
+  saveAndRefreshTask();
+});
 document.getElementById('task-detail-due').addEventListener('change',function(e){
   var t=findTodo(taskDetailId); if(!t)return;
   t.dueDate=e.target.value||null;
@@ -1282,9 +1452,190 @@ document.getElementById('task-detail-delete').addEventListener('click',function(
   });
 });
 
+// ============================================================================
+// Journal — one entry per calendar day, mirroring index.html's exact data
+// shape (same field names, same jnUid() ids, same JOURNAL_KEY) so entries
+// stay fully compatible with the desktop app's own IndexedDB store and cloud
+// sync, in both directions. Past entries reuse the same swipe-row/swipe-list
+// card machinery To-Dos already built — swipe left to delete, tap to open —
+// via the same generic initSwipeList() and swipeRowShell() functions.
+// ============================================================================
+var journalEntries=[];
+var JOURNAL_MOODS=['great','good','neutral','low','rough'];
+var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
+function normalizeJournalEntry(j){
+  var now=Date.now();
+  return {
+    id:(j&&typeof j.id==='string')?j.id:jnUid(),
+    date:(j&&typeof j.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(j.date))?j.date:todayStr(),
+    mood:(j&&JOURNAL_MOODS.indexOf(j.mood)!==-1)?j.mood:'',
+    tags:(j&&Array.isArray(j.tags))?j.tags.filter(function(t){return typeof t==='string'&&t.trim();}).map(function(t){return t.trim();}).slice(0,20):[],
+    body:(j&&typeof j.body==='string')?j.body:'',
+    createdAt:(j&&isFinite(j.createdAt))?j.createdAt:now,
+    modifiedAt:(j&&isFinite(j.modifiedAt))?j.modifiedAt:now
+  };
+}
+function loadJournalLocal(){
+  return idbGet(JOURNAL_KEY).then(function(arr){
+    journalEntries=Array.isArray(arr)?arr.map(normalizeJournalEntry):[];
+  }).catch(function(){ journalEntries=[]; });
+}
+function saveJournalEntries(){
+  idbSet(JOURNAL_KEY,journalEntries).catch(function(){ showToast('Could not save — your device storage may be full.'); });
+  bumpSyncTimestamp('journal');
+  pushMetaToCloud('journal',journalEntries);
+}
+function findJournalEntry(date){ return journalEntries.find(function(j){return j.date===date;}); }
+function findOrCreateJournalEntry(date){
+  var j=findJournalEntry(date);
+  if(!j){ j=normalizeJournalEntry({date:date}); journalEntries.push(j); }
+  return j;
+}
+function formatJournalDate(dateStr,style){
+  var d=new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString(undefined,style||{weekday:'short',month:'short',day:'numeric'});
+}
+function journalSnippet(body){
+  var s=(body||'').replace(/\s+/g,' ').trim();
+  return s.length>100?s.slice(0,100)+'\u2026':s;
+}
+function journalRowInnerHtml(j){
+  var moodDot='<span class="journal-row-mood-dot'+(j.mood?' mood-'+j.mood:'')+'"></span>';
+  var tags=j.tags.length?('<div class="journal-row-tags">'+j.tags.slice(0,4).map(function(t){return '<span class="journal-row-tag">#'+esc(t)+'</span>';}).join('')+'</div>'):'';
+  var snippet=j.body?('<div class="journal-row-snippet">'+esc(journalSnippet(j.body))+'</div>'):'<div class="journal-row-snippet empty">No entry text</div>';
+  return '<div class="journal-row-mobile">'
+    +moodDot
+    +'<div class="todo-row-main"><div class="journal-row-date">'+formatJournalDate(j.date)+'</div>'+snippet+tags+'</div>'
+    +'</div>';
+}
+function renderJournal(){
+  var today=todayStr();
+  var todayEntry=findJournalEntry(today);
+  document.getElementById('journal-today-date').textContent=formatJournalDate(today,{weekday:'long',month:'long',day:'numeric'});
+  var snippetEl=document.getElementById('journal-today-snippet');
+  var hasBody=todayEntry&&todayEntry.body;
+  snippetEl.textContent=hasBody?journalSnippet(todayEntry.body):'Tap to write today\u2019s entry';
+  snippetEl.classList.toggle('empty',!hasBody);
+  document.getElementById('journal-today-mood').className='journal-today-mood-dot'+(todayEntry&&todayEntry.mood?' mood-'+todayEntry.mood:'');
+
+  var past=journalEntries.filter(function(j){return j.date!==today && (j.body||j.mood||j.tags.length);})
+    .sort(function(a,b){return b.date.localeCompare(a.date);});
+  var list=document.getElementById('journal-list');
+  var empty=document.getElementById('journal-empty');
+  var pastLabel=document.getElementById('journal-past-label');
+  empty.style.display=past.length?'none':'';
+  list.style.display=past.length?'':'none';
+  pastLabel.style.display=past.length?'':'none';
+  list.innerHTML=past.map(function(j){
+    return swipeRowShell(j.id,journalRowInnerHtml(j),false);
+  }).join('');
+}
+initSwipeList(document.getElementById('journal-list'),{
+  onTap:function(id){ openJournalDetail(id); },
+  onSwipeLeft:function(id){
+    var idx=journalEntries.findIndex(function(j){return j.id===id;}); if(idx===-1)return;
+    var removed=journalEntries[idx];
+    journalEntries.splice(idx,1);
+    saveJournalEntries(); renderJournal();
+    showUndoToast('Entry deleted',function(){
+      journalEntries.splice(Math.min(idx,journalEntries.length),0,removed);
+      saveJournalEntries(); renderJournal();
+    });
+  }
+});
+document.getElementById('journal-today-card').addEventListener('click',function(){ openJournalDetail(todayStr()); });
+
+// ---------- Journal detail sheet ----------
+var journalDetailDate=null;
+function openJournalDetail(dateOrId){
+  var isDate=/^\d{4}-\d{2}-\d{2}$/.test(dateOrId);
+  var j=isDate?findOrCreateJournalEntry(dateOrId):journalEntries.find(function(e){return e.id===dateOrId;});
+  if(!j)return;
+  journalDetailDate=j.date;
+  document.getElementById('journal-sheet-overlay').classList.add('open');
+  renderJournalDetail();
+  requestAnimationFrame(function(){ autoGrow(document.getElementById('journal-detail-body')); });
+}
+function closeJournalDetail(){
+  document.getElementById('journal-sheet-overlay').classList.remove('open');
+  journalDetailDate=null;
+  renderJournal();
+}
+function renderJournalDetail(){
+  var j=findJournalEntry(journalDetailDate);
+  if(!j){ closeJournalDetail(); return; }
+  document.getElementById('journal-detail-date').textContent=formatJournalDate(j.date,{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('journal-detail-mood-row').innerHTML=JOURNAL_MOODS.map(function(m){
+    return '<button type="button" class="journal-mood-btn mood-'+m+(j.mood===m?' sel':'')+'" data-mood="'+m+'">'+JOURNAL_MOOD_LABEL[m]+'</button>';
+  }).join('');
+  renderJournalTags(j);
+  var bodyEl=document.getElementById('journal-detail-body');
+  if(document.activeElement!==bodyEl)bodyEl.value=j.body;
+  autoGrow(bodyEl);
+  document.getElementById('journal-detail-timestamp').textContent=(j.body||j.mood||j.tags.length)?('Last edited '+new Date(j.modifiedAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):'';
+}
+function renderJournalTags(j){
+  var wrap=document.getElementById('journal-detail-tags-row');
+  wrap.querySelectorAll('.journal-tag-chip').forEach(function(el){ el.remove(); });
+  var chipsHtml=j.tags.map(function(t,i){
+    return '<span class="journal-tag-chip">#'+esc(t)+'<button type="button" data-remove-tag="'+i+'" aria-label="Remove tag">\u00d7</button></span>';
+  }).join('');
+  if(chipsHtml)wrap.insertAdjacentHTML('afterbegin',chipsHtml);
+}
+document.getElementById('journal-sheet-close').addEventListener('click',closeJournalDetail);
+document.getElementById('journal-sheet-overlay').addEventListener('click',function(e){
+  if(e.target.id==='journal-sheet-overlay')closeJournalDetail();
+});
+document.getElementById('journal-detail-mood-row').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-mood]'); if(!btn)return;
+  var j=findJournalEntry(journalDetailDate); if(!j)return;
+  var m=btn.dataset.mood;
+  j.mood=(j.mood===m)?'':m;
+  j.modifiedAt=Date.now();
+  saveJournalEntries(); renderJournalDetail();
+});
+document.getElementById('journal-detail-tags-row').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-remove-tag]'); if(!btn)return;
+  var j=findJournalEntry(journalDetailDate); if(!j)return;
+  j.tags.splice(parseInt(btn.dataset.removeTag,10),1);
+  j.modifiedAt=Date.now();
+  saveJournalEntries(); renderJournalDetail();
+});
+document.getElementById('journal-tag-input').addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  e.preventDefault();
+  var val=this.value.trim().replace(/^#/,'');
+  this.value='';
+  if(!val)return;
+  var j=findJournalEntry(journalDetailDate); if(!j)return;
+  if(j.tags.indexOf(val)===-1 && j.tags.length<20){
+    j.tags.push(val); j.modifiedAt=Date.now();
+    saveJournalEntries(); renderJournalDetail();
+  }
+});
+document.getElementById('journal-detail-body').addEventListener('input',function(e){ autoGrow(e.target); });
+document.getElementById('journal-detail-body').addEventListener('change',function(e){
+  var j=findJournalEntry(journalDetailDate); if(!j)return;
+  j.body=e.target.value;
+  j.modifiedAt=Date.now();
+  saveJournalEntries(); renderJournalDetail();
+});
+document.getElementById('journal-detail-delete').addEventListener('click',function(){
+  var idx=journalEntries.findIndex(function(j){return j.date===journalDetailDate;}); if(idx===-1)return;
+  var removed=journalEntries[idx];
+  journalEntries.splice(idx,1);
+  closeJournalDetail();
+  saveJournalEntries();
+  showUndoToast('Entry deleted',function(){
+    journalEntries.splice(Math.min(idx,journalEntries.length),0,removed);
+    saveJournalEntries(); renderJournal();
+  });
+});
+
 document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
   if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
+  if(document.getElementById('journal-sheet-overlay').classList.contains('open')){ closeJournalDetail(); return; }
   if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
   if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
 });
@@ -1300,18 +1651,32 @@ function onSignedIn(user){
   setAuthStatus('');
   renderAccountButton(user);
   loadTodosLocal();
-  return pullMetaFromCloud('todos').then(function(cloudTodos){
-    if(Array.isArray(cloudTodos)){
-      todos=cloudTodos;
-      localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
-      bumpSyncTimestamp('todos');
-    }else{
-      pushMetaToCloud('todos',todos);
-    }
+  return loadJournalLocal().then(function(){
+    return Promise.all([
+      pullMetaFromCloud('todos').then(function(cloudTodos){
+        if(Array.isArray(cloudTodos)){
+          todos=cloudTodos;
+          localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
+          bumpSyncTimestamp('todos');
+        }else{
+          pushMetaToCloud('todos',todos);
+        }
+      }),
+      pullMetaFromCloud('journal').then(function(cloudJournal){
+        if(Array.isArray(cloudJournal)){
+          journalEntries=cloudJournal.map(normalizeJournalEntry);
+          idbSet(JOURNAL_KEY,journalEntries).catch(function(){});
+          bumpSyncTimestamp('journal');
+        }else{
+          pushMetaToCloud('journal',journalEntries);
+        }
+      })
+    ]);
   }).catch(function(e){
     console.warn('[sakura hub] cloud pull failed, showing local cache instead:',e);
   }).finally(function(){
     renderTodos();
+    renderJournal();
     hideHubLoading();
     nudgeFirstRowOnce();
   });
