@@ -5,25 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Sakura Hub</title>
 <meta name="theme-color" content="#c2553d">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <!--
   Sakura Hub — a separate, purpose-built mobile page. NOT a cut-down copy of index.html's
-  code; a from-scratch, small implementation that happens to read/write the exact same
-  localStorage keys and IndexedDB database/store as the main app, so nothing needs syncing
-  between the two — opening either one always sees the other's latest changes, because
-  there's only ever one copy of the data.
+  code; a from-scratch, small implementation.
+
+  ACCOUNTS ARE REQUIRED HERE, unlike index.html. This page only exists to be opened on a
+  phone — a different browser from whatever desktop/laptop the person normally uses — and a
+  phone's local storage starts out completely empty and disconnected from that desktop's
+  data no matter how identical the two pages' storage code is. Local storage never crosses
+  devices; only a signed-in account (synced through the exact same users/{uid}/meta/todos and
+  users/{uid}/meta/journal Firestore documents index.html's own cloud sync already writes)
+  actually bridges them. So: no sign-in, no data, by design — there is no useful local-only
+  mode for a page whose entire reason to exist is showing you data that almost certainly
+  lives on a different device's storage right now.
+
+  Sync model, deliberately simple for this scope: pull once on sign-in (newer of cloud/local
+  wins, by updatedAt), then push after every local change. No realtime listener — this is a
+  short-session mobile page, not something left open for hours the way index.html can be.
 
   Scope, deliberately: To-Dos and Journal only, and only their core actions (add, edit,
   complete, delete). Meeting Notes, Library, Recap, AI features, PDF export, and version
-  history all stay desktop-only for now — see "Open full app" below for anyone who needs them
-  from a phone anyway.
-
-  Known limitation: if cloud sync (Settings → Account, sign in) is active, changes made here
-  bump the same local-change timestamp index.html's sync engine checks (see
-  bumpSyncTimestamp below), so the next time index.html is opened it correctly treats these
-  edits as newer than the cloud copy and pushes them up. But this page itself never talks to
-  Firebase — an edit made here and never followed by opening index.html again just stays
-  local until it is.
+  history all stay desktop-only for now — see "Open full app" for anyone who needs them.
 -->
 <style>
 :root{--radius:10px}
@@ -35,8 +38,9 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #hub-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 #hub-title{font:700 15px/1 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
 #hub-title span{color:var(--accent)}
-#open-full-app{font-size:11.5px;color:var(--muted);text-decoration:none;white-space:nowrap;padding:5px 8px;border:1px solid var(--border);border-radius:999px}
-#open-full-app:active{background:var(--hover)}
+#hub-header-actions{display:flex;align-items:center;gap:8px}
+#hub-header-actions a,#hub-header-actions button{font-size:11.5px;color:var(--muted);text-decoration:none;white-space:nowrap;padding:5px 8px;border:1px solid var(--border);border-radius:999px;background:none;cursor:pointer;font-family:inherit}
+#hub-header-actions button:active,#hub-header-actions a:active{background:var(--hover)}
 #hub-tabs{display:flex;gap:4px;padding-bottom:8px}
 .hub-tab{flex:1;text-align:center;padding:9px 4px;border-radius:8px 8px 0 0;font:600 13px 'Inter',sans-serif;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent}
 .hub-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -44,6 +48,26 @@ main{padding:14px;max-width:640px;margin:0 auto}
 .hub-view{display:none}
 .hub-view.active{display:block}
 .hub-empty{color:var(--hint);font-size:13px;text-align:center;padding:28px 10px}
+#hub-app{display:none}
+
+/* Auth gate */
+#auth-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+#auth-card{width:100%;max-width:360px;text-align:center}
+#auth-logo{font-size:38px;margin-bottom:4px}
+#auth-title{font:700 18px 'Inter',sans-serif;margin-bottom:6px}
+#auth-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6}
+#auth-google-btn{width:100%;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--edit-bg);color:var(--fg);font:500 13.5px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+#auth-google-btn:active{background:var(--hover)}
+#auth-divider{display:flex;align-items:center;gap:8px;margin:16px 0;color:var(--muted);font-size:10.5px}
+#auth-divider span{flex:1;height:1px;background:var(--border)}
+#auth-email-toggle{background:none;border:1px solid var(--border);border-radius:9px;color:var(--accent);width:100%;padding:10px;cursor:pointer;font:500 13px 'Inter',sans-serif}
+#auth-email-form{display:none;margin-top:12px;text-align:left}
+#auth-email-form input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font-size:13px;margin-bottom:8px;font-family:inherit}
+#auth-email-submit{width:100%;padding:10px;border:none;border-radius:9px;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;cursor:pointer}
+#auth-email-error{color:var(--fc-red);font-size:12px;margin-bottom:8px;display:none}
+#auth-email-mode-toggle,#auth-email-forgot{background:none;border:none;color:var(--muted);font-size:10.5px;cursor:pointer;padding:0;font-family:inherit}
+#auth-email-links{display:flex;justify-content:space-between;margin-top:8px;gap:8px}
+#auth-status{font-size:12px;color:var(--muted);margin-top:16px;min-height:15px}
 
 /* To-Dos */
 #todo-add-row{display:flex;gap:8px;margin-bottom:14px}
@@ -91,10 +115,40 @@ main{padding:14px;max-width:640px;margin:0 auto}
 </style>
 </head>
 <body>
+
+<div id="auth-gate">
+  <div id="auth-card">
+    <div id="auth-logo">🌸</div>
+    <div id="auth-title">Sign in to Sakura Hub</div>
+    <div id="auth-sub">This page needs your account to find your To-Dos and Journal — they live on your other device until you sign in here too.</div>
+    <button id="auth-google-btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="auth-divider"><span></span>or<span></span></div>
+    <button id="auth-email-toggle" type="button">Sign in with email</button>
+    <div id="auth-email-form">
+      <input id="auth-email-input" type="email" placeholder="Email" autocomplete="email" />
+      <input id="auth-password-input" type="password" placeholder="Password" autocomplete="current-password" />
+      <div id="auth-email-error"></div>
+      <button id="auth-email-submit" type="button">Sign in</button>
+      <div id="auth-email-links">
+        <button id="auth-email-mode-toggle" type="button">New here? Create an account</button>
+        <button id="auth-email-forgot" type="button">Forgot password?</button>
+      </div>
+    </div>
+    <div id="auth-status"></div>
+  </div>
+</div>
+
+<div id="hub-app">
 <header>
   <div id="hub-title-row">
     <div id="hub-title">🌸 <span>SAKURA</span> Hub</div>
-    <a href="#" id="open-full-app">Open full app →</a>
+    <div id="hub-header-actions">
+      <button id="sign-out-btn" type="button">Sign out</button>
+      <a href="#" id="open-full-app">Open full app →</a>
+    </div>
   </div>
   <div id="hub-tabs">
     <button class="hub-tab active" data-view="todos" id="tab-todos">To-Dos</button>
@@ -123,12 +177,12 @@ main{padding:14px;max-width:640px;margin:0 auto}
     <div id="jn-past-empty" class="hub-empty" style="display:none">No past entries yet.</div>
   </section>
 </main>
+</div>
 
 <script>
 // ============================================================================
 // Theme — read the same preference index.html saves (Settings → Appearance),
 // so this page doesn't look jarringly different from the app someone just left.
-// Falls back to the OS-level preference if nothing's been saved yet.
 // ============================================================================
 (function applyTheme(){
   var theme='light';
@@ -145,11 +199,166 @@ main{padding:14px;max-width:640px;margin:0 auto}
   }catch(e){}
   document.body.className='theme-'+theme;
 })();
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
 // ============================================================================
-// Storage layer — deliberately mirrors index.html's own key names, IndexedDB
-// database/store, and data shapes exactly. This is the one part of this file
-// that must never drift from index.html without updating both together.
+// Firebase — same config/SDK version/lazy-load pattern as index.html, so this
+// is still one Firebase project, one set of users, one set of data either page
+// can read. Nothing here loads until sign-in is actually attempted, or a prior
+// session on this device is being silently restored (sakura_account_active).
+// ============================================================================
+var FIREBASE_CONFIG={apiKey:"AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0",authDomain:"sakura-4cdae.firebaseapp.com",projectId:"sakura-4cdae",storageBucket:"sakura-4cdae.firebasestorage.app",messagingSenderId:"547935562547",appId:"1:547935562547:web:50ddb56ab0db0089452c46",measurementId:"G-KSBVB732SJ"};
+var FIREBASE_SDK_VERSION="10.14.1";
+var currentUser=null;
+var _firebaseModsPromise=null;
+function loadFirebaseMods(){
+  if(_firebaseModsPromise)return _firebaseModsPromise;
+  _firebaseModsPromise=Promise.all([
+    import('https://www.gstatic.com/firebasejs/'+FIREBASE_SDK_VERSION+'/firebase-app.js'),
+    import('https://www.gstatic.com/firebasejs/'+FIREBASE_SDK_VERSION+'/firebase-auth.js')
+  ]).then(function(mods){
+    var app=mods[0].initializeApp(FIREBASE_CONFIG);
+    var auth=mods[1].getAuth(app);
+    return {app:app,auth:auth,authMod:mods[1]};
+  });
+  return _firebaseModsPromise;
+}
+var _firestoreModsPromise=null;
+function loadFirestoreMods(){
+  if(_firestoreModsPromise)return _firestoreModsPromise;
+  _firestoreModsPromise=Promise.all([
+    import('https://www.gstatic.com/firebasejs/'+FIREBASE_SDK_VERSION+'/firebase-firestore.js'),
+    loadFirebaseMods()
+  ]).then(function(res){
+    var db=res[0].getFirestore(res[1].app);
+    return {mod:res[0],db:db};
+  });
+  return _firestoreModsPromise;
+}
+function emailAuthErrorMessage(e){
+  var code=(e&&e.code)||'';
+  var MAP={
+    'auth/invalid-email':'That email address looks invalid.',
+    'auth/user-not-found':'No account found for that email.',
+    'auth/wrong-password':'Incorrect password.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/email-already-in-use':'An account already exists for that email — try signing in instead.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/missing-password':'Enter a password.',
+    'auth/too-many-requests':'Too many attempts — please wait a moment and try again.',
+    'auth/network-request-failed':'Network error — check your connection and try again.',
+    'auth/operation-not-allowed':"Email/password sign-in isn't enabled for this app yet."
+  };
+  return MAP[code]||'Something went wrong — please try again.';
+}
+function setAuthStatus(msg){ document.getElementById('auth-status').textContent=msg||''; }
+document.getElementById('auth-google-btn').addEventListener('click',function(){
+  var btn=this; btn.disabled=true; btn.style.opacity='.6';
+  setAuthStatus('Opening Google sign-in…');
+  loadFirebaseMods().then(function(f){
+    var provider=new f.authMod.GoogleAuthProvider();
+    return f.authMod.signInWithPopup(f.auth,provider);
+  }).then(function(result){
+    try{ localStorage.setItem('sakura_account_active','true'); }catch(e){}
+    onSignedIn(result.user);
+  }).catch(function(e){
+    btn.disabled=false; btn.style.opacity='';
+    if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
+      setAuthStatus('Sign-in failed — please try again.');
+    }else{
+      setAuthStatus('');
+    }
+  });
+});
+document.getElementById('auth-email-toggle').addEventListener('click',function(){
+  var form=document.getElementById('auth-email-form');
+  var showing=form.style.display!=='none';
+  form.style.display=showing?'none':'block';
+  this.style.display=showing?'':'none';
+  if(!showing)document.getElementById('auth-email-input').focus();
+});
+var authEmailMode='signin';
+document.getElementById('auth-email-mode-toggle').addEventListener('click',function(){
+  authEmailMode=(authEmailMode==='signup')?'signin':'signup';
+  document.getElementById('auth-email-submit').textContent=authEmailMode==='signup'?'Create account':'Sign in';
+  this.textContent=authEmailMode==='signup'?'Already have an account? Sign in':'New here? Create an account';
+});
+function submitEmailAuth(){
+  var emailInput=document.getElementById('auth-email-input');
+  var passwordInput=document.getElementById('auth-password-input');
+  var errEl=document.getElementById('auth-email-error');
+  var submitBtn=document.getElementById('auth-email-submit');
+  var email=emailInput.value.trim(), password=passwordInput.value;
+  errEl.style.display='none';
+  if(!email||!password){ errEl.textContent='Enter an email and password.'; errEl.style.display='block'; return; }
+  if(authEmailMode==='signup'&&password.length<6){ errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
+  submitBtn.disabled=true; submitBtn.style.opacity='.6';
+  loadFirebaseMods().then(function(f){
+    return authEmailMode==='signup'
+      ? f.authMod.createUserWithEmailAndPassword(f.auth,email,password)
+      : f.authMod.signInWithEmailAndPassword(f.auth,email,password);
+  }).then(function(result){
+    try{ localStorage.setItem('sakura_account_active','true'); }catch(e){}
+    passwordInput.value='';
+    onSignedIn(result.user);
+  }).catch(function(e){
+    errEl.textContent=emailAuthErrorMessage(e); errEl.style.display='block';
+  }).finally(function(){
+    submitBtn.disabled=false; submitBtn.style.opacity='';
+  });
+}
+document.getElementById('auth-email-submit').addEventListener('click',submitEmailAuth);
+[document.getElementById('auth-email-input'),document.getElementById('auth-password-input')].forEach(function(inp){
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submitEmailAuth(); } });
+});
+document.getElementById('auth-email-forgot').addEventListener('click',function(){
+  var email=document.getElementById('auth-email-input').value.trim();
+  var errEl=document.getElementById('auth-email-error');
+  if(!email){ errEl.textContent='Enter your email above first, then tap this again.'; errEl.style.display='block'; return; }
+  loadFirebaseMods().then(function(f){
+    return f.authMod.sendPasswordResetEmail(f.auth,email);
+  }).then(function(){
+    setAuthStatus('Password reset email sent to '+email);
+  }).catch(function(e){
+    errEl.textContent=emailAuthErrorMessage(e); errEl.style.display='block';
+  });
+});
+document.getElementById('sign-out-btn').addEventListener('click',function(){
+  loadFirebaseMods().then(function(f){ return f.authMod.signOut(f.auth); }).catch(function(){}).finally(function(){
+    try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
+    currentUser=null;
+    document.getElementById('hub-app').style.display='none';
+    document.getElementById('auth-gate').style.display='flex';
+    setAuthStatus('Signed out.');
+  });
+});
+
+// Silently restores a previous session on load — but only if this exact device has signed
+// in before (same flag index.html itself sets/checks), so a phone that's never been used
+// for this before pays zero Firebase cost and lands straight on the sign-in gate instead of
+// waiting on a network round-trip it already knows will fail.
+function boot(){
+  var wasActive=false;
+  try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
+  if(!wasActive)return; // sign-in gate is already the default visible state — nothing more to do
+  setAuthStatus('Signing in…');
+  loadFirebaseMods().then(function(f){
+    f.authMod.onAuthStateChanged(f.auth,function(user){
+      if(user){ onSignedIn(user); }
+      else{
+        try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
+        setAuthStatus('');
+      }
+    });
+  }).catch(function(){ setAuthStatus('Could not reach your account — check your connection and try again.'); });
+}
+
+// ============================================================================
+// Storage layer — mirrors index.html's own key names, IndexedDB database/store,
+// and data shapes exactly for local caching, PLUS pushes/pulls the same
+// users/{uid}/meta/{todos,journal} Firestore docs index.html's cloud sync uses.
+// This dual layer (local cache + cloud source of truth) is what makes this
+// page actually useful across devices instead of just matching a schema.
 // ============================================================================
 var SAKURA_BACKUP_DB='sakura_backup_db', SAKURA_BACKUP_STORE='kv';
 var TODOS_KEY='sakura_todos_v1';
@@ -188,24 +397,40 @@ function idbSet(key,value){
     });
   }).catch(function(){ return false; });
 }
-// Bumps the same local-change timestamp index.html's cloud sync engine reads (see
-// markMetaChanged/_loadSyncLocalTs in index.html) — without this, a change made only here,
-// on a device that's also signed in for cloud sync, could look "not newer than the cloud"
-// the next time index.html runs its sync comparison and get silently overwritten by an
-// older cloud copy. This page never pushes to Firestore itself; it just makes sure
-// index.html knows to, next time it's open.
-function bumpSyncTimestamp(metaKey){
-  try{
-    var raw=localStorage.getItem(SYNC_LOCAL_TS_KEY);
-    var m=raw?JSON.parse(raw):{};
-    m[metaKey]=Date.now();
-    localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m));
-  }catch(e){}
+function loadSyncLocalTs(){ try{ var r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}; }catch(e){ return {}; } }
+function saveSyncLocalTs(m){ try{ localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m)); }catch(e){} }
+function bumpSyncTimestamp(metaKey){ var m=loadSyncLocalTs(); m[metaKey]=Date.now(); saveSyncLocalTs(m); }
+// Best-effort direct push to Firestore, same shape as index.html's pushMetaToCloud
+// (users/{uid}/meta/{key} = {value, updatedAt}). Failures (offline, etc.) are silent here —
+// the local copy (already saved before this is called) stays the safe fallback, and the
+// bumped local timestamp means index.html's own sync will pick this change up and push it
+// properly the next time that's open, same as any other locally-made-while-offline edit.
+function pushMetaToCloud(metaKey,value){
+  if(!currentUser)return;
+  var ts=Date.now();
+  loadFirestoreMods().then(function(f){
+    return f.mod.setDoc(f.mod.doc(f.db,'users',currentUser.uid,'meta',metaKey),{value:value,updatedAt:ts});
+  }).catch(function(e){ console.warn('[sakura hub] cloud push failed for',metaKey,e); });
+}
+// Pulls users/{uid}/meta/{key}; newer of cloud vs. this device's own last-known-changed
+// timestamp wins (mirrors index.html's own pull/merge comparison, simplified to a single
+// per-key decision instead of the fuller multi-collection reconciliation index.html does).
+function pullMetaFromCloud(metaKey){
+  if(!currentUser)return Promise.resolve(undefined);
+  return loadFirestoreMods().then(function(f){
+    return f.mod.getDoc(f.mod.doc(f.db,'users',currentUser.uid,'meta',metaKey));
+  }).then(function(snap){
+    if(!snap.exists())return undefined;
+    var cloud=snap.data();
+    var localTs=Number(loadSyncLocalTs()[metaKey])||0;
+    var cloudTs=Number(cloud.updatedAt)||0;
+    if(cloudTs>localTs)return cloud.value;
+    return undefined; // local is at least as new — keep what's already here, and it'll get pushed below
+  }).catch(function(e){ console.warn('[sakura hub] cloud pull failed for',metaKey,e); return undefined; });
 }
 function todoUid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function jnUid(){ return 'jn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 
 // ============================================================================
 // To-Dos — same shape as index.html's loadTodos()/saveTodos(). Loaded whole
@@ -215,7 +440,7 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){retu
 // ============================================================================
 var todos=[];
 var todoCompletedOpen=false;
-function loadTodos(){
+function loadTodosLocal(){
   try{
     var raw=localStorage.getItem(TODOS_KEY);
     var parsed=raw?JSON.parse(raw):[];
@@ -226,6 +451,7 @@ function saveTodos(){
   try{
     localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
     bumpSyncTimestamp('todos');
+    pushMetaToCloud('todos',todos);
   }catch(e){
     alert("Could not save — your device storage may be full.");
   }
@@ -329,10 +555,9 @@ function normalizeJournalEntry(j){
     modifiedAt:(j&&isFinite(j.modifiedAt))?j.modifiedAt:now
   };
 }
-function loadJournalEntries(){
+function loadJournalLocal(){
   return idbGet(JOURNAL_KEY).then(function(idbEntries){
     if(Array.isArray(idbEntries)){ journalEntries=idbEntries.map(normalizeJournalEntry); return; }
-    // Legacy localStorage fallback, same one-time migration index.html itself does.
     try{
       var raw=localStorage.getItem(JOURNAL_KEY);
       if(raw){
@@ -348,7 +573,7 @@ function loadJournalEntries(){
 }
 function saveJournalEntries(){
   idbSet(JOURNAL_KEY,journalEntries).then(function(ok){
-    if(ok){ bumpSyncTimestamp('journal'); }
+    if(ok){ bumpSyncTimestamp('journal'); pushMetaToCloud('journal',journalEntries); }
     else{ document.getElementById('jn-today-hint').textContent='Storage full — this change was not saved.'; }
   });
 }
@@ -373,10 +598,10 @@ document.getElementById('jn-today-moods').addEventListener('click',function(e){
   var entry=findJournalEntry(date);
   var body=document.getElementById('jn-today-body').value;
   if(!entry){
-    if(!body.trim() && !mood)return; // nothing to create yet
+    if(!body.trim() && !mood)return;
     entry=normalizeJournalEntry({date:date}); journalEntries.push(entry);
   }
-  entry.mood = entry.mood===mood ? '' : mood; // tap the same mood again to clear it
+  entry.mood = entry.mood===mood ? '' : mood;
   entry.modifiedAt=Date.now();
   if(!entry.body.trim() && !entry.mood){
     journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
@@ -438,7 +663,43 @@ document.getElementById('jn-past-list').addEventListener('click',function(e){
 });
 
 // ============================================================================
-// Tabs & boot
+// Sign-in → pull → render. This is the ONLY path into the Hub UI — there is no
+// local-only fallback (see the file header comment for why).
+// ============================================================================
+function onSignedIn(user){
+  currentUser=user;
+  document.getElementById('auth-gate').style.display='none';
+  document.getElementById('hub-app').style.display='block';
+  setAuthStatus('');
+  loadTodosLocal();
+  return loadJournalLocal().then(function(){
+    return Promise.all([pullMetaFromCloud('todos'),pullMetaFromCloud('journal')]);
+  }).then(function(results){
+    var cloudTodos=results[0], cloudJournal=results[1];
+    if(Array.isArray(cloudTodos)){
+      todos=cloudTodos;
+      localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
+      bumpSyncTimestamp('todos');
+    }else{
+      pushMetaToCloud('todos',todos); // local was at least as new — make sure cloud has it too
+    }
+    if(Array.isArray(cloudJournal)){
+      journalEntries=cloudJournal.map(normalizeJournalEntry);
+      return idbSet(JOURNAL_KEY,journalEntries).then(function(){ bumpSyncTimestamp('journal'); });
+    }else{
+      pushMetaToCloud('journal',journalEntries);
+    }
+  }).catch(function(e){
+    console.warn('[sakura hub] cloud pull failed, showing local cache instead:',e);
+  }).finally(function(){
+    renderTodos();
+    renderJournalToday();
+    renderJournalPast();
+  });
+}
+
+// ============================================================================
+// Tabs & misc
 // ============================================================================
 document.getElementById('hub-tabs').addEventListener('click',function(e){
   var btn=e.target.closest('.hub-tab'); if(!btn)return;
@@ -452,12 +713,7 @@ document.getElementById('open-full-app').addEventListener('click',function(e){
   window.location.href='index.html';
 });
 
-loadTodos();
-renderTodos();
-loadJournalEntries().then(function(){
-  renderJournalToday();
-  renderJournalPast();
-});
+boot();
 </script>
 </body>
 </html>
