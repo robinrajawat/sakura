@@ -91,6 +91,15 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 #hub-toast.show{opacity:1;transform:translate(-50%,0)}
 #hub-app{display:none}
 
+/* Loading — shown while a saved session is being silently restored, and again after sign-in
+   while the initial cloud pull is in flight, so there's never a moment of "is this broken?"
+   silence or a flash of an empty list before real data (or a genuine empty state) appears. */
+#hub-loading{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#hub-loading.show{display:flex}
+.hub-spinner{width:30px;height:30px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:hub-spin .7s linear infinite}
+@keyframes hub-spin{to{transform:rotate(360deg)}}
+#hub-loading-text{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
+
 /* Auth gate */
 #auth-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 #auth-card{width:100%;max-width:360px;text-align:center}
@@ -119,40 +128,48 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 #todo-compose-input::placeholder{color:var(--hint)}
 #todo-compose-btn{width:44px;height:44px;flex-shrink:0;border:none;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(194,85,61,.35)}
 #todo-compose-btn:active{transform:scale(.94)}
-#todo-section-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:4px 4px 8px}
-.todo-row{display:flex;align-items:flex-start;gap:11px;padding:12px 4px;border-bottom:1px solid var(--border)}
-.todo-check{width:23px;height:23px;flex-shrink:0;margin-top:1px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
+#todo-greeting{margin:2px 4px 18px}
+#todo-greeting-title{font:700 21px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg)}
+#todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+#todo-open-list,#todo-completed-list{background:var(--edit-bg);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);overflow:hidden}
+.todo-row{display:flex;align-items:flex-start;gap:11px;padding:13px 14px}
+.todo-row + .todo-row{border-top:1px solid var(--border)}
+.todo-check{width:23px;height:23px;flex-shrink:0;margin-top:2px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
 .todo-check:active{transform:scale(.9)}
 .todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
-.todo-main{flex:1;min-width:0;padding-top:1px}
-.todo-text{width:100%;border:none;background:none;color:var(--fg);font-size:14.5px;font-family:inherit;padding:0;line-height:1.4}
+.todo-main{flex:1;min-width:0;padding-top:2px}
+.todo-text{display:block;width:100%;border:none;background:none;color:var(--fg);font:400 14.5px/1.45 inherit;padding:0;resize:none;overflow:hidden}
+.todo-text:focus{outline:none}
 .todo-text.done{color:var(--hint);text-decoration:line-through}
-.todo-meta{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.todo-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .todo-due{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px 2px 6px}
 .todo-due.overdue{color:var(--fc-red)}
-.todo-del{border:none;background:none;color:var(--border);font-size:16px;line-height:1;cursor:pointer;padding:4px 4px;flex-shrink:0;margin-top:1px}
+.todo-del{border:none;background:none;color:var(--border);font-size:16px;line-height:1;cursor:pointer;padding:4px 4px;flex-shrink:0;margin-top:2px}
 .todo-del:active{color:var(--fc-red)}
 #todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:16px 4px 8px;cursor:pointer}
 #todo-completed-toggle svg{transition:transform .15s ease}
 #todo-completed-toggle.open svg{transform:rotate(90deg)}
-#todo-completed-list{display:none}
+#todo-completed-list{display:none;margin-top:2px}
 #todo-completed-list.open{display:block;animation:hub-fade-in .15s ease}
 
 /* Journal */
 .jn-card{border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:18px;background:var(--edit-bg);box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .jn-date{font:700 15px 'Inter',sans-serif;margin-bottom:2px}
 .jn-date-sub{font-size:11.5px;color:var(--hint);margin-bottom:14px}
-.jn-moods{display:flex;justify-content:space-between;gap:4px;margin-bottom:16px}
-.jn-mood{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex:1}
-.jn-mood-dot{width:34px;height:34px;border-radius:50%;background:var(--chip);border:2px solid transparent;display:flex;align-items:center;justify-content:center;transition:transform .12s ease,border-color .12s ease;font-size:16px}
-.jn-mood span{font:600 9.5px 'Inter',sans-serif}
-.jn-mood.sel .jn-mood-dot{transform:scale(1.08);border-color:currentColor}
+.jn-moods{display:flex;justify-content:space-between;gap:2px;margin-bottom:6px}
+.jn-mood{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex:1}
+.jn-mood-dot{width:42px;height:42px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s ease,box-shadow .15s ease}
+.jn-mood-dot svg{width:22px;height:22px}
+.jn-mood span{font:600 9.5px 'Inter',sans-serif;height:12px;opacity:0;transition:opacity .12s ease}
+.jn-mood:active .jn-mood-dot{transform:scale(.92)}
+.jn-mood.sel .jn-mood-dot{transform:scale(1.12)}
+.jn-mood.sel span{opacity:1}
 .jn-mood[data-mood="great"]{color:var(--fc-green)}
 .jn-mood[data-mood="good"]{color:var(--fc-blue)}
 .jn-mood[data-mood="neutral"]{color:var(--fc-gray)}
 .jn-mood[data-mood="low"]{color:var(--fc-orange)}
 .jn-mood[data-mood="rough"]{color:var(--fc-red)}
-.jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg)}
+.jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg);box-shadow:0 4px 16px -2px currentColor}
 .jn-body{width:100%;min-height:100px;border:none;background:none;color:var(--fg);font:400 14px/1.65 inherit;padding:0;resize:vertical}
 .jn-body:focus{outline:none}
 .jn-body::placeholder{color:var(--hint)}
@@ -204,6 +221,11 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
   </div>
 </div>
 
+<div id="hub-loading">
+  <div class="hub-spinner"></div>
+  <div id="hub-loading-text">Loading your Hub…</div>
+</div>
+
 <div id="hub-app">
 <header>
   <div id="hub-title-row">
@@ -221,7 +243,10 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 </header>
 <main>
   <section id="view-todos" class="hub-view active">
-    <div id="todo-section-label">Today &amp; upcoming</div>
+    <div id="todo-greeting">
+      <div id="todo-greeting-title"></div>
+      <div id="todo-greeting-sub"></div>
+    </div>
     <div id="todo-open-list"></div>
     <div id="todo-open-empty" class="hub-empty" style="display:none">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -485,20 +510,33 @@ function renderAccountButton(user){
 // in before (same flag index.html itself sets/checks), so a phone that's never been used
 // for this before pays zero Firebase cost and lands straight on the sign-in gate instead of
 // waiting on a network round-trip it already knows will fail.
+function showHubLoading(text){
+  document.getElementById('hub-loading-text').textContent=text||'Loading…';
+  document.getElementById('hub-loading').classList.add('show');
+}
+function hideHubLoading(){
+  document.getElementById('hub-loading').classList.remove('show');
+}
 function boot(){
   var wasActive=false;
   try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
   if(!wasActive)return; // sign-in gate is already the default visible state — nothing more to do
-  setAuthStatus('Signing in…');
+  document.getElementById('auth-gate').style.display='none';
+  showHubLoading('Signing in…');
   loadFirebaseMods().then(function(f){
     f.authMod.onAuthStateChanged(f.auth,function(user){
       if(user){ onSignedIn(user); }
       else{
         try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
-        setAuthStatus('');
+        hideHubLoading();
+        document.getElementById('auth-gate').style.display='flex';
       }
     });
-  }).catch(function(){ setAuthStatus('Could not reach your account — check your connection and try again.'); });
+  }).catch(function(){
+    hideHubLoading();
+    document.getElementById('auth-gate').style.display='flex';
+    setAuthStatus('Could not reach your account — check your connection and try again.');
+  });
 }
 
 // ============================================================================
@@ -628,7 +666,7 @@ function renderTodos(){
     var dueChip=t.dueDate?'<span class="todo-due'+(overdue?' overdue':'')+'">'+CAL_SVG+esc(t.dueDate)+'</span>':'';
     return '<div class="todo-row" data-id="'+esc(t.id)+'">'
       +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
-      +'<div class="todo-main"><input class="todo-text" data-action="edit" value="'+esc(t.text)+'" />'
+      +'<div class="todo-main"><textarea class="todo-text" data-action="edit" rows="1">'+esc(t.text)+'</textarea>'
       +(dueChip?'<div class="todo-meta">'+dueChip+'</div>':'')
       +'</div>'
       +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
@@ -645,6 +683,21 @@ function renderTodos(){
       +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
       +'</div>';
   }).join('');
+  openList.querySelectorAll('.todo-text').forEach(autoGrowTodoText);
+  renderTodoGreeting(open.length,done.length);
+}
+function renderTodoGreeting(openCount,completedCount){
+  var hour=new Date().getHours();
+  var greeting=hour<5?'Still up?':hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  document.getElementById('todo-greeting-title').textContent=greeting;
+  var sub;
+  if(openCount===0)sub=completedCount?'Everything\u2019s done \u2014 nice work.':'Nothing on your list yet.';
+  else sub=openCount+' task'+(openCount===1?'':'s')+' open';
+  document.getElementById('todo-greeting-sub').textContent=sub;
+}
+function autoGrowTodoText(el){
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
 }
 function findTodo(id){ return todos.find(function(t){return t.id===id}); }
 document.getElementById('todo-compose-btn').addEventListener('click',addTodoFromInput);
@@ -678,11 +731,14 @@ function todoListClick(e){
 }
 document.getElementById('todo-open-list').addEventListener('click',todoListClick);
 document.getElementById('todo-completed-list').addEventListener('click',todoListClick);
+document.getElementById('todo-open-list').addEventListener('input',function(e){
+  if(e.target.dataset.action==='edit')autoGrowTodoText(e.target);
+});
 document.getElementById('todo-open-list').addEventListener('change',function(e){
   if(e.target.dataset.action!=='edit')return;
   var row=e.target.closest('.todo-row'); var t=findTodo(row.dataset.id); if(!t)return;
   var val=e.target.value.trim();
-  if(!val){ e.target.value=t.text; return; }
+  if(!val){ e.target.value=t.text; autoGrowTodoText(e.target); return; }
   t.text=val;
   saveTodos();
 });
@@ -695,6 +751,16 @@ document.getElementById('todo-open-list').addEventListener('change',function(e){
 // ============================================================================
 var JOURNAL_MOODS=['great','good','neutral','low','rough'];
 var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
+// Small monoline face icons, one per mood tier — eyes as filled dots, mouth as a single
+// curve. All draw in currentColor, so they automatically flip to a light color once their
+// button is selected and its background fills solid (see .jn-mood.sel .jn-mood-dot in CSS).
+var JOURNAL_MOOD_ICON={
+  great:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7 13.5c1 4 3.5 6 5 6s4-2 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  good:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M7.5 14.5c1 2.3 2.7 3.5 4.5 3.5s3.5-1.2 4.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  neutral:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="9.5" r="1.15" fill="currentColor"/><circle cx="15.5" cy="9.5" r="1.15" fill="currentColor"/><path d="M8 15.5h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  low:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7.5 17.5c1-2.3 2.7-3.5 4.5-3.5s3.5 1.2 4.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  rough:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8.5" cy="10" r="1.15" fill="currentColor"/><circle cx="15.5" cy="10" r="1.15" fill="currentColor"/><path d="M7 19c1-4 3.5-6 5-6s4 2 5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+};
 var journalEntries=[];
 var jnSaveTimer=null;
 function normalizeJournalEntry(j){
@@ -741,7 +807,7 @@ function renderJournalToday(){
   var entry=findJournalEntry(date)||normalizeJournalEntry({date:date});
   document.getElementById('jn-today-date').textContent=formatJournalDateLabel(date)+' · Today';
   document.getElementById('jn-today-moods').innerHTML=JOURNAL_MOODS.map(function(m){
-    return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot"></span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
+    return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
   }).join('');
   document.getElementById('jn-today-body').value=entry.body;
 }
@@ -795,7 +861,7 @@ function renderJournalPast(){
     var preview=(j.body||'').replace(/\s+/g,' ').trim().slice(0,80)||'(no notes)';
     var open=j.id===jnExpandedId;
     var moods=JOURNAL_MOODS.map(function(m){
-      return '<button type="button" class="jn-mood'+(j.mood===m?' sel':'')+'" data-past-mood="'+m+'"><span class="jn-mood-dot"></span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
+      return '<button type="button" class="jn-mood'+(j.mood===m?' sel':'')+'" data-past-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
     }).join('');
     return '<div class="jn-past-item'+(open?' open':'')+'" data-id="'+esc(j.id)+'" data-mood="'+esc(j.mood)+'">'
       +'<div class="jn-past-row" data-action="expand">'
@@ -862,6 +928,7 @@ function onSignedIn(user){
   currentUser=user;
   document.getElementById('auth-gate').style.display='none';
   document.getElementById('hub-app').style.display='block';
+  showHubLoading('Loading your Hub…');
   setAuthStatus('');
   renderAccountButton(user);
   loadTodosLocal();
@@ -888,6 +955,7 @@ function onSignedIn(user){
     renderTodos();
     renderJournalToday();
     renderJournalPast();
+    hideHubLoading();
   });
 }
 
