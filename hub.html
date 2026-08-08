@@ -10,7 +10,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <!--
   Sakura Hub — a separate, purpose-built mobile page, rebuilt around mobile-native
   interaction patterns rather than a shrunk desktop layout: swipe-left-to-delete on list
@@ -87,12 +87,14 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-list{border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .swipe-row{position:relative;overflow:hidden}
 .swipe-row + .swipe-row{border-top:1px solid var(--border)}
-.swipe-delete-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;background:#c0392b}
-.swipe-delete-btn{width:64px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.swipe-bg{position:absolute;inset:0;display:flex;align-items:center}
+.swipe-bg-start{justify-content:flex-start;background:var(--fc-green)}
+.swipe-bg-end{justify-content:flex-end;background:#c0392b}
+.swipe-action-btn{width:76px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .swipe-content{position:relative;background:var(--edit-bg);transform:translateX(0);touch-action:pan-y;user-select:none}
 .swipe-row.dragging .swipe-content{transition:none}
 .swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
-.swipe-row.swiped .swipe-content{box-shadow:-6px 0 12px -6px rgba(0,0,0,.15)}
+.swipe-row.open-start .swipe-content,.swipe-row.open-end .swipe-content{box-shadow:0 0 12px -4px rgba(0,0,0,.15)}
 
 /* ---------- To-Do rows ---------- */
 .todo-row{display:flex;align-items:flex-start;gap:12px;padding:14px 14px;cursor:pointer}
@@ -136,13 +138,14 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .jn-mood-badge[data-mood="low"]{background:var(--fc-orange);color:#fff}
 .jn-mood-badge[data-mood="rough"]{background:var(--fc-red);color:#fff}
 .jn-today-main{flex:1;min-width:0}
-.jn-today-title{font:700 15px 'Inter',sans-serif}
-.jn-today-preview{font-size:12.5px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.jn-today-title{font:700 15px 'Inter',sans-serif;display:flex;align-items:center;gap:7px}
+.jn-streak-badge{display:inline-flex;align-items:center;gap:3px;font:700 11px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-radius:999px;padding:2px 8px 2px 5px}
+.jn-today-preview{font:400 12.5px/1.4 'Lora',serif;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .jn-today-chevron{color:var(--hint);flex-shrink:0}
 .jn-feed-row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer}
 .jn-feed-main{flex:1;min-width:0}
 .jn-feed-date{font:600 13px 'Inter',sans-serif}
-.jn-feed-preview{font-size:12.5px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.jn-feed-preview{font:400 12.5px/1.4 'Lora',serif;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .jn-feed-tags{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
 .jn-feed-tag{font:600 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:2px 7px}
 
@@ -218,9 +221,9 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .jn-mood[data-mood="low"]{color:var(--fc-orange)}
 .jn-mood[data-mood="rough"]{color:var(--fc-red)}
 .jn-mood.sel .jn-mood-dot{background:currentColor;color:var(--edit-bg);box-shadow:0 4px 16px -2px currentColor}
-#entry-detail-body{width:100%;min-height:160px;border:none;background:none;color:var(--fg);font:400 14.5px/1.65 inherit;padding:10px 0;resize:vertical}
+#entry-detail-body{width:100%;min-height:160px;border:none;background:none;color:var(--fg);font:400 16.5px/1.75 'Lora',serif;padding:10px 0;resize:vertical;letter-spacing:.1px}
 #entry-detail-body:focus{outline:none}
-#entry-detail-body::placeholder{color:var(--hint)}
+#entry-detail-body::placeholder{color:var(--hint);font-style:italic}
 .jn-tags{display:flex;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--border)}
 .jn-tag{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:4px 6px 4px 10px}
 .jn-tag button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;padding:0 2px;font-size:12px;line-height:1}
@@ -505,25 +508,31 @@ document.getElementById('hub-toast').addEventListener('click',function(e){
 // particular tends to fight the page for gesture ownership mid-swipe.
 // ============================================================================
 function initSwipeList(listEl,opts){
-  var OPEN_X=-72;
+  // opts: {onTap(id), onSwipeLeft(id) — reveals the right-anchored action (delete, always
+  // present), onSwipeRight(id) — reveals the left-anchored action (complete; only on To-Dos,
+  // where "which direction does what" mirrors Things 3's swipe-right-to-complete). Whichever
+  // of onSwipeLeft/onSwipeRight is omitted, that direction just declines to open — dragging
+  // it feels like a soft stop at zero rather than a dead gesture.
+  var OPEN=76;
   var state=null;
   function setX(row,x,animate){
     row.classList.toggle('dragging',!animate);
     row.querySelector('.swipe-content').style.transform = x ? 'translateX('+x+'px)' : '';
   }
-  function closeRow(row,animate){ row.classList.remove('swiped'); setX(row,0,animate); }
+  function closeRow(row,animate){ row.classList.remove('open-start','open-end'); setX(row,0,animate); }
   function closeAllExcept(except){
-    listEl.querySelectorAll('.swipe-row.swiped').forEach(function(r){ if(r!==except)closeRow(r,true); });
+    listEl.querySelectorAll('.swipe-row.open-start,.swipe-row.open-end').forEach(function(r){ if(r!==except)closeRow(r,true); });
   }
   listEl.addEventListener('pointerdown',function(e){
-    if(e.target.closest('.swipe-delete-btn'))return;
+    if(e.target.closest('.swipe-action-btn'))return;
     if(e.target.closest('[data-action="toggle"]'))return;
     var row=e.target.closest('.swipe-row'); if(!row)return;
     if(row._nudgeTimers){
       row._nudgeTimers.forEach(clearTimeout); row._nudgeTimers=null;
       row.querySelector('.swipe-content').style.transition='';
     }
-    state={row:row,startX:e.clientX,startY:e.clientY,decided:null,wasSwiped:row.classList.contains('swiped'),lastX:0};
+    var baseX = row.classList.contains('open-start')?OPEN : row.classList.contains('open-end')?-OPEN : 0;
+    state={row:row,startX:e.clientX,startY:e.clientY,decided:null,baseX:baseX,wasOpen:baseX!==0,lastX:baseX};
     closeAllExcept(row);
   });
   listEl.addEventListener('pointermove',function(e){
@@ -535,8 +544,9 @@ function initSwipeList(listEl,opts){
     }
     if(state.decided!=='h')return;
     if(e.cancelable)e.preventDefault();
-    var base=state.wasSwiped?OPEN_X:0;
-    var x=Math.max(OPEN_X-24,Math.min(0,base+dx));
+    var minX = opts.onSwipeLeft ? -(OPEN+24) : 0;
+    var maxX = opts.onSwipeRight ? (OPEN+24) : 0;
+    var x=Math.max(minX,Math.min(maxX,state.baseX+dx));
     setX(state.row,x,false);
     state.lastX=x;
   });
@@ -545,24 +555,30 @@ function initSwipeList(listEl,opts){
     var s=state; state=null;
     s.row.classList.remove('dragging');
     if(s.decided==='h'){
-      if(s.lastX<OPEN_X/2){ s.row.classList.add('swiped'); setX(s.row,OPEN_X,true); }
+      if(s.lastX<=-OPEN/2 && opts.onSwipeLeft){ s.row.classList.add('open-end'); setX(s.row,-OPEN,true); }
+      else if(s.lastX>=OPEN/2 && opts.onSwipeRight){ s.row.classList.add('open-start'); setX(s.row,OPEN,true); }
       else{ closeRow(s.row,true); }
     }else{
-      if(s.wasSwiped){ closeRow(s.row,true); }
+      if(s.wasOpen){ closeRow(s.row,true); }
       else if(opts.onTap){ opts.onTap(s.row.dataset.id); }
     }
   }
   listEl.addEventListener('pointerup',finish);
   listEl.addEventListener('pointercancel',finish);
   listEl.addEventListener('click',function(e){
-    var delBtn=e.target.closest('.swipe-delete-btn'); if(!delBtn)return;
+    var btn=e.target.closest('.swipe-action-btn'); if(!btn)return;
     var row=e.target.closest('.swipe-row'); if(!row)return;
-    if(opts.onDelete)opts.onDelete(row.dataset.id);
+    if(btn.dataset.swipeAction==='delete'&&opts.onSwipeLeft)opts.onSwipeLeft(row.dataset.id);
+    else if(btn.dataset.swipeAction==='complete'&&opts.onSwipeRight)opts.onSwipeRight(row.dataset.id);
   });
 }
-function swipeRowShell(id,innerHtml){
+function swipeRowShell(id,innerHtml,withComplete){
+  var startBg = withComplete
+    ? '<div class="swipe-bg swipe-bg-start"><button type="button" class="swipe-action-btn" data-swipe-action="complete" aria-label="Complete"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button></div>'
+    : '';
   return '<div class="swipe-row" data-id="'+esc(id)+'">'
-    +'<div class="swipe-delete-bg"><button type="button" class="swipe-delete-btn" aria-label="Delete"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>'
+    +startBg
+    +'<div class="swipe-bg swipe-bg-end"><button type="button" class="swipe-action-btn" data-swipe-action="delete" aria-label="Delete"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>'
     +'<div class="swipe-content">'+innerHtml+'</div>'
     +'</div>';
 }
@@ -994,7 +1010,7 @@ function renderTodos(){
   var done=todos.filter(function(t){return t.done});
   openEmpty.style.display=open.length?'none':'';
   list.style.display=open.length?'':'none';
-  list.innerHTML=open.map(function(t){ return swipeRowShell(t.id,todoRowInnerHtml(t)); }).join('');
+  list.innerHTML=open.map(function(t){ return swipeRowShell(t.id,todoRowInnerHtml(t),true); }).join('');
   doneToggle.classList.toggle('open',todoCompletedOpen);
   doneCount.textContent='Completed ('+done.length+')';
   doneToggle.style.display=done.length?'':'none';
@@ -1022,9 +1038,23 @@ document.getElementById('todo-completed-toggle').addEventListener('click',functi
 });
 // Open list: swipe-to-delete + tap-to-open-detail, plus a direct click handler for the
 // checkbox (excluded from the swipe/tap gesture state machine — see initSwipeList).
+function completeTaskAnimated(id){
+  var row=document.querySelector('#todo-list .swipe-row[data-id="'+CSS.escape(id)+'"]'); if(!row)return;
+  var t=findTodo(id); if(!t)return;
+  var checkBtn=row.querySelector('.todo-check');
+  checkBtn.classList.add('done'); checkBtn.innerHTML=CHECK_SVG;
+  row.querySelector('.todo-row-text').classList.add('done');
+  row.style.transition='opacity .28s ease, transform .28s ease';
+  row.style.opacity='0'; row.style.transform='scale(.97)';
+  setTimeout(function(){
+    t.done=true; t.completedAt=Date.now();
+    saveTodos(); renderTodos();
+  },240);
+}
 initSwipeList(document.getElementById('todo-list'),{
   onTap:function(id){ openTaskDetail(id); },
-  onDelete:function(id){
+  onSwipeRight:function(id){ completeTaskAnimated(id); },
+  onSwipeLeft:function(id){
     var idx=todos.findIndex(function(t){return t.id===id}); if(idx===-1)return;
     var removed=todos[idx];
     todos.splice(idx,1);
@@ -1038,16 +1068,7 @@ initSwipeList(document.getElementById('todo-list'),{
 document.getElementById('todo-list').addEventListener('click',function(e){
   if(!e.target.closest('[data-action="toggle"]'))return;
   var row=e.target.closest('.swipe-row'); if(!row)return;
-  var t=findTodo(row.dataset.id); if(!t)return;
-  var checkBtn=e.target.closest('.todo-check');
-  checkBtn.classList.add('done'); checkBtn.innerHTML=CHECK_SVG;
-  row.querySelector('.todo-row-text').classList.add('done');
-  row.style.transition='opacity .28s ease, transform .28s ease';
-  row.style.opacity='0'; row.style.transform='scale(.97)';
-  setTimeout(function(){
-    t.done=true; t.completedAt=Date.now();
-    saveTodos(); renderTodos();
-  },240);
+  completeTaskAnimated(row.dataset.id);
 });
 document.getElementById('todo-completed-list').addEventListener('click',function(e){
   var row=e.target.closest('.todo-completed-row'); if(!row)return;
@@ -1234,15 +1255,36 @@ function renderTagsHtml(tags,addingActive){
     : '<button type="button" class="jn-tag-add" data-action="tag-add-start">+ Tag</button>';
   return chips+adder;
 }
+var JOURNAL_FLAME_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.5 2.2c1.1 3.4-1.8 4.9-2.9 7.2-.9 1.9-.5 3.7.7 4.9-1.6-.4-2.8-1.8-2.8-3.5 0-.5.1-1 .3-1.4-1.6 1.4-2.6 3.5-2.6 5.8 0 4 3.2 6.8 7 6.8s7-2.9 7-6.8c0-4.4-2.9-6.7-6.7-13z"/></svg>';
+// Counts backward from today (or yesterday, if today has nothing yet — a streak isn't
+// broken until the day actually ends) through consecutive days with a real entry (some
+// mood or body text, not just an empty placeholder date). Mirrors the "keep it alive"
+// convention every streak-based app uses: writing today doesn't require having also
+// written in the last hour, just on each day in the run.
+function computeJournalStreak(){
+  var dates={};
+  journalEntries.forEach(function(j){ if(j.body.trim()||j.mood)dates[j.date]=true; });
+  var d=new Date();
+  if(!dates[todayStr()])d.setDate(d.getDate()-1);
+  var streak=0;
+  while(true){
+    var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!dates[ds])break;
+    streak++; d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
 function renderJournalToday(){
   var date=todayStr();
   var entry=findJournalEntry(date);
   var card=document.getElementById('jn-today-card');
   var mood=entry?entry.mood:'';
   var preview=entry&&entry.body.trim()?entry.body.replace(/\s+/g,' ').trim().slice(0,90):'Tap to write today\u2019s entry';
+  var streak=computeJournalStreak();
+  var streakBadge=streak>=2?'<span class="jn-streak-badge">'+JOURNAL_FLAME_SVG+' '+streak+'</span>':'';
   card.innerHTML=
     '<div class="jn-mood-badge" data-mood="'+esc(mood)+'">'+(mood?JOURNAL_MOOD_ICON[mood]:JOURNAL_NEUTRAL_ICON)+'</div>'
-    +'<div class="jn-today-main"><div class="jn-today-title">Today</div><div class="jn-today-preview">'+esc(preview)+'</div></div>'
+    +'<div class="jn-today-main"><div class="jn-today-title">Today'+streakBadge+'</div><div class="jn-today-preview">'+esc(preview)+'</div></div>'
     +'<svg class="jn-today-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 }
 document.getElementById('jn-today-card').addEventListener('click',function(){ openEntryDetail(todayStr()); });
@@ -1272,7 +1314,7 @@ initSwipeList(document.getElementById('jn-feed-list'),{
     var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
     openEntryDetail(entry.date);
   },
-  onDelete:function(id){
+  onSwipeLeft:function(id){
     var idx=journalEntries.findIndex(function(j){return j.id===id}); if(idx===-1)return;
     var removed=journalEntries[idx];
     journalEntries.splice(idx,1);
