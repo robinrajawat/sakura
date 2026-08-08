@@ -143,8 +143,8 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 #todo-greeting-title{font:700 21px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg)}
 #todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
 #todo-open-list,#todo-completed-list{background:var(--edit-bg);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);overflow:hidden}
-.todo-row{display:flex;align-items:flex-start;gap:11px;padding:13px 14px}
-.todo-row + .todo-row{border-top:1px solid var(--border)}
+.todo-item + .todo-item{border-top:1px solid var(--border)}
+.todo-row{display:flex;align-items:flex-start;gap:10px;padding:13px 14px}
 .todo-check{width:23px;height:23px;flex-shrink:0;margin-top:2px;border:2px solid var(--border);border-radius:50%;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .12s ease,border-color .12s ease,transform .1s ease}
 .todo-check:active{transform:scale(.9)}
 .todo-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -153,10 +153,41 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 .todo-text:focus{outline:none}
 .todo-text.done{color:var(--hint);text-decoration:line-through}
 .todo-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.todo-due{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px 2px 6px}
-.todo-due.overdue{color:var(--fc-red)}
-.todo-del{border:none;background:none;color:var(--border);font-size:16px;line-height:1;cursor:pointer;padding:4px 4px;flex-shrink:0;margin-top:2px}
+.todo-chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 8px 2px 6px}
+.todo-chip.overdue{color:var(--fc-red)}
+.todo-chip[data-status="waiting"]{color:var(--fc-gray);background:color-mix(in srgb,var(--fc-gray) 16%,transparent)}
+.todo-chip[data-status="progress"]{color:var(--fc-blue);background:color-mix(in srgb,var(--fc-blue) 16%,transparent)}
+.todo-chip[data-status="blocked"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 16%,transparent)}
+.todo-chip[data-status="review"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 16%,transparent)}
+.todo-row-actions{display:flex;align-items:center;flex-shrink:0;margin-top:1px}
+.todo-del{border:none;background:none;color:var(--border);font-size:16px;line-height:1;cursor:pointer;padding:4px 4px}
 .todo-del:active{color:var(--fc-red)}
+.todo-expand{border:none;background:none;color:var(--hint);cursor:pointer;padding:4px 2px 4px 6px;display:flex}
+.todo-expand svg{transition:transform .15s ease}
+.todo-item.open .todo-expand svg{transform:rotate(90deg)}
+.todo-detail{display:none;padding:2px 14px 16px 47px}
+.todo-item.open .todo-detail{display:block;animation:hub-fade-in .15s ease}
+.todo-detail-label{font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint);margin:10px 0 6px}
+.todo-detail-label:first-child{margin-top:0}
+.todo-status-row{display:flex;gap:6px;flex-wrap:wrap}
+.todo-status-pill{border:1px solid var(--border);background:none;color:var(--muted);font:600 11px 'Inter',sans-serif;padding:5px 11px;border-radius:999px;cursor:pointer}
+.todo-status-pill.sel{color:#fff;border-color:transparent}
+.todo-status-pill[data-status="waiting"].sel{background:var(--fc-gray)}
+.todo-status-pill[data-status="progress"].sel{background:var(--fc-blue)}
+.todo-status-pill[data-status="blocked"].sel{background:var(--fc-red)}
+.todo-status-pill[data-status="review"].sel{background:var(--fc-orange)}
+.todo-due-row{display:flex;align-items:center;gap:8px}
+.todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;padding:6px 9px}
+.todo-due-clear{border:none;background:none;color:var(--muted);font-size:11.5px;cursor:pointer;padding:4px 6px;text-decoration:underline}
+.todo-subtask-row{display:flex;align-items:center;gap:8px;padding:5px 0}
+.todo-subtask-check{width:17px;height:17px;flex-shrink:0;border:1.5px solid var(--border);border-radius:5px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.todo-subtask-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.todo-subtask-text{flex:1;font-size:12.5px;color:var(--fg)}
+.todo-subtask-text.done{color:var(--hint);text-decoration:line-through}
+.todo-subtask-del{border:none;background:none;color:var(--border);font-size:14px;cursor:pointer;padding:2px 4px}
+.todo-subtask-add{display:flex;gap:6px;margin-top:6px}
+.todo-subtask-add input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font-size:12.5px;padding:6px 9px;font-family:inherit}
+.todo-subtask-add button{border:none;background:var(--chip);color:var(--accent);border-radius:8px;padding:6px 11px;font:600 12px 'Inter',sans-serif;cursor:pointer}
 #todo-completed-toggle{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font:600 12px 'Inter',sans-serif;padding:16px 4px 8px;cursor:pointer}
 #todo-completed-toggle svg{transition:transform .15s ease}
 #todo-completed-toggle.open svg{transform:rotate(90deg)}
@@ -185,6 +216,12 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 .jn-body:focus{outline:none}
 .jn-body::placeholder{color:var(--hint)}
 .jn-save-hint{font-size:10.5px;color:var(--hint);margin-top:8px;min-height:13px;text-align:right}
+.jn-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.jn-tag{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:4px 6px 4px 10px}
+.jn-tag button{border:none;background:none;color:inherit;opacity:.6;cursor:pointer;padding:0 2px;font-size:12px;line-height:1}
+.jn-tag button:active{opacity:1}
+.jn-tag-add{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--muted);background:var(--chip);border:1px dashed var(--border);border-radius:999px;padding:4px 10px;cursor:pointer}
+.jn-tag-input{width:84px;font:600 11px 'Inter',sans-serif;color:var(--fg);background:var(--chip);border:1px solid var(--accent);border-radius:999px;padding:4px 10px}
 #jn-past-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:4px 4px 10px}
 .jn-past-item{border-radius:12px;background:var(--edit-bg);border:1px solid var(--border);margin-bottom:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
 .jn-past-row{display:flex;align-items:center;gap:10px;padding:12px 13px;cursor:pointer;border-left:3px solid var(--border)}
@@ -280,6 +317,7 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
       <div class="jn-date-sub">How was today?</div>
       <div class="jn-moods" id="jn-today-moods"></div>
       <textarea class="jn-body" id="jn-today-body" placeholder="Write about today…" rows="4"></textarea>
+      <div class="jn-tags" id="jn-today-tags"></div>
       <div class="jn-save-hint" id="jn-today-hint"></div>
     </div>
     <div id="jn-past-label">Past entries</div>
@@ -770,6 +808,9 @@ function newTodo(text){
     nodeRef:null, meetingRef:null, repeat:null, subtasks:[], subtasksOpen:true
   };
 }
+var TODO_STATUSES=['waiting','progress','blocked','review'];
+var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
+var todoExpandedId=null;
 function renderTodos(){
   var openList=document.getElementById('todo-open-list');
   var openEmpty=document.getElementById('todo-open-empty');
@@ -779,18 +820,52 @@ function renderTodos(){
   var open=todos.filter(function(t){return !t.done});
   var done=todos.filter(function(t){return t.done});
   var CHECK_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var CHECK_SVG_SM='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var CAL_SVG='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  var CHEVRON_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
   openEmpty.style.display=open.length?'none':'';
   var today=todayStr();
   openList.innerHTML=open.map(function(t){
     var overdue=t.dueDate && t.dueDate<today;
-    var dueChip=t.dueDate?'<span class="todo-due'+(overdue?' overdue':'')+'">'+CAL_SVG+esc(t.dueDate)+'</span>':'';
-    return '<div class="todo-row" data-id="'+esc(t.id)+'">'
-      +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
-      +'<div class="todo-main"><textarea class="todo-text" data-action="edit" rows="1">'+esc(t.text)+'</textarea>'
-      +(dueChip?'<div class="todo-meta">'+dueChip+'</div>':'')
+    var subtasks=t.subtasks||[];
+    var subDone=subtasks.filter(function(s){return s.done}).length;
+    var chips=[];
+    if(t.dueDate)chips.push('<span class="todo-chip'+(overdue?' overdue':'')+'">'+CAL_SVG+esc(t.dueDate)+'</span>');
+    if(t.status&&t.status!=='none')chips.push('<span class="todo-chip" data-status="'+t.status+'">'+TODO_STATUS_LABEL[t.status]+'</span>');
+    if(subtasks.length)chips.push('<span class="todo-chip">'+CHECK_SVG_SM+' '+subDone+'/'+subtasks.length+'</span>');
+    var statusPills=TODO_STATUSES.map(function(s){
+      return '<button type="button" class="todo-status-pill'+(t.status===s?' sel':'')+'" data-status="'+s+'" data-action="status-set">'+TODO_STATUS_LABEL[s]+'</button>';
+    }).join('');
+    var subtaskRows=subtasks.map(function(s){
+      return '<div class="todo-subtask-row" data-sub-id="'+esc(s.id)+'">'
+        +'<button type="button" class="todo-subtask-check'+(s.done?' done':'')+'" data-action="sub-toggle">'+(s.done?CHECK_SVG_SM:'')+'</button>'
+        +'<span class="todo-subtask-text'+(s.done?' done':'')+'">'+esc(s.text)+'</span>'
+        +'<button type="button" class="todo-subtask-del" data-action="sub-delete" aria-label="Delete subtask">×</button>'
+        +'</div>';
+    }).join('');
+    var open_=t.id===todoExpandedId;
+    return '<div class="todo-item'+(open_?' open':'')+'" data-id="'+esc(t.id)+'">'
+      +'<div class="todo-row">'
+        +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
+        +'<div class="todo-main"><textarea class="todo-text" data-action="edit" rows="1">'+esc(t.text)+'</textarea>'
+        +(chips.length?'<div class="todo-meta">'+chips.join('')+'</div>':'')
+        +'</div>'
+        +'<div class="todo-row-actions">'
+          +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
+          +'<button class="todo-expand" data-action="expand" aria-label="Task details">'+CHEVRON_SVG+'</button>'
+        +'</div>'
       +'</div>'
-      +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
+      +'<div class="todo-detail">'
+        +'<div class="todo-detail-label">Status</div>'
+        +'<div class="todo-status-row">'+statusPills+'</div>'
+        +'<div class="todo-detail-label">Due date</div>'
+        +'<div class="todo-due-row"><input type="date" class="todo-due-input" data-action="due-input" value="'+esc(t.dueDate||'')+'">'
+        +(t.dueDate?'<button type="button" class="todo-due-clear" data-action="due-clear">Clear</button>':'')
+        +'</div>'
+        +'<div class="todo-detail-label">Subtasks</div>'
+        +subtaskRows
+        +'<div class="todo-subtask-add"><input type="text" placeholder="Add subtask…" data-action="sub-add-input" maxlength="300"><button type="button" data-action="sub-add-btn">Add</button></div>'
+      +'</div>'
       +'</div>';
   }).join('');
   doneToggle.classList.toggle('open',todoCompletedOpen);
@@ -798,11 +873,11 @@ function renderTodos(){
   doneToggle.style.display=done.length?'':'none';
   doneList.className=todoCompletedOpen?'open':'';
   doneList.innerHTML=done.slice().sort(function(a,b){return (b.completedAt||0)-(a.completedAt||0)}).map(function(t){
-    return '<div class="todo-row" data-id="'+esc(t.id)+'">'
+    return '<div class="todo-item" data-id="'+esc(t.id)+'"><div class="todo-row">'
       +'<button class="todo-check done" data-action="toggle" aria-label="Mark not done">'+CHECK_SVG+'</button>'
       +'<div class="todo-main"><span class="todo-text done">'+esc(t.text)+'</span></div>'
-      +'<button class="todo-del" data-action="delete" aria-label="Delete task">×</button>'
-      +'</div>';
+      +'<div class="todo-row-actions"><button class="todo-del" data-action="delete" aria-label="Delete task">×</button></div>'
+      +'</div></div>';
   }).join('');
   openList.querySelectorAll('.todo-text').forEach(autoGrowTodoText);
   renderTodoGreeting(open.length,done.length);
@@ -834,10 +909,19 @@ function addTodoFromInput(){
 document.getElementById('todo-completed-toggle').addEventListener('click',function(){
   todoCompletedOpen=!todoCompletedOpen; renderTodos();
 });
+function addSubtaskFromItem(item,t){
+  var input=item.querySelector('[data-action="sub-add-input"]');
+  var text=input.value.trim();
+  if(!text)return;
+  if(!Array.isArray(t.subtasks))t.subtasks=[];
+  t.subtasks.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text.slice(0,300),done:false});
+  saveTodos(); renderTodos();
+}
 function todoListClick(e){
-  var row=e.target.closest('.todo-row'); if(!row)return;
-  var id=row.dataset.id; var t=findTodo(id); if(!t)return;
-  var action=e.target.dataset.action;
+  var item=e.target.closest('.todo-item'); if(!item)return;
+  var id=item.dataset.id; var t=findTodo(id); if(!t)return;
+  var actionEl=e.target.closest('[data-action]'); if(!actionEl)return;
+  var action=actionEl.dataset.action;
   if(action==='toggle'){
     t.done=!t.done;
     t.completedAt=t.done?Date.now():null;
@@ -846,22 +930,56 @@ function todoListClick(e){
     hubConfirm('Delete this task?',t.text,'Delete').then(function(ok){
       if(!ok)return;
       todos=todos.filter(function(x){return x.id!==id});
+      if(todoExpandedId===id)todoExpandedId=null;
       saveTodos(); renderTodos();
     });
+  }else if(action==='expand'){
+    todoExpandedId = (todoExpandedId===id) ? null : id;
+    renderTodos();
+  }else if(action==='status-set'){
+    var s=actionEl.dataset.status;
+    t.status = (t.status===s) ? 'none' : s;
+    saveTodos(); renderTodos();
+  }else if(action==='due-clear'){
+    t.dueDate=null;
+    saveTodos(); renderTodos();
+  }else if(action==='sub-toggle'){
+    var subRow=e.target.closest('.todo-subtask-row'); if(!subRow)return;
+    var sub=(t.subtasks||[]).find(function(s){return s.id===subRow.dataset.subId}); if(!sub)return;
+    sub.done=!sub.done;
+    saveTodos(); renderTodos();
+  }else if(action==='sub-delete'){
+    var subRow2=e.target.closest('.todo-subtask-row'); if(!subRow2)return;
+    t.subtasks=(t.subtasks||[]).filter(function(s){return s.id!==subRow2.dataset.subId});
+    saveTodos(); renderTodos();
+  }else if(action==='sub-add-btn'){
+    addSubtaskFromItem(item,t);
   }
 }
 document.getElementById('todo-open-list').addEventListener('click',todoListClick);
 document.getElementById('todo-completed-list').addEventListener('click',todoListClick);
+document.getElementById('todo-open-list').addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var actionEl=e.target.closest('[data-action="sub-add-input"]'); if(!actionEl)return;
+  e.preventDefault();
+  var item=e.target.closest('.todo-item'); var t=findTodo(item.dataset.id); if(!t)return;
+  addSubtaskFromItem(item,t);
+});
 document.getElementById('todo-open-list').addEventListener('input',function(e){
   if(e.target.dataset.action==='edit')autoGrowTodoText(e.target);
 });
 document.getElementById('todo-open-list').addEventListener('change',function(e){
-  if(e.target.dataset.action!=='edit')return;
-  var row=e.target.closest('.todo-row'); var t=findTodo(row.dataset.id); if(!t)return;
-  var val=e.target.value.trim();
-  if(!val){ e.target.value=t.text; autoGrowTodoText(e.target); return; }
-  t.text=val;
-  saveTodos();
+  var item=e.target.closest('.todo-item'); if(!item)return;
+  var t=findTodo(item.dataset.id); if(!t)return;
+  if(e.target.dataset.action==='edit'){
+    var val=e.target.value.trim();
+    if(!val){ e.target.value=t.text; autoGrowTodoText(e.target); return; }
+    t.text=val;
+    saveTodos();
+  }else if(e.target.dataset.action==='due-input'){
+    t.dueDate=e.target.value||null;
+    saveTodos(); renderTodos();
+  }
 });
 
 // ============================================================================
@@ -923,6 +1041,15 @@ function formatJournalDateLabel(dateStr){
   var d=new Date(dateStr+'T00:00:00');
   return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
 }
+function renderTagsHtml(tags,addingActive){
+  var chips=(tags||[]).map(function(tag){
+    return '<span class="jn-tag">'+esc(tag)+'<button type="button" data-action="tag-remove" data-tag="'+esc(tag)+'" aria-label="Remove tag">×</button></span>';
+  }).join('');
+  var adder=addingActive
+    ? '<input type="text" class="jn-tag-input" data-action="tag-input" maxlength="40" placeholder="tag…">'
+    : '<button type="button" class="jn-tag-add" data-action="tag-add-start">+ Tag</button>';
+  return chips+adder;
+}
 function renderJournalToday(){
   var date=todayStr();
   var entry=findJournalEntry(date)||normalizeJournalEntry({date:date});
@@ -931,6 +1058,8 @@ function renderJournalToday(){
     return '<button type="button" class="jn-mood'+(entry.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="jn-mood-dot">'+JOURNAL_MOOD_ICON[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
   }).join('');
   document.getElementById('jn-today-body').value=entry.body;
+  document.getElementById('jn-today-tags').innerHTML=renderTagsHtml(entry.tags,jnTodayAddingTag);
+  if(jnTodayAddingTag)document.querySelector('#jn-today-tags [data-action="tag-input"]').focus();
 }
 document.getElementById('jn-today-moods').addEventListener('click',function(e){
   var btn=e.target.closest('.jn-mood'); if(!btn)return;
@@ -944,10 +1073,51 @@ document.getElementById('jn-today-moods').addEventListener('click',function(e){
   }
   entry.mood = entry.mood===mood ? '' : mood;
   entry.modifiedAt=Date.now();
-  if(!entry.body.trim() && !entry.mood){
+  if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
     journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
   }
   saveJournalEntries(); renderJournalToday(); renderJournalPast();
+});
+var jnTagSuppressCommit=false;
+var jnTodayAddingTag=false;
+document.getElementById('jn-today-tags').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-action]'); if(!btn)return;
+  var date=todayStr();
+  if(btn.dataset.action==='tag-add-start'){
+    jnTodayAddingTag=true;
+    renderJournalToday();
+  }else if(btn.dataset.action==='tag-remove'){
+    var entry=findJournalEntry(date); if(!entry)return;
+    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==btn.dataset.tag});
+    entry.modifiedAt=Date.now();
+    if(!entry.body.trim() && !entry.mood && !entry.tags.length){
+      journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
+    }
+    saveJournalEntries(); renderJournalToday(); renderJournalPast();
+  }
+});
+function commitTodayTagInput(input){
+  jnTagSuppressCommit=true;
+  jnTodayAddingTag=false;
+  var val=input.value.trim();
+  if(!val){ renderJournalToday(); return; }
+  var date=todayStr();
+  var entry=findJournalEntry(date);
+  if(!entry){ entry=normalizeJournalEntry({date:date}); journalEntries.push(entry); }
+  if(!Array.isArray(entry.tags))entry.tags=[];
+  if(entry.tags.indexOf(val)===-1)entry.tags.push(val);
+  entry.modifiedAt=Date.now();
+  saveJournalEntries(); renderJournalToday(); renderJournalPast();
+}
+document.getElementById('jn-today-tags').addEventListener('keydown',function(e){
+  if(e.target.dataset.action!=='tag-input')return;
+  if(e.key==='Enter'){ e.preventDefault(); commitTodayTagInput(e.target); }
+  else if(e.key==='Escape'){ jnTagSuppressCommit=true; jnTodayAddingTag=false; renderJournalToday(); }
+});
+document.getElementById('jn-today-tags').addEventListener('focusout',function(e){
+  if(e.target.dataset.action!=='tag-input')return;
+  if(jnTagSuppressCommit){ jnTagSuppressCommit=false; return; }
+  commitTodayTagInput(e.target);
 });
 document.getElementById('jn-today-body').addEventListener('input',function(e){
   clearTimeout(jnSaveTimer);
@@ -963,7 +1133,7 @@ document.getElementById('jn-today-body').addEventListener('input',function(e){
     }
     entry.body=body;
     entry.modifiedAt=Date.now();
-    if(!entry.body.trim() && !entry.mood){
+    if(!entry.body.trim() && !entry.mood && !(entry.tags&&entry.tags.length)){
       journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
     }
     saveJournalEntries();
@@ -972,6 +1142,7 @@ document.getElementById('jn-today-body').addEventListener('input',function(e){
   },500);
 });
 var jnExpandedId=null;
+var jnPastAddingTagId=null;
 function renderJournalPast(){
   var list=document.getElementById('jn-past-list');
   var empty=document.getElementById('jn-past-empty');
@@ -992,9 +1163,14 @@ function renderJournalPast(){
       +'<button class="jn-past-del" data-action="delete" aria-label="Delete entry">×</button>'
       +'</div>'
       +'<div class="jn-past-edit"><div class="jn-moods">'+moods+'</div>'
-      +'<textarea class="jn-body" data-past-body rows="4">'+esc(j.body)+'</textarea></div>'
+      +'<textarea class="jn-body" data-past-body rows="4">'+esc(j.body)+'</textarea>'
+      +'<div class="jn-tags">'+renderTagsHtml(j.tags,j.id===jnPastAddingTagId)+'</div></div>'
       +'</div>';
   }).join('');
+  if(jnPastAddingTagId){
+    var input=document.querySelector('.jn-past-item[data-id="'+CSS.escape(jnPastAddingTagId)+'"] [data-action="tag-input"]');
+    if(input)input.focus();
+  }
 }
 function updateJnPastRowSummary(id){
   var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return;
@@ -1027,7 +1203,44 @@ document.getElementById('jn-past-list').addEventListener('click',function(e){
   if(e.target.closest('[data-action="expand"]')){
     jnExpandedId = (jnExpandedId===id) ? null : id;
     renderJournalPast();
+    return;
   }
+  var tagBtn=e.target.closest('[data-action]');
+  if(tagBtn&&tagBtn.dataset.action==='tag-add-start'){
+    jnPastAddingTagId=id;
+    renderJournalPast();
+  }else if(tagBtn&&tagBtn.dataset.action==='tag-remove'){
+    entry.tags=(entry.tags||[]).filter(function(tg){return tg!==tagBtn.dataset.tag});
+    entry.modifiedAt=Date.now();
+    if(!entry.body.trim() && !entry.mood && !entry.tags.length){
+      journalEntries=journalEntries.filter(function(j){return j.id!==entry.id});
+      if(jnExpandedId===id)jnExpandedId=null;
+    }
+    saveJournalEntries(); renderJournalPast();
+  }
+});
+function commitPastTagInput(input,id){
+  jnTagSuppressCommit=true;
+  jnPastAddingTagId=null;
+  var val=input.value.trim();
+  var entry=journalEntries.find(function(j){return j.id===id}); if(!entry)return renderJournalPast();
+  if(!val)return renderJournalPast();
+  if(!Array.isArray(entry.tags))entry.tags=[];
+  if(entry.tags.indexOf(val)===-1)entry.tags.push(val);
+  entry.modifiedAt=Date.now();
+  saveJournalEntries(); renderJournalPast();
+}
+document.getElementById('jn-past-list').addEventListener('keydown',function(e){
+  if(e.target.dataset.action!=='tag-input')return;
+  var item=e.target.closest('.jn-past-item'); if(!item)return;
+  if(e.key==='Enter'){ e.preventDefault(); commitPastTagInput(e.target,item.dataset.id); }
+  else if(e.key==='Escape'){ jnTagSuppressCommit=true; jnPastAddingTagId=null; renderJournalPast(); }
+});
+document.getElementById('jn-past-list').addEventListener('focusout',function(e){
+  if(e.target.dataset.action!=='tag-input')return;
+  if(jnTagSuppressCommit){ jnTagSuppressCommit=false; return; }
+  var item=e.target.closest('.jn-past-item'); if(!item)return;
+  commitPastTagInput(e.target,item.dataset.id);
 });
 document.getElementById('jn-past-list').addEventListener('input',function(e){
   if(!e.target.matches('[data-past-body]'))return;
