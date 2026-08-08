@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Sakura Hub</title>
-<meta name="theme-color" content="#c2553d">
+<meta name="theme-color" content="#f8f8f6">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
@@ -54,13 +54,25 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #account-dropdown-name{font:600 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #account-dropdown-email{font-size:11.5px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #account-dropdown-divider,.account-item-divider{height:1px;background:var(--border);margin:10px 0}
-#account-signout-btn{width:100%;text-align:left;background:none;border:none;color:#c0392b;font:500 13px 'Inter',sans-serif;padding:7px 2px;cursor:pointer;border-radius:6px}
+#account-signout-btn{width:100%;text-align:left;background:none;border:none;color:var(--fc-red);font:500 13px 'Inter',sans-serif;padding:7px 2px;cursor:pointer;border-radius:6px}
 #account-signout-btn:active{background:var(--hover)}
 .account-item-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;color:var(--fg);font:500 13px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;border-radius:7px}
 .account-item-btn:active{background:var(--hover)}
 .account-item-btn svg{color:var(--accent);flex-shrink:0}
 #account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
 #account-coffee-btn:active{transform:scale(.98)}
+
+/* ---------- Appearance control ----------
+   A three-way System/Light/Dark override, local to this device (not synced from the
+   desktop app's own prefs) — this page still defaults to whatever index.html last saved,
+   falling back to the OS preference, but a phone is often the one place someone wants a
+   different call than their desktop (e.g. dark outdoors, light at a desk). */
+.account-theme-label{font:700 10px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:2px 0 8px}
+.account-theme-row{display:flex;gap:6px;margin-bottom:2px}
+.account-theme-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 11.5px 'Inter',sans-serif;padding:7px 0;border-radius:9px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease}
+.account-theme-btn svg{flex-shrink:0}
+.account-theme-btn.sel{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%, var(--bg))}
+.account-theme-btn:active{transform:scale(.96)}
 
 /* ---------- Add-task FAB + quick-add bar ----------
    Moved off the top bar entirely: a thumb-reachable floating button bottom-right (the
@@ -164,8 +176,8 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 @media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:20px}}
 @keyframes hub-modal-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 .hub-modal-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:background .15s ease,transform .12s ease}
-.hub-modal-btn.danger{background:none;border-color:color-mix(in srgb,#c0392b 30%, var(--border));color:#c0392b}
-.hub-modal-btn.danger:active{background:color-mix(in srgb,#c0392b 10%, transparent)}
+.hub-modal-btn.danger{background:none;border-color:color-mix(in srgb,var(--fc-red) 30%, var(--border));color:var(--fc-red)}
+.hub-modal-btn.danger:active{background:color-mix(in srgb,var(--fc-red) 10%, transparent)}
 .hub-modal-btn:active{transform:scale(.98);opacity:.85}
 .hub-modal-title{font:700 15px 'Inter',sans-serif;margin-bottom:6px}
 .hub-modal-body{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px}
@@ -297,6 +309,19 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
       <div id="account-dropdown-name"></div>
       <div id="account-dropdown-email"></div>
       <div id="account-dropdown-divider"></div>
+      <div class="account-theme-label">Appearance</div>
+      <div class="account-theme-row" id="account-theme-row">
+        <button type="button" class="account-theme-btn" data-theme="system">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/></svg>Auto
+        </button>
+        <button type="button" class="account-theme-btn" data-theme="light">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>Light
+        </button>
+        <button type="button" class="account-theme-btn" data-theme="dark">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>Dark
+        </button>
+      </div>
+      <div class="account-item-divider"></div>
       <button id="account-signout-btn" type="button">Sign out</button>
       <div class="account-item-divider"></div>
       <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
@@ -388,24 +413,47 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 
 <script>
 // ============================================================================
-// Theme — read the same preference index.html saves (Settings → Appearance),
-// so this page doesn't look jarringly different from the app someone just left.
+// Theme — three-way System/Light/Dark, local to this device via THEME_KEY. "System" (the
+// default, matching prior behavior) reads the same preference index.html saves for a
+// consistent look right after using the desktop app, falling back to the OS preference when
+// nothing's been saved yet — and stays live: an OS-level theme change while this page is
+// open re-applies immediately, same as index.html itself would.
 // ============================================================================
-(function applyTheme(){
-  var theme='light';
+var THEME_KEY='sakura_hub_theme';
+function resolveTheme(pref){
+  if(pref==='light'||pref==='dark')return pref;
   try{
     var raw=localStorage.getItem('sakura_v001_prefs');
     if(raw){
       var d=JSON.parse(raw);
       var map={default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'};
-      theme = d.theme ? (map[d.theme]||d.theme) : 'light';
-      if(theme!=='light'&&theme!=='dark')theme='light';
-    }else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
-      theme='dark';
+      var t = d.theme ? (map[d.theme]||d.theme) : null;
+      if(t==='light'||t==='dark')return t;
     }
   }catch(e){}
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function applyTheme(){
+  var pref='system';
+  try{ pref=localStorage.getItem(THEME_KEY)||'system'; }catch(e){}
+  var theme=resolveTheme(pref);
   document.body.className='theme-'+theme;
-})();
+  var mc=document.querySelector('meta[name="theme-color"]');
+  if(mc)mc.setAttribute('content', theme==='dark' ? '#121212' : '#f8f8f6');
+  document.querySelectorAll('.account-theme-btn').forEach(function(b){ b.classList.toggle('sel', b.dataset.theme===pref); });
+}
+applyTheme();
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){
+    var pref='system'; try{ pref=localStorage.getItem(THEME_KEY)||'system'; }catch(e){}
+    if(pref==='system')applyTheme();
+  });
+}
+document.getElementById('account-theme-row').addEventListener('click',function(e){
+  var btn=e.target.closest('.account-theme-btn'); if(!btn)return;
+  try{ localStorage.setItem(THEME_KEY,btn.dataset.theme); }catch(e){}
+  applyTheme();
+});
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function autoGrow(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 if(document.fonts && document.fonts.ready){
