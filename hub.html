@@ -50,13 +50,18 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
-#account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:220px;background:var(--edit-bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
+#account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:250px;background:var(--edit-bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
 #account-dropdown.open{display:block;animation:hub-fade-in .14s ease}
 #account-dropdown-name{font:600 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #account-dropdown-email{font-size:11.5px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#account-dropdown-divider{height:1px;background:var(--border);margin:10px 0}
+#account-dropdown-divider,.account-item-divider{height:1px;background:var(--border);margin:10px 0}
 #account-signout-btn{width:100%;text-align:left;background:none;border:none;color:#c0392b;font:500 13px 'Inter',sans-serif;padding:7px 2px;cursor:pointer;border-radius:6px}
 #account-signout-btn:active{background:var(--hover)}
+.account-item-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;color:var(--fg);font:500 13px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;border-radius:7px}
+.account-item-btn:active{background:var(--hover)}
+.account-item-btn svg{color:var(--accent);flex-shrink:0}
+#account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
+#account-coffee-btn:active{transform:scale(.98)}
 
 /* Bottom navigation — thumb-reachable section switcher, the mobile-native pattern this
    deserves rather than top tabs modeled on a desktop segmented control. */
@@ -87,6 +92,12 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
 .hub-modal-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer}
 .hub-modal-btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
 .hub-modal-btn:active{opacity:.75}
+#about-modal-version{color:var(--muted);font-weight:500}
+.hub-modal-text{font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 10px}
+.hub-modal-text a{color:var(--accent)}
+#feedback-message-input{width:100%;box-sizing:border-box;min-height:100px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg);font:400 13.5px/1.5 inherit;resize:vertical;margin-bottom:8px}
+#feedback-email-input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg);font-size:13px;font-family:inherit;margin-bottom:6px}
+#feedback-modal-status{font-size:11.5px;color:var(--muted);min-height:14px;margin-bottom:10px}
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
 #hub-toast.show{opacity:1;transform:translate(-50%,0)}
 #hub-app{display:none}
@@ -237,6 +248,10 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
         <div id="account-dropdown-email"></div>
         <div id="account-dropdown-divider"></div>
         <button id="account-signout-btn" type="button">Sign out</button>
+        <div class="account-item-divider"></div>
+        <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
+        <button class="account-item-btn" id="account-about-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button>
+        <button id="account-coffee-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button>
       </div>
     </div>
   </div>
@@ -290,6 +305,32 @@ main{padding:14px 14px calc(140px + env(safe-area-inset-bottom));max-width:640px
     <span>Journal</span>
   </button>
 </nav>
+</div>
+
+<div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+  <div class="hub-modal">
+    <div class="hub-modal-title">Sakura <span id="about-modal-version"></span></div>
+    <p class="hub-modal-text">A single-file outliner and knowledge-management workspace. This page is its lighter mobile companion — To-Dos and Journal, signed in.</p>
+    <p class="hub-modal-text">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></p>
+    <p class="hub-modal-text" style="margin-bottom:16px">Sakura stays free, with no ads and no locked features — built by one person in their spare time. A tip is appreciated but never expected.</p>
+    <div class="hub-modal-actions">
+      <button class="hub-modal-btn" id="about-modal-close" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="feedback-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+  <div class="hub-modal">
+    <div class="hub-modal-title">Send Feedback</div>
+    <p class="hub-modal-text">Goes straight to Robin — bugs, ideas, or just a hello.</p>
+    <textarea id="feedback-message-input" placeholder="What's on your mind?" maxlength="6000"></textarea>
+    <input id="feedback-email-input" type="email" placeholder="Email (optional — only if you want a reply)" autocomplete="email" />
+    <div id="feedback-modal-status"></div>
+    <div class="hub-modal-actions">
+      <button class="hub-modal-btn" id="feedback-modal-cancel" type="button">Cancel</button>
+      <button class="hub-modal-btn" id="feedback-modal-send" type="button" style="background:var(--accent);border-color:var(--accent);color:#fff">Send</button>
+    </div>
+  </div>
 </div>
 
 <div id="hub-confirm-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
@@ -506,6 +547,62 @@ function renderAccountButton(user){
   document.getElementById('account-dropdown-email').textContent=user.email||'';
 }
 
+// === About, Feedback, Buy me a coffee ===
+var HUB_VERSION='v1.0.0'; // kept in step with index.html's own VERSION constant by hand
+document.getElementById('account-about-btn').addEventListener('click',function(){
+  document.getElementById('account-dropdown').classList.remove('open');
+  document.getElementById('about-modal-version').textContent=HUB_VERSION;
+  document.getElementById('about-modal-overlay').classList.add('open');
+});
+document.getElementById('about-modal-close').addEventListener('click',function(){
+  document.getElementById('about-modal-overlay').classList.remove('open');
+});
+document.getElementById('about-modal-overlay').addEventListener('click',function(e){
+  if(e.target.id==='about-modal-overlay')this.classList.remove('open');
+});
+document.getElementById('account-coffee-btn').addEventListener('click',function(){
+  document.getElementById('account-dropdown').classList.remove('open');
+  window.open('https://ko-fi.com/robinrajawat','_blank','noopener,noreferrer');
+});
+function openFeedbackModal(){
+  document.getElementById('account-dropdown').classList.remove('open');
+  document.getElementById('feedback-modal-status').textContent='';
+  document.getElementById('feedback-modal-overlay').classList.add('open');
+  document.getElementById('feedback-message-input').focus();
+}
+function closeFeedbackModal(){
+  document.getElementById('feedback-modal-overlay').classList.remove('open');
+}
+document.getElementById('account-feedback-btn').addEventListener('click',openFeedbackModal);
+document.getElementById('feedback-modal-cancel').addEventListener('click',closeFeedbackModal);
+document.getElementById('feedback-modal-overlay').addEventListener('click',function(e){
+  if(e.target.id==='feedback-modal-overlay')closeFeedbackModal();
+});
+document.getElementById('feedback-modal-send').addEventListener('click',function(){
+  var btn=this;
+  var statusEl=document.getElementById('feedback-modal-status');
+  var message=document.getElementById('feedback-message-input').value;
+  var email=document.getElementById('feedback-email-input').value;
+  if(!message.trim()){ statusEl.textContent='Enter a message first.'; return; }
+  btn.disabled=true; statusEl.textContent='Sending…';
+  submitFeedback({kind:'feedback',message:message,email:email}).then(function(result){
+    btn.disabled=false;
+    if(result.ok){
+      document.getElementById('feedback-message-input').value='';
+      document.getElementById('feedback-email-input').value='';
+      closeFeedbackModal();
+      showToast('Thanks — feedback sent.');
+    }else{
+      statusEl.textContent=result.error||"Couldn't send that — try again.";
+    }
+  });
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
+  if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
+});
+
 // Silently restores a previous session on load — but only if this exact device has signed
 // in before (same flag index.html itself sets/checks), so a phone that's never been used
 // for this before pays zero Firebase cost and lands straight on the sign-in gate instead of
@@ -613,6 +710,30 @@ function pullMetaFromCloud(metaKey){
     if(cloudTs>localTs)return cloud.value;
     return undefined; // local is at least as new — keep what's already here, and it'll get pushed below
   }).catch(function(e){ console.warn('[sakura hub] cloud pull failed for',metaKey,e); return undefined; });
+}
+// Same write-only /feedback collection index.html's own submitFeedback writes to (see
+// firestore.rules — create is open to anyone, read/update/delete are denied to every
+// client). Reuses the Firestore connection already loaded for To-Dos/Journal sync, so
+// there's no extra SDK load just for this.
+function submitFeedback(opts){
+  var trimmed=(opts.message||'').trim();
+  if(!trimmed)return Promise.resolve({ok:false,error:'Enter a message first.'});
+  return loadFirestoreMods().then(function(f){
+    return f.mod.addDoc(f.mod.collection(f.db,'feedback'),{
+      kind:opts.kind,
+      message:trimmed.slice(0,6000),
+      email:(opts.email||'').trim()||null,
+      uid:currentUser?currentUser.uid:null,
+      userAgent:navigator.userAgent,
+      url:window.location.href,
+      createdAt:Date.now()
+    });
+  }).then(function(){
+    return {ok:true};
+  }).catch(function(e){
+    console.warn('[sakura hub] feedback submit failed',e);
+    return {ok:false,error:"Couldn't send that — check your connection and try again."};
+  });
 }
 function todoUid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function jnUid(){ return 'jn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
