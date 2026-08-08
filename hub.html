@@ -44,8 +44,10 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 
 /* ---------- Sticky top bar: wordmark + account, the only persistent chrome ---------- */
 #todo-bar{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
-#hub-brand{display:flex;align-items:baseline;gap:1px;font:800 19px/1 'Inter',sans-serif;letter-spacing:.05em;color:var(--fg)}
-#hub-brand .hub-brand-dot{color:var(--accent);font-size:22px;line-height:0;margin-left:1px}
+#hub-brand{display:flex;align-items:center;gap:8px}
+#hub-brand img{width:25px;height:25px;border-radius:7px;display:block;box-shadow:0 1px 4px rgba(0,0,0,.16)}
+#hub-brand-word{font:800 18px/1 'Inter',sans-serif;letter-spacing:.04em;color:var(--fg)}
+#hub-brand-sub{font:700 9.5px/1 'Inter',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 15%, transparent);padding:4px 6px 3px;border-radius:6px}
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
@@ -59,6 +61,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 .account-item-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;color:var(--fg);font:500 13px 'Inter',sans-serif;padding:8px 4px;cursor:pointer;border-radius:7px}
 .account-item-btn:active{background:var(--hover)}
 .account-item-btn svg{color:var(--accent);flex-shrink:0}
+#account-coffee-desc{font-size:11px;line-height:1.5;color:var(--hint);padding:6px 4px 8px}
 #account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
 #account-coffee-btn:active{transform:scale(.98)}
 
@@ -121,8 +124,6 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-row{position:relative;overflow:hidden;border-radius:18px;background:var(--edit-bg);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
 .swipe-row::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 4px 4px 0;background:var(--border);z-index:1}
 .swipe-row.accent-overdue::before{background:var(--fc-red)}
-.swipe-row.accent-today::before{background:var(--accent)}
-.swipe-row.accent-upcoming::before{background:var(--fc-blue)}
 .swipe-row.pressing .swipe-content{transform:scale(.965);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .swipe-row.pressing::before{background:var(--accent);transition:background .3s ease}
 .swipe-row.completing::after{content:'';position:absolute;inset:0;background:var(--fc-green);opacity:0;animation:todo-complete-flash .3s ease forwards;pointer-events:none;z-index:2}
@@ -306,7 +307,7 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 
 <div id="hub-app">
 <div id="todo-bar">
-  <div id="hub-brand">SAKURA<span class="hub-brand-dot">·</span></div>
+  <div id="hub-brand"><img src="icon-192.png" alt="" width="25" height="25"><span id="hub-brand-word">SAKURA</span><span id="hub-brand-sub">Hub</span></div>
   <div id="account-menu-wrap">
     <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
     <div id="account-dropdown">
@@ -330,6 +331,7 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
       <div class="account-item-divider"></div>
       <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
       <button class="account-item-btn" id="account-about-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button>
+      <div id="account-coffee-desc">Free, no ads, no locked features — built solo. A tip is appreciated, never expected.</div>
       <button id="account-coffee-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button>
     </div>
   </div>
@@ -420,24 +422,14 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 
 <script>
 // ============================================================================
-// Theme — three-way System/Light/Dark, local to this device via THEME_KEY. "System" (the
-// default, matching prior behavior) reads the same preference index.html saves for a
-// consistent look right after using the desktop app, falling back to the OS preference when
-// nothing's been saved yet — and stays live: an OS-level theme change while this page is
-// open re-applies immediately, same as index.html itself would.
+// Theme — three-way System/Light/Dark, local to this device via THEME_KEY. "System" means
+// exactly the OS preference — nothing else. (An earlier version blended in the desktop app's
+// saved theme first, but that key's untouched default maps to 'light', which silently
+// overrode a genuinely dark OS setting — "Auto" should mean the OS, full stop.)
 // ============================================================================
 var THEME_KEY='sakura_hub_theme';
 function resolveTheme(pref){
   if(pref==='light'||pref==='dark')return pref;
-  try{
-    var raw=localStorage.getItem('sakura_v001_prefs');
-    if(raw){
-      var d=JSON.parse(raw);
-      var map={default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'};
-      var t = d.theme ? (map[d.theme]||d.theme) : null;
-      if(t==='light'||t==='dark')return t;
-    }
-  }catch(e){}
   return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
 }
 function applyTheme(){
@@ -1033,9 +1025,9 @@ function renderTodos(){
   var today=todayStr();
   var sections=[
     {label:'Overdue',cls:'accent-overdue',tasks:[],dateFn:function(t){return '<span class="overdue">'+daysOverdueLabel(t.dueDate,today)+'</span>';}},
-    {label:'Today',cls:'accent-today',tasks:[],dateFn:function(){return '';}},
-    {label:'Upcoming',cls:'accent-upcoming',tasks:[],dateFn:function(t){return formatShortDueDate(t.dueDate);}},
-    {label:'No Date',cls:'accent-none',tasks:[],dateFn:function(){return '';}}
+    {label:'Today',cls:'',tasks:[],dateFn:function(){return '';}},
+    {label:'Upcoming',cls:'',tasks:[],dateFn:function(t){return formatShortDueDate(t.dueDate);}},
+    {label:'No Date',cls:'',tasks:[],dateFn:function(){return '';}}
   ];
   open.forEach(function(t){
     if(t.dueDate&&t.dueDate<today)sections[0].tasks.push(t);
