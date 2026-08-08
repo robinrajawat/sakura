@@ -195,15 +195,6 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
 .todo-due-row{display:flex;align-items:center;gap:8px}
 .todo-due-input{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 13px 'Inter',sans-serif;padding:7px 10px}
 .todo-due-clear{border:none;background:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;text-decoration:underline}
-.todo-subtask-row{display:flex;align-items:center;gap:9px;padding:7px 0}
-.todo-subtask-check{width:19px;height:19px;flex-shrink:0;border:1.5px solid var(--border);border-radius:5px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
-.todo-subtask-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
-.todo-subtask-text{flex:1;font-size:13.5px;color:var(--fg)}
-.todo-subtask-text.done{color:var(--hint);text-decoration:line-through}
-.todo-subtask-del{border:none;background:none;color:var(--border);font-size:15px;cursor:pointer;padding:2px 4px}
-.todo-subtask-add{display:flex;gap:6px;margin-top:8px}
-.todo-subtask-add input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font-size:13px;padding:7px 10px;font-family:inherit}
-.todo-subtask-add button{border:none;background:var(--chip);color:var(--accent);border-radius:8px;padding:7px 13px;font:600 12.5px 'Inter',sans-serif;cursor:pointer}
 
 /* Entry sheet — mood + tags reused between the sheet and nowhere else now (feed cards use
    the smaller badge/chip variants above), so these are scoped to the sheet only. */
@@ -326,7 +317,7 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
       <div id="todo-greeting-title"></div>
       <div id="todo-greeting-sub"></div>
     </div>
-    <div id="todo-list" class="swipe-list"></div>
+    <div id="todo-list"></div>
     <div id="todo-open-empty" class="hub-empty" style="display:none">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <div class="hub-empty-title">All clear</div>
@@ -381,12 +372,6 @@ main{padding:16px 16px calc(90px + env(safe-area-inset-bottom));max-width:640px;
       <div class="todo-due-row">
         <input type="date" id="task-detail-due" class="todo-due-input">
         <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
-      </div>
-      <div class="todo-detail-label">Subtasks</div>
-      <div id="task-detail-subtasks"></div>
-      <div class="todo-subtask-add">
-        <input type="text" id="task-detail-subtask-input" placeholder="Add subtask…" maxlength="300">
-        <button type="button" id="task-detail-subtask-add-btn">Add</button>
       </div>
     </div>
     <div class="hub-sheet-foot">
@@ -985,21 +970,27 @@ function renderTodoGreeting(openCount,completedCount){
   else sub=openCount+' task'+(openCount===1?'':'s')+' open';
   document.getElementById('todo-greeting-sub').textContent=sub;
 }
-function todoRowInnerHtml(t){
-  var today=todayStr();
-  var overdue=t.dueDate && t.dueDate<today;
-  var subtasks=t.subtasks||[];
-  var subDone=subtasks.filter(function(s){return s.done}).length;
-  var metaBits=[];
-  if(t.dueDate)metaBits.push('<span class="'+(overdue?'overdue':'')+'">'+esc(t.dueDate)+'</span>');
-  if(t.status&&t.status!=='none')metaBits.push('<span>'+TODO_STATUS_LABEL[t.status]+'</span>');
-  if(subtasks.length)metaBits.push('<span>'+subDone+'/'+subtasks.length+' subtasks</span>');
-  var meta=metaBits.length?'<div class="todo-row-meta">'+metaBits.join('<span class="dot">·</span>')+'</div>':'';
+function todoRowInnerHtml(t,dateDisplay){
+  var meta = dateDisplay ? '<div class="todo-row-meta">'+dateDisplay+'</div>' : '';
   return '<div class="todo-row">'
     +'<button class="todo-check" data-action="toggle" aria-label="Mark done"></button>'
     +'<div class="todo-row-main"><div class="todo-row-text">'+esc(t.text)+'</div>'+meta+'</div>'
     +'</div>';
 }
+function daysOverdueLabel(dueDate,today){
+  var ms=new Date(today+'T00:00:00')-new Date(dueDate+'T00:00:00');
+  var days=Math.round(ms/86400000);
+  return days<=1?'1 day overdue':days+' days overdue';
+}
+function formatShortDueDate(dueDate){
+  var d=new Date(dueDate+'T00:00:00');
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+// Sectioned by urgency rather than one flat list — this is the single biggest thing that
+// makes a task list feel considered instead of just a container of rows: which section a
+// task is in already tells you what matters, so individual rows can stay minimal (just the
+// checkbox and the text) instead of needing a due-date badge, a status chip, and a subtask
+// count all competing for attention on every single line.
 function renderTodos(){
   var list=document.getElementById('todo-list');
   var openEmpty=document.getElementById('todo-open-empty');
@@ -1008,9 +999,29 @@ function renderTodos(){
   var doneCount=document.getElementById('todo-completed-count');
   var open=todos.filter(function(t){return !t.done});
   var done=todos.filter(function(t){return t.done});
+  var today=todayStr();
+  var sections=[
+    {label:'Overdue',tasks:[],dateFn:function(t){return '<span class="overdue">'+daysOverdueLabel(t.dueDate,today)+'</span>';}},
+    {label:'Today',tasks:[],dateFn:function(){return '';}},
+    {label:'Upcoming',tasks:[],dateFn:function(t){return formatShortDueDate(t.dueDate);}},
+    {label:'No Date',tasks:[],dateFn:function(){return '';}}
+  ];
+  open.forEach(function(t){
+    if(t.dueDate&&t.dueDate<today)sections[0].tasks.push(t);
+    else if(t.dueDate===today)sections[1].tasks.push(t);
+    else if(t.dueDate&&t.dueDate>today)sections[2].tasks.push(t);
+    else sections[3].tasks.push(t);
+  });
+  sections[0].tasks.sort(function(a,b){return a.dueDate.localeCompare(b.dueDate);});
+  sections[2].tasks.sort(function(a,b){return a.dueDate.localeCompare(b.dueDate);});
   openEmpty.style.display=open.length?'none':'';
   list.style.display=open.length?'':'none';
-  list.innerHTML=open.map(function(t){ return swipeRowShell(t.id,todoRowInnerHtml(t),true); }).join('');
+  list.innerHTML=sections.filter(function(s){return s.tasks.length;}).map(function(s){
+    return '<div class="hub-section-label todo-section-label">'+s.label+'</div>'
+      +'<div class="swipe-list">'+s.tasks.map(function(t){
+        return swipeRowShell(t.id,todoRowInnerHtml(t,s.dateFn(t)),true);
+      }).join('')+'</div>';
+  }).join('');
   doneToggle.classList.toggle('open',todoCompletedOpen);
   doneCount.textContent='Completed ('+done.length+')';
   doneToggle.style.display=done.length?'':'none';
@@ -1109,13 +1120,6 @@ function renderTaskDetail(){
   }).join('');
   document.getElementById('task-detail-due').value=t.dueDate||'';
   document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
-  document.getElementById('task-detail-subtasks').innerHTML=(t.subtasks||[]).map(function(s){
-    return '<div class="todo-subtask-row" data-sub-id="'+esc(s.id)+'">'
-      +'<button type="button" class="todo-subtask-check'+(s.done?' done':'')+'" data-action="sub-toggle">'+(s.done?CHECK_SVG:'')+'</button>'
-      +'<span class="todo-subtask-text'+(s.done?' done':'')+'">'+esc(s.text)+'</span>'
-      +'<button type="button" class="todo-subtask-del" data-action="sub-delete" aria-label="Delete subtask">×</button>'
-      +'</div>';
-  }).join('');
 }
 document.getElementById('task-sheet-close').addEventListener('click',closeTaskDetail);
 document.getElementById('task-sheet-overlay').addEventListener('click',function(e){
@@ -1150,30 +1154,6 @@ document.getElementById('task-detail-due-clear').addEventListener('click',functi
   var t=findTodo(taskDetailId); if(!t)return;
   t.dueDate=null;
   saveAndRefreshTask();
-});
-document.getElementById('task-detail-subtasks').addEventListener('click',function(e){
-  var t=findTodo(taskDetailId); if(!t)return;
-  var subRow=e.target.closest('.todo-subtask-row'); if(!subRow)return;
-  var sub=(t.subtasks||[]).find(function(s){return s.id===subRow.dataset.subId}); if(!sub)return;
-  if(e.target.closest('[data-action="sub-toggle"]')){ sub.done=!sub.done; saveAndRefreshTask(); }
-  else if(e.target.closest('[data-action="sub-delete"]')){
-    t.subtasks=t.subtasks.filter(function(s){return s.id!==sub.id});
-    saveAndRefreshTask();
-  }
-});
-function addSubtaskToDetailTask(){
-  var t=findTodo(taskDetailId); if(!t)return;
-  var input=document.getElementById('task-detail-subtask-input');
-  var text=input.value.trim(); if(!text)return;
-  if(!Array.isArray(t.subtasks))t.subtasks=[];
-  t.subtasks.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text.slice(0,300),done:false});
-  input.value='';
-  saveAndRefreshTask();
-  document.getElementById('task-detail-subtask-input').focus();
-}
-document.getElementById('task-detail-subtask-add-btn').addEventListener('click',addSubtaskToDetailTask);
-document.getElementById('task-detail-subtask-input').addEventListener('keydown',function(e){
-  if(e.key==='Enter'){ e.preventDefault(); addSubtaskToDetailTask(); }
 });
 document.getElementById('task-detail-delete').addEventListener('click',function(){
   var idx=todos.findIndex(function(t){return t.id===taskDetailId}); if(idx===-1)return;
