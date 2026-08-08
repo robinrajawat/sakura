@@ -41251,7 +41251,7 @@ function _addTagPopoverFromInput(){
   });
   document.addEventListener('keydown',e=>{
     const panel=document.getElementById('todos-panel');
-    if(e.key==='Escape'&&panel&&panel.classList.contains('open')){
+    if(e.key==='Escape'&&panel&&panel.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
       const summaryModal=document.getElementById('todos-summary-modal-overlay');
       if(summaryModal&&summaryModal.classList.contains('open')) return; // that modal's own Escape handler closes it instead
       if(document.getElementById('todos-history-overlay')?.classList.contains('open')) return; // same reason — its own Escape handler closes it instead
@@ -43213,7 +43213,7 @@ el('meetings-search-clear-btn')?.addEventListener('click',()=>{
   renderMeetingsList();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('meetings-history-overlay')?.classList.contains('open')){
+  if(e.key==='Escape'&&meetingsPanelOpen&&!_meetingLinkPopoverOpen&&!_meetingTemplateMenuOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('meetings-history-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
     if(document.activeElement&&document.activeElement.closest('#meeting-card'))return; // let field-level Escape handling (if any) win first
     closeMeetingsPanel();
   }
@@ -44570,7 +44570,7 @@ el('dock-rail-collapse-btn')?.addEventListener('click',(e)=>{
   e.currentTarget.blur();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('journal-history-overlay')?.classList.contains('open')){
+  if(e.key==='Escape'&&journalPanelOpen&&!_journalDatePopoverOpen&&!el('sakura-modal-overlay')?.classList.contains('open')&&!el('journal-history-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
     if(document.activeElement&&document.activeElement.closest('#journal-card'))return;
     closeJournalPanel();
   }
@@ -46853,7 +46853,7 @@ window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-
 // shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
 // same rail/app-bar chip again.
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')){
+  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')&&!document.body.classList.contains('sakura-mobile-hub-mode')){
     e.preventDefault(); e.stopPropagation(); closeActivityReport();
   }
 });
@@ -46996,14 +46996,27 @@ document.getElementById('dock-panel-appbar-toggle')?.addEventListener('click',(e
 // the only reachable surface. Auto-detected only — nothing persisted, no settings toggle;
 // resizing back above the breakpoint (or reloading wide) restores the normal app instantly.
 const MOBILE_HUB_MQ=window.matchMedia('(max-width:768px)');
+// Tracks whether entering mobile mode is what maximized the panel, so leaving mobile mode
+// only un-maximizes if we're the ones who forced it — a panel the person maximized
+// themselves (on desktop, or by hand while in mobile mode) is left alone either way.
+let _mobileHubForcedMaximize=false;
 function applyMobileHubMode(active){
   document.body.classList.toggle('sakura-mobile-hub-mode',active);
-  if(!active)return;
-  const tab=dockActiveTab||dockLastTab;
-  if(!dockPanelIsOpen(tab))openDockTab(tab);
-  const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
-  if(panel&&!panel.classList.contains('maximized')){
-    document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
+  if(active){
+    const tab=dockActiveTab||dockLastTab;
+    if(!dockPanelIsOpen(tab))openDockTab(tab);
+    const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
+    if(panel&&!panel.classList.contains('maximized')){
+      _mobileHubForcedMaximize=true;
+      document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
+    }
+  }else if(_mobileHubForcedMaximize){
+    _mobileHubForcedMaximize=false;
+    const tab=dockActiveTab;
+    const panel=tab?document.getElementById(DOCK_TAB_PANEL_ID[tab]):null;
+    if(panel&&panel.classList.contains('maximized')){
+      document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
+    }
   }
 }
 MOBILE_HUB_MQ.addEventListener('change',e=>applyMobileHubMode(e.matches));
