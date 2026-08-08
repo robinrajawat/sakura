@@ -42,12 +42,10 @@ body.theme-light{color-scheme:light;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;-
 body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 
-/* ---------- Header ---------- */
-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
-#hub-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#hub-brand{display:flex;align-items:center;gap:8px}
-#hub-brand img{width:26px;height:26px;border-radius:7px;display:block}
-#hub-title{font:700 16px/1 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
+/* ---------- Sticky top bar: wordmark + account, the only persistent chrome ---------- */
+#todo-bar{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
+#hub-brand{display:flex;align-items:baseline;gap:1px;font:800 19px/1 'Inter',sans-serif;letter-spacing:.05em;color:var(--fg)}
+#hub-brand .hub-brand-dot{color:var(--accent);font-size:22px;line-height:0;margin-left:1px}
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
@@ -64,13 +62,25 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px s
 #account-coffee-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:2px;padding:9px 10px;border:none;border-radius:9px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 8px rgba(212,165,68,.35)}
 #account-coffee-btn:active{transform:scale(.98)}
 
-/* ---------- Sticky top bar: inline add + account — the only persistent chrome ---------- */
-#todo-bar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
-#todo-add-toggle{display:flex;align-items:center;gap:7px;flex:1;min-width:0;border:none;background:none;color:var(--muted);font:500 15px 'Inter',sans-serif;cursor:pointer;padding:6px 2px}
-#todo-add-toggle svg{color:var(--accent);flex-shrink:0}
-#todo-inline-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font-size:15px;padding:6px 2px}
-#todo-inline-input::placeholder{color:var(--hint)}
-#todo-inline-input:focus{outline:none}
+/* ---------- Add-task FAB + quick-add bar ----------
+   Moved off the top bar entirely: a thumb-reachable floating button bottom-right (the
+   position every major task app — Todoist, Google Tasks, TickTick — settled on for "new
+   task", since it sits where a thumb already rests instead of a stretch to the top corner),
+   opening a compose bar that docks above it rather than a bare unstyled input inline in the
+   header. ---------- */
+#todo-fab{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 8%));color:#fff;box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 40%, transparent),0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
+#todo-fab:active{transform:scale(.9)}
+#todo-fab.hide{transform:scale(0);box-shadow:none;pointer-events:none}
+#todo-quickadd-overlay{position:fixed;inset:0;z-index:29;display:none;background:rgba(0,0,0,.28);backdrop-filter:blur(1px)}
+#todo-quickadd-overlay.open{display:block;animation:hub-fade-in .15s ease}
+#todo-quickadd-bar{position:fixed;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:31;display:flex;align-items:flex-end;gap:8px;background:var(--edit-bg);border-radius:20px;box-shadow:0 14px 34px rgba(0,0,0,.22);padding:8px 8px 8px 18px;transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;transition:transform .2s cubic-bezier(.2,.9,.25,1),opacity .18s ease}
+#todo-quickadd-bar.open{transform:none;opacity:1;pointer-events:auto}
+#todo-quickadd-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15.5px/1.4 'Inter',sans-serif;padding:10px 0;resize:none;max-height:110px}
+#todo-quickadd-input::placeholder{color:var(--hint)}
+#todo-quickadd-input:focus{outline:none}
+#todo-quickadd-send{width:40px;height:40px;flex-shrink:0;border-radius:50%;border:none;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s cubic-bezier(.34,1.56,.64,1),opacity .15s ease}
+#todo-quickadd-send:active{transform:scale(.88)}
+#todo-quickadd-send:disabled{opacity:.35;pointer-events:none}
 
 /* ---------- Layout ---------- */
 main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
@@ -81,22 +91,24 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 .hub-section-label{font:600 11px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:22px 4px 10px}
 .hub-section-label:first-child{margin-top:2px}
 
-/* ---------- Swipeable list rows (To-Dos + past Journal entries) ----------
-   Flat, on the page background — a row list, not a stack of shadowed cards.
-   The only elevation in the whole screen is the swipe reveal itself. ---------- */
-.swipe-list{}
-.swipe-row{position:relative;overflow:hidden}
-.swipe-row + .swipe-row{border-top:1px solid var(--border)}
+/* ---------- Swipeable list rows (To-Dos) ----------
+   Each task is its own elevated card — spaced like a photo grid rather than a dense form
+   list — so the row itself already looks considered before you touch anything. Rounded
+   corners + shadow live on .swipe-row (safe: an element's own box-shadow paints outside its
+   border box independent of its own overflow:hidden, which is only clipping the swipe-reveal
+   layers behind it), so the reveal-on-swipe colors stay perfectly masked to the card shape. */
+.swipe-list{display:flex;flex-direction:column;gap:10px}
+.swipe-row{position:relative;overflow:hidden;border-radius:18px;background:var(--edit-bg);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
 .swipe-bg{position:absolute;inset:0;display:flex;align-items:center}
 .swipe-bg-start{justify-content:flex-start;background:var(--fc-green)}
 .swipe-bg-end{justify-content:flex-end;background:#c0392b}
 .swipe-action-btn{width:76px;height:100%;border:none;background:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.swipe-content{position:relative;background:var(--bg);transform:translateX(0);touch-action:pan-y;user-select:none}
+.swipe-content{position:relative;background:var(--edit-bg);transform:translateX(0);touch-action:pan-y;user-select:none}
 .swipe-row.dragging .swipe-content{transition:none}
 .swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 
 /* ---------- To-Do rows ---------- */
-.todo-row{display:flex;align-items:flex-start;gap:14px;padding:16px 4px;cursor:pointer}
+.todo-row{display:flex;align-items:flex-start;gap:13px;padding:16px 15px;cursor:pointer}
 /* ---------- Premium check control ----------
    A morphing circle rather than a form checkbox: an empty ring with an inset shadow for
    depth, a gradient-filled, glowing disc on completion, and a checkmark that draws itself
@@ -104,11 +116,11 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
    (gated to .just-completed, set only by the direct toggle/swipe handlers so a plain re-
    render of already-done rows never replays it) gives the "confirmed" feeling premium task
    apps use instead of a flat tick. */
-.todo-check{width:25px;height:25px;flex-shrink:0;margin-top:2px;border:1.75px solid var(--border);border-radius:50%;background:var(--edit-bg);box-shadow:inset 0 1px 2px rgba(0,0,0,.04);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;position:relative;transition:background .25s ease,border-color .25s ease,box-shadow .3s ease,transform .18s cubic-bezier(.34,1.56,.64,1)}
-.todo-check:hover{border-color:var(--accent)}
+.todo-check{width:24px;height:24px;flex-shrink:0;margin-top:2px;border:none;border-radius:50%;background:var(--chip);box-shadow:inset 0 0 0 1.25px color-mix(in srgb,var(--border) 80%, transparent);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;position:relative;transition:background .25s ease,box-shadow .2s ease,transform .18s cubic-bezier(.34,1.56,.64,1)}
+.todo-check:hover{box-shadow:inset 0 0 0 1.5px var(--accent)}
 .todo-check:active{transform:scale(.86)}
 .todo-check svg{opacity:0;transform:scale(.4);transition:opacity .15s ease}
-.todo-check.done{border-color:transparent;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 10%));box-shadow:0 3px 9px color-mix(in srgb,var(--accent) 45%, transparent),inset 0 1px 1px rgba(255,255,255,.4);color:#fff;transform:scale(1.05)}
+.todo-check.done{background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 10%));box-shadow:0 3px 9px color-mix(in srgb,var(--accent) 45%, transparent),inset 0 1px 1px rgba(255,255,255,.4);color:#fff;transform:scale(1.05)}
 .todo-check.done svg{opacity:1;transform:scale(1)}
 .todo-check.done svg polyline{stroke-dasharray:22;stroke-dashoffset:22;animation:todo-check-draw .3s cubic-bezier(.65,0,.35,1) .05s forwards}
 @keyframes todo-check-draw{to{stroke-dashoffset:0}}
@@ -265,11 +277,7 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 
 <div id="hub-app">
 <div id="todo-bar">
-  <button id="todo-add-toggle" type="button">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Add a task</span>
-  </button>
-  <input id="todo-inline-input" type="text" placeholder="New task" maxlength="2000" autocomplete="off" style="display:none">
+  <div id="hub-brand">SAKURA<span class="hub-brand-dot">·</span></div>
   <div id="account-menu-wrap">
     <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
     <div id="account-dropdown">
@@ -293,7 +301,7 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
   <div id="todo-open-empty" class="hub-empty" style="display:none">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     <div class="hub-empty-title">All clear</div>
-    Add a task up top.
+    Tap + to add a task.
   </div>
   <button id="todo-completed-toggle" type="button">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -302,6 +310,15 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
   <div id="todo-completed-list" class="swipe-list"></div>
 </main>
 </div>
+
+<div id="todo-quickadd-overlay"></div>
+<div id="todo-quickadd-bar">
+  <textarea id="todo-quickadd-input" rows="1" placeholder="New task" maxlength="2000"></textarea>
+  <button id="todo-quickadd-send" type="button" aria-label="Add task" disabled><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg></button>
+</div>
+<button id="todo-fab" type="button" aria-label="Add a task">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
 
 <div id="task-sheet-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-label="Task details">
   <div class="hub-modal hub-sheet">
@@ -378,6 +395,15 @@ main{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:640px;
 })();
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function autoGrow(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+if(document.fonts && document.fonts.ready){
+  // Webfont swap (Inter loads with display:swap) can reflow already-open text areas once the
+  // real font arrives — re-measure the open task sheet's textarea so a font swap mid-session
+  // never leaves it undersized either.
+  document.fonts.ready.then(function(){
+    var ta=document.getElementById('task-detail-text');
+    if(ta && document.getElementById('task-sheet-overlay').classList.contains('open'))autoGrow(ta);
+  });
+}
 
 // ============================================================================
 // UI helpers — a toast in place of the browser's own alert(), and an undo-capable variant
@@ -954,30 +980,40 @@ function renderTodos(){
   }).join('');
   renderTodoGreeting(open.length,done.length);
 }
-function showInlineAdd(){
-  document.getElementById('todo-add-toggle').style.display='none';
-  var input=document.getElementById('todo-inline-input');
-  input.style.display='block';
+// ---------- Add-task FAB + quick-add bar ----------
+function openQuickAdd(){
+  document.getElementById('todo-fab').classList.add('hide');
+  document.getElementById('todo-quickadd-overlay').classList.add('open');
+  document.getElementById('todo-quickadd-bar').classList.add('open');
+  var input=document.getElementById('todo-quickadd-input');
   input.focus();
 }
-function closeInlineAdd(){
-  document.getElementById('todo-inline-input').style.display='none';
-  document.getElementById('todo-add-toggle').style.display='flex';
+function closeQuickAdd(){
+  var input=document.getElementById('todo-quickadd-input');
+  commitQuickAdd();
+  input.blur();
+  document.getElementById('todo-fab').classList.remove('hide');
+  document.getElementById('todo-quickadd-overlay').classList.remove('open');
+  document.getElementById('todo-quickadd-bar').classList.remove('open');
 }
-function commitInlineAdd(){
-  var input=document.getElementById('todo-inline-input');
+function commitQuickAdd(){
+  var input=document.getElementById('todo-quickadd-input');
   var text=input.value.trim();
   if(text){ todos.push(newTodo(text)); saveTodos(); renderTodos(); }
-  input.value='';
+  input.value=''; autoGrow(input); updateQuickAddSendState();
 }
-document.getElementById('todo-add-toggle').addEventListener('click',showInlineAdd);
-document.getElementById('todo-inline-input').addEventListener('keydown',function(e){
-  if(e.key==='Enter'){ e.preventDefault(); commitInlineAdd(); this.focus(); }
-  else if(e.key==='Escape'){ this.value=''; this.blur(); }
+function updateQuickAddSendState(){
+  document.getElementById('todo-quickadd-send').disabled = !document.getElementById('todo-quickadd-input').value.trim();
+}
+document.getElementById('todo-fab').addEventListener('click',openQuickAdd);
+document.getElementById('todo-quickadd-overlay').addEventListener('click',closeQuickAdd);
+document.getElementById('todo-quickadd-input').addEventListener('input',function(e){ autoGrow(e.target); updateQuickAddSendState(); });
+document.getElementById('todo-quickadd-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); commitQuickAdd(); this.focus(); }
+  else if(e.key==='Escape'){ closeQuickAdd(); }
 });
-document.getElementById('todo-inline-input').addEventListener('blur',function(){
-  commitInlineAdd();
-  closeInlineAdd();
+document.getElementById('todo-quickadd-send').addEventListener('click',function(){
+  commitQuickAdd(); document.getElementById('todo-quickadd-input').focus();
 });
 document.getElementById('todo-completed-toggle').addEventListener('click',function(){
   todoCompletedOpen=!todoCompletedOpen; renderTodos();
@@ -1032,8 +1068,13 @@ document.getElementById('todo-completed-list').addEventListener('click',function
 var taskDetailId=null;
 function openTaskDetail(id){
   taskDetailId=id;
-  renderTaskDetail();
   document.getElementById('task-sheet-overlay').classList.add('open');
+  renderTaskDetail();
+  // The sheet only just became visible above; scrollHeight on the (until now) display:none
+  // textarea reads as a single line regardless of actual content, so the very first autoGrow
+  // inside renderTaskDetail() undersizes on multi-line tasks. Re-measure one frame later, once
+  // the browser has actually laid the text out, so the label below never overlaps it.
+  requestAnimationFrame(function(){ autoGrow(document.getElementById('task-detail-text')); });
 }
 function closeTaskDetail(){
   document.getElementById('task-sheet-overlay').classList.remove('open');
