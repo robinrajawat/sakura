@@ -860,6 +860,13 @@ function loadFirebaseMods(){
     var app=mods[0].initializeApp(FIREBASE_CONFIG);
     var auth=mods[1].getAuth(app);
     return {app:app,auth:auth,authMod:mods[1]};
+  }).catch(function(e){
+    // A transient failure here (e.g. a network blip during the eager preload below) must not
+    // get cached forever — without this, every sign-in attempt for the rest of the session
+    // would immediately fail with the same stale rejection, with no way to retry short of a
+    // full page reload.
+    _firebaseModsPromise=null;
+    throw e;
   });
   return _firebaseModsPromise;
 }
@@ -872,6 +879,9 @@ function loadFirestoreMods(){
   ]).then(function(res){
     var db=res[0].getFirestore(res[1].app);
     return {mod:res[0],db:db};
+  }).catch(function(e){
+    _firestoreModsPromise=null;
+    throw e;
   });
   return _firestoreModsPromise;
 }
@@ -903,7 +913,9 @@ document.getElementById('auth-google-btn').addEventListener('click',function(){
     onSignedIn(result.user);
   }).catch(function(e){
     btn.disabled=false; btn.style.opacity='';
-    if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
+    if(e&&e.code==='auth/account-exists-with-different-credential'){
+      setAuthStatus('This email already has a password-based account here — sign in with your email and password instead.');
+    }else if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
       setAuthStatus('Sign-in failed — please try again.');
     }else{
       setAuthStatus('');
@@ -934,15 +946,31 @@ function submitEmailAuth(){
   if(authEmailMode==='signup'&&password.length<6){ errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
   submitBtn.disabled=true; submitBtn.style.opacity='.6';
   loadFirebaseMods().then(function(f){
-    return authEmailMode==='signup'
-      ? f.authMod.createUserWithEmailAndPassword(f.auth,email,password)
-      : f.authMod.signInWithEmailAndPassword(f.auth,email,password);
+    if(authEmailMode==='signup'){
+      // Prevent silently creating a second, disconnected account for an email that already
+      // signed in with Google — without this check, Firebase happily creates it, and the
+      // person now has two accounts with different UIDs and different data (whichever one
+      // they happen to sign in with looks like their to-dos and journal vanished).
+      return f.authMod.fetchSignInMethodsForEmail(f.auth,email).then(function(methods){
+        if(methods.length && methods.indexOf('password')===-1){
+          var conflictErr=new Error('google-only account exists'); conflictErr.code='sakura/google-only';
+          throw conflictErr;
+        }
+        return f.authMod.createUserWithEmailAndPassword(f.auth,email,password);
+      });
+    }
+    return f.authMod.signInWithEmailAndPassword(f.auth,email,password);
   }).then(function(result){
     try{ localStorage.setItem('sakura_account_active','true'); }catch(e){}
     passwordInput.value='';
     onSignedIn(result.user);
   }).catch(function(e){
-    errEl.textContent=emailAuthErrorMessage(e); errEl.style.display='block';
+    if(e&&e.code==='sakura/google-only'){
+      errEl.textContent='This email already has a Google account here — tap "Sign in with Google" instead.';
+    }else{
+      errEl.textContent=emailAuthErrorMessage(e);
+    }
+    errEl.style.display='block';
   }).finally(function(){
     submitBtn.disabled=false; submitBtn.style.opacity='';
   });
@@ -1054,7 +1082,16 @@ function hideHubLoading(){
 function boot(){
   var wasActive=false;
   try{ wasActive=localStorage.getItem('sakura_account_active')==='true'; }catch(e){}
-  if(!wasActive)return;
+  if(!wasActive){
+    // Warm the Firebase SDK in the background while the sign-in screen is just sitting there
+    // being read — without this, the very first tap on "Sign in with Google" has to fetch the
+    // SDK over the network from inside the click handler, and by the time that resolves the
+    // browser has often already dropped the "trusted user gesture" context a popup needs,
+    // silently blocking it. A second tap then works because the SDK is cached from the first
+    // attempt. This eliminates the gap for a first-time (or freshly signed-out) visitor.
+    loadFirebaseMods().catch(function(){});
+    return;
+  }
   document.getElementById('auth-gate').style.display='none';
   showHubLoading('Signing in…');
   loadFirebaseMods().then(function(f){
