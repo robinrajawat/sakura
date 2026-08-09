@@ -286,7 +286,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-status-row{display:flex;gap:7px;flex-wrap:wrap}
 .todo-status-pill{display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 12.5px 'Inter',sans-serif;padding:7px 14px 7px 11px;border-radius:999px;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease,transform .12s ease,box-shadow .18s ease}
 .todo-status-pill:active{transform:scale(.96)}
-.todo-status-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex-shrink:0}
+.todo-status-pill[data-status]::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex-shrink:0}
+.todo-status-pill[data-priority] svg{width:11px;height:11px;flex-shrink:0}
 .todo-status-pill[data-status="waiting"]{color:var(--fc-gray)}
 .todo-status-pill[data-status="progress"]{color:var(--fc-blue)}
 .todo-status-pill[data-status="blocked"]{color:var(--fc-red)}
@@ -1455,7 +1456,7 @@ function renderTaskDetail(){
     return '<button type="button" class="todo-status-pill'+(t.status===s?' sel':'')+'" data-status="'+s+'">'+TODO_STATUS_LABEL[s]+'</button>';
   }).join('');
   document.getElementById('task-detail-priority').innerHTML=TODO_PRIORITIES.map(function(p){
-    return '<button type="button" class="todo-status-pill'+(t.priority===p?' sel':'')+'" data-priority="'+p+'">'+TODO_PRIORITY_LABEL[p]+'</button>';
+    return '<button type="button" class="todo-status-pill'+(t.priority===p?' sel':'')+'" data-priority="'+p+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V4"/><path fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 4h13l-2.5 4.5L17 13H4z"/></svg>'+TODO_PRIORITY_LABEL[p]+'</button>';
   }).join('');
   document.getElementById('task-detail-due').value=t.dueDate||'';
   document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
