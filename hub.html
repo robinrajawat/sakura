@@ -377,6 +377,14 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #auth-email-error{color:var(--fc-red);font-size:12px;margin-bottom:8px;display:none}
 #auth-email-mode-toggle,#auth-email-forgot{background:none;border:none;color:var(--muted);font-size:10.5px;cursor:pointer;padding:0;font-family:inherit}
 #auth-email-links{display:flex;justify-content:space-between;margin-top:8px;gap:8px}
+#auth-link-panel{display:none;margin-top:12px;text-align:left}
+#auth-link-title{font:700 14px 'Inter',sans-serif;color:var(--fg);margin-bottom:4px}
+#auth-link-sub{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+#auth-link-sub strong{color:var(--fg)}
+#auth-link-panel input{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font-size:13px;margin-bottom:8px;font-family:inherit}
+#auth-link-error{color:var(--fc-red);font-size:12px;margin-bottom:8px;display:none}
+#auth-link-submit{width:100%;padding:10px;border:none;border-radius:9px;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;cursor:pointer}
+#auth-link-forgot,#auth-link-cancel{background:none;border:none;color:var(--muted);font-size:10.5px;cursor:pointer;padding:0;font-family:inherit}
 #auth-status{font-size:12px;color:var(--muted);margin-top:16px;min-height:15px}
 </style>
 </head>
@@ -402,6 +410,17 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
       <div id="auth-email-links">
         <button id="auth-email-mode-toggle" type="button">New here? Create an account</button>
         <button id="auth-email-forgot" type="button">Forgot password?</button>
+      </div>
+    </div>
+    <div id="auth-link-panel">
+      <div id="auth-link-title">Account already exists</div>
+      <div id="auth-link-sub">There's already a password sign-in for <strong id="auth-link-email"></strong>. Enter its password to connect Google sign-in to it — you'll be able to use either one from now on.</div>
+      <input id="auth-link-password-input" type="password" placeholder="Password" autocomplete="current-password" />
+      <div id="auth-link-error"></div>
+      <button id="auth-link-submit" type="button">Link &amp; sign in</button>
+      <div id="auth-email-links">
+        <button id="auth-link-forgot" type="button">Forgot password?</button>
+        <button id="auth-link-cancel" type="button">Cancel</button>
       </div>
     </div>
     <div id="auth-status"></div>
@@ -905,7 +924,9 @@ function setAuthStatus(msg){ document.getElementById('auth-status').textContent=
 document.getElementById('auth-google-btn').addEventListener('click',function(){
   var btn=this; btn.disabled=true; btn.style.opacity='.6';
   setAuthStatus('Opening Google sign-in…');
+  var fRef=null;
   loadFirebaseMods().then(function(f){
+    fRef=f;
     var provider=new f.authMod.GoogleAuthProvider();
     return f.authMod.signInWithPopup(f.auth,provider);
   }).then(function(result){
@@ -913,13 +934,92 @@ document.getElementById('auth-google-btn').addEventListener('click',function(){
     onSignedIn(result.user);
   }).catch(function(e){
     btn.disabled=false; btn.style.opacity='';
-    if(e&&e.code==='auth/account-exists-with-different-credential'){
-      setAuthStatus('This email already has a password-based account here — sign in with your email and password instead.');
+    if(e&&e.code==='auth/account-exists-with-different-credential'&&fRef){
+      // Firebase enforces one account per email, so this fires when the Google account they
+      // just picked shares an email with an existing password account — rather than dead-end
+      // them with "use the other method instead," walk them through Firebase's documented
+      // linking flow: sign in with the password they already have, then attach this Google
+      // credential to that same account so either method works from here on.
+      var pendingCred=fRef.authMod.GoogleAuthProvider.credentialFromError(e);
+      var conflictEmail=(e.customData&&e.customData.email)||'';
+      setAuthStatus('');
+      showAuthLinkPanel(conflictEmail,pendingCred,fRef);
     }else if(e&&e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){
       setAuthStatus('Sign-in failed — please try again.');
     }else{
       setAuthStatus('');
     }
+  });
+});
+var pendingLinkCred=null, pendingLinkFirebase=null;
+function showAuthLinkPanel(email,cred,f){
+  pendingLinkCred=cred;
+  pendingLinkFirebase=f;
+  document.getElementById('auth-link-email').textContent=email;
+  document.getElementById('auth-link-password-input').value='';
+  document.getElementById('auth-link-error').style.display='none';
+  document.getElementById('auth-email-form').style.display='none';
+  document.getElementById('auth-email-toggle').style.display='none';
+  document.getElementById('auth-google-btn').style.display='none';
+  document.getElementById('auth-divider').style.display='none';
+  document.getElementById('auth-link-panel').style.display='block';
+  document.getElementById('auth-link-password-input').focus();
+}
+function hideAuthLinkPanel(){
+  pendingLinkCred=null; pendingLinkFirebase=null;
+  document.getElementById('auth-link-panel').style.display='none';
+  document.getElementById('auth-google-btn').style.display='';
+  document.getElementById('auth-divider').style.display='';
+  document.getElementById('auth-email-toggle').style.display='';
+}
+document.getElementById('auth-link-cancel').addEventListener('click',function(){
+  hideAuthLinkPanel();
+  setAuthStatus('');
+});
+document.getElementById('auth-link-forgot').addEventListener('click',function(){
+  var email=document.getElementById('auth-link-email').textContent;
+  var errEl=document.getElementById('auth-link-error');
+  if(!pendingLinkFirebase)return;
+  pendingLinkFirebase.authMod.sendPasswordResetEmail(pendingLinkFirebase.auth,email).then(function(){
+    errEl.textContent='Password reset email sent — check your inbox.';
+    errEl.style.display='block';
+  }).catch(function(e){
+    errEl.textContent=emailAuthErrorMessage(e);
+    errEl.style.display='block';
+  });
+});
+document.getElementById('auth-link-submit').addEventListener('click',function(){
+  var pwInput=document.getElementById('auth-link-password-input');
+  var errEl=document.getElementById('auth-link-error');
+  var email=document.getElementById('auth-link-email').textContent;
+  var password=pwInput.value;
+  errEl.style.display='none';
+  if(!password){ errEl.textContent='Enter your password.'; errEl.style.display='block'; return; }
+  if(!pendingLinkCred||!pendingLinkFirebase){ errEl.textContent='Something went wrong — please try Google sign-in again.'; errEl.style.display='block'; return; }
+  var f=pendingLinkFirebase, cred=pendingLinkCred;
+  var btn=this; btn.disabled=true; btn.style.opacity='.6';
+  f.authMod.signInWithEmailAndPassword(f.auth,email,password).then(function(result){
+    var signedInUser=result.user;
+    return f.authMod.linkWithCredential(signedInUser,cred).then(function(linkResult){
+      return linkResult.user;
+    }).catch(function(linkErr){
+      // The password sign-in itself already succeeded and proved who they are — linking is a
+      // convenience on top of that, not a precondition for getting in. A benign link failure
+      // (e.g. this Google credential got linked elsewhere in the meantime) shouldn't strand
+      // someone who just correctly authenticated.
+      console.warn('[sakura hub] credential linking failed, continuing signed in via password:',linkErr);
+      return signedInUser;
+    });
+  }).then(function(finalUser){
+    try{ localStorage.setItem('sakura_account_active','true'); }catch(e){}
+    pwInput.value='';
+    hideAuthLinkPanel();
+    onSignedIn(finalUser);
+  }).catch(function(e){
+    errEl.textContent=emailAuthErrorMessage(e);
+    errEl.style.display='block';
+  }).finally(function(){
+    btn.disabled=false; btn.style.opacity='';
   });
 });
 document.getElementById('auth-email-toggle').addEventListener('click',function(){
