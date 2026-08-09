@@ -46,6 +46,19 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #hub-sticky-header{position:sticky;top:0;z-index:15;background:var(--bg);border-bottom:1px solid var(--border)}
 #todo-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
 #hub-brand{display:flex;align-items:baseline;gap:8px}
+#hub-bar-right{display:flex;align-items:center;gap:10px}
+#hub-search-toggle{width:34px;height:34px;border-radius:50%;border:none;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+#hub-search-toggle:active,#hub-search-toggle.active{background:var(--hover);color:var(--accent)}
+#hub-search-bar{display:none;align-items:center;gap:9px;padding:0 16px 12px;max-width:640px;margin:0 auto;color:var(--hint)}
+#hub-search-bar.open{display:flex}
+#hub-search-bar svg{flex-shrink:0}
+#hub-search-input{flex:1;min-width:0;border:none;background:none;color:var(--fg);font:500 15px 'Inter',sans-serif;padding:2px 0}
+#hub-search-input::placeholder{color:var(--hint)}
+#hub-search-input:focus{outline:none}
+#hub-search-close{width:26px;height:26px;flex-shrink:0;border:none;background:var(--chip);color:var(--muted);border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#hub-search-close:active{background:var(--hover)}
+#hub-offline-banner{display:none;align-items:center;gap:8px;padding:8px 16px;background:color-mix(in srgb,var(--fc-orange) 16%, var(--bg));color:var(--fc-orange);font:600 12px 'Inter',sans-serif;max-width:640px;margin:0 auto}
+#hub-offline-banner.show{display:flex}
 #hub-brand-word{font:800 18px/1 'Inter',sans-serif;letter-spacing:.04em;color:var(--fg)}
 #hub-brand-sub{font:700 9.5px/1 'Inter',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 15%, transparent);padding:4px 6px 3px;border-radius:6px}
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
@@ -404,6 +417,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 <div id="hub-sticky-header">
 <div id="todo-bar">
   <div id="hub-brand"><span id="hub-brand-word">SAKURA</span><span id="hub-brand-sub">Hub</span></div>
+  <div id="hub-bar-right">
+  <button id="hub-search-toggle" type="button" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
   <div id="account-menu-wrap">
     <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
     <div id="account-dropdown">
@@ -431,6 +446,16 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
       <button id="account-coffee-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button>
     </div>
   </div>
+  </div>
+</div>
+<div id="hub-offline-banner">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+  You're offline — changes will sync once you're back
+</div>
+<div id="hub-search-bar">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <input type="text" id="hub-search-input" placeholder="Search">
+  <button id="hub-search-close" type="button" aria-label="Close search">×</button>
 </div>
 <div id="hub-tabs">
   <button type="button" class="hub-tab sel" id="hub-tab-todos" data-view="todos">
@@ -450,8 +475,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   <div id="todo-list"></div>
   <div id="todo-open-empty" class="hub-empty" style="display:none">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-    <div class="hub-empty-title">All clear</div>
-    Tap + to add a task.
+    <div class="hub-empty-title" id="todo-open-empty-title">All clear</div>
+    <div id="todo-open-empty-msg">Tap + to add a task.</div>
   </div>
   <button id="todo-completed-toggle" type="button">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -472,8 +497,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     <div id="journal-list" class="swipe-list"></div>
     <div id="journal-empty" class="hub-empty" style="display:none">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <div class="hub-empty-title">No past entries</div>
-      Write today's entry above to get started.
+      <div class="hub-empty-title" id="journal-empty-title">No past entries</div>
+      <div id="journal-empty-msg">Write today's entry above to get started.</div>
     </div>
   </div>
 </main>
@@ -1098,7 +1123,13 @@ function pushMetaToCloud(metaKey,value){
   var ts=Date.now();
   loadFirestoreMods().then(function(f){
     return f.mod.setDoc(f.mod.doc(f.db,'users',currentUser.uid,'meta',metaKey),{value:value,updatedAt:ts});
-  }).catch(function(e){ console.warn('[sakura hub] cloud push failed for',metaKey,e); });
+  }).catch(function(e){
+    console.warn('[sakura hub] cloud push failed for',metaKey,e);
+    // Offline already has its own persistent banner — a toast on every single save while
+    // offline would fire constantly and say nothing new, so this is reserved for a genuine
+    // failure while actually online (e.g. a transient server error).
+    if(navigator.onLine){ showToast('Could not sync — will retry on your next change'); }
+  });
 }
 function pullMetaFromCloud(metaKey){
   if(!currentUser)return Promise.resolve(undefined);
@@ -1190,6 +1221,40 @@ function switchHubView(view){
 }
 document.getElementById('hub-tab-todos').addEventListener('click',function(){ switchHubView('todos'); });
 document.getElementById('hub-tab-journal').addEventListener('click',function(){ switchHubView('journal'); });
+
+// ============================================================================
+// Header search — filters whichever tab is active. Query persists across tab
+// switches (matches expectation for a single shared search control); each
+// render function checks hubSearchQuery independently and short-circuits into
+// a flat, filtered view when it's set.
+// ============================================================================
+var hubSearchQuery='';
+function toggleHubSearch(open){
+  var isOpen = open===undefined ? !document.getElementById('hub-search-bar').classList.contains('open') : open;
+  document.getElementById('hub-search-bar').classList.toggle('open',isOpen);
+  document.getElementById('hub-search-toggle').classList.toggle('active',isOpen);
+  if(isOpen){
+    document.getElementById('hub-search-input').focus();
+  }else{
+    document.getElementById('hub-search-input').value='';
+    hubSearchQuery='';
+    renderTodos(); renderJournal();
+  }
+}
+document.getElementById('hub-search-toggle').addEventListener('click',function(){ toggleHubSearch(); });
+document.getElementById('hub-search-close').addEventListener('click',function(){ toggleHubSearch(false); });
+document.getElementById('hub-search-input').addEventListener('input',function(e){
+  hubSearchQuery=e.target.value.trim().toLowerCase();
+  renderTodos(); renderJournal();
+});
+
+// ---------- Offline banner ----------
+function updateOfflineBanner(){
+  document.getElementById('hub-offline-banner').classList.toggle('show',!navigator.onLine);
+}
+window.addEventListener('online',updateOfflineBanner);
+window.addEventListener('offline',updateOfflineBanner);
+updateOfflineBanner();
 
 function loadTodosLocal(){
   try{
@@ -1286,6 +1351,29 @@ function renderTodos(){
   var doneList=document.getElementById('todo-completed-list');
   var doneToggle=document.getElementById('todo-completed-toggle');
   var doneCount=document.getElementById('todo-completed-count');
+  if(hubSearchQuery){
+    var q=hubSearchQuery;
+    var matches=todos.filter(function(t){return !t.done && t.text.toLowerCase().indexOf(q)!==-1;});
+    doneToggle.style.display='none';
+    doneList.className='swipe-list'; doneList.innerHTML='';
+    openEmpty.style.display=matches.length?'none':'';
+    if(!matches.length){
+      document.getElementById('todo-open-empty-title').textContent='No matches';
+      document.getElementById('todo-open-empty-msg').textContent='Try a different search.';
+    }
+    list.style.display=matches.length?'':'none';
+    list.innerHTML=matches.length?(
+      '<div class="hub-section-label todo-section-label">Search Results</div>'
+      +'<div class="swipe-list">'+matches.map(function(t){
+        var meta=t.dueDate?formatShortDueDate(t.dueDate):'';
+        return swipeRowShell(t.id,todoRowInnerHtml(t,meta,false),true);
+      }).join('')+'</div>'
+    ):'';
+    renderGreeting();
+    return;
+  }
+  document.getElementById('todo-open-empty-title').textContent='All clear';
+  document.getElementById('todo-open-empty-msg').textContent='Tap + to add a task.';
   var open=todos.filter(function(t){return !t.done});
   var done=todos.filter(function(t){return t.done});
   var today=todayStr();
@@ -1682,6 +1770,30 @@ function journalRowInnerHtml(j){
     +'</div>';
 }
 function renderJournal(){
+  if(hubSearchQuery){
+    var q=hubSearchQuery;
+    document.getElementById('journal-today-card').style.display='none';
+    var pastLabelEl=document.getElementById('journal-past-label');
+    pastLabelEl.textContent='Search Results';
+    var matches=journalEntries.filter(function(j){return (j.body||'').toLowerCase().indexOf(q)!==-1;})
+      .sort(function(a,b){return b.date.localeCompare(a.date);});
+    var listEl=document.getElementById('journal-list');
+    var emptyEl=document.getElementById('journal-empty');
+    pastLabelEl.style.display=matches.length?'':'none';
+    emptyEl.style.display=matches.length?'none':'';
+    if(!matches.length){
+      document.getElementById('journal-empty-title').textContent='No matches';
+      document.getElementById('journal-empty-msg').textContent='Try a different search.';
+    }
+    listEl.style.display=matches.length?'':'none';
+    listEl.innerHTML=matches.map(function(j){
+      return swipeRowShell(j.id,journalRowInnerHtml(j),false);
+    }).join('');
+    return;
+  }
+  document.getElementById('journal-today-card').style.display='';
+  document.getElementById('journal-empty-title').textContent='No past entries';
+  document.getElementById('journal-empty-msg').textContent="Write today's entry above to get started.";
   var today=todayStr();
   var todayEntry=findJournalEntry(today);
   document.getElementById('journal-today-date').textContent=formatJournalDate(today,{weekday:'long',month:'long',day:'numeric'});
@@ -1703,6 +1815,7 @@ function renderJournal(){
   var list=document.getElementById('journal-list');
   var empty=document.getElementById('journal-empty');
   var pastLabel=document.getElementById('journal-past-label');
+  pastLabel.textContent='Past Entries';
   empty.style.display=past.length?'none':'';
   list.style.display=past.length?'':'none';
   pastLabel.style.display=past.length?'':'none';
@@ -1802,7 +1915,8 @@ document.addEventListener('keydown',function(e){
   if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
   if(document.getElementById('journal-sheet-overlay').classList.contains('open')){ closeJournalDetail(); return; }
   if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
-  if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); }
+  if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); return; }
+  if(document.getElementById('hub-search-bar').classList.contains('open')){ toggleHubSearch(false); }
 });
 
 // ============================================================================
