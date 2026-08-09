@@ -347,6 +347,10 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-subtask-input::placeholder{color:var(--hint)}
 .todo-subtask-chip{display:inline-flex;align-items:center;gap:5px;font:600 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:3.5px 9px;border-radius:999px}
 .todo-subtask-chip svg{width:10px;height:10px}
+.todo-link-chip{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#task-detail-link{display:none;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin:-4px 0 4px;padding:2px 0}
+#task-detail-link svg{color:var(--hint);flex-shrink:0}
+#task-detail-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .todo-due-clear:active{background:var(--hover)}
 
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
@@ -570,6 +574,7 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     </div>
     <div class="hub-sheet-body">
       <textarea id="task-detail-text" rows="1" placeholder="Task"></textarea>
+      <div id="task-detail-link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="task-detail-link-text"></span></div>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Due date</div>
       <div class="todo-due-row">
         <div class="todo-due-input-wrap">
@@ -1453,6 +1458,7 @@ function todoRowInnerHtml(t,dateDisplay,isOverdue){
     metaParts.push('<span class="todo-subtask-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'+doneCt+'/'+t.subtasks.length+'</span>');
   }
   if(t.repeat)metaParts.push('<span class="todo-subtask-chip">'+REPEAT_SVG+TODO_REPEAT_LABEL[t.repeat]+'</span>');
+  if(t.linkLabel)metaParts.push('<span class="todo-subtask-chip todo-link-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'+esc(t.linkLabel)+'</span>');
   var meta = metaParts.length ? '<div class="todo-row-meta">'+metaParts.join('')+'</div>' : '';
   var dot = isOverdue ? '<span class="todo-dot"></span>' : '';
   return '<div class="todo-row">'
@@ -1711,6 +1717,9 @@ function renderTaskDetail(){
   var textEl=document.getElementById('task-detail-text');
   if(document.activeElement!==textEl)textEl.value=t.text;
   autoGrow(textEl);
+  var linkEl=document.getElementById('task-detail-link');
+  linkEl.style.display=t.linkLabel?'flex':'none';
+  if(t.linkLabel)document.getElementById('task-detail-link-text').textContent=t.linkLabel;
   document.getElementById('task-detail-due').value=t.dueDate||'';
   document.getElementById('task-detail-due-clear').style.display=t.dueDate?'':'none';
   var dueDisplay=document.getElementById('task-detail-due-display');
