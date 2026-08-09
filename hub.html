@@ -148,7 +148,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-list{display:flex;flex-direction:column;gap:10px}
 .swipe-row{position:relative;overflow:hidden;border-radius:18px;background:var(--edit-bg);box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
 .swipe-row.pressing .swipe-content{transform:scale(.965);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
-.swipe-row.pressing .todo-dot{background:var(--accent);transition:background .3s ease}
 .swipe-row.completing::after{content:'';position:absolute;inset:0;background:var(--fc-green);opacity:0;animation:todo-complete-flash .3s ease forwards;pointer-events:none;z-index:2}
 @keyframes todo-complete-flash{0%{opacity:0}35%{opacity:.16}100%{opacity:.16}}
 .swipe-bg{position:absolute;inset:0;display:flex;align-items:center;opacity:0}
@@ -162,7 +161,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .swipe-row:not(.dragging) .swipe-content{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 
 .todo-row{display:flex;align-items:flex-start;gap:11px;padding:17px 16px;cursor:pointer}
-.todo-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:8px;background:var(--fc-red)}
 /* ---------- Premium check control ----------
    A morphing circle rather than a form checkbox: an empty ring with an inset shadow for
    depth, a gradient-filled, glowing disc on completion, and a checkmark that draws itself
@@ -1448,7 +1446,7 @@ function renderGreeting(){
   else sub=openCount+' task'+(openCount===1?'':'s')+' open';
   subEl.textContent=sub;
 }
-function todoRowInnerHtml(t,dateDisplay,isOverdue){
+function todoRowInnerHtml(t,dateDisplay){
   var metaParts=[];
   if(dateDisplay)metaParts.push(dateDisplay);
   if(t.priority && t.priority!=='none')metaParts.push('<span class="todo-priority-chip pr-'+t.priority+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 21V4"/><path fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 4h13l-2.5 4.5L17 13H4z"/></svg>'+TODO_PRIORITY_LABEL[t.priority]+'</span>');
@@ -1460,9 +1458,7 @@ function todoRowInnerHtml(t,dateDisplay,isOverdue){
   if(t.repeat)metaParts.push('<span class="todo-subtask-chip">'+REPEAT_SVG+TODO_REPEAT_LABEL[t.repeat]+'</span>');
   if(t.linkLabel)metaParts.push('<span class="todo-subtask-chip todo-link-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'+esc(t.linkLabel)+'</span>');
   var meta = metaParts.length ? '<div class="todo-row-meta">'+metaParts.join('')+'</div>' : '';
-  var dot = isOverdue ? '<span class="todo-dot"></span>' : '';
   return '<div class="todo-row">'
-    +dot
     +'<div class="todo-row-main"><div class="todo-row-text">'+esc(t.text)+'</div>'+meta+'</div>'
     +'</div>';
 }
@@ -1522,10 +1518,10 @@ function renderTodos(){
   var done=todos.filter(function(t){return t.done});
   var today=todayStr();
   var sections=[
-    {label:'Overdue',cls:'accent-overdue',tasks:[],dateFn:function(t){return '<span class="overdue">'+daysOverdueLabel(t.dueDate,today)+'</span>';}},
-    {label:'Today',cls:'',tasks:[],dateFn:function(){return '';}},
-    {label:'Upcoming',cls:'',tasks:[],dateFn:function(t){return formatShortDueDate(t.dueDate);}},
-    {label:'No Date',cls:'',tasks:[],dateFn:function(){return '';}}
+    {label:'Overdue',tasks:[],dateFn:function(t){return '<span class="overdue">'+daysOverdueLabel(t.dueDate,today)+'</span>';}},
+    {label:'Today',tasks:[],dateFn:function(){return '';}},
+    {label:'Upcoming',tasks:[],dateFn:function(t){return formatShortDueDate(t.dueDate);}},
+    {label:'No Date',tasks:[],dateFn:function(){return '';}}
   ];
   open.forEach(function(t){
     if(t.dueDate&&t.dueDate<today)sections[0].tasks.push(t);
@@ -1540,7 +1536,7 @@ function renderTodos(){
   list.innerHTML=sections.filter(function(s){return s.tasks.length;}).map(function(s){
     return '<div class="hub-section-label todo-section-label">'+s.label+'</div>'
       +'<div class="swipe-list">'+s.tasks.map(function(t){
-        return swipeRowShell(t.id,todoRowInnerHtml(t,s.dateFn(t),s.cls==='accent-overdue'),true,s.cls);
+        return swipeRowShell(t.id,todoRowInnerHtml(t,s.dateFn(t)),true);
       }).join('')+'</div>';
   }).join('');
   doneToggle.classList.toggle('open',todoCompletedOpen);
