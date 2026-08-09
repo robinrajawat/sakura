@@ -233,8 +233,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .journal-row-date{font:650 14.5px 'Inter',sans-serif;letter-spacing:-.005em;color:var(--fg)}
 .journal-row-snippet{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .journal-row-snippet.empty{font-style:italic;color:var(--hint)}
-.journal-row-tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
-.journal-row-tag{font:600 10.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%, transparent);padding:2.5px 8px;border-radius:999px}
 /* Journal detail sheet */
 .journal-mood-row{display:flex;gap:6px}
 .journal-mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 10.5px 'Inter',sans-serif;padding:9px 2px 8px;border-radius:12px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .12s ease}
@@ -246,13 +244,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .journal-mood-btn.mood-low::before{background:var(--fc-orange)}
 .journal-mood-btn.mood-rough::before{background:var(--fc-red)}
 .journal-mood-btn.sel{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 10%, var(--bg))}
-.journal-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1.5px solid var(--border);border-radius:12px;padding:8px 10px;background:var(--bg)}
-.journal-tag-chip{display:inline-flex;align-items:center;gap:5px;font:600 11.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%, transparent);padding:4px 5px 4px 10px;border-radius:999px}
-.journal-tag-chip button{border:none;background:none;color:inherit;opacity:.7;cursor:pointer;padding:1px;display:inline-flex;font-size:13px;line-height:1}
-.journal-tag-chip button:active{opacity:1}
-#journal-tag-input{flex:1;min-width:80px;border:none;background:none;color:var(--fg);font:500 13px 'Inter',sans-serif;padding:3px 2px}
-#journal-tag-input:focus{outline:none}
-#journal-tag-input::placeholder{color:var(--hint)}
 #journal-detail-body{width:100%;border:none;background:none;color:var(--fg);font:450 15px/1.6 'Inter',sans-serif;padding:12px 0 6px;resize:none;overflow:hidden;min-height:80px}
 #journal-detail-body:focus{outline:none}
 #journal-detail-body::placeholder{color:var(--hint)}
@@ -346,11 +337,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-subtask-input::placeholder{color:var(--hint)}
 .todo-subtask-chip{display:inline-flex;align-items:center;gap:5px;font:600 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:3.5px 9px;border-radius:999px}
 .todo-subtask-chip svg{width:10px;height:10px}
-/* ---------- Journal tag suggestions ---------- */
-.journal-tag-suggestions{display:none;flex-wrap:wrap;gap:6px;margin-top:8px}
-.journal-tag-suggestions.show{display:flex}
-.journal-tag-suggestion{font:600 11.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:5px 12px;border-radius:999px;cursor:pointer;border:none}
-.journal-tag-suggestion:active{background:var(--hover)}
 .todo-due-clear:active{background:var(--hover)}
 
 #hub-toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--fg);color:var(--bg);font:500 12.5px 'Inter',sans-serif;padding:9px 16px;border-radius:999px;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:200;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:calc(100vw - 40px);text-align:center}
@@ -523,11 +509,6 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     <div class="hub-sheet-body">
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>Mood</div>
       <div id="journal-detail-mood-row" class="journal-mood-row"></div>
-      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 12 22l-9-9 8.59-8.59A2 2 0 0 1 13 4h6a1 1 0 0 1 1 1v6a2 2 0 0 1-.41 1.41Z"/><circle cx="16.5" cy="7.5" r="1"/></svg>Tags</div>
-      <div id="journal-detail-tags-row" class="journal-tags-row">
-        <input type="text" id="journal-tag-input" placeholder="Add tag" maxlength="30">
-      </div>
-      <div id="journal-tag-suggestions" class="journal-tag-suggestions"></div>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>Entry</div>
       <textarea id="journal-detail-body" rows="1" placeholder="What's on your mind?"></textarea>
       <div id="journal-detail-timestamp"></div>
@@ -1640,11 +1621,10 @@ function journalSnippet(body){
 }
 function journalRowInnerHtml(j){
   var moodDot='<span class="journal-row-mood-dot'+(j.mood?' mood-'+j.mood:'')+'"></span>';
-  var tags=j.tags.length?('<div class="journal-row-tags">'+j.tags.slice(0,4).map(function(t){return '<span class="journal-row-tag">#'+esc(t)+'</span>';}).join('')+'</div>'):'';
   var snippet=j.body?('<div class="journal-row-snippet">'+esc(journalSnippet(j.body))+'</div>'):'<div class="journal-row-snippet empty">No entry text</div>';
   return '<div class="journal-row-mobile">'
     +moodDot
-    +'<div class="todo-row-main"><div class="journal-row-date">'+formatJournalDate(j.date)+'</div>'+snippet+tags+'</div>'
+    +'<div class="todo-row-main"><div class="journal-row-date">'+formatJournalDate(j.date)+'</div>'+snippet+'</div>'
     +'</div>';
 }
 function renderJournal(){
@@ -1707,75 +1687,12 @@ function renderJournalDetail(){
   document.getElementById('journal-detail-mood-row').innerHTML=JOURNAL_MOODS.map(function(m){
     return '<button type="button" class="journal-mood-btn mood-'+m+(j.mood===m?' sel':'')+'" data-mood="'+m+'">'+JOURNAL_MOOD_LABEL[m]+'</button>';
   }).join('');
-  renderJournalTags(j);
   var bodyEl=document.getElementById('journal-detail-body');
   if(document.activeElement!==bodyEl)bodyEl.value=stripJournalHtml(j.body);
   autoGrow(bodyEl);
   document.getElementById('journal-detail-timestamp').textContent=(j.body||j.mood||j.tags.length)?('Last edited '+new Date(j.modifiedAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):'';
   updateJournalSheetFade();
 }
-function renderJournalTags(j){
-  var wrap=document.getElementById('journal-detail-tags-row');
-  wrap.querySelectorAll('.journal-tag-chip').forEach(function(el){ el.remove(); });
-  var chipsHtml=j.tags.map(function(t,i){
-    return '<span class="journal-tag-chip">#'+esc(t)+'<button type="button" data-remove-tag="'+i+'" aria-label="Remove tag">\u00d7</button></span>';
-  }).join('');
-  if(chipsHtml)wrap.insertAdjacentHTML('afterbegin',chipsHtml);
-  updateJournalTagSuggestions();
-}
-// ---------- Journal tag autocomplete ----------
-// Suggests tags already used elsewhere in the journal, filtered by what's typed so far and
-// excluding tags already on this entry — tapping one adds it directly, same as pressing
-// Enter. Tags are normalized to lowercase on add so "#sap" and "#SAP" can't fork into two
-// separate tags by accident.
-function allJournalTags(){
-  var seen={}, out=[];
-  journalEntries.forEach(function(j){
-    j.tags.forEach(function(t){
-      var k=t.toLowerCase();
-      if(!seen[k]){ seen[k]=true; out.push(t); }
-    });
-  });
-  return out;
-}
-function updateJournalTagSuggestions(){
-  var wrap=document.getElementById('journal-tag-suggestions');
-  var input=document.getElementById('journal-tag-input');
-  var q=input.value.trim().replace(/^#/,'').toLowerCase();
-  var j=findJournalEntry(journalDetailDate);
-  var current=j?j.tags.map(function(t){return t.toLowerCase();}):[];
-  var matches=allJournalTags().filter(function(t){
-    var lt=t.toLowerCase();
-    if(current.indexOf(lt)!==-1)return false;
-    return !q || lt.indexOf(q)!==-1;
-  }).sort(function(a,b){
-    var aStarts=a.toLowerCase().indexOf(q)===0, bStarts=b.toLowerCase().indexOf(q)===0;
-    if(aStarts!==bStarts)return aStarts?-1:1;
-    return a.localeCompare(b);
-  }).slice(0,6);
-  wrap.classList.toggle('show',matches.length>0);
-  wrap.innerHTML=matches.map(function(t){
-    return '<button type="button" class="journal-tag-suggestion" data-tag="'+esc(t)+'">#'+esc(t)+'</button>';
-  }).join('');
-}
-function addJournalTag(rawVal){
-  var val=rawVal.trim().replace(/^#/,'').toLowerCase();
-  if(!val)return;
-  var j=findJournalEntry(journalDetailDate); if(!j)return;
-  if(j.tags.map(function(t){return t.toLowerCase();}).indexOf(val)===-1 && j.tags.length<20){
-    j.tags.push(val); j.modifiedAt=Date.now();
-    saveJournalEntries(); renderJournalDetail();
-  }
-}
-document.getElementById('journal-tag-input').addEventListener('input',updateJournalTagSuggestions);
-document.getElementById('journal-tag-input').addEventListener('focus',updateJournalTagSuggestions);
-document.getElementById('journal-tag-suggestions').addEventListener('pointerdown',function(e){
-  var btn=e.target.closest('[data-tag]'); if(!btn)return;
-  e.preventDefault();
-  addJournalTag(btn.dataset.tag);
-  var input=document.getElementById('journal-tag-input');
-  input.value=''; input.focus();
-});
 document.getElementById('journal-sheet-close').addEventListener('click',closeJournalDetail);
 document.getElementById('journal-sheet-overlay').addEventListener('click',function(e){
   if(e.target.id==='journal-sheet-overlay')closeJournalDetail();
@@ -1787,20 +1704,6 @@ document.getElementById('journal-detail-mood-row').addEventListener('click',func
   j.mood=(j.mood===m)?'':m;
   j.modifiedAt=Date.now();
   saveJournalEntries(); renderJournalDetail();
-});
-document.getElementById('journal-detail-tags-row').addEventListener('click',function(e){
-  var btn=e.target.closest('[data-remove-tag]'); if(!btn)return;
-  var j=findJournalEntry(journalDetailDate); if(!j)return;
-  j.tags.splice(parseInt(btn.dataset.removeTag,10),1);
-  j.modifiedAt=Date.now();
-  saveJournalEntries(); renderJournalDetail();
-});
-document.getElementById('journal-tag-input').addEventListener('keydown',function(e){
-  if(e.key!=='Enter')return;
-  e.preventDefault();
-  var val=this.value;
-  this.value='';
-  addJournalTag(val);
 });
 document.getElementById('journal-detail-body').addEventListener('input',function(e){ autoGrow(e.target); updateJournalSheetFade(); });
 document.getElementById('journal-detail-body').addEventListener('change',function(e){
