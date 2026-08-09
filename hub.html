@@ -42,19 +42,12 @@ body.theme-light{color-scheme:light;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;-
 body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 
-/* ---------- Sticky top bar: icon + greeting + account, the only persistent chrome ----------
-   The greeting lives here now, not in the scrolling content — it's a personal, time-of-day
-   welcome, not something tied to whichever list is open, so it stays visible across both
-   tabs and while scrolled. The wordmark it replaced is gone, but the icon stays: this page
-   can run standalone as a home-screen PWA with no browser chrome at all, and the icon is the
-   only thing left saying "this is Sakura" in that mode. */
+/* ---------- Sticky top bar: wordmark + account, the only persistent chrome ---------- */
 #hub-sticky-header{position:sticky;top:0;z-index:15;background:var(--bg);border-bottom:1px solid var(--border)}
 #todo-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(14px + env(safe-area-inset-top)) 16px 13px}
-#hub-brand{display:flex;align-items:center;gap:10px;min-width:0}
-#hub-brand img{width:25px;height:25px;border-radius:7px;display:block;box-shadow:0 1px 4px rgba(0,0,0,.16);flex-shrink:0}
-#todo-greeting{min-width:0}
-#todo-greeting-title{font:700 15.5px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#todo-greeting-sub{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hub-brand{display:flex;align-items:baseline;gap:8px}
+#hub-brand-word{font:800 18px/1 'Inter',sans-serif;letter-spacing:.04em;color:var(--fg)}
+#hub-brand-sub{font:700 9.5px/1 'Inter',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 15%, transparent);padding:4px 6px 3px;border-radius:6px}
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
@@ -206,14 +199,18 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #todo-completed-list.open{display:flex;animation:hub-fade-in .15s ease}
 .todo-completed-when{color:var(--hint);font:600 11.5px 'Inter',sans-serif}
 
+/* ---------- Greeting header ---------- */
+#todo-greeting{margin:26px 4px 22px}
+#todo-greeting-title{font:700 30px 'Inter',sans-serif;letter-spacing:-.02em;color:var(--fg)}
+#todo-greeting-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+
 /* ---------- Journal ----------
    Today gets one deliberately prominent card (journal is one entry per day, not a growing
    list the way tasks are) rather than sitting as just another row — tapping it always opens
    today, creating the entry on first write. Past entries reuse the exact same swipe-row card
    list To-Dos already established, right down to swipe-left-to-delete, matching this page's
    original design intent: one list pattern shared by both sections. */
-#journal-today-card{display:block;width:100%;text-align:left;border:none;cursor:pointer;margin:22px 0 20px;padding:20px 20px 22px;border-radius:20px;background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 13%, var(--edit-bg)),var(--edit-bg));box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 26px -14px rgba(0,0,0,.18);position:relative;overflow:hidden}
-#journal-today-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+#journal-today-card{display:block;width:100%;text-align:left;border:none;cursor:pointer;margin:22px 0 20px;padding:20px 20px 22px;border-radius:20px;background:linear-gradient(155deg,color-mix(in srgb,var(--accent) 13%, var(--edit-bg)),var(--edit-bg));box-shadow:0 1px 2px rgba(0,0,0,.04),0 10px 26px -14px rgba(0,0,0,.18)}
 #journal-today-label{font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 #journal-today-date{font:700 20px 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);margin-top:3px}
 #journal-today-row{display:flex;align-items:flex-start;gap:9px;margin-top:10px}
@@ -428,12 +425,7 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 <div id="hub-app">
 <div id="hub-sticky-header">
 <div id="todo-bar">
-  <div id="hub-brand"><img src="icon-192.png" alt="" width="25" height="25">
-    <div id="todo-greeting">
-      <div id="todo-greeting-title"></div>
-      <div id="todo-greeting-sub"></div>
-    </div>
-  </div>
+  <div id="hub-brand"><span id="hub-brand-word">SAKURA</span><span id="hub-brand-sub">Hub</span></div>
   <div id="account-menu-wrap">
     <button id="account-btn" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false"></button>
     <div id="account-dropdown">
@@ -472,6 +464,10 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 </div>
 </div>
 <main>
+  <div id="todo-greeting">
+    <div id="todo-greeting-title"></div>
+    <div id="todo-greeting-sub"></div>
+  </div>
   <div id="todos-view">
   <div id="todo-list"></div>
   <div id="todo-open-empty" class="hub-empty" style="display:none">
