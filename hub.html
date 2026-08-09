@@ -686,7 +686,12 @@ document.getElementById('hub-toast').addEventListener('click',function(e){
 // particular tends to fight the page for gesture ownership mid-swipe.
 // ============================================================================
 function initSwipeList(listEl,opts){
-  // opts: {onTap(id), onLongPress(id) — fires after a still hold, the no-swipe path to
+  // opts: {onTap(id) — fires only on a truly stationary release (no meaningful movement in
+  // either axis); a confirmed vertical scroll never reaches this, even after the finger
+  // lifts — that distinction previously wasn't made (any non-horizontal gesture fell through
+  // to onTap), which meant starting a scroll from on top of a card could also open it the
+  // moment you lifted your finger.
+  // onLongPress(id) — fires after a still hold, the no-swipe path to
   // complete a task now that rows carry no checkbox; a real drag cancels it immediately.
   // onSwipeLeft(id) — reveals the right-anchored action (delete, always present),
   // onSwipeRight(id) — reveals the left-anchored action (complete; only on To-Dos, where
@@ -772,7 +777,7 @@ function initSwipeList(listEl,opts){
       else{ closeRow(s.row,true); }
     }else{
       if(s.wasOpen){ closeRow(s.row,true); }
-      else if(opts.onTap){ opts.onTap(s.row.dataset.id); }
+      else if(!s.decided && opts.onTap){ opts.onTap(s.row.dataset.id); }
     }
   }
   listEl.addEventListener('pointerup',finish);
