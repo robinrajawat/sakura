@@ -219,9 +219,9 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #journal-today-snippet{font:450 14.5px/1.5 'Inter',sans-serif;color:var(--fg)}
 #journal-today-snippet.empty{color:var(--hint);font-style:italic}
 #journal-past-label{margin-top:24px}
-.journal-row-mobile{display:flex;align-items:flex-start;gap:12px;padding:16px}
+.journal-row-mobile{display:flex;align-items:center;gap:14px;padding:16px}
 .journal-row-mood-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px;background:var(--border)}
-.journal-row-mood-emoji{font-size:16px;line-height:1;flex-shrink:0;margin-top:1px}
+.journal-row-mood-emoji{font-size:22px;line-height:1;flex-shrink:0}
 .journal-row-date{font:650 14.5px 'Inter',sans-serif;letter-spacing:-.005em;color:var(--fg)}
 .journal-row-snippet{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .journal-row-snippet.empty{font-style:italic;color:var(--hint)}
@@ -281,6 +281,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #task-detail-text{width:100%;border:none;background:none;color:var(--fg);font:650 19px/1.4 'Inter',sans-serif;letter-spacing:-.015em;padding:10px 0 16px;resize:none;overflow:hidden}
 #task-detail-text:focus{outline:none}
 .todo-detail-label{display:flex;align-items:center;gap:6px;font:700 10.5px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);margin:20px 0 10px}
+.todo-detail-note{font-size:11.5px;color:var(--hint);font-style:italic;margin-top:-2px;margin-bottom:4px}
+.todo-status-pill[disabled]{opacity:.4;cursor:not-allowed}
 .todo-detail-label:first-of-type{margin-top:2px}
 .todo-detail-label svg{color:var(--hint);opacity:.8}
 .todo-status-row{display:flex;gap:7px;flex-wrap:wrap}
@@ -288,6 +290,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-status-pill:active{transform:scale(.96)}
 .todo-status-pill[data-status]::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;flex-shrink:0}
 .todo-status-pill[data-priority] svg{width:11px;height:11px;flex-shrink:0}
+.todo-status-pill[data-repeat]{color:var(--accent)}
+.todo-status-pill[data-repeat] svg{width:11px;height:11px;flex-shrink:0}
 .todo-status-pill[data-status="waiting"]{color:var(--fc-gray)}
 .todo-status-pill[data-status="progress"]{color:var(--fc-blue)}
 .todo-status-pill[data-status="blocked"]{color:var(--fc-red)}
@@ -529,9 +533,13 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
         </div>
         <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
       </div>
+      <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Repeat</div>
+      <div class="todo-status-row" id="task-detail-repeat"></div>
+      <div id="task-detail-repeat-note" class="todo-detail-note" style="display:none">A recurring task can't hold subtasks — clear its subtasks first.</div>
       <div class="todo-detail-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Subtasks</div>
       <div id="task-detail-subtasks" class="todo-subtasks-list"></div>
       <input type="text" id="task-subtask-input" class="todo-subtask-input" placeholder="Add subtask" maxlength="300">
+      <div id="task-detail-subtask-note" class="todo-detail-note" style="display:none">Adding a subtask clears this task's repeat.</div>
       <div class="hub-sheet-fade" id="task-sheet-fade"></div>
     </div>
     <div class="hub-sheet-foot">
@@ -1139,6 +1147,19 @@ var TODO_STATUSES=['waiting','progress','blocked','review'];
 var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
 var TODO_PRIORITIES=['low','med','high'];
 var TODO_PRIORITY_LABEL={low:'Low',med:'Medium',high:'High'};
+var TODO_REPEATS=['daily','weekdays','weekly'];
+var TODO_REPEAT_LABEL={daily:'Daily',weekdays:'Weekdays',weekly:'Weekly'};
+var REPEAT_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+// Mirrors index.html's nextRepeatDate() exactly: daily +1 day, weekly +7 days, weekdays
+// steps forward one day at a time skipping Sat/Sun — same rule, same output, so a task
+// advanced from mobile lands on the identical next date the desktop app would compute.
+function nextRepeatDate(fromDateStr,repeat){
+  var d = fromDateStr ? new Date(fromDateStr+'T00:00:00') : new Date(new Date().setHours(0,0,0,0));
+  if(repeat==='daily'){ d.setDate(d.getDate()+1); }
+  else if(repeat==='weekly'){ d.setDate(d.getDate()+7); }
+  else if(repeat==='weekdays'){ do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||d.getDay()===6); }
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 var CHECK_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 var FAB_PLUS_SVG='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
 var FAB_PENCIL_SVG='<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -1228,6 +1249,7 @@ function todoRowInnerHtml(t,dateDisplay,isOverdue){
     var doneCt=t.subtasks.filter(function(s){return s.done;}).length;
     metaParts.push('<span class="todo-subtask-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'+doneCt+'/'+t.subtasks.length+'</span>');
   }
+  if(t.repeat)metaParts.push('<span class="todo-subtask-chip">'+REPEAT_SVG+TODO_REPEAT_LABEL[t.repeat]+'</span>');
   var meta = metaParts.length ? '<div class="todo-row-meta">'+metaParts.join('')+'</div>' : '';
   var dot = isOverdue ? '<span class="todo-dot"></span>' : '';
   return '<div class="todo-row">'
@@ -1391,6 +1413,16 @@ document.getElementById('todo-completed-toggle').addEventListener('click',functi
 function completeTaskAnimated(id){
   var row=document.querySelector('#todo-list .swipe-row[data-id="'+CSS.escape(id)+'"]'); if(!row)return;
   var t=findTodo(id); if(!t)return;
+  if(t.repeat){
+    var priorDue=t.dueDate;
+    t.dueDate=nextRepeatDate(t.dueDate,t.repeat);
+    saveTodos(); renderTodos();
+    showUndoToast('Moved to '+formatShortDueDate(t.dueDate),function(){
+      var tt=findTodo(id); if(!tt)return;
+      tt.dueDate=priorDue; saveTodos(); renderTodos();
+    });
+    return;
+  }
   row.querySelector('.todo-row-text').classList.add('done');
   row.classList.add('completing');
   row.style.transition='opacity .3s ease .12s, transform .3s ease .12s';
@@ -1436,6 +1468,7 @@ function openTaskDetail(id){
   requestAnimationFrame(function(){ autoGrow(document.getElementById('task-detail-text')); updateTaskSheetFade(); });
 }
 function closeTaskDetail(){
+  commitTaskText();
   document.getElementById('task-sheet-overlay').classList.remove('open');
   taskDetailId=null;
 }
@@ -1463,6 +1496,12 @@ function renderTaskDetail(){
   var dueDisplay=document.getElementById('task-detail-due-display');
   dueDisplay.classList.toggle('empty',!t.dueDate);
   document.getElementById('task-detail-due-text').textContent=t.dueDate?formatDueDisplay(t.dueDate):'Add due date';
+  var hasSubtasks=(t.subtasks||[]).length>0;
+  document.getElementById('task-detail-repeat').innerHTML=TODO_REPEATS.map(function(r){
+    return '<button type="button" class="todo-status-pill'+(t.repeat===r?' sel':'')+'" data-repeat="'+r+'"'+(hasSubtasks?' disabled':'')+'>'+REPEAT_SVG+TODO_REPEAT_LABEL[r]+'</button>';
+  }).join('');
+  document.getElementById('task-detail-repeat-note').style.display=hasSubtasks?'':'none';
+  document.getElementById('task-detail-subtask-note').style.display=t.repeat?'':'none';
   renderTaskSubtasks(t);
   updateTaskSheetFade();
 }
@@ -1497,6 +1536,7 @@ document.getElementById('task-subtask-input').addEventListener('keydown',functio
   var t=findTodo(taskDetailId); if(!t)return;
   if(!t.subtasks)t.subtasks=[];
   t.subtasks.push({id:subUid(),text:val.slice(0,300),done:false});
+  t.repeat=null;
   saveTodos(); renderTodos(); renderTaskDetail();
   document.getElementById('task-subtask-input').focus();
 });
@@ -1506,18 +1546,31 @@ document.getElementById('task-sheet-overlay').addEventListener('click',function(
 });
 document.getElementById('task-detail-check').addEventListener('click',function(){
   var t=findTodo(taskDetailId); if(!t)return;
+  if(!t.done && t.repeat){
+    var priorDue=t.dueDate;
+    t.dueDate=nextRepeatDate(t.dueDate,t.repeat);
+    saveAndRefreshTask();
+    showUndoToast('Moved to '+formatShortDueDate(t.dueDate),function(){
+      var tt=findTodo(t.id); if(!tt)return;
+      tt.dueDate=priorDue; saveTodos(); renderTodos(); renderTaskDetail();
+    });
+    return;
+  }
   t.done=!t.done; t.completedAt=t.done?Date.now():null;
   if(t.done){ this.classList.remove('just-completed'); void this.offsetWidth; this.classList.add('just-completed'); }
   saveAndRefreshTask();
 });
 document.getElementById('task-detail-text').addEventListener('input',function(e){ autoGrow(e.target); updateTaskSheetFade(); });
-document.getElementById('task-detail-text').addEventListener('change',function(e){
+document.getElementById('task-detail-text').addEventListener('change',commitTaskText);
+function commitTaskText(){
   var t=findTodo(taskDetailId); if(!t)return;
-  var val=e.target.value.trim();
-  if(!val){ e.target.value=t.text; autoGrow(e.target); return; }
+  var el=document.getElementById('task-detail-text');
+  var val=el.value.trim();
+  if(!val){ el.value=t.text; autoGrow(el); return; }
+  if(val===t.text)return;
   t.text=val;
   saveTodos(); renderTodos();
-});
+}
 document.getElementById('task-detail-status').addEventListener('click',function(e){
   var btn=e.target.closest('[data-status]'); if(!btn)return;
   var t=findTodo(taskDetailId); if(!t)return;
@@ -1530,6 +1583,13 @@ document.getElementById('task-detail-priority').addEventListener('click',functio
   var t=findTodo(taskDetailId); if(!t)return;
   var p=btn.dataset.priority;
   t.priority = (t.priority===p) ? 'none' : p;
+  saveAndRefreshTask();
+});
+document.getElementById('task-detail-repeat').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-repeat]'); if(!btn||btn.disabled)return;
+  var t=findTodo(taskDetailId); if(!t)return;
+  var r=btn.dataset.repeat;
+  t.repeat = (t.repeat===r) ? null : r;
   saveAndRefreshTask();
 });
 document.getElementById('task-detail-due').addEventListener('change',function(e){
@@ -1677,6 +1737,7 @@ function openJournalDetail(dateOrId){
   requestAnimationFrame(function(){ autoGrow(document.getElementById('journal-detail-body')); updateJournalSheetFade(); });
 }
 function closeJournalDetail(){
+  commitJournalBody();
   document.getElementById('journal-sheet-overlay').classList.remove('open');
   journalDetailDate=null;
   renderJournal();
@@ -1707,12 +1768,23 @@ document.getElementById('journal-detail-mood-row').addEventListener('click',func
   saveJournalEntries(); renderJournalDetail();
 });
 document.getElementById('journal-detail-body').addEventListener('input',function(e){ autoGrow(e.target); updateJournalSheetFade(); });
-document.getElementById('journal-detail-body').addEventListener('change',function(e){
-  var j=findJournalEntry(journalDetailDate); if(!j)return;
-  j.body=e.target.value;
-  j.modifiedAt=Date.now();
-  saveJournalEntries(); renderJournalDetail();
+document.getElementById('journal-detail-body').addEventListener('change',function(){
+  commitJournalBody();
+  renderJournalDetail();
 });
+// Explicit, forced save — called on every path that dismisses the sheet (close button,
+// backdrop tap, Escape) rather than relying solely on the textarea's native blur-triggered
+// 'change' event. Mobile Safari doesn't always fire blur/change synchronously before a
+// button's own click handler runs when a text field is focused, which risked losing
+// in-progress text if someone tapped close right after typing.
+function commitJournalBody(){
+  var j=findJournalEntry(journalDetailDate); if(!j)return;
+  var el=document.getElementById('journal-detail-body');
+  if(el.value===j.body)return;
+  j.body=el.value;
+  j.modifiedAt=Date.now();
+  saveJournalEntries();
+}
 document.getElementById('journal-detail-delete').addEventListener('click',function(){
   var idx=journalEntries.findIndex(function(j){return j.date===journalDetailDate;}); if(idx===-1)return;
   var removed=journalEntries[idx];
