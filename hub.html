@@ -215,34 +215,21 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #journal-today-date{font:700 20px 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);margin-top:3px}
 #journal-today-row{display:flex;align-items:flex-start;gap:9px;margin-top:10px}
 .journal-today-mood-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin-top:3px;background:var(--border)}
-.journal-today-mood-dot.mood-great{background:var(--fc-green)}
-.journal-today-mood-dot.mood-good{background:var(--fc-blue)}
-.journal-today-mood-dot.mood-neutral{background:var(--fc-gray)}
-.journal-today-mood-dot.mood-low{background:var(--fc-orange)}
-.journal-today-mood-dot.mood-rough{background:var(--fc-red)}
+.journal-today-mood-dot.has-emoji{width:auto;height:auto;border-radius:0;background:none;font-size:17px;line-height:1;margin-top:0}
 #journal-today-snippet{font:450 14.5px/1.5 'Inter',sans-serif;color:var(--fg)}
 #journal-today-snippet.empty{color:var(--hint);font-style:italic}
 #journal-past-label{margin-top:24px}
 .journal-row-mobile{display:flex;align-items:flex-start;gap:12px;padding:16px}
 .journal-row-mood-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px;background:var(--border)}
-.journal-row-mood-dot.mood-great{background:var(--fc-green)}
-.journal-row-mood-dot.mood-good{background:var(--fc-blue)}
-.journal-row-mood-dot.mood-neutral{background:var(--fc-gray)}
-.journal-row-mood-dot.mood-low{background:var(--fc-orange)}
-.journal-row-mood-dot.mood-rough{background:var(--fc-red)}
+.journal-row-mood-emoji{font-size:16px;line-height:1;flex-shrink:0;margin-top:1px}
 .journal-row-date{font:650 14.5px 'Inter',sans-serif;letter-spacing:-.005em;color:var(--fg)}
 .journal-row-snippet{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .journal-row-snippet.empty{font-style:italic;color:var(--hint)}
 /* Journal detail sheet */
 .journal-mood-row{display:flex;gap:6px}
-.journal-mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 10.5px 'Inter',sans-serif;padding:9px 2px 8px;border-radius:12px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .12s ease}
+.journal-mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);font:600 10.5px 'Inter',sans-serif;padding:9px 2px 8px;border-radius:12px;cursor:pointer;transition:border-color .15s ease,background .15s ease,color .15s ease,transform .12s ease}
 .journal-mood-btn:active{transform:scale(.95)}
-.journal-mood-btn::before{content:'';width:11px;height:11px;border-radius:50%;background:var(--border)}
-.journal-mood-btn.mood-great::before{background:var(--fc-green)}
-.journal-mood-btn.mood-good::before{background:var(--fc-blue)}
-.journal-mood-btn.mood-neutral::before{background:var(--fc-gray)}
-.journal-mood-btn.mood-low::before{background:var(--fc-orange)}
-.journal-mood-btn.mood-rough::before{background:var(--fc-red)}
+.journal-mood-btn .mood-emoji{font-size:21px;line-height:1}
 .journal-mood-btn.sel{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 10%, var(--bg))}
 #journal-detail-body{width:100%;border:none;background:none;color:var(--fg);font:450 15px/1.6 'Inter',sans-serif;padding:12px 0 6px;resize:none;overflow:hidden;min-height:80px}
 #journal-detail-body:focus{outline:none}
@@ -1577,6 +1564,7 @@ document.getElementById('task-detail-delete').addEventListener('click',function(
 var journalEntries=[];
 var JOURNAL_MOODS=['great','good','neutral','low','rough'];
 var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
+var JOURNAL_MOOD_EMOJI={great:'\ud83d\ude04',good:'\ud83d\ude42',neutral:'\ud83d\ude10',low:'\ud83d\ude41',rough:'\ud83d\ude14'};
 function normalizeJournalEntry(j){
   var now=Date.now();
   return {
@@ -1625,7 +1613,7 @@ function journalSnippet(body){
   return s.length>100?s.slice(0,100)+'\u2026':s;
 }
 function journalRowInnerHtml(j){
-  var moodDot='<span class="journal-row-mood-dot'+(j.mood?' mood-'+j.mood:'')+'"></span>';
+  var moodDot=j.mood?('<span class="journal-row-mood-emoji">'+JOURNAL_MOOD_EMOJI[j.mood]+'</span>'):'<span class="journal-row-mood-dot"></span>';
   var snippet=j.body?('<div class="journal-row-snippet">'+esc(journalSnippet(j.body))+'</div>'):'<div class="journal-row-snippet empty">No entry text</div>';
   return '<div class="journal-row-mobile">'
     +moodDot
@@ -1640,7 +1628,14 @@ function renderJournal(){
   var hasBody=todayEntry&&todayEntry.body;
   snippetEl.textContent=hasBody?journalSnippet(todayEntry.body):'Tap to write today\u2019s entry';
   snippetEl.classList.toggle('empty',!hasBody);
-  document.getElementById('journal-today-mood').className='journal-today-mood-dot'+(todayEntry&&todayEntry.mood?' mood-'+todayEntry.mood:'');
+  var todayMoodEl=document.getElementById('journal-today-mood');
+  if(todayEntry&&todayEntry.mood){
+    todayMoodEl.className='journal-today-mood-dot has-emoji';
+    todayMoodEl.textContent=JOURNAL_MOOD_EMOJI[todayEntry.mood];
+  }else{
+    todayMoodEl.className='journal-today-mood-dot';
+    todayMoodEl.textContent='';
+  }
 
   var past=journalEntries.filter(function(j){return j.date!==today && (j.body||j.mood||j.tags.length);})
     .sort(function(a,b){return b.date.localeCompare(a.date);});
@@ -1690,7 +1685,7 @@ function renderJournalDetail(){
   if(!j){ closeJournalDetail(); return; }
   document.getElementById('journal-detail-date').textContent=formatJournalDate(j.date,{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('journal-detail-mood-row').innerHTML=JOURNAL_MOODS.map(function(m){
-    return '<button type="button" class="journal-mood-btn mood-'+m+(j.mood===m?' sel':'')+'" data-mood="'+m+'">'+JOURNAL_MOOD_LABEL[m]+'</button>';
+    return '<button type="button" class="journal-mood-btn'+(j.mood===m?' sel':'')+'" data-mood="'+m+'"><span class="mood-emoji">'+JOURNAL_MOOD_EMOJI[m]+'</span><span>'+JOURNAL_MOOD_LABEL[m]+'</span></button>';
   }).join('');
   var bodyEl=document.getElementById('journal-detail-body');
   if(document.activeElement!==bodyEl)bodyEl.value=stripJournalHtml(j.body);
