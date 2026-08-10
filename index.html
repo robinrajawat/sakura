@@ -2745,8 +2745,6 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 #preview-laser-dot{display:none;position:fixed;z-index:5001;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
 #preview-laser-dot.on{display:block}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
-#preview-body.pv-zoomed{cursor:grab}
-#preview-body.pv-zoomed.pv-panning{cursor:grabbing;user-select:none}
 
 
 #preview-doc{max-width:min(var(--pv-reading-width,1080px),94%);margin:0 auto;padding:0 48px 0 24px;font-family:'Inter',sans-serif;color:var(--node-fg)}
@@ -2759,8 +2757,6 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
    shouldn't re-flash it. */
 #preview-overlay.pv-presenting .pv-slide.pv-slide-active.pv-slide-entering{opacity:0}
 #preview-overlay.pv-presenting #preview-body{padding:60px 0 100px;cursor:pointer}
-#preview-overlay.pv-presenting #preview-body.pv-zoomed{cursor:grab}
-#preview-overlay.pv-presenting #preview-body.pv-zoomed.pv-panning{cursor:grabbing}
 /* #preview-body's own cursor:pointer above is more specific than the cursor:none
    previewSetLaser() sets inline on #preview-overlay itself, so it was winning and showing
    a hand cursor on top of the laser dot while the laser was active. */
@@ -34178,7 +34174,6 @@ el('preview-body')?.addEventListener('scroll',updatePreviewProgress);
 // instead of here, so a plain left click always just advances, matching every other slide
 // tool's convention and freeing left-click from double-duty as an editing trigger.
 el('preview-body')?.addEventListener('click',e=>{
-  if(_previewJustPanned){ _previewJustPanned=false; return; }
   if(!previewPresenting||presenterBlanked)return;
   if(el('presenter-overview-grid')?.classList.contains('open'))return;
   if(isControlTarget(e.target))return;
@@ -35443,11 +35438,10 @@ function applyDiagramImageZoom(){
 }
 function applyPresenterZoom(){
   const body=el('preview-body'); if(!body) return;
-  if(!previewActive){ body.style.zoom=''; body.classList.remove('pv-zoomed'); return; }
+  if(!previewActive){ body.style.zoom=''; return; }
   const effective=previewInteractiveZoom;
   const atBaseline=Math.abs(effective-1)<=0.001;
   body.style.zoom=atBaseline?'':String(effective);
-  body.classList.toggle('pv-zoomed',!atBaseline);
   // Horizontal scroll only ever accumulates from viewing a zoomed-wide diagram — once zoom
   // drops back to baseline there's nothing wide enough left to justify keeping that offset,
   // and leaving it stuck mid-scroll made Reset look like it hadn't done anything.
@@ -35483,37 +35477,6 @@ el('preview-overlay')?.addEventListener('wheel',e=>{
   requestPreviewZoomFrame();
 },{passive:false});
 function resetPreviewZoom(){ previewInteractiveZoom=1; applyPresenterZoom(); }
-// Click-and-drag panning while zoomed in — once Ctrl+scroll/pinch has zoomed past baseline,
-// dragging anywhere on the slide (that isn't a link, image, or editable field) scrolls the
-// zoomed content around, same as most image/PDF viewers. Below the small movement threshold
-// it's treated as a plain click instead, so clicking to advance a slide in Presenter mode (see
-// the preview-body click handler below) still works exactly as before at any zoom level — only
-// an actual drag suppresses that one click via _previewJustPanned, consumed once.
-let _previewPanState=null;
-let _previewJustPanned=false;
-const PREVIEW_PAN_THRESHOLD=4;
-el('preview-body')?.addEventListener('pointerdown',e=>{
-  const body=el('preview-body');
-  if(!body||!body.classList.contains('pv-zoomed'))return;
-  if(e.button!==0)return;
-  if(e.target.closest('a,img,[contenteditable],button,input,textarea,select,.pv-ctx-item'))return;
-  _previewPanState={startX:e.clientX,startY:e.clientY,scrollLeft:body.scrollLeft,scrollTop:body.scrollTop,moved:false,pointerId:e.pointerId};
-});
-document.addEventListener('pointermove',e=>{
-  if(!_previewPanState||_previewPanState.pointerId!==e.pointerId)return;
-  const body=el('preview-body'); if(!body)return;
-  const dx=e.clientX-_previewPanState.startX, dy=e.clientY-_previewPanState.startY;
-  if(!_previewPanState.moved&&Math.hypot(dx,dy)<PREVIEW_PAN_THRESHOLD)return;
-  if(!_previewPanState.moved){ _previewPanState.moved=true; body.classList.add('pv-panning'); try{body.setPointerCapture(e.pointerId)}catch(err){} }
-  body.scrollLeft=_previewPanState.scrollLeft-dx;
-  body.scrollTop=_previewPanState.scrollTop-dy;
-});
-document.addEventListener('pointerup',e=>{
-  if(!_previewPanState||_previewPanState.pointerId!==e.pointerId)return;
-  const body=el('preview-body');
-  if(_previewPanState.moved){ _previewJustPanned=true; body?.classList.remove('pv-panning'); try{body?.releasePointerCapture(e.pointerId)}catch(err){} }
-  _previewPanState=null;
-});
 // Exists for cross-window sync (see syncAudienceZoom) — win.previewInteractiveZoom=value would
 // not work there: previewInteractiveZoom is declared with let, and top-level let/const
 // bindings never become window properties the way var or function declarations do, so a plain
