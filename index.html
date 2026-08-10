@@ -44029,9 +44029,9 @@ el('journal-rewrite-body')?.addEventListener('click',rewriteJournalField);
 // Fifth Hub tab. Structurally modeled on Journal directly above (list + single-card
 // detail, one rich body field, IndexedDB overflow storage) rather than Meetings' two-
 // field layout, since each entry is one free-form note, not a multi-field record.
-// Adds: an optional URL field, freeform tags (reusing Journal's tag-chip pattern), and
-// pasted-image support in the body field (reusing note-editor's paste handling, since
-// Journal's own body field never needed that).
+// Adds: an optional URL field, freeform tags (own tag-chip implementation, styled to
+// match the rest of the panel), and pasted-image support in the body field (reusing
+// note-editor's paste handling, since Journal's own body field never needed that).
 // ══════════════════════════════════════════════════════════════════════════
 const LIBRARY_KEY='sakura_library_v1';
 let libraryItems=[];
@@ -44356,7 +44356,7 @@ el('library-url-open-btn')?.addEventListener('click',()=>{
   window.open(href,'_blank','noopener');
 });
 
-// ── Tags (identical pattern to Journal's own tag chips) ──
+// ── Tags ──
 function renderLibraryTags(it){
   const wrap=el('library-tag-chips'); if(!wrap)return;
   wrap.innerHTML='';

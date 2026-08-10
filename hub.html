@@ -26,9 +26,13 @@
   users/{uid}/meta/journal Firestore documents index.html's own cloud sync already writes)
   actually bridges them. So: no sign-in, no data, by design.
 
-  Sync model, deliberately simple for this scope: pull once on sign-in (newer of cloud/local
-  wins, by updatedAt), then push after every local change. No realtime listener — this is a
-  short-session mobile page, not something left open for hours the way index.html can be.
+  Sync model: pull on sign-in (newer of cloud/local wins, by updatedAt), then push after every
+  local change. Also re-pulls whenever the tab/PWA regains focus while already signed in (see
+  the visibilitychange listener near the bottom) — added after a real gap where a phone tab
+  left open in the background never saw a change made on another device until force-closed.
+  Still no full realtime listener (onSnapshot) — the foreground re-pull covers the case that
+  actually mattered without the complexity of a live subscription for what's still meant to be
+  a short-session mobile page, not something left open for hours the way index.html can be.
 
   Scope, deliberately: To-Dos and Journal only. Meeting Notes, Library, Recap, AI features,
   PDF export, and version history all stay desktop-only for now — the sign-in screen says so
