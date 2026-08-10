@@ -4076,8 +4076,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .journal-row-main{flex:1;min-width:0}
 .journal-row-date{font:600 12px 'Inter',sans-serif;color:var(--fg)}
 .journal-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
-.journal-row-tags{margin-top:2px;display:flex;gap:4px;flex-wrap:wrap}
-.journal-row-tag{font:500 9.5px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:1px 6px;border-radius:99px}
+
 #journal-card{display:none;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:16px 18px 14px;margin-top:2px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
 #journal-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 #journal-back-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex}
@@ -4090,12 +4089,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .journal-mood-btn{appearance:none;border:1px solid var(--border);background:var(--hover);cursor:pointer;padding:7px 0;border-radius:8px;flex:1;display:inline-flex;align-items:center;justify-content:center;transition:border-color .12s,background .12s,transform .1s}
 .journal-mood-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
 .journal-mood-btn.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
-#journal-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
-.journal-tag-chip{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:var(--hover);border:1px solid var(--border);padding:3px 4px 3px 9px;border-radius:99px}
-.journal-tag-chip button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:1px;display:inline-flex;border-radius:50%}
-.journal-tag-chip button:hover{color:var(--sem-alert,#b85450)}
-#journal-tag-input{flex:1;min-width:90px;appearance:none;border:none;background:none;color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 2px}
-#journal-tag-input:focus{outline:none}
+
 #journal-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
 #journal-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
 #journal-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
@@ -5957,8 +5951,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <ul>
 <li>An app-level daily journal — not tied to any document. One shared list across your whole workspace, same idea as Meeting Notes and To-Dos, but keyed to one entry per calendar date rather than any number of freely-dated items</li>
 <li>Open it from the Hub button in the app bar, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">J</span>; the same shortcut closes it again, and it switches straight to this tab if the panel is already open on a different one</li>
-<li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> for today's entry — it's created the moment you type something into it, not the moment you open it, so opening a fresh date and then navigating away without writing anything leaves no empty entry behind. Entries are listed newest first, each row showing its date, mood dot (if set), a one-line preview, and any tags; click a row to open it</li>
-<li>Each entry has an optional <strong>mood</strong> (five presets — click again to clear), free-form <strong>tags</strong> (type one, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add it), and a rich-text <strong>body</strong> — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to the field's label, plus a small AI-rewrite icon that appears on hover next to the label (rewrites the whole entry). Highlight any text in the body and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight, Link, and Rewrite (AI, scoped to just the highlighted phrase). Settings → Editing → "Selection formatting popover" turns this off if it's not wanted</li>
+<li>Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> for today's entry — it's created the moment you type something into it, not the moment you open it, so opening a fresh date and then navigating away without writing anything leaves no empty entry behind. Entries are listed newest first, each row showing its date, mood dot (if set), and a one-line preview; click a row to open it</li>
+<li>Each entry has an optional <strong>mood</strong> (five presets — click again to clear) and a rich-text <strong>body</strong> — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to the field's label, plus a small AI-rewrite icon that appears on hover next to the label (rewrites the whole entry). Highlight any text in the body and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight, Link, and Rewrite (AI, scoped to just the highlighted phrase). Settings → Editing → "Selection formatting popover" turns this off if it's not wanted</li>
 <li>The calendar icon jumps to any date — Today/Yesterday/Tomorrow presets, or pick a day from the month grid; days with an existing entry show a small dot. Opening a past or future date this way works the same as opening today's — write something and it becomes a real entry</li>
 <li>Export a single entry as a PDF (top of the entry, download icon) — date, mood, tags, and the body with its real formatting. The export icon in the panel header instead exports every entry, newest first, as one PDF</li>
 <li>Delete an entry from its card (trash icon) — with a confirm dialog first, since there's no separate Undo toast for this one</li>
@@ -7637,10 +7631,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" class="journal-mood-btn" data-mood="neutral" data-tip="Neutral" style="color:var(--fc-gray)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="15" x2="16" y2="15"/></svg></button>
         <button type="button" class="journal-mood-btn" data-mood="low" data-tip="Low" style="color:var(--fc-orange)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8 15.5Q12 13.5 16 15.5"/></svg></button>
         <button type="button" class="journal-mood-btn" data-mood="rough" data-tip="Rough" style="color:var(--fc-red)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M7.5 9.5l2 1M16.5 9.5l-2 1"/><path d="M7.5 16Q12 12.5 16.5 16"/></svg></button>
-      </div>
-      <div id="journal-tags-row">
-        <div id="journal-tag-chips"></div>
-        <input id="journal-tag-input" type="text" placeholder="+ Add tag" autocomplete="off" maxlength="40" />
       </div>
       <div class="meeting-field" style="margin-top:0;padding-top:0;border-top:none">
         <div class="meeting-field-label-row"><span class="meeting-field-label" style="color:var(--fc-purple)">Entry</span><div class="meeting-field-tools"><button type="button" class="meeting-field-fmt-btn" data-cmd="insertUnorderedList" data-target="journal-body-field" data-tip="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-fmt-btn" data-cmd="insertOrderedList" data-target="journal-body-field" data-tip="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="meeting-field-rewrite" id="journal-rewrite-body" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div></div>
@@ -35475,7 +35465,14 @@ function requestPreviewZoomFrame(){
 el('preview-overlay')?.addEventListener('wheel',e=>{
   if(!e.ctrlKey||!previewActive)return;
   e.preventDefault();
-  const factor=Math.exp(-e.deltaY*0.01);
+  // Trackpad pinch delivers small deltaY per event (~1-10), which through Math.exp(-deltaY*0.01)
+  // gives a smooth, gradual factor. A physical mouse wheel instead sends one large delta per
+  // notch (~100-120), which fed into the same formula produced a ~170% jump (or a drop to ~37%)
+  // per single click — jarring compared to the trackpad case. Clamping the delta before it hits
+  // the exponential keeps a single wheel notch closer to a trackpad tick's step size, while
+  // leaving genuinely continuous trackpad input untouched.
+  const clampedDeltaY=Math.max(-25,Math.min(25,e.deltaY));
+  const factor=Math.exp(-clampedDeltaY*0.01);
   previewInteractiveZoom=Math.min(PREVIEW_ZOOM_MAX,Math.max(PREVIEW_ZOOM_MIN,previewInteractiveZoom*factor));
   requestPreviewZoomFrame();
 },{passive:false});
@@ -43911,11 +43908,6 @@ function renderJournalList(){
     const snippet=stripHtmlToText(j.body||'').trim();
     const snippetEl=document.createElement('div'); snippetEl.className='journal-row-snippet'; snippetEl.textContent=snippet||'(empty)';
     main.appendChild(dateEl); main.appendChild(snippetEl);
-    if(j.tags&&j.tags.length){
-      const tagsEl=document.createElement('div'); tagsEl.className='journal-row-tags';
-      j.tags.forEach(t=>{ const chip=document.createElement('span'); chip.className='journal-row-tag'; chip.textContent='#'+t; tagsEl.appendChild(chip); });
-      main.appendChild(tagsEl);
-    }
     row.appendChild(moodEl); row.appendChild(main);
     row.addEventListener('click',()=>openJournalEntry(j.date));
     list.appendChild(row);
@@ -43937,7 +43929,6 @@ function openJournalEntry(date){
   showJournalCardView(true);
   const dateLabel=el('journal-date-input-label'); if(dateLabel)dateLabel.textContent=date===todayStr()?'Today':formatJournalDateLabel(date).replace(/^Today · /,'');
   document.querySelectorAll('.journal-mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===j.mood));
-  renderJournalTags(j);
   const bodyField=el('journal-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(j.body||'');
   const ts=el('journal-timestamp'); if(ts)ts.textContent=j.modifiedAt&&findJournalEntry(date)?('Last updated '+formatTimestamp(j.modifiedAt)):'';
 }
@@ -43956,36 +43947,6 @@ document.querySelectorAll('.journal-mood-btn').forEach(btn=>{
     document.querySelectorAll('.journal-mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===j.mood));
     refreshJournalRowInList();
   });
-});
-
-// ── Tags ──
-function renderJournalTags(j){
-  const wrap=el('journal-tag-chips'); if(!wrap)return;
-  wrap.innerHTML='';
-  (j.tags||[]).forEach(tag=>{
-    const chip=document.createElement('span'); chip.className='journal-tag-chip';
-    const label=document.createElement('span'); label.textContent=tag;
-    const rm=document.createElement('button'); rm.type='button'; rm.setAttribute('aria-label','Remove tag'); rm.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
-    rm.addEventListener('click',()=>{
-      const entry=findJournalEntry(journalExpandedDate); if(!entry)return;
-      entry.tags=(entry.tags||[]).filter(t=>t!==tag); entry.modifiedAt=Date.now();
-      saveJournalEntries(); renderJournalTags(entry); refreshJournalRowInList();
-    });
-    chip.appendChild(label); chip.appendChild(rm); wrap.appendChild(chip);
-  });
-}
-el('journal-tag-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'||e.key===','){
-    e.preventDefault();
-    const input=e.currentTarget; const val=input.value.trim().replace(/^#/,'');
-    if(!val||!journalExpandedDate)return;
-    const j=findOrCreateJournalEntry(journalExpandedDate);
-    if(!j.tags.includes(val))j.tags.push(val);
-    j.modifiedAt=Date.now();
-    saveJournalEntries();
-    renderJournalTags(j); refreshJournalRowInList();
-    input.value='';
-  }
 });
 
 // ── Body field ──
@@ -44688,8 +44649,7 @@ document.addEventListener('mousedown',e=>{
 // ── PDF export (single entry + whole journal), via the shared generic panel PDF exporter ──
 function journalEntryPdfHtml(j){
   const moodLine=j.mood?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">Mood: ${JOURNAL_MOOD_LABEL[j.mood]}</div>`:'';
-  const tagsLine=(j.tags&&j.tags.length)?`<div style="color:var(--muted);font-size:12px;margin-bottom:10px">${j.tags.map(t=>'#'+esc(t)).join('  ')}</div>`:'';
-  return `<div class="gpe-section"><h2>${esc(formatJournalDateLabel(j.date))}</h2>${moodLine}${tagsLine}<div>${sakuraSanitizeRichHtml(j.body||'')||'<p style="color:var(--muted)"><em>(empty)</em></p>'}</div></div>`;
+  return `<div class="gpe-section"><h2>${esc(formatJournalDateLabel(j.date))}</h2>${moodLine}<div>${sakuraSanitizeRichHtml(j.body||'')||'<p style="color:var(--muted)"><em>(empty)</em></p>'}</div></div>`;
 }
 function exportJournalEntryAsPdf(date){
   const j=findJournalEntry(date); if(!j){ showJournalToast('Nothing to export yet'); return; }

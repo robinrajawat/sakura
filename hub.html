@@ -2079,6 +2079,28 @@ document.addEventListener('keydown',function(e){
 // ============================================================================
 // Sign-in → pull → render
 // ============================================================================
+function pullAndMergeCloudData(){
+  return Promise.all([
+    pullMetaFromCloud('todos').then(function(cloudTodos){
+      if(Array.isArray(cloudTodos)){
+        todos=cloudTodos;
+        localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
+        bumpSyncTimestamp('todos');
+      }else{
+        pushMetaToCloud('todos',todos);
+      }
+    }),
+    pullMetaFromCloud('journal').then(function(cloudJournal){
+      if(Array.isArray(cloudJournal)){
+        journalEntries=cloudJournal.map(normalizeJournalEntry);
+        idbSet(JOURNAL_KEY,journalEntries).catch(function(){});
+        bumpSyncTimestamp('journal');
+      }else{
+        pushMetaToCloud('journal',journalEntries);
+      }
+    })
+  ]);
+}
 function onSignedIn(user){
   currentUser=user;
   document.getElementById('auth-gate').style.display='none';
@@ -2088,26 +2110,7 @@ function onSignedIn(user){
   renderAccountButton(user);
   loadTodosLocal();
   return loadJournalLocal().then(function(){
-    return Promise.all([
-      pullMetaFromCloud('todos').then(function(cloudTodos){
-        if(Array.isArray(cloudTodos)){
-          todos=cloudTodos;
-          localStorage.setItem(TODOS_KEY,JSON.stringify(todos));
-          bumpSyncTimestamp('todos');
-        }else{
-          pushMetaToCloud('todos',todos);
-        }
-      }),
-      pullMetaFromCloud('journal').then(function(cloudJournal){
-        if(Array.isArray(cloudJournal)){
-          journalEntries=cloudJournal.map(normalizeJournalEntry);
-          idbSet(JOURNAL_KEY,journalEntries).catch(function(){});
-          bumpSyncTimestamp('journal');
-        }else{
-          pushMetaToCloud('journal',journalEntries);
-        }
-      })
-    ]);
+    return pullAndMergeCloudData();
   }).catch(function(e){
     console.warn('[sakura hub] cloud pull failed, showing local cache instead:',e);
   }).finally(function(){
@@ -2117,6 +2120,28 @@ function onSignedIn(user){
     nudgeFirstRowOnce();
   });
 }
+
+// The page was originally designed to be pulled once on sign-in with no realtime listener,
+// on the assumption this is a short-lived session that gets a fresh page load each time it's
+// opened. In practice, a phone browser tab or installed PWA is often left open in the
+// background rather than closed — reopening/foregrounding it resumes the same JS state
+// without ever re-running onAuthStateChanged, so a change made on another device (e.g. a
+// journal entry written on desktop) can sit invisible here indefinitely. This re-pulls
+// whenever the tab becomes visible again while already signed in, so foregrounding the app
+// is enough to catch up — no full reload required. A short cooldown avoids piling up pulls if
+// visibility flips rapidly (e.g. quickly switching apps back and forth).
+var _lastForegroundPullAt=0;
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState!=='visible'||!currentUser)return;
+  if(Date.now()-_lastForegroundPullAt<5000)return; // debounce rapid foreground flips
+  _lastForegroundPullAt=Date.now();
+  pullAndMergeCloudData().then(function(){
+    renderTodos();
+    renderJournal();
+  }).catch(function(e){
+    console.warn('[sakura hub] foreground re-pull failed:',e);
+  });
+});
 
 boot();
 </script>
