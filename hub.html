@@ -465,6 +465,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
         </button>
       </div>
       <div class="account-item-divider"></div>
+      <button class="account-item-btn" id="account-reminders-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="account-reminders-label">Turn on due-date reminders</span></button>
+      <div class="account-item-divider"></div>
       <button id="account-signout-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
       <div class="account-item-divider"></div>
       <button class="account-item-btn" id="account-feedback-btn" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send Feedback</button>
@@ -659,6 +661,78 @@ document.getElementById('account-theme-row').addEventListener('click',function(e
   try{ localStorage.setItem(THEME_KEY,btn.dataset.theme); }catch(e){}
   applyTheme();
 });
+// ---------- Due-date reminders ----------
+// Local-only notifications (no push server behind this static site, so nothing fires while
+// the app/tab is fully closed — an honest limitation, especially on iOS Safari where even
+// foreground Notification support is inconsistent). What this DOES cover: a notification the
+// moment a task becomes due or overdue, checked on boot, whenever the tab/PWA is foregrounded,
+// and on a standing timer while it stays open in the background. Each task is only notified
+// once per calendar day it's due/overdue, tracked in localStorage so re-checks don't spam.
+var REMINDERS_KEY='sakura_reminders_enabled';
+var REMINDERS_NOTIFIED_KEY='sakura_reminders_notified';
+function remindersEnabled(){
+  try{ return localStorage.getItem(REMINDERS_KEY)==='1' && typeof Notification!=='undefined' && Notification.permission==='granted'; }catch(e){ return false; }
+}
+function updateRemindersLabel(){
+  var label=document.getElementById('account-reminders-label');
+  if(!label)return;
+  var on=false;
+  try{ on = localStorage.getItem(REMINDERS_KEY)==='1' && typeof Notification!=='undefined' && Notification.permission==='granted'; }catch(e){}
+  label.textContent = on ? 'Due-date reminders on' : 'Turn on due-date reminders';
+}
+function loadNotifiedMap(){
+  try{ return JSON.parse(localStorage.getItem(REMINDERS_NOTIFIED_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveNotifiedMap(m){
+  try{ localStorage.setItem(REMINDERS_NOTIFIED_KEY,JSON.stringify(m)); }catch(e){}
+}
+function checkDueReminders(){
+  if(!remindersEnabled())return;
+  var today=todayStr();
+  var notified=loadNotifiedMap();
+  todos.forEach(function(t){
+    if(t.done || !t.dueDate || t.dueDate>today)return;
+    if(notified[t.id]===today)return; // already notified for this due/overdue day
+    try{
+      var n=new Notification(t.dueDate<today ? 'Overdue: '+t.text : 'Due today: '+t.text,{
+        body:'Sakura To-Dos', tag:'sakura-todo-'+t.id, icon:'icon-192.png'
+      });
+      n.onclick=function(){ try{ window.focus(); }catch(e){} openTaskDetail(t.id); n.close(); };
+    }catch(e){}
+    notified[t.id]=today;
+  });
+  saveNotifiedMap(notified);
+}
+document.getElementById('account-reminders-btn').addEventListener('click',function(){
+  if(typeof Notification==='undefined'){
+    showToast('Notifications aren\u2019t supported on this browser.');
+    return;
+  }
+  var currentlyOn = false;
+  try{ currentlyOn = localStorage.getItem(REMINDERS_KEY)==='1' && Notification.permission==='granted'; }catch(e){}
+  if(currentlyOn){
+    try{ localStorage.setItem(REMINDERS_KEY,'0'); }catch(e){}
+    updateRemindersLabel();
+    showToast('Reminders turned off.');
+    return;
+  }
+  if(Notification.permission==='denied'){
+    showToast('Notifications are blocked for Sakura in your browser settings.');
+    return;
+  }
+  Notification.requestPermission().then(function(perm){
+    if(perm==='granted'){
+      try{ localStorage.setItem(REMINDERS_KEY,'1'); }catch(e){}
+      updateRemindersLabel();
+      checkDueReminders();
+      showToast('Reminders turned on \u2014 works while Sakura is open.');
+    }else{
+      showToast('Notification permission was not granted.');
+    }
+  });
+});
+updateRemindersLabel();
+setInterval(checkDueReminders,5*60*1000); // standing check every 5 min while the tab is open
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function autoGrow(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 // ---------- Sheet scroll-fade ----------
@@ -2114,6 +2188,7 @@ function onSignedIn(user){
     renderJournal();
     hideHubLoading();
     nudgeFirstRowOnce();
+    checkDueReminders();
   });
 }
 
@@ -2134,6 +2209,7 @@ document.addEventListener('visibilitychange',function(){
   pullAndMergeCloudData().then(function(){
     renderTodos();
     renderJournal();
+    checkDueReminders();
   }).catch(function(e){
     console.warn('[sakura hub] foreground re-pull failed:',e);
   });
