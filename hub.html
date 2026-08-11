@@ -1690,6 +1690,30 @@ function commitQuickAdd(){
   if(text){ todos.push(newTodo(text)); saveTodos(); renderTodos(); }
   input.value=''; autoGrow(input); updateQuickAddSendState();
 }
+// ---------- Incoming shares (Android/desktop "Share to Sakura") ----------
+// hub-manifest.json registers a GET share_target pointed at this page, so sharing a link or
+// selected text from another app lands here as query params instead of a POST body — no
+// service-worker interception needed, but it also means no file attachments, which is fine
+// for a to-do capture use case. Runs once per load, after todos are available to push into,
+// and immediately strips the params via replaceState so a refresh doesn't re-add the same item.
+function handleIncomingShare(){
+  var params=new URLSearchParams(window.location.search);
+  var title=(params.get('share_title')||'').trim();
+  var text=(params.get('share_text')||'').trim();
+  var url=(params.get('share_url')||'').trim();
+  if(!title && !text && !url)return;
+  var parts=[];
+  if(text)parts.push(text); else if(title)parts.push(title);
+  if(url && parts.indexOf(url)===-1)parts.push(url);
+  var taskText=parts.join(' \u2014 ').trim();
+  if(taskText){
+    todos.push(newTodo(taskText));
+    saveTodos(); renderTodos();
+    showToast('Added to your To-Dos.');
+  }
+  var clean=window.location.pathname+(window.location.hash||'');
+  try{ window.history.replaceState(null,'',clean); }catch(e){}
+}
 function updateQuickAddSendState(){
   document.getElementById('todo-quickadd-send').disabled = !document.getElementById('todo-quickadd-input').value.trim();
 }
@@ -2189,6 +2213,7 @@ function onSignedIn(user){
     hideHubLoading();
     nudgeFirstRowOnce();
     checkDueReminders();
+    handleIncomingShare();
   });
 }
 
