@@ -706,9 +706,19 @@ function checkDueReminders(){
   });
   saveNotifiedMap(notified);
 }
+function isIOS(){
+  return /iP(hone|od|ad)/.test(navigator.platform) || (navigator.userAgent.indexOf('Mac')!==-1 && 'ontouchend' in document);
+}
+function isStandaloneDisplay(){
+  return window.navigator.standalone===true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
 document.getElementById('account-reminders-btn').addEventListener('click',function(){
   if(typeof Notification==='undefined'){
-    showToast('Notifications aren\u2019t supported on this browser.');
+    if(isIOS()&&!isStandaloneDisplay()){
+      showToast('Add Sakura to your Home Screen first (Share \u2192 Add to Home Screen), then open it from there to turn on notifications.',5000);
+    }else{
+      showToast('Notifications aren\u2019t supported on this browser.');
+    }
     return;
   }
   var currentlyOn = false;
@@ -777,14 +787,14 @@ if(document.fonts && document.fonts.ready){
 // ============================================================================
 var _toastTimer=null;
 var _toastUndoFn=null;
-function showToast(msg){
+function showToast(msg,duration){
   var t=document.getElementById('hub-toast');
   _toastUndoFn=null;
   t.classList.remove('with-action');
   t.textContent=msg;
   t.classList.add('show');
   clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(function(){ t.classList.remove('show'); },2200);
+  _toastTimer=setTimeout(function(){ t.classList.remove('show'); },duration||2200);
 }
 function showUndoToast(msg,undoFn){
   var t=document.getElementById('hub-toast');
