@@ -468,7 +468,7 @@ body.feature-off-quickassist #global-search-wrap{display:none!important}
 #appbar-more-menu{min-width:130px}
 .export-menu-rich{padding:6px}
 .export-menu-rich .export-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px 2px}
-.export-menu-rich .export-item{display:flex;align-items:center;gap:10px;border-radius:8px;margin:0 2px;padding:8px 10px;width:auto}
+.export-menu-rich .export-item{display:flex;align-items:center;gap:10px;border-radius:8px;margin:0 2px;padding:6px 10px;width:auto}
 .account-danger-item:hover{background:color-mix(in srgb,#e5484d 12%,transparent);color:#e5484d}
 .account-status-dot{position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--bg);background:transparent;transition:background .15s}
 .account-status-dot.syncing{background:var(--accent);animation:accountDotPulse 1s ease-in-out infinite}
@@ -4445,7 +4445,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <button class="export-item" id="account-help-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="export-label">Help</span></button>
           <button class="export-item" id="account-feedback-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="export-label">Send Feedback</span></button>
           <button class="export-item" id="account-about-btn" aria-haspopup="true" aria-expanded="false"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><span class="export-label">About Sakura</span></button>
-          <div id="settings-about-popover" role="region" aria-label="About Sakura" style="display:none;padding:2px 12px 10px">
+          <div id="settings-about-popover" role="region" aria-label="About Sakura" style="display:none;margin:4px 10px 8px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--hover)">
             <div style="font-weight:600;margin-bottom:6px">Sakura <span id="about-version"></span></div>
             <div class="muted-help" style="margin-top:0">A single-file outliner and knowledge-management workspace. No backend, no build step, no account required to use it — your data stays in this browser unless you export it or sign in with the optional Google account feature to sync across devices.</div>
             <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></div>
@@ -13504,6 +13504,7 @@ el('settings-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.pre
 function setSettingsAboutVisible(on){
   const pop=el('settings-about-popover'); if(pop)pop.style.display=on?'block':'none';
   const btn=el('account-about-btn'); if(btn)btn.setAttribute('aria-expanded',String(on));
+  if(on&&pop)setTimeout(()=>pop.scrollIntoView({block:'nearest',behavior:'smooth'}),10);
 }
 function toggleSettingsAbout(){const pop=el('settings-about-popover'); const isOpen=!!pop&&pop.style.display!=='none'; setSettingsAboutVisible(!isOpen)}
 el('account-about-btn')?.addEventListener('click',e=>{e.stopPropagation(); toggleSettingsAbout()});
