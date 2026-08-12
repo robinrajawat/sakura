@@ -604,6 +604,17 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   </div>
 </div>
 
+<div id="ios-notif-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+  <div class="hub-modal compact">
+    <div style="width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,transparent);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
+    <div class="hub-modal-title">Turn on notifications</div>
+    <p class="hub-modal-text">iOS only allows notifications for apps added to your Home Screen — not for pages open in Safari itself.</p>
+    <p class="hub-modal-text" style="margin-bottom:16px"><strong style="color:var(--fg)">1.</strong> Tap the Share icon in Safari<br><strong style="color:var(--fg)">2.</strong> Choose "Add to Home Screen"<br><strong style="color:var(--fg)">3.</strong> Open Sakura from that new icon, then turn reminders on from there</p>
+    <div class="hub-modal-actions">
+      <button class="hub-modal-btn" id="ios-notif-modal-close" type="button">Got it</button>
+    </div>
+  </div>
+</div>
 <div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
   <div class="hub-modal compact">
     <div class="hub-modal-title">Sakura <span id="about-modal-version"></span></div>
@@ -715,7 +726,7 @@ function isStandaloneDisplay(){
 document.getElementById('account-reminders-btn').addEventListener('click',function(){
   if(typeof Notification==='undefined'){
     if(isIOS()&&!isStandaloneDisplay()){
-      showToast('Add Sakura to your Home Screen first (Share \u2192 Add to Home Screen), then open it from there to turn on notifications.',5000);
+      document.getElementById('ios-notif-modal-overlay').classList.add('open');
     }else{
       showToast('Notifications aren\u2019t supported on this browser.');
     }
@@ -1221,6 +1232,12 @@ document.getElementById('account-about-btn').addEventListener('click',function()
 });
 document.getElementById('about-modal-close').addEventListener('click',function(){
   document.getElementById('about-modal-overlay').classList.remove('open');
+});
+document.getElementById('ios-notif-modal-close').addEventListener('click',function(){
+  document.getElementById('ios-notif-modal-overlay').classList.remove('open');
+});
+document.getElementById('ios-notif-modal-overlay').addEventListener('click',function(e){
+  if(e.target.id==='ios-notif-modal-overlay')this.classList.remove('open');
 });
 document.getElementById('about-modal-overlay').addEventListener('click',function(e){
   if(e.target.id==='about-modal-overlay')this.classList.remove('open');
@@ -2179,6 +2196,7 @@ document.addEventListener('keydown',function(e){
   if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
   if(document.getElementById('journal-sheet-overlay').classList.contains('open')){ closeJournalDetail(); return; }
   if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
+  if(document.getElementById('ios-notif-modal-overlay').classList.contains('open')){ document.getElementById('ios-notif-modal-overlay').classList.remove('open'); return; }
   if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); return; }
   if(document.getElementById('hub-search-bar').classList.contains('open')){ toggleHubSearch(false); }
 });
