@@ -1239,6 +1239,46 @@ document.getElementById('ios-notif-modal-close').addEventListener('click',functi
 document.getElementById('ios-notif-modal-overlay').addEventListener('click',function(e){
   if(e.target.id==='ios-notif-modal-overlay')this.classList.remove('open');
 });
+// Background touch/scroll lock: whenever ANY .hub-modal-overlay gains/loses its 'open'
+// class, lock or release body scroll accordingly. Watching via MutationObserver (rather
+// than hooking every individual open/close call site) means this covers all five modal
+// overlays uniformly and automatically covers any new ones added later.
+(function(){
+  var lockCount=0, savedScrollY=0;
+  function applyLock(){
+    savedScrollY=window.scrollY||window.pageYOffset||0;
+    document.body.style.position='fixed';
+    document.body.style.top='-'+savedScrollY+'px';
+    document.body.style.left='0';
+    document.body.style.right='0';
+    document.body.style.width='100%';
+  }
+  function releaseLock(){
+    document.body.style.position='';
+    document.body.style.top='';
+    document.body.style.left='';
+    document.body.style.right='';
+    document.body.style.width='';
+    window.scrollTo(0,savedScrollY);
+  }
+  var openSet=new WeakSet();
+  document.querySelectorAll('.hub-modal-overlay').forEach(function(ov){
+    var mo=new MutationObserver(function(){
+      var isOpen=ov.classList.contains('open');
+      var wasOpen=openSet.has(ov);
+      if(isOpen&&!wasOpen){
+        openSet.add(ov);
+        lockCount++;
+        if(lockCount===1)applyLock();
+      }else if(!isOpen&&wasOpen){
+        openSet.delete(ov);
+        lockCount=Math.max(0,lockCount-1);
+        if(lockCount===0)releaseLock();
+      }
+    });
+    mo.observe(ov,{attributes:true,attributeFilter:['class']});
+  });
+})();
 document.getElementById('about-modal-overlay').addEventListener('click',function(e){
   if(e.target.id==='about-modal-overlay')this.classList.remove('open');
 });
