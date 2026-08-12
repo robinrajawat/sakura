@@ -45,6 +45,7 @@
 *{box-sizing:border-box}
 body.theme-light{color-scheme:light;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--hover:#f1f0ec;--sel:#eae8e2;--edit-bg:#ffffff;--chip:#eceae4;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-gray:#6f6b63}
 body.theme-dark{color-scheme:dark;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d}
+html{scrollbar-gutter:stable}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 
 /* ---------- Sticky top bar: wordmark + account, the only persistent chrome ---------- */
@@ -604,10 +605,10 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   </div>
 </div>
 
-<div id="ios-notif-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+<div id="ios-notif-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ios-notif-modal-title">
   <div class="hub-modal compact">
     <div style="width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent) 14%,transparent);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
-    <div class="hub-modal-title">Turn on notifications</div>
+    <div class="hub-modal-title" id="ios-notif-modal-title">Turn on notifications</div>
     <p class="hub-modal-text">iOS only allows notifications for apps added to your Home Screen — not for pages open in Safari itself.</p>
     <p class="hub-modal-text" style="margin-bottom:16px"><strong style="color:var(--fg)">1.</strong> Tap the Share icon in Safari<br><strong style="color:var(--fg)">2.</strong> Choose "Add to Home Screen"<br><strong style="color:var(--fg)">3.</strong> Open Sakura from that new icon, then turn reminders on from there</p>
     <div class="hub-modal-actions">
@@ -615,9 +616,9 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     </div>
   </div>
 </div>
-<div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+<div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
   <div class="hub-modal compact">
-    <div class="hub-modal-title">Sakura <span id="about-modal-version"></span></div>
+    <div class="hub-modal-title" id="about-modal-title">Sakura <span id="about-modal-version"></span></div>
     <p class="hub-modal-text">A single-file outliner and knowledge-management workspace. This page is its lighter mobile companion — To-Dos and Journal, signed in.</p>
     <p class="hub-modal-text">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></p>
     <p class="hub-modal-text" style="margin-bottom:16px">Sakura stays free, with no ads and no locked features — built by one person in their spare time. A tip is appreciated but never expected.</p>
@@ -627,9 +628,9 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
   </div>
 </div>
 
-<div id="feedback-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true">
+<div id="feedback-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
   <div class="hub-modal compact">
-    <div class="hub-modal-title">Send Feedback</div>
+    <div class="hub-modal-title" id="feedback-modal-title">Send Feedback</div>
     <p class="hub-modal-text">Goes straight to Robin — bugs, ideas, or just a hello.</p>
     <textarea id="feedback-message-input" placeholder="What's on your mind?" maxlength="6000"></textarea>
     <input id="feedback-email-input" type="email" placeholder="Email (optional — only if you want a reply)" autocomplete="email" />
