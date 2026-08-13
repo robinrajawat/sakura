@@ -3822,12 +3822,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row.drag-over-top{box-shadow:inset 0 2px 0 0 var(--accent)}
 .todo-row.drag-over-bottom{box-shadow:inset 0 -2px 0 0 var(--accent)}
 /* Actions: a float (see .todo-textwrap above) so they only take space from the
-   first line of text, not every wrapped line. At rest, width:0+overflow:hidden
-   keeps their footprint at zero (matching the "no reserved space until
-   revealed" behavior); hover/fixed mode animates the float to its full width. */
-.todo-actions{float:right;margin-left:0;width:0;overflow:hidden;display:flex;gap:2px;opacity:0;pointer-events:none;transition:width .16s ease,margin-left .16s ease,opacity .12s}
-.todo-row:not(.completed):hover .todo-actions{width:74px;margin-left:4px;opacity:1;pointer-events:auto}
-.todo-row.completed:hover .todo-actions{width:50px;margin-left:4px;opacity:1;pointer-events:auto}
+   first line of text, not every wrapped line. Width/margin are reserved
+   permanently here (keyed only on .completed, which changes the button count)
+   rather than animated on hover/reveal — animating width caused the floated
+   text next to it to visibly reflow frame-by-frame as the icons grew, which
+   read as the row's text "shifting." Hover/fixed mode now only toggles
+   opacity+pointer-events against that already-reserved space, so the text's
+   wrap point never moves. */
+.todo-actions{float:right;margin-left:4px;width:74px;overflow:hidden;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
+.todo-row.completed .todo-actions{width:50px}
+.todo-row:hover .todo-actions{opacity:1;pointer-events:auto}
 .todo-rewrite,.todo-delete,.todo-subtask-ai{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-ai{color:var(--accent)}
 .todo-subtask-ai:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -3855,8 +3859,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #todos-panel.actions-fixed .todo-row{transition:background .12s}
 #todos-panel.actions-fixed .todo-row:not(.completed){padding-left:20px}
 #todos-panel.actions-fixed .todo-drag-handle{opacity:.7}
-#todos-panel.actions-fixed .todo-row:not(.completed) .todo-actions{width:74px;margin-left:4px;opacity:1;pointer-events:auto}
-#todos-panel.actions-fixed .todo-row.completed .todo-actions{width:50px;margin-left:4px;opacity:1;pointer-events:auto}
+#todos-panel.actions-fixed .todo-row:not(.completed) .todo-actions{opacity:1;pointer-events:auto}
+#todos-panel.actions-fixed .todo-row.completed .todo-actions{opacity:1;pointer-events:auto}
 #todos-panel.actions-fixed .todo-priority{display:inline-flex}
 #todos-panel.actions-fixed .todo-status{display:inline-flex}
 #todos-panel.actions-fixed .todo-due{display:inline-flex}
