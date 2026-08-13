@@ -14181,7 +14181,7 @@ function jumpToNodeInDoc(docId,nodeId,query){
   if(docId!==currentDocId)switchDoc(docId);
   searchQuery=query; searchOpen=true; computeSearchMatches();
   const pos=searchMatches.indexOf(nodeId); if(pos>=0)searchIndex=pos;
-  expandAncestorsOf(nodeId); setSingleSelection(nodeId);
+  exitFocusIfOutsideCurrent(nodeId); expandAncestorsOf(nodeId); setSingleSelection(nodeId);
   const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp)inp.value=query;
   render(); updateSearchCount(); scrollToNode(nodeId);
   flashNodeId=nodeId; if(flashTimer)clearTimeout(flashTimer); render();
@@ -14192,7 +14192,7 @@ function jumpToNodeInDoc(docId,nodeId,query){
 // node's own text, so highlighting that text would be misleading.
 function revealNodeInDoc(docId,nodeId){
   if(docId!==currentDocId)switchDoc(docId);
-  expandAncestorsOf(nodeId); setSingleSelection(nodeId);
+  exitFocusIfOutsideCurrent(nodeId); expandAncestorsOf(nodeId); setSingleSelection(nodeId);
   render(); scrollToNode(nodeId);
   flashNodeId=nodeId; if(flashTimer)clearTimeout(flashTimer); render();
   flashTimer=setTimeout(()=>{flashNodeId=null; render()},900);
@@ -15407,6 +15407,22 @@ function pruneInlineExpandIds(){
 // zoom or Dynalist's focus mode works. Purely a view-state concern — it is not part
 // of undo/redo history, but it does persist per-document/per-tab like collapsedIds.
 function pruneFocus(){if(focusedId!==null&&getIndex(focusedId)<0)focusedId=null}
+// Jump-to-node entry points (in-document Find, Global Search/Quick Assist, Notes/Tags
+// results) can land on a node outside the currently focused (zoomed-in) subtree. render()
+// only builds rows inside that range (see the focusActive skip check inside it), so without
+// this the target row is simply never created: selection updates silently, but
+// scrollToNode's querySelector finds nothing, and Next/Prev or a jump result appears to do
+// nothing with no indication why. Same "just clear it, let the caller's own render() pick
+// the change up" minimalism as pruneFocus above -- called by each jump function right
+// before it selects the target.
+function exitFocusIfOutsideCurrent(targetId){
+  if(focusedId===null)return;
+  const focusIdx=getIndex(focusedId);
+  if(focusIdx<0){focusedId=null; return}
+  const idx=getIndex(targetId);
+  if(idx<0)return;
+  if(idx<=focusIdx||idx>=getSubtreeEnd(focusIdx))focusedId=null;
+}
 function getFocusBreadcrumb(){const chain=[]; let idx=getIndex(focusedId); if(idx<0)return chain; while(idx>=0){chain.unshift({id:nodes[idx].id,text:nodes[idx].text}); idx=getParentIndex(idx)} return chain}
 function enterFocus(id){if(!featureFocusEnabled)return; if(id===null||id===undefined)return; const idx=getIndex(id); if(idx<0)return; commitEdit(); focusedId=id; setSingleSelection(id); editingId=null; scheduleAutoSave(); render()}
 function exitFocus(){if(focusedId===null)return; commitEdit(); const prevId=focusedId; focusedId=null; scheduleAutoSave(); render(); scrollToNode(prevId)}
@@ -16110,7 +16126,7 @@ function setSearchWholeWord(on,persist=true){
   if(searchOpen){computeSearchMatches(); render()}
 }
 function updateSearchCount(){const c=el('search-count'); if(c)c.textContent=searchMatches.length?`${searchIndex+1}/${searchMatches.length}`:'0/0'}
-function jumpSearch(dir){if(!searchMatches.length)return; searchIndex=(searchIndex+dir+searchMatches.length)%searchMatches.length; const id=searchMatches[searchIndex]; expandAncestorsOf(id); setSingleSelection(id); render(); updateSearchCount(); scrollToNode(id)}
+function jumpSearch(dir){if(!searchMatches.length)return; searchIndex=(searchIndex+dir+searchMatches.length)%searchMatches.length; const id=searchMatches[searchIndex]; exitFocusIfOutsideCurrent(id); expandAncestorsOf(id); setSingleSelection(id); render(); updateSearchCount(); scrollToNode(id)}
 function toggleReplaceBar(){const bar=el('replace-bar'); const btn=el('search-toggle-replace'); if(!bar||!btn)return; const willOpen=!bar.classList.contains('open'); if(willOpen){bar.hidden=false; requestAnimationFrame(()=>bar.classList.add('open')); btn.setAttribute('aria-expanded','true'); const inp=el('replace-input'); if(inp)setTimeout(()=>inp.focus(),150)} else {bar.classList.remove('open'); btn.setAttribute('aria-expanded','false'); setTimeout(()=>{if(!bar.classList.contains('open'))bar.hidden=true},150)}}
 function replaceTextInNode(text,query,replacement){if(!query)return text; const escaped=escapeRegExpLiteral(query); const pattern=searchWholeWord?('\\b'+escaped+'\\b'):escaped; const re=new RegExp(pattern,searchMatchCase?'g':'gi'); return String(text||'').replace(re,replacement)}
 function replaceCurrentMatch(){if(!searchMatches.length||searchIndex<0)return; const q=searchQuery.trim(); if(!q)return; const replacement=el('replace-input')?.value??''; const id=searchMatches[searchIndex]; const idx=getIndex(id); if(idx<0)return; pushUndo(); nodes[idx].text=replaceTextInNode(nodes[idx].text,q,replacement); markDirty(); computeSearchMatches(); render(); if(searchMatches.length){if(searchIndex>=searchMatches.length)searchIndex=0; scrollToNode(searchMatches[searchIndex])} showToast('Replaced')}
