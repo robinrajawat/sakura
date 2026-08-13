@@ -17196,7 +17196,7 @@ function renderBacklinkPanel(nodeId){
     const raw=String(nodes[bidx].text||'');
     txt.innerHTML=esc(raw.slice(0,80)).replace(/\[\[([\s\S]*?)\]\](?!\])/g,'<em>[[$1]]</em>');
     item.appendChild(arrow); item.appendChild(txt);
-    item.addEventListener('click',()=>{closeNodePanel(true); setSingleSelection(bid); render(); scrollToNode(bid);});
+    item.addEventListener('click',()=>{closeNodePanel(true); exitFocusIfOutsideCurrent(bid); setSingleSelection(bid); render(); scrollToNode(bid);});
     panel.appendChild(item);
   });
 }
@@ -22799,7 +22799,7 @@ document.addEventListener('mousedown',e=>{
 },true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link');
-  if(blLink){e.stopPropagation(); const target=findNodeByText(blLink.dataset.blTarget||''); if(target){setSingleSelection(target.id); render(); scrollToNode(target.id);} return;}
+  if(blLink){e.stopPropagation(); const target=findNodeByText(blLink.dataset.blTarget||''); if(target){exitFocusIfOutsideCurrent(target.id); setSingleSelection(target.id); render(); scrollToNode(target.id);} return;}
   if(e.target.closest('.sem-sap-note')){e.stopPropagation(); return;}
   hideContextMenu(); if(!e.target.closest('.node-row'))focusPane();
 }); el('editor-pane').addEventListener('dblclick',e=>{if(e.target.closest('.node-row'))return; if(!nodes.length)createRootAndEdit('')});
@@ -45329,7 +45329,7 @@ function mmHandleContextMenuClick(e){
     const n=findMindNode(nodeId);
     if(n&&n.docNodeId!=null&&nodes.some(dn=>dn.id===n.docNodeId)){
       closeMindMapOverlay();
-      setSingleSelection(n.docNodeId); flashNode(n.docNodeId); render(); scrollToNode(n.docNodeId);
+      setSingleSelection(n.docNodeId); flashNode(n.docNodeId); exitFocusIfOutsideCurrent(n.docNodeId); render(); scrollToNode(n.docNodeId);
     } else showToast('The linked document node no longer exists');
   }
   else if(act==='add-from-doc'&&point){ openMindMapAddFromDocPicker(point,{x:e.clientX,y:e.clientY}); }
