@@ -35518,13 +35518,13 @@ el('preview-overlay')?.addEventListener('wheel',e=>{
   e.preventDefault();
   // Trackpad pinch delivers small deltaY per event, almost always well under 12, so the clamp
   // below never touches it and it keeps its smooth, continuous feel through
-  // Math.exp(-deltaY*0.01). A physical mouse wheel instead sends one large delta per notch
+  // Math.exp(-deltaY*0.006). A physical mouse wheel instead sends one large delta per notch
   // (~100-120) — sometimes as several separate wheel events for a single physical click, which
   // compound multiplicatively. The first attempt at this clamped to +/-25, which still let a
   // single notch swing zoom by ~20-30% and left repeated notches compounding fast; tightened
-  // considerably further here so a notch (however many events it turns into) steps gently.
+  // further here so a single notch steps by roughly 5-10%, matching PowerPoint's own feel.
   const clampedDeltaY=Math.max(-12,Math.min(12,e.deltaY));
-  const factor=Math.exp(-clampedDeltaY*0.01);
+  const factor=Math.exp(-clampedDeltaY*0.006);
   previewInteractiveZoom=Math.min(PREVIEW_ZOOM_MAX,Math.max(PREVIEW_ZOOM_MIN,previewInteractiveZoom*factor));
   requestPreviewZoomFrame();
 },{passive:false});
