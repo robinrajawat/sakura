@@ -474,6 +474,7 @@ body.feature-off-quickassist #global-search-wrap{display:none!important}
 .account-status-dot.syncing{background:var(--accent);animation:accountDotPulse 1s ease-in-out infinite}
 .account-status-dot.synced{background:#2fa84f}
 .account-status-dot.error{background:#e5484d}
+.account-status-dot.idle-ok{background:color-mix(in srgb,#2fa84f 42%,transparent)}
 @keyframes accountDotPulse{0%,100%{opacity:1}50%{opacity:.35}}
 .export-menu-rich .export-item:hover{background:var(--hover)}
 .export-menu-rich .export-item:active{background:var(--sel)}
@@ -12878,6 +12879,10 @@ function updateAccountUI(user){
       if(user.photoURL){ toggleAvatar.src=user.photoURL; toggleAvatar.style.display='block'; toggleAvatarWrap.style.background=''; }
       else{ toggleAvatar.style.display='none'; toggleAvatarWrap.style.background='var(--muted)'; toggleAvatarWrap.style.borderRadius='50%'; toggleAvatarWrap.style.width='20px'; toggleAvatarWrap.style.height='20px'; }
     }
+    // Give the dot a baseline presence right away rather than leaving it blank until the
+    // first sync event fires -- an in-flight sync or a standing error takes priority.
+    const toggleDot=el('account-toggle-status-dot');
+    if(toggleDot&&!toggleDot.classList.contains('syncing')&&!toggleDot.classList.contains('error'))toggleDot.classList.add('idle-ok');
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none';
@@ -13447,12 +13452,16 @@ function updateSyncStatusUI(status){
   }
   const dot=el('account-toggle-status-dot'); if(!dot)return;
   clearTimeout(_syncDotFadeTimer);
-  dot.classList.remove('syncing','synced','error');
+  dot.classList.remove('syncing','synced','error','idle-ok');
   if(status==='syncing'){ dot.classList.add('syncing'); }
   else if(status==='synced'){
     dot.classList.add('synced');
-    _syncDotFadeTimer=setTimeout(()=>dot.classList.remove('synced'),4000); // brief confirmation, then fades — not a permanent green light
+    // brief bright confirmation, then settles into a dim persistent dot rather than
+    // vanishing -- previously it faded to fully transparent, so between sync events
+    // (i.e. most of the time) there was no indicator on screen at all.
+    _syncDotFadeTimer=setTimeout(()=>{dot.classList.remove('synced'); dot.classList.add('idle-ok')},4000);
   }else if(status==='error'){ dot.classList.add('error'); } // persists until the next successful sync, unlike 'synced'
+  else if(status==='idle-ok'){ dot.classList.add('idle-ok'); }
 }
 async function flushSyncQueue(){
   if(!currentUser||_syncPushQueue.size===0)return;
