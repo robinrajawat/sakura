@@ -4552,6 +4552,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="7" cy="3.1" rx="5.5" ry="2"/><path d="M1.5 3.1v7.8c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V3.1"/><path d="M1.5 7c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2"/></svg>
                 <span>Data &amp; backup</span>
               </button>
+              <button type="button" class="settings-rail-btn" data-cat="account" data-tip="Account">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5 16c.6-1.6 2.1-2.5 4-2.5s3.4.9 4 2.5"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12" x2="18" y2="12"/></svg>
+                <span>Account</span>
+              </button>
               <button type="button" class="settings-rail-btn" data-cat="ai" data-tip="AI">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.2l1.3 3.9L12.2 6.4l-3.9 1.3L7 11.6l-1.3-3.9L1.8 6.4l3.9-1.3Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>
                 <span>AI</span>
@@ -5206,6 +5210,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             </div>
           </div>
           <input id="doc-author" type="text" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
+          <div class="settings-section" data-cat="account" id="settings-section-account">
+            <div class="settings-section-title">Account</div>
+            <div id="account-settings-signedout" class="muted-help" style="margin:0">Sign in from the account menu (top right) to sync your documents and set a display name here.</div>
+            <div id="account-settings-signedin" style="display:none">
+              <div class="settings-list">
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Display name</span><span class="settings-row-desc">Used for the greeting on a blank document. Leave blank to use your account's first name automatically.</span></div><input id="account-greeting-name-input" type="text" class="meta-input" placeholder="e.g. Robin" style="width:140px;text-align:left" /></div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section" data-cat="account" id="settings-section-account-admin" style="display:none">
+            <div class="settings-section-title">Admin</div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
+            </div>
+          </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite">
             <div class="settings-section-title">Provider</div>
             <div class="settings-list">
@@ -6907,23 +6926,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
 </div>
 
-<div id="account-manage-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Manage account">
-  <div class="app-modal" style="width:min(420px,94vw)">
-    <div class="app-modal-head">
-      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5 16c.6-1.6 2.1-2.5 4-2.5s3.4.9 4 2.5"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12" x2="18" y2="12"/></svg>Manage account</h2></div>
-      <button class="app-modal-close-btn" id="account-manage-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-    </div>
-    <div class="app-modal-body">
-      <label for="account-greeting-name-input" style="display:block;font:500 10.5px 'Inter',sans-serif;color:var(--hint);margin-bottom:3px">Display name</label>
-      <input id="account-greeting-name-input" type="text" class="meta-input" placeholder="e.g. Robin" style="width:100%;box-sizing:border-box" />
-      <div class="muted-help" style="margin:6px 0 0">Used for the greeting on a blank document. Leave blank to use your account's first name automatically.</div>
-      <div class="export-divider" id="account-feedback-inbox-divider" style="display:none;margin:14px 0 4px"></div>
-      <div class="export-section-label" id="account-feedback-inbox-label" style="display:none;padding-left:0">Admin</div>
-      <button class="export-item" id="account-feedback-inbox-btn" style="display:none;margin:0 -4px"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span><span class="export-label">Feedback Inbox</span></button>
-    </div>
-  </div>
-</div>
-
 
 <div id="feedback-inbox-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Feedback Inbox">
   <div class="app-modal" style="width:min(640px,94vw)">
@@ -8272,24 +8274,20 @@ function openFeedbackModal(){
 function closeFeedbackModal(){
   el('feedback-modal-overlay')?.classList.remove('open');
 }
-function openAccountManageModal(){
-  const ov=el('account-manage-modal-overlay'); if(!ov)return;
-  ov.classList.add('open');
-  el('account-greeting-name-input')?.focus();
-}
-function closeAccountManageModal(){
-  el('account-manage-modal-overlay')?.classList.remove('open');
-}
-el('account-manage-btn')?.addEventListener('click',()=>{ el('account-menu')?.classList.remove('open'); openAccountManageModal(); });
-el('account-manage-modal-close-btn')?.addEventListener('click',closeAccountManageModal);
-el('account-manage-modal-overlay')?.addEventListener('click', e=>{ if(e.target.id==='account-manage-modal-overlay') closeAccountManageModal(); });
+// "Manage account" in the account dropdown deep-links straight into Settings -> Account,
+// same jump-to-category pattern as todos-ai-settings-jump-btn below -- Display name and the
+// admin Feedback Inbox entry live there now instead of a separate popup, consistent with
+// every other setting in the app.
+el('account-manage-btn')?.addEventListener('click',()=>{
+  const anchor=el('account-toggle'); el('account-menu')?.classList.remove('open');
+  setTimeout(()=>{ el('settings-toggle').click(); anchorMenuToButton(el('settings-panel'),anchor); document.querySelector('.settings-rail-btn[data-cat="account"]')?.click(); },0);
+});
 el('open-feedback-modal-btn')?.addEventListener('click',openFeedbackModal);
 el('account-feedback-btn')?.addEventListener('click',()=>{ el('account-menu')?.classList.remove('open'); openFeedbackModal(); });
 el('feedback-modal-close-btn')?.addEventListener('click',closeFeedbackModal);
 el('feedback-modal-cancel-btn')?.addEventListener('click',closeFeedbackModal);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('feedback-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeFeedbackModal(); }
-  if(e.key==='Escape'&&el('account-manage-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeAccountManageModal(); }
 });
 el('feedback-modal-overlay')?.addEventListener('click', e=>{ if(e.target.id==='feedback-modal-overlay') closeFeedbackModal(); });
 el('feedback-modal-send-btn')?.addEventListener('click',async()=>{
@@ -12882,9 +12880,8 @@ function refreshAdminStatus(user){
   });
 }
 function updateFeedbackAdminUI(){
-  [el('account-feedback-inbox-divider'),el('account-feedback-inbox-label'),el('account-feedback-inbox-btn')].forEach(elx=>{
-    if(elx)elx.style.display=isAdmin?'':'none';
-  });
+  const sec=el('settings-section-account-admin');
+  if(sec){ sec.style.display=isAdmin?'':'none'; sec.dataset.featureHidden=isAdmin?'':'1'; }
   if(!isAdmin)closeFeedbackInboxModal();
 }
 function updateAccountUI(user){
@@ -12930,11 +12927,17 @@ function updateAccountUI(user){
       greetInput.placeholder=first?`${first} (from your account)`:'e.g. Robin';
       if(document.activeElement!==greetInput)greetInput.value=greetingDisplayName;
     }
+    const settingsOut=el('account-settings-signedout'), settingsIn=el('account-settings-signedin');
+    if(settingsOut)settingsOut.style.display='none';
+    if(settingsIn)settingsIn.style.display='';
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none';
     if(toggleLabel){toggleLabel.textContent='Sign in'; toggleLabel.style.display='';}
     if(toggleAvatarWrap)toggleAvatarWrap.style.display='none';
+    const settingsOut=el('account-settings-signedout'), settingsIn=el('account-settings-signedin');
+    if(settingsOut)settingsOut.style.display='';
+    if(settingsIn)settingsIn.style.display='none';
     updateSyncStatusUI('idle');
   }
 }
@@ -13437,7 +13440,7 @@ async function openFeedbackInboxModal(){
 function closeFeedbackInboxModal(){
   el('feedback-inbox-modal-overlay')?.classList.remove('open');
 }
-el('account-feedback-inbox-btn')?.addEventListener('click',()=>{ el('account-menu')?.classList.remove('open'); closeAccountManageModal(); openFeedbackInboxModal(); });
+el('account-feedback-inbox-btn')?.addEventListener('click',openFeedbackInboxModal);
 el('feedback-inbox-modal-close-btn')?.addEventListener('click',closeFeedbackInboxModal);
 el('feedback-inbox-modal-overlay')?.addEventListener('click',e=>{ if(e.target.id==='feedback-inbox-modal-overlay')closeFeedbackInboxModal(); });
 // Same todo-dd-* dropdown component and open/close wiring already used for diagram sort, the
