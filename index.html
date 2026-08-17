@@ -23309,7 +23309,18 @@ el('account-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); co
 el('account-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('account-toggle'); el('account-menu').classList.remove('open'); setTimeout(()=>{el('help-toggle').click(); anchorMenuToButton(el('help-panel'),anchor);},0)});
 el('account-google-signin-btn')?.addEventListener('click',e=>{e.stopPropagation(); signInWithGoogleAccount()});
 el('account-signin-open-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu').classList.remove('open'); showLandingOverlay()});
-el('account-signout-btn')?.addEventListener('click',e=>{e.stopPropagation(); signOutOfAccount()});
+el('account-signout-btn')?.addEventListener('click',async e=>{
+  e.stopPropagation();
+  const ok=await sakuraConfirm({
+    icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    title:'Sign out?',
+    body:'Documents on this device stay exactly as they are — signing out just stops them syncing to the cloud until you sign back in.',
+    confirmLabel:'Sign out',
+    confirmCls:'danger'
+  });
+  if(!ok)return;
+  signOutOfAccount();
+});
 el('sb-scale').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.toggle('open')});
 el('scale-popover-slider').addEventListener('input',e=>setEditorScale(e.target.value,true));
 document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',async()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='clipboard')await exportToClipboard(true); else if(type==='image')await exportTreeAsImage(true); else if(type==='md')exportMarkdown(); else if(type==='txt')exportTreeFormat(); else if(type==='docx')await exportDocx(); else if(type==='pdf')exportPdfDirect(); else if(type==='pptx')await exportPptx(); else if(type==='opml')exportOpml(); else if(type==='decision-log-xlsx')exportDecisionLogXlsx(); else if(type==='sakura-json')await exportSakuraDocumentFile()}));
