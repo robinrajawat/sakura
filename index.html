@@ -3682,6 +3682,22 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-status[data-status="blocked"]{color:#c2553d}
 .todo-status[data-status="review"]{color:#c98f4a}
 .todo-status svg{fill:currentColor}
+/* Feedback Inbox priority/status pills -- same ghost-button recipe as .todo-priority/.todo-status
+   just above (transparent until hover, color-only, small dot icon + label), with their own
+   attribute values and colors since feedback's states (open/planned/fixed/wontfix,
+   low/medium/high) don't map onto Todos' (waiting/progress/blocked/review, none/low/med/high).
+   Always visible rather than hover-revealed like Todos' compact rows -- the Feedback Inbox row
+   is already fully expanded (message, URL, note), so there's no density reason to hide them. */
+.fi-priority,.fi-status{appearance:none;border:1px solid transparent;background:none;font:400 10.5px 'Inter',sans-serif;padding:1px 6px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.fi-priority:hover,.fi-status:hover{background:var(--hover);border-color:var(--border)}
+.fi-priority svg,.fi-status svg{fill:currentColor}
+.fi-priority[data-priority="low"]{color:#6c9bd1}
+.fi-priority[data-priority="medium"]{color:#d1a23a}
+.fi-priority[data-priority="high"]{color:#c2553d}
+.fi-status[data-status="open"]{color:#c2553d}
+.fi-status[data-status="planned"]{color:#d1a23a}
+.fi-status[data-status="fixed"]{color:#5aa970}
+.fi-status[data-status="wontfix"]{color:var(--hint)}
 .todo-meta-row{display:flex;align-items:center;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 /* Text+actions wrapper: a plain block (not flex) so .todo-actions can be a
@@ -6870,18 +6886,22 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
     </div>
     <div class="app-modal-body">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <select id="feedback-inbox-kind-filter" class="select" style="width:auto">
-          <option value="all">All kinds</option>
-          <option value="feedback">feedback</option>
-          <option value="error">error</option>
-        </select>
-        <select id="feedback-inbox-status-filter" class="select" style="width:auto">
-          <option value="open">open</option>
-          <option value="planned">planned</option>
-          <option value="fixed">fixed</option>
-          <option value="wontfix">wontfix</option>
-          <option value="all">All statuses</option>
-        </select>
+        <div class="todo-dd-wrap" id="feedback-inbox-filter-wrap">
+          <button type="button" class="todo-dd-trigger" id="feedback-inbox-filter-trigger" data-tip="Filter" aria-label="Filter" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+          <div class="todo-dd-menu" id="feedback-inbox-filter-menu" role="menu">
+            <span class="todo-dd-label">Kind</span>
+            <button type="button" class="todo-dd-item selected" data-group="kind" data-value="all" role="menuitemradio">All kinds<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="kind" data-value="feedback" role="menuitemradio">Feedback<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="kind" data-value="error" role="menuitemradio">Error<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <div class="todo-dd-divider"></div>
+            <span class="todo-dd-label">Status</span>
+            <button type="button" class="todo-dd-item selected" data-group="status" data-value="open" role="menuitemradio">Open<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="status" data-value="planned" role="menuitemradio">Planned<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="status" data-value="fixed" role="menuitemradio">Fixed<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="status" data-value="wontfix" role="menuitemradio">Won't fix<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+            <button type="button" class="todo-dd-item" data-group="status" data-value="all" role="menuitemradio">All statuses<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
+          </div>
+        </div>
         <span id="feedback-inbox-count" class="muted-help" style="margin:0 0 0 auto"></span>
       </div>
       <div id="feedback-inbox-loading" class="muted-help">Loading…</div>
@@ -13143,10 +13163,10 @@ let feedbackInboxItems=[];
 let feedbackInboxLoading=false;
 let feedbackInboxNoteDrafts={}; // id -> draft text, only for ids currently being edited
 let feedbackInboxBusyId=null; // id currently mid status/priority/note/delete write
+let feedbackInboxKindFilter='all';
+let feedbackInboxStatusFilter='open';
 const FEEDBACK_STATUSES=['open','planned','fixed','wontfix'];
 const FEEDBACK_PRIORITIES=['low','medium','high'];
-const FEEDBACK_STATUS_COLOR={open:'#c2553d',planned:'#d1a23a',fixed:'var(--accent)',wontfix:'var(--hint)'};
-const FEEDBACK_PRIORITY_COLOR={low:'#6c9bd1',medium:'#d1a23a',high:'#c2553d'};
 async function loadFeedbackInboxItems(){
   try{
     const {mod,db}=await loadFirestoreMods();
@@ -13210,8 +13230,8 @@ function renderFeedbackInboxList(){
     return;
   }
   if(loadingEl)loadingEl.style.display='none';
-  const kindFilter=el('feedback-inbox-kind-filter')?.value||'all';
-  const statusFilter=el('feedback-inbox-status-filter')?.value||'open';
+  const kindFilter=feedbackInboxKindFilter;
+  const statusFilter=feedbackInboxStatusFilter;
   const visible=feedbackInboxItems.filter(it=>(kindFilter==='all'||it.kind===kindFilter)&&(statusFilter==='all'||(it.status||'open')===statusFilter));
   if(countEl)countEl.textContent=`${visible.length} of ${feedbackInboxItems.length}`;
   if(!visible.length){
@@ -13240,8 +13260,8 @@ function renderFeedbackInboxList(){
       <textarea class="fi-note" data-id="${it.id}" placeholder="Private resolution note (only admins see this)" rows="2" style="width:100%;box-sizing:border-box;margin-top:4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;resize:vertical">${esc(noteVal)}</textarea>
       <button type="button" class="fi-save-note" style="display:${noteDirty?'block':'none'};background:none;border:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:6px 0">${busy?'Saving…':'Save note'}</button>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <button type="button" class="fi-priority" data-tip="Tap to cycle priority" style="font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;padding:6px 12px;border-radius:999px;border:none;background:${FEEDBACK_PRIORITY_COLOR[priority]||'var(--border)'};color:#fff;cursor:pointer">${priority}</button>
-        <button type="button" class="fi-status" data-tip="Tap to cycle status" style="font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;padding:6px 12px;border-radius:999px;border:none;background:${FEEDBACK_STATUS_COLOR[status]||'var(--border)'};color:#fff;cursor:pointer">${status}</button>
+        <button type="button" class="fi-priority" data-priority="${priority}" data-tip="Priority: ${priority[0].toUpperCase()+priority.slice(1)} (click to cycle)" aria-label="Cycle priority"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${priority}</span></button>
+        <button type="button" class="fi-status" data-status="${status}" data-tip="Status: ${status[0].toUpperCase()+status.slice(1)} (click to cycle)" aria-label="Cycle status"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${status}</span></button>
         <button type="button" class="fi-copy btn" style="border-color:var(--accent);color:var(--accent);font-size:11.5px;padding:5px 10px">Copy prompt</button>
         <button type="button" class="fi-delete btn" style="margin-left:auto;border-color:#c2553d;color:#c2553d;font-size:11.5px;padding:5px 10px">Delete</button>
       </div>
@@ -13329,8 +13349,27 @@ function closeFeedbackInboxModal(){
 el('account-feedback-inbox-btn')?.addEventListener('click',()=>{ el('account-menu')?.classList.remove('open'); openFeedbackInboxModal(); });
 el('feedback-inbox-modal-close-btn')?.addEventListener('click',closeFeedbackInboxModal);
 el('feedback-inbox-modal-overlay')?.addEventListener('click',e=>{ if(e.target.id==='feedback-inbox-modal-overlay')closeFeedbackInboxModal(); });
-el('feedback-inbox-kind-filter')?.addEventListener('change',renderFeedbackInboxList);
-el('feedback-inbox-status-filter')?.addEventListener('change',renderFeedbackInboxList);
+// Same todo-dd-* dropdown component and open/close wiring already used for diagram sort, the
+// Q&A toolbar, doc status/link chips, and Todos' own filter menu -- see wireQaToolbarDropdown's
+// own comment for why forwarding through one shared helper beats re-wiring open/close by hand
+// again here.
+wireQaToolbarDropdown('feedback-inbox-filter-trigger','feedback-inbox-filter-menu','feedback-inbox-filter-wrap');
+document.querySelectorAll('#feedback-inbox-filter-menu .todo-dd-item').forEach(item=>{
+  item.addEventListener('click',e=>{
+    e.stopPropagation();
+    const group=item.getAttribute('data-group');
+    const val=item.getAttribute('data-value');
+    if(group==='kind')feedbackInboxKindFilter=['all','feedback','error'].includes(val)?val:'all';
+    else if(group==='status')feedbackInboxStatusFilter=['open','planned','fixed','wontfix','all'].includes(val)?val:'open';
+    document.querySelectorAll(`#feedback-inbox-filter-menu .todo-dd-item[data-group="${group}"]`).forEach(i=>{
+      i.classList.toggle('selected',i===item);
+      i.setAttribute('aria-checked',String(i===item));
+    });
+    el('feedback-inbox-filter-wrap')?.classList.toggle('active',feedbackInboxKindFilter!=='all'||feedbackInboxStatusFilter!=='open');
+    el('feedback-inbox-filter-menu')?.classList.remove('open');
+    renderFeedbackInboxList();
+  });
+});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('feedback-inbox-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeFeedbackInboxModal(); }
 });
