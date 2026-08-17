@@ -3707,6 +3707,20 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    .todo-dd-menu{right:0} default would push the menu off-canvas to the left -- same fix already
    applied to doc-status-wrap/doc-link-wrap above for the same reason. */
 #feedback-inbox-filter-wrap .todo-dd-menu{right:auto;left:0}
+/* .app-modal has overflow:hidden (needed for its own rounded corners), which clips any
+   absolutely-positioned descendant that extends past the modal's actual rendered edge -- normally
+   fine, but this modal's height is otherwise unconstrained (flex column, no min-height), so with
+   only a couple of feedback rows it shrinks to content height and leaves no room below the filter
+   trigger for the ~250px-tall dropdown menu to render into, clipping it instead of letting it
+   float. Forcing a consistent minimum height, rather than fighting the clip, means there's always
+   room regardless of how many rows are currently loaded -- the same fix the person who reported
+   this suggested themselves. */
+#feedback-inbox-modal-overlay .app-modal{min-height:min(80vh,640px)}
+/* .app-modal-body has no flex-grow by default, so the min-height above would otherwise just add
+   blank space below the body rather than actually growing it -- and it's growing the BODY's own
+   scrollport (not just the outer modal) that the dropdown menu's clipping bounds actually depend
+   on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
+#feedback-inbox-modal-overlay .app-modal-body{flex:1}
 .todo-meta-row{display:flex;align-items:center;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 /* Text+actions wrapper: a plain block (not flex) so .todo-actions can be a
