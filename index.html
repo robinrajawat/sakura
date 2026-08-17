@@ -3698,6 +3698,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .fi-status[data-status="planned"]{color:#d1a23a}
 .fi-status[data-status="fixed"]{color:#5aa970}
 .fi-status[data-status="wontfix"]{color:var(--hint)}
+.fi-status-badge[data-status="open"]{color:#c2553d}
+.fi-status-badge[data-status="planned"]{color:#d1a23a}
+.fi-status-badge[data-status="fixed"]{color:#5aa970}
+.fi-status-badge[data-status="wontfix"]{color:var(--hint)}
+/* Feedback Inbox filter dropdown: the trigger sits near the modal's LEFT edge (unlike every
+   other todo-dd-wrap usage, which sits at the right end of a toolbar), so the shared
+   .todo-dd-menu{right:0} default would push the menu off-canvas to the left -- same fix already
+   applied to doc-status-wrap/doc-link-wrap above for the same reason. */
+#feedback-inbox-filter-wrap .todo-dd-menu{right:auto;left:0}
 .todo-meta-row{display:flex;align-items:center;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 /* Text+actions wrapper: a plain block (not flex) so .todo-actions can be a
@@ -13165,6 +13174,7 @@ let feedbackInboxNoteDrafts={}; // id -> draft text, only for ids currently bein
 let feedbackInboxBusyId=null; // id currently mid status/priority/note/delete write
 let feedbackInboxKindFilter='all';
 let feedbackInboxStatusFilter='open';
+let feedbackInboxExpandedId=null;
 const FEEDBACK_STATUSES=['open','planned','fixed','wontfix'];
 const FEEDBACK_PRIORITIES=['low','medium','high'];
 async function loadFeedbackInboxItems(){
@@ -13249,28 +13259,41 @@ function renderFeedbackInboxList(){
     const noteVal=draft!==undefined?draft:(it.resolutionNote||'');
     const noteDirty=draft!==undefined&&draft!==(it.resolutionNote||'');
     const busy=feedbackInboxBusyId===it.id;
+    const isOpen=feedbackInboxExpandedId===it.id;
     const row=document.createElement('div');
     row.style.cssText='background:var(--hover);border-radius:10px;padding:10px 12px;'+(busy?'opacity:.55':'');
     const when=Number.isFinite(it.createdAt)?new Date(it.createdAt).toLocaleString():'';
     row.innerHTML=`
-      <div style="font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;color:${it.kind==='error'?'#c2553d':'var(--accent)'};margin-bottom:3px">${it.kind}${it.email?' — '+esc(it.email):''} — ${esc(when)}</div>
-      <div style="font:400 13px 'Inter',sans-serif;color:var(--fg);white-space:pre-wrap;margin-bottom:6px">${esc(it.message||'')}</div>
-      ${it.url?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:2px;word-break:break-all">URL: ${esc(it.url)}</div>`:''}
-      ${it.userAgent?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:8px;word-break:break-all">Agent: ${esc(it.userAgent)}</div>`:''}
-      <textarea class="fi-note" data-id="${it.id}" placeholder="Private resolution note (only admins see this)" rows="2" style="width:100%;box-sizing:border-box;margin-top:4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;resize:vertical">${esc(noteVal)}</textarea>
-      <button type="button" class="fi-save-note" style="display:${noteDirty?'block':'none'};background:none;border:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:6px 0">${busy?'Saving…':'Save note'}</button>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <button type="button" class="fi-priority" data-priority="${priority}" data-tip="Priority: ${priority[0].toUpperCase()+priority.slice(1)} (click to cycle)" aria-label="Cycle priority"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${priority}</span></button>
-        <button type="button" class="fi-status" data-status="${status}" data-tip="Status: ${status[0].toUpperCase()+status.slice(1)} (click to cycle)" aria-label="Cycle status"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${status}</span></button>
-        <button type="button" class="fi-copy btn" style="border-color:var(--accent);color:var(--accent);font-size:11.5px;padding:5px 10px">Copy prompt</button>
-        <button type="button" class="fi-delete btn" style="margin-left:auto;border-color:#c2553d;color:#c2553d;font-size:11.5px;padding:5px 10px">Delete</button>
+      <div class="fi-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;cursor:pointer">
+        <div style="flex:1;min-width:0">
+          <div style="font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;color:${it.kind==='error'?'var(--sem-alert)':'var(--accent)'};margin-bottom:3px">${it.kind}${it.email?' — '+esc(it.email):''} — ${esc(when)}</div>
+          <div style="font:400 13px 'Inter',sans-serif;color:var(--fg);${isOpen?'white-space:pre-wrap':'overflow:hidden;text-overflow:ellipsis;white-space:nowrap'}">${esc(it.message||'')}</div>
+        </div>
+        <div class="fi-status-badge" data-status="${status}" style="flex-shrink:0;font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;padding-top:1px">${status}</div>
       </div>
+      ${isOpen?`
+      <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">
+        ${it.url?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:2px;word-break:break-all">URL: ${esc(it.url)}</div>`:''}
+        ${it.userAgent?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:8px;word-break:break-all">Agent: ${esc(it.userAgent)}</div>`:''}
+        <textarea class="fi-note" data-id="${it.id}" placeholder="Private resolution note (only admins see this)" rows="2" style="width:100%;box-sizing:border-box;margin-top:4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;resize:vertical">${esc(noteVal)}</textarea>
+        <button type="button" class="fi-save-note" style="display:${noteDirty?'block':'none'};background:none;border:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:6px 0">${busy?'Saving…':'Save note'}</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <button type="button" class="fi-priority" data-priority="${priority}" data-tip="Priority: ${priority[0].toUpperCase()+priority.slice(1)} (click to cycle)" aria-label="Cycle priority"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${priority}</span></button>
+          <button type="button" class="fi-status" data-status="${status}" data-tip="Status: ${status[0].toUpperCase()+status.slice(1)} (click to cycle)" aria-label="Cycle status"><svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg><span>${status}</span></button>
+          <button type="button" class="fi-copy btn">Copy prompt</button>
+          <button type="button" class="fi-delete btn" style="margin-left:auto;color:var(--sem-alert);border-color:color-mix(in srgb,var(--sem-alert) 40%,transparent)">${TRASH_ICON.replace('width="24" height="24"','width="12" height="12"')} Delete</button>
+        </div>
+      </div>`:''}
     `;
-    row.querySelector('.fi-priority')?.addEventListener('click',()=>cycleFeedbackPriority(it));
-    row.querySelector('.fi-status')?.addEventListener('click',()=>cycleFeedbackStatus(it));
-    row.querySelector('.fi-copy')?.addEventListener('click',()=>copyFeedbackPrompt(it));
-    row.querySelector('.fi-delete')?.addEventListener('click',()=>requestDeleteFeedback(it));
-    row.querySelector('.fi-save-note')?.addEventListener('click',()=>saveFeedbackNote(it));
+    row.querySelector('.fi-header')?.addEventListener('click',()=>{
+      feedbackInboxExpandedId=isOpen?null:it.id;
+      renderFeedbackInboxList();
+    });
+    row.querySelector('.fi-priority')?.addEventListener('click',e=>{ e.stopPropagation(); cycleFeedbackPriority(it); });
+    row.querySelector('.fi-status')?.addEventListener('click',e=>{ e.stopPropagation(); cycleFeedbackStatus(it); });
+    row.querySelector('.fi-copy')?.addEventListener('click',e=>{ e.stopPropagation(); copyFeedbackPrompt(it); });
+    row.querySelector('.fi-delete')?.addEventListener('click',e=>{ e.stopPropagation(); requestDeleteFeedback(it); });
+    row.querySelector('.fi-save-note')?.addEventListener('click',e=>{ e.stopPropagation(); saveFeedbackNote(it); });
     const noteEl=row.querySelector('.fi-note');
     const saveBtn=row.querySelector('.fi-save-note');
     // Deliberately NOT a renderFeedbackInboxList() call here — that rebuilds the whole list's
@@ -13281,6 +13304,7 @@ function renderFeedbackInboxList(){
       const dirty=noteEl.value!==(it.resolutionNote||'');
       if(saveBtn)saveBtn.style.display=dirty?'block':'none';
     });
+    noteEl?.addEventListener('click',e=>e.stopPropagation());
     listEl.appendChild(row);
   });
 }
@@ -13331,13 +13355,14 @@ async function requestDeleteFeedback(item){
   if(result.ok){
     feedbackInboxItems=feedbackInboxItems.filter(x=>x.id!==item.id);
     delete feedbackInboxNoteDrafts[item.id];
+    if(feedbackInboxExpandedId===item.id)feedbackInboxExpandedId=null;
   }else showToast(result.error);
   renderFeedbackInboxList();
 }
 async function openFeedbackInboxModal(){
   const ov=el('feedback-inbox-modal-overlay'); if(!ov||!isAdmin)return;
   ov.classList.add('open');
-  feedbackInboxLoading=true; feedbackInboxNoteDrafts={}; feedbackInboxBusyId=null;
+  feedbackInboxLoading=true; feedbackInboxNoteDrafts={}; feedbackInboxBusyId=null; feedbackInboxExpandedId=null;
   renderFeedbackInboxList();
   feedbackInboxItems=await loadFeedbackInboxItems();
   feedbackInboxLoading=false;
