@@ -520,7 +520,7 @@ body.feature-off-quickassist #global-search-wrap{display:none!important}
 .empty-state.doc-empty{position:absolute;inset:0;height:auto}
 .empty-state-illustration{margin-bottom:4px;opacity:.55;transition:opacity .2s}.empty-state:hover .empty-state-illustration{opacity:.72}
 .empty-state-actions{display:flex;gap:8px;justify-content:center;margin-top:10px}
-.node-row{display:flex;align-items:center;gap:0;min-height:calc(25px * var(--editor-scale) * var(--row-density));padding:calc(1px * var(--editor-scale) * var(--row-density)) calc(8px * var(--editor-scale));border-radius:6px;cursor:default;user-select:none;transition:background .12s ease,box-shadow .12s ease}
+.node-row{display:flex;align-items:center;gap:0;min-height:calc(25px * var(--editor-scale) * var(--row-density));padding:calc(1px * var(--editor-scale) * var(--row-density)) calc(8px * var(--editor-scale));margin-bottom:calc(2px * var(--editor-scale) * var(--row-density));border-radius:6px;cursor:default;user-select:none;transition:background .12s ease,box-shadow .12s ease}
 /* Only rows with a citation switch off center-alignment — every other row (the overwhelming
    majority) stays pixel-identical to before. Without this, a row grown taller by its own
    node-quote-block below would vertically center the whole row's flex children (prefix, fold
@@ -951,8 +951,8 @@ body.toolbar-hidden #quick-bar{display:none}
 
 
 /* === Fold / collapse === */
-.fold-toggle{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:center;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:1px;user-select:none;border-radius:4px;line-height:1}
-.node-dot{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:center;color:var(--muted);font-size:9px;margin-right:6px;user-select:none;line-height:1}
+.fold-toggle{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((21.7px * var(--editor-scale) - 18px) / 2);cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:1px;user-select:none;border-radius:4px;line-height:1}
+.node-dot{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((21.7px * var(--editor-scale) - 18px) / 2);color:var(--muted);font-size:9px;margin-right:6px;user-select:none;line-height:1}
 .node-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
 .fold-toggle:hover{background:var(--hover);color:var(--accent)}
 /* Dynalist-style dot fold marker — used instead of .fold-toggle's triangle when hideTreeLines is on.
@@ -960,7 +960,7 @@ body.toolbar-hidden #quick-bar{display:none}
    already signals "expanded"). Folded state: ring-with-dot (bullseye), so a collapsed branch is
    distinguishable at a glance without hovering. Either state swaps to a −/+ glyph on hover, matching
    .fold-toggle's existing triangle→+/− hover behavior. */
-.fold-dot{display:inline-flex;position:relative;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:center;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:6px;user-select:none;border-radius:4px;line-height:1}
+.fold-dot{display:inline-flex;position:relative;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((21.7px * var(--editor-scale) - 18px) / 2);cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:6px;user-select:none;border-radius:4px;line-height:1}
 .fold-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
 .fold-dot.is-folded::before{width:6px;height:6px}
 .fold-dot.is-folded::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;border:1.2px solid currentColor;opacity:.85}
