@@ -22942,7 +22942,13 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 // outside the tree editor — e.g. text highlighted in the help panel, settings
 // panel, or any other overlay. When this is true the global Ctrl+C / Ctrl+A
 // shortcuts must not intercept, so the browser can copy the selected text.
-function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
+// A selection counts as "external" (let the browser's native copy handle it, don't let the
+// app's own copy-tree-as-text shortcut hijack it) whenever it isn't real node content -- which
+// includes the empty-state placeholder text ("Nothing here yet...", "No sub-items yet...").
+// That text lives inside #editor-pane too (it's the pane's only content when the tree/subtree
+// is empty), so a plain "is it inside editor-pane" check mistook it for tree content and copied
+// an empty tree instead of letting the person copy what they'd actually selected.
+function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
 document.querySelectorAll('.theme-seg').forEach(btn=>btn.addEventListener('click',()=>setTheme(btn.dataset.theme)));
 document.querySelectorAll('.font-seg').forEach(btn=>btn.addEventListener('click',()=>setFont(btn.dataset.font)));
 document.querySelectorAll('.theme-mode-seg').forEach(btn=>btn.addEventListener('click',()=>setThemeMode(btn.dataset.themeMode)));
