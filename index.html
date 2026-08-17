@@ -15986,11 +15986,14 @@ function buildPrefix(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes
 // Pixel-grid counterpart to buildPrefix's vert loop, used only when hideTreeLines is on. The editor's
 // indentation used to be driven entirely by monospace characters (buildPrefix above), which doesn't
 // share a coordinate system with the fixed-pixel dot/fold-marker boxes -- so dots, indentation, and
-// guide lines never reliably lined up level-to-level. This returns one boolean per ancestor depth
-// (same "does this ancestor have a later sibling, i.e. is its line still ongoing" logic) so the
-// renderer can draw guide lines as absolutely-positioned pixel elements tied to the same grid as the
-// dot markers, instead of characters.
-function buildVertFlags(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; const flags=[]; for(let d=0;d<depth;d++){let hasSibling=false; for(let j=idx-1;j>=0;j--){if(scopedNodes[j].depth+depthOffset===d){hasSibling=hasLaterSiblingAtDepth(scopedNodes,j,d-depthOffset); break}} flags.push(hasSibling)} return flags}
+// guide lines never reliably lined up level-to-level. This returns one boolean per ancestor depth.
+// Unlike buildPrefix's ASCII connectors (which must stop a branch's "|" once its own ancestor has no
+// later sibling, so exported/copied text reads as a topologically correct tree), these are a soft
+// visual affordance, not a topology diagram -- Dynalist-style outliners keep every active nesting
+// level's guide on for as long as its children are on screen, sibling status aside, so a node that
+// happens to be the last branch in the document doesn't lose its children's guide lines. So every
+// ancestor depth is simply on.
+function buildVertFlags(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; return new Array(Math.max(0,depth)).fill(true)}
 function stripSemanticMarkers(text){
   return String(text||'')
     .replace(/\[\[([\s\S]*?)\]\](?!\])/g,'$1')
