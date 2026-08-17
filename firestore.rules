@@ -6,33 +6,58 @@ rules_version = '2';
 // → Publish. Keeping it in the repo is so the actual access-control model has a diff history,
 // instead of living only as tribal knowledge in the console.
 //
-// Two collections, two different trust models:
+// Three collections:
 //   1. /users/{uid}/...  — cloud sync. Every synced document, template, and settings blob lives
 //      under here, so the rule is a single check: you can only read/write your own subtree, and
 //      only while actually signed in as that uid.
-//   2. /feedback/{id}    — a write-only mailbox for manual feedback and automatic crash reports
-//      (see submitFeedback/reportErrorAuto in index.html). See the rule's own comment below.
+//   2. /feedback/{id}    — anyone can file one (create-only for non-admins); a small admin set
+//      can read/triage/delete (see submitFeedback/reportErrorAuto in index.html).
+//   3. /admins/{uid}     — existence-only admin registry backing isFeedbackAdminAuth() below.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // App-wide admin check for /feedback triage. Hardcoded email kept as a bootstrap fallback (so
+    // this account can never get locked out), ORed with a data-driven /admins/{uid} doc so
+    // additional admins can be added/removed without a code + rules redeploy. See index.html's
+    // isFeedbackAdmin/checkIsCollectionAdmin for the client-side mirror of this same check.
+    function isFeedbackAdminAuth() {
+      return request.auth != null && (
+        request.auth.token.email.lower() == 'robinsinghrajawat@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     // ---------------------------------------------------------------------
-    // Feedback & automatic error reports — a write-only mailbox. Anyone (signed in or not,
-    // since an error can happen before sign-in and feedback shouldn't require an account) can
-    // file one; NO client can ever read, list, update, or delete ANY of them, including their
-    // own — this is deliberately one-directional, like dropping a letter in a mailbox slot.
-    // Robin reads these directly in the Firebase Console (Console access isn't bound by these
-    // rules at all). Basic shape validation only: a non-empty, size-capped message and a known
-    // kind, so this can't be used to dump arbitrary large blobs.
+    // Feedback & automatic error reports. Anyone (signed in or not, since an error can happen
+    // before sign-in and feedback shouldn't require an account) can file one via create. Reading,
+    // updating (status/priority/a private resolution note), and deleting are limited to
+    // isFeedbackAdminAuth() — Robin, or anyone granted via /admins. Basic shape validation only on
+    // create: a non-empty, size-capped message and a known kind, so this can't be used to dump
+    // arbitrary large blobs.
     // ---------------------------------------------------------------------
     match /feedback/{feedbackId} {
       allow create: if request.resource.data.kind in ['feedback', 'error']
         && request.resource.data.message is string
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() < 6000;
-      allow read, update, delete: if false;
+      allow read: if isFeedbackAdminAuth();
+      allow update: if isFeedbackAdminAuth()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolutionNote', 'priority']);
+      allow delete: if isFeedbackAdminAuth();
+    }
+
+    // Existence-only admin registry — a doc at /admins/{uid} means that uid is an admin, checked
+    // by isFeedbackAdminAuth() above. A user may only read their OWN doc (existence, no field
+    // values needed), never list the collection, so this can't be used to enumerate who else is
+    // an admin. No client write path at all — adding/removing an admin is a Firebase Console
+    // action, the same trust tier as reviewing /feedback directly in the console.
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list: if false;
+      allow write: if false;
     }
   }
 }

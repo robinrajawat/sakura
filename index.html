@@ -4442,6 +4442,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="export-divider" style="margin:0 0 4px"></div>
             <button class="export-item account-danger-item" id="account-signout-btn"><span class="export-icon danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="export-label">Sign out</span></button>
           </div>
+          <div class="export-divider" id="account-feedback-inbox-divider" style="display:none"></div>
+          <div class="export-section-label" id="account-feedback-inbox-label" style="display:none">Admin</div>
+          <button class="export-item" id="account-feedback-inbox-btn" style="display:none"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span><span class="export-label">Feedback Inbox</span></button>
           <div class="export-divider"></div>
           <button class="export-item" id="account-settings-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="export-label">Settings</span></button>
           <div class="export-divider"></div>
@@ -6855,6 +6858,35 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" class="btn" id="feedback-modal-cancel-btn">Cancel</button>
         <button type="button" class="btn primary" id="feedback-modal-send-btn">Send</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="feedback-inbox-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Feedback Inbox">
+  <div class="app-modal" style="width:min(640px,94vw)">
+    <div class="app-modal-head">
+      <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Feedback Inbox</h2><div class="cs-sub">Everything submitted via Send Feedback, plus auto-captured crashes. Newest first, up to 300 rows.</div></div>
+      <button class="app-modal-close-btn" id="feedback-inbox-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div class="app-modal-body">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <select id="feedback-inbox-kind-filter" class="select" style="width:auto">
+          <option value="all">All kinds</option>
+          <option value="feedback">feedback</option>
+          <option value="error">error</option>
+        </select>
+        <select id="feedback-inbox-status-filter" class="select" style="width:auto">
+          <option value="open">open</option>
+          <option value="planned">planned</option>
+          <option value="fixed">fixed</option>
+          <option value="wontfix">wontfix</option>
+          <option value="all">All statuses</option>
+        </select>
+        <span id="feedback-inbox-count" class="muted-help" style="margin:0 0 0 auto"></span>
+      </div>
+      <div id="feedback-inbox-loading" class="muted-help">Loading…</div>
+      <div id="feedback-inbox-empty" class="muted-help" style="display:none">Nothing here.</div>
+      <div id="feedback-inbox-list" style="max-height:56vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
     </div>
   </div>
 </div>
@@ -12727,8 +12759,52 @@ function loadFirebaseMods(){
   })();
   return _firebaseModsPromise;
 }
+// === Feedback admin access ===
+// The hardcoded fallback email allowed to read/triage /feedback in-app (see firestore.rules) --
+// kept as a bootstrap/fallback rather than the only source of truth: isCollectionAdmin below is
+// the primary, data-driven path (an /admins/{uid} doc), matching how the rest of this app's
+// access control works (cloud sync is always "your own uid," never a hardcoded identity). Keeping
+// this constant as an OR, not a replacement, means this account can never get locked out even if
+// the admins collection is empty, misconfigured, or a rules deploy lags behind.
+const FEEDBACK_ADMIN_EMAIL='robinsinghrajawat@gmail.com';
+function isFeedbackAdmin(user){return !!user&&!!user.email&&user.email.toLowerCase()===FEEDBACK_ADMIN_EMAIL;}
+// Data-driven admin check: does an /admins/{uid} doc exist for this person? See firestore.rules
+// for the collection's own rule (a user may only read their OWN doc, existence-only, no listing).
+async function checkIsCollectionAdmin(uid){
+  if(!uid)return false;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'admins',uid));
+    return snap.exists();
+  }catch(e){return false;}
+}
+// isAdmin combines both checks. The email check is instant (zero flicker for this account); the
+// collection check is async and starts false, only ever flipping true after the Firestore read
+// resolves — so it only affects a hypothetical second admin, never this account's own experience.
+// A monotonically increasing token guards against a stale async result from a since-superseded
+// sign-in landing after a newer one (e.g. rapid sign-out/sign-in).
+let isAdmin=false;
+let _adminCheckToken=0;
+function refreshAdminStatus(user){
+  isAdmin=isFeedbackAdmin(user);
+  updateFeedbackAdminUI();
+  const token=++_adminCheckToken;
+  if(!user)return;
+  checkIsCollectionAdmin(user.uid).then(result=>{
+    if(token!==_adminCheckToken||!result)return;
+    isAdmin=true;
+    updateFeedbackAdminUI();
+  });
+}
+function updateFeedbackAdminUI(){
+  [el('account-feedback-inbox-divider'),el('account-feedback-inbox-label'),el('account-feedback-inbox-btn')].forEach(elx=>{
+    if(elx)elx.style.display=isAdmin?'':'none';
+  });
+  if(!isAdmin)closeFeedbackInboxModal();
+}
 function updateAccountUI(user){
   currentUser=user;
+  refreshAdminStatus(user);
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
   if(user){
@@ -13057,6 +13133,207 @@ async function reportErrorAuto(message,extra){
     return{ok:false,error:e.message};
   }
 }
+
+// === Feedback Inbox (admin-only triage UI) ===
+// Everything below is gated behind isAdmin (see refreshAdminStatus above) both by the entry
+// point being hidden and by the underlying firestore.rules — this is UI convenience, not the
+// actual security boundary. Loaded/rendered lazily: nothing here runs, and no extra Firestore
+// reads happen, unless an admin actually opens the modal.
+let feedbackInboxItems=[];
+let feedbackInboxLoading=false;
+let feedbackInboxNoteDrafts={}; // id -> draft text, only for ids currently being edited
+let feedbackInboxBusyId=null; // id currently mid status/priority/note/delete write
+const FEEDBACK_STATUSES=['open','planned','fixed','wontfix'];
+const FEEDBACK_PRIORITIES=['low','medium','high'];
+const FEEDBACK_STATUS_COLOR={open:'#c2553d',planned:'#d1a23a',fixed:'var(--accent)',wontfix:'var(--hint)'};
+const FEEDBACK_PRIORITY_COLOR={low:'#6c9bd1',medium:'#d1a23a',high:'#c2553d'};
+async function loadFeedbackInboxItems(){
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const q=mod.query(mod.collection(db,'feedback'),mod.orderBy('createdAt','desc'),mod.limit(300));
+    const snap=await mod.getDocs(q);
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){
+    console.error('feedback inbox load failed',e);
+    return [];
+  }
+}
+async function updateFeedbackDoc(id,fields){
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.updateDoc(mod.doc(db,'feedback',id),fields);
+    return {ok:true};
+  }catch(e){
+    return {ok:false,error:e.code==='permission-denied'?'Only the admin account can do that.':(e.message||"Couldn't update that.")};
+  }
+}
+async function deleteFeedbackDoc(id){
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.deleteDoc(mod.doc(db,'feedback',id));
+    return {ok:true};
+  }catch(e){
+    return {ok:false,error:e.code==='permission-denied'?'Only the admin account can do that.':(e.message||"Couldn't delete that.")};
+  }
+}
+// Ready-to-paste prompt for a fresh Claude session, from the report's own fields plus whatever
+// resolution note the admin has already saved on it. No pre-diagnosis, no guessing which
+// function is at fault — just the facts already on hand.
+function buildFeedbackClaudePrompt(item){
+  const lines=[`This is a ${item.kind==='error'?'user-reported crash':'user feedback report'} from Sakura (single-file app, index.html in robinrajawat/sakura):`,'',`"${item.message}"`,''];
+  if(item.url)lines.push(`Page: ${item.url}`);
+  if(item.userAgent)lines.push(`Browser: ${item.userAgent}`);
+  if(item.createdAt)lines.push(`Reported: ${new Date(item.createdAt).toLocaleString()}`);
+  const note=(item.resolutionNote||'').trim();
+  if(note)lines.push('',`My own note on this so far: "${note}"`);
+  lines.push('','Please investigate index.html and fix the underlying issue.');
+  return lines.join('\n');
+}
+async function copyFeedbackPrompt(item){
+  const effectiveNote=feedbackInboxNoteDrafts[item.id]!==undefined?feedbackInboxNoteDrafts[item.id]:item.resolutionNote;
+  const text=buildFeedbackClaudePrompt({...item,resolutionNote:effectiveNote});
+  try{
+    if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    catch(e2){ showToast('Copy failed'); return; }
+  }
+  showToast('Prompt copied');
+}
+function renderFeedbackInboxList(){
+  const listEl=el('feedback-inbox-list'), emptyEl=el('feedback-inbox-empty'), loadingEl=el('feedback-inbox-loading'), countEl=el('feedback-inbox-count');
+  if(!listEl)return;
+  if(feedbackInboxLoading){
+    if(loadingEl)loadingEl.style.display='';
+    listEl.style.display='none'; if(emptyEl)emptyEl.style.display='none';
+    return;
+  }
+  if(loadingEl)loadingEl.style.display='none';
+  const kindFilter=el('feedback-inbox-kind-filter')?.value||'all';
+  const statusFilter=el('feedback-inbox-status-filter')?.value||'open';
+  const visible=feedbackInboxItems.filter(it=>(kindFilter==='all'||it.kind===kindFilter)&&(statusFilter==='all'||(it.status||'open')===statusFilter));
+  if(countEl)countEl.textContent=`${visible.length} of ${feedbackInboxItems.length}`;
+  if(!visible.length){
+    listEl.style.display='none';
+    if(emptyEl)emptyEl.style.display='';
+    return;
+  }
+  if(emptyEl)emptyEl.style.display='none';
+  listEl.style.display='flex';
+  listEl.innerHTML='';
+  visible.forEach(it=>{
+    const status=it.status||'open';
+    const priority=it.priority||'medium';
+    const draft=feedbackInboxNoteDrafts[it.id];
+    const noteVal=draft!==undefined?draft:(it.resolutionNote||'');
+    const noteDirty=draft!==undefined&&draft!==(it.resolutionNote||'');
+    const busy=feedbackInboxBusyId===it.id;
+    const row=document.createElement('div');
+    row.style.cssText='background:var(--hover);border-radius:10px;padding:10px 12px;'+(busy?'opacity:.55':'');
+    const when=Number.isFinite(it.createdAt)?new Date(it.createdAt).toLocaleString():'';
+    row.innerHTML=`
+      <div style="font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;color:${it.kind==='error'?'#c2553d':'var(--accent)'};margin-bottom:3px">${it.kind}${it.email?' — '+esc(it.email):''} — ${esc(when)}</div>
+      <div style="font:400 13px 'Inter',sans-serif;color:var(--fg);white-space:pre-wrap;margin-bottom:6px">${esc(it.message||'')}</div>
+      ${it.url?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:2px;word-break:break-all">URL: ${esc(it.url)}</div>`:''}
+      ${it.userAgent?`<div style="font:400 11px 'Inter',sans-serif;color:var(--hint);margin-bottom:8px;word-break:break-all">Agent: ${esc(it.userAgent)}</div>`:''}
+      <textarea class="fi-note" data-id="${it.id}" placeholder="Private resolution note (only admins see this)" rows="2" style="width:100%;box-sizing:border-box;margin-top:4px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;resize:vertical">${esc(noteVal)}</textarea>
+      <button type="button" class="fi-save-note" style="display:${noteDirty?'block':'none'};background:none;border:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:6px 0">${busy?'Saving…':'Save note'}</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" class="fi-priority" data-tip="Tap to cycle priority" style="font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;padding:6px 12px;border-radius:999px;border:none;background:${FEEDBACK_PRIORITY_COLOR[priority]||'var(--border)'};color:#fff;cursor:pointer">${priority}</button>
+        <button type="button" class="fi-status" data-tip="Tap to cycle status" style="font:700 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.3px;padding:6px 12px;border-radius:999px;border:none;background:${FEEDBACK_STATUS_COLOR[status]||'var(--border)'};color:#fff;cursor:pointer">${status}</button>
+        <button type="button" class="fi-copy btn" style="border-color:var(--accent);color:var(--accent);font-size:11.5px;padding:5px 10px">Copy prompt</button>
+        <button type="button" class="fi-delete btn" style="margin-left:auto;border-color:#c2553d;color:#c2553d;font-size:11.5px;padding:5px 10px">Delete</button>
+      </div>
+    `;
+    row.querySelector('.fi-priority')?.addEventListener('click',()=>cycleFeedbackPriority(it));
+    row.querySelector('.fi-status')?.addEventListener('click',()=>cycleFeedbackStatus(it));
+    row.querySelector('.fi-copy')?.addEventListener('click',()=>copyFeedbackPrompt(it));
+    row.querySelector('.fi-delete')?.addEventListener('click',()=>requestDeleteFeedback(it));
+    row.querySelector('.fi-save-note')?.addEventListener('click',()=>saveFeedbackNote(it));
+    const noteEl=row.querySelector('.fi-note');
+    const saveBtn=row.querySelector('.fi-save-note');
+    // Deliberately NOT a renderFeedbackInboxList() call here — that rebuilds the whole list's
+    // innerHTML, which would steal focus and the cursor position on every keystroke. Just track
+    // the draft and toggle the one button that needs to react, directly.
+    noteEl?.addEventListener('input',()=>{
+      feedbackInboxNoteDrafts[it.id]=noteEl.value;
+      const dirty=noteEl.value!==(it.resolutionNote||'');
+      if(saveBtn)saveBtn.style.display=dirty?'block':'none';
+    });
+    listEl.appendChild(row);
+  });
+}
+async function cycleFeedbackPriority(item){
+  if(feedbackInboxBusyId)return;
+  const idx=FEEDBACK_PRIORITIES.indexOf(item.priority||'medium');
+  const next=FEEDBACK_PRIORITIES[(idx+1)%FEEDBACK_PRIORITIES.length];
+  feedbackInboxBusyId=item.id; renderFeedbackInboxList();
+  const result=await updateFeedbackDoc(item.id,{priority:next});
+  feedbackInboxBusyId=null;
+  if(result.ok){ item.priority=next; feedbackInboxItems=feedbackInboxItems.map(x=>x.id===item.id?{...x,priority:next}:x); }
+  else showToast(result.error);
+  renderFeedbackInboxList();
+}
+async function cycleFeedbackStatus(item){
+  if(feedbackInboxBusyId)return;
+  const idx=FEEDBACK_STATUSES.indexOf(item.status||'open');
+  const next=FEEDBACK_STATUSES[(idx+1)%FEEDBACK_STATUSES.length];
+  const note=feedbackInboxNoteDrafts[item.id]!==undefined?feedbackInboxNoteDrafts[item.id]:(item.resolutionNote||'');
+  feedbackInboxBusyId=item.id; renderFeedbackInboxList();
+  const result=await updateFeedbackDoc(item.id,{status:next,resolutionNote:note});
+  feedbackInboxBusyId=null;
+  if(result.ok){
+    feedbackInboxItems=feedbackInboxItems.map(x=>x.id===item.id?{...x,status:next,resolutionNote:note}:x);
+    delete feedbackInboxNoteDrafts[item.id];
+  }else showToast(result.error);
+  renderFeedbackInboxList();
+}
+async function saveFeedbackNote(item){
+  if(feedbackInboxBusyId)return;
+  const note=feedbackInboxNoteDrafts[item.id]; if(note===undefined)return;
+  feedbackInboxBusyId=item.id; renderFeedbackInboxList();
+  const result=await updateFeedbackDoc(item.id,{status:item.status||'open',resolutionNote:note});
+  feedbackInboxBusyId=null;
+  if(result.ok){
+    feedbackInboxItems=feedbackInboxItems.map(x=>x.id===item.id?{...x,resolutionNote:note}:x);
+    delete feedbackInboxNoteDrafts[item.id];
+  }else showToast(result.error);
+  renderFeedbackInboxList();
+}
+async function requestDeleteFeedback(item){
+  if(feedbackInboxBusyId)return;
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',title:'Delete this report?',body:"This can't be undone.",confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  feedbackInboxBusyId=item.id; renderFeedbackInboxList();
+  const result=await deleteFeedbackDoc(item.id);
+  feedbackInboxBusyId=null;
+  if(result.ok){
+    feedbackInboxItems=feedbackInboxItems.filter(x=>x.id!==item.id);
+    delete feedbackInboxNoteDrafts[item.id];
+  }else showToast(result.error);
+  renderFeedbackInboxList();
+}
+async function openFeedbackInboxModal(){
+  const ov=el('feedback-inbox-modal-overlay'); if(!ov||!isAdmin)return;
+  ov.classList.add('open');
+  feedbackInboxLoading=true; feedbackInboxNoteDrafts={}; feedbackInboxBusyId=null;
+  renderFeedbackInboxList();
+  feedbackInboxItems=await loadFeedbackInboxItems();
+  feedbackInboxLoading=false;
+  renderFeedbackInboxList();
+}
+function closeFeedbackInboxModal(){
+  el('feedback-inbox-modal-overlay')?.classList.remove('open');
+}
+el('account-feedback-inbox-btn')?.addEventListener('click',()=>{ el('account-menu')?.classList.remove('open'); openFeedbackInboxModal(); });
+el('feedback-inbox-modal-close-btn')?.addEventListener('click',closeFeedbackInboxModal);
+el('feedback-inbox-modal-overlay')?.addEventListener('click',e=>{ if(e.target.id==='feedback-inbox-modal-overlay')closeFeedbackInboxModal(); });
+el('feedback-inbox-kind-filter')?.addEventListener('change',renderFeedbackInboxList);
+el('feedback-inbox-status-filter')?.addEventListener('change',renderFeedbackInboxList);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('feedback-inbox-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeFeedbackInboxModal(); }
+});
 
 let _syncPushQueue=new Map();
 let _syncPushTimer=null;
