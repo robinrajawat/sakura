@@ -371,7 +371,7 @@ body{padding-top:env(titlebar-area-height,40px)}
    browser occasionally offering to save random outline text as your AI provider's password. */
 .key-masked{-webkit-text-security:disc;text-security:disc}
 .select option{background-color:var(--edit-bg);color:var(--fg)}
-.btn{cursor:pointer}.btn:hover,.select:hover,.meta-input:hover{border-color:var(--accent);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)} .btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);box-shadow:0 1px 2px rgba(0,0,0,.08), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)}.btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%);box-shadow:0 2px 6px rgba(0,0,0,.12), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)} .btn.toggle-on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.btn{cursor:pointer}.btn:disabled{opacity:.45;cursor:default;box-shadow:none;pointer-events:none}.btn:hover,.select:hover,.meta-input:hover{border-color:var(--accent);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)} .btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);box-shadow:0 1px 2px rgba(0,0,0,.08), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)}.btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%);box-shadow:0 2px 6px rgba(0,0,0,.12), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)} .btn.toggle-on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #import-toggle,#export-toggle{display:inline-flex;align-items:center;gap:5px}
 #import-toggle .btn-icon,#export-toggle .btn-icon{display:none;flex:0 0 auto}
 #appbar.appbar-io-icononly #import-toggle .btn-label,#appbar.appbar-io-icononly #export-toggle .btn-label{display:none}
@@ -5218,10 +5218,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
             </div>
           </div>
-          <div class="settings-section" data-cat="account" id="settings-section-account-admin" style="display:none">
+          <div class="settings-section" data-cat="account" id="settings-section-account-admin" data-feature-hidden="1" style="display:none">
             <div class="settings-section-title">Admin</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
+            </div>
+          </div>
+          <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
+            <div style="background:color-mix(in srgb,#e5484d 6%,transparent);border:1px solid color-mix(in srgb,#e5484d 25%,transparent);border-radius:12px;padding:14px 16px">
+              <div style="font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e5484d;margin-bottom:10px">Danger zone</div>
+              <div style="font:700 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px">Delete account</div>
+              <div style="font:400 11.5px/1.5 'Inter',sans-serif;color:var(--muted);margin-bottom:12px">Permanently deletes your synced documents, templates, and settings stored in the cloud for this account, and signs you out. This device's local documents are untouched and keep working exactly as they do now — sign in again anytime to start fresh. Can't be undone.</div>
+              <button type="button" class="btn" id="account-delete-open-btn" style="width:100%;box-sizing:border-box;border:1px solid #e5484d;color:#e5484d;background:none;font-weight:600">Delete my account</button>
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite">
@@ -6926,6 +6934,26 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </div>
 
 
+<div id="account-delete-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Delete account">
+  <div class="app-modal" style="width:min(440px,94vw)">
+    <div class="app-modal-head">
+      <div><h2 style="display:flex;align-items:center;gap:7px;color:#e5484d"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e5484d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Delete your account?</h2></div>
+      <button class="app-modal-close-btn" id="account-delete-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+    </div>
+    <div class="app-modal-body">
+      <div style="font:400 13px/1.6 'Inter',sans-serif;color:var(--fg);margin-bottom:14px">This permanently deletes your synced documents, templates, and settings stored in the cloud for this account, and signs you out everywhere. It does not touch this device's local documents — they keep working exactly as they do now, just without anywhere to sync to. If you've used this account on another device, that device's local copies are unaffected too, but they'll stop syncing as well. This cannot be undone.</div>
+      <div style="font:600 12px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px">Type DELETE to confirm</div>
+      <input id="account-delete-confirm-input" type="text" class="meta-input" placeholder="DELETE" autocapitalize="characters" autocorrect="off" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;margin-bottom:10px" />
+      <div id="account-delete-modal-status" style="font:400 12px/1.5 'Inter',sans-serif;color:#e5484d;min-height:15px;margin-bottom:8px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button type="button" class="btn" id="account-delete-modal-cancel-btn">Cancel</button>
+        <button type="button" class="btn" id="account-delete-confirm-btn" disabled style="background:#e5484d;color:#fff;border:none">Permanently delete my account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div id="feedback-inbox-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Feedback Inbox">
   <div class="app-modal" style="width:min(640px,94vw)">
     <div class="app-modal-head">
@@ -8305,6 +8333,56 @@ el('feedback-modal-send-btn')?.addEventListener('click',async()=>{
     showToast('Thanks — feedback sent.');
   }else if(statusEl){
     statusEl.textContent=result.error||"Couldn't send that — try again.";
+  }
+});
+// === Delete account modal ===
+// Same "type DELETE to confirm" pattern as cricket-scorer's account deletion — the confirm
+// button stays disabled until the exact word is typed, so this can't be triggered by a stray
+// click or an Enter-key slip the way a plain confirm() dialog could be.
+function updateDeleteConfirmBtnState(){
+  const input=el('account-delete-confirm-input'), btn=el('account-delete-confirm-btn');
+  if(!input||!btn)return;
+  btn.disabled=input.value.trim().toUpperCase()!=='DELETE';
+}
+function openDeleteAccountModal(){
+  const ov=el('account-delete-modal-overlay'); if(!ov)return;
+  const input=el('account-delete-confirm-input'), statusEl=el('account-delete-modal-status');
+  if(input)input.value='';
+  if(statusEl)statusEl.textContent='';
+  updateDeleteConfirmBtnState();
+  ov.classList.add('open');
+  input?.focus();
+}
+function closeDeleteAccountModal(){
+  if(_deleteAccountInFlight)return;
+  el('account-delete-modal-overlay')?.classList.remove('open');
+}
+let _deleteAccountInFlight=false;
+el('account-delete-open-btn')?.addEventListener('click',openDeleteAccountModal);
+el('account-delete-modal-close-btn')?.addEventListener('click',closeDeleteAccountModal);
+el('account-delete-modal-cancel-btn')?.addEventListener('click',closeDeleteAccountModal);
+el('account-delete-modal-overlay')?.addEventListener('click', e=>{ if(e.target.id==='account-delete-modal-overlay')closeDeleteAccountModal(); });
+el('account-delete-confirm-input')?.addEventListener('input',updateDeleteConfirmBtnState);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&el('account-delete-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeDeleteAccountModal(); }
+});
+el('account-delete-confirm-btn')?.addEventListener('click',async()=>{
+  const input=el('account-delete-confirm-input'), btn=el('account-delete-confirm-btn'), statusEl=el('account-delete-modal-status');
+  if(input?.value.trim().toUpperCase()!=='DELETE')return;
+  _deleteAccountInFlight=true;
+  btn.disabled=true; btn.textContent='Deleting…';
+  if(statusEl)statusEl.textContent='';
+  try{
+    await deleteAccountPermanently();
+    _deleteAccountInFlight=false;
+    el('account-delete-modal-overlay')?.classList.remove('open');
+    el('account-menu')?.classList.remove('open');
+  }catch(e){
+    console.error('[sakura] account deletion failed:',e);
+    _deleteAccountInFlight=false;
+    btn.textContent='Permanently delete my account';
+    updateDeleteConfirmBtnState();
+    if(statusEl)statusEl.textContent=(e&&e.code==='auth/popup-closed-by-user')?'Sign-in was needed to confirm this, but the popup was closed — try again.':"Couldn't delete your account — try again, or send feedback if this keeps happening.";
   }
 });
 el('debug-log-copy-btn')?.addEventListener('click',async()=>{
@@ -12929,6 +13007,8 @@ function updateAccountUI(user){
     const settingsOut=el('account-settings-signedout'), settingsIn=el('account-settings-signedin');
     if(settingsOut)settingsOut.style.display='none';
     if(settingsIn)settingsIn.style.display='';
+    const dangerSec=el('settings-section-account-danger');
+    if(dangerSec){ dangerSec.style.display=''; dangerSec.dataset.featureHidden=''; }
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none';
@@ -12937,6 +13017,8 @@ function updateAccountUI(user){
     const settingsOut=el('account-settings-signedout'), settingsIn=el('account-settings-signedin');
     if(settingsOut)settingsOut.style.display='';
     if(settingsIn)settingsIn.style.display='none';
+    const dangerSec=el('settings-section-account-danger');
+    if(dangerSec){ dangerSec.style.display='none'; dangerSec.dataset.featureHidden='1'; }
     updateSyncStatusUI('idle');
   }
 }
@@ -13092,6 +13174,46 @@ async function signOutOfAccount(){
   updateAccountUI(null);
   el('account-menu')?.classList.remove('open');
   showToast('Signed out');
+}
+// Deletes every cloud-synced document, template, and settings blob this account has (the three
+// subcollections under users/{uid} — see the sync layout comment further down), then the
+// Firebase Auth account itself. Mirrors cricket-scorer's deleteUserAccount(): best-effort cleanup
+// of everything reachable, individual failures logged rather than aborting the whole operation,
+// then the actual auth deletion with a reauth-and-retry if Firebase demands a fresh sign-in for
+// it (auth/requires-recent-login fires whenever the existing session is more than a few minutes
+// old, regardless of how the person got here).
+//
+// Deliberately scoped to the cloud side only -- this device's local documents, templates, and
+// settings are untouched and keep working exactly as before, just without anywhere to sync to
+// once the account's gone. Sakura's account is a sync mirror, not the source of truth the way
+// cricket-scorer's account-owned matches/clubs are, so there's no equivalent of that app's
+// "you're the sole owner of a club, deleting leaves it stuck" warning to carry over here.
+async function deleteAccountCloudData(uid){
+  const {mod,db}=await loadFirestoreMods();
+  for(const sub of ['docs','templates','meta']){
+    let snap; try{ snap=await mod.getDocs(mod.collection(db,'users',uid,sub)); }catch(e){ console.error('[sakura] delete account: could not list',sub,e); continue; }
+    await Promise.all(snap.docs.map(d=>mod.deleteDoc(d.ref).catch(e=>console.error('[sakura] delete account: failed to delete',sub,d.id,e))));
+  }
+}
+async function deleteAccountPermanently(){
+  const {auth,authMod}=await loadFirebaseMods();
+  const uid=auth.currentUser?.uid; if(!uid)throw new Error('Not signed in');
+  stopRealtimeSync();
+  await deleteAccountCloudData(uid);
+  try{
+    await authMod.deleteUser(auth.currentUser);
+  }catch(e){
+    if(e && e.code==='auth/requires-recent-login'){
+      const provider=new authMod.GoogleAuthProvider();
+      await authMod.signInWithPopup(auth,provider);
+      await authMod.deleteUser(auth.currentUser);
+    }else{
+      throw e;
+    }
+  }
+  try{localStorage.removeItem('sakura_account_active')}catch(e){}
+  updateAccountUI(null);
+  showToast('Account deleted — your documents on this device are untouched');
 }
 // Silently restores a previous session on boot — but ONLY if this device has actually signed
 // in before, so first-time and never-opted-in visitors never trigger a Firebase load or
