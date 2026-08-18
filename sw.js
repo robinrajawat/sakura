@@ -21,7 +21,7 @@
 // origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
 // server was never actually seen. Bump the version suffix whenever an asset in
 // PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
-const CACHE_NAME = 'sakura-shell-v4';
+const CACHE_NAME = 'sakura-shell-v5';
 
 // Assets whose content is effectively immutable for a given URL -- the CDN libraries are
 // pinned to an exact version in their path (xlsx@0.18.5, pptxgenjs@4.0.1), and Google Fonts'
@@ -39,6 +39,8 @@ const PRECACHE_URLS = [
   './icon-192-pwa.png',
   './icon-512-pwa.png',
   './icon-512-maskable.png',
+  './flower-glyph.svg',
+  './icon-glyph-192.png',
   'https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js',

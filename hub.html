@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Sakura Hub</title>
 <meta name="theme-color" content="#f8f8f6">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
 <link rel="manifest" href="hub-manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com; frame-src https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
@@ -722,7 +722,7 @@ function checkDueReminders(){
     if(notified[t.id]===today)return; // already notified for this due/overdue day
     try{
       var n=new Notification(t.dueDate<today ? 'Overdue: '+t.text : 'Due today: '+t.text,{
-        body:'Sakura To-Dos', tag:'sakura-todo-'+t.id, icon:'icon-192.png'
+        body:'Sakura To-Dos', tag:'sakura-todo-'+t.id, icon:'icon-glyph-192.png'
       });
       n.onclick=function(){ try{ window.focus(); }catch(e){} openTaskDetail(t.id); n.close(); };
     }catch(e){}
