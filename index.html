@@ -97,8 +97,14 @@ Sakura v1.0.0 — see LICENSE for terms.
 <link rel="apple-touch-icon" href="icon-192.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="icon-192-dark.png" media="(prefers-color-scheme: dark)">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}</script>
-  <!-- ✅ Favicon goes HERE -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4.5 0.5 63 63'%3E%3Cg opacity='0.9'%3E%3Cellipse cx='36' cy='18' rx='9' ry='9' fill='%23c2553d' fill-opacity='0.38' stroke='%23c2553d' stroke-opacity='0.55' stroke-width='1'/%3E%3Cellipse cx='18' cy='30' rx='9' ry='9' fill='%23c2553d' fill-opacity='0.30' stroke='%23c2553d' stroke-opacity='0.45' stroke-width='1'/%3E%3Cellipse cx='54' cy='30' rx='9' ry='9' fill='%23c2553d' fill-opacity='0.30' stroke='%23c2553d' stroke-opacity='0.45' stroke-width='1'/%3E%3Cellipse cx='24' cy='46' rx='9' ry='9' fill='%23c2553d' fill-opacity='0.22' stroke='%23c2553d' stroke-opacity='0.38' stroke-width='1'/%3E%3Cellipse cx='48' cy='46' rx='9' ry='9' fill='%23c2553d' fill-opacity='0.22' stroke='%23c2553d' stroke-opacity='0.38' stroke-width='1'/%3E%3Ccircle cx='36' cy='32' r='5.5' fill='%23c2553d' fill-opacity='0.18' stroke='%23c2553d' stroke-opacity='0.48' stroke-width='1.2'/%3E%3C/g%3E%3C/svg%3E">
+  <!-- Favicon: intentionally just icon-192.png above (line ~96) — it already carries the
+  rounded-card background and 3D shading that matches manifest.json's install icons. A second,
+  later rel="icon" used to point at a bare inline SVG of just the flower glyph with no
+  background at all; SVG favicons are generally preferred over PNG by browsers when both are
+  declared, so that flat, backgroundless version was winning for the tab icon and for the
+  Windows desktop/PWA shortcut icon too — producing a flat-looking icon instead of the
+  polished one. Removed rather than fixed-in-place so there's only ever one favicon source
+  of truth to keep in sync with the manifest icons. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
