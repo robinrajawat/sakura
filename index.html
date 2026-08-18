@@ -5064,8 +5064,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Local safety copy</span><span class="settings-row-desc">A second copy is kept automatically in a separate browser storage area, in case the main storage gets cleared. Not a substitute for Export.</span><span class="settings-row-desc" id="sb-safetycopy-status" style="margin-top:2px"></span></div><button id="sb-idb-restore-btn" class="btn data-io-btn backup-btn">Restore…</button></div>
               <div class="settings-list-row" id="sb-undo-restore-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Undo last restore</span><span class="settings-row-desc">A snapshot of what was here right before your last Restore, in case that restore turns out to have been the wrong file.</span><span class="settings-row-desc" id="sb-undo-restore-status" style="margin-top:2px"></span></div><button id="sb-undo-restore-btn" class="btn data-io-btn backup-btn">Undo…</button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Remind me to back up</span><span class="settings-row-desc">Shows a status-bar warning if it's been longer than this since your last manual Export or auto-backup write.</span><span class="settings-row-desc" id="sb-backup-reminder-status" style="margin-top:2px"></span></div><select id="backup-reminder-days-select" class="select" style="width:auto"><option value="1">1 day</option><option value="2">2 days</option><option value="3">3 days</option><option value="5">5 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Warn if this session isn't backed up</span><span class="settings-row-desc">Strict: the browser's own "leave site?" prompt on close attempt, then this dialog if you cancel it — a real last-chance gate, but you'll see the browser's generic popup. Passive: this dialog only, shown next time you switch away from or close the tab — no browser popup, but a direct close with no prior tab-switch gets no warning at all. Off: neither; the status-bar chip above is your only signal.</span></div><select id="session-backup-mode-select" class="select" style="width:auto"><option value="strict">Strict (native prompt)</option><option value="passive">Passive (no native prompt)</option><option value="off">Off</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Remind me to back up</span><span class="settings-row-desc">Shows a status-bar warning if it's been longer than this since your last manual Export or auto-backup write — skipped entirely while signed in with sync healthy, since that's already a live off-device backup.</span><span class="settings-row-desc" id="sb-backup-reminder-status" style="margin-top:2px"></span></div><select id="backup-reminder-days-select" class="select" style="width:auto"><option value="1">1 day</option><option value="2">2 days</option><option value="3">3 days</option><option value="5">5 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Warn if this session isn't backed up</span><span class="settings-row-desc">Strict: the browser's own "leave site?" prompt on close attempt, then this dialog if you cancel it — a real last-chance gate, but you'll see the browser's generic popup. Passive: this dialog only, shown next time you switch away from or close the tab — no browser popup, but a direct close with no prior tab-switch gets no warning at all. Off: neither; the status-bar chip above is your only signal. None of this applies while signed in with sync healthy — that already is an off-device backup.</span></div><select id="session-backup-mode-select" class="select" style="width:auto"><option value="strict">Strict (native prompt)</option><option value="passive">Passive (no native prompt)</option><option value="off">Off</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Why this matters</span><span class="settings-row-desc">Opening a new version of this file starts with empty storage (browsers isolate it per file). Export before switching files, then Import right after to carry your data over. Auto-backup and the safety copy protect against accidental data loss, but only Export gives you a file outside the browser.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset to default settings</span><span class="settings-row-desc">Restores appearance and behavior preferences (theme, toolbar, right-click menu, accent color, and the like) to their defaults. Doesn't touch your documents, folders, templates, or AI provider settings.</span></div><button id="sb-reset-settings-btn" class="btn data-io-btn">Reset…</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore built-in templates</span><span class="settings-row-desc">Recreates any built-in template — or the Built-in folder — you deleted or renamed, using the original shipped content. Templates you duplicated or made yourself aren't touched.</span></div><button id="restore-builtin-tpls-btn" class="btn data-io-btn">Restore…</button></div>
@@ -13705,6 +13705,17 @@ let _syncPushTimer=null;
 // instead catches "this is just my own write coming back" before that ever happens.
 let _lastPushedTs={};
 let _syncErrorToastShown=false;
+// Tracks the sync engine's own last-known status, independent of the DOM (the status dot can
+// be hidden/removed by settings, but code elsewhere — like the session-backup-warning gate
+// below — still needs to know "is cloud sync currently healthy" without caring whether the
+// indicator is visible). Not persisted: resets to 'idle' on every fresh load, same as the dot.
+let _lastSyncStatus='idle';
+// A signed-in account with sync not currently erroring counts as a real, live off-device
+// backup — every doc/meta change is queued to Firestore within ~1.5s (see queueSync), so
+// there's no meaningful window where local-only data is the sole copy while this is true.
+// 'idle' (nothing queued right now) and 'syncing' both count; only a standing 'error' means
+// the cloud copy can't currently be trusted to be caught up.
+function cloudBackupIsHealthy(){ return !!currentUser && _lastSyncStatus!=='error'; }
 function queueSync(kind,id){
   if(!currentUser)return;
   _syncPushQueue.set(kind+':'+id,{kind,id});
@@ -13713,6 +13724,10 @@ function queueSync(kind,id){
 }
 let _syncDotFadeTimer=null;
 function updateSyncStatusUI(status){
+  _lastSyncStatus=status;
+  // Keep the backup-reminder chip in sync immediately on any status change (sign-in, sign-out,
+  // sync recovering from an error, etc.) rather than waiting up to 5 minutes for its own ticker.
+  if(typeof checkBackupReminder==='function')checkBackupReminder();
   const el2=el('account-sync-status'); if(el2){
     const ICONS={
       syncing:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:accountDotPulse 1s ease-in-out infinite"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>',
@@ -27551,6 +27566,14 @@ function checkBackupReminder(){
   const chip=el('sb-backup-reminder-chip'); const divider=el('sb-backup-reminder-divider');
   // Nothing to protect yet — don't nag a fresh install that has never saved anything.
   if(!lastSavedAt){ if(chip){chip.style.display='none'} if(divider){divider.style.display='none'} if(statusNote)statusNote.textContent=''; refreshStatusbarDividers(); return }
+  // Same reasoning as sessionHasUnbackedChanges: a signed-in account with sync currently
+  // healthy already IS an off-device backup, continuously — no separate Export/auto-backup
+  // needed on top of that, so the chip stays quiet.
+  if(cloudBackupIsHealthy()){
+    if(chip){chip.style.display='none'} if(divider){divider.style.display='none'}
+    if(statusNote)statusNote.textContent='Synced to your account — no separate backup needed';
+    refreshStatusbarDividers(); return
+  }
   let exportTs=0, fsTs=0;
   try{ exportTs=Number(localStorage.getItem(LAST_EXPORT_KEY))||0 }catch(e){}
   try{ fsTs=Number(localStorage.getItem(LAST_FSBACKUP_KEY))||0 }catch(e){}
@@ -27592,6 +27615,9 @@ function checkBackupReminder(){
 function sessionHasUnbackedChanges(){
   const lastChangeAt=Math.max(lastSavedAt||0, lastAnyDataChangeAt||0);
   if(!lastChangeAt||lastChangeAt<sessionStartAt)return false;
+  // A signed-in account with sync currently healthy is a real, live off-device backup — no
+  // need to also nag about Export/auto-backup-to-file on top of that. See cloudBackupIsHealthy.
+  if(cloudBackupIsHealthy())return false;
   let exportTs=0, fsTs=0;
   try{ exportTs=Number(localStorage.getItem(LAST_EXPORT_KEY))||0 }catch(e){}
   try{ fsTs=Number(localStorage.getItem(LAST_FSBACKUP_KEY))||0 }catch(e){}
