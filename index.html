@@ -9603,12 +9603,38 @@ function reconcileDocState(list){
   // Drop index entries with no backing document left in storage (e.g. a partial delete).
   let repaired=list.filter(d=>{ const ok=realIds.has(d.id); if(!ok)changed=true; return ok });
   // Add back any real document missing from the index — the exact desync this pass exists for.
+  //
+  // Two important refinements here, both added after tracing a "documents keep appearing out
+  // of nowhere" report back to this function:
+  //
+  // 1. trashedAt lives ONLY on the index entry — moveDocToTrashCore never touches the
+  //    document's own storage record. So if an index entry is lost for any reason (a failed
+  //    write, the pullAndMergeFromCloud docsIndex race fixed elsewhere in this file, or
+  //    anything else), the trashed document's content is still sitting untouched in storage,
+  //    and this pass would previously add it straight back as a brand-new ACTIVE entry —
+  //    silently un-trashing something the person deliberately deleted. There's no way to
+  //    recover the lost trashed/active status once the index entry is gone, so the only safe
+  //    default is to recover it INTO Trash, never straight into the active list: nothing is
+  //    lost, and a deliberate delete can never come back uninvited.
+  // 2. An orphaned record with zero nodes (Array.isArray is true even for an empty array) is
+  //    far more likely to be a leftover blank placeholder than real content worth recovering
+  //    at all — surfacing it as a new "Untitled" document just manufactures clutter with
+  //    nothing behind it. Those are left out of the index entirely rather than recovered.
   realIds.forEach(id=>{
     if(!repaired.some(d=>d.id===id)){
-      let title='Untitled';
-      try{ const raw=localStorage.getItem(docKey(id)); const d=raw?JSON.parse(raw):null; if(d&&d.title)title=d.title; }catch(e){}
-      repaired.push({id,title,updatedAt:Date.now()});
+      let title='Untitled', hasContent=false;
+      try{
+        const raw=localStorage.getItem(docKey(id));
+        const d=raw?JSON.parse(raw):null;
+        if(d){ if(d.title)title=d.title; hasContent=Array.isArray(d.nodes)&&d.nodes.length>0; }
+      }catch(e){}
+      if(!hasContent){
+        console.warn('[sakura] reconcileDocState: found an orphaned, empty document record ('+id+') with no index entry — leaving it out rather than surfacing it as a new document.');
+        return;
+      }
+      repaired.push({id,title,updatedAt:Date.now(),trashedAt:Date.now()});
       changed=true;
+      console.warn('[sakura] reconcileDocState: recovered an orphaned document ('+id+') into Trash — its index entry was missing, so its prior trashed/active status could not be determined; Trash is the safe default.');
     }
   });
   if(changed) saveDocsIndex(repaired);
