@@ -21,7 +21,7 @@
 // origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
 // server was never actually seen. Bump the version suffix whenever an asset in
 // PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
-const CACHE_NAME = 'sakura-shell-v3';
+const CACHE_NAME = 'sakura-shell-v4';
 
 // Assets whose content is effectively immutable for a given URL -- the CDN libraries are
 // pinned to an exact version in their path (xlsx@0.18.5, pptxgenjs@4.0.1), and Google Fonts'
