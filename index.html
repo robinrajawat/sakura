@@ -1220,12 +1220,12 @@ body.show-toolbar-labels .quick-sep{margin-top:9px}
 
 
 .theme-segmented{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
-.theme-seg,.theme-mode-seg,.font-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.theme-seg,.theme-mode-seg,.font-seg,.profile-visibility-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 body.appbar-decluttered #app-brand,body.appbar-decluttered .docs-wrap{display:none}
-.theme-seg:hover,.theme-mode-seg:hover,.font-seg:hover{color:var(--fg)}
-.theme-seg.active,.theme-mode-seg.active,.font-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
-body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .font-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
-body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .font-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
+.theme-seg:hover,.theme-mode-seg:hover,.font-seg:hover,.profile-visibility-seg:hover{color:var(--fg)}
+.theme-seg.active,.theme-mode-seg.active,.font-seg.active,.profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
+body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .font-seg.active,body.theme-dark .profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
+body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .font-seg.active,body.theme-light .profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
 .segmented-control{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
 .segmented-btn{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 .segmented-btn:hover{color:var(--fg)}
@@ -5272,7 +5272,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="account-settings-signedin" style="display:none">
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Display name</span><span class="settings-row-desc">Used for the greeting on a blank document. Leave blank to use your account's first name automatically.</span></div><input id="account-greeting-name-input" type="text" class="meta-input" placeholder="e.g. Robin" style="width:140px;text-align:left" /></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Discoverable by email</span><span class="settings-row-desc">Off by default. When on, someone can find your account by searching your exact email or your name when sharing a document with you. When off, your account can't be found this way at all — not "found but blocked," genuinely invisible to that search.</span></div><button id="profile-discoverable-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Discoverable by email"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Profile visibility</span><span class="settings-row-desc">Private by default. Public lets someone find your account by searching your exact email or your name when sharing a document with you, and shows your name/photo in their results. Private means your account genuinely can't be found that way at all — not "found but blocked," invisible to that search.</span></div><div class="theme-segmented" id="profile-visibility-segmented" role="tablist" aria-label="Profile visibility" style="min-height:30px"><button type="button" class="profile-visibility-seg" data-visibility="private" role="tab" aria-selected="true">Private</button><button type="button" class="profile-visibility-seg" data-visibility="public" role="tab" aria-selected="false">Public</button></div></div>
               </div>
             </div>
           </div>
@@ -5847,8 +5847,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Sharing &amp; sync</h4>
 <ul>
 <li>Signing in (Google or email, from the account button top-right) syncs your documents, folders, templates, and settings to your account, so they follow you to another browser or device. Fully optional — everything keeps working locally without it, and nothing here requires an account except sharing a document with someone else, which needs both people signed in</li>
-<li><strong>Discoverable by email</strong> (Settings → Account) — off by default. Turning it on lets someone find your account by typing your exact email or name when sharing a document with you; leaving it off means your account genuinely can't be found that way, not just hidden behind an extra step. Your name and photo only ever show up in someone's search results once this is on</li>
-<li><strong>Share a document</strong> — a "Share" chip appears under the title (next to Status/Author/Link) once you're signed in and a document is open; right-click a document in the file explorer → "Share…" does the same, switching to it first if it isn't already open. Type a name or email to search — results only ever include accounts with "Discoverable by email" turned on, shown with their photo/initial, name, and email so you can tell you've got the right person. Click a result to share immediately with whichever access level ("Can view" / "Can edit") is currently selected. The same panel lists everyone who currently has access, with a dropdown to change their role and a × to remove them, at any time</li>
+<li><strong>Profile visibility</strong> (Settings → Account) — Private by default. Setting it to Public lets someone find your account by typing your exact email or name when sharing a document with you; Private means your account genuinely can't be found that way, not just hidden behind an extra step. Your name and photo only ever show up in someone's search results once it's set to Public</li>
+<li><strong>Share a document</strong> — a "Share" chip appears under the title (next to Status/Author/Link) once you're signed in and a document is open; right-click a document in the file explorer → "Share…" does the same, switching to it first if it isn't already open. Type a name or email to search — results only ever include accounts set to Public, shown with their photo/initial, name, and email so you can tell you've got the right person. Click a result to share immediately with whichever access level ("Can view" / "Can edit") is currently selected. The same panel lists everyone who currently has access, with a dropdown to change their role and a × to remove them, at any time</li>
 <li><strong>View vs. edit access</strong> — a document shared as "Can view" is read-only for that person: their changes won't actually save even if the outline lets them type, since the save itself is rejected without edit access. "Can edit" allows real changes, which sync back to your account the same as your own edits do</li>
 <li><strong>Shared</strong> — a collapsible section in the file explorer, right after your own documents, listing everything other accounts have shared with you (who shared it, and your access level). Click one to open it as a regular tab. Reopening after closing it or reloading the page means going back to the Shared section and opening it again — a shared document doesn't stay in your tab strip across a reload the way your own documents do</li>
 <li>The bell icon next to the account button shows notifications — currently just "someone shared a document with you," more uses planned later. A dot shows how many are unread; click one to mark it read</li>
@@ -6496,7 +6496,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div class="share-dd-doctitle" id="share-dd-doctitle"></div>
               </div>
             </div>
-            <div class="muted-help share-dd-help">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
+            <div class="muted-help share-dd-help">Only people with their profile set to Public (Settings → Account → "Profile visibility") can be found this way.</div>
             <div style="display:flex;gap:6px;position:relative">
               <div class="share-search-wrap">
                 <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
@@ -13562,10 +13562,11 @@ function resetProfileUiState(){
   updateProfileDiscoverableToggleUi();
 }
 function updateProfileDiscoverableToggleUi(){
-  const toggle=el('profile-discoverable-toggle'); if(!toggle)return;
-  const on=profileVisibility==='public';
-  toggle.classList.toggle('on',on);
-  toggle.setAttribute('aria-checked',String(on));
+  document.querySelectorAll('#profile-visibility-segmented .profile-visibility-seg').forEach(btn=>{
+    const active=btn.dataset.visibility===profileVisibility;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-selected',String(active));
+  });
 }
 async function setProfileDiscoverable(on){
   if(!currentUser)return;
@@ -13575,15 +13576,16 @@ async function setProfileDiscoverable(on){
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.setDoc(mod.doc(db,'profiles',currentUser.uid),{visibility:profileVisibility,updatedAt:Date.now()},{merge:true});
-    showToast(on?'Your account can now be found by email when someone shares a document with you':'Your account is no longer discoverable by email');
+    showToast(on?'Your profile is now public — discoverable by email when someone shares a document with you':'Your profile is now private — no longer discoverable by email');
   }catch(e){
     console.warn('[sakura] setProfileDiscoverable failed:',e);
     profileVisibility=prev; updateProfileDiscoverableToggleUi();
     showToast('Could not update — try again');
   }
 }
-el('profile-discoverable-toggle')?.addEventListener('click',()=>setProfileDiscoverable(profileVisibility!=='public'));
-el('profile-discoverable-toggle')?.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setProfileDiscoverable(profileVisibility!=='public'); } });
+document.querySelectorAll('#profile-visibility-segmented .profile-visibility-seg').forEach(btn=>{
+  btn.addEventListener('click',()=>setProfileDiscoverable(btn.dataset.visibility==='public'));
+});
 
 // Looks up a public profile by exact email — the only lookup path that exists (see
 // firestore.rules: a private profile can never be returned by this query, not just filtered
