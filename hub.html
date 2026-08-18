@@ -615,6 +615,17 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
     </div>
   </div>
 </div>
+<div id="signout-confirm-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="signout-confirm-title">
+  <div class="hub-modal compact">
+    <div class="hub-modal-title" id="signout-confirm-title">Sign out?</div>
+    <p class="hub-modal-text">Deleting a task or entry here always gives you a few seconds to undo it — signing out doesn't have that safety net, so this asks first instead.</p>
+    <div class="hub-modal-actions">
+      <button class="hub-modal-btn" id="signout-confirm-cancel" type="button">Cancel</button>
+      <button class="hub-modal-btn danger" id="signout-confirm-ok" type="button">Sign out</button>
+    </div>
+  </div>
+</div>
+
 <div id="about-modal-overlay" class="hub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
   <div class="hub-modal compact">
     <div class="hub-modal-title" id="about-modal-title">Sakura Hub</div>
@@ -1209,6 +1220,16 @@ document.addEventListener('click',function(e){
 });
 document.getElementById('account-signout-btn').addEventListener('click',function(){
   document.getElementById('account-dropdown').classList.remove('open');
+  document.getElementById('signout-confirm-overlay').classList.add('open');
+});
+document.getElementById('signout-confirm-cancel').addEventListener('click',function(){
+  document.getElementById('signout-confirm-overlay').classList.remove('open');
+});
+document.getElementById('signout-confirm-overlay').addEventListener('click',function(e){
+  if(e.target.id==='signout-confirm-overlay')this.classList.remove('open');
+});
+document.getElementById('signout-confirm-ok').addEventListener('click',function(){
+  document.getElementById('signout-confirm-overlay').classList.remove('open');
   loadFirebaseMods().then(function(f){ return f.authMod.signOut(f.auth); }).catch(function(){}).finally(function(){
     try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
     currentUser=null;
@@ -2236,6 +2257,7 @@ document.addEventListener('keydown',function(e){
   if(document.getElementById('task-sheet-overlay').classList.contains('open')){ closeTaskDetail(); return; }
   if(document.getElementById('journal-sheet-overlay').classList.contains('open')){ closeJournalDetail(); return; }
   if(document.getElementById('about-modal-overlay').classList.contains('open')){ document.getElementById('about-modal-overlay').classList.remove('open'); return; }
+  if(document.getElementById('signout-confirm-overlay').classList.contains('open')){ document.getElementById('signout-confirm-overlay').classList.remove('open'); return; }
   if(document.getElementById('ios-notif-modal-overlay').classList.contains('open')){ document.getElementById('ios-notif-modal-overlay').classList.remove('open'); return; }
   if(document.getElementById('feedback-modal-overlay').classList.contains('open')){ closeFeedbackModal(); return; }
   if(document.getElementById('hub-search-bar').classList.contains('open')){ toggleHubSearch(false); }
