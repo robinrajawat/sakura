@@ -116,6 +116,24 @@ service cloud.firestore {
       // disappear from the owner's account entirely.
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
+    // Supplementary grant for the collectionGroup('docs') query in findDocsSharedWithMe
+    // (index.html) — added after the sharedWithUids branch above STILL failed with "Missing or
+    // insufficient permissions" even once it matched the query's field/operator exactly.
+    // Firebase's own "Securely query data" documentation demonstrates authorizing a
+    // collectionGroup query through a SEPARATE match block written with the recursive wildcard
+    // {path=**}, distinct from the fixed-depth block used for direct get()/write access — their
+    // worked example (the forums/posts case) keeps these as two match blocks, not one. Whether a
+    // fixed-depth match is actually insufficient to authorize a collection-group query on its
+    // own, or the real fix was already the field/operator match added above and this block is
+    // now redundant, isn't something this sandbox can verify against a live project — but this
+    // mirrors Firebase's own documented pattern exactly, which the previous attempts didn't.
+    // Multiple matching `match` blocks for the same path are ORed together by Firestore (a read
+    // is allowed if ANY matching block allows it), so this is purely additive: it cannot narrow
+    // what the block above already grants, and write access is untouched, still governed
+    // entirely by the fixed-depth block above.
+    match /{path=**}/docs/{docId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.sharedWithUids;
+    }
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
