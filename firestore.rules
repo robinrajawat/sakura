@@ -43,9 +43,17 @@ service cloud.firestore {
       // `resource` exists yet); for existing-document read/update, resource.data is what's
       // already stored, which is the correct thing to check against for an incoming reader/
       // editor that isn't touching sharedWith themselves.
+      // 'sharedWith' in resource.data (existence check) rather than resource.data.sharedWith !=
+      // null: a doc that's never been shared has no sharedWith field at all, not a null one, and
+      // directly dereferencing an absent field throws an evaluation error rather than returning
+      // null. For a single get() that just denies that one read, but for the collectionGroup
+      // list query in findDocsSharedWithMe (index.html), an error evaluating the rule against
+      // ANY one candidate document fails the ENTIRE query with "Missing or insufficient
+      // permissions" — not merely excluding that document. Since most docs predate ever being
+      // shared, the old `!= null` form broke every shared-docs query, not just direct reads.
       allow read: if request.auth != null && (
         request.auth.uid == userId ||
-        (resource.data.sharedWith != null && request.auth.uid in resource.data.sharedWith.keys())
+        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys())
       );
       // Only the owner can create a new doc record under their own path — sharing only ever
       // grants access to a document the owner already created, never lets a collaborator mint
@@ -53,7 +61,7 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && (
         request.auth.uid == userId ||
-        (resource.data.sharedWith != null && resource.data.sharedWith[request.auth.uid].role == 'editor')
+        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys() && resource.data.sharedWith[request.auth.uid].role == 'editor')
       );
       // Only the owner can delete — an editor can change content, not make the document
       // disappear from the owner's account entirely.
