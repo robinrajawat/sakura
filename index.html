@@ -9802,6 +9802,22 @@ function saveToStorage(){
   try{ if(SAKURA_AUDIENCE_MODE)return; }catch(e){}
   try{
     if(!currentDocId)return;
+    // Safety guard: if this tab is a ghost-fallback placeholder (see warnGhostDocFallback) and
+    // still has no real content, refuse to save it — regardless of `dirty`. Unlike the
+    // existing-content guard just below, there's no prior localStorage record to compare
+    // against here at all; without this check, the very next autosave tick after a ghost
+    // placeholder is shown would happily write (and cloud-push) an empty document under an id
+    // that's supposed to hold real content, permanently losing it the moment sync catches up.
+    // Once the person actually types real content (nodes.length>0), this guard steps aside —
+    // it only exists to stop an untouched blank placeholder from being persisted as if real.
+    if(nodes.length===0){
+      const activeTab=findOpenTab(currentDocId);
+      if(activeTab&&activeTab._ghostFallback){
+        console.warn('[sakura] saveToStorage: refused to save ghost-fallback placeholder for',currentDocId,'— its real content never finished loading.');
+        sakuraLog('save','saveToStorage refused — ghost-fallback placeholder has no real content yet',{docId:currentDocId});
+        return;
+      }
+    }
     // Safety guard: if the in-memory doc is empty AND was never actually edited this session
     // (dirty=false — a real "user emptied the doc" always sets dirty first), but storage
     // already holds a real, non-empty document under this same id, this is almost certainly
@@ -10008,6 +10024,20 @@ let openTabs=[]; let activeTabDocId=null; const OPEN_TABS_KEY='sakura_open_tabs_
 
 function findOpenTab(id){return openTabs.find(t=>t.docId===id)}
 
+// Fired whenever switchDoc()/restoreOpenTabsOnStartup() had to fabricate a blank in-memory
+// placeholder for a document id that the docs index says is real (i.e. loadTabFromStorageObj
+// found no actual localStorage record for it). Previously this happened completely silently,
+// which is exactly what made the resulting "random empty document" reports so hard to trace —
+// there was no signal at the time it occurred, only the empty content itself, much later.
+// Surfacing it here doesn't fix a bad pull on its own (see pullAndMergeFromCloud for the
+// actual root-cause fix), but it does mean the person sees *something* the moment it happens,
+// and saveToStorage below refuses to quietly persist/push this placeholder as if it were real.
+function warnGhostDocFallback(id,context){
+  console.warn('[sakura] '+context+': no local content found for document',id,'— showing a blank placeholder instead of the real content. This usually means a cloud sync pull is still catching up. Try refreshing again in a moment, or sign out/in to re-sync.');
+  try{sakuraLog('doc','ghost-fallback placeholder shown',{docId:id,context})}catch(e){}
+  showToast("Couldn't load this document's content yet — showing a placeholder. Try refreshing again shortly.");
+}
+
 function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
@@ -10078,7 +10108,14 @@ function cycleOpenTab(dir){
 }
 function switchDoc(id){
   let tab=findOpenTab(id);
-  if(!tab){ tab=loadTabFromStorageObj(id)||{docId:id,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1}; openTabs.push(tab) }
+  if(!tab){
+    tab=loadTabFromStorageObj(id);
+    if(!tab){
+      tab={docId:id,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+      if(loadActiveDocsIndex().some(d=>d.id===id)){ tab._ghostFallback=true; warnGhostDocFallback(id,'switchDoc'); }
+    }
+    openTabs.push(tab);
+  }
   commitEdit(); captureActiveTabSnapshot(); saveToStorage();
   applyTabSnapshot(tab);
   persistOpenTabs(); renderTabStrip();
@@ -10275,8 +10312,11 @@ function restoreOpenTabsOnStartup(forceActiveId){
     // sakura_doc_v1_<id> — that's the source of truth, independent of the index. Only if
     // the document is genuinely gone from storage do we fall back to a blank tab; we never
     // silently stamp the built-in sample content over a slot that used to hold real work.
-    const t=loadTabFromStorageObj(currentDocId)
-      || {docId:currentDocId,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+    let t=loadTabFromStorageObj(currentDocId);
+    if(!t){
+      t={docId:currentDocId,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+      if(validIds.has(currentDocId)){ t._ghostFallback=true; warnGhostDocFallback(currentDocId,'restoreOpenTabsOnStartup'); }
+    }
     openTabs.push(t); activeId=currentDocId;
     // Self-heal the index so this doesn't repeat on the next refresh.
     if(!validIds.has(currentDocId)) touchDocIndex(currentDocId, t.title||'Untitled');
@@ -13809,9 +13849,29 @@ async function pullAndMergeFromCloud(isInitial=false){
   let pulledInCount=0, pushedUpCount=0;
   try{
     const {mod,db}=await loadFirestoreMods();
+
+    // Fetch the real doc/template collections FIRST, before touching the 'docsIndex' /
+    // 'templatesIndex' meta keys below. Those meta keys are just a cached listing of these
+    // same collections; applying that cached listing before we know the real collections
+    // were actually fetched successfully can leave the local index pointing at ids with no
+    // backing content (e.g. this getDocs call fails on a flaky connection while the much
+    // smaller per-meta-key getDoc calls below succeed). That's exactly what produces a
+    // silent "ghost" document later — switchDoc()/restoreOpenTabsOnStartup() find the id in
+    // the index, find no stored content for it, and fabricate a blank placeholder in its
+    // place. Gating the index meta-key application on this fetch having actually succeeded
+    // closes that gap. See warnGhostDocFallback for the other half of this fix.
+    let cloudDocsSnap=null, docsFetchOk=false;
+    try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); docsFetchOk=true; }
+    catch(e){ console.warn('[sakura] pullAndMergeFromCloud: docs collection fetch failed — skipping docsIndex meta sync this round to avoid creating ghost entries:',e); }
+    let cloudTplSnap=null, tplFetchOk=false;
+    try{ cloudTplSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'templates')); tplFetchOk=true; }
+    catch(e){ console.warn('[sakura] pullAndMergeFromCloud: templates collection fetch failed — skipping templatesIndex meta sync this round to avoid creating ghost entries:',e); }
+
     const idbSyncMetaKeys=getIdbSyncMetaKeys();
     const syncMetaKeys={...getSyncMetaKeys(),...idbSyncMetaKeys};
     for(const metaKey of Object.keys(syncMetaKeys)){
+      if(metaKey==='docsIndex'&&!docsFetchOk)continue;
+      if(metaKey==='templatesIndex'&&!tplFetchOk)continue;
       const idbKeyName=idbSyncMetaKeys[metaKey];
       const localKeyName=syncMetaKeys[metaKey];
       let snap; try{ snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey)); }catch(e){ continue; }
@@ -13833,7 +13893,6 @@ async function pullAndMergeFromCloud(isInitial=false){
     }
 
     const localIndex=loadDocsIndex();
-    let cloudDocsSnap=null; try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); }catch(e){}
     const cloudIds=new Set();
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
@@ -13841,10 +13900,12 @@ async function pullAndMergeFromCloud(isInitial=false){
         if(applyIncomingDocData(id,docSnap.data(),false))pulledInCount++;
       }
     }
-    for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} }
+    // Only decide "this local doc is missing from the cloud, push it up" when we actually
+    // know what the cloud has — an empty cloudIds set caused by the fetch above failing
+    // isn't the same as a genuinely empty cloud collection.
+    if(docsFetchOk){ for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} } }
 
     const localTplIndex=loadTemplatesIndex();
-    let cloudTplSnap=null; try{ cloudTplSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'templates')); }catch(e){}
     const cloudTplIds=new Set();
     if(cloudTplSnap){
       for(const docSnap of cloudTplSnap.docs){
@@ -13852,7 +13913,7 @@ async function pullAndMergeFromCloud(isInitial=false){
         if(applyIncomingTemplateData(id,docSnap.data()))pulledInCount++;
       }
     }
-    for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} }
+    if(tplFetchOk){ for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} } }
 
     loadPrefs();
     renderSidebar();
