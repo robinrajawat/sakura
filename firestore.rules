@@ -38,6 +38,20 @@ service cloud.firestore {
       // single read of the doc a person is already fetching also tells them their own access
       // level — no second round-trip.
       //
+      // A second field, sharedWithUids, sits alongside sharedWith purely so this document can be
+      // FOUND via a collectionGroup query in the first place (see findDocsSharedWithMe in
+      // index.html) — a plain array of collaborator uids, kept in sync by grantDocumentAccess/
+      // revokeDocumentAccess. sharedWith alone can't be queried this way: a query on
+      // sharedWith.<uid>.role embeds the CALLING user's own uid into the field path itself, and
+      // Firestore indexes a collectionGroup query by its exact literal field path — there's no
+      // way to pre-create an index for a field path that only exists once a specific uid is
+      // plugged in, so every different account's first attempt would hit an un-indexed query
+      // and fail, forever, no matter how many times any ONE of those per-uid indexes gets
+      // created via the Console. sharedWithUids has one static field name, so one
+      // array-contains index (collection-group scope) covers every user permanently. No rules
+      // change was needed for this field itself — the owner's write access below is already
+      // unrestricted by field name.
+      //
       // request.resource.data is used (not resource.data) for read/write's OWN check where
       // sharedWith is being evaluated against a write, per Firestore's rule for `create` (no
       // `resource` exists yet); for existing-document read/update, resource.data is what's

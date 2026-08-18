@@ -13680,11 +13680,35 @@ async function fetchDocSharedWith(ownerUid,docId){
 // group index on 'docs' isn't automatic. Firebase Console -> Firestore -> Indexes -> Add (scope:
 // Collection group), or just try opening the Shared section once signed in — Firestore prints a
 // direct "create this index" link in the browser console the first time this runs without one.
+// Finds every doc shared with the signed-in user, across every other account's users/{uid}/docs
+// subcollection.
+//
+// This used to query where('sharedWith.'+currentUser.uid+'.role', 'in', [...]) — a field PATH
+// that embeds the CALLING user's own uid. That's the actual reason shared documents kept not
+// showing up: Firestore indexes a collectionGroup query by its exact literal field path, and
+// there is no way to pre-create an index for a field path that doesn't exist until a specific
+// uid is plugged in. The very first time ANY new account opened "Shared", it would be querying
+// a field path (sharedWith.<their-own-uid>.role) Firestore had never indexed before and could
+// throw "the query requires an index" — clicking through creates an index for THAT ONE uid's
+// field path only; every other person hits the identical wall on their own first attempt,
+// forever. A rules fix alone could never have solved this — the query pattern itself can't
+// scale past a single hardcoded uid.
+//
+// Fixed by keeping a second, STATIC-named field in sync alongside sharedWith: sharedWithUids,
+// a plain array of collaborator uids (see grantDocumentAccess/revokeDocumentAccess). A single
+// array-contains index on that one literal field name covers every user, forever, the same way
+// a normal collection-group index does for any other field. sharedWith itself (the map, keyed
+// by uid, holding {role,email,displayName,sharedAt}) is unchanged and still what's actually
+// read for role/display info — sharedWithUids exists purely to make this query indexable.
+//
+// Backward compatibility: a document shared BEFORE this fix has no sharedWithUids field yet, so
+// it won't appear here until the owner's own Share dialog opens for it at least once (see the
+// self-healing backfill in renderShareModalList) or they revoke+re-share.
 async function findDocsSharedWithMe(){
   if(!currentUser)return [];
   try{
     const {mod,db}=await loadFirestoreMods();
-    const q=mod.query(mod.collectionGroup(db,'docs'),mod.where('sharedWith.'+currentUser.uid+'.role','in',['viewer','editor']));
+    const q=mod.query(mod.collectionGroup(db,'docs'),mod.where('sharedWithUids','array-contains',currentUser.uid));
     const snap=await mod.getDocs(q);
     return snap.docs.map(d=>{
       const data=d.data();
@@ -13698,7 +13722,7 @@ async function findDocsSharedWithMe(){
         sharedAt:mySharedEntry.sharedAt||0
       };
     });
-  }catch(e){ console.warn('[sakura] findDocsSharedWithMe failed — likely needs a collection-group index on "docs", see Firebase Console → Firestore → Indexes:',e); return []; }
+  }catch(e){ console.warn('[sakura] findDocsSharedWithMe failed — likely needs a collection-group index on "sharedWithUids" (array-contains), see Firebase Console → Firestore → Indexes, or the direct link Firestore prints above this warning:',e); return []; }
 }
 // Resolves the OWNER's display name/email for the "shared by" line — best-effort: if their
 // profile is private, this just falls back to whatever's in the sharedWith entry itself isn't
@@ -13778,7 +13802,11 @@ async function grantDocumentAccess(docId,docTitle,profile,role){
     const {mod,db}=await loadFirestoreMods();
     const ref=mod.doc(db,'users',currentUser.uid,'docs',docId);
     const entry={role,email:profile.email||'',displayName:profile.displayName||'',sharedAt:Date.now()};
-    await mod.updateDoc(ref,{['sharedWith.'+profile.uid]:entry});
+    // sharedWithUids (array-contains-friendly) is written alongside sharedWith (the map) purely
+    // so findDocsSharedWithMe can be queried at all — see the long comment on that function for
+    // why a dynamic-field-path query (sharedWith.<uid>.role) can never work as a collectionGroup
+    // query across more than one collaborator.
+    await mod.updateDoc(ref,{['sharedWith.'+profile.uid]:entry,sharedWithUids:mod.arrayUnion(profile.uid)});
     await mod.addDoc(mod.collection(db,'notifications',profile.uid,'items'),{
       type:'share_invite',
       fromUid:currentUser.uid,
@@ -13805,7 +13833,7 @@ async function revokeDocumentAccess(docId,uid){
   if(!currentUser)return false;
   try{
     const {mod,db}=await loadFirestoreMods();
-    await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid]:mod.deleteField()});
+    await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid]:mod.deleteField(),sharedWithUids:mod.arrayRemove(uid)});
     return true;
   }catch(e){ console.warn('[sakura] revokeDocumentAccess failed:',e); return false; }
 }
@@ -13819,10 +13847,18 @@ async function changeDocumentAccessRole(docId,uid,role){
 }
 
 // Shown under the title, alongside the status/author/link chips — only when signed in (sharing
-// needs an account on both ends) and an actual document is open (nothing to share otherwise).
+// needs an account on both ends), an actual document is open, AND this account is the actual
+// OWNER of it. Deliberately excludes a document shared TO you (sharedDocMeta[currentDocId] set
+// by openSharedDocument): managing who else has access is an owner action — the update rule
+// does currently let an editor collaborator touch other fields too, but the client-side dialog
+// and write functions below (grantDocumentAccess/revokeDocumentAccess/changeDocumentAccessRole)
+// all unconditionally write to users/{currentUser.uid}/docs/{docId}, which is simply the wrong
+// path entirely when currentUser isn't the owner — that mismatch, not a permissions problem, is
+// what silently broke the dialog for a collaborator who had the chip visible before this fix.
 function updateDocShareChipVisibility(){
   const wrap=el('doc-share-wrap'); if(!wrap)return;
-  wrap.style.display=(currentUser&&currentDocId)?'':'none';
+  const isOwnDoc=currentDocId&&!sharedDocMeta[currentDocId];
+  wrap.style.display=(currentUser&&isOwnDoc)?'':'none';
 }
 // Inline dropdown (same pattern as the Status/Link chips right next to it — see doc-link-chip's
 // listener), not a modal: sharing is a fast, frequent-ish action on the document you're already
@@ -13873,6 +13909,17 @@ async function renderShareModalList(){
   list.innerHTML='<div class="share-modal-loading">Loading…</div>';
   const shared=await fetchDocSharedWith(currentUser.uid,shareModalDocId);
   const uids=Object.keys(shared);
+  // Self-healing backfill for documents shared before sharedWithUids existed (see
+  // findDocsSharedWithMe): the Share dialog only ever opens for a document this account
+  // actually owns (updateDocShareChipVisibility), so this is a safe, cheap place to keep the
+  // array in sync with the map it's derived from — idempotent, and only fires when there's
+  // actually at least one collaborator to backfill.
+  if(uids.length){
+    try{
+      const {mod,db}=await loadFirestoreMods();
+      await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',shareModalDocId),{sharedWithUids:uids});
+    }catch(e){ console.warn('[sakura] sharedWithUids backfill failed:',e); }
+  }
   list.innerHTML='';
   // Owner row always shown first — makes "who has access" a complete picture at a glance
   // instead of only listing collaborators and leaving the owner implicit (previously the only
