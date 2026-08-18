@@ -6459,6 +6459,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             </div>
           </div>
         </div>
+        <button type="button" class="doc-status-chip unset" id="doc-share-chip" style="display:none" data-tip="Share this document with another Sakura account"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
         <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a meeting or to-do — click to view">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span id="doc-ref-chip-text"></span>
         </button>
@@ -10171,6 +10172,7 @@ function applyTabSnapshot(tab){
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
   hydrateDiagramBlobsForDoc(tab.docId);
   ensureSelection(); render(); updateDirtyIndicator();
+  if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   const pane=el('editor-pane'); const restoreScroll=tab.scrollTop||0;
   if(pane){ try{ if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>{ try{pane.scrollTop=restoreScroll}catch(e){} }); else pane.scrollTop=restoreScroll; }catch(e){} }
@@ -10446,6 +10448,7 @@ function ensureDocumentForEditing(){
   setDocStatus('',false);
   persistOpenTabs(); renderTabStrip(); renderSidebar();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
+  if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
 }
 // Clears all in-memory document state and brings the UI to the empty welcome screen with no
 // document open — used when the last tab is closed, or on startup if nothing was restored.
@@ -10459,6 +10462,7 @@ function clearToNoDocumentState(){
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
   render(); updateDirtyIndicator(); updateAuthorDisplay();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
+  if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
 }
 function startupEnsureBlankDoc(){
   const id=genDocId();
@@ -13126,6 +13130,7 @@ function updateAccountUI(user){
   // know "a user just became signed in" rather than repeating the hook at each call site.
   if(user){ ensureUserProfile(user); startNotificationsListener(); }
   else { stopNotificationsListener(); resetProfileUiState(); }
+  if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
   if(user){
@@ -13639,6 +13644,17 @@ async function changeDocumentAccessRole(docId,uid,role){
     return true;
   }catch(e){ console.warn('[sakura] changeDocumentAccessRole failed:',e); return false; }
 }
+
+// Shown under the title, alongside the status/author/link chips — only when signed in (sharing
+// needs an account on both ends) and an actual document is open (nothing to share otherwise).
+function updateDocShareChipVisibility(){
+  const chip=el('doc-share-chip'); if(!chip)return;
+  chip.style.display=(currentUser&&currentDocId)?'':'none';
+}
+el('doc-share-chip')?.addEventListener('click',()=>{
+  if(!currentDocId)return;
+  openShareModal(currentDocId, el('header-title')?.value||'Untitled');
+});
 
 let shareModalDocId=null, shareModalDocTitle='';
 async function openShareModal(docId,docTitle){
