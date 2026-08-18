@@ -1426,6 +1426,11 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .share-role-segmented{min-height:30px;flex:0 0 auto}
 .share-modal-row-role{min-height:26px}
 .share-role-seg{padding:5px 9px;font-size:11px}
+.profile-visibility-seg .seg-icon{display:inline-block;vertical-align:-1px;margin-right:4px}
+.account-visibility-badge{display:inline-flex;align-items:center;gap:4px;font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px 3px 7px;border-radius:999px;cursor:default}
+.account-visibility-badge.is-private{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.account-visibility-badge.is-public{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.account-visibility-badge svg{display:inline-block;flex-shrink:0}
 .share-modal-owner-badge{flex:0 0 auto;font:500 11px 'Inter',sans-serif;color:var(--hint);padding:4px 8px}
 .shared-doc-banner{display:flex;align-items:center;gap:7px;margin:0 26px 10px;padding:8px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--fg);font:400 12.5px 'Inter',sans-serif}
 .shared-doc-banner.viewer{background:color-mix(in srgb,#e5484d 8%,transparent)}
@@ -4536,7 +4541,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <img id="account-avatar" width="40" height="40" style="border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--border)" alt="" />
               <div style="min-width:0">
                 <div id="account-name" style="font:600 13.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px"></div>
-                <div id="account-email" style="font:400 11.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                <div id="account-email" style="font:400 11.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px"></div>
+                <span id="account-visibility-badge" class="account-visibility-badge" data-tip="Who can find you when sharing a document — change in Settings → Account"></span>
               </div>
             </div>
             <div style="padding:0 10px 8px">
@@ -5275,7 +5281,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="account-settings-signedin" style="display:none">
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Display name</span><span class="settings-row-desc">Used for the greeting on a blank document. Leave blank to use your account's first name automatically.</span></div><input id="account-greeting-name-input" type="text" class="meta-input" placeholder="e.g. Robin" style="width:140px;text-align:left" /></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Profile visibility</span><span class="settings-row-desc">Private by default. Public lets someone find your account by searching your exact email or your name when sharing a document with you, and shows your name/photo in their results. Private means your account genuinely can't be found that way at all — not "found but blocked," invisible to that search.</span></div><div class="theme-segmented" id="profile-visibility-segmented" role="tablist" aria-label="Profile visibility" style="min-height:30px"><button type="button" class="profile-visibility-seg" data-visibility="private" role="tab" aria-selected="true">Private</button><button type="button" class="profile-visibility-seg" data-visibility="public" role="tab" aria-selected="false">Public</button></div></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Profile visibility</span><span class="settings-row-desc">Private by default. Public lets someone find your account by searching your exact email or your name when sharing a document with you, and shows your name/photo in their results. Private means your account genuinely can't be found that way at all — not "found but blocked," invisible to that search.</span></div><div class="theme-segmented" id="profile-visibility-segmented" role="tablist" aria-label="Profile visibility" style="min-height:30px"><button type="button" class="profile-visibility-seg" data-visibility="private" role="tab" aria-selected="true"><svg class="seg-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Private</button><button type="button" class="profile-visibility-seg" data-visibility="public" role="tab" aria-selected="false"><svg class="seg-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>Public</button></div></div>
               </div>
             </div>
           </div>
@@ -13570,6 +13576,15 @@ function updateProfileDiscoverableToggleUi(){
     btn.classList.toggle('active',active);
     btn.setAttribute('aria-selected',String(active));
   });
+  const badge=el('account-visibility-badge');
+  if(badge){
+    const isPublic=profileVisibility==='public';
+    badge.className='account-visibility-badge '+(isPublic?'is-public':'is-private');
+    badge.innerHTML=(isPublic
+      ?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>'
+      :'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>')
+      +'<span>'+(isPublic?'Public':'Private')+'</span>';
+  }
 }
 async function setProfileDiscoverable(on){
   if(!currentUser)return;
