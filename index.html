@@ -1401,6 +1401,15 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-row-restore:hover{background:var(--hover);border-color:var(--accent)}
 .history-empty{padding:20px 6px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif;line-height:1.5}
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.share-modal-error{font:400 12px 'Inter',sans-serif;color:#e5484d}
+.share-modal-divider{border-top:1px solid var(--border);margin:2px 0}
+.share-modal-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
+.share-modal-loading,.share-modal-empty{font:400 13px 'Inter',sans-serif;color:var(--hint);padding:6px 0}
+.share-modal-row{display:flex;align-items:center;gap:8px;padding:6px 0}
+.share-modal-row-info{flex:1;min-width:0}
+.share-modal-row-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share-modal-row-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share-modal-role-sel{width:auto;flex:0 0 auto}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
 #report-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
 #report-panel.open{display:flex}
@@ -7685,6 +7694,29 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
     </div>
   </div>
+  <div id="share-modal-overlay" class="history-modal-overlay">
+    <div class="history-modal" style="width:min(420px,calc(100vw - 32px))">
+      <div class="history-modal-header">
+        <span class="history-modal-title">Share — <span id="share-modal-doctitle"></span></span>
+        <button id="share-modal-close-btn" class="history-modal-close-x" data-tip="Close">×</button>
+      </div>
+      <div class="history-modal-body" style="gap:10px;display:flex;flex-direction:column">
+        <div class="muted-help" style="margin:0">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
+        <div style="display:flex;gap:6px">
+          <input id="share-modal-email-input" type="email" class="meta-input" placeholder="Their email address" style="flex:1;min-width:0" />
+          <select id="share-modal-role-select" class="select" style="width:auto">
+            <option value="viewer">Can view</option>
+            <option value="editor">Can edit</option>
+          </select>
+        </div>
+        <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
+        <button id="share-modal-submit-btn" class="btn primary" style="align-self:flex-start">Share</button>
+        <div class="share-modal-divider"></div>
+        <div class="share-modal-section-label">Who has access</div>
+        <div id="share-modal-list"></div>
+      </div>
+    </div>
+  </div>
   <div id="todos-history-overlay" class="history-modal-overlay">
     <div class="history-modal">
       <div class="history-modal-header">
@@ -13492,6 +13524,137 @@ async function findPublicProfileByEmail(email){
     return {uid:d.id,...d.data()};
   }catch(e){ console.warn('[sakura] findPublicProfileByEmail failed:',e); return null; }
 }
+
+// ---------- Document sharing ----------
+// sharedWith lives directly on the Firestore doc at users/{ownerUid}/docs/{docId} — see
+// firestore.rules for the read/write model this backs. Each entry is keyed by the
+// collaborator's uid and holds {role, email, displayName, sharedAt}, not a bare role string,
+// specifically so "who has access" can still be shown even if that person's own profile has
+// since gone private (their profiles/{uid} doc becoming unreadable to the owner doesn't erase
+// what was already recorded here at share time).
+async function fetchDocSharedWith(ownerUid,docId){
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'users',ownerUid,'docs',docId));
+    if(!snap.exists())return {};
+    const d=snap.data();
+    return (d&&typeof d.sharedWith==='object'&&d.sharedWith)||{};
+  }catch(e){ console.warn('[sakura] fetchDocSharedWith failed:',e); return {}; }
+}
+// Adds/updates a single collaborator without touching any other existing entry — dot-path
+// field update rather than a read-modify-write of the whole map, so two people sharing the
+// same document with different collaborators at nearly the same moment can't clobber each
+// other's change.
+async function shareDocumentWith(docId,docTitle,email,role){
+  if(!currentUser)return {ok:false,error:'Not signed in'};
+  const profile=await findPublicProfileByEmail(email);
+  if(!profile)return {ok:false,error:'No discoverable Sakura account for that email — they may not have an account, or their profile is private.'};
+  if(profile.uid===currentUser.uid)return {ok:false,error:"That's your own account."};
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const ref=mod.doc(db,'users',currentUser.uid,'docs',docId);
+    const entry={role,email:profile.email||email.toLowerCase(),displayName:profile.displayName||'',sharedAt:Date.now()};
+    await mod.updateDoc(ref,{['sharedWith.'+profile.uid]:entry});
+    await mod.addDoc(mod.collection(db,'notifications',profile.uid,'items'),{
+      type:'share_invite',
+      fromUid:currentUser.uid,
+      fromEmail:(currentUser.email||'').toLowerCase(),
+      fromDisplayName:currentUser.displayName||'',
+      docId,
+      docTitle:docTitle||'Untitled',
+      role,
+      createdAt:Date.now(),
+      read:false
+    });
+    return {ok:true,uid:profile.uid,entry};
+  }catch(e){ console.warn('[sakura] shareDocumentWith failed:',e); return {ok:false,error:'Could not share — try again'}; }
+}
+async function revokeDocumentAccess(docId,uid){
+  if(!currentUser)return false;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid]:mod.deleteField()});
+    return true;
+  }catch(e){ console.warn('[sakura] revokeDocumentAccess failed:',e); return false; }
+}
+async function changeDocumentAccessRole(docId,uid,role){
+  if(!currentUser)return false;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid+'.role']:role});
+    return true;
+  }catch(e){ console.warn('[sakura] changeDocumentAccessRole failed:',e); return false; }
+}
+
+let shareModalDocId=null, shareModalDocTitle='';
+async function openShareModal(docId,docTitle){
+  if(!currentUser){ showToast('Sign in to share a document'); return; }
+  shareModalDocId=docId; shareModalDocTitle=docTitle||'Untitled';
+  const overlay=el('share-modal-overlay'); if(!overlay)return;
+  el('share-modal-doctitle').textContent=shareModalDocTitle;
+  el('share-modal-email-input').value='';
+  el('share-modal-role-select').value='viewer';
+  el('share-modal-error').style.display='none';
+  overlay.classList.add('open');
+  setTimeout(()=>el('share-modal-email-input')?.focus(),0);
+  await renderShareModalList();
+}
+function closeShareModal(){ el('share-modal-overlay')?.classList.remove('open'); shareModalDocId=null; }
+async function renderShareModalList(){
+  const list=el('share-modal-list'); if(!list||!shareModalDocId)return;
+  list.innerHTML='<div class="share-modal-loading">Loading…</div>';
+  const shared=await fetchDocSharedWith(currentUser.uid,shareModalDocId);
+  const uids=Object.keys(shared);
+  list.innerHTML='';
+  if(!uids.length){ list.innerHTML='<div class="share-modal-empty">Only you have access right now.</div>'; return; }
+  uids.forEach(uid=>{
+    const entry=shared[uid];
+    const row=document.createElement('div'); row.className='share-modal-row';
+    const info=document.createElement('div'); info.className='share-modal-row-info';
+    const name=document.createElement('div'); name.className='share-modal-row-name'; name.textContent=entry.displayName||entry.email||uid;
+    const email=document.createElement('div'); email.className='share-modal-row-email'; email.textContent=entry.displayName?(entry.email||''):'';
+    info.appendChild(name); if(email.textContent)info.appendChild(email);
+    row.appendChild(info);
+    const roleSel=document.createElement('select'); roleSel.className='select share-modal-role-sel';
+    ['viewer','editor'].forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r==='viewer'?'Viewer':'Editor'; if(r===entry.role)o.selected=true; roleSel.appendChild(o); });
+    roleSel.addEventListener('change',async()=>{
+      roleSel.disabled=true;
+      const ok=await changeDocumentAccessRole(shareModalDocId,uid,roleSel.value);
+      roleSel.disabled=false;
+      showToast(ok?'Access updated':'Could not update — try again');
+    });
+    row.appendChild(roleSel);
+    const removeBtn=document.createElement('button'); removeBtn.className='sb-icon-btn danger'; removeBtn.dataset.tip='Remove access';
+    removeBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    removeBtn.addEventListener('click',async()=>{
+      removeBtn.disabled=true;
+      const ok=await revokeDocumentAccess(shareModalDocId,uid);
+      if(ok){ showToast('Access removed'); await renderShareModalList(); }
+      else { showToast('Could not remove — try again'); removeBtn.disabled=false; }
+    });
+    row.appendChild(removeBtn);
+    list.appendChild(row);
+  });
+}
+async function submitShareModal(){
+  const emailInput=el('share-modal-email-input'), roleSelect=el('share-modal-role-select'), errorEl=el('share-modal-error'), submitBtn=el('share-modal-submit-btn');
+  if(!emailInput||!shareModalDocId)return;
+  const email=emailInput.value.trim();
+  errorEl.style.display='none';
+  if(!email||!email.includes('@')){ errorEl.textContent='Enter a valid email address.'; errorEl.style.display='block'; return; }
+  submitBtn.disabled=true; submitBtn.style.opacity='.6';
+  const res=await shareDocumentWith(shareModalDocId,shareModalDocTitle,email,roleSelect.value);
+  submitBtn.disabled=false; submitBtn.style.opacity='';
+  if(!res.ok){ errorEl.textContent=res.error; errorEl.style.display='block'; return; }
+  emailInput.value='';
+  showToast('Shared with '+(res.entry.displayName||res.entry.email));
+  await renderShareModalList();
+}
+el('share-modal-submit-btn')?.addEventListener('click',submitShareModal);
+el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } });
+el('share-modal-close-btn')?.addEventListener('click',closeShareModal);
+onOverlayBackdropClick(el('share-modal-overlay'),closeShareModal);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-modal-overlay')?.classList.contains('open'))closeShareModal(); });
 
 // ---------- Notifications (generic inbox — share invites today, reusable for anything later) ----------
 // /notifications/{uid}/items/{id} — see firestore.rules for why a share invite can be written by
@@ -26409,6 +26572,7 @@ function sbDocContextItems(d, folders){
   items.push({label:'Rename', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: async()=>{ await renameDoc(d.id); renderSidebar(); }});
   items.push({label:'Duplicate', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await duplicateDoc(d.id); renderSidebar(); }});
   items.push({label:'Version history', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>', onClick: async()=>{ openVersionHistory(d.id); }});
+  if(currentUser)items.push({label:'Share…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', onClick: async()=>{ openShareModal(d.id,d.title); }});
   if(folders.length){
     items.push({divider:true});
     const curF=getFolderForDoc(d.id);

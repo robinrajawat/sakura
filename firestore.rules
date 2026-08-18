@@ -30,10 +30,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/docs/{docId} {
       // Shared-access model: the owner always has full access. Anyone else needs their uid
-      // present in this specific document's own sharedWith map, with 'editor' required for
-      // write access ('viewer' or 'editor' both suffice for read). sharedWith lives on the
-      // document itself (not a separate collection) so a single read of the doc a person is
-      // already fetching also tells them their own access level — no second round-trip.
+      // present in this specific document's own sharedWith map, with role=='editor' required
+      // for write access (role=='viewer' or 'editor' both suffice for read). Each sharedWith
+      // entry is an object ({role, email, displayName, sharedAt}), not a bare role string —
+      // so who-has-access can be displayed later even if that person's own profile has since
+      // gone private. sharedWith lives on the document itself (not a separate collection) so a
+      // single read of the doc a person is already fetching also tells them their own access
+      // level — no second round-trip.
       //
       // request.resource.data is used (not resource.data) for read/write's OWN check where
       // sharedWith is being evaluated against a write, per Firestore's rule for `create` (no
@@ -50,7 +53,7 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && (
         request.auth.uid == userId ||
-        (resource.data.sharedWith != null && resource.data.sharedWith[request.auth.uid] == 'editor')
+        (resource.data.sharedWith != null && resource.data.sharedWith[request.auth.uid].role == 'editor')
       );
       // Only the owner can delete — an editor can change content, not make the document
       // disappear from the owner's account entirely.
