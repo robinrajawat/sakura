@@ -1404,17 +1404,27 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-row-restore:hover{background:var(--hover);border-color:var(--accent)}
 .history-empty{padding:20px 6px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif;line-height:1.5}
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.share-dd-menu{min-width:320px;max-width:min(90vw,340px);max-height:min(420px,70vh);padding:12px;gap:8px}
-.share-dd-title{font:600 13px 'Inter',sans-serif;color:var(--fg);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-dd-menu.share-dd-menu{min-width:320px;max-width:min(90vw,340px);max-height:min(420px,70vh);padding:14px;gap:8px}
+.share-dd-header{display:flex;align-items:flex-start;gap:9px;margin-bottom:2px}
+.share-dd-header-icon{flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.share-dd-header-text{flex:1;min-width:0;padding-top:1px}
+.share-dd-title{font:600 13.5px 'Inter',sans-serif;color:var(--fg)}
+.share-dd-doctitle{font:400 12px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.share-dd-help{margin:2px 0 8px;font-size:11.5px;line-height:1.5}
+.share-search-wrap{flex:1;min-width:0;position:relative;display:flex;align-items:center}
+.share-search-icon{position:absolute;left:8px;color:var(--hint);pointer-events:none;display:flex}
+.share-search-wrap .meta-input{width:100%;padding-left:26px}
 .share-modal-error{font:400 12px 'Inter',sans-serif;color:#e5484d}
 .share-modal-divider{border-top:1px solid var(--border);margin:2px 0}
 .share-modal-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
 .share-modal-loading,.share-modal-empty{font:400 13px 'Inter',sans-serif;color:var(--hint);padding:6px 0}
-.share-modal-row{display:flex;align-items:center;gap:8px;padding:6px 0}
+.share-modal-row{display:flex;align-items:center;gap:9px;padding:6px 4px;margin:0 -4px;border-radius:8px;transition:background .12s}
+.share-modal-row:hover{background:var(--hover)}
 .share-modal-row-info{flex:1;min-width:0}
 .share-modal-row-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-row-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-role-sel{width:auto;flex:0 0 auto}
+.share-modal-owner-badge{flex:0 0 auto;font:500 11px 'Inter',sans-serif;color:var(--hint);padding:4px 8px}
 .shared-doc-banner{display:flex;align-items:center;gap:7px;margin:0 26px 10px;padding:8px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--fg);font:400 12.5px 'Inter',sans-serif}
 .shared-doc-banner.viewer{background:color-mix(in srgb,#e5484d 8%,transparent)}
 .shared-doc-banner svg{flex:0 0 auto;opacity:.7}
@@ -6483,10 +6493,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
           <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
           <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
-            <div class="share-dd-title">Share — <span id="share-dd-doctitle"></span></div>
-            <div class="muted-help" style="margin:0 0 8px">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
+            <div class="share-dd-header">
+              <span class="share-dd-header-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
+              <div class="share-dd-header-text">
+                <div class="share-dd-title">Share document</div>
+                <div class="share-dd-doctitle" id="share-dd-doctitle"></div>
+              </div>
+            </div>
+            <div class="muted-help share-dd-help">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
             <div style="display:flex;gap:6px;position:relative">
-              <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" style="flex:1;min-width:0" />
+              <div class="share-search-wrap">
+                <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" />
+              </div>
               <select id="share-modal-role-select" class="select" style="width:auto">
                 <option value="viewer">Can view</option>
                 <option value="editor">Can edit</option>
@@ -13824,10 +13843,24 @@ async function renderShareModalList(){
   const shared=await fetchDocSharedWith(currentUser.uid,shareModalDocId);
   const uids=Object.keys(shared);
   list.innerHTML='';
-  if(!uids.length){ list.innerHTML='<div class="share-modal-empty">Only you have access right now.</div>'; return; }
+  // Owner row always shown first — makes "who has access" a complete picture at a glance
+  // instead of only listing collaborators and leaving the owner implicit (previously the only
+  // sign you had access at all was an empty-list placeholder message).
+  const ownerRow=document.createElement('div'); ownerRow.className='share-modal-row';
+  ownerRow.innerHTML=shareAvatarHtml({displayName:currentUser.displayName,email:currentUser.email,photoURL:currentUser.photoURL});
+  const ownerInfo=document.createElement('div'); ownerInfo.className='share-modal-row-info';
+  const ownerName=document.createElement('div'); ownerName.className='share-modal-row-name'; ownerName.textContent=(currentUser.displayName||currentUser.email||'You')+' (you)';
+  ownerInfo.appendChild(ownerName);
+  if(currentUser.displayName&&currentUser.email){ const oe=document.createElement('div'); oe.className='share-modal-row-email'; oe.textContent=currentUser.email; ownerInfo.appendChild(oe); }
+  ownerRow.appendChild(ownerInfo);
+  const ownerBadge=document.createElement('span'); ownerBadge.className='share-modal-owner-badge'; ownerBadge.textContent='Owner';
+  ownerRow.appendChild(ownerBadge);
+  list.appendChild(ownerRow);
+  if(!uids.length)return;
   uids.forEach(uid=>{
     const entry=shared[uid];
     const row=document.createElement('div'); row.className='share-modal-row';
+    row.insertAdjacentHTML('beforeend',shareAvatarHtml({displayName:entry.displayName,email:entry.email}));
     const info=document.createElement('div'); info.className='share-modal-row-info';
     const name=document.createElement('div'); name.className='share-modal-row-name'; name.textContent=entry.displayName||entry.email||uid;
     const email=document.createElement('div'); email.className='share-modal-row-email'; email.textContent=entry.displayName?(entry.email||''):'';
