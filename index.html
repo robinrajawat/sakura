@@ -1461,11 +1461,14 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 
 /* Section headers */
 .sb-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 3px;flex-shrink:0}
-.sb-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
-.sb-section-actions{display:flex;gap:2px;align-items:center}
+.sb-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.sb-section-actions{display:flex;gap:2px;align-items:center;flex-shrink:0}
 .sb-icon-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px 5px;border-radius:5px;font-size:13px;line-height:1;display:flex;align-items:center;transition:color .1s,background .1s}
 .sb-icon-btn:hover{color:var(--fg);background:var(--hover)}
 .sb-icon-btn.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.sb-icon-btn.danger:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 10%,transparent)}
+.sb-trash-bulk-row{display:flex;align-items:center;gap:4px;padding:4px 8px;margin:0 2px 2px;border-radius:6px;background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.sb-trash-bulk-count{flex:1;min-width:0;font-size:11px;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Folder rows */
 .sfolder-row{display:flex;align-items:center;border-radius:7px;min-height:28px;cursor:pointer;transition:background .1s;margin-bottom:1px}
 .sfolder-row:hover{background:var(--hover)}
@@ -25874,6 +25877,13 @@ let folderDefaultCollapsed = false;
 let sbSelectedDocIds = new Set();
 let sbLastClickedDocId = null;
 let sbRenderedDocOrder = [];
+// Trash multi-select — separate from the active-docs selection above since Trash mixes
+// documents and templates in one list (see renderSidebarTrash). Keys are 'doc:<id>' /
+// 'tpl:<id>' rather than raw ids so the two types can't collide when bulk-acting on a mixed
+// selection.
+let sbSelectedTrashKeys = new Set();
+let sbLastClickedTrashKey = null;
+let sbRenderedTrashOrder = [];
 try { const sv = localStorage.getItem('sakura_sidebar_open'); if(sv !== null) sidebarOpen = sv !== 'false'; } catch(e){}
 try { folderDefaultCollapsed = localStorage.getItem(SB_FOLDER_DEFAULT_COLLAPSED_KEY) === 'true'; } catch(e){}
 
@@ -26442,6 +26452,11 @@ function renderSidebarTrash(){
   const trashedDocs=loadTrashedDocsIndex().map(d=>({...d,_type:'doc'}));
   const trashedTpls=loadTrashedTemplatesIndex().map(t=>({...t,_type:'template'}));
   const trashed=trashedDocs.concat(trashedTpls).sort((a,b)=>(b.trashedAt||0)-(a.trashedAt||0));
+  const trashKey=d=>(d._type==='template'?'tpl:':'doc:')+d.id;
+  sbRenderedTrashOrder=trashed.map(trashKey);
+  // Drop any selected keys whose item no longer exists (restored/purged/permanently deleted
+  // elsewhere) so a stale selection can't linger and drive a bulk action against nothing.
+  Array.from(sbSelectedTrashKeys).forEach(k=>{ if(!sbRenderedTrashOrder.includes(k)) sbSelectedTrashKeys.delete(k); });
 
   const row=document.createElement('div'); row.className='sfolder-row';
   row.dataset.tip='Documents and templates you deleted, kept here until restored or purged';
@@ -26470,10 +26485,47 @@ function renderSidebarTrash(){
     const retentionNote=document.createElement('div'); retentionNote.className='sb-empty'; retentionNote.style.opacity='.65';
     retentionNote.textContent = trashRetentionDays>0 ? `Purged automatically after ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}` : 'Kept until you empty Trash (Settings → Trash)';
     children.appendChild(retentionNote);
+    // Bulk action row — only shown once something in Trash is selected. Click a row (or
+    // Ctrl/Cmd/Shift-click it, same modifiers as the active-documents list above) to select;
+    // this list has no "open" action to protect, so a plain click toggles selection directly
+    // rather than needing a modifier key.
+    if(sbSelectedTrashKeys.size){
+      const bulkRow=document.createElement('div'); bulkRow.className='sb-trash-bulk-row';
+      const bulkLabel=document.createElement('span'); bulkLabel.className='sb-trash-bulk-count';
+      bulkLabel.textContent=sbSelectedTrashKeys.size+(sbSelectedTrashKeys.size===1?' selected':' selected');
+      bulkRow.appendChild(bulkLabel);
+      const restoreBtn=document.createElement('button'); restoreBtn.className='sb-icon-btn'; restoreBtn.dataset.tip='Restore selected';
+      restoreBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+      restoreBtn.addEventListener('click',e=>{ e.stopPropagation(); bulkRestoreTrashSelected(); });
+      bulkRow.appendChild(restoreBtn);
+      const forgetBtn=document.createElement('button'); forgetBtn.className='sb-icon-btn danger'; forgetBtn.dataset.tip='Delete selected forever';
+      forgetBtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      forgetBtn.addEventListener('click',e=>{ e.stopPropagation(); bulkPermanentlyDeleteTrashSelected(); });
+      bulkRow.appendChild(forgetBtn);
+      const clearBtn=document.createElement('button'); clearBtn.className='sb-icon-btn'; clearBtn.dataset.tip='Clear selection';
+      clearBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+      clearBtn.addEventListener('click',e=>{ e.stopPropagation(); sbSelectedTrashKeys.clear(); renderSidebarTrash(); });
+      bulkRow.appendChild(clearBtn);
+      children.appendChild(bulkRow);
+    }
     trashed.forEach(d=>{
       const isTpl=d._type==='template';
-      const item=document.createElement('div'); item.className='sdoc-item';
+      const key=trashKey(d);
+      const isSelected=sbSelectedTrashKeys.has(key);
+      const item=document.createElement('div'); item.className='sdoc-item'+(isSelected?' sb-multi-selected':'');
       if(isTpl)item.dataset.trashTplId=d.id; else item.dataset.trashDocId=d.id;
+      const handleSelectClick=e=>{
+        e.stopPropagation();
+        if(e.shiftKey && sbLastClickedTrashKey && sbRenderedTrashOrder.includes(sbLastClickedTrashKey)){
+          const i1=sbRenderedTrashOrder.indexOf(sbLastClickedTrashKey), i2=sbRenderedTrashOrder.indexOf(key);
+          const lo=Math.min(i1,i2), hi=Math.max(i1,i2);
+          sbSelectedTrashKeys=new Set(sbRenderedTrashOrder.slice(lo,hi+1));
+        } else {
+          if(sbSelectedTrashKeys.has(key)) sbSelectedTrashKeys.delete(key); else sbSelectedTrashKeys.add(key);
+        }
+        sbLastClickedTrashKey=key; renderSidebarTrash();
+      };
+      item.addEventListener('click',handleSelectClick);
       item.addEventListener('contextmenu',e=>{
         e.preventDefault(); e.stopPropagation();
         showSbContextMenu(e.clientX,e.clientY,[
@@ -26486,7 +26538,7 @@ function renderSidebarTrash(){
       const builtinIcon=isTpl?getBuiltinTemplateIconById(d.id):null;
       dIcon.innerHTML=builtinIcon||'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
       item.appendChild(dIcon);
-      const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='opacity:.7;cursor:default'; nb.textContent=d.title||(isTpl?'Untitled template':'Untitled'); nb.dataset.tip=d.title||'';
+      const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='opacity:.7;cursor:pointer'; nb.textContent=d.title||(isTpl?'Untitled template':'Untitled'); nb.dataset.tip=d.title||'';
       item.appendChild(nb);
       const meta=document.createElement('span'); meta.className='sdoc-meta'; meta.textContent=(isTpl?'Template · ':'')+'trashed '+sbRelativeTime(d.trashedAt);
       meta.dataset.tip=new Date(d.trashedAt).toLocaleString();
@@ -26502,6 +26554,30 @@ function renderSidebarTrash(){
     });
   }
   wrap.appendChild(children);
+}
+function bulkRestoreTrashSelected(){
+  const keys=Array.from(sbSelectedTrashKeys); if(!keys.length)return;
+  let restored=0;
+  keys.forEach(k=>{
+    const [type,id]=k.split(/:(.+)/);
+    const ok = type==='tpl' ? restoreTemplateFromTrashCore(id) : restoreDocFromTrashCore(id);
+    if(ok)restored++;
+  });
+  sbSelectedTrashKeys.clear();
+  renderDocsList(); if(typeof renderTemplatesList==='function')renderTemplatesList(); renderSidebar();
+  showToast(`Restored ${restored} item${restored===1?'':'s'}`);
+}
+async function bulkPermanentlyDeleteTrashSelected(){
+  const keys=Array.from(sbSelectedTrashKeys); if(!keys.length)return;
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete Forever',body:`Permanently delete ${keys.length} selected item${keys.length===1?'':'s'}?\n\nThis cannot be undone.`,confirmLabel:'Delete Forever',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  keys.forEach(k=>{
+    const [type,id]=k.split(/:(.+)/);
+    if(type==='tpl')permanentlyDeleteTemplateCore(id); else permanentlyDeleteDocCore(id);
+  });
+  sbSelectedTrashKeys.clear();
+  renderDocsList(); if(typeof renderTemplatesList==='function')renderTemplatesList(); renderSidebar();
+  showToast(`Permanently deleted ${keys.length} item${keys.length===1?'':'s'}`);
 }
 function updateBulkBar(){
   const bar = el('sb-bulk-bar'); if(!bar) return;
