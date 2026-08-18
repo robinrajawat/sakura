@@ -28549,23 +28549,39 @@ async function importAllDataFromPayload(payload,opts={}){
   for(const [k,v] of Object.entries(payload.data)){
     if(k.startsWith(IDB_BACKUP_KEY_PREFIX)) idbData[k]=v; else localData[k]=v;
   }
-  // Stage all writes into a temp key first to verify they fit before wiping existing data.
-  // localStorage.clear() followed by a mid-loop failure would otherwise leave the app with
-  // partial data and no way to recover — the backup file is only in memory at this point.
-  const IMPORT_STAGE_KEY='_sakura_import_stage';
-  try{
-    localStorage.setItem(IMPORT_STAGE_KEY, JSON.stringify(localData));
-  }catch(e){ sakuraLog('restore','Data import failed — too large for available storage',{message:e&&e.message}); showToast('Import failed — backup too large for available storage'); return; }
+  // Previously this staged the entire new payload into a temp localStorage key *before*
+  // clearing the old data, purely to verify it would fit. That meant the instantaneous
+  // space requirement was current-data + new-data combined, not just new-data — so a
+  // backup that would fit fine once old data is cleared could still fail the pre-check
+  // simply because this browser's existing localStorage usage pushed the combined total
+  // over quota. The preRestoreSnapshot written to IndexedDB above already gives us a safe
+  // rollback path that doesn't touch localStorage, so clear first and write directly;
+  // on a partial failure, restore the snapshot back into localStorage instead of just
+  // telling the user to reload into a half-wiped app.
   try{
     localStorage.clear();
     const entries=Object.entries(localData);
-    let failed=false;
+    let failed=false, failErr=null;
     for(const [k,v] of entries){
-      try{ localStorage.setItem(k,v); }catch(e){ failed=true; break; }
+      try{ localStorage.setItem(k,v); }catch(e){ failed=true; failErr=e; break; }
     }
-    if(failed){ sakuraLog('restore','Data import failed partway through writing',{}); showToast('Import failed partway — reload and try again'); return; }
-    // Clean up stage key if it survived the clear (it shouldn't, but be safe)
-    try{ localStorage.removeItem(IMPORT_STAGE_KEY); }catch(e){}
+    if(failed){
+      sakuraLog('restore','Data import failed partway through writing — rolling back',{message:failErr&&failErr.message});
+      let rolledBack=false;
+      try{
+        const snap=await idbGet('preRestoreSnapshot');
+        if(snap&&snap.payload&&snap.payload.data){
+          localStorage.clear();
+          for(const [k,v] of Object.entries(snap.payload.data)){
+            if(k.startsWith(IDB_BACKUP_KEY_PREFIX))continue;
+            try{ localStorage.setItem(k,v); }catch(e){}
+          }
+          rolledBack=true;
+        }
+      }catch(e){}
+      showToast(rolledBack ? 'Import failed — backup too large for available storage; your previous data was restored' : 'Import failed partway — reload and try again');
+      return;
+    }
     Object.entries(preserved).forEach(([k,v])=>{ if(!(k in localData)){ try{ localStorage.setItem(k,v); }catch(e){} } });
     await applyBackupDataEntries(idbData);
   }catch(e){ sakuraLog('restore','Data import threw',{message:e&&e.message}); showToast('Import failed'); return; }
