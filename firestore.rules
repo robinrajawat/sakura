@@ -6,17 +6,87 @@ rules_version = '2';
 // → Publish. Keeping it in the repo is so the actual access-control model has a diff history,
 // instead of living only as tribal knowledge in the console.
 //
-// Three collections:
-//   1. /users/{uid}/...  — cloud sync. Every synced document, template, and settings blob lives
-//      under here, so the rule is a single check: you can only read/write your own subtree, and
-//      only while actually signed in as that uid.
-//   2. /feedback/{id}    — anyone can file one (create-only for non-admins); a small admin set
-//      can read/triage/delete (see submitFeedback/reportErrorAuto in index.html).
-//   3. /admins/{uid}     — existence-only admin registry backing isFeedbackAdminAuth() below.
+// Collections:
+//   1. /users/{uid}/...     — cloud sync. Every synced document, template, and settings blob
+//      lives under here. Most of this subtree stays owner-only; /users/{uid}/docs/{docId}
+//      specifically also grants access to anyone listed in that one document's own sharedWith
+//      map, at the role (viewer/editor) recorded there — see that match block below for why
+//      this can't just be "owner or nothing" anymore now that sharing exists.
+//   2. /profiles/{uid}      — one doc per account, owned and written only by that account.
+//      Always readable by its own owner; readable by anyone else ONLY when visibility=="public"
+//      — a private profile is invisible to every other account, not just "found but unreachable".
+//      This is what lookup-by-email for sharing queries against (see index.html's profile/share
+//      code), rather than a separate always-public email→uid directory, specifically so no one
+//      can probe whether an email has an account at all unless that account opted in.
+//   3. /notifications/{uid}/items/{id} — generic, reusable notification inbox (share invites
+//      today, anything else later — see the bell icon in index.html). Owner-only, both ways:
+//      no one can read another account's notifications, and nothing here is created directly
+//      by a client write from a DIFFERENT account — see the comment on that match block for how
+//      a share invite still reaches the right inbox despite that restriction.
+//   4. /feedback/{id}       — anyone can file one (create-only for non-admins); a small admin
+//      set can read/triage/delete (see submitFeedback/reportErrorAuto in index.html).
+//   5. /admins/{uid}        — existence-only admin registry backing isFeedbackAdminAuth() below.
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /users/{userId}/docs/{docId} {
+      // Shared-access model: the owner always has full access. Anyone else needs their uid
+      // present in this specific document's own sharedWith map, with 'editor' required for
+      // write access ('viewer' or 'editor' both suffice for read). sharedWith lives on the
+      // document itself (not a separate collection) so a single read of the doc a person is
+      // already fetching also tells them their own access level — no second round-trip.
+      //
+      // request.resource.data is used (not resource.data) for read/write's OWN check where
+      // sharedWith is being evaluated against a write, per Firestore's rule for `create` (no
+      // `resource` exists yet); for existing-document read/update, resource.data is what's
+      // already stored, which is the correct thing to check against for an incoming reader/
+      // editor that isn't touching sharedWith themselves.
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        (resource.data.sharedWith != null && request.auth.uid in resource.data.sharedWith.keys())
+      );
+      // Only the owner can create a new doc record under their own path — sharing only ever
+      // grants access to a document the owner already created, never lets a collaborator mint
+      // one that appears to live under someone else's account.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (
+        request.auth.uid == userId ||
+        (resource.data.sharedWith != null && resource.data.sharedWith[request.auth.uid] == 'editor')
+      );
+      // Only the owner can delete — an editor can change content, not make the document
+      // disappear from the owner's account entirely.
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /profiles/{uid} {
+      // For `list` (the email-lookup query the share dialog runs), Firestore evaluates this
+      // same condition against EACH candidate document individually via `resource` — so a
+      // query for profiles where email==X is only ever allowed to actually return documents
+      // that are the requester's own, or that already have visibility=='public'. A private
+      // profile can never come back from that query, full stop — not filtered client-side,
+      // actually inaccessible.
+      allow get, list: if request.auth != null && (
+        request.auth.uid == uid || resource.data.visibility == 'public'
+      );
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /notifications/{uid}/items/{itemId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == uid;
+      // A share invite is written by the SENDER into the RECIPIENT's inbox — i.e. request.auth.uid
+      // (sender) != uid (recipient) is the normal case here, not an attack. Shape-restricted
+      // instead of identity-restricted: any signed-in account can create an item in anyone's
+      // inbox, but only with this specific known shape (type/fromUid/fromEmail/docId/createdAt,
+      // read defaulting false), so this can't be used to write arbitrary data into someone
+      // else's account the way an unrestricted create could.
+      allow create: if request.auth != null &&
+        request.resource.data.type is string &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.createdAt is number &&
+        request.resource.data.read == false &&
+        request.resource.data.keys().hasOnly(['type','fromUid','fromEmail','fromDisplayName','docId','docTitle','role','createdAt','read']);
     }
 
     // App-wide admin check for /feedback triage. Hardcoded email kept as a bootstrap fallback (so
@@ -61,3 +131,4 @@ service cloud.firestore {
     }
   }
 }
+

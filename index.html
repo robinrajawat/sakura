@@ -488,6 +488,17 @@ body.feature-off-templates #sb-templates-section,body.feature-off-templates #es-
 .export-menu-rich .export-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;color:var(--muted);flex:0 0 auto}
 .export-menu-rich .export-icon.danger{color:#e5484d}
 .export-menu-rich .export-label{font:400 13px 'Inter',sans-serif}
+#notif-toggle{position:relative}
+.notif-badge{position:absolute;top:2px;right:2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#e5484d;color:#fff;font:600 9px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid var(--bg)}
+#notif-menu{width:300px;max-width:min(92vw,320px);max-height:380px;overflow-y:auto}
+.notif-menu-title{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 10px 8px}
+.notif-empty{padding:20px 10px;text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif}
+.notif-item{padding:8px 10px;border-radius:8px;margin:0 2px 2px;cursor:pointer;transition:background .12s}
+.notif-item:hover{background:var(--hover)}
+.notif-item.unread{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.notif-item.unread::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
+.notif-item-text{font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4}
+.notif-item-meta{font:400 11px 'Inter',sans-serif;color:var(--hint);margin-top:2px}
 .export-menu-rich .export-ext{color:var(--muted);font-size:11px;margin-left:2px}
 .export-menu-rich .export-divider{height:1px;background:var(--border);margin:4px 6px}
 .export-menu-fold-note{display:none;align-items:flex-start;gap:6px;margin:6px 2px 2px;padding:8px 10px;border-radius:8px;background:var(--hover);font:400 11.5px 'Inter',sans-serif;color:var(--muted);line-height:1.4;min-width:0}
@@ -4458,6 +4469,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <button class="export-item" id="appbar-more-print-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="export-label">Print</span></button>
         </div>
       </div>
+      <div class="export-wrap" id="notif-wrap" style="display:none">
+        <button class="btn" id="notif-toggle" data-tip="Notifications" aria-haspopup="true" aria-expanded="false">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="notif-badge" class="notif-badge" style="display:none"></span>
+        </button>
+        <div class="export-menu export-menu-rich" id="notif-menu">
+          <div class="notif-menu-title">Notifications</div>
+          <div id="notif-list"></div>
+        </div>
+      </div>
       <div class="export-wrap" id="account-wrap">
         <button class="btn" id="account-toggle" data-tip="Account &amp; sync">
           <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-5px">
@@ -5218,6 +5239,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div id="account-settings-signedin" style="display:none">
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Display name</span><span class="settings-row-desc">Used for the greeting on a blank document. Leave blank to use your account's first name automatically.</span></div><input id="account-greeting-name-input" type="text" class="meta-input" placeholder="e.g. Robin" style="width:140px;text-align:left" /></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Discoverable by email</span><span class="settings-row-desc">Off by default. When on, someone who types your exact email address when sharing a document with you can find your account. When off, your account can't be found this way at all — not "found but blocked," genuinely invisible to that lookup.</span></div><button id="profile-discoverable-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Discoverable by email"></button></div>
               </div>
             </div>
           </div>
@@ -13058,6 +13080,11 @@ function updateFeedbackAdminUI(){
 function updateAccountUI(user){
   currentUser=user;
   refreshAdminStatus(user);
+  // All three sign-in paths (Google popup, email/password, and restored-session
+  // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
+  // know "a user just became signed in" rather than repeating the hook at each call site.
+  if(user){ ensureUserProfile(user); startNotificationsListener(); }
+  else { stopNotificationsListener(); resetProfileUiState(); }
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
   if(user){
@@ -13387,6 +13414,159 @@ async function loadFirestoreMods(){
   firestoreMods={mod:fsMod,db};
   return firestoreMods;
 }
+
+// ---------- Profiles (email discoverability for sharing) ----------
+// One doc per account at /profiles/{uid} — see firestore.rules for the actual access model.
+// A private profile (the default) is genuinely invisible to every query but its own owner's;
+// public only ever means "findable by exact email", nothing more is exposed by turning it on.
+let profileVisibility='private';
+let _profileLoadedForUid=null;
+// Called from updateAccountUI on every sign-in (fresh or restored) — keeps email/displayName/
+// photoURL current on the profile doc without ever touching visibility once it's been set by
+// the person themselves, and without needing a separate "first time?" check: an update merge
+// with visibility only present in the initial-create branch does this naturally.
+async function ensureUserProfile(user){
+  if(!user)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const ref=mod.doc(db,'profiles',user.uid);
+    const snap=await mod.getDoc(ref);
+    const base={
+      email:(user.email||'').toLowerCase(),
+      displayName:user.displayName||'',
+      photoURL:user.photoURL||'',
+      updatedAt:Date.now()
+    };
+    if(snap.exists()){
+      await mod.setDoc(ref,base,{merge:true}); // merge — never overwrites the existing visibility
+      profileVisibility=snap.data().visibility==='public'?'public':'private';
+    }else{
+      await mod.setDoc(ref,{...base,visibility:'private'});
+      profileVisibility='private';
+    }
+    _profileLoadedForUid=user.uid;
+  }catch(e){ console.warn('[sakura] ensureUserProfile failed:',e); }
+  updateProfileDiscoverableToggleUi();
+}
+function resetProfileUiState(){
+  profileVisibility='private'; _profileLoadedForUid=null;
+  updateProfileDiscoverableToggleUi();
+}
+function updateProfileDiscoverableToggleUi(){
+  const toggle=el('profile-discoverable-toggle'); if(!toggle)return;
+  const on=profileVisibility==='public';
+  toggle.classList.toggle('on',on);
+  toggle.setAttribute('aria-checked',String(on));
+}
+async function setProfileDiscoverable(on){
+  if(!currentUser)return;
+  const prev=profileVisibility;
+  profileVisibility=on?'public':'private';
+  updateProfileDiscoverableToggleUi();
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.setDoc(mod.doc(db,'profiles',currentUser.uid),{visibility:profileVisibility,updatedAt:Date.now()},{merge:true});
+    showToast(on?'Your account can now be found by email when someone shares a document with you':'Your account is no longer discoverable by email');
+  }catch(e){
+    console.warn('[sakura] setProfileDiscoverable failed:',e);
+    profileVisibility=prev; updateProfileDiscoverableToggleUi();
+    showToast('Could not update — try again');
+  }
+}
+el('profile-discoverable-toggle')?.addEventListener('click',()=>setProfileDiscoverable(profileVisibility!=='public'));
+el('profile-discoverable-toggle')?.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setProfileDiscoverable(profileVisibility!=='public'); } });
+
+// Looks up a public profile by exact email — the only lookup path that exists (see
+// firestore.rules: a private profile can never be returned by this query, not just filtered
+// after the fact). Returns null for "no account", "private account", or any error — those are
+// deliberately indistinguishable to the caller, same reasoning as the rule itself.
+async function findPublicProfileByEmail(email){
+  const clean=(email||'').trim().toLowerCase();
+  if(!clean)return null;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const q=mod.query(mod.collection(db,'profiles'),mod.where('email','==',clean),mod.where('visibility','==','public'),mod.limit(1));
+    const snap=await mod.getDocs(q);
+    if(snap.empty)return null;
+    const d=snap.docs[0];
+    return {uid:d.id,...d.data()};
+  }catch(e){ console.warn('[sakura] findPublicProfileByEmail failed:',e); return null; }
+}
+
+// ---------- Notifications (generic inbox — share invites today, reusable for anything later) ----------
+// /notifications/{uid}/items/{id} — see firestore.rules for why a share invite can be written by
+// the SENDER directly into the RECIPIENT's inbox despite the owner-only read/update/delete.
+let notifItems=[];
+let _notifUnsub=null;
+let notifMenuOpen=false;
+function startNotificationsListener(){
+  stopNotificationsListener();
+  if(!currentUser)return;
+  loadFirestoreMods().then(({mod,db})=>{
+    if(!currentUser)return; // signed out again before this resolved
+    const q=mod.query(mod.collection(db,'notifications',currentUser.uid,'items'),mod.orderBy('createdAt','desc'),mod.limit(30));
+    _notifUnsub=mod.onSnapshot(q,snap=>{
+      notifItems=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderNotifBell();
+      if(notifMenuOpen)renderNotifList();
+    },err=>console.warn('[sakura] notifications listener error:',err));
+  }).catch(e=>console.warn('[sakura] could not start notifications listener:',e));
+}
+function stopNotificationsListener(){
+  if(_notifUnsub){ try{_notifUnsub()}catch(e){} _notifUnsub=null; }
+  notifItems=[];
+  renderNotifBell();
+}
+function renderNotifBell(){
+  const wrap=el('notif-wrap'); if(wrap)wrap.style.display=currentUser?'':'none';
+  const badge=el('notif-badge'); if(!badge)return;
+  const unread=notifItems.filter(n=>!n.read).length;
+  badge.style.display=unread>0?'flex':'none';
+  badge.textContent=unread>9?'9+':String(unread);
+}
+function notifText(n){
+  if(n.type==='share_invite'){
+    const from=n.fromDisplayName||n.fromEmail||'Someone';
+    const role=n.role==='editor'?'edit':'view';
+    return `${from} shared "${n.docTitle||'a document'}" with you (${role} access)`;
+  }
+  // Generic fallback so a future notification type "just works" visually without needing a
+  // matching branch here — as long as it carries a plain-language `message` field.
+  return n.message||'New notification';
+}
+async function markNotificationRead(id){
+  if(!currentUser||!id)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',id),{read:true});
+  }catch(e){ console.warn('[sakura] markNotificationRead failed:',e); }
+}
+function renderNotifList(){
+  const list=el('notif-list'); if(!list)return;
+  list.innerHTML='';
+  if(!notifItems.length){
+    const empty=document.createElement('div'); empty.className='notif-empty'; empty.textContent="You're all caught up";
+    list.appendChild(empty); return;
+  }
+  notifItems.forEach(n=>{
+    const item=document.createElement('div'); item.className='notif-item'+(n.read?'':' unread');
+    const text=document.createElement('div'); text.className='notif-item-text'; text.textContent=notifText(n);
+    item.appendChild(text);
+    const meta=document.createElement('div'); meta.className='notif-item-meta'; meta.textContent=formatRelativeTime(n.createdAt||Date.now());
+    item.appendChild(meta);
+    item.addEventListener('click',()=>{ if(!n.read)markNotificationRead(n.id); });
+    list.appendChild(item);
+  });
+}
+function toggleNotifMenu(force){
+  const menu=el('notif-menu'); if(!menu)return;
+  notifMenuOpen=force!==undefined?force:!menu.classList.contains('open');
+  menu.classList.toggle('open',notifMenuOpen);
+  el('notif-toggle')?.setAttribute('aria-expanded',String(notifMenuOpen));
+  if(notifMenuOpen)renderNotifList();
+}
+el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
+document.addEventListener('click',e=>{ if(notifMenuOpen&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
 
 // ---------- Feedback & error reporting ----------
 // One write-only Firestore collection ('feedback', see firestore.rules) for both a person's own
@@ -13766,7 +13946,15 @@ async function pushDocToCloud(mod,db,docId){
   const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:ts});
+  // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
+  // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
+  // has no idea whether this document carries a sharedWith map (collaboration metadata that
+  // lives on the Firestore doc itself, not mirrored into this device's local copy). A plain
+  // setDoc would silently wipe that out on every single autosave-triggered push. Only matters
+  // once sharing is actually wired up client-side, but the write path needs to already be safe
+  // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
+  // bug window was "every push, for every collaborator, until someone noticed."
+  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:ts},{merge:true});
 }
 // The other half of "delete propagation" — without this, permanently deleting a document (or
 // emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
@@ -23463,7 +23651,7 @@ el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontC
 el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
 el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus()}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('more-menu').classList.toggle('open')});
-el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu').classList.toggle('open')});
+el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu')?.classList.remove('open'); el('appbar-more-menu').classList.toggle('open')});
 // Makes a real panel/menu open anchored to the button that was actually clicked (the '...'
 // or Account toggle), instead of its own default position — which is relative to its original,
