@@ -1413,6 +1413,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .share-modal-row-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-row-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-role-sel{width:auto;flex:0 0 auto}
+.shared-doc-banner{display:flex;align-items:center;gap:7px;margin:0 26px 10px;padding:8px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--fg);font:400 12.5px 'Inter',sans-serif}
+.shared-doc-banner.viewer{background:color-mix(in srgb,#e5484d 8%,transparent)}
+.shared-doc-banner svg{flex:0 0 auto;opacity:.7}
 .share-modal-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.14);max-height:220px;overflow-y:auto;z-index:10;padding:4px}
 .share-result-empty{padding:12px 10px;font:400 13px 'Inter',sans-serif;color:var(--hint);text-align:center}
 .share-result-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:none;background:none;border-radius:8px;cursor:pointer;text-align:left}
@@ -6260,6 +6263,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
           <div id="sb-templates-list"></div>
         </div>
+        <div id="sb-shared-list"></div>
         <div id="sb-trash-list"></div>
       </div>
     </div>
@@ -6466,7 +6470,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
         <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a meeting or to-do — click to view">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span id="doc-ref-chip-text"></span>
         </button>
-      </div></div></div><div id="editor-pane" tabindex="0"><div id="editor-pane-inner"></div></div>
+      </div></div></div><div id="shared-doc-banner" class="shared-doc-banner" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="shared-doc-banner-text"></span></div><div id="editor-pane" tabindex="0"><div id="editor-pane-inner"></div></div>
   <div id="node-hover-rail" class="node-hover-rail" role="toolbar" aria-label="Node quick actions"></div>
   <div id="node-hover-menu" class="node-hover-menu" role="menu" aria-label="Node actions menu"></div>
   <button id="editor-zen-toggle" data-tip="Maximize editor (hide file explorer &amp; chrome) (Ctrl/Cmd+Shift+E)" aria-label="Maximize editor" aria-pressed="false">
@@ -9993,9 +9997,18 @@ function saveToStorage(){
     }
     storageWriteFailed=false;
     const titleForIndex=payload.title||'Untitled';
-    // Only bump updatedAt when content is actually dirty; title changes always persist title
-    if(dirty) touchDocIndex(currentDocId,titleForIndex);
-    else touchDocIndexTitleOnly(currentDocId,titleForIndex);
+    // Shared documents (opened from the Shared section — see openSharedDocument) are never
+    // added to THIS account's own docs index: doing so would make someone else's document
+    // appear to be mine, show up in my own Documents list, and get pushed to cloud sync's
+    // "which of my docs am I missing" reconciliation as if I owned it. sharedDocMeta tracks
+    // which currently-open docs are shared and who actually owns them — see pushDocToCloud for
+    // the other half of this (routing the actual cloud write to the real owner's path).
+    const sharedMeta=sharedDocMeta[currentDocId];
+    if(!sharedMeta){
+      // Only bump updatedAt when content is actually dirty; title changes always persist title
+      if(dirty) touchDocIndex(currentDocId,titleForIndex);
+      else touchDocIndexTitleOnly(currentDocId,titleForIndex);
+    }
     queueSync('doc',currentDocId);
     // The write above just landed, so whatever made this save fire (an edit, or the 450ms
     // autosave debounce in scheduleAutoSave) is now actually persisted — clear the dirty flag so
@@ -10113,6 +10126,13 @@ async function retryDiagramHydration(id){
 // existing call site (sidebar clicks, createDoc, duplicateDoc, deleteDoc, etc.) gets tab behavior
 // for free.
 let openTabs=[]; let activeTabDocId=null; const OPEN_TABS_KEY='sakura_open_tabs_v1';
+// Tracks which currently-open tabs are documents SHARED with this account (opened via the
+// Shared section, not owned locally) — {docId: {ownerUid, role, ownerDisplayName, ownerEmail}}.
+// Session-only, deliberately not persisted across reloads (see openSharedDocument for why):
+// saveToStorage checks this to avoid adding a shared doc into this account's own docs index,
+// and pushDocToCloud checks it to route the actual write to the real owner's path instead of
+// this account's own.
+let sharedDocMeta={};
 
 function findOpenTab(id){return openTabs.find(t=>t.docId===id)}
 
@@ -10176,6 +10196,7 @@ function applyTabSnapshot(tab){
   hydrateDiagramBlobsForDoc(tab.docId);
   ensureSelection(); render(); updateDirtyIndicator();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
+  if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   const pane=el('editor-pane'); const restoreScroll=tab.scrollTop||0;
   if(pane){ try{ if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>{ try{pane.scrollTop=restoreScroll}catch(e){} }); else pane.scrollTop=restoreScroll; }catch(e){} }
@@ -10221,6 +10242,7 @@ function closeTab(id, force=false){
   const wasActive=id===activeTabDocId;
   if(wasActive){ commitEdit(); captureActiveTabSnapshot(); saveToStorage() }
   openTabs.splice(idx,1);
+  if(sharedDocMeta[id])delete sharedDocMeta[id]; // see removeDocFromOpenTabs' comment
   let wentToEmptyState=false;
   if(wasActive){
     const fallback=openTabs[idx]||openTabs[idx-1]||openTabs[0];
@@ -10248,6 +10270,11 @@ function closeTabsToRight(fromId){
 function removeDocFromOpenTabs(id){
   const idx=openTabs.findIndex(t=>t.docId===id); if(idx<0)return;
   openTabs.splice(idx,1); persistOpenTabs();
+  // Shared-doc tracking is scoped to "currently open this session" — once the tab's gone,
+  // there's nothing left that needs owner-routing for pushes or exclusion from this account's
+  // own docs index (see sharedDocMeta's own comment). Not deleting it here would just leak
+  // stale entries for the rest of the session, harmlessly but pointlessly.
+  if(sharedDocMeta[id])delete sharedDocMeta[id];
 }
 
 // === Tab strip drag-and-drop reordering ===
@@ -10466,6 +10493,7 @@ function clearToNoDocumentState(){
   render(); updateDirtyIndicator(); updateAuthorDisplay();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
+  if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
 }
 function startupEnsureBlankDoc(){
   const id=genDocId();
@@ -13132,7 +13160,7 @@ function updateAccountUI(user){
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
   // know "a user just became signed in" rather than repeating the hook at each call site.
   if(user){ ensureUserProfile(user); startNotificationsListener(); }
-  else { stopNotificationsListener(); resetProfileUiState(); }
+  else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
@@ -13592,6 +13620,100 @@ async function fetchDocSharedWith(ownerUid,docId){
     const d=snap.data();
     return (d&&typeof d.sharedWith==='object'&&d.sharedWith)||{};
   }catch(e){ console.warn('[sakura] fetchDocSharedWith failed:',e); return {}; }
+}
+// Finds every document ANY account has shared with this one, regardless of who owns it — a
+// collectionGroup query across every users/{uid}/docs subcollection at once, filtered to only
+// documents where this exact uid appears in sharedWith. Firestore applies the SAME security
+// rule (see firestore.rules match /users/{userId}/docs/{docId}) to each candidate document in a
+// collectionGroup query as it would via the normal subcollection path, so this can never return
+// a document that rule wouldn't already allow reading directly.
+//
+// Needs its own one-time setup, same idea as the name-search index from before: a collection
+// group index on 'docs' isn't automatic. Firebase Console -> Firestore -> Indexes -> Add (scope:
+// Collection group), or just try opening the Shared section once signed in — Firestore prints a
+// direct "create this index" link in the browser console the first time this runs without one.
+async function findDocsSharedWithMe(){
+  if(!currentUser)return [];
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const q=mod.query(mod.collectionGroup(db,'docs'),mod.where('sharedWith.'+currentUser.uid+'.role','in',['viewer','editor']));
+    const snap=await mod.getDocs(q);
+    return snap.docs.map(d=>{
+      const data=d.data();
+      const ownerUid=d.ref.parent.parent.id;
+      const mySharedEntry=(data.sharedWith||{})[currentUser.uid]||{};
+      return {
+        docId:d.id,
+        ownerUid,
+        title:data.title||'Untitled',
+        role:mySharedEntry.role||'viewer',
+        sharedAt:mySharedEntry.sharedAt||0
+      };
+    });
+  }catch(e){ console.warn('[sakura] findDocsSharedWithMe failed — likely needs a collection-group index on "docs", see Firebase Console → Firestore → Indexes:',e); return []; }
+}
+// Resolves the OWNER's display name/email for the "shared by" line — best-effort: if their
+// profile is private, this just falls back to whatever's in the sharedWith entry itself isn't
+// available here (that's the recipient's OWN entry, not the owner's identity), so a private
+// owner shows as "Someone" rather than failing the whole list.
+async function fetchOwnerIdentity(ownerUid){
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'profiles',ownerUid));
+    if(snap.exists())return {displayName:snap.data().displayName||'',email:snap.data().email||''};
+  }catch(e){}
+  return {displayName:'',email:''};
+}
+// Opens a document that lives under a DIFFERENT account's users/{ownerUid}/docs/{docId} into
+// this session's tab strip. Deliberately session-only, not persisted into openTabs'
+// localStorage-backed restore list: restoreOpenTabsOnStartup has no concept of "this tab
+// belongs to someone else's account" and teaching it that is real added complexity for a case
+// (reopening a shared doc automatically on next launch) that "just open it again from Shared"
+// already covers adequately for a first version.
+async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmail){
+  const existing=findOpenTab(docId);
+  if(existing){ switchDoc(docId); return; }
+  showToast('Opening shared document…');
+  let tab=null;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'users',ownerUid,'docs',docId));
+    if(!snap.exists()){ showToast('This document is no longer available'); return; }
+    const d=snap.data();
+    const nds=Array.isArray(d.nodes)?d.nodes.map(normalizeNode):[];
+    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',pad:d.pad||'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:Array.isArray(d.diagrams)?d.diagrams:[],mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[],decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[],attachments:Array.isArray(d.attachments)?d.attachments:[],remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+  }catch(e){ console.warn('[sakura] openSharedDocument failed:',e); showToast('Could not open — you may no longer have access'); return; }
+  if(!tab)return;
+  // Mirror into localStorage under the same docKey the rest of the app already reads/writes —
+  // saveToStorage/queueSync/pushDocToCloud all key off this; sharedDocMeta (checked in both) is
+  // what keeps it from being mistaken for a document this account owns.
+  try{ localStorage.setItem(docKey(docId),JSON.stringify({nodes:tab.nodes,nextId:tab.nextId,selectedId:tab.selectedId,multiSelectedIds:[],selectionAnchorId:null,collapsed:[...tab.collapsedIds],title:tab.title,author:tab.author,pad:tab.pad})) }catch(e){}
+  sharedDocMeta[docId]={ownerUid,role,ownerDisplayName,ownerEmail};
+  openTabs.push(tab);
+  commitEdit(); captureActiveTabSnapshot(); saveToStorage();
+  applyTabSnapshot(tab);
+  persistOpenTabs(); renderTabStrip();
+  updateSharedDocBanner();
+}
+function updateSharedDocBanner(){
+  const banner=el('shared-doc-banner'); if(!banner)return;
+  const meta=currentDocId?sharedDocMeta[currentDocId]:null;
+  if(!meta){ banner.style.display='none'; return; }
+  const who=meta.ownerDisplayName||meta.ownerEmail||'someone else';
+  el('shared-doc-banner-text').textContent=meta.role==='editor'
+    ? `Shared by ${who} — you can edit this document.`
+    : `Shared by ${who} — view only, you can't edit this document.`;
+  banner.classList.toggle('viewer',meta.role!=='editor');
+  banner.style.display='flex';
+}
+// Best-effort deterrent for a viewer, not the real security boundary — Firestore rules already
+// correctly reject a viewer's write (role must be 'editor'), so the worst case if some edit path
+// isn't covered here is a wasted local edit that gets silently overwritten on the next pull, not
+// a data-integrity or security issue. Covers the single most common entry point (typing into a
+// node); exhaustively gating every mutation path in an app this size wasn't attempted.
+function isViewerOnCurrentDoc(){
+  const meta=currentDocId?sharedDocMeta[currentDocId]:null;
+  return !!meta&&meta.role!=='editor';
 }
 // Adds/updates a single collaborator without touching any other existing entry — dot-path
 // field update rather than a read-modify-write of the whole map, so two people sharing the
@@ -14227,6 +14349,11 @@ async function pushDocToCloud(mod,db,docId){
   const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
+  // Shared documents push to their REAL owner's path, not this account's own — see
+  // sharedDocMeta. A viewer's push will correctly fail here (Firestore rules require
+  // role=='editor' for write) rather than silently doing nothing; flushSyncQueue's existing
+  // catch surfaces that as a sync error, same as any other push failure.
+  const ownerUid=sharedDocMeta[docId]?.ownerUid||currentUser.uid;
   // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
   // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
   // has no idea whether this document carries a sharedWith map (collaboration metadata that
@@ -14235,7 +14362,7 @@ async function pushDocToCloud(mod,db,docId){
   // once sharing is actually wired up client-side, but the write path needs to already be safe
   // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
   // bug window was "every push, for every collaborator, until someone noticed."
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:ts},{merge:true});
+  await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...data,updatedAt:ts},{merge:true});
 }
 // The other half of "delete propagation" — without this, permanently deleting a document (or
 // emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
@@ -17364,7 +17491,7 @@ el('editor-pane')?.addEventListener('keyup',e=>{
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')typewriterRecenter();
 });
 
-function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document"); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 // Standard mirror-div technique: clones the textarea's exact text-layout styles (width, font,
 // padding, wrapping) into a hidden div so the browser wraps the text identically, then measures
 // where a marker lands to get the true visual line index -- this is the only reliable way to know
@@ -17451,7 +17578,7 @@ function setEditableSelectionRange(el,start,end){
 }
 // Places the caret at a specific offset rather than just start/end -- used by single-click-to-edit
 // below, so clicking mid-sentence doesn't force the caret to jump to one end of the line first.
-function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document"); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 // Best-effort mapping from a click point to a character offset in the node's raw text. Walks the
 // rendered label's text nodes (via the browser's native caret-from-point APIs) and sums lengths up
 // to the click position. This can be slightly off for lines with inline formatting syntax (bold,
@@ -26964,8 +27091,80 @@ function openFolderPicker(docId, folders){
 function renderSidebar(){
   renderSidebarDocs();
   renderSidebarTemplates();
+  renderSidebarShared();
   renderSidebarTrash();
   updateBulkBar();
+}
+let sharedSectionOpen=false;
+// null = not fetched yet this session, array = loaded (possibly empty). Deliberately cached
+// rather than re-querying on every renderSidebar() call (which fires very often, on nearly
+// every edit) — refreshed explicitly (sign-in, opening the section for the first time, or the
+// refresh button) rather than on some fixed poll, since "someone shared a doc with me" isn't
+// urgent enough to justify a live listener the way the notification bell's inbox is.
+let sharedWithMeCache=null;
+async function loadSharedWithMeList(force){
+  if(sharedWithMeCache&&!force)return sharedWithMeCache;
+  const items=await findDocsSharedWithMe();
+  // Best-effort owner identity per item (see fetchOwnerIdentity) -- a second read per shared
+  // doc, acceptable for a list a person opens occasionally and isn't a hot path.
+  const withOwners=await Promise.all(items.map(async it=>{
+    const owner=await fetchOwnerIdentity(it.ownerUid);
+    return {...it,ownerDisplayName:owner.displayName,ownerEmail:owner.email};
+  }));
+  withOwners.sort((a,b)=>(b.sharedAt||0)-(a.sharedAt||0));
+  sharedWithMeCache=withOwners;
+  return sharedWithMeCache;
+}
+function renderSidebarShared(){
+  const wrap=el('sb-shared-list'); if(!wrap)return; wrap.innerHTML='';
+  if(!currentUser)return; // nothing to show when signed out -- sharing needs an account
+  if(sbSearchQuery.trim())return; // same as Trash -- doesn't participate in the sidebar filter
+
+  const row=document.createElement('div'); row.className='sfolder-row';
+  row.dataset.tip='Documents other Sakura accounts have shared with you';
+  const tog=document.createElement('button'); tog.className='sfolder-toggle'+(sharedSectionOpen?' open':''); tog.textContent='▶';
+  tog.addEventListener('click',e=>{
+    e.stopPropagation(); sharedSectionOpen=!sharedSectionOpen;
+    if(sharedSectionOpen&&sharedWithMeCache===null){ renderSidebarShared(); loadSharedWithMeList().then(renderSidebarShared); return; }
+    renderSidebarShared();
+  });
+  row.appendChild(tog);
+  const icon=document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+  row.appendChild(icon);
+  const name=document.createElement('span'); name.className='sfolder-name'; name.textContent='Shared';
+  row.appendChild(name);
+  const count=document.createElement('span'); count.className='sfolder-count'; count.textContent=sharedWithMeCache===null?'…':sharedWithMeCache.length;
+  row.appendChild(count);
+  const facts=document.createElement('div'); facts.className='sfolder-actions';
+  const refreshBtn=document.createElement('button'); refreshBtn.className='sdoc-action-btn'; refreshBtn.dataset.tip='Refresh';
+  refreshBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+  refreshBtn.addEventListener('click',async e=>{ e.stopPropagation(); sharedSectionOpen=true; renderSidebarShared(); await loadSharedWithMeList(true); renderSidebarShared(); });
+  facts.appendChild(refreshBtn);
+  row.appendChild(facts);
+  wrap.appendChild(row);
+
+  const children=document.createElement('div'); children.className='sfolder-children'+(sharedSectionOpen?'':' hidden');
+  if(sharedSectionOpen){
+    if(sharedWithMeCache===null){
+      const loading=document.createElement('div'); loading.className='sb-empty'; loading.textContent='Loading…'; children.appendChild(loading);
+    }else if(!sharedWithMeCache.length){
+      const empty=document.createElement('div'); empty.className='sb-empty'; empty.textContent='Nothing shared with you yet'; children.appendChild(empty);
+    }else{
+      sharedWithMeCache.forEach(item=>{
+        const el2=document.createElement('div'); el2.className='sdoc-item';
+        el2.addEventListener('click',()=>openSharedDocument(item.ownerUid,item.docId,item.role,item.ownerDisplayName,item.ownerEmail));
+        const docIcon=document.createElement('span'); docIcon.className='sdoc-icon'; docIcon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        el2.appendChild(docIcon);
+        const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='cursor:pointer'; nb.textContent=item.title; nb.dataset.tip=item.title;
+        el2.appendChild(nb);
+        const who=item.ownerDisplayName||item.ownerEmail||'Someone';
+        const meta=document.createElement('span'); meta.className='sdoc-meta'; meta.textContent=`${who} · ${item.role==='editor'?'can edit':'view only'}`;
+        el2.appendChild(meta);
+        children.appendChild(el2);
+      });
+    }
+  }
+  wrap.appendChild(children);
 }
 let trashSectionOpen=false;
 function updateTrashSettingsStatus(){
