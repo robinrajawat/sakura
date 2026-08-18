@@ -65,9 +65,28 @@ service cloud.firestore {
       // ANY one candidate document fails the ENTIRE query with "Missing or insufficient
       // permissions" — not merely excluding that document. Since most docs predate ever being
       // shared, the old `!= null` form broke every shared-docs query, not just direct reads.
+      //
+      // The sharedWithUids branch below is not redundant with the sharedWith branch — it exists
+      // specifically because "security rules are not filters": for a list/collectionGroup query
+      // (unlike a plain get() by exact document reference), Firestore does not evaluate the rule
+      // against each candidate's actual stored data. It has to PROVE, from the query's own where
+      // clause alone, that every possible match would satisfy the rule — without ever looking at
+      // real field values. findDocsSharedWithMe's query filters on
+      // where('sharedWithUids','array-contains',uid); a rule that only checks a DIFFERENT field
+      // (sharedWith.keys()) can never be proven safe against that specific query, no matter what
+      // the data actually contains, and Firestore rejects the whole query with "Missing or
+      // insufficient permissions" — this is the same error a missing rule produces, but it's a
+      // rule/query field MISMATCH, not an actual missing permission. The fix demonstrated in
+      // Firebase's own docs is to give the rule a branch matching the query's own constraint
+      // field+operator exactly (array-contains here) — this branch is that: it mirrors the query
+      // precisely, so Firestore can verify it directly, while the sharedWith branch remains for
+      // ordinary get()-by-reference reads (openSharedDocument, fetchDocSharedWith), which face no
+      // such restriction since there's no "potential result set" to reason about for one exact,
+      // already-identified document.
       allow read: if request.auth != null && (
         request.auth.uid == userId ||
-        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys())
+        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys()) ||
+        ('sharedWithUids' in resource.data && request.auth.uid in resource.data.sharedWithUids)
       );
       // Only the owner can create a new doc record under their own path — sharing only ever
       // grants access to a document the owner already created, never lets a collaborator mint
