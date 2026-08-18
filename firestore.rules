@@ -83,10 +83,26 @@ service cloud.firestore {
       // ordinary get()-by-reference reads (openSharedDocument, fetchDocSharedWith), which face no
       // such restriction since there's no "potential result set" to reason about for one exact,
       // already-identified document.
+      //
+      // Deliberately NO `'sharedWithUids' in resource.data &&` existence guard on this specific
+      // branch, unlike every other field check in this file — that first attempt still failed
+      // with the same "Missing or insufficient permissions" error. Firestore's query-safety
+      // prover does fairly literal pattern-matching between the query's own where clause and the
+      // rule expression; it recognizes the bare idiomatic form `uid in resource.data.FIELD`
+      // (matching every official array-contains rule example) but apparently doesn't reduce a
+      // compound `('FIELD' in resource.data) && (uid in resource.data.FIELD)` down to the same
+      // provable shape, so it fails safe (rejects) rather than proving it true. Dropping the
+      // guard is safe here specifically because it's provably unreachable-when-absent for THIS
+      // query: array-contains can only ever match a document where the array field exists, so
+      // every candidate this branch would need to evaluate for already has it. A direct get() on
+      // some other, unrelated document that genuinely lacks sharedWithUids would still correctly
+      // deny (via a thrown-and-caught error rather than a clean false) — same outcome, just take
+      // a different path through the expression; the sharedWith branch either short-circuits
+      // first or is independently sufficient for those.
       allow read: if request.auth != null && (
         request.auth.uid == userId ||
         ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys()) ||
-        ('sharedWithUids' in resource.data && request.auth.uid in resource.data.sharedWithUids)
+        request.auth.uid in resource.data.sharedWithUids
       );
       // Only the owner can create a new doc record under their own path — sharing only ever
       // grants access to a document the owner already created, never lets a collaborator mint
