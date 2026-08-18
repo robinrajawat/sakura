@@ -1410,6 +1410,15 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .share-modal-row-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-row-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-role-sel{width:auto;flex:0 0 auto}
+.share-modal-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.14);max-height:220px;overflow-y:auto;z-index:10;padding:4px}
+.share-result-empty{padding:12px 10px;font:400 13px 'Inter',sans-serif;color:var(--hint);text-align:center}
+.share-result-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:none;background:none;border-radius:8px;cursor:pointer;text-align:left}
+.share-result-item:hover{background:var(--hover)}
+.share-result-avatar{width:26px;height:26px;border-radius:50%;flex:0 0 auto;object-fit:cover}
+.share-result-avatar-fallback{display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font:600 12px 'Inter',sans-serif}
+.share-result-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.share-result-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share-result-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
 #report-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
 #report-panel.open{display:flex}
@@ -7702,15 +7711,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div>
       <div class="history-modal-body" style="gap:10px;display:flex;flex-direction:column">
         <div class="muted-help" style="margin:0">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
-        <div style="display:flex;gap:6px">
-          <input id="share-modal-email-input" type="email" class="meta-input" placeholder="Their email address" style="flex:1;min-width:0" />
+        <div style="display:flex;gap:6px;position:relative">
+          <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" style="flex:1;min-width:0" />
           <select id="share-modal-role-select" class="select" style="width:auto">
             <option value="viewer">Can view</option>
             <option value="editor">Can edit</option>
           </select>
+          <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
         </div>
         <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
-        <button id="share-modal-submit-btn" class="btn primary" style="align-self:flex-start">Share</button>
         <div class="share-modal-divider"></div>
         <div class="share-modal-section-label">Who has access</div>
         <div id="share-modal-list"></div>
@@ -13466,6 +13475,10 @@ async function ensureUserProfile(user){
     const base={
       email:(user.email||'').toLowerCase(),
       displayName:user.displayName||'',
+      // Lowercased, indexed copy purely for the prefix-range search findPublicProfilesByQuery
+      // runs (Firestore has no case-insensitive or full-text search — a >=/<= range on a
+      // lowercased field is the standard workaround for "starts with").
+      displayNameLower:(user.displayName||'').toLowerCase(),
       photoURL:user.photoURL||'',
       updatedAt:Date.now()
     };
@@ -13524,6 +13537,37 @@ async function findPublicProfileByEmail(email){
     return {uid:d.id,...d.data()};
   }catch(e){ console.warn('[sakura] findPublicProfileByEmail failed:',e); return null; }
 }
+// Live search-as-you-type for the Share dialog — matches by name prefix OR exact email, merged
+// and deduped. Two separate Firestore queries rather than one: an exact-email equality filter
+// alongside visibility=='public' needs no extra index (Firestore satisfies pure equality-on-
+// equality queries automatically), but the displayNameLower prefix range (>=/<= ...) combined
+// with the visibility equality filter needs its own composite index (profiles: visibility ASC,
+// displayNameLower ASC) — NOT auto-created, has to be added once in Firebase Console →
+// Firestore → Indexes (or via the direct link Firestore prints in the browser console the first
+// time this query runs and the index doesn't exist yet). Only the name-prefix query can hit
+// that; the exact-email one keeps working regardless, so a name search failing before the index
+// exists degrades to "no name matches" rather than breaking sharing entirely.
+async function searchPublicProfiles(queryStr){
+  const clean=(queryStr||'').trim().toLowerCase();
+  if(clean.length<2)return [];
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const results=new Map();
+    const emailQ=mod.query(mod.collection(db,'profiles'),mod.where('email','==',clean),mod.where('visibility','==','public'),mod.limit(5));
+    const nameQ=mod.query(mod.collection(db,'profiles'),
+      mod.where('visibility','==','public'),
+      mod.where('displayNameLower','>=',clean),
+      mod.where('displayNameLower','<=',clean+'\uf8ff'),
+      mod.limit(8));
+    const [emailSnap,nameSnap]=await Promise.all([
+      mod.getDocs(emailQ).catch(e=>{ console.warn('[sakura] email-match profile search failed:',e); return {docs:[]}; }),
+      mod.getDocs(nameQ).catch(e=>{ console.warn('[sakura] name-prefix profile search failed — likely needs a composite index (profiles: visibility, displayNameLower), see Firebase Console → Firestore → Indexes:',e); return {docs:[]}; })
+    ]);
+    [...emailSnap.docs,...nameSnap.docs].forEach(d=>{ if(!results.has(d.id))results.set(d.id,{uid:d.id,...d.data()}); });
+    if(currentUser)results.delete(currentUser.uid); // never suggest sharing with yourself
+    return [...results.values()].slice(0,8);
+  }catch(e){ console.warn('[sakura] searchPublicProfiles failed:',e); return []; }
+}
 
 // ---------- Document sharing ----------
 // sharedWith lives directly on the Firestore doc at users/{ownerUid}/docs/{docId} — see
@@ -13545,15 +13589,17 @@ async function fetchDocSharedWith(ownerUid,docId){
 // field update rather than a read-modify-write of the whole map, so two people sharing the
 // same document with different collaborators at nearly the same moment can't clobber each
 // other's change.
-async function shareDocumentWith(docId,docTitle,email,role){
+// Does the actual Firestore write — both shareDocumentWith (email-lookup path, kept for the
+// Enter-key fallback) and shareDocumentWithProfile (the dropdown-result-click path, which
+// already has the exact profile from the search results and shouldn't re-look-it-up) funnel
+// through here so the write logic — and the notification it fires — only exists once.
+async function grantDocumentAccess(docId,docTitle,profile,role){
   if(!currentUser)return {ok:false,error:'Not signed in'};
-  const profile=await findPublicProfileByEmail(email);
-  if(!profile)return {ok:false,error:'No discoverable Sakura account for that email — they may not have an account, or their profile is private.'};
   if(profile.uid===currentUser.uid)return {ok:false,error:"That's your own account."};
   try{
     const {mod,db}=await loadFirestoreMods();
     const ref=mod.doc(db,'users',currentUser.uid,'docs',docId);
-    const entry={role,email:profile.email||email.toLowerCase(),displayName:profile.displayName||'',sharedAt:Date.now()};
+    const entry={role,email:profile.email||'',displayName:profile.displayName||'',sharedAt:Date.now()};
     await mod.updateDoc(ref,{['sharedWith.'+profile.uid]:entry});
     await mod.addDoc(mod.collection(db,'notifications',profile.uid,'items'),{
       type:'share_invite',
@@ -13567,7 +13613,15 @@ async function shareDocumentWith(docId,docTitle,email,role){
       read:false
     });
     return {ok:true,uid:profile.uid,entry};
-  }catch(e){ console.warn('[sakura] shareDocumentWith failed:',e); return {ok:false,error:'Could not share — try again'}; }
+  }catch(e){ console.warn('[sakura] grantDocumentAccess failed:',e); return {ok:false,error:'Could not share — try again'}; }
+}
+async function shareDocumentWith(docId,docTitle,email,role){
+  const profile=await findPublicProfileByEmail(email);
+  if(!profile)return {ok:false,error:'No discoverable Sakura account for that email — they may not have an account, or their profile is private.'};
+  return grantDocumentAccess(docId,docTitle,profile,role);
+}
+async function shareDocumentWithProfile(docId,docTitle,profile,role){
+  return grantDocumentAccess(docId,docTitle,profile,role);
 }
 async function revokeDocumentAccess(docId,uid){
   if(!currentUser)return false;
@@ -13595,11 +13649,12 @@ async function openShareModal(docId,docTitle){
   el('share-modal-email-input').value='';
   el('share-modal-role-select').value='viewer';
   el('share-modal-error').style.display='none';
+  hideShareResults();
   overlay.classList.add('open');
   setTimeout(()=>el('share-modal-email-input')?.focus(),0);
   await renderShareModalList();
 }
-function closeShareModal(){ el('share-modal-overlay')?.classList.remove('open'); shareModalDocId=null; }
+function closeShareModal(){ el('share-modal-overlay')?.classList.remove('open'); shareModalDocId=null; hideShareResults(); }
 async function renderShareModalList(){
   const list=el('share-modal-list'); if(!list||!shareModalDocId)return;
   list.innerHTML='<div class="share-modal-loading">Loading…</div>';
@@ -13636,23 +13691,67 @@ async function renderShareModalList(){
     list.appendChild(row);
   });
 }
+function shareAvatarHtml(profile){
+  const initial=(profile.displayName||profile.email||'?').trim().charAt(0).toUpperCase();
+  if(profile.photoURL)return `<img src="${esc(profile.photoURL)}" class="share-result-avatar" alt="" />`;
+  return `<span class="share-result-avatar share-result-avatar-fallback">${esc(initial)}</span>`;
+}
+function hideShareResults(){ const r=el('share-modal-results'); if(r){ r.style.display='none'; r.innerHTML=''; } }
+function renderShareResults(results){
+  const box=el('share-modal-results'); if(!box)return;
+  if(!results.length){ box.style.display='block'; box.innerHTML='<div class="share-result-empty">No matching discoverable accounts</div>'; return; }
+  box.innerHTML='';
+  results.forEach(profile=>{
+    const item=document.createElement('button'); item.type='button'; item.className='share-result-item';
+    item.innerHTML=shareAvatarHtml(profile)+
+      `<span class="share-result-text"><span class="share-result-name">${esc(profile.displayName||'(no name set)')}</span><span class="share-result-email">${esc(profile.email||'')}</span></span>`;
+    item.addEventListener('click',async()=>{
+      const role=el('share-modal-role-select').value;
+      hideShareResults();
+      el('share-modal-email-input').value='';
+      const res=await shareDocumentWithProfile(shareModalDocId,shareModalDocTitle,profile,role);
+      const errorEl=el('share-modal-error');
+      if(!res.ok){ errorEl.textContent=res.error; errorEl.style.display='block'; return; }
+      errorEl.style.display='none';
+      showToast('Shared with '+(res.entry.displayName||res.entry.email));
+      await renderShareModalList();
+    });
+    box.appendChild(item);
+  });
+  box.style.display='block';
+}
+let _shareSearchDebounce=null;
+function onShareEmailInput(){
+  const input=el('share-modal-email-input'); if(!input)return;
+  const q=input.value;
+  clearTimeout(_shareSearchDebounce);
+  if(q.trim().length<2){ hideShareResults(); return; }
+  _shareSearchDebounce=setTimeout(async()=>{
+    const results=await searchPublicProfiles(q);
+    // Guard against a slow, now-stale response landing after the input changed again.
+    if(el('share-modal-email-input')?.value===q)renderShareResults(results);
+  },300);
+}
 async function submitShareModal(){
-  const emailInput=el('share-modal-email-input'), roleSelect=el('share-modal-role-select'), errorEl=el('share-modal-error'), submitBtn=el('share-modal-submit-btn');
+  // Enter-key fallback: if a full email was typed but no dropdown result was clicked yet
+  // (e.g. the debounce hasn't resolved), fall back to the exact-match lookup rather than
+  // making the person wait for the dropdown.
+  const emailInput=el('share-modal-email-input'), roleSelect=el('share-modal-role-select'), errorEl=el('share-modal-error');
   if(!emailInput||!shareModalDocId)return;
-  const email=emailInput.value.trim();
+  const val=emailInput.value.trim();
   errorEl.style.display='none';
-  if(!email||!email.includes('@')){ errorEl.textContent='Enter a valid email address.'; errorEl.style.display='block'; return; }
-  submitBtn.disabled=true; submitBtn.style.opacity='.6';
-  const res=await shareDocumentWith(shareModalDocId,shareModalDocTitle,email,roleSelect.value);
-  submitBtn.disabled=false; submitBtn.style.opacity='';
+  if(!val||!val.includes('@')){ errorEl.textContent='Type a full email to press Enter, or pick a name from the results.'; errorEl.style.display='block'; return; }
+  hideShareResults();
+  const res=await shareDocumentWith(shareModalDocId,shareModalDocTitle,val,roleSelect.value);
   if(!res.ok){ errorEl.textContent=res.error; errorEl.style.display='block'; return; }
   emailInput.value='';
   showToast('Shared with '+(res.entry.displayName||res.entry.email));
   await renderShareModalList();
 }
-el('share-modal-submit-btn')?.addEventListener('click',submitShareModal);
-el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } });
+el('share-modal-email-input')?.addEventListener('input',onShareEmailInput);
+el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } else if(e.key==='Escape'){ hideShareResults(); } });
 el('share-modal-close-btn')?.addEventListener('click',closeShareModal);
+document.addEventListener('click',e=>{ if(!e.target.closest('#share-modal-email-input, #share-modal-results'))hideShareResults(); });
 onOverlayBackdropClick(el('share-modal-overlay'),closeShareModal);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-modal-overlay')?.classList.contains('open'))closeShareModal(); });
 
