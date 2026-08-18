@@ -780,7 +780,6 @@ body.no-word-wrap .node-row{min-width:max-content}
 /* Header layout: brand + inline title + actions, single row, no wrap */
 #editor-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 2px 16px}
 #sb-author.doc-author-chip{text-transform:none;letter-spacing:0;font-weight:600;cursor:text;width:132px;text-align:left;outline:none}
-#sb-author.doc-author-chip:focus{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 16%, transparent)}
 #doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu{right:auto;left:0}
 .meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
 .meta-inline::placeholder{color:var(--hint)}
@@ -1220,12 +1219,13 @@ body.show-toolbar-labels .quick-sep{margin-top:9px}
 
 
 .theme-segmented{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
-.theme-seg,.theme-mode-seg,.font-seg,.profile-visibility-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.theme-seg,.theme-mode-seg,.font-seg,.profile-visibility-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 body.appbar-decluttered #app-brand,body.appbar-decluttered .docs-wrap{display:none}
-.theme-seg:hover,.theme-mode-seg:hover,.font-seg:hover,.profile-visibility-seg:hover{color:var(--fg)}
-.theme-seg.active,.theme-mode-seg.active,.font-seg.active,.profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
-body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .font-seg.active,body.theme-dark .profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
-body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .font-seg.active,body.theme-light .profile-visibility-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
+.theme-seg:hover,.theme-mode-seg:hover,.font-seg:hover,.profile-visibility-seg:hover,.share-role-seg:hover{color:var(--fg)}
+.theme-seg:focus-visible,.theme-mode-seg:focus-visible,.font-seg:focus-visible,.profile-visibility-seg:focus-visible,.share-role-seg:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.theme-seg.active,.theme-mode-seg.active,.font-seg.active,.profile-visibility-seg.active,.share-role-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
+body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .font-seg.active,body.theme-dark .profile-visibility-seg.active,body.theme-dark .share-role-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
+body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .font-seg.active,body.theme-light .profile-visibility-seg.active,body.theme-light .share-role-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
 .segmented-control{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
 .segmented-btn{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;flex:1 1 0;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 .segmented-btn:hover{color:var(--fg)}
@@ -1423,7 +1423,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .share-modal-row-info{flex:1;min-width:0}
 .share-modal-row-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-row-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.share-modal-role-sel{width:auto;flex:0 0 auto}
+.share-role-segmented{min-height:30px;flex:0 0 auto}
+.share-modal-row-role{min-height:26px}
+.share-role-seg{padding:5px 9px;font-size:11px}
 .share-modal-owner-badge{flex:0 0 auto;font:500 11px 'Inter',sans-serif;color:var(--hint);padding:4px 8px}
 .shared-doc-banner{display:flex;align-items:center;gap:7px;margin:0 26px 10px;padding:8px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--fg);font:400 12.5px 'Inter',sans-serif}
 .shared-doc-banner.viewer{background:color-mix(in srgb,#e5484d 8%,transparent)}
@@ -3563,6 +3565,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 #doc-status-wrap{position:relative;flex:0 0 auto}
 .doc-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);transition:background .12s,color .12s}
+.doc-status-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
 .doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
 .doc-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
@@ -6502,10 +6505,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
                 <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" />
               </div>
-              <select id="share-modal-role-select" class="select" style="width:auto">
-                <option value="viewer">Can view</option>
-                <option value="editor">Can edit</option>
-              </select>
+              <div class="theme-segmented share-role-segmented" id="share-modal-role-segmented" role="tablist" aria-label="Access level">
+                <button type="button" class="share-role-seg active" data-role="viewer" role="tab" aria-selected="true" data-tip="Can view">View</button>
+                <button type="button" class="share-role-seg" data-role="editor" role="tab" aria-selected="false" data-tip="Can edit">Edit</button>
+              </div>
               <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
             </div>
             <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
@@ -13819,14 +13822,25 @@ el('doc-share-chip')?.addEventListener('click',e=>{
   openShareDropdown(currentDocId, el('header-title')?.value||'Untitled');
 });
 
-let shareModalDocId=null, shareModalDocTitle='';
+let shareModalDocId=null, shareModalDocTitle='', shareModalSelectedRole='viewer';
+function setShareModalSelectedRole(role){
+  shareModalSelectedRole=role==='editor'?'editor':'viewer';
+  document.querySelectorAll('#share-modal-role-segmented .share-role-seg').forEach(btn=>{
+    const active=btn.dataset.role===shareModalSelectedRole;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-selected',String(active));
+  });
+}
+document.querySelectorAll('#share-modal-role-segmented .share-role-seg').forEach(btn=>{
+  btn.addEventListener('click',e=>{ e.stopPropagation(); setShareModalSelectedRole(btn.dataset.role); });
+});
 async function openShareDropdown(docId,docTitle){
   if(!currentUser){ showToast('Sign in to share a document'); return; }
   shareModalDocId=docId; shareModalDocTitle=docTitle||'Untitled';
   const menu=el('share-dd-menu'); if(!menu)return;
   el('share-dd-doctitle').textContent=shareModalDocTitle;
   el('share-modal-email-input').value='';
-  el('share-modal-role-select').value='viewer';
+  setShareModalSelectedRole('viewer');
   el('share-modal-error').style.display='none';
   hideShareResults();
   menu.classList.add('open');
@@ -13868,15 +13882,22 @@ async function renderShareModalList(){
     const email=document.createElement('div'); email.className='share-modal-row-email'; email.textContent=entry.displayName?(entry.email||''):'';
     info.appendChild(name); if(email.textContent)info.appendChild(email);
     row.appendChild(info);
-    const roleSel=document.createElement('select'); roleSel.className='select share-modal-role-sel';
-    ['viewer','editor'].forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r==='viewer'?'Viewer':'Editor'; if(r===entry.role)o.selected=true; roleSel.appendChild(o); });
-    roleSel.addEventListener('change',async()=>{
-      roleSel.disabled=true;
-      const ok=await changeDocumentAccessRole(shareModalDocId,uid,roleSel.value);
-      roleSel.disabled=false;
-      showToast(ok?'Access updated':'Could not update — try again');
+    const roleSeg=document.createElement('div'); roleSeg.className='theme-segmented share-role-segmented share-modal-row-role';
+    ['viewer','editor'].forEach(r=>{
+      const b=document.createElement('button'); b.type='button'; b.className='share-role-seg'+(r===entry.role?' active':'');
+      b.dataset.role=r; b.dataset.tip=r==='viewer'?'Can view':'Can edit'; b.textContent=r==='viewer'?'View':'Edit';
+      b.addEventListener('click',async e=>{
+        e.stopPropagation();
+        if(b.classList.contains('active'))return;
+        roleSeg.querySelectorAll('.share-role-seg').forEach(x=>x.disabled=true);
+        const ok=await changeDocumentAccessRole(shareModalDocId,uid,r);
+        if(ok){ roleSeg.querySelectorAll('.share-role-seg').forEach(x=>x.classList.toggle('active',x===b)); }
+        roleSeg.querySelectorAll('.share-role-seg').forEach(x=>x.disabled=false);
+        showToast(ok?'Access updated':'Could not update — try again');
+      });
+      roleSeg.appendChild(b);
     });
-    row.appendChild(roleSel);
+    row.appendChild(roleSeg);
     const removeBtn=document.createElement('button'); removeBtn.className='sb-icon-btn danger'; removeBtn.dataset.tip='Remove access';
     removeBtn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
     removeBtn.addEventListener('click',async()=>{
@@ -13904,7 +13925,7 @@ function renderShareResults(results){
     item.innerHTML=shareAvatarHtml(profile)+
       `<span class="share-result-text"><span class="share-result-name">${esc(profile.displayName||'(no name set)')}</span><span class="share-result-email">${esc(profile.email||'')}</span></span>`;
     item.addEventListener('click',async()=>{
-      const role=el('share-modal-role-select').value;
+      const role=shareModalSelectedRole;
       hideShareResults();
       el('share-modal-email-input').value='';
       const res=await shareDocumentWithProfile(shareModalDocId,shareModalDocTitle,profile,role);
@@ -13934,13 +13955,13 @@ async function submitShareModal(){
   // Enter-key fallback: if a full email was typed but no dropdown result was clicked yet
   // (e.g. the debounce hasn't resolved), fall back to the exact-match lookup rather than
   // making the person wait for the dropdown.
-  const emailInput=el('share-modal-email-input'), roleSelect=el('share-modal-role-select'), errorEl=el('share-modal-error');
+  const emailInput=el('share-modal-email-input'), errorEl=el('share-modal-error');
   if(!emailInput||!shareModalDocId)return;
   const val=emailInput.value.trim();
   errorEl.style.display='none';
   if(!val||!val.includes('@')){ errorEl.textContent='Type a full email to press Enter, or pick a name from the results.'; errorEl.style.display='block'; return; }
   hideShareResults();
-  const res=await shareDocumentWith(shareModalDocId,shareModalDocTitle,val,roleSelect.value);
+  const res=await shareDocumentWith(shareModalDocId,shareModalDocTitle,val,shareModalSelectedRole);
   if(!res.ok){ errorEl.textContent=res.error; errorEl.style.display='block'; return; }
   emailInput.value='';
   showToast('Shared with '+(res.entry.displayName||res.entry.email));
