@@ -1404,6 +1404,8 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .history-row-restore:hover{background:var(--hover);border-color:var(--accent)}
 .history-empty{padding:20px 6px;text-align:center;color:var(--muted);font:400 12.5px 'Inter',sans-serif;line-height:1.5}
 .history-modal-footer{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.share-dd-menu{min-width:320px;max-width:min(90vw,340px);max-height:min(420px,70vh);padding:12px;gap:8px}
+.share-dd-title{font:600 13px 'Inter',sans-serif;color:var(--fg);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-modal-error{font:400 12px 'Inter',sans-serif;color:#e5484d}
 .share-modal-divider{border-top:1px solid var(--border);margin:2px 0}
 .share-modal-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint)}
@@ -6246,6 +6248,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
         </div>
         <div id="sb-docs-list"></div>
+        <div id="sb-shared-list"></div>
         <!-- Templates section -->
         <div id="sb-templates-section">
           <div class="sb-section-hdr">
@@ -6263,7 +6266,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
           <div id="sb-templates-list"></div>
         </div>
-        <div id="sb-shared-list"></div>
         <div id="sb-trash-list"></div>
       </div>
     </div>
@@ -6466,7 +6468,25 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             </div>
           </div>
         </div>
-        <button type="button" class="doc-status-chip unset" id="doc-share-chip" style="display:none" data-tip="Share this document with another Sakura account"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+        <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
+          <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+          <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
+            <div class="share-dd-title">Share — <span id="share-dd-doctitle"></span></div>
+            <div class="muted-help" style="margin:0 0 8px">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
+            <div style="display:flex;gap:6px;position:relative">
+              <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" style="flex:1;min-width:0" />
+              <select id="share-modal-role-select" class="select" style="width:auto">
+                <option value="viewer">Can view</option>
+                <option value="editor">Can edit</option>
+              </select>
+              <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
+            </div>
+            <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
+            <div class="share-modal-divider"></div>
+            <div class="share-modal-section-label">Who has access</div>
+            <div id="share-modal-list"></div>
+          </div>
+        </div>
         <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a meeting or to-do — click to view">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span id="doc-ref-chip-text"></span>
         </button>
@@ -7708,29 +7728,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 20 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
-      </div>
-    </div>
-  </div>
-  <div id="share-modal-overlay" class="history-modal-overlay">
-    <div class="history-modal" style="width:min(420px,calc(100vw - 32px))">
-      <div class="history-modal-header">
-        <span class="history-modal-title">Share — <span id="share-modal-doctitle"></span></span>
-        <button id="share-modal-close-btn" class="history-modal-close-x" data-tip="Close">×</button>
-      </div>
-      <div class="history-modal-body" style="gap:10px;display:flex;flex-direction:column">
-        <div class="muted-help" style="margin:0">Only people with a discoverable Sakura account (Settings → Account → "Discoverable by email") can be found this way.</div>
-        <div style="display:flex;gap:6px;position:relative">
-          <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" style="flex:1;min-width:0" />
-          <select id="share-modal-role-select" class="select" style="width:auto">
-            <option value="viewer">Can view</option>
-            <option value="editor">Can edit</option>
-          </select>
-          <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
-        </div>
-        <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
-        <div class="share-modal-divider"></div>
-        <div class="share-modal-section-label">Who has access</div>
-        <div id="share-modal-list"></div>
       </div>
     </div>
   </div>
@@ -13773,29 +13770,42 @@ async function changeDocumentAccessRole(docId,uid,role){
 // Shown under the title, alongside the status/author/link chips — only when signed in (sharing
 // needs an account on both ends) and an actual document is open (nothing to share otherwise).
 function updateDocShareChipVisibility(){
-  const chip=el('doc-share-chip'); if(!chip)return;
-  chip.style.display=(currentUser&&currentDocId)?'':'none';
+  const wrap=el('doc-share-wrap'); if(!wrap)return;
+  wrap.style.display=(currentUser&&currentDocId)?'':'none';
 }
-el('doc-share-chip')?.addEventListener('click',()=>{
+// Inline dropdown (same pattern as the Status/Link chips right next to it — see doc-link-chip's
+// listener), not a modal: sharing is a fast, frequent-ish action on the document you're already
+// looking at, and a full centered overlay with a backdrop was heavier than that action warrants.
+el('doc-share-chip')?.addEventListener('click',e=>{
+  e.stopPropagation();
   if(!currentDocId)return;
-  openShareModal(currentDocId, el('header-title')?.value||'Untitled');
+  const menu=el('share-dd-menu'); if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
+  if(isOpen){ closeShareDropdown(); return; }
+  openShareDropdown(currentDocId, el('header-title')?.value||'Untitled');
 });
 
 let shareModalDocId=null, shareModalDocTitle='';
-async function openShareModal(docId,docTitle){
+async function openShareDropdown(docId,docTitle){
   if(!currentUser){ showToast('Sign in to share a document'); return; }
   shareModalDocId=docId; shareModalDocTitle=docTitle||'Untitled';
-  const overlay=el('share-modal-overlay'); if(!overlay)return;
-  el('share-modal-doctitle').textContent=shareModalDocTitle;
+  const menu=el('share-dd-menu'); if(!menu)return;
+  el('share-dd-doctitle').textContent=shareModalDocTitle;
   el('share-modal-email-input').value='';
   el('share-modal-role-select').value='viewer';
   el('share-modal-error').style.display='none';
   hideShareResults();
-  overlay.classList.add('open');
+  menu.classList.add('open');
+  el('doc-share-chip')?.setAttribute('aria-expanded','true');
   setTimeout(()=>el('share-modal-email-input')?.focus(),0);
   await renderShareModalList();
 }
-function closeShareModal(){ el('share-modal-overlay')?.classList.remove('open'); shareModalDocId=null; hideShareResults(); }
+function closeShareDropdown(){
+  el('share-dd-menu')?.classList.remove('open');
+  el('doc-share-chip')?.setAttribute('aria-expanded','false');
+  shareModalDocId=null; hideShareResults();
+}
 async function renderShareModalList(){
   const list=el('share-modal-list'); if(!list||!shareModalDocId)return;
   list.innerHTML='<div class="share-modal-loading">Loading…</div>';
@@ -13890,11 +13900,13 @@ async function submitShareModal(){
   await renderShareModalList();
 }
 el('share-modal-email-input')?.addEventListener('input',onShareEmailInput);
-el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } else if(e.key==='Escape'){ hideShareResults(); } });
-el('share-modal-close-btn')?.addEventListener('click',closeShareModal);
-document.addEventListener('click',e=>{ if(!e.target.closest('#share-modal-email-input, #share-modal-results'))hideShareResults(); });
-onOverlayBackdropClick(el('share-modal-overlay'),closeShareModal);
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-modal-overlay')?.classList.contains('open'))closeShareModal(); });
+el('share-modal-email-input')?.addEventListener('click',e=>e.stopPropagation());
+el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } else if(e.key==='Escape'){ e.stopPropagation(); hideShareResults(); } });
+el('share-dd-menu')?.addEventListener('mousedown',e=>e.stopPropagation());
+document.addEventListener('mousedown',e=>{
+  if(!e.target.closest('#doc-share-wrap'))closeShareDropdown();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-dd-menu')?.classList.contains('open'))closeShareDropdown(); });
 
 // ---------- Notifications (generic inbox — share invites today, reusable for anything later) ----------
 // /notifications/{uid}/items/{id} — see firestore.rules for why a share invite can be written by
@@ -26837,7 +26849,13 @@ function sbDocContextItems(d, folders){
   items.push({label:'Rename', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: async()=>{ await renameDoc(d.id); renderSidebar(); }});
   items.push({label:'Duplicate', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await duplicateDoc(d.id); renderSidebar(); }});
   items.push({label:'Version history', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>', onClick: async()=>{ openVersionHistory(d.id); }});
-  if(currentUser)items.push({label:'Share…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', onClick: async()=>{ openShareModal(d.id,d.title); }});
+  if(currentUser)items.push({label:'Share…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', onClick: async()=>{
+    // The Share dropdown is anchored under the open document's own chip (see
+    // updateDocShareChipVisibility) — switch to this doc first if it isn't already the active
+    // one, so there's actually a chip for it to open under.
+    if(d.id!==currentDocId)switchDoc(d.id);
+    setTimeout(()=>openShareDropdown(d.id,d.title),0);
+  }});
   if(folders.length){
     items.push({divider:true});
     const curF=getFolderForDoc(d.id);
@@ -27110,8 +27128,8 @@ function openFolderPicker(docId, folders){
 // --- Main render ---
 function renderSidebar(){
   renderSidebarDocs();
-  renderSidebarTemplates();
   renderSidebarShared();
+  renderSidebarTemplates();
   renderSidebarTrash();
   updateBulkBar();
 }
