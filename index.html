@@ -14397,7 +14397,27 @@ async function pushMetaToCloud(mod,db,metaKey){
   const idbKeyName=getIdbSyncMetaKeys()[metaKey];
   let value=null;
   if(idbKeyName){
-    try{ const v=await idbGet(idbKeyName); value=(v===undefined)?null:v; }catch(e){ value=null; }
+    // A read failure or "not found yet" here must NOT be treated as "the user wants this
+    // deleted" — but that's exactly what pushing {value:null} with a fresh timestamp did
+    // previously. Meetings/journal/library always idbSet a real value (even an empty array)
+    // immediately before markMetaChanged ever fires (see saveMeetingNotes and its siblings),
+    // so by the time a push actually runs, idbGet coming back undefined or throwing means
+    // something transient went wrong reading IndexedDB (a connection hiccup, the tab
+    // backgrounding mid-read, storage pressure, private-browsing quirks) — not a genuine
+    // empty state. Pushing null in that moment overwrites the cloud's real data with nothing,
+    // and every other device (or this same device on its next reload) then pulls that null
+    // and deletes its own local copy too, having done nothing wrong. This was almost
+    // certainly the actual mechanism behind Meeting Notes/Library disappearing with no
+    // apparent cause. Abort the push instead — the item stays effectively unsynced this
+    // round, but nothing gets destroyed, and the next real edit re-marks it changed anyway.
+    let v, readFailed=false;
+    try{ v=await idbGet(idbKeyName); }catch(e){ readFailed=true; }
+    if(readFailed||v===undefined){
+      console.warn('[sakura] pushMetaToCloud: refused to push',metaKey,'— local IndexedDB read came back empty/failed, which is far more likely to be transient than a genuine delete. Skipping this push rather than risking overwriting real cloud data with nothing.');
+      sakuraLog('sync','pushMetaToCloud refused — idb read empty/failed, would have pushed a false delete',{metaKey,readFailed});
+      return;
+    }
+    value=v;
   }else{
     const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
     const raw=localStorage.getItem(localKeyName);
