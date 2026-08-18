@@ -1453,10 +1453,6 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 #sidebar-search-clear:hover{color:var(--fg)}
 /* Scrollable content */
 #sidebar-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:2px 6px 8px;display:flex;flex-direction:column;gap:0}
-#sidebar-footer{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
-.sb-footer-btn{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
-.sb-footer-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.sb-footer-btn:hover{background:var(--hover);color:var(--fg);border-color:color-mix(in srgb,var(--accent) 30%, var(--border))}
 
 
 /* Section headers */
@@ -5829,7 +5825,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Settings → Data → Secure Storage → optional, encrypts AI provider keys and the GitHub Gist token at rest (AES-GCM, passphrase-derived key) instead of storing them as plain text — in this browser and in local backup files. The passphrase itself is never stored anywhere; unlocking derives the key fresh each time, and it only lives in memory for that session — reload the page and you'll need to unlock again to use AI features or Gist auto-sync. There's no recovery if you forget it. Turning it off writes everything back as plain text. Once it's set up, a status-bar chip shows the current Locked/Unlocked state and toggles it in one click — no need to open Settings each session; right-click the chip to jump to the full Secure Storage controls instead. Hide it like any other status-bar item in Settings → Statusbar items if you don't want it there. Unlocking also automatically resumes anything that was paused waiting on it — Auto-rewrite on commit and Gist auto-sync each pick back up on their own the moment you unlock, with no need to redo whatever triggered them originally</li>
 <li>Settings → Data → Cloud Backup → optional, pushes the same full backup as "Backup all data" to GitHub Gist or Google Drive instead of a local file, so you can pull it down again from a different browser or computer. GitHub Gist needs a Personal Access Token with the <span class="help-kbd">gist</span> scope, pasted into Settings — stored in this browser only, the same as an AI provider key (and covered by Secure Storage above, if that's turned on). Google Drive needs your own free OAuth Client ID from Google Cloud Console; the app only ever sees files it created itself, not the rest of your Drive, and the sign-in token lives in memory only — you reconnect each session, nothing Google-related is written to disk. Both providers find your existing backup automatically by name/description on Save and Load, so there's no ID to copy between browsers by hand. Both are manual push/pull by default — Save fully overwrites the cloud copy with what's here, Load fully overwrites what's here with the cloud copy, no merging either direction. Both also offer "Auto-sync on edit" (off by default) — pushes automatically ~1.2s after edits settle, same timing as Auto-backup to file. Gist's auto-sync persists across reloads (the token is saved) and additionally detects conflicts: if the Gist changed elsewhere since your last Save/Load here, auto-push pauses itself and shows a conflict notice rather than silently overwriting the newer version — resolve it with a manual Save or Load. Drive's auto-sync is session-only, since Drive's sign-in token isn't kept across reloads — it turns itself off with a one-time notice (not a nag) whenever the session connection is gone, and needs reconnecting and re-enabling next time; it has no conflict detection of its own, so treat it as a convenience rather than a safety net if you also edit from Drive on another device. Gist's auto-sync also pauses (with a one-time toast, not a nag on every edit) if the token itself can't be read because Secure Storage is locked — nothing is lost in the meantime since local saves and the safety copy never depend on the vault, and the paused push resumes and sends on its own the moment you unlock, no extra edit needed to retrigger it. Neither AI provider keys nor the Gist token — encrypted or not — are ever included in what gets uploaded to Gist or Drive; only your documents are</li>
 <li>Settings → Data → Outlook Calendar → optional, lets the Meeting Notes panel's "Import from Outlook" button (calendar-with-check icon, top toolbar) pull events straight from your Outlook calendar instead of typing meeting details in by hand. Needs your own free app registration from Azure Portal (a Single-page application, with this app's URL added as a redirect URI and <span class="help-kbd">Calendars.Read</span> permission granted) — same "bring your own OAuth client" shape as Google Drive above, and the same reasoning: no backend server, sign-in token lives in memory only for this session. Read-only — importing never writes or changes anything on your actual calendar. Import shows a checklist of events from a few days back through about two weeks ahead (recurring events expanded into their real occurrences, not just the series); each creates a new meeting note pre-filled with title, date, time, attendees, and location. Already-imported events are shown greyed out and pre-unchecked (matched by the event's own ID) so re-opening the importer later won't create duplicates of the same meeting. The document icon next to it, <strong>Import from .ics file</strong>, needs none of that setup — pick any .ics file (exported or shared from Outlook, Google Calendar, Apple Calendar, or elsewhere) and it's parsed entirely in the browser, no sign-in or network call at all. Same checklist, same pre-filled fields, same already-imported dedup, matched by the file's own event UID instead of a Graph API event ID. One real gap: an event whose recurrence is more than a simple daily or weekly pattern (monthly, yearly, or anything with a by-month-day/by-position rule) imports as just its one base occurrence, not expanded into every future instance the way the Outlook API import does — the picker flags any such event so that's never a silent surprise. Plain daily/weekly recurrences (including "every N days/weeks" and "every Mon/Wed/Fri") are expanded into their real upcoming occurrences, up to about six months out</li>
-<li>Settings → Data → Backup / Restore → still the way to move data between files, browsers, or computers, or to take a one-off manual backup; the file explorer footer has Backup/Restore shortcuts too, so you don't need to open Settings just for that. The header's Export ▾ and Import ▾ buttons are for the current document only (Markdown, Word, OPML, etc.) — Backup/Restore cover all your data</li>
+<li>Settings → Data → Backup / Restore → the way to move data between files, browsers, or computers, or to take a one-off manual backup. Deliberately only in Settings, not surfaced as a one-click shortcut elsewhere — Restore replaces everything currently in the app, so it's worth the extra couple of clicks to reach it. The header's Export ▾ and Import ▾ buttons are for the current document only (Markdown, Word, OPML, etc.) — Backup/Restore cover all your data</li>
 <li>Settings → Data → "Warn if this session isn't backed up" → offers Export or Connect auto-backup if you've made changes this session but neither has run yet. Three modes: <strong>Strict</strong> shows the browser's own "leave site?" prompt when you try to close the tab, then this dialog if you cancel it — a real last-chance gate, at the cost of that generic browser popup (its wording is fixed by the browser, not by Sakura). <strong>Passive</strong> skips the browser prompt entirely and shows only this dialog, the next time you switch away from or close the tab — quieter, but a direct close with no prior tab-switch gets no warning at all. <strong>Off</strong> disables both; the status-bar "⚠ Back up your data" chip (from the reminder setting above) is your only remaining signal</li>
 <li>Recommended: export before switching to a new version of this file, then import right after opening it</li>
 <li>Settings → Data → Reset to default settings → restores appearance/behavior preferences only (theme, toolbar, right-click menu, etc.); your documents and AI settings aren't touched</li>
@@ -6222,16 +6218,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div id="sb-templates-list"></div>
         </div>
         <div id="sb-trash-list"></div>
-      </div>
-      <div id="sidebar-footer">
-        <button class="sb-footer-btn" id="sb-footer-export-btn" data-tip="Backup — saves every document, folder, and template to a single file">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Backup</span>
-        </button>
-        <button class="sb-footer-btn" id="sb-footer-import-btn" data-tip="Restore — replaces everything in the app from a backup file">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Restore</span>
-        </button>
       </div>
     </div>
   </div>
@@ -8179,6 +8165,10 @@ const APPBAR_HIDEABLE_BTN_ID={help:'help-toggle',print:'print-btn',import:'impor
 const LAST_EXPORT_KEY='sakura_last_export_v1';
 function markLastExport(){ try{ localStorage.setItem(LAST_EXPORT_KEY,String(Date.now())); }catch(e){} }
 const LAST_FSBACKUP_KEY='sakura_last_fsbackup_v1';
+// See importAllDataFromPayload / pullAndMergeFromCloud: set right before the page reloads that
+// always follows a Restore, so the next cloud pull knows to reconcile-only rather than also
+// pushing whatever the just-restored (possibly stale) backup file contained.
+const SAKURA_JUST_RESTORED_KEY='sakura_just_restored_v1';
 const DL_FIELDS=[
   {key:'context', text:'Context: What prompted this decision?'},
   {key:'decision', text:'Decision: What was decided?'},
@@ -13924,6 +13914,21 @@ async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
   const now=Date.now(); if(!isInitial&&now-_lastPullAt<15000)return; // throttle: focus-spam guard (initial sign-in pull always runs)
   _lastPullAt=now;
+  // If a Restore-from-backup just happened (see importAllDataFromPayload), this device's local
+  // storage was just wholesale-replaced by a backup file of unknown age. The very first pull
+  // after that MUST be reconcile-only: pull whatever the cloud already has, but do NOT push
+  // anything up just because it's "missing from the cloud" locally — that's exactly how a stale
+  // backup would silently resurrect documents that were genuinely deleted since it was taken, or
+  // overwrite a meta key (docsIndex, folders, prefs...) with old content stamped as brand-new.
+  // One-shot: cleared immediately so only this one pull is affected, not the whole session.
+  let justRestored=false;
+  try{
+    const raw=localStorage.getItem(SAKURA_JUST_RESTORED_KEY);
+    if(raw){
+      localStorage.removeItem(SAKURA_JUST_RESTORED_KEY);
+      if(Date.now()-Number(raw)<10*60*1000) justRestored=true; // ignore an implausibly stale leftover flag
+    }
+  }catch(e){}
   updateSyncStatusUI('syncing');
   let pulledInCount=0, pushedUpCount=0;
   try{
@@ -13959,11 +13964,11 @@ async function pullAndMergeFromCloud(isInitial=false){
         const applied=await applyIncomingMetaData(metaKey,cloud);
         if(applied){
           await refreshHubPanelAfterSync(metaKey);
-        }else{
+        }else if(!justRestored){
           const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0; const cloudTs=Number(cloud.updatedAt)||0;
           if(localT>cloudTs)queueSync('meta',metaKey); // local is newer — make sure it's queued to push
         }
-      }else{
+      }else if(!justRestored){
         let existsLocally;
         if(idbKeyName){ let v; try{v=await idbGet(idbKeyName)}catch(e){v=undefined} existsLocally=(v!==undefined&&v!==null); }
         else existsLocally=localStorage.getItem(localKeyName)!==null;
@@ -13981,8 +13986,9 @@ async function pullAndMergeFromCloud(isInitial=false){
     }
     // Only decide "this local doc is missing from the cloud, push it up" when we actually
     // know what the cloud has — an empty cloudIds set caused by the fetch above failing
-    // isn't the same as a genuinely empty cloud collection.
-    if(docsFetchOk){ for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} } }
+    // isn't the same as a genuinely empty cloud collection. Also never do this right after a
+    // Restore (see justRestored above) — see the top of this function for why.
+    if(docsFetchOk&&!justRestored){ for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} } }
 
     const localTplIndex=loadTemplatesIndex();
     const cloudTplIds=new Set();
@@ -13992,7 +13998,7 @@ async function pullAndMergeFromCloud(isInitial=false){
         if(applyIncomingTemplateData(id,docSnap.data()))pulledInCount++;
       }
     }
-    if(tplFetchOk){ for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} } }
+    if(tplFetchOk&&!justRestored){ for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} } }
 
     loadPrefs();
     renderSidebar();
@@ -14000,7 +14006,9 @@ async function pullAndMergeFromCloud(isInitial=false){
     if(typeof renderTemplatesList==='function')renderTemplatesList();
     updateSyncStatusUI('synced');
     _syncErrorToastShown=false;
-    if(isInitial&&(pulledInCount>0||pushedUpCount>0)){
+    if(justRestored&&pulledInCount>0){
+      showToast(`Restored locally, then reconciled with your account: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} that were newer in the cloud`);
+    }else if(isInitial&&(pulledInCount>0||pushedUpCount>0)){
       if(pulledInCount>0&&pushedUpCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account, sent up ${pushedUpCount} from this device`);
       else if(pulledInCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account`);
       else showToast(`Synced: sent ${pushedUpCount} item${pushedUpCount===1?'':'s'} from this device to your account`);
@@ -27789,7 +27797,18 @@ async function importAllDataFromPayload(payload,opts={}){
     showToast('Not a valid Sakura backup file'); return;
   }
   const keyCount=Object.keys(payload.data).length;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',title:'Import Data',body:`This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents, folders, and templates will be overwritten.\n\nThis cannot be undone. Continue?`,confirmLabel:'Import',confirmCls:'danger',cancelLabel:'Cancel'});
+  // Signed-in + syncing is a materially more dangerous situation to restore into than local-only
+  // use: this device's cloud sync doesn't know or care that a Restore just happened, and without
+  // the SAKURA_JUST_RESTORED_KEY guard below, the very next sync pass could push this backup's
+  // stale content up as if it were the newest version — including resurrecting documents that
+  // were genuinely, deliberately deleted since the backup was taken. Worth a distinctly different
+  // warning from the generic "this cannot be undone" wording used when there's no cloud account
+  // in the picture at all.
+  const signedIn=!!currentUser;
+  const body=signedIn
+    ? `This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents, folders, and templates will be overwritten.\n\nYou're signed in with sync active. This device won't push the restored content up to your account until it's first reconciled against what's already there, so newer work on your other devices won't be silently overwritten — but anything genuinely new only on THIS device since the backup was taken will need re-adding by hand.\n\nThis cannot be undone. Continue?`
+    : `This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents, folders, and templates will be overwritten.\n\nThis cannot be undone. Continue?`;
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',title:'Import Data',body,confirmLabel:'Import',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok) return;
   // Snapshot what's here right now before we overwrite it, so a restore that turns out to be
   // the wrong file (old backup, wrong version, etc.) is itself undoable via "Undo last restore"
@@ -27832,6 +27851,12 @@ async function importAllDataFromPayload(payload,opts={}){
     await applyBackupDataEntries(idbData);
   }catch(e){ sakuraLog('restore','Data import threw',{message:e&&e.message}); showToast('Import failed'); return; }
   suppressSaveToStorageOnUnload=true;
+  // Flag this device as "just restored" so the next pullAndMergeFromCloud (which runs
+  // automatically on reload via restoreAccountSessionIfNeeded, if signed in) knows to treat
+  // this session specially — see the guard in pullAndMergeFromCloud for what that means.
+  // Timestamped so a very stale leftover flag (e.g. the reload never actually completed) can't
+  // suppress pushes indefinitely on some later, unrelated session.
+  try{ localStorage.setItem(SAKURA_JUST_RESTORED_KEY, String(Date.now())) }catch(e){}
   sakuraLog('restore','Data import',{keyCount:Object.keys(payload.data||{}).length});
   showToast('Data imported — reloading…');
   setTimeout(()=>location.reload(), 700);
@@ -28763,8 +28788,6 @@ const cloudDriveOriginHint=el('cloud-drive-origin-hint'); if(cloudDriveOriginHin
 updateCloudGistStatus();
 updateCloudDriveStatus();
 el('sb-import-all-btn')?.addEventListener('click',()=>{ el('sakura-import-file-input')?.click(); });
-el('sb-footer-export-btn')?.addEventListener('click',()=>exportAllData());
-el('sb-footer-import-btn')?.addEventListener('click',()=>{ el('sakura-import-file-input')?.click(); });
 async function resetSettingsToDefault(){
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset Settings',body:'This restores appearance and behavior preferences — theme, accent color, toolbar layout, right-click menu, and the like — back to their defaults.\n\nYour documents, folders, templates, and AI provider settings are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
