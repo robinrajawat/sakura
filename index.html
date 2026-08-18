@@ -6496,7 +6496,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           </div>
         </div>
         <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
-          <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+          <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
           <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
             <div class="share-dd-header">
               <span class="share-dd-header-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
@@ -13859,6 +13859,41 @@ function updateDocShareChipVisibility(){
   const wrap=el('doc-share-wrap'); if(!wrap)return;
   const isOwnDoc=currentDocId&&!sharedDocMeta[currentDocId];
   wrap.style.display=(currentUser&&isOwnDoc)?'':'none';
+  if(currentUser&&isOwnDoc)refreshDocShareChipStatus(currentDocId);
+}
+// Passive "is this shared, and with how many people" indicator on the chip itself, so that's
+// visible at a glance without opening the dialog — previously the chip always looked identical
+// (dashed "Share" pill) whether or not the document actually had any collaborators.
+// docShareStatusCache is session-only and keyed by docId; entries stay fresh two ways: (1) a
+// fetch here the first time a given owned document is switched to in this session, and (2)
+// renderShareModalList (below) writing the same cache directly whenever the dialog itself
+// fetches or changes the list, so opening/using Share never needs a second, separate fetch to
+// stay in sync with what the chip shows.
+let docShareStatusCache={};
+function renderDocShareChip(docId){
+  const chip=el('doc-share-chip'),label=el('doc-share-chip-label'); if(!chip||!label)return;
+  if(docId!==currentDocId)return; // stale async response for a doc that's no longer open
+  const entries=docShareStatusCache[docId];
+  const count=Array.isArray(entries)?entries.length:0;
+  if(count>0){
+    chip.classList.remove('unset');
+    chip.setAttribute('data-color','green');
+    label.textContent='Shared · '+count;
+    chip.dataset.tip='Shared with '+count+' '+(count===1?'person':'people')+' — click to manage';
+  }else{
+    chip.classList.add('unset');
+    chip.removeAttribute('data-color');
+    label.textContent='Share';
+    chip.dataset.tip='Share this document with another Sakura account';
+  }
+}
+async function refreshDocShareChipStatus(docId){
+  if(docShareStatusCache[docId]!==undefined){ renderDocShareChip(docId); return; }
+  try{
+    const shared=await fetchDocSharedWith(currentUser.uid,docId);
+    docShareStatusCache[docId]=Object.values(shared);
+  }catch(e){ docShareStatusCache[docId]=[]; }
+  renderDocShareChip(docId);
 }
 // Inline dropdown (same pattern as the Status/Link chips right next to it — see doc-link-chip's
 // listener), not a modal: sharing is a fast, frequent-ish action on the document you're already
@@ -13909,6 +13944,11 @@ async function renderShareModalList(){
   list.innerHTML='<div class="share-modal-loading">Loading…</div>';
   const shared=await fetchDocSharedWith(currentUser.uid,shareModalDocId);
   const uids=Object.keys(shared);
+  // Keep the chip's passive shared-status indicator (updateDocShareChipVisibility /
+  // renderDocShareChip) in sync from the same fetch, rather than it needing a separate one —
+  // this is the one place that always has a fresh, authoritative read of who has access.
+  docShareStatusCache[shareModalDocId]=Object.values(shared);
+  renderDocShareChip(shareModalDocId);
   // Self-healing backfill for documents shared before sharedWithUids existed (see
   // findDocsSharedWithMe): the Share dialog only ever opens for a document this account
   // actually owns (updateDocShareChipVisibility), so this is a safe, cheap place to keep the
