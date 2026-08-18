@@ -10516,6 +10516,11 @@ function permanentlyDeleteDocCore(id){
   saveDocsIndex(loadDocsIndex().filter(d=>d.id!==id));
   const fm=loadDocFolderMap(); delete fm[id]; saveDocFolderMap(fm);
   const om=loadDocOrderMap(); delete om[id]; saveDocOrderMap(om);
+  // Fire-and-forget: see deleteDocFromCloud for why this exists. Not awaited — this function
+  // is synchronous and called from many places (Empty Trash, the automatic retention purge,
+  // bulk trash actions); none of them need to block on the network round-trip, and a failure
+  // here is logged rather than surfaced, matching every other best-effort sync call in the file.
+  deleteDocFromCloud(id);
 }
 // === Version History panel ===
 function openVersionHistory(docId){
@@ -12446,6 +12451,7 @@ function permanentlyDeleteTemplateCore(id){
   try{localStorage.removeItem(templateKey(id))}catch(e){}
   saveTemplatesIndex(loadTemplatesIndex().filter(t=>t.id!==id));
   const fm=loadTplFolderMap(); delete fm[id]; saveTplFolderMap(fm);
+  deleteTemplateFromCloud(id); // fire-and-forget — see deleteDocFromCloud for why
 }
 async function deleteTemplate(id){
   const entry=loadTemplatesIndex().find(t=>t.id===id); if(!entry)return;
@@ -13757,6 +13763,29 @@ async function pushDocToCloud(mod,db,docId){
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
   await mod.setDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{...data,updatedAt:ts});
 }
+// The other half of "delete propagation" — without this, permanently deleting a document (or
+// emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
+// untouched, so the next sync pull (a page load, tab focus, sign-in, or the realtime listener's
+// own startup catch-up) saw a cloud document with no local counterpart and dutifully recreated
+// it — a permanently-deleted document quietly coming back after a reload. Best-effort and
+// fire-and-forget (called from permanentlyDeleteDocCore/permanentlyDeleteTemplateCore, which are
+// synchronous and used from many places, including the automatic retention purge) — a failure
+// here just means this device's next sign-in will need to re-delete it, not silent data loss in
+// either direction.
+async function deleteDocFromCloud(docId){
+  if(!currentUser)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.deleteDoc(mod.doc(db,'users',currentUser.uid,'docs',docId));
+  }catch(e){ console.warn('[sakura] deleteDocFromCloud: failed to delete',docId,'from the cloud — it may reappear on next sync:',e); }
+}
+async function deleteTemplateFromCloud(tplId){
+  if(!currentUser)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.deleteDoc(mod.doc(db,'users',currentUser.uid,'templates',tplId));
+  }catch(e){ console.warn('[sakura] deleteTemplateFromCloud: failed to delete',tplId,'from the cloud — it may reappear on next sync:',e); }
+}
 async function pushTemplateToCloud(mod,db,tplId){
   const raw=localStorage.getItem(templateKey(tplId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
@@ -13997,7 +14026,14 @@ async function startRealtimeSync(){
       const isLive=!_docsFirstSnapshot; _docsFirstSnapshot=false;
       let changed=false;
       snapshot.docChanges().forEach(change=>{
-        if(change.type==='removed')return; // this app never deletes cloud doc records from a listener path
+        // permanentlyDeleteDocCore now calls deleteDocFromCloud, so a 'removed' change here CAN
+        // legitimately mean a document was permanently deleted (by this device or another one
+        // signed into the same account). Deliberately still a no-op rather than mirroring the
+        // deletion locally: this device's own local copy might be mid-edit, or the deletion
+        // might be this device's own write echoing back through the listener (already handled
+        // locally by the delete path that triggered it). Cross-device delete propagation is a
+        // separate, more involved piece of work than what's needed here.
+        if(change.type==='removed')return;
         if(applyIncomingDocData(change.doc.id,change.doc.data(),isLive))changed=true;
       });
       if(changed){ renderSidebar(); if(typeof renderDocsList==='function')renderDocsList(); }
