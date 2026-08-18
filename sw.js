@@ -9,7 +9,19 @@
 // so a document opened after at least one successful online visit keeps working without a
 // connection -- editing, exporting, everything that doesn't itself require a network call
 // (AI actions, cloud sync, Feedback Inbox) stays available.
-const CACHE_NAME = 'sakura-shell-v1';
+//
+// CACHE_NAME must be bumped any time a precached asset's *content* changes (icons, fonts,
+// pinned CDN library versions, etc) even though its URL stays the same -- activate() below
+// only evicts caches whose *name* differs from the current CACHE_NAME, so a same-name cache
+// serves whatever bytes it first stored, forever, regardless of what's actually deployed.
+// This bit us concretely: manifest.json/icon-192.png/icon-512.png are cached with
+// destination 'manifest'/'image' (cache-first, see STATIC_DESTINATIONS below), so once a
+// browser had precached an older icon under this cache name, it kept serving that stale icon
+// to Chrome's "Install app" flow indefinitely -- reinstalling the PWA doesn't clear this
+// origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
+// server was never actually seen. Bump the version suffix whenever an asset in
+// PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
+const CACHE_NAME = 'sakura-shell-v2';
 
 // Assets whose content is effectively immutable for a given URL -- the CDN libraries are
 // pinned to an exact version in their path (xlsx@0.18.5, pptxgenjs@4.0.1), and Google Fonts'
