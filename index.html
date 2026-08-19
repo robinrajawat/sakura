@@ -10826,11 +10826,6 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,decisionLogList,
 async function restoreDocRevision(docId,ts){
   const revisions=await loadDocRevisions(docId);
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-  const diagramNote=Array.isArray(rev.diagrams)&&rev.diagrams.length?'\n\nDiagrams restore too — a diagram\'s thumbnail regenerates the next time it\'s reopened and saved.':'';
-  const qaNote=Array.isArray(rev.qa)&&rev.qa.length?'\n\nQ&A restores too.':'';
-  const padNote=rev.pad?'\n\nPad content restores too — any images from that version won\'t come back, just the text (they\'re never kept in version history, to avoid it growing huge). Files-tab attachments aren\'t touched by a restore either way.':'';
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current content with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.'+diagramNote+qaNote+padNote,confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   const freshNodes=rev.nodes.map(normalizeNode);
   let restoreOrphanMsg='';
   if(docId===currentDocId){
@@ -11268,10 +11263,6 @@ function toggleDiagramSelect(id,shiftKey){
 async function bulkDeleteDiagramsSelected(){
   if(!diagramSelectedIds.size)return;
   const count=diagramSelectedIds.size;
-  if(confirmBeforeDelete){
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:count===1?'Delete Diagram':'Delete Diagrams',body:`Delete ${count===1?'this diagram':`${count} diagrams`}?\nYou can use Undo to restore ${count===1?'it':'them'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
   const snapshot=diagrams.slice();
   diagrams=diagrams.filter(d=>!diagramSelectedIds.has(d.id));
   diagramSelectedIds=new Set(); diagramSelectionAnchorId=null;
@@ -11572,19 +11563,11 @@ function duplicateDiagram(id){
 async function deleteDiagram(id){
   const idx=diagrams.findIndex(d=>d.id===id); if(idx<0)return;
   const removed=diagrams[idx];
-  if(confirmBeforeDelete){
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Delete Diagram',body:`Delete "${removed.title||'Untitled diagram'}"?\nYou can use Undo (Ctrl/Cmd+Z, or the toast) to restore it.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
-  // findIndex again rather than reusing idx: the confirm dialog awaits a user click, during
-  // which the list could have changed (another diagram added/removed) — idx may no longer
-  // point at the same row.
-  const idx2=diagrams.findIndex(d=>d.id===id); if(idx2<0)return;
-  diagrams.splice(idx2,1);
+  diagrams.splice(idx,1);
   markDirty(); scheduleAutoSave();
   renderDiagramsList();
   showActionToast('Diagram deleted','Undo',()=>{
-    diagrams.splice(Math.min(idx2,diagrams.length),0,removed);
+    diagrams.splice(Math.min(idx,diagrams.length),0,removed);
     markDirty(); scheduleAutoSave(); renderDiagramsList();
   });
   // Deliberately delayed rather than immediate: if the person clicks Undo above, the diagram's
@@ -12200,12 +12183,6 @@ el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion())
 el('more-version-history-btn')?.addEventListener('click',()=>{ el('more-menu')?.classList.remove('open'); if(currentDocId)openVersionHistory(currentDocId); });
 async function deleteDoc(id){
   const entry=loadDocsIndex().find(d=>d.id===id); if(!entry)return;
-  const linked=collectLinkedContentForDocument(id);
-  const parts=linkedContentSummaryParts(linked);
-  let linkedWarning=parts.length?`\n\n${joinSummaryParts(parts)} ${parts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked to this document — those links will show as missing while it's in Trash.`:'';
-  if(!linked.complete)linkedWarning+=(parts.length?' ':'\n\n')+"(This document isn't open, so only meetings and to-dos could be checked — not notes, decision logs, diagrams, or Q&A.)";
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Move to Trash',body:'Move this document to Trash?'+(trashRetentionDays>0?` It'll be kept there for ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}, then deleted for good — or restore it any time before that.`:' It stays there until you empty the Trash, and can be restored any time before that.')+linkedWarning,confirmLabel:'Move to Trash',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   moveDocToTrashCore(id);
   renderDocsList(); renderSidebar();
   showActionToast(`Moved "${entry.title||'Untitled'}" to Trash`,'Undo',()=>{ if(restoreDocFromTrashCore(id)){ renderDocsList(); renderSidebar(); showToast('Document restored'); } });
@@ -12641,8 +12618,6 @@ function permanentlyDeleteTemplateCore(id){
 }
 async function deleteTemplate(id){
   const entry=loadTemplatesIndex().find(t=>t.id===id); if(!entry)return;
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Move to Trash',body:'Move this template to Trash?'+(trashRetentionDays>0?` It'll be kept there for ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}, then deleted for good — or restore it any time before that.`:' It stays there until you empty the Trash, and can be restored any time before that.'),confirmLabel:'Move to Trash',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   moveTemplateToTrashCore(id);
   renderTemplatesList(); renderSidebar();
   showActionToast(`Moved "${entry.title||'Untitled template'}" to Trash`,'Undo',()=>{ if(restoreTemplateFromTrashCore(id)){ renderTemplatesList(); renderSidebar(); showToast('Template restored'); } });
@@ -12682,10 +12657,6 @@ function stampTemplateDateAuthor(){
 }
 async function loadTemplateById(id){
   el('templates-menu').classList.remove('open');
-  if(hasMeaningfulContent()){
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',title:'Load Template',body:'This will replace the current content in the editor.\nYou can use Undo to restore it.',confirmLabel:'Load Template',confirmCls:'primary',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
   pushUndo(); markDirty();
   if(id==='__default__'){
     applyDefaultTemplate();
@@ -13172,8 +13143,15 @@ async function confirmDeleteIfNeeded(){
   const linked=collectLinkedContentForNodeIds(roots);
   const linkedParts=linkedContentSummaryParts(linked);
   const linkedWarning=linkedParts.length?`\n\n${joinSummaryParts(linkedParts)} ${linkedParts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked here and will become unlinked.`:'';
-  if(!confirmBeforeDelete&&!extCount&&!intCount&&!linkedParts.length)return true;
-  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\nYou can use Undo to restore them.${blWarning}${linkedWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  // Plain "are you sure, you can undo" case is gone entirely (Category A of the popup audit —
+  // Ctrl+Z / the delete toast already cover it). What's left here is different in kind: a
+  // warning that OTHER content elsewhere (backlinks, Diagrams/Decision Log/Meetings/To-Dos/Q&A/
+  // Mind Map anchors) will lose its link target — something the person could easily not notice
+  // at the delete site itself, unlike "this thing is gone but Undo brings it back." That warning
+  // stays a modal regardless of the confirmBeforeDelete setting; only the no-impact case is
+  // always silent now.
+  if(!extCount&&!intCount&&!linkedParts.length)return true;
+  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\n${blWarning}${linkedWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
 function formatRelativeTime(ts){if(!ts)return '—'; const secs=Math.floor((Date.now()-ts)/1000); if(secs<5)return 'just now'; if(secs<60)return `${secs}s ago`; const mins=Math.floor(secs/60); if(mins<60)return `${mins}m ago`; const hrs=Math.floor(mins/60); if(hrs<24)return `${hrs}h ago`; return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 let storageWriteFailed=false;
@@ -24313,7 +24291,7 @@ document.querySelectorAll('.node-font-swatch').forEach(btn=>btn.addEventListener
 el('node-depth-fade-toggle')?.addEventListener('click',()=>setNodeDepthFadeEnabled(!nodeDepthFadeEnabled));
 el('node-depth-fade-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setNodeDepthFadeEnabled(!nodeDepthFadeEnabled);}});
 
-el('clear-btn').addEventListener('click',async()=>{if(hasMeaningfulContent()){const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Clear Editor',body:'This will remove all current content from the editor.\nYou can use Undo to restore it.',confirmLabel:'Clear',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return} pushUndo(); markDirty(); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane()});
+el('clear-btn').addEventListener('click',async()=>{pushUndo(); markDirty(); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane()});
 el('doc-tab-add-btn')?.addEventListener('click',()=>createDoc());
 el('doc-tab-overview-btn')?.addEventListener('click',e=>{ e.stopPropagation(); const menu=el('doc-tab-overview-menu'); if(menu&&menu.classList.contains('open'))closeTabOverviewMenu(); else openTabOverviewMenu() });
 el('doc-tab-overview-search')?.addEventListener('click',e=>e.stopPropagation());
@@ -26466,9 +26444,6 @@ function suggestIconForSelection(){
 // much wider change than the selection-scoped version above.
 async function suggestIconsForAllNodes(){
   if(!nodes.length){showToast('No nodes to suggest icons for'); return;}
-  const count=nodes.length;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',title:'Suggest Icons for All Nodes',body:`This will suggest an icon for all ${count} node${count===1?'':'s'} in the document.\nYou can use Undo to revert.`,confirmLabel:'Suggest Icons',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   await suggestIconsForNodeIds(nodes.map(n=>n.id));
 }
 
@@ -27814,8 +27789,6 @@ function updateBulkBar(){
 }
 async function bulkDeleteDocs(ids){
   if(!ids.length) return;
-  const ok = await sakuraConfirm({icon:TRASH_ICON,title:'Move to Trash',body:`Move ${ids.length} document${ids.length===1?'':'s'} to Trash?`+(trashRetentionDays>0?` They'll be kept there for ${trashRetentionDays} day${trashRetentionDays===1?'':'s'}, then deleted for good — or restore them any time before that.`:' They stay there until you empty the Trash, and can be restored any time before that.'),confirmLabel:'Move to Trash',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok) return;
   ids.forEach(id=>moveDocToTrashCore(id));
   sbSelectedDocIds.clear();
   renderDocsList(); renderSidebar();
@@ -32862,10 +32835,6 @@ function toggleQaSelect(id,shiftKey){
 async function bulkDeleteQaSelected(){
   if(!qaSelectedIds.size)return;
   const count=qaSelectedIds.size;
-  if(confirmBeforeDelete){
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:count===1?'Delete Q&A Row':'Delete Q&A Rows',body:`Delete ${count===1?'this Q&A row':`${count} Q&A rows`}?\nYou can use Undo to restore ${count===1?'it':'them'}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
   const snapshot=qaItems.slice();
   qaItems=qaItems.filter(it=>!qaSelectedIds.has(it.id));
   qaSelectedIds=new Set(); qaSelectionAnchorId=null;
@@ -40026,8 +39995,6 @@ el('pad-clear-btn')?.addEventListener('click', async (e) => {
   if(padViewMode==='qa'){
     const valid=qaItems.filter(it=>(it.question||'').trim()||(it.answer||'').trim());
     if(!valid.length){ showToast('No Q&A rows to clear'); return; }
-    const ok=await sakuraConfirm({icon:trashIcon, title:'Clear Q&A', body:'Remove all Q&A rows for this document?\nYou can use Undo to restore them.', confirmLabel:'Clear', confirmCls:'danger', cancelLabel:'Cancel'});
-    if(!ok) return;
     const snapshot=qaItems.slice();
     qaItems=[]; qaSelectedIds=new Set(); qaSelectionAnchorId=null;
     renderQaList();
@@ -42855,8 +42822,6 @@ function _addTagPopoverFromInput(){
   async function restoreTodosRevision(ts){
     const revisions=loadTodosRevisions();
     const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace the current To-Dos list with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
-    if(!ok)return;
     recordTodosRevision(todos,'Before restoring an older version');
     todos=JSON.parse(JSON.stringify(rev.todos));
     saveTodos();
@@ -45626,8 +45591,6 @@ async function renderMeetingsHistoryList(){
 async function restoreMeetingsRevision(ts){
   const revisions=await loadMeetingsRevisions();
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace all current meeting notes with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   await recordMeetingsRevision(meetingNotes,'Before restoring an older version');
   meetingNotes=JSON.parse(JSON.stringify(rev.notes)).map(normalizeMeetingNote);
   meetingExpandedId=null;
@@ -46099,8 +46062,6 @@ async function renderJournalHistoryList(){
 async function restoreJournalRevision(ts){
   const revisions=await loadJournalRevisions();
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',title:'Restore This Version',body:'Replace all current journal entries with this version from '+new Date(ts).toLocaleString()+'?\n\nWhat\'s there now is saved as a version first, so you can always come back to it.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   await recordJournalRevision(journalEntries,'Before restoring an older version');
   journalEntries=JSON.parse(JSON.stringify(rev.entries)).map(normalizeJournalEntry);
   journalExpandedDate=null;
@@ -47215,17 +47176,12 @@ function duplicateMindMap(id){
 async function deleteMindMap(id){
   const idx=mindMaps.findIndex(m=>m.id===id); if(idx<0)return;
   const removed=mindMaps[idx];
-  if(confirmBeforeDelete){
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Delete Mind Map',body:`Delete "${removed.title||'Untitled map'}"?\nYou can use Undo (Ctrl/Cmd+Z, or the toast) to restore it.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
-  const idx2=mindMaps.findIndex(m=>m.id===id); if(idx2<0)return;
-  mindMaps.splice(idx2,1);
+  mindMaps.splice(idx,1);
   if(mindMapActiveId===id){ mindMapActiveId=null; mindMap=null; if(mindMapOpen)closeMindMapOverlay(); }
   markDirty(); if(typeof scheduleAutoSave==='function')scheduleAutoSave();
   if(typeof renderMindMapsList==='function')renderMindMapsList();
   showActionToast('Mind map deleted','Undo',()=>{
-    mindMaps.splice(Math.min(idx2,mindMaps.length),0,removed);
+    mindMaps.splice(Math.min(idx,mindMaps.length),0,removed);
     markDirty(); if(typeof scheduleAutoSave==='function')scheduleAutoSave(); if(typeof renderMindMapsList==='function')renderMindMapsList();
   });
 }
@@ -47390,12 +47346,6 @@ async function mmDeleteSelected(){
   if(!ids.length)return;
   const allIds=new Set();
   ids.forEach(id=>mmSubtreeIds(id).forEach(sid=>allIds.add(sid)));
-  const extra=allIds.size-ids.length;
-  if(allIds.size>1&&confirmBeforeDelete){
-    const label=ids.length===1?`"${(findMindNode(ids[0])||{}).text||'(untitled)'}"`:`${ids.length} selected ideas`;
-    const ok=await sakuraConfirm({title:'Delete branch?',body:`This will remove ${label}${extra>0?` and ${extra} connected idea${extra===1?'':'s'}`:''}.`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-    if(!ok)return;
-  }
   const pre=mmSnapshot();
   const singleParentId=ids.length===1?(findMindNode(ids[0])||{}).parentId:null;
   mindMap.nodes=mindMap.nodes.filter(n=>!allIds.has(n.id));
@@ -47707,8 +47657,6 @@ function mmResetView(){
 async function mmClearCanvas(){
   ensureMindMap();
   if(!mindMap.nodes.length){ showToast('The canvas is already empty'); return; }
-  const ok=await sakuraConfirm({title:'Clear Mind Map?',body:'Removes every idea on the canvas. Ctrl/Cmd+Z right after undoes this.',confirmLabel:'Clear',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
   mmCloseContextMenu();
   if(mindMapEditingId!=null){ mindMapEditingId=null; }
   const pre=mmSnapshot();
