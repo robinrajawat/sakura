@@ -492,7 +492,7 @@ body.feature-off-templates #sb-templates-section,body.feature-off-templates #es-
 .export-menu-rich .export-icon.danger{color:#e5484d}
 .export-menu-rich .export-label{font:400 13px 'Inter',sans-serif}
 #notif-toggle{position:relative}
-.notif-badge{position:absolute;top:2px;right:2px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:#e5484d;color:#fff;font:600 9px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;line-height:1;border:1.5px solid var(--bg)}
+.notif-badge{position:absolute;top:-5px;right:-5px;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--fc-red);color:#fff;font:700 9.5px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06)}
 #notif-menu{width:300px;max-width:min(92vw,320px);max-height:380px;overflow-y:auto}
 .notif-menu-title{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 10px 8px}
 .notif-empty{padding:20px 10px;text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif}
@@ -4316,7 +4316,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    to change. */
 #status-util-group{display:none!important}
 #dock-panel-appbar-toggle{position:relative}
-#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-6px;right:-6px;margin-left:0;min-width:11px;height:11px;font-size:7px;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box}
+/* (see .notif-badge above — this is the same badge design, applied to the Hub button's overdue
+   count instead of the bell's unread count; kept as its own selector since updateOverdueBadge()
+   creates this element generically for three different buttons, only one of which is this
+   floating app-bar context, but the declared visual values are intentionally identical.) */
+#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-5px;right:-5px;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;margin-left:0;border-radius:999px;background:var(--fc-red);color:#fff;font:700 9.5px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06)}
 #status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px;width:34px;opacity:1;overflow:hidden;transition:width .18s cubic-bezier(.22,.8,.34,1),opacity .14s ease}
 /* Collapsed: shrink the buttons column's width to 0 (clipped by the overflow:hidden
    above) rather than display:none-ing it — a widthless, still-flexbox-participating
