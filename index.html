@@ -9962,10 +9962,29 @@ function warnDiagramBlobWriteFailed(){
   diagramBlobWriteFailed=true;
   showToast('This browser\u2019s IndexedDB storage isn\u2019t syncing diagram content right now. Edits are still being kept in regular storage as a fallback. If a diagram won\u2019t load, use its Retry button rather than drawing over what looks like a blank canvas.');
 }
+let _viewerSaveBlockedToastAt=0; // throttle for saveToStorage's viewer-block toast — see there
 function saveToStorage(){
   try{ if(SAKURA_AUDIENCE_MODE)return; }catch(e){}
   try{
     if(!currentDocId)return;
+    // The actual robustness backstop for the viewer role, not just another individual UI check
+    // like beginEdit/beginEditAt already have. Firestore rules are and remain the real security
+    // boundary for the SHARED copy (a viewer's role can never be forged there), but until now
+    // nothing stopped a viewer's LOCAL session from persisting an attempted edit to their own
+    // localStorage first — meaning even a mutation path this app never got around to gating
+    // individually (the right-click menu, a toolbar button, a Pad/Q&A/Diagram edit, ...) could
+    // still make it look, in that person's own browser, like the edit "worked", right up until
+    // the next sync pull silently reverted it. Refusing the save here closes that off at the one
+    // choke point every mutation path already goes through to actually persist anything, rather
+    // than requiring every individual entry point across the app to remember to check first.
+    if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){
+      const now=Date.now();
+      if(!_viewerSaveBlockedToastAt||(now-_viewerSaveBlockedToastAt)>10000){
+        _viewerSaveBlockedToastAt=now;
+        showToast("View only — your changes aren't being saved");
+      }
+      return;
+    }
     // Safety guard: if this tab is a ghost-fallback placeholder (see warnGhostDocFallback) and
     // still has no real content, refuse to save it — regardless of `dirty`. Unlike the
     // existing-content guard just below, there's no prior localStorage record to compare
@@ -12984,6 +13003,13 @@ function filterHelpByFeatures(){
 }
 function ctxActionAllowed(actionId){
   if(contextHiddenActions.includes(actionId))return false;
+  // A viewer (read-only shared access) never gets a mutating action offered at all, rather than
+  // relying on catching it after the fact — the context menu is data-driven off this same check
+  // for every entry, so this one line covers all of them at once instead of needing an
+  // individual guard per action. The four exceptions are genuinely non-mutating: 'focus' and
+  // 'fold' only change this device's own view state (never saved for a viewer anyway, see
+  // saveToStorage), and 'where-used'/'version-history' just open read-only viewers.
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='note')return featureNoteEnabled;
   if(actionId==='codeblock')return featureCodeEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
@@ -12997,6 +13023,10 @@ function ctxActionAllowed(actionId){
 // shown in the hover rail — they used to share a gate, which meant hiding something
 // from one silently hid it from the other too. This only respects the feature toggles.
 function hoverActionAllowed(actionId){
+  // Same viewer gate as ctxActionAllowed just above — kept in sync deliberately rather than one
+  // calling the other, since a future edit to either could otherwise silently stop covering the
+  // other's surface (the hover toolbar) without any error to catch it.
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='note')return featureNoteEnabled;
   if(actionId==='codeblock')return featureCodeEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
