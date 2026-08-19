@@ -14619,6 +14619,10 @@ async function pushDocToCloud(mod,db,docId){
   // role=='editor' for write) rather than silently doing nothing; flushSyncQueue's existing
   // catch surfaces that as a sync error, same as any other push failure.
   const ownerUid=sharedDocMeta[docId]?.ownerUid||currentUser.uid;
+  // lastEditedBy* — stamped on every push, by owner and collaborator alike, purely so the
+  // owner's real-time listener (applyIncomingDocData below) can tell "someone ELSE just changed
+  // one of my documents" from its own echo, and notify accordingly. Not used for anything else.
+  const editedBy={lastEditedByUid:currentUser.uid,lastEditedByDisplayName:currentUser.displayName||'',lastEditedByEmail:(currentUser.email||'').toLowerCase()};
   // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
   // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
   // has no idea whether this document carries a sharedWith map (collaboration metadata that
@@ -14627,7 +14631,7 @@ async function pushDocToCloud(mod,db,docId){
   // once sharing is actually wired up client-side, but the write path needs to already be safe
   // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
   // bug window was "every push, for every collaborator, until someone noticed."
-  await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...data,updatedAt:ts},{merge:true});
+  await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...data,...editedBy,updatedAt:ts},{merge:true});
 }
 // The other half of "delete propagation" — without this, permanently deleting a document (or
 // emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
@@ -14701,6 +14705,7 @@ async function pushMetaToCloud(mod,db,metaKey){
 // next time the doc is reopened); realtime instead surfaces the existing cross-tab-banner (the
 // same UI already used for the same-browser-other-tab case) so the person can choose to reload
 // rather than staying silently stale indefinitely while the app is open live.
+let _lastCollabEditNotifAt={}; // per-docId cooldown for the collaborator-edit notification below — see applyIncomingDocData
 function applyIncomingDocData(id,cloud,viaRealtime){
   const cloudTs=Number(cloud.updatedAt)||0;
   if(_lastPushedTs['doc:'+id]===cloudTs)return false; // our own echo
@@ -14722,6 +14727,25 @@ function applyIncomingDocData(id,cloud,viaRealtime){
   const {updatedAt,...docData}=cloud;
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   touchDocIndex(id,docData.title||'Untitled');
+  // A collaborator with edit access just changed one of MY documents that isn't the one I have
+  // open right now — the currently-open case above already has its own signal (the cross-tab
+  // banner), so this only fires for the "you'd otherwise have no way to find out at all" case.
+  // Owner-side only: this listener only ever sees changes to documents THIS account owns —
+  // there's no equivalent live listener for a collaborator watching someone ELSE's document
+  // (openSharedDocument is a one-time fetch, not a subscription), so notifying a collaborator
+  // that the owner or another editor changed a doc they're currently viewing isn't something
+  // this can do without building real-time collaborative sync, a materially bigger feature.
+  if(viaRealtime&&currentUser&&cloud.lastEditedByUid&&cloud.lastEditedByUid!==currentUser.uid&&cloud.sharedWith&&Object.keys(cloud.sharedWith).length&&typeof pushLocalNotification==='function'){
+    const key='doc:'+id; const now=Date.now();
+    // One notification per ~15 minutes of continuous editing by a collaborator, not one per
+    // autosave push — an active editing session can push every ~1.2s (queueSync's debounce),
+    // and without this a single sitting would spam the panel dozens of times over.
+    if(!_lastCollabEditNotifAt[key]||(now-_lastCollabEditNotifAt[key])>15*60000){
+      _lastCollabEditNotifAt[key]=now;
+      const who=cloud.lastEditedByDisplayName||cloud.lastEditedByEmail||'Someone';
+      pushLocalNotification('collab_edit',`${who} edited "${docData.title||'Untitled'}"`);
+    }
+  }
   return true;
 }
 function applyIncomingTemplateData(id,cloud){
