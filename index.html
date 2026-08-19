@@ -3794,16 +3794,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    scrollport (not just the outer modal) that the dropdown menu's clipping bounds actually depend
    on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
 #feedback-inbox-modal-overlay .app-modal-body{flex:1}
-.todo-meta-row{display:flex;align-items:center;gap:4px}
+.todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-/* Text+actions wrapper: a plain block (not flex) so .todo-actions can be a
-   CSS float. A float only narrows the lines it vertically overlaps, so the
-   icons take space from the first line only — wrapped lines below reclaim
-   the row's full width. (A flex row here would stretch the icon column
-   across the whole wrapped-text height instead of just the first line.)
-   Clears the float so .todo-meta-row below isn't pulled up alongside it. */
 .todo-textwrap{display:block}
-.todo-textwrap::after{content:"";display:table;clear:both}
 .todo-text{font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
@@ -3933,16 +3926,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row.dragging{opacity:.4}
 .todo-row.drag-over-top{box-shadow:inset 0 2px 0 0 var(--accent)}
 .todo-row.drag-over-bottom{box-shadow:inset 0 -2px 0 0 var(--accent)}
-/* Actions: a float (see .todo-textwrap above) so they only take space from the
-   first line of text, not every wrapped line. Width/margin are reserved
-   permanently here (keyed only on .completed, which changes the button count)
-   rather than animated on hover/reveal — animating width caused the floated
-   text next to it to visibly reflow frame-by-frame as the icons grew, which
-   read as the row's text "shifting." Hover/fixed mode now only toggles
-   opacity+pointer-events against that already-reserved space, so the text's
-   wrap point never moves. */
-.todo-actions{float:right;margin-left:4px;width:74px;overflow:hidden;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
-.todo-row.completed .todo-actions{width:50px}
+/* Actions now live on .todo-meta-row (the chip row) instead of floating over the task text —
+   moved there so the text gets the row's full width unconditionally, rather than always having
+   ~74px reserved on its first line whether or not the actions are actually visible. margin-left:
+   auto pushes the group to the end of whichever flex line it lands on; opacity+pointer-events
+   (not display) still gates hover/fixed visibility, same as before, so toggling them doesn't
+   shift anything else in the row — the space is already accounted for in the flex layout either
+   way, it just isn't painted until revealed. */
+.todo-actions{margin-left:auto;flex:0 0 auto;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
 .todo-row:hover .todo-actions{opacity:1;pointer-events:auto}
 .todo-rewrite,.todo-delete,.todo-subtask-ai{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-ai{color:var(--accent)}
@@ -41778,10 +41769,6 @@ function _addTagPopoverFromInput(){
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
       +`<div class="todo-textwrap">`
-      + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
-          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
-          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
-        ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
       +`<div class="todo-meta-row">`
@@ -41813,6 +41800,10 @@ function _addTagPopoverFromInput(){
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
         +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
       +`</button>` : '')
+      + `<span class="todo-actions">${(hasAttachment&&showLink)?(nodeRef
+          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
+          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+        ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`
       + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
