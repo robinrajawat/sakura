@@ -3730,7 +3730,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    a little left padding on hover, but the action icons no longer reserve
    row-wide padding — they're a float inside .todo-textwrap (see below) that
    only narrows the first line. */
-.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:7px 8px;border-radius:8px;transition:background .12s,padding .16s ease}
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .12s,padding .16s ease}
 .todo-row:hover{background:var(--hover)}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
@@ -3740,7 +3740,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 @keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
 .todo-priority{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-priority.set{display:inline-flex}
-.todo-row:hover .todo-priority{display:inline-flex}
+.todo-row.expanded .todo-priority{display:inline-flex}
 .todo-priority:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 .todo-priority[data-priority="low"]{color:#6c9bd1}
 .todo-priority[data-priority="med"]{color:#d1a23a}
@@ -3748,7 +3748,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-priority svg{fill:currentColor}
 .todo-status{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-status.set{display:inline-flex}
-.todo-row:hover .todo-status{display:inline-flex}
+.todo-row.expanded .todo-status{display:inline-flex}
 .todo-status:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 .todo-status[data-status="waiting"]{color:#8a7fc9}
 .todo-status[data-status="progress"]{color:#5aa970}
@@ -3804,28 +3804,28 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    display:none) so the reveal animates instead of popping, and doesn't affect chip-bearing rows
    at all — this only ever applies to rows with truly nothing else on that line. */
 .todo-row-nochips .todo-meta-row{max-height:0;overflow:hidden;margin-top:-2px;transition:max-height .15s ease,margin-top .15s ease}
-.todo-row-nochips:hover .todo-meta-row,.todo-row-nochips:focus-within .todo-meta-row{max-height:28px;margin-top:0}
+.todo-row-nochips.expanded .todo-meta-row,.todo-row-nochips:focus-within .todo-meta-row{max-height:28px;margin-top:0}
 #todos-panel.actions-fixed .todo-row-nochips .todo-meta-row{max-height:28px;margin-top:0}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .todo-textwrap{display:block}
-.todo-text{font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
+.todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-due.set{display:inline-flex}
-.todo-row:hover .todo-due{display:inline-flex}
+.todo-row.expanded .todo-due{display:inline-flex}
 .todo-due:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 .todo-due.overdue{color:var(--sem-alert,#b85450)}
 .todo-link{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;max-width:130px;transition:color .12s,background .12s,border-color .12s}
 .todo-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .todo-link.set{display:inline-flex}
-.todo-row:hover .todo-link{display:inline-flex}
+.todo-row.expanded .todo-link{display:inline-flex}
 .todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 .todo-link.link-missing{color:var(--sem-alert,#b85450);border-style:dashed;border-color:color-mix(in srgb,var(--sem-alert,#b85450) 40%,transparent)}
 .todo-due.recurring{display:inline-flex}
 .todo-due-repeat-icon{opacity:.75;margin-left:1px}
 .todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-repeat.set{display:inline-flex;color:var(--accent)}
-.todo-row:hover .todo-repeat{display:inline-flex}
+.todo-row.expanded .todo-repeat{display:inline-flex}
 .todo-repeat:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
 #todos-panel.actions-fixed .todo-repeat{display:inline-flex}
 .todo-check:disabled{cursor:default;opacity:.75}
@@ -3849,7 +3849,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
 .todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
-.todo-row:hover .todo-subtask-add-btn{display:inline-flex}
+.todo-row.expanded .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
 #todos-panel.actions-fixed .todo-subtask-add-btn{display:inline-flex}
 .todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
@@ -3945,7 +3945,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    shift anything else in the row — the space is already accounted for in the flex layout either
    way, it just isn't painted until revealed. */
 .todo-actions{margin-left:auto;flex:0 0 auto;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
-.todo-row:hover .todo-actions{opacity:1;pointer-events:auto}
+.todo-row.expanded .todo-actions{opacity:1;pointer-events:auto}
 .todo-rewrite,.todo-delete,.todo-subtask-ai{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-ai{color:var(--accent)}
 .todo-subtask-ai:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -3963,7 +3963,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-meeting-chip-open:hover{color:var(--accent)}
 .todo-meeting-chip.missing .todo-meeting-chip-open{color:var(--sem-alert,#b85450)}
 .todo-meeting-chip-remove{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.todo-row:hover .todo-meeting-chip-remove,.todo-meeting-chip-remove:focus{opacity:.7}
+.todo-row.expanded .todo-meeting-chip-remove,.todo-meeting-chip-remove:focus{opacity:.7}
 .todo-meeting-chip-remove:hover{opacity:1;color:var(--fc-red);background:var(--hover)}
 .todo-row.qa-flash{animation:todo-flash 1.1s ease}
 .qa-row.qa-flash{animation:todo-flash 1.1s ease}
@@ -4892,7 +4892,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features for To-Dos</span><span class="settings-row-desc">Extract action items, Break into subtasks, Status summary, and its highlighting live in Settings → AI, alongside every other AI-powered feature in the app — so everything using your API key and budget is visible in one place rather than split across each panel.</span></div><button class="btn" id="todos-ai-settings-jump-btn">Open in AI settings</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Overdue count badge</span><span class="settings-row-desc">Show a small count badge on the To-Dos button itself when you have overdue tasks, so you can tell at a glance without opening the panel.</span></div><button id="todos-overdue-badge-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show overdue count badge on the To-Dos button"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">"On hover" keeps rows compact and reveals priority/due/rewrite/delete only when you point at a row. "Always visible" keeps them in place permanently — less compact, but nothing moves or hides. The drag handle is separate — turn that on from the header's select/reorder toggle instead, only when you actually need to reorder ("Always visible" also keeps it on, alongside everything else).</span></div><select id="todos-actions-mode-select" class="select" style="width:auto"><option value="hover">On hover (compact)</option><option value="fixed">Always visible</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row actions</span><span class="settings-row-desc">"Click to expand" keeps rows compact — click a task's own background to open it and reveal priority/due/link/repeat/rewrite/delete, click again to close. "Always visible" keeps all of that in place permanently on every row instead, without needing to click — less compact, but nothing to open first. The drag handle is separate — turn that on from the header's select/reorder toggle instead, only when you actually need to reorder ("Always visible" also keeps it on, alongside everything else).</span></div><select id="todos-actions-mode-select" class="select" style="width:auto"><option value="hover">Click to expand (compact)</option><option value="fixed">Always visible</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Collapse sub-tasks by default</span><span class="settings-row-desc">New sub-task checklists start collapsed instead of expanded, showing just the progress count until you click to open them.</span></div><button id="todos-subtasks-collapse-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Collapse sub-tasks by default"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Collapse completed section by default</span><span class="settings-row-desc">The Completed list starts collapsed to just its header (with count) when you open the To-Dos panel, instead of showing every completed task. Click the header to expand it any time.</span></div><button id="todos-completed-collapse-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Collapse completed section by default"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Row elements</span><span class="settings-row-desc">Turn off any of these to remove them from every task row — useful if you only use a few of them and want a leaner list. Unchecking one only hides it; nothing already set on a task is lost, and it comes back the moment you check it again.</span></div></div>
@@ -6107,15 +6107,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li>Click the magnifying-glass icon to open <strong>quick-find</strong> and type to search task text, across both Open and Completed. Matches are highlighted and non-matching tasks are hidden entirely (not just dimmed), so the list actually shortens as you narrow it down — this composes with the priority filter, so a priority filter plus a search term shows only tasks matching both. Esc clears the search text first, then a second Esc (or clicking the icon again) closes it; the search always resets when you close the panel. Dragging to reorder still works correctly while filtered — a task dropped next to a visible neighbor lands there in the full list too, even if other hidden tasks sit between them. This searches task text only, live, within the panel — for a version that also opens the panel and jumps to the match from anywhere in the app, Quick Assist's <code>todo:</code> scope still does that</li>
 <li>Turn on the select/reorder toggle (checklist icon in the header) to reveal each open task's drag handle, then drag it to reorder. Completed tasks aren't draggable — they're always ordered by completion time</li>
 <li>Editing a task's text supports <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> to undo/redo that text edit — its own history, shared across all tasks (app-level, like the list itself) rather than per-task. This covers text edits only: adding, deleting, reordering, and completing tasks keep their existing in-panel Undo toasts instead</li>
-<li>Hover a task for a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button — both sit as an overlay rather than reserving space, so task text keeps the full row width when you're not hovering. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick — past that window, Version History (the clock icon) can still bring back a deleted task as part of restoring an earlier snapshot of the whole list</li>
+<li>Click a task's own background — not its text, and not a checkbox/chip/button, all of which keep doing their own thing on click — to expand it and reveal a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button on its chip row, alongside any unset priority/due/link/repeat placeholders. Click the row again to close it — collapsed rows show only the task text (plus any chips that already have a value), so a plain checklist-style task with nothing set takes up as little room as possible. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick — past that window, Version History (the clock icon) can still bring back a deleted task as part of restoring an earlier snapshot of the whole list</li>
 <li>The <strong>Completed</strong> section header shows a <strong>Clear completed</strong> button whenever it has tasks (respecting the current priority filter) to remove them all in one action, with its own in-panel Undo toast — a batch counterpart to deleting one at a time. All To-Dos toasts (Undo prompts, export confirmation, AI rewrite errors) show inside the panel while it's open rather than the app's global toast, so acting on one never closes the panel</li>
 <li>An overdue count badge can appear on the Hub button itself, in the app bar, whenever you have open, overdue tasks — visible without opening the panel. Toggle it off at Settings → To-Dos → "Overdue count badge" if you'd rather not see it</li>
-<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal on hover while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over your active documents — the same lookup Quick Assist and Global Search use — with results grouped into Documents, for linking the whole document, and Nodes, for one specific spot in it; leave the box empty to browse and pick a document without typing its title first), plus a Remove link option that clears whichever kind is set. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a document-link chip shows the document's title with a plain document icon, and a node-link chip shows that node's own text with a small hierarchy icon, in place of the link-chain icon, so either reads as "jumps within Sakura" rather than "opens a website" — and both stay live, tracking the current title/text rather than a snapshot. Once any kind of link is attached, an open/jump button appears in the row's hover actions, next to Rewrite and Delete: for a web link it opens a new tab; for a document or node link it switches to that document if needed (scrolling to and briefly flashing the node, the same way backlinks do, when it's a node link specifically). If the node or document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" (or "That document no longer exists") toast instead of failing silently</li>
+<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal once you click the task to expand it while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over your active documents — the same lookup Quick Assist and Global Search use — with results grouped into Documents, for linking the whole document, and Nodes, for one specific spot in it; leave the box empty to browse and pick a document without typing its title first), plus a Remove link option that clears whichever kind is set. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a document-link chip shows the document's title with a plain document icon, and a node-link chip shows that node's own text with a small hierarchy icon, in place of the link-chain icon, so either reads as "jumps within Sakura" rather than "opens a website" — and both stay live, tracking the current title/text rather than a snapshot. Once any kind of link is attached, an open/jump button appears in the row's actions once it's expanded, next to Rewrite and Delete: for a web link it opens a new tab; for a document or node link it switches to that document if needed (scrolling to and briefly flashing the node, the same way backlinks do, when it's a node link specifically). If the node or document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" (or "That document no longer exists") toast instead of failing silently</li>
 <li>A task promoted from a Meeting Notes action item shows a small calendar-icon <strong>"from meeting"</strong> chip instead — separate from the link chip above, since a task can have both at once. Click it to jump back to the source meeting note; a small × on it removes just the reference, not the task. If that meeting note was later deleted, the chip switches to a dashed "missing" style rather than failing silently</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
-<li>Hover a task and click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
+<li>Click a task to expand it, then click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
 <li>Right-click a task for a context menu — mark complete/open, duplicate the task, copy its text, move it to the top or bottom of the list, expand/collapse its sub-tasks, or delete it. Right-clicking directly on the task's own text, or on a sub-task row, falls through to the normal browser menu instead, so copy/paste and spellcheck still work there</li>
-<li>Settings → To-Dos: show or hide the overdue count badge; auto-expire completed tasks after a set number of days; cap how many completed tasks are kept (oldest drop first); choose whether row actions (priority/due/repeat/link chips, Rewrite/Subtask/Delete) stay always visible or only reveal on hover; and whether a task's first sub-task list starts collapsed by default instead of expanded</li>
+<li>Settings → To-Dos: show or hide the overdue count badge; auto-expire completed tasks after a set number of days; cap how many completed tasks are kept (oldest drop first); choose whether row actions (priority/due/repeat/link chips, Rewrite/Subtask/Delete) stay always visible or only reveal once you click a task to expand it; and whether a task's first sub-task list starts collapsed by default instead of expanded</li>
 <li>Typing <strong>@</strong> directly in a task's text renders an inline chip: <span class="todo-at todo-at-person">@name</span> for an assignee, <span class="todo-at todo-at-date">@date</span> (ISO date, <span class="todo-at todo-at-date">@today</span>/<span class="todo-at todo-at-date">@tomorrow</span>, or a weekday like <span class="todo-at todo-at-date">@fri</span>) for a date reference, and <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) for status. A suggestion popup appears as you type, offering the date/status keywords plus any names you've already used as <span class="todo-at todo-at-person">@name</span> elsewhere — Arrow keys to navigate, Enter/Tab to accept, Escape to dismiss. These are colored text only — display convenience within the task text, not linked to the priority/due-date/link fields above</li>
 <li><span class="todo-tag-chip">#tag</span> renders as a colored tag chip — same autocomplete popup, suggesting tags you've already used. <span class="todo-remark">&gt;remark</span> renders everything from the &gt; to the end of the line as a muted italic aside. Both are display only, same as @ tokens</li>
 <li>Quick-find already searches the raw task text, so it matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text without any special handling — priority stays a separate structured field with its own dedicated filter</li>
@@ -40399,6 +40399,30 @@ function _addTagPopoverFromInput(){
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   const PRIORITIES=['none','low','med','high'];
   let todosSelectedIds=new Set(); // bulk-select mode, open tasks only — scoped to this module, not persisted
+  // Which rows currently show their full chip row + actions, via clicking the row's own
+  // background (see the .todo-row click listener below) — replaces the old hover-to-reveal
+  // model entirely. Session-only, like todosSelectedIds: re-rendering the whole list on every
+  // mutation (renderTodos rebuilds body.innerHTML) means this external Set is what keeps a row
+  // expanded across those rebuilds, not any DOM state on the row itself.
+  let todosExpandedIds=new Set();
+  function toggleTodoExpanded(id){
+    if(todosExpandedIds.has(id)) todosExpandedIds.delete(id); else todosExpandedIds.add(id);
+    renderTodos();
+  }
+  // Whether a click landed on something that already has its own meaning (editing text,
+  // toggling a checkbox, cycling a chip, dragging, deleting a subtask, ...) — walking up from
+  // the actual click target rather than an exhaustive class list, so a chip type added later
+  // doesn't silently also toggle the row open from underneath its own click handler. Stops at
+  // `row` itself so a click on true background (row padding, the empty space in a short title's
+  // line) still falls through to the row toggle.
+  function todoRowClickIsInteractive(target,row){
+    let elx=target;
+    while(elx&&elx!==row){
+      if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle'))return true;
+      elx=elx.parentElement;
+    }
+    return false;
+  }
   const STATUSES=['none','waiting','progress','blocked','review'];
   let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, linkLabel, nodeRef, repeat, subtasks, subtasksOpen} — array order IS open-task order
   // nodeRef ({docId,nodeId}|null) and link/linkLabel are mutually exclusive — a task's "attach a
@@ -41382,6 +41406,10 @@ function _addTagPopoverFromInput(){
       btn.addEventListener('click',()=>rewriteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
     });
     body.querySelectorAll('.todo-row').forEach(row=>{
+      row.addEventListener('click', e=>{
+        if(todoRowClickIsInteractive(e.target,row))return;
+        toggleTodoExpanded(row.getAttribute('data-id'));
+      });
       row.addEventListener('contextmenu', e=>{
         if(e.target.closest('.todo-text') || e.target.closest('.todo-subtask-row') || e.target.closest('.todo-subtask-input-row')) return;
         const id=row.getAttribute('data-id');
@@ -41779,7 +41807,7 @@ function _addTagPopoverFromInput(){
     // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
     // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
     const hasVisibleChips=(showPriority&&priority!=='none')||(showStatus&&status!=='none')||(showDue&&!!due)||(showLink&&hasAttachment)||!!meetingRef||(showRepeat&&!!t.repeat&&!hasSubtasks);
-    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
+    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${todosExpandedIds.has(t.id)?' expanded':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
