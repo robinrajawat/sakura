@@ -13827,6 +13827,15 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
     const d=snap.data();
     const nds=Array.isArray(d.nodes)?d.nodes.map(normalizeNode):[];
     tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',pad:d.pad||'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:Array.isArray(d.diagrams)?d.diagrams:[],mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[],decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[],attachments:Array.isArray(d.attachments)?d.attachments:[],remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+    // Mirrors loadDocFromStorage's own identical line — without this, applyTabSnapshot (called
+    // below) has no equivalent step of its own, so hydrateDiagramBlobsForDoc would treat every
+    // one of these as un-hydrated and go looking for it in THIS device's local IndexedDB
+    // overflow store — which has nothing for a document that was never saved here, since it just
+    // arrived fresh from Firestore. That would show a false "couldn't load" failure on a diagram
+    // that's actually fine; marking it hydrated here means the real xml (now included in the
+    // shared payload — see pushDocToCloud) is trusted immediately, same as it already is for a
+    // normal local document load.
+    tab.diagrams.forEach(dg=>{ if(dg&&dg.xml)dg._hydrated=true; });
   }catch(e){ console.warn('[sakura] openSharedDocument failed:',e); showToast('Could not open — you may no longer have access'); return; }
   if(!tab)return;
   // Mirror into localStorage under the same docKey the rest of the app already reads/writes —
@@ -14638,6 +14647,7 @@ let _syncPushTimer=null;
 // instead catches "this is just my own write coming back" before that ever happens.
 let _lastPushedTs={};
 let _syncErrorToastShown=false;
+let _docTooLargeToastShown=new Set(); // per-docId, so a genuinely-too-large document's toast doesn't repeat on every retry — see pushDocToCloud
 // Tracks the sync engine's own last-known status, independent of the DOM (the status dot can
 // be hidden/removed by settings, but code elsewhere — like the session-backup-warning gate
 // below — still needs to know "is cloud sync currently healthy" without caring whether the
@@ -14718,6 +14728,25 @@ async function pushDocToCloud(mod,db,docId){
   // owner's real-time listener (applyIncomingDocData below) can tell "someone ELSE just changed
   // one of my documents" from its own echo, and notify accordingly. Not used for anything else.
   const editedBy={lastEditedByUid:currentUser.uid,lastEditedByDisplayName:currentUser.displayName||'',lastEditedByEmail:(currentUser.email||'').toLowerCase()};
+  // Diagram XML is included here specifically so a shared document's diagrams actually reach the
+  // recipient — the localStorage copy this function reads from deliberately has it stripped out
+  // (see saveToStorage's own comment on diagramMeta) since that split exists purely for
+  // localStorage's much tighter aggregate quota, a constraint that doesn't apply to a single
+  // Firestore document the same way. previewSvg/pageSvgs are deliberately NOT included: they're
+  // pure rendered-from-xml cache, the actual expensive part size-wise, and the app already has a
+  // clean, calm fallback for "xml present, no cached thumbnail yet" (a plain placeholder icon
+  // with a visible, clearly-labeled regenerate button — see renderDiagramsList) rather than
+  // needing this to ship pre-rendered images across the wire at all.
+  let dataToSend=data;
+  if(Array.isArray(data.diagrams)&&data.diagrams.length){
+    const diagramsWithXml=await Promise.all(data.diagrams.map(async dg=>{
+      try{
+        const blob=await idbGet('diagblob:'+docId+':'+dg.id);
+        return blob&&blob.xml?{...dg,xml:blob.xml}:dg;
+      }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
+    }));
+    dataToSend={...data,diagrams:diagramsWithXml};
+  }
   // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
   // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
   // has no idea whether this document carries a sharedWith map (collaboration metadata that
@@ -14726,7 +14755,27 @@ async function pushDocToCloud(mod,db,docId){
   // once sharing is actually wired up client-side, but the write path needs to already be safe
   // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
   // bug window was "every push, for every collaborator, until someone noticed."
-  await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...data,...editedBy,updatedAt:ts},{merge:true});
+  try{
+    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...dataToSend,...editedBy,updatedAt:ts},{merge:true});
+    _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
+  }catch(e){
+    // Firestore's 1MB-per-document limit is the one real risk of including diagram xml (or,
+    // already, base64 attachments) inline — worth a specific, actionable message instead of the
+    // generic "will keep retrying quietly" flushSyncQueue shows for everything else, since
+    // retrying literally cannot help here: the document will be exactly this size again next
+    // time. Detected by message pattern rather than a stable error code, since Firestore doesn't
+    // expose one specific to this — checked narrowly enough (both "size"/"large" AND a byte-limit
+    // or "exceed" mention) to stay a genuine size-limit match rather than misfiring on an
+    // unrelated error that happens to share one common word.
+    const msg=String(e&&e.message||'');
+    if(/longer than \d+ bytes|exceeds? maximum size|document exceeds[^.]*size|1,?048,?576/i.test(msg)){
+      if(!_docTooLargeToastShown.has(docId)){
+        _docTooLargeToastShown.add(docId);
+        showToast('This document is too large to sync to the cloud (over Firestore\u2019s 1MB limit) \u2014 try removing large attachments or simplifying a diagram. Your local copy is unaffected; it just won\u2019t reach the cloud or anyone it\u2019s shared with until it\u2019s smaller.');
+      }
+    }
+    throw e; // still surfaces to flushSyncQueue's own catch, which needs it for the sync-status dot regardless of which toast (if either) already fired
+  }
 }
 // The other half of "delete propagation" — without this, permanently deleting a document (or
 // emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
