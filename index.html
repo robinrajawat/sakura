@@ -9981,7 +9981,7 @@ function saveToStorage(){
       const now=Date.now();
       if(!_viewerSaveBlockedToastAt||(now-_viewerSaveBlockedToastAt)>10000){
         _viewerSaveBlockedToastAt=now;
-        showToast("View only — your changes aren't being saved");
+        showToast("View only — your changes aren't being saved",null,false,2600);
       }
       return;
     }
@@ -13667,7 +13667,7 @@ async function setProfileDiscoverable(on){
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.setDoc(mod.doc(db,'profiles',currentUser.uid),{visibility:profileVisibility,updatedAt:Date.now()},{merge:true});
-    showToast(on?'Your profile is now public — discoverable by email when someone shares a document with you':'Your profile is now private — no longer discoverable by email');
+    showToast(on?'Your profile is now public — discoverable by email when someone shares a document with you':'Your profile is now private — no longer discoverable by email',null,false,2600);
   }catch(e){
     console.warn('[sakura] setProfileDiscoverable failed:',e);
     profileVisibility=prev; updateProfileDiscoverableToggleUi();
@@ -14771,7 +14771,7 @@ async function pushDocToCloud(mod,db,docId){
     if(/longer than \d+ bytes|exceeds? maximum size|document exceeds[^.]*size|1,?048,?576/i.test(msg)){
       if(!_docTooLargeToastShown.has(docId)){
         _docTooLargeToastShown.add(docId);
-        showToast('This document is too large to sync to the cloud (over Firestore\u2019s 1MB limit) \u2014 try removing large attachments or simplifying a diagram. Your local copy is unaffected; it just won\u2019t reach the cloud or anyone it\u2019s shared with until it\u2019s smaller.');
+        showToast('This document is too large to sync to the cloud (over Firestore\u2019s 1MB limit) \u2014 try removing large attachments or simplifying a diagram. Your local copy is unaffected; it just won\u2019t reach the cloud or anyone it\u2019s shared with until it\u2019s smaller.',null,false,6000);
       }
     }
     throw e; // still surfaces to flushSyncQueue's own catch, which needs it for the sync-status dot regardless of which toast (if either) already fired
@@ -17944,7 +17944,7 @@ el('editor-pane')?.addEventListener('keyup',e=>{
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')typewriterRecenter();
 });
 
-function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document"); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+function beginEdit(id,atEnd=true){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 // Standard mirror-div technique: clones the textarea's exact text-layout styles (width, font,
 // padding, wrapping) into a hidden div so the browser wraps the text identically, then measures
 // where a marker lands to get the true visual line index -- this is the only reliable way to know
@@ -18031,7 +18031,7 @@ function setEditableSelectionRange(el,start,end){
 }
 // Places the caret at a specific offset rather than just start/end -- used by single-click-to-edit
 // below, so clicking mid-sentence doesn't force the caret to jump to one end of the line first.
-function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document"); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
+function beginEditAt(id,caretPos){if(id===null||getIndex(id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(id)].text; render()}
 // Best-effort mapping from a click point to a character offset in the node's raw text. Walks the
 // rendered label's text nodes (via the browser's native caret-from-point APIs) and sums lengths up
 // to the click position. This can be slightly off for lines with inline formatting syntax (bold,
