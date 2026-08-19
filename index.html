@@ -1538,6 +1538,7 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .sfolder-toggle.open{transform:rotate(90deg)}
 .sfolder-icon{display:inline-flex;align-items:center;margin-right:4px;flex-shrink:0;opacity:.75}
 .sfolder-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:4px 4px 4px 0}
+.sfolder-name-input{flex:1;min-width:0;font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--edit-bg);border:1px solid var(--accent);border-radius:4px;padding:2px 5px;margin:2px 2px 2px 0;outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
 .sfolder-count{font:400 10px 'Inter',sans-serif;color:var(--hint);margin-right:4px;flex-shrink:0}
 .sfolder-actions{display:none;gap:1px;align-items:center;padding-right:3px;flex-shrink:0}
 .sfolder-row:hover .sfolder-actions{display:flex}
@@ -26988,6 +26989,19 @@ const SB_FOLDER_DEFAULT_COLLAPSED_KEY = 'sakura_folder_default_collapsed_v1';
 let sidebarOpen = true;
 let tourSidebarWasOpen = true;
 let folderDefaultCollapsed = false;
+// Which folder (document tree) currently shows an inline rename input in place of its plain
+// label — used for both "New Folder" (created immediately with a default name, then focused
+// here for naming) and "Rename Folder" (an existing folder's current name, editable in place).
+// Session-only, like the render-time UI state elsewhere in this file — renderSidebarDocs checks
+// this on every rebuild rather than the row carrying its own edit state, since the sidebar
+// re-renders from scratch on most changes.
+let _folderInlineEditId=null;
+// Bumped every time an inline edit session starts or ends — see the blur/Escape handlers below.
+// Guarding purely on folder id isn't enough: editing the SAME folder twice in a row (edit,
+// cancel, edit again) means a stale, already-cancelled input's blur handler could still see
+// _folderInlineEditId match on the second edit and incorrectly commit its old, discarded value.
+// Each input captures the token current at its own creation and only acts if it's still current.
+let _folderInlineEditToken=0;
 let sbSelectedDocIds = new Set();
 let sbLastClickedDocId = null;
 let sbRenderedDocOrder = [];
@@ -27026,18 +27040,38 @@ function saveTplFolderMap(m){ try{ localStorage.setItem(TPL_FOLDER_MAP_KEY,JSON.
 function genTplFolderId(){ return 'tf'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function getFolderForTemplate(tplId){ return loadTplFolderMap()[tplId]||null; }
 function setFolderForTemplate(tplId, folderId){ const m=loadTplFolderMap(); if(folderId===null) delete m[tplId]; else m[tplId]=folderId; saveTplFolderMap(m); }
-async function createTplFolder(){
-  const name = await sakuraPrompt({icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',title:'New Template Folder',body:'Enter a name for the folder:',defaultValue:'New Folder',confirmLabel:'Create',cancelLabel:'Cancel'});
-  if(!name) return;
+// Same create-immediately-then-rename-inline pattern as createFolder above, and reusing the
+// same _folderInlineEditId/_folderInlineEditToken state — document folders and template folders
+// are rendered in separate parts of the sidebar and can never be mid-edit on both at once from a
+// single click, so one shared "which folder is being edited" slot is enough for both without
+// them ever needing to distinguish which system a given id belongs to.
+function createTplFolder(){
   const folders = loadTplFolders();
-  folders.push({id:genTplFolderId(), name:name.trim()||'New Folder', open:true});
+  const id = genTplFolderId();
+  folders.push({id, name:'New Folder', open:true});
   saveTplFolders(folders);
-  renderSidebar();
+  startTplFolderInlineEdit(id);
 }
-async function renameTplFolderById(id){
-  const folders=loadTplFolders(); const f=folders.find(x=>x.id===id); if(!f)return;
-  const name=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',title:'Rename Folder',body:'Enter a new name:',defaultValue:f.name,confirmLabel:'Rename',cancelLabel:'Cancel'});
-  if(!name)return; f.name=name.trim()||f.name; saveTplFolders(folders); renderSidebar();
+function renameTplFolderById(id){
+  const folders=loadTplFolders(); if(!folders.some(x=>x.id===id))return;
+  startTplFolderInlineEdit(id);
+}
+function startTplFolderInlineEdit(id){
+  _folderInlineEditId=id;
+  _folderInlineEditToken++;
+  renderSidebar();
+  requestAnimationFrame(()=>{
+    const input=document.querySelector('.sfolder-name-input[data-folder-id="'+id+'"]');
+    if(input){ input.focus(); input.select(); }
+  });
+}
+function commitTplFolderInlineEdit(id,value){
+  if(_folderInlineEditId!==id)return;
+  const folders=loadTplFolders(); const f=folders.find(x=>x.id===id);
+  if(f){ f.name=value.trim()||f.name||'New Folder'; saveTplFolders(folders); }
+  _folderInlineEditId=null;
+  _folderInlineEditToken++;
+  renderSidebar();
 }
 async function deleteTplFolderById(id){
   const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Delete Folder',body:'Delete this folder? Templates inside will become ungrouped.',confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
@@ -27296,9 +27330,9 @@ function sbDocContextItems(d, folders){
 function sbFolderContextItems(folder){
   return [
     {label:'New document here', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', onClick: async()=>{ createDoc(folder.id); renderSidebar(); }},
-    {label:'New subfolder here', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', onClick: async()=>{ await createFolder(folder.id); }},
+    {label:'New subfolder here', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>', onClick: ()=>{ createFolder(folder.id); }},
     {divider:true},
-    {label:'Rename folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: async()=>{ await renameFolderById(folder.id); renderSidebar(); }},
+    {label:'Rename folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: ()=>{ renameFolderById(folder.id); }},
     {divider:true},
     {label:'Delete folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>', danger:true, onClick: async()=>{ await deleteFolderById(folder.id); }}
   ];
@@ -27853,6 +27887,12 @@ function renderSidebarDocs(){
     const folderRow = document.createElement('div'); folderRow.className='sfolder-row'; folderRow.dataset.folderId=folder.id;
     const isOpen = q ? true : (folder.open!==false);
     if(!q){ wireSbDropTarget(folderRow, folder.id); wireFolderDragReorder(folderRow, folder); }
+    // Reordering and inline-renaming a folder at the same time don't mix well — with the row
+    // still draggable, a click-drag inside the input to select text could get misread as
+    // starting the row's own native drag instead of a normal text selection. Off for the
+    // duration of the edit; wireFolderDragReorder sets it back to true the next time this row
+    // renders normally (every commit/cancel triggers a full re-render).
+    if(folder.id===_folderInlineEditId)folderRow.draggable=false;
     folderRow.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY, sbFolderContextItems(folder)); });
 
     const tog = document.createElement('button'); tog.className='sfolder-toggle'+(isOpen?' open':'');
@@ -27864,8 +27904,26 @@ function renderSidebarDocs(){
     const icon = document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     folderRow.appendChild(icon);
 
-    const name = document.createElement('span'); name.className='sfolder-name'; name.textContent=truncateTitle(folder.name||'Unnamed folder',50); name.dataset.tip=truncateTitle(folder.name||'Unnamed folder',120);
-    folderRow.appendChild(name);
+    if(folder.id===_folderInlineEditId){
+      const myToken=_folderInlineEditToken;
+      const input=document.createElement('input'); input.type='text'; input.className='sfolder-name-input'; input.value=folder.name||''; input.maxLength=200; input.spellcheck=false; input.autocomplete='off'; input.dataset.folderId=folder.id;
+      input.addEventListener('click',e=>e.stopPropagation());
+      input.addEventListener('mousedown',e=>e.stopPropagation());
+      input.addEventListener('keydown',e=>{
+        e.stopPropagation();
+        if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
+        else if(e.key==='Escape'){ e.preventDefault(); if(_folderInlineEditToken===myToken)cancelFolderInlineEdit(); }
+      });
+      // Checked against the token captured at this input's own creation, not just the folder id
+      // — editing the same folder again later (a fresh token) must not let this now-stale input's
+      // blur (however it ends up firing) commit its old, already-abandoned value. See
+      // _folderInlineEditToken's own comment for the scenario this was written to catch.
+      input.addEventListener('blur',()=>{ if(_folderInlineEditToken===myToken)commitFolderInlineEdit(folder.id,input.value); });
+      folderRow.appendChild(input);
+    } else {
+      const name = document.createElement('span'); name.className='sfolder-name'; name.textContent=truncateTitle(folder.name||'Unnamed folder',50); name.dataset.tip=truncateTitle(folder.name||'Unnamed folder',120);
+      folderRow.appendChild(name);
+    }
 
     const directCount = folderDocs.length;
     const totalCount = q ? directCount : folderSubtreeDocCount(folder, folders, allDocs, folderMap);
@@ -27879,7 +27937,7 @@ function renderSidebarDocs(){
       const addF = document.createElement('button'); addF.className='sdoc-action-btn'; addF.dataset.tip='New document in this folder'; addF.textContent='＋';
       addF.addEventListener('click',e=>{ e.stopPropagation(); createDoc(folder.id); renderSidebar(); });
       const renF = document.createElement('button'); renF.className='sdoc-action-btn'; renF.dataset.tip='Rename folder'; renF.textContent='✎';
-      renF.addEventListener('click',async e=>{ e.stopPropagation(); await renameFolderById(folder.id); renderSidebar(); });
+      renF.addEventListener('click',e=>{ e.stopPropagation(); renameFolderById(folder.id); });
       const delF = document.createElement('button'); delF.className='sdoc-action-btn danger'; delF.dataset.tip='Delete folder'; delF.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
       delF.addEventListener('click',async e=>{ e.stopPropagation(); await deleteFolderById(folder.id); });
       facts.appendChild(addF); facts.appendChild(renF); facts.appendChild(delF);
@@ -27926,7 +27984,14 @@ function renderSidebarDocs(){
     wrap.appendChild(lbl);
   }
 
-  if(!allDocs.length){ wrap.innerHTML='<div class="sb-empty">No documents</div>'; }
+  // Only the true empty state (nothing at all) replaces what's already been built above —
+  // previously this fired whenever there were zero DOCUMENTS, even with real folders already
+  // rendered into `wrap`, silently wiping them via innerHTML= the moment someone created a
+  // folder before their first document (a perfectly normal thing to do — setting up structure
+  // first). Found while testing inline folder creation, not something that existed because of
+  // it: a document-less folder is still useful (a drop target, a place to see it browsable) and
+  // shouldn't vanish just because nothing's been filed into it yet.
+  if(!allDocs.length&&!folders.length){ wrap.innerHTML='<div class="sb-empty">No documents</div>'; }
 }
 
 function sbTplContextItems(t, tplFolders){
@@ -28042,21 +28107,35 @@ function renderSidebarTemplates(){
       const folderTpls = filtered.filter(t=> tplFolderMap[t.id]===folder.id);
       const row = document.createElement('div'); row.className='sfolder-row'; row.dataset.tplFolderId=folder.id;
       row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const menuItems=[
-        {label:'Rename folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: async()=>{ await renameTplFolderById(folder.id); }}
+        {label:'Rename folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', onClick: ()=>{ renameTplFolderById(folder.id); }}
       ]; menuItems.push({divider:true}); menuItems.push({label:'Delete folder', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>', danger:true, onClick: async()=>{ await deleteTplFolderById(folder.id); }}); showSbContextMenu(e.clientX,e.clientY,menuItems); });
       const tog=document.createElement('button'); tog.className='sfolder-toggle'+(folder.open!==false?' open':''); tog.textContent='▶';
       tog.addEventListener('click',e=>{ e.stopPropagation(); toggleTplFolder(folder.id); });
       row.appendChild(tog);
       const icon=document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
       row.appendChild(icon);
-      const name=document.createElement('span'); name.className='sfolder-name'; name.textContent=folder.name||'Unnamed folder';
-      row.appendChild(name);
+      if(folder.id===_folderInlineEditId){
+        const myToken=_folderInlineEditToken;
+        const input=document.createElement('input'); input.type='text'; input.className='sfolder-name-input'; input.value=folder.name||''; input.maxLength=200; input.spellcheck=false; input.autocomplete='off'; input.dataset.folderId=folder.id;
+        input.addEventListener('click',e=>e.stopPropagation());
+        input.addEventListener('mousedown',e=>e.stopPropagation());
+        input.addEventListener('keydown',e=>{
+          e.stopPropagation();
+          if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
+          else if(e.key==='Escape'){ e.preventDefault(); if(_folderInlineEditToken===myToken)cancelFolderInlineEdit(); }
+        });
+        input.addEventListener('blur',()=>{ if(_folderInlineEditToken===myToken)commitTplFolderInlineEdit(folder.id,input.value); });
+        row.appendChild(input);
+      } else {
+        const name=document.createElement('span'); name.className='sfolder-name'; name.textContent=folder.name||'Unnamed folder';
+        row.appendChild(name);
+      }
       const count=document.createElement('span'); count.className='sfolder-count'; count.textContent=folderTpls.length;
       row.appendChild(count);
       row.dataset.tip='Right-click for more options';
       const facts=document.createElement('div'); facts.className='sfolder-actions';
       const renF=document.createElement('button'); renF.className='sdoc-action-btn'; renF.dataset.tip='Rename folder'; renF.textContent='✎';
-      renF.addEventListener('click',async e=>{ e.stopPropagation(); await renameTplFolderById(folder.id); });
+      renF.addEventListener('click',e=>{ e.stopPropagation(); renameTplFolderById(folder.id); });
       facts.appendChild(renF);
       const delF=document.createElement('button'); delF.className='sdoc-action-btn danger'; delF.dataset.tip='Delete folder'; delF.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
       delF.addEventListener('click',async e=>{ e.stopPropagation(); await deleteTplFolderById(folder.id); });
@@ -28088,19 +28167,46 @@ function renderSidebarTemplates(){
 
 
 // --- Folder CRUD ---
-async function createFolder(parentId=null){
-  const name = await sakuraPrompt({icon:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',title: parentId ? 'New Subfolder' : 'New Folder',body:'Enter a name for the folder:',defaultValue:'New Folder',confirmLabel:'Create',cancelLabel:'Cancel'});
-  if(!name) return;
+// Creates the folder immediately with a placeholder name, then focuses an inline rename input
+// on it — rather than a modal prompt asking for the name upfront. Matches how Explorer/Finder/
+// Notion all handle this: a "cancel" (Escape, or clicking away without typing) just leaves the
+// default name rather than needing separate create-vs-cancel logic, since nothing is lost either
+// way — a folder named "New Folder" you can rename later is a fine, low-cost outcome, and it's
+// simpler and more standard than trying to delete the folder again on cancel.
+function createFolder(parentId=null){
   const folders = loadFolders();
-  folders.push({id:genFolderId(), name:name.trim()||'New Folder', open: !folderDefaultCollapsed, parentId: parentId||null});
+  const id = genFolderId();
+  folders.push({id, name:'New Folder', open: !folderDefaultCollapsed, parentId: parentId||null});
   saveFolders(folders);
+  startFolderInlineEdit(id);
+}
+function renameFolderById(id){
+  const folders=loadFolders(); if(!folders.some(x=>x.id===id))return;
+  startFolderInlineEdit(id);
+}
+function startFolderInlineEdit(id){
+  _folderInlineEditId=id;
+  _folderInlineEditToken++;
+  renderSidebar();
+  requestAnimationFrame(()=>{
+    const input=document.querySelector('.sfolder-name-input[data-folder-id="'+id+'"]');
+    if(input){ input.focus(); input.select(); }
+  });
+}
+function commitFolderInlineEdit(id,value){
+  if(_folderInlineEditId!==id)return; // already committed/cancelled via another path (e.g. Enter's blur already ran this)
+  const folders=loadFolders(); const f=folders.find(x=>x.id===id);
+  if(f){ f.name=value.trim()||f.name||'New Folder'; saveFolders(folders); }
+  _folderInlineEditId=null;
+  _folderInlineEditToken++;
   renderSidebar();
 }
-async function renameFolderById(id){
-  const folders=loadFolders(); const f=folders.find(x=>x.id===id); if(!f)return;
-  const name=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',title:'Rename Folder',body:'Enter a new name:',defaultValue:f.name,confirmLabel:'Rename',cancelLabel:'Cancel'});
-  if(!name)return; f.name=name.trim()||f.name; saveFolders(folders);
+function cancelFolderInlineEdit(){
+  _folderInlineEditId=null;
+  _folderInlineEditToken++;
+  renderSidebar();
 }
+
 async function deleteFolderById(id){
   const folders0=loadFolders();
   const hasChildren = folders0.some(f=>(f.parentId||null)===id);
