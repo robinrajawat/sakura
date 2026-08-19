@@ -494,9 +494,18 @@ body.feature-off-templates #sb-templates-section,body.feature-off-templates #es-
 #notif-toggle{position:relative}
 .notif-badge{position:absolute;top:-5px;right:-5px;display:flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--fc-red);color:#fff;font:700 9.5px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:2px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06)}
 #notif-menu{width:300px;max-width:min(92vw,320px);max-height:380px;overflow-y:auto}
-.notif-menu-title{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 10px 8px}
+.notif-menu-header{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px 10px}
+.notif-menu-title{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0}
+.notif-clear-all{appearance:none;border:none;background:none;color:var(--accent);font:600 10.5px 'Inter',sans-serif;cursor:pointer;padding:3px 6px;border-radius:6px}
+.notif-clear-all:hover{background:var(--hover)}
+.notif-clear-all:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.notif-item{display:flex;align-items:flex-start;gap:4px;padding:8px 6px 8px 10px;border-radius:8px;margin:0 2px 2px;cursor:pointer;transition:background .12s}
+.notif-item-body{flex:1;min-width:0}
+.notif-item-dismiss{flex-shrink:0;appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:4px;border-radius:6px;opacity:0;transition:opacity .12s,color .12s,background .12s;margin-top:1px}
+.notif-item:hover .notif-item-dismiss{opacity:1}
+.notif-item-dismiss:hover{color:var(--fc-red);background:var(--hover)}
+.notif-item-dismiss:focus-visible{outline:none;opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .notif-empty{padding:20px 10px;text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif}
-.notif-item{padding:8px 10px;border-radius:8px;margin:0 2px 2px;cursor:pointer;transition:background .12s}
 .notif-item:hover{background:var(--hover)}
 .notif-item.unread{background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .notif-item.unread::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
@@ -4523,7 +4532,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <span id="notif-badge" class="notif-badge" style="display:none"></span>
         </button>
         <div class="export-menu export-menu-rich" id="notif-menu">
-          <div class="notif-menu-title">Notifications</div>
+          <div class="notif-menu-header">
+            <div class="notif-menu-title">Notifications</div>
+            <button type="button" class="notif-clear-all" id="notif-clear-all-btn" style="display:none">Clear all</button>
+          </div>
           <div id="notif-list"></div>
         </div>
       </div>
@@ -14207,20 +14219,61 @@ async function markNotificationRead(id){
     await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',id),{read:true});
   }catch(e){ console.warn('[sakura] markNotificationRead failed:',e); }
 }
+async function deleteNotification(id){
+  if(!id)return;
+  if(id.startsWith('local_')){
+    localNotifItems=localNotifItems.filter(x=>x.id!==id);
+    saveLocalNotifItems(); renderNotifBell(); if(notifMenuOpen)renderNotifList();
+    return;
+  }
+  if(!currentUser)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.deleteDoc(mod.doc(db,'notifications',currentUser.uid,'items',id));
+    // No local-array splice needed for this branch — the Firestore onSnapshot listener already
+    // updates notifItems and re-renders on its own once the delete round-trips back.
+  }catch(e){ console.warn('[sakura] deleteNotification failed:',e); showToast('Could not dismiss — try again'); }
+}
+async function clearAllNotifications(){
+  const items=combinedNotifItems();
+  if(!items.length)return;
+  // Local items: clear synchronously, no round-trip needed.
+  localNotifItems=[]; saveLocalNotifItems();
+  // Cloud items: best-effort parallel delete. A failure on one doesn't block the rest — whatever
+  // doesn't go through just reappears next render (the listener is still live), same recovery
+  // behavior as any other partial-failure case elsewhere in this app rather than leaving things
+  // in a confusing half-cleared state silently.
+  const cloudIds=notifItems.map(n=>n.id);
+  if(cloudIds.length&&currentUser){
+    try{
+      const {mod,db}=await loadFirestoreMods();
+      await Promise.all(cloudIds.map(id=>mod.deleteDoc(mod.doc(db,'notifications',currentUser.uid,'items',id)).catch(e=>console.warn('[sakura] clearAllNotifications: one delete failed:',e))));
+    }catch(e){ console.warn('[sakura] clearAllNotifications failed:',e); }
+  }
+  renderNotifBell(); if(notifMenuOpen)renderNotifList();
+}
+el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
 function renderNotifList(){
   const list=el('notif-list'); if(!list)return;
   list.innerHTML='';
   const items=combinedNotifItems();
+  const clearBtn=el('notif-clear-all-btn'); if(clearBtn)clearBtn.style.display=items.length?'':'none';
   if(!items.length){
     const empty=document.createElement('div'); empty.className='notif-empty'; empty.textContent="You're all caught up";
     list.appendChild(empty); return;
   }
   items.forEach(n=>{
     const item=document.createElement('div'); item.className='notif-item'+(n.read?'':' unread');
+    const body=document.createElement('div'); body.className='notif-item-body';
     const text=document.createElement('div'); text.className='notif-item-text'; text.textContent=notifText(n);
-    item.appendChild(text);
+    body.appendChild(text);
     const meta=document.createElement('div'); meta.className='notif-item-meta'; meta.textContent=formatRelativeTime(n.createdAt||Date.now());
-    item.appendChild(meta);
+    body.appendChild(meta);
+    item.appendChild(body);
+    const dismiss=document.createElement('button'); dismiss.type='button'; dismiss.className='notif-item-dismiss'; dismiss.dataset.tip='Dismiss';
+    dismiss.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+    dismiss.addEventListener('click',e=>{ e.stopPropagation(); deleteNotification(n.id); });
+    item.appendChild(dismiss);
     item.addEventListener('click',()=>{ if(!n.read)markNotificationRead(n.id); });
     list.appendChild(item);
   });
