@@ -12205,6 +12205,16 @@ function purgeExpiredTrash(){
   const expiredTpls=loadTrashedTemplatesIndex().filter(t=>(now-t.trashedAt)>cutoffMs);
   expiredDocs.forEach(d=>permanentlyDeleteDocCore(d.id));
   expiredTpls.forEach(t=>permanentlyDeleteTemplateCore(t.id));
+  // Previously silent — this runs on every launch and permanently deletes anything past its
+  // retention window with no trace anywhere, not even a console log. A one-time notification per
+  // run at least gives a record of what happened and when, in case something's missed later.
+  const total=expiredDocs.length+expiredTpls.length;
+  if(total>0&&typeof pushLocalNotification==='function'){
+    const parts=[];
+    if(expiredDocs.length)parts.push(expiredDocs.length+' document'+(expiredDocs.length===1?'':'s'));
+    if(expiredTpls.length)parts.push(expiredTpls.length+' template'+(expiredTpls.length===1?'':'s'));
+    pushLocalNotification('trash_purge',parts.join(' and ')+' permanently deleted from Trash (past the '+trashRetentionDays+'-day retention limit)');
+  }
 }
 function renderDocsList(){
   const wrap=el('docs-list'); if(!wrap)return; wrap.innerHTML='';
@@ -14093,6 +14103,40 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-dd-menu'
 let notifItems=[];
 let _notifUnsub=null;
 let notifMenuOpen=false;
+// Local (device-only) notifications, alongside the Firestore-backed ones above — for events that
+// have nothing to do with document sharing and can happen whether or not you're signed into a
+// Sakura account at all: Cloud Backup (Gist/Drive) is its own GitHub-PAT/Google-OAuth system,
+// entirely independent of Firebase sign-in, and Trash auto-purge runs regardless of sign-in too.
+// Previously several of these failures produced NO durable trace whatsoever — a silent
+// (background) Gist/Drive sync failure deliberately skips its toast, and a Gist conflict only
+// ever wrote into a <div> buried in a Settings sub-panel, invisible unless that exact panel
+// happened to be open. Stored in localStorage (capped, most-recent-first) rather than Firestore,
+// since these are per-device by nature and shouldn't require an account to exist at all.
+const LOCAL_NOTIF_KEY='sakuraLocalNotifs';
+const LOCAL_NOTIF_CAP=30;
+let localNotifItems=[];
+function loadLocalNotifItems(){
+  try{
+    const raw=localStorage.getItem(LOCAL_NOTIF_KEY);
+    localNotifItems=raw?JSON.parse(raw):[];
+    if(!Array.isArray(localNotifItems))localNotifItems=[];
+  }catch(e){ localNotifItems=[]; }
+}
+function saveLocalNotifItems(){
+  try{ localStorage.setItem(LOCAL_NOTIF_KEY,JSON.stringify(localNotifItems.slice(0,LOCAL_NOTIF_CAP))); }catch(e){}
+}
+// id is prefixed 'local_' so markNotificationRead can route to the right storage without needing
+// a separate origin field on every call site.
+function pushLocalNotification(type,message){
+  localNotifItems.unshift({id:'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),type,message,createdAt:Date.now(),read:false});
+  localNotifItems=localNotifItems.slice(0,LOCAL_NOTIF_CAP);
+  saveLocalNotifItems();
+  renderNotifBell();
+  if(notifMenuOpen)renderNotifList();
+}
+function combinedNotifItems(){
+  return [...notifItems,...localNotifItems].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
 function startNotificationsListener(){
   stopNotificationsListener();
   if(!currentUser)return;
@@ -14112,9 +14156,9 @@ function stopNotificationsListener(){
   renderNotifBell();
 }
 function renderNotifBell(){
-  const wrap=el('notif-wrap'); if(wrap)wrap.style.display=currentUser?'':'none';
+  const wrap=el('notif-wrap'); if(wrap)wrap.style.display=(currentUser||localNotifItems.length)?'':'none';
   const badge=el('notif-badge'); if(!badge)return;
-  const unread=notifItems.filter(n=>!n.read).length;
+  const unread=combinedNotifItems().filter(n=>!n.read).length;
   badge.style.display=unread>0?'flex':'none';
   badge.textContent=unread>9?'9+':String(unread);
 }
@@ -14129,7 +14173,12 @@ function notifText(n){
   return n.message||'New notification';
 }
 async function markNotificationRead(id){
-  if(!currentUser||!id)return;
+  if(!id)return;
+  if(id.startsWith('local_')){
+    const n=localNotifItems.find(x=>x.id===id); if(n){ n.read=true; saveLocalNotifItems(); renderNotifBell(); }
+    return;
+  }
+  if(!currentUser)return;
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',id),{read:true});
@@ -14138,11 +14187,12 @@ async function markNotificationRead(id){
 function renderNotifList(){
   const list=el('notif-list'); if(!list)return;
   list.innerHTML='';
-  if(!notifItems.length){
+  const items=combinedNotifItems();
+  if(!items.length){
     const empty=document.createElement('div'); empty.className='notif-empty'; empty.textContent="You're all caught up";
     list.appendChild(empty); return;
   }
-  notifItems.forEach(n=>{
+  items.forEach(n=>{
     const item=document.createElement('div'); item.className='notif-item'+(n.read?'':' unread');
     const text=document.createElement('div'); text.className='notif-item-text'; text.textContent=notifText(n);
     item.appendChild(text);
@@ -14152,6 +14202,7 @@ function renderNotifList(){
     list.appendChild(item);
   });
 }
+loadLocalNotifItems();
 function toggleNotifMenu(force){
   const menu=el('notif-menu'); if(!menu)return;
   notifMenuOpen=force!==undefined?force:!menu.classList.contains('open');
@@ -26724,7 +26775,7 @@ function setFormatButtonHidden(key,hidden,persist=true){ formatTbGroup.setKeyHid
 const extrasTbGroup=createToolbarButtonGroup(EXTRAS_TB_BUTTONS,EXTRAS_TB_BTN_IDS,'extb-',()=>extrasHiddenButtons,v=>extrasHiddenButtons=v,()=>updateMoreMenuSections());
 function applyExtrasButtonVisibility(){ extrasTbGroup.apply(); }
 
-loadPrefs(); loadRecentAnswerers(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAlwaysExpandInlineEnabled(alwaysExpandInlineEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setRemarksExportEnabled(remarksExportEnabled,false); setDiagramGenSkipReviewEnabled(diagramGenSkipReviewEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList(); restoreAccountSessionIfNeeded();
+loadPrefs(); loadRecentAnswerers(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true); setThemeMode(themeMode,false); setFont(currentFont||'sans'); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setToolbarLabels(toolbarLabels,false); setWordWrap(wordWrapEnabled,false); setConfirmBeforeDelete(confirmBeforeDelete,false); setBacklinksEnabled(backlinksEnabled,false); setDecisionLogAskAuthor(decisionLogAskAuthor,false); setDecisionLogColors(decisionLogColors,false); setDecisionLogSplitToSlide(decisionLogSplitToSlide,false); setDecisionLogSplitThreshold(decisionLogSplitThreshold,false); setDecisionLogInPad(decisionLogInPad,false); setExpandedToolbar(expandedToolbar,false); setToolbarVisible(toolbarVisible,false); applyToolbarGroupVisibility(); applyFormatButtonVisibility(); applyExtrasButtonVisibility(); applyContextHiddenActions(); setZenHideToolbar(zenHideToolbar,false); setZenHidePad(zenHidePad,false); setZenHideAppbar(zenHideAppbar,false); setZenUseFullscreen(zenUseFullscreen,false); setZenHideSidebar(zenHideSidebar,false); setZenHideStatusbar(zenHideStatusbar,false); setZenHideTabbar(zenHideTabbar,false); setSpellcheckEnabled(spellcheckEnabled,false); setCompactRows(compactRows,false); setAlwaysExpandInlineEnabled(alwaysExpandInlineEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setHideTreeLines(hideTreeLines,false); setDepthGuideLines(depthGuideLines,false); setQaExportEnabled(qaExportEnabled,false); setPadNotepadExportEnabled(padNotepadExportEnabled,false); setDecisionLogExportEnabled(decisionLogExportEnabled,false); setNodeContentExportEnabled(nodeContentExportEnabled,false); setDiagramExportEnabled(diagramExportEnabled,false); setRemarksExportEnabled(remarksExportEnabled,false); setDiagramGenSkipReviewEnabled(diagramGenSkipReviewEnabled,false); setNodeTimestampHoverEnabled(nodeTimestampHoverEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setPreviewPdfFooterEnabled(previewPdfFooterEnabled,false); setPreviewTocOpen(previewTocOpen,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentIntensity(accentIntensity,false); updateAccentCustomSwatch(accentCustomColor); setAccentPreset(accentPreset,false); setChromePreset(chromePreset,false); setNodeFontColorPreset(nodeFontColorPreset,false); setNodeDepthFadeEnabled(nodeDepthFadeEnabled,false); setAccentCursorEnabled(accentCursorEnabled,false); setStatusbarVisible(statusbarVisible,false); setTabbarVisible(tabbarVisible,false); setAppbarVisible(appbarVisible,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); applyAppbarHiddenButtons(); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyAutoRewriteExclusionSettings(); applyStatusbarItemVisibility(); setSkipFoldedInExports(skipFoldedInExports,false); setExportMenuFoldNoteEnabled(exportMenuFoldNoteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupContextQuickbarSettings(); setHoverToolbarEnabled(hoverToolbarEnabled,false); setSelectionFmtPopoverEnabled(selectionFmtPopoverEnabled,false); renderHoverRailButtons(); renderHoverMenuItems(); setupHoverToolbarSettings(); setupNodeQuickAssistSettings(); setNqaIconOnly(nqaIconOnly,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); initFsBackup(); mirrorToIndexedDb(); updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); setBackupReminderDays(backupReminderDays,false); setSessionBackupPromptMode(sessionBackupPromptMode,false); setAutoRewriteChipShowDetail(autoRewriteChipShowQueued,false); updateFormatIconColors(); updateAiUsageDisplay(); applyStatusbarRightOrder(); renderStatusbarOrderList(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search, templates === */
@@ -28804,6 +28855,7 @@ function saveCloudBackupPrefs(patch){ try{ const d=loadCloudBackupPrefsRaw(); Ob
 let cloudDriveAccessToken=null; // in-memory only — never persisted, re-requested each session
 let cloudDriveTokenClient=null;
 let _driveAutoSyncPausedDisconnected=false; // true once we've shown the one-time "auto-sync paused" toast for this disconnect
+let _driveSilentFailNotified=false; // same one-per-streak pattern as _gistSilentFailNotified above — resets on the next successful silent save
 function gistApiFetch(path,token,opts={}){ return fetch('https://api.github.com'+path,{...opts,headers:{'Authorization':'token '+token,'Accept':'application/vnd.github+json',...(opts.headers||{})}}) }
 async function findExistingGistId(token){
   try{
@@ -28848,6 +28900,7 @@ let gistSaveInFlight=false;
 // vault state change — no data is at risk in the meantime (local saves and the IndexedDB
 // safety mirror never depended on the vault), only the Gist copy sits stale until resumed.
 let _gistAutoSyncPausedLocked=false;
+let _gistSilentFailNotified=false; // one notification per continuous streak of silent-save failures, not one per attempt — resets to false on the next successful silent save (see saveBackupToGist)
 async function saveBackupToGist(opts={}){
   const {silent=false,force=false}=opts;
   if(gistSaveInFlight){ if(!silent)showToast('A Gist save is already in progress'); return; }
@@ -28879,14 +28932,15 @@ async function saveBackupToGist(opts={}){
     const res=gistId
       ?await gistApiFetch('/gists/'+gistId,d.gistToken,{method:'PATCH',body:JSON.stringify(body)})
       :await gistApiFetch('/gists',d.gistToken,{method:'POST',body:JSON.stringify(body)});
-    if(!res.ok){ sakuraLog('backup','Gist save failed',{silent,status:res.status}); if(!silent)showToast(res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'); return; }
+    if(!res.ok){ sakuraLog('backup','Gist save failed',{silent,status:res.status}); const msg=res.status===401?'Token rejected — check it\'s valid and has the "gist" scope':'GitHub returned an error ('+res.status+')'; if(!silent)showToast(msg); else if(!_gistSilentFailNotified&&typeof pushLocalNotification==='function'){ _gistSilentFailNotified=true; pushLocalNotification('gist_save_failed','Auto-sync to Gist failed — '+msg); } return; }
     const json=await res.json();
     saveCloudBackupPrefs({gistId:json.id,gistLastSyncAt:Date.now(),gistRemoteUpdatedAt:json.updated_at});
     setCloudGistConflict(false);
     updateCloudGistStatus();
     sakuraLog('backup','Gist save ok',{silent,gistId:json.id});
+    _gistSilentFailNotified=false;
     if(!silent)showToast('Backed up to Gist');
-  }catch(e){ sakuraLog('backup','Gist save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach GitHub — check your connection'); }
+  }catch(e){ sakuraLog('backup','Gist save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach GitHub — check your connection'); else if(!_gistSilentFailNotified&&typeof pushLocalNotification==='function'){ _gistSilentFailNotified=true; pushLocalNotification('gist_save_failed','Auto-sync to Gist failed — could not reach GitHub. Your local documents are unaffected; this only means the cloud copy is out of date until the next successful sync.'); } }
   finally{ gistSaveInFlight=false; if(!silent&&btn){btn.disabled=false; btn.textContent='Save to Gist'} }
 }
 async function loadBackupFromGist(){
@@ -28915,8 +28969,17 @@ async function loadBackupFromGist(){
   finally{ gistSaveInFlight=false; if(btn){btn.disabled=false; btn.textContent='Load from Gist…'} }
 }
 function setCloudGistConflict(on){
-  saveCloudBackupPrefs({gistConflict:!!on});
-  renderCloudGistConflictBanner(!!on);
+  on=!!on;
+  // Previously the ONLY trace of this was a <div> inside Settings → Data → Cloud Backup → GitHub
+  // Gist — invisible unless that exact sub-panel happened to already be open when the conflict
+  // was detected. Notify on the transition into a conflict (not every call — this can be invoked
+  // repeatedly while it stays true) so it's discoverable later even if missed in the moment.
+  const was=loadCloudBackupPrefs().gistConflict;
+  saveCloudBackupPrefs({gistConflict:on});
+  renderCloudGistConflictBanner(on);
+  if(on&&!was&&typeof pushLocalNotification==='function'){
+    pushLocalNotification('gist_conflict','Cloud backup conflict — the Gist changed elsewhere since your last Save/Load here. Auto-sync is paused until you resolve it with a manual Save or Load.');
+  }
 }
 function renderCloudGistConflictBanner(on){
   const statusEl=el('cloud-gist-conflict-status');
@@ -29059,13 +29122,14 @@ async function saveBackupToDrive(opts={}){
       const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
       res=await driveApiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body});
     }
-    if(!res.ok){ sakuraLog('backup','Drive save failed',{silent,status:res.status}); if(!silent)showToast(await describeDriveApiError(res)); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} return; }
+    if(!res.ok){ sakuraLog('backup','Drive save failed',{silent,status:res.status}); if(res.status===401){cloudDriveAccessToken=null; updateCloudDriveStatus();} if(!silent)showToast(await describeDriveApiError(res)); else if(!_driveSilentFailNotified&&typeof pushLocalNotification==='function'){ _driveSilentFailNotified=true; pushLocalNotification('drive_save_failed','Auto-sync to Google Drive failed — '+await describeDriveApiError(res)); } return; }
     const json=await res.json();
     saveCloudBackupPrefs({driveFileId:json.id||fileId,driveLastSyncAt:Date.now()});
     updateCloudDriveStatus();
     sakuraLog('backup','Drive save ok',{silent,fileId:json.id||fileId});
+    _driveSilentFailNotified=false;
     if(!silent)showToast('Backed up to Google Drive');
-  }catch(e){ sakuraLog('backup','Drive save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach Google Drive'); }
+  }catch(e){ sakuraLog('backup','Drive save threw',{silent,message:e&&e.message}); if(!silent)showToast('Could not reach Google Drive'); else if(!_driveSilentFailNotified&&typeof pushLocalNotification==='function'){ _driveSilentFailNotified=true; pushLocalNotification('drive_save_failed','Auto-sync to Google Drive failed — could not reach Google Drive. Your local documents are unaffected; this only means the cloud copy is out of date until the next successful sync.'); } }
   finally{ driveSaveInFlight=false; if(!silent&&btn){btn.disabled=false; btn.textContent='Save to Drive'} }
 }
 async function loadBackupFromDrive(){
