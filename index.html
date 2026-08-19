@@ -10946,7 +10946,18 @@ async function restoreDocRevision(docId,ts){
   }
   renderVersionHistoryList();
   renderSidebar(); renderTabStrip();
-  showToast('Version restored'+restoreOrphanMsg,undefined,undefined,restoreOrphanMsg?4200:1600);
+  // The pad-image-loss caveat used to live in the pre-restore confirm dialog unconditionally
+  // (any pad content at all, even a plain paragraph with no image); tightened here to only
+  // fire when the restored pad actually contained an <img>, since that's the one case with real
+  // information loss (images are never kept in version history) — everything else about a
+  // restore is already fully reversible via Version History itself.
+  // trimPadHtmlForRevision (see its own comment) already replaces every <img> with a
+  // "[alt — image not kept in version history]" placeholder text node at record time, so by
+  // the time a revision is loaded here there's no <img> left to detect — check for that
+  // placeholder text instead, not the tag.
+  const padImageNote=(rev.pad&&/— image not kept in version history\]/.test(rev.pad))?' Pad images from that version won\'t come back, just the text.':'';
+  const toastMsg='Version restored'+restoreOrphanMsg+padImageNote;
+  showToast(toastMsg,undefined,undefined,(restoreOrphanMsg||padImageNote)?4200:1600);
 }
 // Surgical restore for the node-scoped history view — only touches this one node's text,
 // through the normal undo stack, rather than replacing the whole document like restoreDocRevision
