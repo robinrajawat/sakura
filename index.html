@@ -13853,6 +13853,22 @@ async function revokeDocumentAccess(docId,uid){
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid]:mod.deleteField(),sharedWithUids:mod.arrayRemove(uid)});
+    // Tell the person their access is gone, same pattern as grantDocumentAccess's share_invite
+    // above — otherwise the only way they'd ever find out is the document quietly vanishing
+    // from their Shared list with no explanation at all. Best-effort: revoke itself already
+    // succeeded above regardless of whether this write goes through.
+    try{
+      await mod.addDoc(mod.collection(db,'notifications',uid,'items'),{
+        type:'access_revoked',
+        fromUid:currentUser.uid,
+        fromEmail:(currentUser.email||'').toLowerCase(),
+        fromDisplayName:currentUser.displayName||'',
+        docId,
+        docTitle:shareModalDocId===docId?(shareModalDocTitle||'Untitled'):'a document',
+        createdAt:Date.now(),
+        read:false
+      });
+    }catch(e){ console.warn('[sakura] access_revoked notification failed (revoke itself still succeeded):',e); }
     return true;
   }catch(e){ console.warn('[sakura] revokeDocumentAccess failed:',e); return false; }
 }
@@ -14170,6 +14186,10 @@ function notifText(n){
     const from=n.fromDisplayName||n.fromEmail||'Someone';
     const role=n.role==='editor'?'edit':'view';
     return `${from} shared "${n.docTitle||'a document'}" with you (${role} access)`;
+  }
+  if(n.type==='access_revoked'){
+    const from=n.fromDisplayName||n.fromEmail||'The owner';
+    return `${from} removed your access to "${n.docTitle||'a document'}"`;
   }
   // Generic fallback so a future notification type "just works" visually without needing a
   // matching branch here — as long as it carries a plain-language `message` field.
@@ -25673,8 +25693,14 @@ async function flushAutoRewriteQueue(){
     updateAutoRewriteStatusChip();
     if(!wasAlreadyPaused){
       const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider);
+      const msg=locked?'Auto-rewrite paused — unlock Secure Storage to resume':'Auto-rewrite paused — no AI key set';
       sakuraLog('ai','auto-rewrite paused',{reason:locked?'vault-locked':'no-key',queueSize:autoRewriteQueue.size});
-      showToast(locked?'Auto-rewrite paused — unlock Secure Storage to resume':'Auto-rewrite paused — no AI key set');
+      showToast(msg);
+      // The status-bar chip (updateAutoRewriteStatusChip) already shows this ongoing, but only
+      // while it's visible/not hidden and only for as long as the pause lasts — the toast alone
+      // is easy to miss if it fires while attention is elsewhere. One notification per pause,
+      // not one per queued node.
+      if(typeof pushLocalNotification==='function')pushLocalNotification('autorewrite_paused',msg+(autoRewriteQueue.size?' — '+autoRewriteQueue.size+' node'+(autoRewriteQueue.size===1?'':'s')+' waiting':'')+'.');
     }
     return;
   }
@@ -28509,6 +28535,7 @@ function setSearchIncludesTrash(on,persist=true){
   if(toggle){ toggle.classList.toggle('on',searchIncludesTrash); toggle.setAttribute('aria-checked',String(searchIncludesTrash)); }
   if(persist){ savePrefs(); if(isQaDropdownOpen())qaRender(); }
 }
+let _backupReminderNotified=false; // one notification per stale streak, not one per 5-min tick — mirrors _gistSilentFailNotified's pattern; resets to false once a backup/export/sync actually happens
 function checkBackupReminder(){
   const statusNote=el('sb-backup-reminder-status');
   const chip=el('sb-backup-reminder-chip'); const divider=el('sb-backup-reminder-divider');
@@ -28520,6 +28547,7 @@ function checkBackupReminder(){
   if(cloudBackupIsHealthy()){
     if(chip){chip.style.display='none'} if(divider){divider.style.display='none'}
     if(statusNote)statusNote.textContent='Synced to your account — no separate backup needed';
+    _backupReminderNotified=false;
     refreshStatusbarDividers(); return
   }
   let exportTs=0, fsTs=0;
@@ -28537,8 +28565,16 @@ function checkBackupReminder(){
       chip.style.color='var(--sem-alert)';
       chip.textContent=lastBackupAt?`⚠ Back up your data (${formatRelativeTime(lastBackupAt)})`:'⚠ Back up your data';
       chip.dataset.tip=`No manual Export or auto-backup write in over ${backupReminderDays} day${backupReminderDays===1?'':'s'} — click to open backup settings`;
+      // The status-bar chip above is the primary indicator and can be individually hidden
+      // (Settings → Statusbar items), at which point this reminder would otherwise have no
+      // trace anywhere at all. One notification per stale streak, not one per 5-minute tick.
+      if(!_backupReminderNotified&&typeof pushLocalNotification==='function'){
+        _backupReminderNotified=true;
+        pushLocalNotification('backup_reminder',(lastBackupAt?`No backup or export in over ${backupReminderDays} day${backupReminderDays===1?'':'s'} (last one ${formatRelativeTime(lastBackupAt)})`:`You haven't backed up or exported yet — it's been over ${backupReminderDays} day${backupReminderDays===1?'':'s'} since you started`)+'.');
+      }
     } else {
       chip.style.display='none'; divider.style.display='none';
+      _backupReminderNotified=false;
     }
   }
   refreshStatusbarDividers();
