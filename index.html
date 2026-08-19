@@ -40613,10 +40613,32 @@ function _addTagPopoverFromInput(){
   function todoRowClickIsInteractive(target,row){
     let elx=target;
     while(elx&&elx!==row){
-      if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle'))return true;
+      // .todo-textwrap itself included (not just isContentEditable descendants): .todo-text is
+      // display:inline-block and sized to its own content, so on a short title there's real
+      // empty space inside the block-level wrapper that isn't covered by the editable element
+      // at all. A click landing in that gap used to fall through as a "background" click and
+      // toggle the row's expand state right when the person was trying to click into the title
+      // to place a cursor — the row would flip open/closed instead of focusing the text. Since
+      // .todo-expand-toggle already exists as the dedicated, always-reliable toggle target (see
+      // its own comment above), the text line no longer needs to double as a toggle surface too.
+      if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle')||elx.classList.contains('todo-textwrap'))return true;
       elx=elx.parentElement;
     }
     return false;
+  }
+  // Focuses a contenteditable element with the caret placed at the very end of its content —
+  // used when a click lands on .todo-textwrap's empty margin rather than directly on the text
+  // (see todoRowClickIsInteractive above), so that click still does something useful instead of
+  // silently no-op'ing now that it no longer toggles the row.
+  function focusContentEditableAtEnd(elx){
+    elx.focus();
+    const sel=window.getSelection();
+    if(!sel) return;
+    const range=document.createRange();
+    range.selectNodeContents(elx);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
   const STATUSES=['none','waiting','progress','blocked','review'];
   let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, linkLabel, nodeRef, repeat, subtasks, subtasksOpen} — array order IS open-task order
@@ -41599,6 +41621,16 @@ function _addTagPopoverFromInput(){
     });
     body.querySelectorAll('.todo-subtask-rewrite').forEach(btn=>{
       btn.addEventListener('click',()=>rewriteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
+    });
+    body.querySelectorAll('.todo-textwrap').forEach(wrap=>{
+      wrap.addEventListener('click', e=>{
+        // Only for clicks that land on the wrapper itself, i.e. missed the (content-width)
+        // .todo-text element — a real click on the text already focuses it natively via
+        // contenteditable and should keep its own native caret placement untouched.
+        if(e.target!==wrap) return;
+        const txt=wrap.querySelector('.todo-text');
+        if(txt) focusContentEditableAtEnd(txt);
+      });
     });
     body.querySelectorAll('.todo-row').forEach(row=>{
       row.addEventListener('click', e=>{
