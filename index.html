@@ -3730,7 +3730,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    a little left padding on hover, but the action icons no longer reserve
    row-wide padding — they're a float inside .todo-textwrap (see below) that
    only narrows the first line. */
-.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .12s,padding .16s ease}
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:5px 8px;border-radius:8px;cursor:pointer;transition:background .12s,padding .16s ease}
 .todo-row:hover{background:var(--hover)}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
@@ -3808,7 +3808,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 #todos-panel.actions-fixed .todo-row-nochips .todo-meta-row{max-height:28px;margin-top:0}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .todo-textwrap{display:block}
-.todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
+.todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:12.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-due.set{display:inline-flex}
@@ -3848,6 +3848,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
+/* The one reliable, always-visible expand/collapse target — added after verifying the
+   whole-row-background click (still the primary trigger, unchanged) becomes hard to hit
+   reliably once a row is expanded and mostly full of chip/action buttons. This sits in its own
+   reserved flex column at the row's end, so it's never covered regardless of how many chips or
+   actions are showing, and never competes with .todo-text for click space the way the
+   background alone could. */
+.todo-expand-toggle{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;flex:0 0 auto;align-self:flex-start;margin-top:2px;padding:3px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+.todo-expand-toggle:hover{color:var(--fg);background:var(--hover)}
+.todo-expand-chevron{transition:transform .15s}
+.todo-expand-chevron.open{transform:rotate(90deg)}
 .todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
 .todo-row.expanded .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
@@ -41410,6 +41420,10 @@ function _addTagPopoverFromInput(){
         if(todoRowClickIsInteractive(e.target,row))return;
         toggleTodoExpanded(row.getAttribute('data-id'));
       });
+      row.querySelector('.todo-expand-toggle')?.addEventListener('click', e=>{
+        e.stopPropagation();
+        toggleTodoExpanded(row.getAttribute('data-id'));
+      });
       row.addEventListener('contextmenu', e=>{
         if(e.target.closest('.todo-text') || e.target.closest('.todo-subtask-row') || e.target.closest('.todo-subtask-input-row')) return;
         const id=row.getAttribute('data-id');
@@ -41851,6 +41865,7 @@ function _addTagPopoverFromInput(){
       +`</div>`
       + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
+      +`<button type="button" class="todo-expand-toggle" data-id="${t.id}" data-tip="${todosExpandedIds.has(t.id)?'Collapse':'Expand'}" aria-label="${todosExpandedIds.has(t.id)?'Collapse task details':'Expand task details'}"><svg class="todo-expand-chevron${todosExpandedIds.has(t.id)?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`
       +`</div>`;
   }
 
