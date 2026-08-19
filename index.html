@@ -3795,6 +3795,17 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
 #feedback-inbox-modal-overlay .app-modal-body{flex:1}
 .todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+/* A row with no priority/due/status/etc. actually set still renders a meta-row purely to hold the
+   (always-present, hover-only) action buttons — reserving that same-height row unconditionally
+   made every plain checklist-style task look like it had a same-sized but visually-empty gap
+   under it, next to rows that DO show real chips there. Collapsed down to ~0 by default and only
+   expanded on hover/focus (revealing the actions, same as any other row) or in "always visible"
+   actions mode, where every row's chip placeholders are shown regardless. max-height (not
+   display:none) so the reveal animates instead of popping, and doesn't affect chip-bearing rows
+   at all — this only ever applies to rows with truly nothing else on that line. */
+.todo-row-nochips .todo-meta-row{max-height:0;overflow:hidden;margin-top:-2px;transition:max-height .15s ease,margin-top .15s ease}
+.todo-row-nochips:hover .todo-meta-row,.todo-row-nochips:focus-within .todo-meta-row{max-height:28px;margin-top:0}
+#todos-panel.actions-fixed .todo-row-nochips .todo-meta-row{max-height:28px;margin-top:0}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .todo-textwrap{display:block}
 .todo-text{font-family:var(--content-font);font-size:12.5px;line-height:1.5;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none}
@@ -41763,7 +41774,12 @@ function _addTagPopoverFromInput(){
     const showPriority=!hidden.includes('priority'), showStatus=!hidden.includes('status'),
       showDue=!hidden.includes('due'), showLink=!hidden.includes('link'),
       showRepeat=!hidden.includes('repeat'), showSubtask=!hidden.includes('subtask');
-    return `<div class="todo-row${t.done?' completed':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
+    // Whether this row has anything actually visible on its meta-row besides the (always-present,
+    // hover-only) action buttons — used to collapse that row's reserved height down to ~nothing
+    // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
+    // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
+    const hasVisibleChips=(showPriority&&priority!=='none')||(showStatus&&status!=='none')||(showDue&&!!due)||(showLink&&hasAttachment)||!!meetingRef||(showRepeat&&!!t.repeat&&!hasSubtasks);
+    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
