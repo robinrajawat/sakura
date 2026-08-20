@@ -181,22 +181,16 @@ The rest needed the same treatment as the Markdown-export batch: `nodes`/`collap
 `selectAllMode`/`multiSelectedIds`/`selectedId`/`treeIndentWidth`/`sectionMarkersDepthZero`
 turned from implicit global reads into explicit parameters, zero logic changes otherwise.
 
-**`nodeQueries.ts` cutover complete — the other two batches are not.** Of the three Phase 1
-batches, only the third (`nodeQueries.ts`'s 13 tree-query functions) is actually spliced into
-`index.html` today. `escapeHtml`/`generateId`/`formatRelativeTime` (first batch) and
-`stripSemanticMarkers`/`computeOutlineNumbers`/`serializeMarkdown` (second batch, Markdown-export
-chain) remain hand-written duplicates sitting alongside their tested `src/utils/` originals —
-verified-correct and ready, per the original plan below, but not yet wired in. Only
-`nodeQueries.ts` needed the scattered-definitions problem solved (next paragraph), which is why
-it went first among the three despite being written last.
+**All three batches now fully cut over — Phase 1 is complete, not just written.**
 
-The `nodeQueries.ts` cutover needed real, separately-scoped infrastructure work first, exactly as
-anticipated above: its 13 functions were scattered across ~2,000 lines of `index.html`,
-interleaved with unrelated stateful functions (`toggleCollapse`, `enterFocus`, `ensureSelection`,
-etc.) that had to stay exactly where they were. Path (b) from the original two options was taken:
-a pure code-motion commit first relocated all 13 declarations into one contiguous, marked region
-(verified via a sorted removed/added-line diff — the only textual additions were the cluster
-marker comments), making them splice-able as one block the same way every Phase 2 slice is.
+`nodeQueries.ts` went first among the three despite being written last, since it needed real,
+separately-scoped infrastructure work the other two didn't: its 13 functions were scattered
+across ~2,000 lines of `index.html`, interleaved with unrelated stateful functions
+(`toggleCollapse`, `enterFocus`, `ensureSelection`, etc.) that had to stay exactly where they
+were. A pure code-motion commit first relocated all 13 declarations into one contiguous, marked
+region (verified via a sorted removed/added-line diff — the only textual additions were the
+cluster marker comments), making them splice-able as one block the same way every Phase 2 slice
+is.
 
 The splice itself then had to be one atomic swap, not incremental, for a reason that only became
 concrete once the generator was actually pointed at this file: `generate-index-blocks.mjs`
@@ -207,28 +201,54 @@ every one of the 268 real call sites had to move in the same commit as the defin
 via a paren/string-aware codemod (not hand-edited) after confirming argument counts were uniform
 per function; `buildPrefix`/`buildVertFlags` needed a genuine positional-argument reorder
 (`scopedNodes` moved from a trailing optional parameter to a required leading one), not just an
-appended arg, since their old call sites already passed it explicitly in a different order.
+appended arg, since their old call sites already passed it explicitly in a different order. This
+pass also surfaced a generator bug: `compileToPlainJs` assumed `tsc` places compiled output flat
+in its temp `outDir` — true for every import-free Phase 2 state module, but `nodeQueries.ts` has
+an `import type` reference to `serializeMarkdown.ts` (fully erased from the emitted JS) that makes
+`tsc` infer a shared `rootDir` across both files, nesting the output instead. Fixed by searching
+recursively for the compiled file instead of assuming a flat path.
+`tests/e2e/generated-nodequeries-smoke.spec.ts` exercises the highest-risk part of this cutover —
+real tree rendering, both tree-line modes, collapse/expand fold-badge counts, focus-mode
+breadcrumbs, and range selection — against the real DOM with a real 5-node multi-depth tree.
 
-The generator itself needed one fix along the way: `compileToPlainJs` assumed `tsc` places
-compiled output flat in its temp `outDir` — true for every import-free Phase 2 state module, but
-`nodeQueries.ts` has an `import type` reference to `serializeMarkdown.ts` (fully erased from the
-emitted JS — verified no import statement survives) that makes `tsc` infer a shared `rootDir`
-across both files, nesting the output at `<tmpDir>/core/nodeQueries.js` instead. Fixed by
-searching recursively for the compiled file instead of assuming a flat path — a one-line
-generator bug, not a codegen strategy problem, but worth knowing if a future module triggers the
-same rootDir inference.
+Following `nodeQueries.ts`, the remaining two batches (`escapeHtml`/`generateId`/
+`formatRelativeTime`, and `stripSemanticMarkers`/`computeOutlineNumbers`/`serializeMarkdown`)
+were wired in too. Much lower risk: no scattered definitions interleaved with off-limits stateful
+code, and 4 of the 5 remaining functions needed zero call-site changes —
+either a thin hand-written wrapper preserving the original name (`function esc(value){return
+escapeHtml(value);}`, similarly for `genDocId`; `genTemplateId`/`mnUid` live elsewhere in
+`index.html` and were hand-edited in place to delegate the same way, e.g. `function
+genTemplateId(){return generateId('t')}`), or the name and signature already matched the original
+exactly (`formatRelativeTime`, `stripSemanticMarkers`/`getNodePlainText`). Only
+`computeOutlineNumbers`/`serializeMarkdown` needed real call-site work — a required explicit
+`outlineNumbering` parameter (no default, same reasoning as `sectionMarkersDepthZero` above), 7
+sites, append-only, no reordering. The two functions needed the same small relocation treatment
+as `nodeQueries.ts` first, since they were interleaved with un-extracted sibling functions
+(`serializeTreeText`, `serializeClipboardHtml`).
 
-New test coverage: `tests/e2e/generated-nodequeries-smoke.spec.ts` exercises the highest-risk part
-of this cutover — real tree rendering, both tree-line modes (`buildPrefix`'s ASCII connectors and
-`buildVertFlags`'s pixel-grid guides), collapse/expand fold-badge counts, focus-mode breadcrumbs,
-and range selection — against the real DOM with a real 5-node multi-depth tree, not just "did it
-throw." `hub.html` needed no changes at all (verified zero diff) — none of these 13 functions are
-used there.
+This second pass caught a real generator bug of its own, not just a mechanical one:
+`serializeMarkdown.ts` has a genuine VALUE import (`import { getNodePlainText } from
+'./stripSemanticMarkers'`) — unlike `nodeQueries.ts`'s `import type` reference above, which
+`tsc` fully erases, a real value import survives compilation as a literal `import` statement.
+Spliced into the classic (non-module) script, that's a syntax error which silently kills the
+**entire** script block, not just the one function — every previously-working generated function
+(`esc`, `genDocId`, `nodeQueries.ts`'s `getIndex`, everything) went undefined at once. Root-caused
+by comparing behavior against `main` (confirming it wasn't a pre-existing `file://`-loading
+quirk) and fixed in `compileToPlainJs` by stripping any surviving `import ... from '...';` line
+from compiled output — safe because every generated block shares one script scope with every
+other block and the rest of `index.html`, so a cross-block reference is already a bare global by
+the time it's used, function-declaration hoisting making physical block order irrelevant. Caught
+by the new `tests/e2e/generated-phase1-remaining-smoke.spec.ts` before merge, not in production —
+exactly the value this generator+test harness is supposed to provide, and a good reminder that
+even a "simple wiring" pass over already-tested code needs the same real-DOM verification as a
+genuinely risky one.
+
+`hub.html` needed no changes at all across either cutover (verified zero diff both times) — none
+of Phase 1's functions are used there.
 
 6 files (5 in `src/utils/`, 1 in `src/core/`), 75 unit tests total (verified passing), each
 backed by a pinned oracle copy of the actual current index.html implementation asserting exact
-behavioral equivalence. Only the `src/core/` file (`nodeQueries.ts`) is live in `index.html` so
-far — the 5 `src/utils/` files from the first two batches are still tested-and-waiting.
+behavioral equivalence — all six now live in `index.html`, none still tested-and-waiting.
 
 **Phase 2 — state consolidation. (In progress — 4 of many domains done.)**
 Replace the scattered `let`s with typed state modules, one domain at a time.
