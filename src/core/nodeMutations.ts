@@ -9,16 +9,18 @@
  * all interleaved in the same lines, with no seam between them. There is no way to "just
  * relocate" that code the way nodeQueries.ts's zero-side-effect queries were relocated; it has
  * to be DECOMPOSED into a pure state-transition plus the orchestration that calls it. Given the
- * real risk of a subtle bug in core editing logic (indent/outdent/move/paste all mutate a live
- * user's document), slices are picked in roughly ascending risk order — indent/outdent first
- * (pure depth-array mutation, no text-splitting/clipboard/drag-drop edge cases), then
+ * real risk of a subtle bug in core editing logic (indent/outdent/move/paste/delete all mutate
+ * a live user's document), slices are picked in roughly ascending risk order — indent/outdent
+ * first (pure depth-array mutation, no text-splitting/clipboard/drag-drop edge cases), then
  * moveSelected (keyboard-driven single-block reordering), then drag-and-drop move (multiple
  * modes, depth remapping, a descendant guard, a multi-block reordering algorithm), then paste
- * here (computing the depth offset a pasted block needs to land as siblings of the node being
- * edited, and inserting already-built node objects into the tree — deliberately NOT the node
- * construction itself, which has its own global-counter side effect and 20+ other callers; see
- * below) — to prove the decomposition pattern incrementally before attempting anything larger
- * (split, delete are still ahead).
+ * (computing the depth offset a pasted block needs, inserting already-built node objects), then
+ * delete here (removing selected subtrees) — to prove the decomposition pattern incrementally.
+ * `splitNodeAtCursor` — originally assumed to be the next candidate after paste — turned out to
+ * be genuinely dead code (confirmed via exhaustive grep: zero call sites anywhere, not even
+ * indirect ones; the real Enter-key handler calls `insertSiblingAfter`/`insertChildFirst`
+ * instead, never a text-split), so it was skipped in favor of `deleteSelected`, which has real,
+ * active usage (confirmed via call-site count before starting, same discipline as every slice).
  *
  * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
  * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
@@ -334,5 +336,28 @@ export function insertParsedNodesCore(nodes: QueryableNode[], insertIdx: number,
     nodes.splice(0, nodes.length, ...mappedNodes);
   } else {
     nodes.splice(getSubtreeEnd(nodes, insertIdx), 0, ...mappedNodes);
+  }
+}
+
+/** Removes each root index's entire subtree from `nodes`, mutating in place. Processes
+ * `rootIndexes` in REVERSE order — deleting from the end of the document backward — so that
+ * removing a later block never shifts the array positions of an earlier block still waiting to
+ * be removed (the same "process in an order that keeps not-yet-processed indexes valid"
+ * principle `moveMultipleNodeBlocksCore` uses for its own removal step, just simpler here since
+ * nothing needs to be re-inserted afterward). Does not compute `rootIndexes` itself (that's
+ * `getSelectionRootIndexes()`, ambient and hand-written, called by the caller before this), nor
+ * handle the separate "select-all: clear the entire document" case `deleteSelected` has its own
+ * branch for (a fundamentally different, much simpler reset that doesn't go through subtree
+ * removal at all — not this function's concern). Also does not call `rebuildParentIds()`,
+ * collect deleted node text/ids for the backlinks/auto-rewrite-queue/featured-tables cleanup
+ * `deleteSelected` does around this call (those are genuinely separate feature domains, not
+ * part of the core outline engine, and need to run on the PRE-deletion node data anyway — the
+ * caller collects that before calling this), or touch any selection state — all of that stays
+ * the orchestration wrapper's responsibility, same convention as every function in this module. */
+export function deleteRootIndexes(nodes: QueryableNode[], rootIndexes: number[]): void {
+  for (let r = rootIndexes.length - 1; r >= 0; r--) {
+    const idx = rootIndexes[r];
+    const end = getSubtreeEnd(nodes, idx);
+    nodes.splice(idx, end - idx);
   }
 }

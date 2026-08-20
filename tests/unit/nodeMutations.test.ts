@@ -11,7 +11,8 @@ import {
   moveNodeBlockCore,
   moveMultipleNodeBlocksCore,
   computePasteOffsetDepth,
-  insertParsedNodesCore
+  insertParsedNodesCore,
+  deleteRootIndexes
 } from '../../src/core/nodeMutations';
 import { getSubtreeEnd, getIndex } from '../../src/core/nodeQueries';
 
@@ -504,5 +505,63 @@ describe('insertParsedNodesCore', () => {
     insertParsedNodesCore(nodes, -1, idTree([[10, 0]]));
     expect(nodes).toBe(originalRef);
     expect(nodes.map((n) => n.id)).toEqual([10]);
+  });
+});
+
+describe('deleteRootIndexes', () => {
+  it('removes a single leaf node', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]); // A B C
+    deleteRootIndexes(nodes, [1]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 3]); // A, C — B removed
+  });
+
+  it("removes a root's entire subtree, not just the root node itself", () => {
+    // A(0)=1 A1(1)=2 A2(1)=3 B(0)=4 — deleting A removes A1/A2 too, leaves only B
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 1],
+      [4, 0]
+    ]);
+    deleteRootIndexes(nodes, [0]);
+    expect(nodes.map((n) => n.id)).toEqual([4]);
+  });
+
+  it('removes multiple disjoint root subtrees in one call, in any relative position', () => {
+    // A(0)=1 A1(1)=2 B(0)=3 C(0)=4 C1(1)=5 D(0)=6 — delete A(+A1) and C(+C1), keep B and D
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0],
+      [4, 0],
+      [5, 1],
+      [6, 0]
+    ]);
+    deleteRootIndexes(nodes, [0, 3]); // indexes of A and C
+    expect(nodes.map((n) => n.id)).toEqual([3, 6]); // B, D
+  });
+
+  it('processes indexes in reverse order so earlier indexes stay valid while later ones are removed first', () => {
+    // Passing rootIndexes out of order (descending) should produce the identical result to
+    // passing them in ascending order — the function sorts its own processing order internally
+    // via the reverse for-loop, regardless of the array's own order.
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [4, 0]
+    ]);
+    deleteRootIndexes(nodes, [0, 2]); // remove A and C, keep B and D
+    expect(nodes.map((n) => n.id)).toEqual([2, 4]);
+  });
+
+  it('is a no-op for an empty rootIndexes array', () => {
+    const nodes = idTree([[1, 0]]);
+    deleteRootIndexes(nodes, []);
+    expect(nodes.map((n) => n.id)).toEqual([1]);
   });
 });
