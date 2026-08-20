@@ -9,7 +9,9 @@ import {
   moveNodeDown,
   isDescendantIndex,
   moveNodeBlockCore,
-  moveMultipleNodeBlocksCore
+  moveMultipleNodeBlocksCore,
+  computePasteOffsetDepth,
+  insertParsedNodesCore
 } from '../../src/core/nodeMutations';
 import { getSubtreeEnd, getIndex } from '../../src/core/nodeQueries';
 
@@ -433,5 +435,74 @@ describe('moveMultipleNodeBlocksCore', () => {
     const survivors = moveMultipleNodeBlocksCore(nodes, [1, 999], 3, 'below');
     expect(survivors).toBeNull();
     expect(nodes.map((n) => n.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('computePasteOffsetDepth', () => {
+  it('returns 0 when the document is empty', () => {
+    expect(computePasteOffsetDepth([], -1)).toBe(0);
+  });
+
+  it('returns 0 when insertIdx is not found (-1)', () => {
+    const nodes = idTree([[1, 0]]);
+    expect(computePasteOffsetDepth(nodes, -1)).toBe(0);
+  });
+
+  it("returns the insertion point's own depth when there is valid context", () => {
+    // A(0)=1 A1(2)=2 — pasting while "on" A1 (depth 2) should offset by 2
+    const nodes = idTree([
+      [1, 0],
+      [2, 2]
+    ]);
+    expect(computePasteOffsetDepth(nodes, 1)).toBe(2);
+  });
+
+  it('returns 0 for a depth-0 insertion point (no offset needed)', () => {
+    const nodes = idTree([[1, 0]]);
+    expect(computePasteOffsetDepth(nodes, 0)).toBe(0);
+  });
+});
+
+describe('insertParsedNodesCore', () => {
+  it('replaces the whole document when nodes is empty', () => {
+    const nodes: IdNode[] = [];
+    const mapped = idTree([
+      [10, 0],
+      [11, 1]
+    ]);
+    insertParsedNodesCore(nodes, -1, mapped);
+    expect(nodes.map((n) => n.id)).toEqual([10, 11]);
+  });
+
+  it('replaces the whole document when insertIdx is not found, even if nodes is non-empty', () => {
+    // Oracle: matches the original's noContext condition (!nodes.length || insertIdx<0) —
+    // a non-empty document with an invalid insertIdx still hits the "replace whole document"
+    // branch, not the splice-after-subtree branch.
+    const nodes = idTree([[1, 0]]);
+    const mapped = idTree([[10, 0]]);
+    insertParsedNodesCore(nodes, -1, mapped);
+    expect(nodes.map((n) => n.id)).toEqual([10]);
+  });
+
+  it("splices the pasted block in right after the insertion point's own subtree", () => {
+    // A(0)=1 A1(1)=2 B(0)=3 — paste after A's subtree (which includes A1), landing before B
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0]
+    ]);
+    const mapped = idTree([[10, 0]]);
+    insertParsedNodesCore(nodes, 0, mapped);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 10, 3]); // A, A1, pasted, B
+  });
+
+  it('mutates the original array in place (same reference) rather than reassigning it', () => {
+    // Confirms the splice(0,length,...) substitution for the original's `nodes=mapped`
+    // preserves the same array identity a real caller's `nodes` binding depends on.
+    const nodes: IdNode[] = [];
+    const originalRef = nodes;
+    insertParsedNodesCore(nodes, -1, idTree([[10, 0]]));
+    expect(nodes).toBe(originalRef);
+    expect(nodes.map((n) => n.id)).toEqual([10]);
   });
 });
