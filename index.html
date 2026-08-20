@@ -13823,7 +13823,7 @@ function renderDocShareChip(docId){
   // already-tracking/already-stopped cases either way).
   if(typeof startPresenceTrackingIfShared==='function'){
     if(count>0)startPresenceTrackingIfShared(docId);
-    else if(presenceDocId===docId)stopPresenceTracking();
+    else if(isPresenceTrackingDocId(docId))stopPresenceTracking();
   }
 }
 async function refreshDocShareChipStatus(docId){
@@ -14196,108 +14196,225 @@ function toggleNotifMenu(force){
 el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
 document.addEventListener('click',e=>{ if(notifMenuOpen&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
 
-// ---------- Live presence ("who's here") on shared documents ----------
-// A lightweight "X is viewing" chip next to the Share button — not full Google-Docs-style live
-// cursors, just an avatar-free name chip so collaborators know they're not editing blind. Each
-// signed-in viewer heartbeats their own presence doc every PRESENCE_HEARTBEAT_MS under
-// users/{ownerUid}/docs/{docId}/presence/{their own uid} (see firestore.rules for why that path
-// mirrors the sharedWith access model instead of a separate top-level collection), and everyone
-// else viewing that same document listens via onSnapshot and filters out anything older than
-// PRESENCE_STALE_MS. Staleness-based expiry (rather than a delete-on-unload we could actually
-// rely on) is deliberate: a closed tab, crashed browser, or lost network connection never fires
-// beforeunload reliably, so "last write is old" is the only signal that's actually trustworthy —
-// the best-effort delete below is just a fast path for the common clean-close case, not the real
-// mechanism.
-const PRESENCE_HEARTBEAT_MS=20000;
-const PRESENCE_STALE_MS=45000;
-let presenceHeartbeatTimer=null;
-// _sharedDocUnsub/_sharedDocUnsubId (used by startSharedDocRealtimeSyncIfNeeded/
-// stopSharedDocRealtimeSync, defined much further down near the cross-tab-banner code) are
-// declared HERE rather than next to those functions deliberately: clearToNoDocumentState calls
-// stopSharedDocRealtimeSync() during early startup (restoreOpenTabsOnStartup), well before a
-// `let` declared later in this same top-level script would have executed — hitting exactly the
-// same "Cannot access '<name>' before initialization" TDZ crash this codebase already has to
-// guard against elsewhere (see markMetaChanged's own try/catch for FOLDERS_KEY). A `typeof fn===
-// 'function'` guard at the call site doesn't help here: function declarations are always fully
-// hoisted regardless of position, so the guard passes and the call proceeds — it's the `let`
-// bindings the function body reads that are still in their dead zone. Declaring them this early
-// (verified via testing to run before that boot path) avoids the crash without needing a
-// try/catch at every call site.
+// _sharedDocUnsub/_sharedDocUnsubId belong to a DIFFERENT feature (shared-doc live sync,
+// stopSharedDocRealtimeSync/startSharedDocRealtimeSyncIfNeeded, defined much further down
+// near the cross-tab-banner code) — they only ever lived at this exact spot in the file
+// because of an earlier TDZ fix: clearToNoDocumentState calls stopSharedDocRealtimeSync()
+// during early startup (restoreOpenTabsOnStartup), well before a `let` declared later in
+// this script would have executed, so these were deliberately placed early. They are NOT
+// part of the generated presence block below and must stay here (or somewhere else that
+// still runs before that same boot path) even if the presence block itself is regenerated —
+// scripts/generate-index-blocks.mjs only ever touches the content strictly between the
+// GENERATED:presence markers, so this comment and the two declarations below are safe.
 let _sharedDocUnsub=null;
 let _sharedDocUnsubId=null;
-let presenceUnsub=null;
-let presenceDocId=null; // which doc the heartbeat+listener above are currently tracking, if any
-function presenceOwnerUidFor(docId){ return sharedDocMeta[docId]?.ownerUid||(currentUser?currentUser.uid:null); }
-async function writePresenceHeartbeat(docId){
-  if(!currentUser)return;
-  const ownerUid=presenceOwnerUidFor(docId); if(!ownerUid)return;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    const meta=sharedDocMeta[docId];
-    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'presence',currentUser.uid),{
-      displayName:currentUser.displayName||currentUser.email||'Someone',
-      role:meta?meta.role:'owner',
-      lastSeen:Date.now()
-    });
-  }catch(e){ console.warn('[sakura] presence heartbeat failed:',e); }
+
+/* GENERATED:presence:START — DO NOT EDIT BY HAND. Source of truth: src/state/presence.ts (tests: tests/unit/presenceState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Live presence ("who's here") state for shared documents.
+ *
+ * Phase 2 (docs/architecture-plan.md) — the first state-consolidation slice. Unlike Phase 1's
+ * pure leaf utilities, this module's output DOES reach production: see
+ * scripts/generate-index-blocks.mjs, which compiles this file and splices it into index.html
+ * between the GENERATED:presence marker comments, replacing what was previously ~100 lines of
+ * hand-written code using module-scoped `let`s. index.html itself is unchanged as a deployment
+ * artifact — still one file, still a classic script, still served exactly as before — only HOW
+ * that one block within it is produced and kept correct has changed.
+ *
+ * Design: the original code read `currentUser`, `sharedDocMeta`, `docShareStatusCache`,
+ * `loadFirestoreMods`, and `el` directly as ambient globals — impossible to unit test without
+ * either faking a whole browser+Firestore environment or testing nothing at all. Here, those
+ * become an explicit `PresenceDeps` object, injected once via `initPresenceState()` rather than
+ * threaded through every call (which would have meant changing every external call site's
+ * signature — `startPresenceTrackingIfShared(docId)` still takes exactly one argument, matching
+ * every existing call site elsewhere in index.html unchanged). For the generated production
+ * block, `initPresenceState()` is called once with the real ambient globals, referenced by name
+ * — since the generated code is spliced into the SAME classic-script scope as the rest of the
+ * app, those names resolve correctly at runtime without any window.* indirection.
+ */
+const PRESENCE_HEARTBEAT_MS = 20000;
+const PRESENCE_STALE_MS = 45000;
+/**
+ * Pure: given a list of other viewers (already filtered to non-self, non-stale), compute what
+ * the chip should show. Extracted from the original `renderPresenceChip()`'s label/tooltip
+ * logic — the one genuinely pure, easily-isolated piece of that function.
+ */
+function computePresenceDisplay(others) {
+    if (!others.length)
+        return { visible: false, label: '', tooltip: '' };
+    const names = others.map((p) => p.displayName || 'Someone');
+    const label = names.length === 1 ? names[0] + ' is here' : names.length + ' others are here';
+    const tooltip = names.join(', ') + (names.length > 1 ? ' are viewing this document' : ' is viewing this document');
+    return { visible: true, label, tooltip };
 }
-async function clearPresenceFor(docId){
-  if(!currentUser||!docId)return;
-  const ownerUid=presenceOwnerUidFor(docId); if(!ownerUid)return;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    await mod.deleteDoc(mod.doc(db,'users',ownerUid,'docs',docId,'presence',currentUser.uid));
-  }catch(e){ /* best-effort — staleness filter on other clients covers this regardless */ }
+/**
+ * Pure: given raw snapshot docs, the current account's own uid, the current time, and the
+ * staleness threshold, returns the set of OTHER viewers who are genuinely still active.
+ * Extracted from the original `onSnapshot` callback's inline filter chain in
+ * `startPresenceTrackingIfShared()`.
+ */
+function filterLiveOthers(rawDocs, ownUid, now, staleMs) {
+    return rawDocs
+        .filter((d) => d.id !== ownUid)
+        .map((d) => ({ uid: d.id, ...d.data() }))
+        .filter((p) => typeof p.lastSeen === 'number' && now - p.lastSeen < staleMs);
 }
-function renderPresenceChip(others){
-  const chip=el('doc-presence-chip'); if(!chip)return;
-  if(!others||!others.length){ chip.style.display='none'; chip.innerHTML=''; return; }
-  const names=others.map(p=>p.displayName||'Someone');
-  const label=names.length===1?(names[0]+' is here'):(names.length+' others are here');
-  chip.style.display='';
-  chip.innerHTML='<span class="doc-presence-dot"></span><span></span>';
-  chip.querySelector('span:last-child').textContent=label;
-  chip.dataset.tip=names.join(', ')+(names.length>1?' are viewing this document':' is viewing this document');
+let deps = null;
+let heartbeatTimer = null;
+let unsub = null;
+let trackedDocId = null;
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initPresenceState(injected) {
+    deps = injected;
+    heartbeatTimer = null;
+    unsub = null;
+    trackedDocId = null;
 }
-function stopPresenceTracking(){
-  if(presenceHeartbeatTimer){ clearInterval(presenceHeartbeatTimer); presenceHeartbeatTimer=null; }
-  if(presenceUnsub){ try{presenceUnsub()}catch(e){} presenceUnsub=null; }
-  const prevDocId=presenceDocId; presenceDocId=null;
-  if(prevDocId)clearPresenceFor(prevDocId);
-  renderPresenceChip([]);
+function requireDeps() {
+    if (!deps)
+        throw new Error('presence state used before initPresenceState() was called');
+    return deps;
 }
-// Only worth tracking when the document actually has more than one person who could be looking
-// at it: unconditionally heartbeating/listening on every document ever opened — including every
-// private, never-shared one — would be a steady stream of pointless Firestore reads/writes for
-// the overwhelming majority of documents. A doc shared TO the current user (sharedDocMeta set)
-// always qualifies; a doc the current user OWNS only qualifies once its own share count is known
-// to be > 0 (see the docShareStatusCache hook in renderDocShareChip below), since that status
-// loads asynchronously and isn't known yet at the moment a tab is switched into.
-function startPresenceTrackingIfShared(docId){
-  if(presenceDocId===docId)return; // already tracking this exact document
-  stopPresenceTracking();
-  if(!currentUser||!docId)return;
-  const sharedToMe=!!sharedDocMeta[docId];
-  const ownedAndShared=!sharedToMe&&Array.isArray(docShareStatusCache[docId])&&docShareStatusCache[docId].length>0;
-  if(!sharedToMe&&!ownedAndShared)return;
-  presenceDocId=docId;
-  writePresenceHeartbeat(docId);
-  presenceHeartbeatTimer=setInterval(()=>writePresenceHeartbeat(docId),PRESENCE_HEARTBEAT_MS);
-  const ownerUid=presenceOwnerUidFor(docId);
-  loadFirestoreMods().then(({mod,db})=>{
-    if(presenceDocId!==docId)return; // switched to a different doc before this resolved
-    const q=mod.collection(db,'users',ownerUid,'docs',docId,'presence');
-    presenceUnsub=mod.onSnapshot(q,snap=>{
-      const now=Date.now();
-      const others=snap.docs
-        .filter(d=>d.id!==currentUser.uid)
-        .map(d=>({uid:d.id,...d.data()}))
-        .filter(p=>typeof p.lastSeen==='number'&&(now-p.lastSeen)<PRESENCE_STALE_MS);
-      renderPresenceChip(others);
-    },err=>console.warn('[sakura] presence listener error:',err));
-  }).catch(e=>console.warn('[sakura] could not start presence listener:',e));
+function presenceOwnerUidFor(docId) {
+    const d = requireDeps();
+    const meta = d.getSharedDocMeta(docId);
+    if (meta)
+        return meta.ownerUid;
+    const user = d.getCurrentUser();
+    return user ? user.uid : null;
 }
-window.addEventListener('beforeunload',()=>{ if(presenceDocId)clearPresenceFor(presenceDocId); });
+async function writePresenceHeartbeat(docId) {
+    const d = requireDeps();
+    const user = d.getCurrentUser();
+    if (!user)
+        return;
+    const ownerUid = presenceOwnerUidFor(docId);
+    if (!ownerUid)
+        return;
+    try {
+        const { mod, db } = await d.loadFirestoreMods();
+        const meta = d.getSharedDocMeta(docId);
+        await mod.setDoc(mod.doc(db, 'users', ownerUid, 'docs', docId, 'presence', user.uid), {
+            displayName: user.displayName || user.email || 'Someone',
+            role: meta ? meta.role : 'owner',
+            lastSeen: d.now()
+        });
+    }
+    catch (e) {
+        console.warn('[sakura] presence heartbeat failed:', e);
+    }
+}
+async function clearPresenceFor(docId) {
+    const d = requireDeps();
+    const user = d.getCurrentUser();
+    if (!user || !docId)
+        return;
+    const ownerUid = presenceOwnerUidFor(docId);
+    if (!ownerUid)
+        return;
+    try {
+        const { mod, db } = await d.loadFirestoreMods();
+        await mod.deleteDoc(mod.doc(db, 'users', ownerUid, 'docs', docId, 'presence', user.uid));
+    }
+    catch {
+        // best-effort — staleness filter on other clients covers this regardless
+    }
+}
+function renderPresenceChip(others) {
+    const d = requireDeps();
+    const chip = d.getChipElement();
+    if (!chip)
+        return;
+    const display = computePresenceDisplay(others);
+    if (!display.visible) {
+        chip.style.display = 'none';
+        chip.innerHTML = '';
+        return;
+    }
+    chip.style.display = '';
+    chip.innerHTML = '<span class="doc-presence-dot"></span><span></span>';
+    const labelSpan = chip.querySelector('span:last-child');
+    if (labelSpan)
+        labelSpan.textContent = display.label;
+    chip.dataset.tip = display.tooltip;
+}
+function stopPresenceTracking() {
+    const d = requireDeps();
+    if (heartbeatTimer) {
+        d.clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+    }
+    if (unsub) {
+        try {
+            unsub();
+        }
+        catch {
+            // ignore
+        }
+        unsub = null;
+    }
+    const prevDocId = trackedDocId;
+    trackedDocId = null;
+    if (prevDocId)
+        clearPresenceFor(prevDocId);
+    renderPresenceChip([]);
+}
+/** Whether presence tracking is currently active for this exact docId — replaces the direct read of the old `presenceDocId` global at index.html's one external call site. */
+function isPresenceTrackingDocId(docId) {
+    return trackedDocId === docId;
+}
+function startPresenceTrackingIfShared(docId) {
+    const d = requireDeps();
+    if (trackedDocId === docId)
+        return; // already tracking this exact document
+    stopPresenceTracking();
+    const user = d.getCurrentUser();
+    if (!user || !docId)
+        return;
+    const sharedToMe = !!d.getSharedDocMeta(docId);
+    const cache = d.getDocShareStatusCache(docId);
+    const ownedAndShared = !sharedToMe && Array.isArray(cache) && cache.length > 0;
+    if (!sharedToMe && !ownedAndShared)
+        return;
+    trackedDocId = docId;
+    writePresenceHeartbeat(docId);
+    heartbeatTimer = d.setInterval(() => writePresenceHeartbeat(docId), PRESENCE_HEARTBEAT_MS);
+    const ownerUid = presenceOwnerUidFor(docId);
+    d.loadFirestoreMods()
+        .then(({ mod, db }) => {
+        if (trackedDocId !== docId)
+            return; // switched to a different doc before this resolved
+        const q = mod.collection(db, 'users', ownerUid, 'docs', docId, 'presence');
+        unsub = mod.onSnapshot(q, (snap) => {
+            const user2 = d.getCurrentUser();
+            if (!user2)
+                return;
+            const others = filterLiveOthers(snap.docs, user2.uid, d.now(), PRESENCE_STALE_MS);
+            renderPresenceChip(others);
+        }, (err) => console.warn('[sakura] presence listener error:', err));
+    })
+        .catch((e) => console.warn('[sakura] could not start presence listener:', e));
+}
+function handlePresenceBeforeUnload() {
+    if (trackedDocId)
+        clearPresenceFor(trackedDocId);
+}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares the classic script's own
+// scope at runtime: currentUser, sharedDocMeta, docShareStatusCache, loadFirestoreMods, el.
+initPresenceState({
+  getCurrentUser:()=>currentUser,
+  getSharedDocMeta:(docId)=>sharedDocMeta[docId],
+  getDocShareStatusCache:(docId)=>docShareStatusCache[docId],
+  loadFirestoreMods:()=>loadFirestoreMods(),
+  getChipElement:()=>el('doc-presence-chip'),
+  setInterval:(fn,ms)=>setInterval(fn,ms),
+  clearInterval:(id)=>clearInterval(id),
+  now:()=>Date.now()
+});
+window.addEventListener('beforeunload',handlePresenceBeforeUnload);
+/* GENERATED:presence:END */
 
 // ---------- Feedback & error reporting ----------
 // One write-only Firestore collection ('feedback', see firestore.rules) for both a person's own
