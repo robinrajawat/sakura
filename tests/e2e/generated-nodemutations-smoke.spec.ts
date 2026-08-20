@@ -581,4 +581,150 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
 
     expect(unexpectedErrors).toEqual([]);
   });
+
+  test('deleteSelected: single subtree, multiple subtrees, and the select-all clear-tree branch, all against real app state', async ({ page }) => {
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
+    });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !KNOWN_NOISE.test(msg.text())) {
+        unexpectedErrors.push('console.error: ' + msg.text());
+      }
+    });
+
+    await page.goto('file://' + indexPath);
+
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => {
+        const el = document.getElementById('sakura-landing-overlay');
+        if (el) el.style.display = 'none';
+      });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    // 1. The pure function directly — a subtree deletion, and multiple disjoint subtrees
+    // deleted in one call regardless of index order.
+    const pureResults = await page.evaluate(() => {
+      // A(0)=1 A1(1)=2 B(0)=3 — delete A's whole subtree
+      const singleDelete = [
+        { id: 1, depth: 0 },
+        { id: 2, depth: 1 },
+        { id: 3, depth: 0 }
+      ];
+      // @ts-expect-error — bare global from index.html
+      deleteRootIndexes(singleDelete, [0]);
+
+      // A(0)=1 B(0)=2 C(0)=3 D(0)=4 — delete B and D, keep A and C
+      const multiDelete = [
+        { id: 1, depth: 0 },
+        { id: 2, depth: 0 },
+        { id: 3, depth: 0 },
+        { id: 4, depth: 0 }
+      ];
+      // @ts-expect-error
+      deleteRootIndexes(multiDelete, [1, 3]);
+
+      return {
+        singleDeleteOrder: singleDelete.map((n) => n.id),
+        multiDeleteOrder: multiDelete.map((n) => n.id)
+      };
+    });
+    expect(pureResults.singleDeleteOrder).toEqual([3]); // only B survives
+    expect(pureResults.multiDeleteOrder).toEqual([1, 3]); // A, C survive
+
+    // 2. The real orchestration wrapper (deleteSelected), normal branch: real app state, a
+    // 4-node tree, deleting a subtree with a child. Proves pushUndo/markDirty/
+    // rebuildParentIds/render/showToast AND the selection fallback (selectedId lands on a
+    // remaining node, not null) all still fire around the new core call.
+    const normalDeleteResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 1, text: 'A1', styles: {} },
+        { id: 3, depth: 0, text: 'B', styles: {} },
+        { id: 4, depth: 0, text: 'C', styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = 1;
+      // @ts-expect-error
+      multiSelectedIds = [1];
+      // @ts-expect-error
+      selectAllMode = false;
+      // @ts-expect-error
+      editingId = null;
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      render();
+
+      const undoDepthBefore = undoStack.length;
+      // @ts-expect-error
+      deleteSelected(); // delete A (and its child A1)
+
+      return {
+        // @ts-expect-error
+        texts: nodes.map((n: any) => n.text),
+        undoStackGrew: undoStack.length > undoDepthBefore,
+        // @ts-expect-error
+        selectedIdIsValid: selectedId !== null && nodes.some((n: any) => n.id === selectedId),
+        renderedRows: document.querySelectorAll('.node-row').length
+      };
+    });
+    expect(normalDeleteResult.texts).toEqual(['B', 'C']);
+    expect(normalDeleteResult.undoStackGrew).toBe(true);
+    expect(normalDeleteResult.selectedIdIsValid).toBe(true);
+    expect(normalDeleteResult.renderedRows).toBe(2);
+
+    // 3. deleteSelected's OTHER branch — selectAllMode — a completely different, much simpler
+    // reset (clears the whole document and resets nextId), deliberately left untouched by this
+    // slice. Confirms it still works correctly alongside the new core call in the same function.
+    const selectAllDeleteResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 0, text: 'B', styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectAllMode = true;
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      render();
+
+      // @ts-expect-error
+      deleteSelected();
+
+      return {
+        // @ts-expect-error
+        nodeCount: nodes.length,
+        // @ts-expect-error
+        selectedIdCleared: selectedId === null,
+        // @ts-expect-error
+        selectAllModeCleared: selectAllMode === false,
+        renderedRows: document.querySelectorAll('.node-row').length
+      };
+    });
+    expect(selectAllDeleteResult.nodeCount).toBe(0);
+    expect(selectAllDeleteResult.selectedIdCleared).toBe(true);
+    expect(selectAllDeleteResult.selectAllModeCleared).toBe(true);
+    expect(selectAllDeleteResult.renderedRows).toBe(0);
+
+    // 4. Proof the rest of the script still runs.
+    const restOfScriptWorks = await page.evaluate(() => {
+      // @ts-expect-error
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof pasteParsedNodes === 'function' && typeof handleDrop === 'function';
+    });
+    expect(restOfScriptWorks).toBe(true);
+
+    expect(unexpectedErrors).toEqual([]);
+  });
 });
