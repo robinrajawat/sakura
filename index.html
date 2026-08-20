@@ -12429,10 +12429,181 @@ function renderDocsList(){
   });
 }
 function genTemplateId(){return generateId('t')}
-function templateKey(id){return TEMPLATE_KEY_PREFIX+id}
-function loadTemplatesIndex(){try{const raw=localStorage.getItem(TEMPLATES_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
-function saveTemplatesIndex(list){try{localStorage.setItem(TEMPLATES_INDEX_KEY,JSON.stringify(list)); lastAnyDataChangeAt=Date.now(); if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); markMetaChanged('templatesIndex');}catch(e){}}
-function setTemplateIcon(id,icon){const list=loadTemplatesIndex(); const i=list.findIndex(t=>t.id===id); if(i>=0){list[i]={...list[i],icon:icon||null}; saveTemplatesIndex(list);} return list}
+/* GENERATED:templatesIndex:START — DO NOT EDIT BY HAND. Source of truth: src/state/templatesIndex.ts (tests: tests/unit/templatesIndexState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Templates index storage — the localStorage-backed list of saved templates (id, title,
+ * updatedAt, icon, trashedAt) that Templates menu/sidebar/trash all read from and write to.
+ *
+ * Phase 3 (docs/architecture-plan.md) — first feature-domain slice, using the same
+ * dependency-injected generator pipeline as Phase 2's state modules
+ * (src/state/admin.ts/notifications.ts/presence.ts/vault.ts). Deliberately scoped narrow,
+ * following the "extract only the pure, testable core; leave orchestration alone" pattern
+ * the architecture doc describes for the vault extraction: this module owns index CRUD and
+ * trash-state toggling only.
+ *
+ * Explicitly NOT extracted here, and why:
+ * - renderTemplatesList/openTemplatesMenu/renderSidebarTemplates — DOM construction, stays
+ *   hand-written, same reasoning as renderNotifList staying out of notifications.ts.
+ * - applyTemplateNodes/stampTemplateDateAuthor/applyBuiltinDefaultTemplate/applyDefaultTemplate
+ *   — touch the live `nodes` array directly, the same core-outline coupling that blocks
+ *   Phase 2's remaining candidates (search/tabs/diagram-anchor state). Not safely extractable
+ *   until a real `core/` module boundary exists.
+ * - applyIncomingTemplateData — Firestore sync, explicitly Phase 4 territory (extracted last
+ *   on purpose, per the architecture doc's own reasoning: this area has produced the most
+ *   bugs historically).
+ * - permanentlyDeleteTemplateCore — investigated and deliberately left out: unlike
+ *   moveTemplateToTrashCore/restoreTemplateFromTrashCore (which only touch the templates
+ *   index itself, and so ARE included below), permanentlyDeleteTemplateCore also reaches into
+ *   a sibling, not-yet-extracted domain (the template/folder map storage) and fires a
+ *   real Firestore delete — genuinely cross-domain, not this module's narrow scope.
+ *
+ * Deliberately no module-level constants for the storage key strings / built-in-template
+ * version number (TEMPLATES_INDEX_KEY, TEMPLATE_KEY_PREFIX, BUILTIN_TEMPLATES_VERSION):
+ * index.html already declares these as top-level `const`s, still read directly by sibling
+ * template functions that remain hand-written (e.g. BUILTIN_TEMPLATES_SEEDED_KEY derives from
+ * BUILTIN_TEMPLATES_VERSION, getSyncMetaKeys() reads TEMPLATES_INDEX_KEY). Since every
+ * generated block shares one script scope with the rest of index.html, redeclaring the same
+ * names here would be a duplicate `const` — a hard SyntaxError. The literal values are inlined
+ * below instead, with this comment as the single place documenting that they must stay in
+ * sync with index.html's own copies if either ever changes.
+ */
+// Private to this module (deliberately NOT the same name as index.html's own top-level
+// TEMPLATES_INDEX_KEY — see this file's header comment for why they can't be shared).
+const _TEMPLATES_INDEX_STORAGE_KEY = 'sakura_templates_index_v1';
+let tplIndexDeps = null;
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initTemplatesIndexState(injected) {
+    tplIndexDeps = injected;
+}
+function requireTplIndexDeps() {
+    if (!tplIndexDeps)
+        throw new Error('templatesIndex state used before initTemplatesIndexState() was called');
+    return tplIndexDeps;
+}
+/** Pure: the localStorage key a single template document's own content is stored under. */
+function templateKey(id) {
+    return 'sakura_template_v1_' + id;
+}
+/** Pure: the stable id a built-in template gets for a given key, versioned so a shipped-content
+ * change re-seeds cleanly rather than silently patching a user's already-customized copy. The
+ * version number (10) must stay in sync with index.html's own BUILTIN_TEMPLATES_VERSION — see
+ * this file's header comment for why it can't be a shared constant. */
+function builtinTemplateId(key) {
+    return 't_builtin_' + key + '_v10';
+}
+/** Reads the full templates index (active + trashed). Never throws — a missing or corrupt
+ * localStorage entry behaves the same as an empty list. */
+function loadTemplatesIndex() {
+    const ls = requireTplIndexDeps().getLocalStorage();
+    try {
+        const raw = ls ? ls.getItem(_TEMPLATES_INDEX_STORAGE_KEY) : null;
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+    }
+    catch {
+        return [];
+    }
+}
+/** Writes the full templates index and fires the same side effects the original did:
+ * bumping the last-changed timestamp, scheduling a backup write, and marking the
+ * `templatesIndex` sync meta key dirty. All three real effects, injected — this module
+ * doesn't reimplement backup/sync logic, only triggers it the same way the original did. */
+function saveTemplatesIndex(list) {
+    const d = requireTplIndexDeps();
+    const ls = d.getLocalStorage();
+    try {
+        if (ls)
+            ls.setItem(_TEMPLATES_INDEX_STORAGE_KEY, JSON.stringify(list));
+        d.setLastAnyDataChangeAt(d.now());
+        d.scheduleBackupWrite();
+        d.markMetaChanged('templatesIndex');
+    }
+    catch {
+        // Original swallowed localStorage write failures (e.g. quota exceeded, private browsing) —
+        // preserved exactly: a failed save is silently a no-op, not a thrown error.
+    }
+}
+/** Sets (or clears, via `icon: null`) one template's icon override. Returns the updated list,
+ * matching the original's return value even though most callers use it for the side effect. */
+function setTemplateIcon(id, icon) {
+    const list = loadTemplatesIndex();
+    const i = list.findIndex((t) => t.id === id);
+    if (i >= 0) {
+        list[i] = { ...list[i], icon: icon || null };
+        saveTemplatesIndex(list);
+    }
+    return list;
+}
+/** Looks up a built-in template's icon by its (already-versioned) id. Always returns `null`
+ * now — Sakura no longer ships prebuilt template content (see getBuiltinTemplateDefs's own
+ * comment in index.html), but the lookup itself is kept working rather than deleted, since
+ * performBuiltinTemplateSeed and the legacy-id cleanup still call through it. */
+function getBuiltinTemplateIconById(_id) {
+    return null;
+}
+/** Upserts a template's index entry (creating one if it doesn't exist yet) with a fresh title
+ * and updatedAt timestamp. Returns the updated list. */
+function touchTemplateIndex(id, title) {
+    const d = requireTplIndexDeps();
+    const list = loadTemplatesIndex();
+    const i = list.findIndex((t) => t.id === id);
+    const entry = i >= 0
+        ? { ...list[i], title: title || 'Untitled template', updatedAt: d.now() }
+        : { id, title: title || 'Untitled template', updatedAt: d.now() };
+    if (i >= 0)
+        list[i] = entry;
+    else
+        list.push(entry);
+    saveTemplatesIndex(list);
+    return list;
+}
+/** Templates not currently in the trash. */
+function loadActiveTemplatesIndex() {
+    return loadTemplatesIndex().filter((t) => !t.trashedAt);
+}
+/** Trashed templates, most-recently-trashed first. */
+function loadTrashedTemplatesIndex() {
+    return loadTemplatesIndex()
+        .filter((t) => t.trashedAt)
+        .sort((a, b) => (b.trashedAt || 0) - (a.trashedAt || 0));
+}
+/** Marks a template trashed (soft delete) by stamping `trashedAt`. A no-op if the id isn't
+ * found in the index. */
+function moveTemplateToTrashCore(id) {
+    const d = requireTplIndexDeps();
+    const list = loadTemplatesIndex();
+    const i = list.findIndex((t) => t.id === id);
+    if (i < 0)
+        return;
+    list[i] = { ...list[i], trashedAt: d.now() };
+    saveTemplatesIndex(list);
+}
+/** Un-trashes a template by removing `trashedAt`. Returns whether it actually did anything
+ * (false if the id wasn't found), matching the original's boolean return used by its callers
+ * to decide whether to show a success toast. */
+function restoreTemplateFromTrashCore(id) {
+    const list = loadTemplatesIndex();
+    const i = list.findIndex((t) => t.id === id);
+    if (i < 0)
+        return false;
+    const rest = { ...list[i] };
+    delete rest.trashedAt;
+    list[i] = rest;
+    saveTemplatesIndex(list);
+    return true;
+}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares the classic script's own
+// scope at runtime: localStorage, markMetaChanged, scheduleBackupWrite, lastAnyDataChangeAt.
+initTemplatesIndexState({
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } },
+  markMetaChanged:(metaKey)=>markMetaChanged(metaKey),
+  scheduleBackupWrite:()=>{ if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); },
+  setLastAnyDataChangeAt:(ts)=>{ lastAnyDataChangeAt=ts; },
+  now:()=>Date.now()
+});
+/* GENERATED:templatesIndex:END */
 const BUILTIN_TPL_FOLDER_ID='tf_builtin_v1';
 const SAP_TPL_FOLDER_ID='tf_sap_v1';
 const BUILTIN_TEMPLATES_VERSION=10;
@@ -12441,7 +12612,6 @@ const BUILTIN_TEMPLATES_SEEDED_KEY='sakura_builtin_tpls_seeded_v'+BUILTIN_TEMPLA
 // they don't linger alongside the new unified built-in pack.
 const LEGACY_BUILTIN_TEMPLATE_IDS=['t_meetingnotes_preset_v1','t_meetingnotes_preset_v2','t_meetingnotes_preset_v3','t_builtin_meeting-notes_v4','t_builtin_one-on-one_v4','t_builtin_daily-standup_v4','t_builtin_weekly-status_v4','t_builtin_decision-record_v4','t_builtin_project-kickoff_v4','t_builtin_retrospective_v4','t_builtin_meeting-notes_v5','t_builtin_one-on-one_v5','t_builtin_daily-standup_v5','t_builtin_weekly-status_v5','t_builtin_decision-record_v5','t_builtin_project-kickoff_v5','t_builtin_retrospective_v5','t_builtin_meeting-notes_v6','t_builtin_one-on-one_v6','t_builtin_daily-standup_v6','t_builtin_weekly-status_v6','t_builtin_decision-record_v6','t_builtin_project-kickoff_v6','t_builtin_retrospective_v6','t_builtin_meeting-notes_v7','t_builtin_one-on-one_v7','t_builtin_daily-standup_v7','t_builtin_weekly-status_v7','t_builtin_decision-record_v7','t_builtin_project-kickoff_v7','t_builtin_retrospective_v7','t_builtin_meeting-notes_v8','t_builtin_one-on-one_v8','t_builtin_daily-standup_v8','t_builtin_weekly-status_v8','t_builtin_decision-record_v8','t_builtin_project-kickoff_v8','t_builtin_retrospective_v8','t_builtin_meeting-notes_v9','t_builtin_one-on-one_v9','t_builtin_daily-standup_v9','t_builtin_weekly-status_v9','t_builtin_decision-record_v9','t_builtin_project-kickoff_v9','t_builtin_retrospective_v9','t_builtin_decision-record_v9','t_builtin_sap-ewm-architecture_v9','t_builtin_sap-rap-application_v9','t_builtin_sap-sd-pricing_v9','t_builtin_sap-btp-integration_v9','t_builtin_sap-integration-flow_v9'];
 
-function builtinTemplateId(key){ return 't_builtin_'+key+'_v'+BUILTIN_TEMPLATES_VERSION }
 // Icons are shared by document "shape", not assigned one-per-template — a calendar for
 // anything cadence-driven (written on a recurring schedule), a checkmark for the one
 // decision-record format, a flag for one-off project milestones. Keeps the template list
@@ -12467,7 +12637,6 @@ function getBuiltinTemplateDefs(){
   // keep working unchanged — they already treat an empty defs list as "nothing to seed".
   return [];
 }
-function getBuiltinTemplateIconById(id){ const def=getBuiltinTemplateDefs().find(d=>builtinTemplateId(d.key)===id); return def?def.icon:null }
 // The actual seed/restore work, shared by the once-ever startup seed below and the
 // Settings → Templates → "Restore…" button. Always overwrites built-in content back to
 // shipped defaults and re-creates the folder/index entries if missing — never touches
@@ -12545,7 +12714,6 @@ function seedBuiltinTemplates(){
 // in Settings → Templates and the sidebar's restore icon were removed too (see their old ids,
 // restore-builtin-tpls-btn / sb-tpl-restore-btn, no longer present in the HTML below).
 
-function touchTemplateIndex(id,title){const list=loadTemplatesIndex(); const i=list.findIndex(t=>t.id===id); const entry=i>=0?{...list[i],title:title||'Untitled template',updatedAt:Date.now()}:{id,title:title||'Untitled template',updatedAt:Date.now()}; if(i>=0)list[i]=entry; else list.push(entry); saveTemplatesIndex(list); return list}
 async function saveCurrentAsTemplate(){
   commitEdit();
   if(!hasMeaningfulContent()){showToast('Nothing to save — the document is empty'); return}
@@ -12589,16 +12757,6 @@ async function duplicateTemplate(id){
 // sidebar. Templates have no in-place editing (saving as a template always creates a new
 // id rather than overwriting one), so there's no autosave-flush concern here the way
 // there was for documents — a template's stored content never changes out from under it.
-function loadActiveTemplatesIndex(){ return loadTemplatesIndex().filter(t=>!t.trashedAt) }
-function loadTrashedTemplatesIndex(){ return loadTemplatesIndex().filter(t=>t.trashedAt).sort((a,b)=>(b.trashedAt||0)-(a.trashedAt||0)) }
-function moveTemplateToTrashCore(id){
-  const list=loadTemplatesIndex(); const i=list.findIndex(t=>t.id===id); if(i<0)return;
-  list[i]={...list[i],trashedAt:Date.now()}; saveTemplatesIndex(list);
-}
-function restoreTemplateFromTrashCore(id){
-  const list=loadTemplatesIndex(); const i=list.findIndex(t=>t.id===id); if(i<0)return false;
-  const {trashedAt, ...rest}=list[i]; list[i]=rest; saveTemplatesIndex(list); return true;
-}
 function permanentlyDeleteTemplateCore(id){
   try{localStorage.removeItem(templateKey(id))}catch(e){}
   saveTemplatesIndex(loadTemplatesIndex().filter(t=>t.id!==id));

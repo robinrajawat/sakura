@@ -177,6 +177,23 @@ initVaultState({
     // this block in (a relocation pass first made the two functions contiguous, since they
     // were originally interleaved with un-extracted sibling functions like serializeTreeText).
     footer: ''
+  },
+  {
+    name: 'templatesIndex',
+    sourceFile: 'src/state/templatesIndex.ts',
+    testFile: 'tests/unit/templatesIndexState.test.ts',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares the classic script's own
+// scope at runtime: localStorage, markMetaChanged, scheduleBackupWrite, lastAnyDataChangeAt.
+initTemplatesIndexState({
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } },
+  markMetaChanged:(metaKey)=>markMetaChanged(metaKey),
+  scheduleBackupWrite:()=>{ if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); },
+  setLastAnyDataChangeAt:(ts)=>{ lastAnyDataChangeAt=ts; },
+  now:()=>Date.now()
+});
+`.trim()
   }
 ];
 
