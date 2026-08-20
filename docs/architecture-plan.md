@@ -181,33 +181,54 @@ The rest needed the same treatment as the Markdown-export batch: `nodes`/`collap
 `selectAllMode`/`multiSelectedIds`/`selectedId`/`treeIndentWidth`/`sectionMarkersDepthZero`
 turned from implicit global reads into explicit parameters, zero logic changes otherwise.
 
-**Important: none of Phase 1's extracted code — any of the three batches — is wired into
-index.html/hub.html yet.** Production behavior is unchanged — verified via an empty `git diff`
-against both files across every commit in this phase, including the third batch's. This is
-deliberate, not an oversight: the live app is a classic (non-module) `<script>`, executing
-synchronously in document order. A `<script type="module">` is always deferred (runs after
-parsing, like `defer`), so simply adding a module `<script>` importing these utilities and
-assigning them to `window` would NOT make them available in time for the classic script's own
-top-to-bottom execution — they'd be `undefined` at every call site until the deferred module
-happened to run, which is too late.
+**`nodeQueries.ts` cutover complete — the other two batches are not.** Of the three Phase 1
+batches, only the third (`nodeQueries.ts`'s 13 tree-query functions) is actually spliced into
+`index.html` today. `escapeHtml`/`generateId`/`formatRelativeTime` (first batch) and
+`stripSemanticMarkers`/`computeOutlineNumbers`/`serializeMarkdown` (second batch, Markdown-export
+chain) remain hand-written duplicates sitting alongside their tested `src/utils/` originals —
+verified-correct and ready, per the original plan below, but not yet wired in. Only
+`nodeQueries.ts` needed the scattered-definitions problem solved (next paragraph), which is why
+it went first among the three despite being written last.
 
-Two realistic paths to an actual cutover, neither attempted yet: (a) extend
-`scripts/generate-index-blocks.mjs` — built for Phase 2's state modules — to support a block
-that replaces several small, non-contiguous marked regions instead of assuming one contiguous
-region per module (`nodeQueries.ts`'s 13 functions are scattered across ~2,000 lines of
-index.html, interleaved with unrelated code, unlike every Phase 2 slice's single contiguous
-block); or (b) a separate, low-risk "just move code, change nothing" pass that physically
-relocates these 13 function declarations to sit together first, making them splice-able as one
-block the same way Phase 2's slices are. Either is real, separately-scoped work — not something
-to bolt on while also writing and verifying the pure logic itself, and not attempted in this
-pass. Until then, Phase 1's value is what it already provides across all three batches:
-verified-correct, fully typed, fully tested canonical implementations ready to become the real
-ones the moment cutover happens, plus the extraction/test methodology now proven across three
-real batches.
+The `nodeQueries.ts` cutover needed real, separately-scoped infrastructure work first, exactly as
+anticipated above: its 13 functions were scattered across ~2,000 lines of `index.html`,
+interleaved with unrelated stateful functions (`toggleCollapse`, `enterFocus`, `ensureSelection`,
+etc.) that had to stay exactly where they were. Path (b) from the original two options was taken:
+a pure code-motion commit first relocated all 13 declarations into one contiguous, marked region
+(verified via a sorted removed/added-line diff — the only textual additions were the cluster
+marker comments), making them splice-able as one block the same way every Phase 2 slice is.
+
+The splice itself then had to be one atomic swap, not incremental, for a reason that only became
+concrete once the generator was actually pointed at this file: `generate-index-blocks.mjs`
+compiles a whole source file as a single block, so all 13 signatures changed at once (implicit
+global reads — `nodes`, `collapsedIds`, `treeIndentWidth`, `sectionMarkersDepthZero`,
+`selectAllMode`, `multiSelectedIds`, `selectedId` — becoming explicit parameters), which meant
+every one of the 268 real call sites had to move in the same commit as the definition swap. Done
+via a paren/string-aware codemod (not hand-edited) after confirming argument counts were uniform
+per function; `buildPrefix`/`buildVertFlags` needed a genuine positional-argument reorder
+(`scopedNodes` moved from a trailing optional parameter to a required leading one), not just an
+appended arg, since their old call sites already passed it explicitly in a different order.
+
+The generator itself needed one fix along the way: `compileToPlainJs` assumed `tsc` places
+compiled output flat in its temp `outDir` — true for every import-free Phase 2 state module, but
+`nodeQueries.ts` has an `import type` reference to `serializeMarkdown.ts` (fully erased from the
+emitted JS — verified no import statement survives) that makes `tsc` infer a shared `rootDir`
+across both files, nesting the output at `<tmpDir>/core/nodeQueries.js` instead. Fixed by
+searching recursively for the compiled file instead of assuming a flat path — a one-line
+generator bug, not a codegen strategy problem, but worth knowing if a future module triggers the
+same rootDir inference.
+
+New test coverage: `tests/e2e/generated-nodequeries-smoke.spec.ts` exercises the highest-risk part
+of this cutover — real tree rendering, both tree-line modes (`buildPrefix`'s ASCII connectors and
+`buildVertFlags`'s pixel-grid guides), collapse/expand fold-badge counts, focus-mode breadcrumbs,
+and range selection — against the real DOM with a real 5-node multi-depth tree, not just "did it
+throw." `hub.html` needed no changes at all (verified zero diff) — none of these 13 functions are
+used there.
 
 6 files (5 in `src/utils/`, 1 in `src/core/`), 75 unit tests total (verified passing), each
 backed by a pinned oracle copy of the actual current index.html implementation asserting exact
-behavioral equivalence.
+behavioral equivalence. Only the `src/core/` file (`nodeQueries.ts`) is live in `index.html` so
+far — the 5 `src/utils/` files from the first two batches are still tested-and-waiting.
 
 **Phase 2 — state consolidation. (In progress — 4 of many domains done.)**
 Replace the scattered `let`s with typed state modules, one domain at a time.
