@@ -435,4 +435,150 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
 
     expect(unexpectedErrors).toEqual([]);
   });
+
+  test('pasteParsedNodes: depth-offset insertion, real orchestration, and the empty-document replace case', async ({ page }) => {
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
+    });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !KNOWN_NOISE.test(msg.text())) {
+        unexpectedErrors.push('console.error: ' + msg.text());
+      }
+    });
+
+    await page.goto('file://' + indexPath);
+
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => {
+        const el = document.getElementById('sakura-landing-overlay');
+        if (el) el.style.display = 'none';
+      });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    // 1. Pure functions directly.
+    const pureResults = await page.evaluate(() => {
+      // @ts-expect-error — bare globals from index.html
+      const offsetEmpty = computePasteOffsetDepth([], -1);
+      const contextNodes = [
+        { id: 1, depth: 0 },
+        { id: 2, depth: 2 }
+      ];
+      // @ts-expect-error
+      const offsetWithContext = computePasteOffsetDepth(contextNodes, 1); // insertion point at depth 2
+
+      const insertTarget = [
+        { id: 1, depth: 0 },
+        { id: 2, depth: 1 },
+        { id: 3, depth: 0 }
+      ]; // A, A1, B
+      // @ts-expect-error — insert after A's subtree (index 0's subtree ends at index 2)
+      insertParsedNodesCore(insertTarget, 0, [{ id: 10, depth: 0 }]);
+
+      return {
+        offsetEmpty,
+        offsetWithContext,
+        insertOrder: insertTarget.map((n: any) => n.id)
+      };
+    });
+    expect(pureResults.offsetEmpty).toBe(0);
+    expect(pureResults.offsetWithContext).toBe(2);
+    expect(pureResults.insertOrder).toEqual([1, 2, 10, 3]); // A, A1, pasted, B
+
+    // 2. Real orchestration wrapper (pasteParsedNodes), against real app state: a 3-node tree,
+    // editing the middle (depth-1) node, pasting a 2-node block. Proves the depth offset,
+    // pushUndo/markDirty/rebuildParentIds/render/showToast, AND the selection-state reset
+    // (selectedId/selectAllMode/multiSelectedIds/selectionAnchorId/editingId/flashNodeId) all
+    // still fire around the new core calls.
+    const orchestrationResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 1, text: 'A1', styles: {} },
+        { id: 3, depth: 0, text: 'B', styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = 2; // editing A1, at depth 1
+      // @ts-expect-error
+      multiSelectedIds = [5]; // deliberately non-empty, to confirm pasteParsedNodes clears it
+      // @ts-expect-error
+      selectAllMode = true; // deliberately true, to confirm it gets reset to false
+      // @ts-expect-error
+      editingId = 2;
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      render();
+
+      const undoDepthBefore = undoStack.length;
+      const parsed = [
+        { text: 'Pasted 1', depth: 0, styles: {} },
+        { text: 'Pasted 2', depth: 1, styles: {} }
+      ];
+      // @ts-expect-error
+      pasteParsedNodes(parsed, 'Pasted');
+
+      return {
+        // @ts-expect-error — pasted nodes should land at depth 1/2 (offset by A1's own depth 1)
+        depths: nodes.map((n: any) => n.depth),
+        // @ts-expect-error
+        texts: nodes.map((n: any) => n.text),
+        undoStackGrew: undoStack.length > undoDepthBefore,
+        // @ts-expect-error
+        selectAllModeReset: selectAllMode === false,
+        // @ts-expect-error
+        multiSelectedIdsCleared: multiSelectedIds.length === 0,
+        // @ts-expect-error
+        editingIdCleared: editingId === null,
+        renderedRows: document.querySelectorAll('.node-row').length
+      };
+    });
+    expect(orchestrationResult.texts).toEqual(['A', 'A1', 'Pasted 1', 'Pasted 2', 'B']);
+    expect(orchestrationResult.depths).toEqual([0, 1, 1, 2, 0]); // offset by 1 (A1's depth)
+    expect(orchestrationResult.undoStackGrew).toBe(true);
+    expect(orchestrationResult.selectAllModeReset).toBe(true);
+    expect(orchestrationResult.multiSelectedIdsCleared).toBe(true);
+    expect(orchestrationResult.editingIdCleared).toBe(true);
+    expect(orchestrationResult.renderedRows).toBe(5);
+
+    // 3. The empty-document replace case, through the real orchestration wrapper too.
+    const emptyDocResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [];
+      // @ts-expect-error
+      selectedId = null;
+      // @ts-expect-error
+      multiSelectedIds = [];
+      // @ts-expect-error
+      selectAllMode = false;
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      pasteParsedNodes([{ text: 'First', depth: 0, styles: {} }], 'Pasted');
+      // @ts-expect-error
+      return { texts: nodes.map((n: any) => n.text), count: nodes.length };
+    });
+    expect(emptyDocResult.texts).toEqual(['First']);
+    expect(emptyDocResult.count).toBe(1);
+
+    // 4. Proof the rest of the script still runs.
+    const restOfScriptWorks = await page.evaluate(() => {
+      // @ts-expect-error
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof indentSelected === 'function' && typeof handleDrop === 'function';
+    });
+    expect(restOfScriptWorks).toBe(true);
+
+    expect(unexpectedErrors).toEqual([]);
+  });
 });

@@ -12,11 +12,13 @@
  * real risk of a subtle bug in core editing logic (indent/outdent/move/paste all mutate a live
  * user's document), slices are picked in roughly ascending risk order — indent/outdent first
  * (pure depth-array mutation, no text-splitting/clipboard/drag-drop edge cases), then
- * moveSelected (keyboard-driven single-block reordering — still no text-splitting or clipboard,
- * but real array-splice repositioning logic), then the drag-and-drop move functions here
- * (multiple modes — above/below/child/end — depth remapping, a descendant-of-target guard, and
- * a genuinely tricky multi-block reordering algorithm) — to prove the decomposition pattern
- * incrementally before attempting anything larger (paste, split, delete are still ahead).
+ * moveSelected (keyboard-driven single-block reordering), then drag-and-drop move (multiple
+ * modes, depth remapping, a descendant guard, a multi-block reordering algorithm), then paste
+ * here (computing the depth offset a pasted block needs to land as siblings of the node being
+ * edited, and inserting already-built node objects into the tree — deliberately NOT the node
+ * construction itself, which has its own global-counter side effect and 20+ other callers; see
+ * below) — to prove the decomposition pattern incrementally before attempting anything larger
+ * (split, delete are still ahead).
  *
  * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
  * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
@@ -26,10 +28,14 @@
  * radius than any single slice here is scoped to. They remain hand-written, ambient-global
  * functions/values, called or assigned by the orchestration wrapper exactly as before; this
  * module's functions take or return only what they specifically need (`rootIndexes`, a single
- * `idx`, dragged/target ids, mode) as plain parameters/return values — selection-state side
- * effects (`selectedId`, `selectionAnchorId`, `multiSelectedIds`, `selectAllMode`,
- * `clearMultiSelection()`) stay in the hand-written wrappers, assigned based on what the core
- * function reports happened.
+ * `idx`, dragged/target ids, mode, an insertion index and already-built node objects) as plain
+ * parameters/return values — selection-state side effects (`selectedId`, `selectionAnchorId`,
+ * `multiSelectedIds`, `selectAllMode`, `clearMultiSelection()`) stay in the hand-written
+ * wrappers, assigned based on what the core function reports happened. `makeNode()` (which
+ * mints a fresh id from a global `nextId` counter, among other real side effects) likewise
+ * stays hand-written and ambient — the paste slice's core functions take already-built node
+ * objects as input rather than building them, the same "pure functions receive fully-formed
+ * data, orchestration wrappers do the side-effecting construction" split used throughout.
  *
  * `getSubtreeEnd` (from nodeQueries.ts, already a generated block spliced in elsewhere in
  * index.html) is referenced as an ambient global via `declare function` below — type-only,
@@ -291,4 +297,42 @@ export function moveMultipleNodeBlocksCore(
   });
   nodes.splice(insertAt, 0, ...combined);
   return draggedIds.filter((id) => getIndex(nodes, id) >= 0);
+}
+
+/** Pure: the depth every node in a pasted block should be offset by, so the pasted content
+ * lands as siblings of the node currently being edited rather than keeping whatever depth it
+ * had in its original context (which — without this offset — would insert depth-0 nodes into
+ * the middle of the array, and everything originally following the insertion point would then
+ * read as descendants of those newly-inserted depth-0 nodes, since depth-based subtree/parent
+ * logic has no other way to tell "sibling" from "ancestor" apart: a serious structural
+ * corruption, not just a cosmetic indent issue). Returns 0 (no offset — paste at depth as-is)
+ * when there's no valid insertion context: an empty document, or `insertIdx` not found
+ * (`insertIdx` is `getIndex(nodes, selectedId)`, computed by the caller; the original also had
+ * an explicit `selectedId===null` check here, which is mathematically redundant — no node's id
+ * is ever `null`, so `getIndex(nodes, null)` already returns -1 — preserved in spirit by this
+ * function depending only on `insertIdx`, not on `selectedId` itself). */
+export function computePasteOffsetDepth(nodes: QueryableNode[], insertIdx: number): number {
+  const noContext = !nodes.length || insertIdx < 0;
+  return noContext ? 0 : nodes[insertIdx].depth;
+}
+
+/** Inserts a block of already-built, already-depth-offset node objects into `nodes`, either
+ * replacing the whole (empty or context-less) document, or splicing in right after the
+ * insertion point's own subtree ends — the same two cases `computePasteOffsetDepth` handles,
+ * using the identical `noContext` condition so the two functions' behavior always agrees.
+ * Mutates `nodes` in place; the empty-document case uses `nodes.splice(0, nodes.length, ...
+ * mappedNodes)` rather than the original's `nodes=mapped` reassignment — a plain array
+ * parameter can't reassign the caller's own variable binding the way a global assignment can,
+ * so this achieves the identical end state (same final contents) through the same in-place-
+ * mutation convention every other function in this module uses, rather than the original's
+ * literal statement. Does not call `rebuildParentIds()`, build the node objects themselves
+ * (that's `makeNode()`'s job — real side effects, stays hand-written), or touch any selection
+ * state — all of that stays the orchestration wrapper's responsibility. */
+export function insertParsedNodesCore(nodes: QueryableNode[], insertIdx: number, mappedNodes: QueryableNode[]): void {
+  const noContext = !nodes.length || insertIdx < 0;
+  if (noContext) {
+    nodes.splice(0, nodes.length, ...mappedNodes);
+  } else {
+    nodes.splice(getSubtreeEnd(nodes, insertIdx), 0, ...mappedNodes);
+  }
 }
