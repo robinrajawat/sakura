@@ -3,8 +3,10 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
 Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
-boundary started, four slices done (indent/outdent, moveSelected, drag-and-drop move, then paste
-insertion); split, delete not yet attempted. Phases 4–5 still future work.
+boundary started, five slices done (indent/outdent, moveSelected, drag-and-drop move, paste,
+then delete — split turned out to be dead code and was skipped); the shared selection helpers
+(getSelectionRootIndexes/getSelectedIds/rebuildParentIds/clearMultiSelection) not yet attempted.
+Phases 4–5 still future work.
 
 ## Why
 
@@ -533,6 +535,47 @@ reset (`selectedId`/`selectAllMode`/`multiSelectedIds`/`selectionAnchorId`/`edit
 
 Not yet started: split, delete — still ahead — and the shared selection-computation helpers
 every slice so far has deliberately left hand-written.
+
+**Fifth slice: delete — plus a real detour worth recording.** `split` (`splitNodeAtCursor`) was
+assumed to be next per the ordering guessed above, but investigation showed it's genuinely dead
+code: zero call sites anywhere, confirmed via exhaustive grep, not even indirect ones. The real
+Enter-key handler (`onEditorKeyDown`) calls `insertSiblingAfter`/`insertChildFirst` instead,
+never a text-split. Extracting dead code would mean no real orchestration path to test and no
+actual user-facing risk being addressed — a materially weaker slice than anything done so far —
+so it was skipped in favor of `deleteSelected`, which has 5 real call sites (confirmed via
+call-site count before starting, same discipline as every prior slice). A good example of why
+the "likely in that order" ordering guessed at the end of the previous slice's writeup was
+explicitly a guess, not a plan: real investigation changes the plan when it should.
+
+`deleteRootIndexes`, added to the same `src/core/nodeMutations.ts` file: removes each root
+index's entire subtree, processing in reverse order so removing a later block never shifts the
+array positions of an earlier not-yet-removed block (the same index-stability principle
+`moveMultipleNodeBlocksCore` uses for its own removal step, simpler here since nothing needs
+re-inserting afterward).
+
+`deleteSelected` turned out to be the most cross-domain-entangled orchestration function of any
+slice so far: its normal-delete path also cleans up an auto-rewrite AI queue, backlinks, and a
+"featured tables" domain — three genuinely separate feature domains, not part of the core
+outline engine at all, needing the deleted nodes' text/ids collected BEFORE the deletion so the
+cleanups have the data they need afterward. None of that touched — `deleteRootIndexes` covers
+only the actual subtree removal; the orchestration wrapper still collects that data and runs all
+three cleanups in the same order as before, just calling the new core function instead of its
+own inline reverse for-loop. `deleteSelected`'s OTHER branch (`selectAllMode`: clear the entire
+document, reset `nextId`) is a fundamentally different, much simpler reset that doesn't go
+through subtree removal at all — left entirely untouched, covered by its own e2e assertions to
+confirm it still works correctly alongside the new core call in the same function.
+
+5 new oracle-backed unit tests, including argument-order independence. New e2e coverage exercises
+three real scenarios against live app state: a normal subtree delete (checking undo/dirty/
+render/selection-fallback — landing on a remaining node, not `null`), the select-all clear-tree
+branch, and the pure function directly with multiple disjoint subtrees in one call.
+
+`src/core/nodeMutations.ts` now covers indent, outdent, keyboard move, drag-and-drop move,
+paste, and delete — a substantial write-side complement to `nodeQueries.ts`'s read-only queries.
+Not yet started: the shared selection-computation helpers (`getSelectionRootIndexes`/
+`getSelectedIds`/`rebuildParentIds`/`clearMultiSelection`) every slice so far has deliberately
+left hand-written — likely the next real fork, since extracting them would need to touch every
+one of their many call sites across every mutation function, not just one narrow slice's worth.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
