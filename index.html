@@ -15524,8 +15524,6 @@ function expandAll(){if(!collapsedIds.size)return; collapsedIds.clear(); schedul
 function toggleFoldAll(){ if(collapsedIds.size>0)expandAll(); else collapseAll(); }
 function updateStatusAppearance(){el('sb-theme').textContent={light:'Light',dark:'Dark'}[currentTheme]||'Light'}
 function hasMeaningfulContent(){return nodes.some(n=>String(n.text||'').trim())||nodes.length>1}
-function getIndex(id){return nodes.findIndex(n=>n.id===id)}
-function nodeHasChildren(idx){return idx+1<nodes.length && nodes[idx+1].depth>nodes[idx].depth}
 // Which rail category is currently shown, per panel. Search (below) temporarily overrides
 // this — while a query is active every category is searched at once, and clearing the query
 // (or picking a rail item) restores the single-category view.
@@ -17187,8 +17185,21 @@ el('qa-category-icon-btn')?.addEventListener('click',e=>{
   el('qa-input')?.focus();
   qaRenderCategoryPicker();
 });
-function getVisibleNodeIndexes(){const out=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(idx); const folded=collapsedIds.has(node.id); if(folded&&nodeHasChildren(idx))skipDepth=node.depth }); return out}
+/* NODEQUERIES_CLUSTER_START — Phase 1 (docs/architecture-plan.md) tree-query functions, relocated here (2026-08-20) so they form one contiguous, splice-able region ahead of the generate-index-blocks.mjs cutover. Zero logic changes — see git history for the pure code-motion commit. Canonical source: src/core/nodeQueries.ts. */
+function getIndex(id){return nodes.findIndex(n=>n.id===id)}
+function nodeHasChildren(idx){return idx+1<nodes.length && nodes[idx+1].depth>nodes[idx].depth}
+function getSubtreeEnd(idx){const depth=nodes[idx].depth; let end=idx+1; while(end<nodes.length&&nodes[end].depth>depth)end++; return end}
 function countDescendants(idx){return getSubtreeEnd(idx)-idx-1}
+function getParentIndex(idx){const depth=nodes[idx]?.depth??0; if(depth===0)return -1; for(let i=idx-1;i>=0;i--) if(nodes[i].depth===depth-1) return i; return -1}
+function getVisibleNodeIndexes(){const out=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } out.push(idx); const folded=collapsedIds.has(node.id); if(folded&&nodeHasChildren(idx))skipDepth=node.depth }); return out}
+function hasLaterSiblingAtDepth(arr,fromIdx,depth){for(let i=fromIdx+1;i<arr.length;i++){if(arr[i].depth===depth)return true; if(arr[i].depth<depth)return false} return false}
+function buildPrefix(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; const w=treeIndentWidth; const dashes='─'.repeat(Math.max(1,w-2)); let vert=''; for(let d=0;d<depth;d++){let hasSibling=false; for(let j=idx-1;j>=0;j--){if(scopedNodes[j].depth+depthOffset===d){hasSibling=hasLaterSiblingAtDepth(scopedNodes,j,d-depthOffset); break}} vert+=hasSibling?('│'+' '.repeat(w-1)):' '.repeat(w)} const conn=depth>0?(hasLaterSiblingAtDepth(scopedNodes,idx,node.depth)?('├'+dashes+' '):('└'+dashes+' ')):''; return {vert,conn}}
+function buildVertFlags(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; return new Array(Math.max(0,depth)).fill(true)}
+function isSectionNodeText(text){return /^\[[^\]]+\]$/.test(String(text||'').trim())}
+function nodeIsSection(node){return isSectionNodeText(node&&node.text) || (sectionMarkersDepthZero && !!node && (node.depth||0)===0)}
+function isIdSelected(id){return selectAllMode||multiSelectedIds.includes(id)||(!multiSelectedIds.length&&id===selectedId)}
+function getSelectionRangeIds(fromId,toId){const from=getIndex(fromId), to=getIndex(toId); if(from<0||to<0)return toId!==null?[toId]:[]; if(from===to)return [toId]; const visible=getVisibleNodeIndexes(); const visFrom=visible.indexOf(from), visTo=visible.indexOf(to); if(visFrom<0||visTo<0){const [start,end]=from<=to?[from,to]:[to,from]; return nodes.slice(start,end+1).map(n=>n.id)} const [vs,ve]=visFrom<=visTo?[visFrom,visTo]:[visTo,visFrom]; return visible.slice(vs,ve+1).map(idx=>nodes[idx].id)}
+/* NODEQUERIES_CLUSTER_END */
 function subtreeHasDecisionLog(idx){const end=getSubtreeEnd(idx); for(let i=idx+1;i<end;i++){if(decisionLogForNode(nodes[i].id))return true} return false}
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
 // A node "has a citation" when its text contains a '>quoted…' segment — same detection previewSplitQuotes
@@ -17578,8 +17589,6 @@ function buildFocusBar(focusIdx){
   bar.appendChild(upBtn);
   return bar;
 }
-function getSubtreeEnd(idx){const depth=nodes[idx].depth; let end=idx+1; while(end<nodes.length&&nodes[end].depth>depth)end++; return end}
-function getParentIndex(idx){const depth=nodes[idx]?.depth??0; if(depth===0)return -1; for(let i=idx-1;i>=0;i--) if(nodes[i].depth===depth-1) return i; return -1}
 function getChildBlocks(parentIdx){
   const blocks=[];
   if(parentIdx===null){
@@ -17610,11 +17619,9 @@ function sortChildBlocks(parentIdx,mode){
 }
 function clearMultiSelection(){multiSelectedIds=[]}
 function getSelectedIds(){if(selectAllMode)return nodes.map(n=>n.id); const base=multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)); if(base.length)return [...new Set(base)]; return selectedId!==null?[selectedId]:[]}
-function isIdSelected(id){return selectAllMode||multiSelectedIds.includes(id)||(!multiSelectedIds.length&&id===selectedId)}
 function setSingleSelection(id){selectedId=id; selectionAnchorId=id; selectAllMode=false; clearMultiSelection()}
 function flashNode(id){flashNodeId=id; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{if(flashNodeId===id){flashNodeId=null; render()}},700)}
 function getSelectionRootIndexes(){const allIds=new Set(getSelectedIds()); const indexes=nodes.map((n,i)=>allIds.has(n.id)?i:-1).filter(i=>i>=0).sort((a,b)=>a-b); return indexes.filter(idx=>{const depth=nodes[idx].depth; for(let i=idx-1;i>=0;i--){if(nodes[i].depth<depth)return !allIds.has(nodes[i].id)} return true})}
-function getSelectionRangeIds(fromId,toId){const from=getIndex(fromId), to=getIndex(toId); if(from<0||to<0)return toId!==null?[toId]:[]; if(from===to)return [toId]; const visible=getVisibleNodeIndexes(); const visFrom=visible.indexOf(from), visTo=visible.indexOf(to); if(visFrom<0||visTo<0){const [start,end]=from<=to?[from,to]:[to,from]; return nodes.slice(start,end+1).map(n=>n.id)} const [vs,ve]=visFrom<=visTo?[visFrom,visTo]:[visTo,visFrom]; return visible.slice(vs,ve+1).map(idx=>nodes[idx].id)}
 function getDeleteImpactCount(){if(selectAllMode)return nodes.length; const roots=getSelectionRootIndexes(); let total=0; for(const idx of roots) total+=getSubtreeEnd(idx)-idx; return total}
 /* === Sakura Modal Engine === */
 let _modalResolve=null;
@@ -17756,8 +17763,6 @@ async function sakuraLinkPrompt({title='Insert Link',text='',url=''}){
 
 function rebuildParentIds(){for(let i=0;i<nodes.length;i++){const p=getParentIndex(i); nodes[i].parentId=p>=0?nodes[p].id:null}}
 function ensureSelection(){if(!nodes.length){selectedId=null; editingId=null; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; return} multiSelectedIds=multiSelectedIds.filter(id=>getIndex(id)>=0); if(selectedId===null||getIndex(selectedId)<0)selectedId=multiSelectedIds[0]??nodes[0].id; if(selectionAnchorId===null||getIndex(selectionAnchorId)<0)selectionAnchorId=selectedId; if(flashNodeId!==null&&getIndex(flashNodeId)<0)flashNodeId=null}
-function hasLaterSiblingAtDepth(arr,fromIdx,depth){for(let i=fromIdx+1;i<arr.length;i++){if(arr[i].depth===depth)return true; if(arr[i].depth<depth)return false} return false}
-function buildPrefix(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; const w=treeIndentWidth; const dashes='─'.repeat(Math.max(1,w-2)); let vert=''; for(let d=0;d<depth;d++){let hasSibling=false; for(let j=idx-1;j>=0;j--){if(scopedNodes[j].depth+depthOffset===d){hasSibling=hasLaterSiblingAtDepth(scopedNodes,j,d-depthOffset); break}} vert+=hasSibling?('│'+' '.repeat(w-1)):' '.repeat(w)} const conn=depth>0?(hasLaterSiblingAtDepth(scopedNodes,idx,node.depth)?('├'+dashes+' '):('└'+dashes+' ')):''; return {vert,conn}}
 // Pixel-grid counterpart to buildPrefix's vert loop, used only when hideTreeLines is on. The editor's
 // indentation used to be driven entirely by monospace characters (buildPrefix above), which doesn't
 // share a coordinate system with the fixed-pixel dot/fold-marker boxes -- so dots, indentation, and
@@ -17768,7 +17773,6 @@ function buildPrefix(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes
 // level's guide on for as long as its children are on screen, sibling status aside, so a node that
 // happens to be the last branch in the document doesn't lose its children's guide lines. So every
 // ancestor depth is simply on.
-function buildVertFlags(idx,depthOffset=0,scopedNodes=nodes){const node=scopedNodes[idx]; const depth=node.depth+depthOffset; return new Array(Math.max(0,depth)).fill(true)}
 function stripSemanticMarkers(text){
   return String(text||'')
     .replace(/\[\[([\s\S]*?)\]\](?!\])/g,'$1')
@@ -17780,12 +17784,10 @@ function stripSemanticMarkers(text){
     .replace(/(\s)>(\S)/g,'$1$2');
 }
 function getNodePlainText(node){return stripSemanticMarkers(node.text||'')}
-function isSectionNodeText(text){return /^\[[^\]]+\]$/.test(String(text||'').trim())}
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
 // OR — when the setting is on — it's simply at depth 0, with no bracket text required.
 // The two are independent and additive, per the setting's own description: [Bracket]
 // keeps working at any depth including 0, on top of the depth-0 rule, not instead of it.
-function nodeIsSection(node){return isSectionNodeText(node&&node.text) || (sectionMarkersDepthZero && !!node && (node.depth||0)===0)}
 // Curated set — only common emoji used as a leading icon on section-header rows get a
 // matching SVG so they render as crisp, consistent line icons (matching the note/code dot
 // style) instead of relying on the OS emoji font, which varies wildly across platforms.
