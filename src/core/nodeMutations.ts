@@ -12,22 +12,24 @@
  * real risk of a subtle bug in core editing logic (indent/outdent/move/paste all mutate a live
  * user's document), slices are picked in roughly ascending risk order — indent/outdent first
  * (pure depth-array mutation, no text-splitting/clipboard/drag-drop edge cases), then
- * moveSelected here (keyboard-driven single-block reordering — still no text-splitting or
- * clipboard, but real array-splice repositioning logic, one step up in complexity) — to prove
- * the decomposition pattern incrementally before attempting anything larger.
+ * moveSelected (keyboard-driven single-block reordering — still no text-splitting or clipboard,
+ * but real array-splice repositioning logic), then the drag-and-drop move functions here
+ * (multiple modes — above/below/child/end — depth remapping, a descendant-of-target guard, and
+ * a genuinely tricky multi-block reordering algorithm) — to prove the decomposition pattern
+ * incrementally before attempting anything larger (paste, split, delete are still ahead).
  *
  * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
- * `rebuildParentIds` are used far more widely than any single mutation slice needs (13/18/23
- * real call sites respectively, across moveSelected/moveNodeBlock/insertSiblingBefore/
- * pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them would mean updating
- * every one of those call sites in the same slice, a much larger blast radius than any single
- * slice here is scoped to. They remain hand-written, ambient-global functions, called by the
- * orchestration wrapper exactly as before; this module takes their output (`rootIndexes`, a
- * single `idx`) as plain parameters. Likewise `moveNodeBlock`/`moveMultipleNodeBlocks`/
- * `handleDrop` (drag-and-drop reordering — mode='above'/'below'/'child'/'end', depth remapping,
- * descendant-of-target checks, multi-block moves) are a substantially more complex superset of
- * what `moveSelected` does and are deliberately deferred to their own later, more carefully
- * scoped slice rather than folded into this one.
+ * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
+ * slice needs (13/18/23/24 real call sites respectively, across moveSelected/moveNodeBlock/
+ * insertSiblingBefore/pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them
+ * would mean updating every one of those call sites in the same slice, a much larger blast
+ * radius than any single slice here is scoped to. They remain hand-written, ambient-global
+ * functions/values, called or assigned by the orchestration wrapper exactly as before; this
+ * module's functions take or return only what they specifically need (`rootIndexes`, a single
+ * `idx`, dragged/target ids, mode) as plain parameters/return values — selection-state side
+ * effects (`selectedId`, `selectionAnchorId`, `multiSelectedIds`, `selectAllMode`,
+ * `clearMultiSelection()`) stay in the hand-written wrappers, assigned based on what the core
+ * function reports happened.
  *
  * `getSubtreeEnd` (from nodeQueries.ts, already a generated block spliced in elsewhere in
  * index.html) is referenced as an ambient global via `declare function` below — type-only,
@@ -44,6 +46,7 @@
 import type { QueryableNode } from './nodeQueries';
 
 declare function getSubtreeEnd(nodes: QueryableNode[], idx: number): number;
+declare function getIndex(nodes: QueryableNode[], id: QueryableNode['id']): number;
 
 /** Pure: can the node at `idx` be indented — i.e. does it have an earlier sibling at the same
  * depth to become a child of? Walks backward from `idx`; an earlier node at a shallower depth
@@ -137,4 +140,155 @@ export function moveNodeDown(nodes: QueryableNode[], idx: number): QueryableNode
   const insertAt = nextEnd - (end - idx);
   nodes.splice(insertAt, 0, ...block);
   return block[0].id;
+}
+
+export type DropMode = 'above' | 'below' | 'child' | 'end';
+
+/** Pure: is `maybeDescendantIdx` inside `ancestorIdx`'s subtree? Used to reject a drag-and-drop
+ * that would move a node into its own descendant (which would orphan the moved subtree). */
+export function isDescendantIndex(nodes: QueryableNode[], maybeDescendantIdx: number, ancestorIdx: number): boolean {
+  return maybeDescendantIdx > ancestorIdx && maybeDescendantIdx < getSubtreeEnd(nodes, ancestorIdx);
+}
+
+/** Moves the single subtree rooted at `draggedId` to a new position relative to `targetId`,
+ * per `mode`: 'above'/'below' place it as `targetId`'s preceding/following sibling (same
+ * depth as `targetId`); 'child' places it as `targetId`'s first child (depth + 1); 'end'
+ * ignores `targetId` and moves it to the very end of the document at depth 0. The moved
+ * subtree's OWN descendants move with it, depth-shifted by the same delta as the root
+ * (floored at 0 via `Math.max(0, ...)` — preserved exactly from the original, which guards
+ * against a negative depth in edge cases rather than assuming the delta math can never
+ * produce one). Rejects the move (returns `false`, `nodes` unchanged) if: `draggedId===
+ * targetId`; either id isn't found; or `targetId` is inside `draggedId`'s own subtree (via
+ * `isDescendantIndex` — moving a node into its own descendant would orphan it). Mutates
+ * `nodes` in place; does NOT call `rebuildParentIds()` or touch any selection state
+ * (`selectedId`/`selectionAnchorId`/`multiSelectedIds`/`selectAllMode`) — all of that stays
+ * the orchestration wrapper's responsibility, assigned only when this returns `true`. */
+export function moveNodeBlockCore(
+  nodes: QueryableNode[],
+  draggedId: QueryableNode['id'],
+  targetId: QueryableNode['id'],
+  mode: DropMode = 'below'
+): boolean {
+  if (mode === 'end') {
+    const fromIdx = getIndex(nodes, draggedId);
+    if (fromIdx < 0) return false;
+    const fromEnd = getSubtreeEnd(nodes, fromIdx);
+    const sourceDepth = nodes[fromIdx].depth;
+    const block = nodes.slice(fromIdx, fromEnd).map((n) => ({ ...n }));
+    if (sourceDepth !== 0) {
+      block.forEach((n) => {
+        n.depth = Math.max(0, n.depth - sourceDepth);
+      });
+    }
+    nodes.splice(fromIdx, fromEnd - fromIdx);
+    nodes.push(...block);
+    return true;
+  }
+  if (draggedId === targetId) return false;
+  const fromIdx = getIndex(nodes, draggedId);
+  const targetIdxOriginal = getIndex(nodes, targetId);
+  if (fromIdx < 0 || targetIdxOriginal < 0) return false;
+  if (isDescendantIndex(nodes, targetIdxOriginal, fromIdx)) return false;
+  const fromEnd = getSubtreeEnd(nodes, fromIdx);
+  const sourceDepth = nodes[fromIdx].depth;
+  let insertAtOriginal = targetIdxOriginal;
+  let newDepth = sourceDepth;
+  if (mode === 'above') {
+    insertAtOriginal = targetIdxOriginal;
+    newDepth = nodes[targetIdxOriginal].depth;
+  } else if (mode === 'below') {
+    insertAtOriginal = getSubtreeEnd(nodes, targetIdxOriginal);
+    newDepth = nodes[targetIdxOriginal].depth;
+  } else {
+    insertAtOriginal = targetIdxOriginal + 1;
+    newDepth = nodes[targetIdxOriginal].depth + 1;
+  }
+  const block = nodes.slice(fromIdx, fromEnd).map((n) => ({ ...n }));
+  const depthDelta = newDepth - sourceDepth;
+  if (depthDelta !== 0) {
+    block.forEach((n) => {
+      n.depth = Math.max(0, n.depth + depthDelta);
+    });
+  }
+  nodes.splice(fromIdx, fromEnd - fromIdx);
+  const insertAt = insertAtOriginal > fromIdx ? insertAtOriginal - (fromEnd - fromIdx) : insertAtOriginal;
+  nodes.splice(insertAt, 0, ...block);
+  return true;
+}
+
+interface DraggedBlock {
+  id: QueryableNode['id'];
+  fromIdx: number;
+  endIdx: number;
+  sourceDepth: number;
+}
+
+/** Moves 2+ subtrees (identified by `draggedIds`, in whatever order the caller selected them)
+ * to a new position relative to `targetId`, as one contiguous combined block, preserving each
+ * dragged subtree's own internal structure and RELATIVE document order (re-sorted by original
+ * position before processing, regardless of selection order) but not necessarily their
+ * original adjacency to each other. Same `mode` semantics as `moveNodeBlockCore`. Rejects the
+ * move (returns `null`, `nodes` unchanged) if: fewer than 2 valid dragged ids remain after
+ * filtering out any not found; `mode!=='end'` and `targetId` is itself one of the dragged ids;
+ * `targetId` isn't found; or `targetId` is inside ANY dragged block's own subtree. On success,
+ * returns the subset of `draggedIds` that still exist post-move (matching the original's
+ * `multiSelectedIds` recomputation) — always all of them in practice, since ids are stable
+ * across the internal splice operations, but recomputed rather than assumed, exactly as the
+ * original did. Mutates `nodes` in place; does NOT call `rebuildParentIds()` or touch any
+ * selection state itself — see moveNodeBlockCore's own comment for why. */
+export function moveMultipleNodeBlocksCore(
+  nodes: QueryableNode[],
+  draggedIds: QueryableNode['id'][],
+  targetId: QueryableNode['id'],
+  mode: DropMode = 'below'
+): QueryableNode['id'][] | null {
+  if (!draggedIds || draggedIds.length < 2) return null;
+  const draggedSet = new Set(draggedIds);
+  if (mode !== 'end' && draggedSet.has(targetId)) return null;
+  // Extract every dragged block's current position/subtree BEFORE any removal, in document order.
+  const blocks: DraggedBlock[] = draggedIds
+    .map((id): DraggedBlock | null => {
+      const idx = getIndex(nodes, id);
+      return idx < 0 ? null : { id, fromIdx: idx, endIdx: getSubtreeEnd(nodes, idx), sourceDepth: nodes[idx].depth };
+    })
+    .filter((b): b is DraggedBlock => b !== null)
+    .sort((a, b) => a.fromIdx - b.fromIdx);
+  if (blocks.length < 2) return null;
+  if (mode !== 'end') {
+    const targetIdxOriginal = getIndex(nodes, targetId);
+    if (targetIdxOriginal < 0) return null;
+    // Target can't be a descendant of any dragged block either — same guard moveNodeBlockCore
+    // applies for the single-node case, checked here against every block.
+    if (blocks.some((b) => isDescendantIndex(nodes, targetIdxOriginal, b.fromIdx))) return null;
+  }
+  const copies = blocks.map((b) => ({ ...b, copy: nodes.slice(b.fromIdx, b.endIdx).map((n) => ({ ...n })) }));
+  // Remove last-to-first so earlier blocks' indexes stay valid while later ones are spliced out.
+  for (let i = copies.length - 1; i >= 0; i--) nodes.splice(copies[i].fromIdx, copies[i].endIdx - copies[i].fromIdx);
+  let insertAt: number;
+  let newDepth: number;
+  if (mode === 'end') {
+    insertAt = nodes.length;
+    newDepth = 0;
+  } else {
+    const tIdxNow = getIndex(nodes, targetId); // ids are stable across splice, so re-resolve post-removal
+    if (mode === 'above') {
+      insertAt = tIdxNow;
+      newDepth = nodes[tIdxNow].depth;
+    } else if (mode === 'below') {
+      insertAt = getSubtreeEnd(nodes, tIdxNow);
+      newDepth = nodes[tIdxNow].depth;
+    } else {
+      insertAt = tIdxNow + 1;
+      newDepth = nodes[tIdxNow].depth + 1;
+    }
+  }
+  const combined: QueryableNode[] = [];
+  copies.forEach((b) => {
+    const depthDelta = newDepth - b.sourceDepth;
+    b.copy.forEach((n) => {
+      combined.push({ ...n, depth: Math.max(0, n.depth + depthDelta) });
+    });
+  });
+  nodes.splice(insertAt, 0, ...combined);
+  return draggedIds.filter((id) => getIndex(nodes, id) >= 0);
 }
