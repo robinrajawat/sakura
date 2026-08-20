@@ -1,6 +1,6 @@
 # Sakura: from single-file HTML to a real codebase
 
-**Status:** Phase 0 and Phase 1 (partial) complete. Phases 2–5 are still future work.
+**Status:** Phase 0 and Phase 1 complete. Phases 2–5 are still future work.
 
 ## Why
 
@@ -143,37 +143,46 @@ firestore.rules             — unchanged, deployed exactly as today (manual
 
 **Phase 0 — tooling scaffold, zero behavior change. (Done.)**
 
-**Phase 1 — pure, leaf utilities. (Done — this commit.)**
-Extracted three functions, each with full unit-test parity against a pinned copy of the
-original: `escapeHtml` (index.html's `esc()`, used ~183 times — the highest-value, most
-security-relevant target), `generateId` (unifies `genDocId`/`genTemplateId`/`mnUid`, three
-near-identical copies, into one parameterized function), `formatRelativeTime` (needed one
-minimal addition — an injectable `now` parameter, defaulting to `Date.now()` — since the
+**Phase 1 — pure, leaf utilities. (Done.)**
+Two batches. First: `escapeHtml` (index.html's `esc()`, used ~183 times — the highest-value,
+most security-relevant target), `generateId` (unifies `genDocId`/`genTemplateId`/`mnUid`,
+three near-identical copies, into one parameterized function), `formatRelativeTime` (needed
+one minimal addition — an injectable `now` parameter, defaulting to `Date.now()` — since the
 original calls `Date.now()` internally, making it untestable without either mocking global
 time or a flaky real-clock wait; every real call site still calls it with one argument,
-unaffected).
+unaffected). Second: the complete pure dependency chain behind Markdown export —
+`stripSemanticMarkers`/`getNodePlainText` (fully pure string transforms, no changes needed at
+all), `computeOutlineNumbers` and `serializeMarkdown` (both needed their implicit global-state
+reads — the `outlineNumbering` user-preference toggle, and the live `nodes` array default —
+turned into explicit, required parameters; unlike the clock injection above, no default was
+added for `outlineNumbering`, since there's no universally-correct default for a user
+preference the way "the current time" is for a clock, and guessing one would risk silently
+diverging from the app's actual current setting).
 
-**Important: none of these are wired into index.html/hub.html yet.** Production behavior is
-unchanged — verified via an empty `git diff` against both files. This is deliberate, not an
-oversight: the live app is a classic (non-module) `<script>`, executing synchronously in
-document order. A `<script type="module">` is always deferred (runs after parsing, like
-`defer`), so simply adding a module `<script>` importing these utilities and assigning them
-to `window` would NOT make them available in time for the classic script's own top-to-bottom
-execution — they'd be `undefined` at every one of the 183 call sites until the deferred module
-happened to run, which is too late. Solving this properly (most likely: converting the main
-script to `type="module"` itself, a bigger, separately-tested step, since that also changes
-top-level `let`/`function` scoping semantics from global to module-scoped) is real
-infrastructure work belonging to its own deliberate phase — not something to bolt on
-piecemeal, function by function, during extraction. Until then, Phase 1's value is what it
-already provides: a verified-correct, fully typed, fully tested canonical implementation
-ready to become the real one the moment cutover happens, plus the extraction/test
-methodology now proven on real code instead of only placeholders.
+Deliberately NOT extracted in this phase: `serializeOpml`, despite looking like a natural
+next target — it calls `getMeta()`, which reads live DOM (`el('header-title')`), so it isn't
+actually a pure leaf function without a real signature change to accept the title as a
+parameter too. Left for a later pass rather than force-fit into "pure, leaf" scope it doesn't
+cleanly meet.
 
-Still open within Phase 1 (not done this pass, real candidates for a future session):
-OPML/Markdown/plain-text export converters (larger, more logic per function, worth their own
-focused pass with equally thorough equivalence tests) and a few other small pure helpers
-noticed along the way but not yet inventoried exhaustively.
+**Important: none of Phase 1's extracted code is wired into index.html/hub.html yet.**
+Production behavior is unchanged — verified via an empty `git diff` against both files across
+every commit in this phase. This is deliberate, not an oversight: the live app is a classic
+(non-module) `<script>`, executing synchronously in document order. A `<script type="module">`
+is always deferred (runs after parsing, like `defer`), so simply adding a module `<script>`
+importing these utilities and assigning them to `window` would NOT make them available in
+time for the classic script's own top-to-bottom execution — they'd be `undefined` at every
+call site until the deferred module happened to run, which is too late. Solving this properly
+(most likely: converting the main script to `type="module"` itself, a bigger, separately-
+tested step, since that also changes top-level `let`/`function` scoping semantics from global
+to module-scoped) is real infrastructure work belonging to its own deliberate phase — not
+something to bolt on piecemeal, function by function, during extraction. Until then, Phase
+1's value is what it already provides: verified-correct, fully typed, fully tested canonical
+implementations ready to become the real ones the moment cutover happens, plus the
+extraction/test methodology now proven across two real batches instead of only placeholders.
 
+5 utility files, 53 unit tests total (verified passing), each backed by a pinned oracle copy
+of the actual current index.html implementation asserting exact behavioral equivalence.
 **Phase 2 — state consolidation.**
 Replace the scattered `let`s with typed state modules, one domain at a time.
 Purely mechanical — behavior must stay identical, verified against the
