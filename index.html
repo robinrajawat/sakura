@@ -10287,6 +10287,8 @@ function applyTabSnapshot(tab){
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
   if(typeof startPresenceTrackingIfShared==='function')startPresenceTrackingIfShared(tab.docId);
+  if(sharedDocMeta[tab.docId]){ if(typeof startSharedDocRealtimeSyncIfNeeded==='function')startSharedDocRealtimeSyncIfNeeded(tab.docId); }
+  else if(typeof stopSharedDocRealtimeSync==='function')stopSharedDocRealtimeSync();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   const pane=el('editor-pane'); const restoreScroll=tab.scrollTop||0;
   if(pane){ try{ if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>{ try{pane.scrollTop=restoreScroll}catch(e){} }); else pane.scrollTop=restoreScroll; }catch(e){} }
@@ -10585,6 +10587,7 @@ function clearToNoDocumentState(){
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
   if(typeof stopPresenceTracking==='function')stopPresenceTracking();
+  if(typeof stopSharedDocRealtimeSync==='function')stopSharedDocRealtimeSync();
 }
 function startupEnsureBlankDoc(){
   const id=genDocId();
@@ -13079,7 +13082,7 @@ function updateAccountUI(user){
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
   // know "a user just became signed in" rather than repeating the hook at each call site.
   if(user){ ensureUserProfile(user); startNotificationsListener(); }
-  else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; if(typeof stopPresenceTracking==='function')stopPresenceTracking(); }
+  else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; if(typeof stopPresenceTracking==='function')stopPresenceTracking(); if(typeof stopSharedDocRealtimeSync==='function')stopSharedDocRealtimeSync(); }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
@@ -14208,6 +14211,20 @@ document.addEventListener('click',e=>{ if(notifMenuOpen&&!e.target.closest('#not
 const PRESENCE_HEARTBEAT_MS=20000;
 const PRESENCE_STALE_MS=45000;
 let presenceHeartbeatTimer=null;
+// _sharedDocUnsub/_sharedDocUnsubId (used by startSharedDocRealtimeSyncIfNeeded/
+// stopSharedDocRealtimeSync, defined much further down near the cross-tab-banner code) are
+// declared HERE rather than next to those functions deliberately: clearToNoDocumentState calls
+// stopSharedDocRealtimeSync() during early startup (restoreOpenTabsOnStartup), well before a
+// `let` declared later in this same top-level script would have executed — hitting exactly the
+// same "Cannot access '<name>' before initialization" TDZ crash this codebase already has to
+// guard against elsewhere (see markMetaChanged's own try/catch for FOLDERS_KEY). A `typeof fn===
+// 'function'` guard at the call site doesn't help here: function declarations are always fully
+// hoisted regardless of position, so the guard passes and the call proceeds — it's the `let`
+// bindings the function body reads that are still in their dead zone. Declaring them this early
+// (verified via testing to run before that boot path) avoids the crash without needing a
+// try/catch at every call site.
+let _sharedDocUnsub=null;
+let _sharedDocUnsubId=null;
 let presenceUnsub=null;
 let presenceDocId=null; // which doc the heartbeat+listener above are currently tracking, if any
 function presenceOwnerUidFor(docId){ return sharedDocMeta[docId]?.ownerUid||(currentUser?currentUser.uid:null); }
@@ -28893,6 +28910,59 @@ function reloadCurrentDocFromOtherTab(){
   applyTabSnapshot(fresh); // also hides the banner
   showToast('Reloaded with the latest version from the other tab');
 }
+
+// === Realtime sync for a document SHARED TO the current user ===
+// startRealtimeSync (Phase 3, above) only listens to users/{currentUser.uid}/docs — documents
+// this account OWNS. A document someone else shared TO this account lives under THEIR uid, and
+// openSharedDocument is a one-time fetch, not a subscription (see its own and
+// applyIncomingDocData's comments) — so previously, if the owner or another editor changed a
+// shared document while you had it open, you'd never find out short of closing and reopening
+// it. This adds a SINGLE-document listener (deliberately not a whole-collection one — the
+// sharedWith-based Firestore rules only grant get/onSnapshot on this one doc, never list access
+// to the owner's entire docs collection) for whichever shared document is the currently active
+// tab, reusing the exact cross-tab banner UI already built for the same-account-different-
+// device case just above: on a genuine remote change, the fresh content is written to
+// localStorage only (never the live `nodes` in memory — same don't-clobber-unsaved-edits
+// reasoning as applyIncomingDocData's currentDocId branch) and the existing "Reload latest"
+// banner appears; nothing is silently overwritten out from under an active edit. Known,
+// documented gap (matching applyIncomingDocData's own): a shared document open in a
+// BACKGROUND tab (not the active one) doesn't get this live treatment — only the active tab is
+// watched, to avoid running one Firestore listener per open shared tab for what's a much rarer
+// case than "the document I'm actually looking at just changed".
+// (_sharedDocUnsub/_sharedDocUnsubId themselves are declared much earlier in the script,
+// alongside the presence state — see that declaration's own comment for why.)
+function stopSharedDocRealtimeSync(){
+  if(_sharedDocUnsub){ try{_sharedDocUnsub()}catch(e){} _sharedDocUnsub=null; }
+  _sharedDocUnsubId=null;
+}
+function startSharedDocRealtimeSyncIfNeeded(docId){
+  if(_sharedDocUnsubId===docId)return; // already watching this exact document
+  stopSharedDocRealtimeSync();
+  if(!currentUser||!docId)return;
+  const meta=sharedDocMeta[docId]; if(!meta)return; // only for docs shared TO this account, not owned by it
+  _sharedDocUnsubId=docId;
+  let firstSnapshot=true; // Firestore's own first callback is a catch-up snapshot matching what openSharedDocument already fetched, not a live change — same pattern as startRealtimeSync's own _docsFirstSnapshot guard
+  loadFirestoreMods().then(({mod,db})=>{
+    if(_sharedDocUnsubId!==docId)return; // switched to a different tab before this resolved
+    _sharedDocUnsub=mod.onSnapshot(mod.doc(db,'users',meta.ownerUid,'docs',docId),snap=>{
+      const isFirst=firstSnapshot; firstSnapshot=false;
+      if(isFirst||!snap.exists())return;
+      const cloud=snap.data();
+      const cloudTs=Number(cloud.updatedAt)||0;
+      if(_lastPushedTs['doc:'+docId]===cloudTs)return; // our own echo — this account has editor access and just pushed this exact write
+      if(docId!==currentDocId)return; // switched tabs before this arrived — see the background-tab gap noted above
+      const {updatedAt,...docData}=cloud;
+      localStorage.setItem(docKey(docId),JSON.stringify(docData));
+      if(crossTabWarningDocId!==currentDocId){
+        crossTabWarningDocId=currentDocId;
+        const who=cloud.lastEditedByDisplayName||cloud.lastEditedByEmail||'someone else';
+        const txt=el('cross-tab-banner-text'); if(txt)txt.textContent='This document was just updated by '+who+'.';
+        showCrossTabWarning();
+      }
+    },err=>console.warn('[sakura] shared-doc realtime listener error:',err));
+  }).catch(e=>console.warn('[sakura] could not start shared-doc realtime sync:',e));
+}
+
 window.addEventListener('storage', e=>{
   if(!e.key)return; // some browsers fire a no-key event for localStorage.clear() elsewhere — nothing actionable here
   if(e.key===PREFS_KEY){
