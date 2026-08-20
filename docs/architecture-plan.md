@@ -1,14 +1,15 @@
 # Sakura: from single-file HTML to a real codebase
 
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
-plus one narrower re-investigation: outline search matching (`computeSearchMatches`'s pure
-matching logic) turned out extractable once the `core/` pattern existed, even though it was
-originally set aside as `nodes`-coupled. Phase 3 in progress (Templates' storage layer done; AI
-provider prefs storage done; Hub panels/Diagrams/Export and the rest of Templates not yet
-begun — Hub is also blocked on a structural issue: it lives in a separate `hub.html` file, not
-`index.html`). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
-drag-and-drop move, paste, delete, the shared selection/parentId helpers, and outline search
-matching). Phases 4–5 still future work.
+plus two narrower re-investigations: outline search matching and tab cycling/reordering both
+turned out extractable once the `core/` pattern existed, even though both were originally set
+aside as blocked. Phase 3 in progress (Templates' storage layer done; AI provider prefs storage
+done; Hub panels/Diagrams/Export and the rest of Templates not yet begun — Hub is also blocked
+on a structural issue: it lives in a separate `hub.html` file, not `index.html`). `core/` module
+boundary: seven slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete,
+the shared selection/parentId helpers, and outline search matching). One additional Phase 3
+slice: tab cycling/reordering (`src/state/tabOrder.ts` — not `core/`, since it never touches the
+outline `nodes` array). Phases 4–5 still future work.
 
 ## Why
 
@@ -311,8 +312,13 @@ that same full-scope treatment:
   no change here. **Update, after the `core/` boundary existed:** outline
   search's matching logic specifically was re-investigated and turned out to
   be a false blocker — see `src/core/nodeSearch.ts` under the `core/`
-  section below. Tab state and diagram-anchor state remain un-investigated;
-  no claim either way about whether they'd offer the same narrow opening.
+  section below. Tab state was also re-investigated: `cycleOpenTab`/
+  `reorderTab` specifically never touch `nodes` at all (only `openTabs`/
+  `activeTabDocId`), so the original blocking reason didn't apply to them —
+  see `src/state/tabOrder.ts` below. Diagram-anchor state and the rest of
+  tab state (tab-strip drag visuals, `switchDoc`'s own document-loading
+  orchestration) remain un-investigated/genuinely coupled; no claim either
+  way about whether more of either domain would offer the same opening.
 - Secure Storage vault (`vaultCryptoKey`/`decryptedKeyCache`/
   `decryptedGistTokenCache`, AES-GCM/PBKDF2) — initially deferred whole
   (self-contained from `nodes`/`render()`, but read/written from several
@@ -403,6 +409,28 @@ rest of index.html before considering it done — zero unexpected hits). New
 `loadAiPrefs()`/`saveAiPrefs()` wrapper functions against real localStorage (not the extracted
 functions directly, since the wrappers are the actual call path the app uses) and checks the
 same "unrelated distant function still callable" invariant as every other cutover.
+
+**Third slice: `src/state/tabOrder.ts`** — `computeNextTabDocId`/`reorderTabsCore`. Not a
+Phase 3 domain in the original sense (Templates/Hub/Diagrams/Export/AI providers); this is a
+revisit of Phase 2's "tab state," which was set aside early on as `nodes`-coupled alongside
+outline search and diagram-anchor state. That framing turned out not to hold for these two
+functions specifically: `cycleOpenTab`/`reorderTab` only ever read/write `openTabs`/
+`activeTabDocId`, never the outline `nodes` array — the same over-broad-original-judgment shape
+as `nodeSearch.ts`'s revisit of search matching, just in Phase 2 territory rather than `core/`
+(since nothing here is about the outline tree). Both wrapper functions kept their exact original
+names/signatures; the two real call sites (the `Ctrl+Tab` keydown handler, the tab-strip drop
+handler) didn't change. `switchDoc`/`persistOpenTabs`/`renderTabStrip` (real orchestration —
+loading a document's full editor state, localStorage writes, DOM rebuild) stayed hand-written,
+same split as every other slice. 16 new unit tests, all passing first run. One e2e authoring
+mistake caught and fixed before commit: passing a `Set` (inside a fake tab's `collapsedIds`) as
+a `page.evaluate()` argument silently degrades to a plain object across Playwright's
+serialization boundary, causing a real runtime error (`collapsedIds.has is not a function`)
+once `cycleOpenTab` actually loaded that tab via `switchDoc`/`applyTabSnapshot` — fixed by
+constructing the fake tab objects inside the page context instead of passing them in as
+arguments. New `tests/e2e/generated-taborder-smoke.spec.ts` exercises the real, unchanged
+`cycleOpenTab()`/`reorderTab()` wrappers against fully-formed fake tab objects (the same shape
+`loadTabFromStorageObj` produces for a real document), including confirming the reorder persists
+to the real `sakura_open_tabs_v1` localStorage key.
 
 Not yet started in Phase 3: Hub panels, Diagrams, Export, and the rest of the Templates domain
 (rendering, node-array manipulation, sync).
