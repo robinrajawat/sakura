@@ -1,12 +1,14 @@
 # Sakura: from single-file HTML to a real codebase
 
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
-candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
-Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
-boundary started, five slices done (indent/outdent, moveSelected, drag-and-drop move, paste,
-then delete — split turned out to be dead code and was skipped); the shared selection helpers
-(getSelectionRootIndexes/getSelectedIds/rebuildParentIds/clearMultiSelection) not yet attempted.
-Phases 4–5 still future work.
+candidates blocked on core-outline coupling). Phase 3 in progress (Templates' storage layer
+done; AI provider prefs storage done; Hub panels/Diagrams/Export and the rest of Templates not
+yet begun). `core/` module boundary started, five slices done (indent/outdent, moveSelected,
+drag-and-drop move, paste, then delete — split turned out to be dead code and was skipped); the
+shared selection helpers (getSelectionRootIndexes/getSelectedIds/rebuildParentIds/
+clearMultiSelection) were investigated (79 real call sites spanning ~15,000 lines of index.html,
+well outside nodeMutations.ts's territory) and deliberately deferred — not the next slice, see
+below. Phases 4–5 still future work.
 
 ## Why
 
@@ -375,8 +377,31 @@ round-trip against real localStorage and specifically checks that an unrelated, 
 distant function is still callable — the check that would have caught the prior cutover's
 import-statement bug that silently killed the whole script.
 
-Not yet started in Phase 3: Hub panels, Diagrams, Export, AI providers, and the rest of the
-Templates domain (rendering, node-array manipulation, sync).
+Second slice: `src/state/aiProviders.ts` — the AI settings panel's prefs storage
+(`computeLoadedAiPrefs`/`loadAiPrefsCore`/`saveAiPrefsCore`). Scope was narrowed during
+investigation from the originally-planned "AI providers" slice: `getAllAiProviders()`/
+`getAiProviderById()` in index.html are trivial one-line ambient lookups over the
+`AI_BUILTIN_PROVIDERS` const with no real logic to test, so they were left hand-written rather
+than extracted — generator/test overhead for zero bug-surface reduction. The genuinely testable
+part is the stored-JSON parse/validate/merge logic (an unknown/stale stored provider id is
+ignored rather than clamped; a per-provider `modelByProvider` entry overrides a flat `model`
+field when both are present) — that's what got extracted, with `loadAiPrefs()`/`saveAiPrefs()`
+kept as thin hand-written wrappers around it, same split as vault/templatesIndex. Deliberately
+excluded: `syncAiProviderOptions`/`syncAiModelOptions`/`updateAiKeyStatus` (DOM construction,
+same reasoning as `renderNotifList`); the `AI_CURATED_MODELS`-driven model-list rendering (pure
+DOM, no storage). One real bug caught during the gauntlet, not before: the initial
+`loadAiPrefsCore` wrapped only the storage read in `try/catch`, not the `getLocalStorage()` call
+itself — a unit test for "getLocalStorage() throws" failed, fixed by widening the `try` to match
+`saveAiPrefsCore`'s (and `templatesIndex.ts`'s) existing convention of catching from the deps
+call onward. No name collisions this time (checked all 7 module-level identifiers against the
+rest of index.html before considering it done — zero unexpected hits). New
+`tests/e2e/generated-aiproviders-smoke.spec.ts` round-trips through the real, unchanged
+`loadAiPrefs()`/`saveAiPrefs()` wrapper functions against real localStorage (not the extracted
+functions directly, since the wrappers are the actual call path the app uses) and checks the
+same "unrelated distant function still callable" invariant as every other cutover.
+
+Not yet started in Phase 3: Hub panels, Diagrams, Export, and the rest of the Templates domain
+(rendering, node-array manipulation, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,

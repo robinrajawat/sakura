@@ -196,6 +196,19 @@ initTemplatesIndexState({
 `.trim()
   },
   {
+    name: 'aiProviders',
+    sourceFile: 'src/state/aiProviders.ts',
+    testFile: 'tests/unit/aiProvidersState.test.ts',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient global, referenced directly since this code shares the classic script's own
+// scope at runtime: localStorage.
+initAiProvidersState({
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
+});
+`.trim()
+  },
+  {
     name: 'nodeMutations',
     sourceFile: 'src/core/nodeMutations.ts',
     testFile: 'tests/unit/nodeMutations.test.ts',
