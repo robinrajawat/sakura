@@ -289,6 +289,26 @@ function todoUid(){return generateId('t',6);}
 function jnUid(){return generateId('jn',6);}
 function subUid(){return generateId('sub',6);}
 `.trim()
+  },
+  {
+    // First Hub FEATURE-DOMAIN slice — see this module's own header for why hubGenerateId
+    // (the infrastructure pilot above) doesn't count as one.
+    name: 'hubTodos',
+    sourceFile: 'src/state/hubTodos.ts',
+    testFile: 'tests/unit/hubTodos.test.ts',
+    targetFile: 'hub.html',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares hub.html's own classic
+// script scope at runtime: localStorage, bumpSyncTimestamp, pushMetaToCloud, todoUid.
+initHubTodosState({
+  getLocalStorage:function(){ try{ return localStorage; }catch(e){ return null; } },
+  bumpSyncTimestamp:function(metaKey){ bumpSyncTimestamp(metaKey); },
+  pushMetaToCloud:function(metaKey,value){ pushMetaToCloud(metaKey,value); },
+  now:function(){ return Date.now(); },
+  generateTodoId:function(){ return todoUid(); }
+});
+`.trim()
   }
 ];
 

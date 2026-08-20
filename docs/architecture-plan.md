@@ -4,18 +4,18 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done; AI provider prefs storage done; Diagrams/Export and the
-rest of Templates not yet begun). `core/` module boundary: seven slices done (indent/outdent,
-moveSelected, drag-and-drop move, paste, delete, the shared selection/parentId helpers, and
-outline search matching). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
-diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not
-`core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
-structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
-HTML files (`targetFile` per block, collision-checking scoped per file); a first pilot block
-(`hubGenerateId`) is live in `hub.html`, reusing the already-tested `generateId.ts` from Phase 1.
-Hub's own feature domains (todos/meetings/journal/library) are not yet extracted — only the
-generator infrastructure and this one proof-of-concept slice exist so far. Phases 4–5 still
-future work.
+progress (Templates' storage layer done; AI provider prefs storage done; **Hub's first
+feature-domain slice done** — To-Dos creation/load/save (`src/state/hubTodos.ts`, targeting
+`hub.html`); Diagrams/Export and the rest of Templates/Hub not yet begun). `core/` module
+boundary: seven slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete,
+the shared selection/parentId helpers, and outline search matching). Two additional Phase
+2/3-adjacent slices: tab cycling/reordering and diagram-anchor/orphan logic
+(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither touches the
+outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
+`scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
+block, collision-checking scoped per file); first proven with an infrastructure-only pilot
+(`hubGenerateId`, reusing Phase 1's `generateId.ts`), then a real feature-domain slice
+(`hubTodos`). Phases 4–5 still future work.
 
 ## Why
 
@@ -498,8 +498,29 @@ extending it to `hub.html` would need its own pass, since `hub.html`'s script is
 the 1MB-minimum heuristic that guard uses for `index.html` and naively reusing that threshold
 would make it fail immediately.
 
-Not yet started in Phase 3: Hub's own feature domains (see above), Diagrams, Export, and the
-rest of the Templates domain (rendering, node-array manipulation, sync).
+**First Hub feature-domain slice: `src/state/hubTodos.ts`** — `createTodo`/`loadTodosLocalCore`/
+`saveTodosCore`, targeting `hub.html`. Unlike `hubGenerateId` (pure infrastructure proof, zero
+new logic), this is a genuine feature-domain extraction: the To-Dos panel's item-creation
+factory and its localStorage load/save layer, using the same dependency-injected pattern as
+`templatesIndex.ts`/`aiProviders.ts` (`getLocalStorage`/`bumpSyncTimestamp`/`pushMetaToCloud`
+injected, with `bumpSyncTimestamp`/`pushMetaToCloud` themselves real ambient hub.html globals —
+Hub's own lightweight per-key cloud-sync mechanism, distinct from index.html's Firestore-doc
+sync). `findTodo` (a trivial one-line lookup) stayed hand-written, same reasoning as
+`getAllAiProviders` staying out of `aiProviders.ts`; `renderTodos` and the swipe-list DOM wiring
+also stayed hand-written. Two real bugs caught by the unit tests before commit, not before: both
+`loadTodosLocalCore` and `saveTodosCore` initially called `getLocalStorage()` *outside* their own
+`try` block (an initial "throws on access" test failed for each) — the same class of mistake as
+`aiProviders.ts`'s earlier `loadAiPrefsCore` bug, fixed the same way (widen the `try` to wrap the
+deps call too). 12 new unit tests, all passing after those two fixes. New
+`tests/e2e/generated-hubtodos-smoke.spec.ts` round-trips through the real, unchanged
+`newTodo()`/`saveTodos()`/`loadTodosLocal()` wrapper functions against real localStorage in
+`hub.html`'s own script scope, plus the standard distant-function-still-callable check.
+
+Not yet started: the rest of Hub's To-Dos domain (subtasks, repeat-date advancement, due-date
+reminder checking), and Hub's other three feature domains entirely (meetings, journal, library).
+
+Not yet started in Phase 3: the rest of Hub's feature domains (see above), Diagrams, Export, and
+the rest of the Templates domain (rendering, node-array manipulation, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
