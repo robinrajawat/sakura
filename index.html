@@ -13033,48 +13033,108 @@ function loadFirebaseMods(){
   })();
   return _firebaseModsPromise;
 }
-// === Feedback admin access ===
-// The hardcoded fallback email allowed to read/triage /feedback in-app (see firestore.rules) --
-// kept as a bootstrap/fallback rather than the only source of truth: isCollectionAdmin below is
-// the primary, data-driven path (an /admins/{uid} doc), matching how the rest of this app's
-// access control works (cloud sync is always "your own uid," never a hardcoded identity). Keeping
-// this constant as an OR, not a replacement, means this account can never get locked out even if
-// the admins collection is empty, misconfigured, or a rules deploy lags behind.
-const FEEDBACK_ADMIN_EMAIL='robinsinghrajawat@gmail.com';
-function isFeedbackAdmin(user){return !!user&&!!user.email&&user.email.toLowerCase()===FEEDBACK_ADMIN_EMAIL;}
-// Data-driven admin check: does an /admins/{uid} doc exist for this person? See firestore.rules
-// for the collection's own rule (a user may only read their OWN doc, existence-only, no listing).
-async function checkIsCollectionAdmin(uid){
-  if(!uid)return false;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    const snap=await mod.getDoc(mod.doc(db,'admins',uid));
-    return snap.exists();
-  }catch(e){return false;}
+// ===== Admin status (feedback inbox access) =====
+// State and logic live in src/state/admin.ts (Phase 2, docs/architecture-plan.md), generated
+// into the block below.
+
+/* GENERATED:admin:START — DO NOT EDIT BY HAND. Source of truth: src/state/admin.ts (tests: tests/unit/adminState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Admin status (feedback-inbox access control).
+ *
+ * Phase 2 (docs/architecture-plan.md) — third state-consolidation slice, same generator
+ * pipeline as src/state/presence.ts and src/state/notifications.ts.
+ *
+ * Two independent checks combine into `isAdmin`, kept as an OR rather than either replacing
+ * the other: a hardcoded-email fast path (`isFeedbackAdmin`, instant, zero flicker for the one
+ * account it matches) and a data-driven Firestore check (`checkIsCollectionAdmin`, async,
+ * starts false and only ever flips true once the read resolves — so it only affects a
+ * hypothetical second admin, never the hardcoded account's own experience, and that account
+ * can never get locked out even if the admins collection is empty, misconfigured, or a rules
+ * deploy lags behind). `_adminCheckToken` guards against a stale async result from a
+ * since-superseded sign-in landing after a newer one (rapid sign-out/sign-in).
+ *
+ * Naming note (learned from the presence/notifications collision, see PR #6): `isAdmin` and
+ * `_adminCheckToken` are kept UNEXPORTED here, matching their original names exactly. In this
+ * splicing model that isn't real encapsulation — every top-level declaration in every generated
+ * block still shares one script scope at runtime regardless of the TypeScript `export` keyword,
+ * which only affects whether Vitest can import a symbol directly and only matters for the
+ * cross-block collision check. It's used here specifically so index.html's one external
+ * `isAdmin` read keeps working as a bare identifier with zero call-site changes, exactly as
+ * before — `isAdminNow()` is exported separately for tests to read the same state.
+ */
+// This account can never get locked out of the feedback inbox even if the `admins` Firestore
+// collection is empty, misconfigured, or a rules deploy lags behind — see isFeedbackAdmin.
+const FEEDBACK_ADMIN_EMAIL = 'robinsinghrajawat@gmail.com';
+let adminDeps = null;
+let isAdmin = false;
+let _adminCheckToken = 0;
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initAdminState(injected) {
+    adminDeps = injected;
+    isAdmin = false;
+    _adminCheckToken = 0;
 }
-// isAdmin combines both checks. The email check is instant (zero flicker for this account); the
-// collection check is async and starts false, only ever flipping true after the Firestore read
-// resolves — so it only affects a hypothetical second admin, never this account's own experience.
-// A monotonically increasing token guards against a stale async result from a since-superseded
-// sign-in landing after a newer one (e.g. rapid sign-out/sign-in).
-let isAdmin=false;
-let _adminCheckToken=0;
-function refreshAdminStatus(user){
-  isAdmin=isFeedbackAdmin(user);
-  updateFeedbackAdminUI();
-  const token=++_adminCheckToken;
-  if(!user)return;
-  checkIsCollectionAdmin(user.uid).then(result=>{
-    if(token!==_adminCheckToken||!result)return;
-    isAdmin=true;
+function requireAdminDeps() {
+    if (!adminDeps)
+        throw new Error('admin state used before initAdminState() was called');
+    return adminDeps;
+}
+/** Pure: the hardcoded-email fast path. Extracted unchanged from the original `isFeedbackAdmin()`. */
+function isFeedbackAdmin(user) {
+    return !!user && !!user.email && user.email.toLowerCase() === FEEDBACK_ADMIN_EMAIL;
+}
+/**
+ * Data-driven admin check: does an /admins/{uid} doc exist for this person? See firestore.rules
+ * for the collection's own rule (a user may only read their OWN doc, existence-only, no listing).
+ */
+async function checkIsCollectionAdmin(uid) {
+    if (!uid)
+        return false;
+    const d = requireAdminDeps();
+    try {
+        const { mod, db } = await d.loadFirestoreMods();
+        const snap = await mod.getDoc(mod.doc(db, 'admins', uid));
+        return snap.exists();
+    }
+    catch {
+        return false;
+    }
+}
+/** For tests (and any future external reader) — mirrors the bare `isAdmin` this module also declares. */
+function isAdminNow() {
+    return isAdmin;
+}
+function updateFeedbackAdminUI() {
+    const d = requireAdminDeps();
+    const sec = d.getAdminSectionElement();
+    if (sec) {
+        sec.style.display = isAdmin ? '' : 'none';
+        sec.dataset.featureHidden = isAdmin ? '' : '1';
+    }
+    if (!isAdmin)
+        d.closeFeedbackInboxModal();
+}
+function refreshAdminStatus(user) {
+    isAdmin = isFeedbackAdmin(user);
     updateFeedbackAdminUI();
-  });
+    const token = ++_adminCheckToken;
+    if (!user)
+        return;
+    checkIsCollectionAdmin(user.uid).then((result) => {
+        if (token !== _adminCheckToken || !result)
+            return;
+        isAdmin = true;
+        updateFeedbackAdminUI();
+    });
 }
-function updateFeedbackAdminUI(){
-  const sec=el('settings-section-account-admin');
-  if(sec){ sec.style.display=isAdmin?'':'none'; sec.dataset.featureHidden=isAdmin?'':'1'; }
-  if(!isAdmin)closeFeedbackInboxModal();
-}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+initAdminState({
+  loadFirestoreMods:()=>loadFirestoreMods(),
+  getAdminSectionElement:()=>el('settings-section-account-admin'),
+  closeFeedbackInboxModal:()=>closeFeedbackInboxModal()
+});
+/* GENERATED:admin:END */
 function updateAccountUI(user){
   currentUser=user;
   refreshAdminStatus(user);
