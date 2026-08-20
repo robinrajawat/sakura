@@ -3,9 +3,8 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
 Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
-boundary started, three slices done (indent/outdent, moveSelected, then drag-and-drop move — the
-highest-complexity slice yet: 4 modes, depth remapping, a descendant guard, and a multi-block
-reordering algorithm); paste, split, delete not yet attempted. Phases 4–5 still future work.
+boundary started, four slices done (indent/outdent, moveSelected, drag-and-drop move, then paste
+insertion); split, delete not yet attempted. Phases 4–5 still future work.
 
 ## Why
 
@@ -497,6 +496,43 @@ multi-block drop — real array order, depths, undo-stack growth, `dragState` re
 Not yet started: paste, split, delete — still ahead, likely in that order — and the shared
 selection-computation helpers (`getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds`/
 `clearMultiSelection`) every slice so far has deliberately left hand-written.
+
+**Fourth slice: paste insertion.** `computePasteOffsetDepth`/`insertParsedNodesCore`, added to
+the same `src/core/nodeMutations.ts` file. Covers the depth-offset math and array-insertion
+logic `pasteParsedNodes` needs to land pasted content as siblings of the node being edited,
+rather than corrupting the tree structure by inserting depth-0 nodes mid-document.
+
+Deliberately excludes `makeNode()` (node object construction — mints a fresh id from a global
+`nextId` counter, 20+ other callers, a real side effect well outside this slice's scope) and the
+decision-log/diagram `clipExtras` handling in `pasteParsedNodes` (a completely separate feature
+domain, not part of the core outline engine at all). The core functions take already-built node
+objects as input rather than building them, the same "pure functions receive fully-formed data,
+orchestration wrappers do the side-effecting construction" split used for `makeNode` throughout
+this module already (`indentSelected`/`moveSelected`/`handleDrop` never built node objects
+either).
+
+One real substitution worth noting for future slices: `insertParsedNodesCore` uses
+`nodes.splice(0, nodes.length, ...mapped)` for the empty-document case, not the original's
+`nodes=mapped` reassignment — a plain array parameter can't reassign the caller's own variable
+binding the way a global assignment can, so this achieves the identical end state through the
+same in-place-mutation convention every other function in this module already uses. Verified
+with a dedicated test that the array reference itself is preserved, not just the resulting
+contents — this is the first slice where the original code did a full reassignment rather than
+an in-place splice, and it won't be the last time this substitution is needed.
+
+Also confirmed a redundancy before relying on it, the same discipline as `canMoveUpAt`'s
+redundant `idx===0` guard: the original's explicit `selectedId===null` check is mathematically
+redundant with `insertIdx<0`, since node ids are always non-null numbers (verified via grep) —
+`computePasteOffsetDepth` depends only on `insertIdx`, not `selectedId` itself.
+
+8 new oracle-backed unit tests. New e2e coverage exercises the full orchestration path — a
+depth-offset paste while editing a nested node (confirming pasted content lands at the right
+depth), checking `pushUndo`/`markDirty`/`rebuildParentIds`/`render` AND the full selection-state
+reset (`selectedId`/`selectAllMode`/`multiSelectedIds`/`selectionAnchorId`/`editingId`/
+`flashNodeId`) — plus the empty-document replace case through the real orchestration wrapper.
+
+Not yet started: split, delete — still ahead — and the shared selection-computation helpers
+every slice so far has deliberately left hand-written.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
