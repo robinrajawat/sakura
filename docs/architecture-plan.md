@@ -1,15 +1,14 @@
 # Sakura: from single-file HTML to a real codebase
 
-**Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
-candidates blocked on core-outline coupling). Phase 3 in progress (Templates' storage layer
-done; AI provider prefs storage done; Hub panels/Diagrams/Export and the rest of Templates not
-yet begun — Hub is also blocked on a structural issue: it lives in a separate `hub.html` file,
-not `index.html`, so extracting it would mean standing up generator infra for a second file).
-`core/` module boundary: six slices done (indent/outdent, moveSelected, drag-and-drop move,
-paste, delete, then the shared selection/parentId helpers — `getSelectionRootIndexes`/
-`getSelectedIds`/`rebuildParentIds` — which turned out to be a small, low-risk slice once
-correctly scoped; see below for why the earlier "79 call sites" framing was too pessimistic).
-Phases 4–5 still future work.
+**Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
+plus one narrower re-investigation: outline search matching (`computeSearchMatches`'s pure
+matching logic) turned out extractable once the `core/` pattern existed, even though it was
+originally set aside as `nodes`-coupled. Phase 3 in progress (Templates' storage layer done; AI
+provider prefs storage done; Hub panels/Diagrams/Export and the rest of Templates not yet
+begun — Hub is also blocked on a structural issue: it lives in a separate `hub.html` file, not
+`index.html`). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
+drag-and-drop move, paste, delete, the shared selection/parentId helpers, and outline search
+matching). Phases 4–5 still future work.
 
 ## Why
 
@@ -309,7 +308,11 @@ that same full-scope treatment:
   `render()` directly, which doesn't have a stable module boundary yet.
   These are more honestly Phase 3 (or a "core outline engine" slice that
   doesn't exist yet in this plan) than Phase 2 leaf state. Still set aside —
-  no change here.
+  no change here. **Update, after the `core/` boundary existed:** outline
+  search's matching logic specifically was re-investigated and turned out to
+  be a false blocker — see `src/core/nodeSearch.ts` under the `core/`
+  section below. Tab state and diagram-anchor state remain un-investigated;
+  no claim either way about whether they'd offer the same narrow opening.
 - Secure Storage vault (`vaultCryptoKey`/`decryptedKeyCache`/
   `decryptedGistTokenCache`, AES-GCM/PBKDF2) — initially deferred whole
   (self-contained from `nodes`/`render()`, but read/written from several
@@ -623,6 +626,26 @@ functions directly, plus the standard "unrelated distant function still callable
 
 Not yet attempted for `core/`: nothing else has been identified as a comparably narrow next
 slice — see Phase 3's status above for why Hub/Diagrams/Export don't currently offer one either.
+
+**Seventh slice: `src/core/nodeSearch.ts`** — `computeSearchMatchIds`/`resolveSearchIndex`.
+Revisits a Phase 2 candidate (outline search state) originally set aside as `nodes`-coupled,
+before the `core/` pattern existed to make that coupling tractable. `computeSearchMatches`'s
+actual matching logic (the whole-word-regex / case-sensitive / case-insensitive three-way
+filter over `nodes`) turned out to already be pure and read-only — only the wrapping
+assignments to `searchMatches`/`searchIndex` and the `updateSearchCount()` DOM call needed to
+stay hand-written, same split as every other slice. `escapeRegExpLiteral` (a trivial one-line
+hand-written helper, not itself a generated block, still used elsewhere by `replaceTextInNode`)
+was inlined directly into the new module rather than referenced via `declare function` — that
+ambient-reference pattern has so far only been used for functions from other ALREADY-GENERATED
+blocks (`nodeQueries.ts`'s exports), not hand-written code, and wasn't worth extending for a
+one-liner. One test-authoring mistake caught before commit, not a real bug: an initial test
+asserted `\b` would match around a `$` character, which it can't (`$` isn't a word character, so
+no word-boundary transition exists there) — fixed by picking a test case where the boundary
+genuinely applies. 19 new unit tests, all passing (after that one fix) against a pinned oracle.
+New `tests/e2e/generated-nodesearch-smoke.spec.ts` exercises the real, unchanged
+`computeSearchMatches()` wrapper against a real multi-node tree — including a deliberately
+stale/out-of-range `searchIndex` to prove `resolveSearchIndex`'s reset logic works through the
+real call path, not just in isolation — plus the standard distant-function-still-callable check.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately

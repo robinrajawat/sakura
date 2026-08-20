@@ -209,6 +209,15 @@ initAiProvidersState({
 `.trim()
   },
   {
+    name: 'nodeSearch',
+    sourceFile: 'src/core/nodeSearch.ts',
+    testFile: 'tests/unit/nodeSearch.test.ts',
+    // No production wiring needed — pure functions, no DOM/undo-stack/render side effects. The
+    // one real call site (computeSearchMatches's own wrapper body in index.html) was updated in
+    // the same commit that wired this block in.
+    footer: ''
+  },
+  {
     name: 'nodeSelection',
     sourceFile: 'src/core/nodeSelection.ts',
     testFile: 'tests/unit/nodeSelection.test.ts',
