@@ -209,6 +209,17 @@ initAiProvidersState({
 `.trim()
   },
   {
+    name: 'diagramAnchor',
+    sourceFile: 'src/state/diagramAnchor.ts',
+    testFile: 'tests/unit/diagramAnchor.test.ts',
+    // No production wiring needed — pure functions (reorderDiagramsCore mutates the diagrams
+    // array passed to it, same convention as nodeMutations.ts/tabOrder.ts's own in-place-
+    // mutation pattern; no DOM/undo-stack/render side effects). The four real call sites
+    // (diagramAnchorLabel/reorderDiagramRow/diagramIsOrphaned/diagramNeedsAttention wrapper
+    // bodies in index.html) were updated in the same commit that wired this block in.
+    footer: ''
+  },
+  {
     name: 'tabOrder',
     sourceFile: 'src/state/tabOrder.ts',
     testFile: 'tests/unit/tabOrder.test.ts',
