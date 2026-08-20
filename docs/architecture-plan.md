@@ -1,6 +1,6 @@
 # Sakura: from single-file HTML to a real codebase
 
-**Status:** Phase 0 complete (this commit). Phases 1–5 are still future work.
+**Status:** Phase 0 and Phase 1 (partial) complete. Phases 2–5 are still future work.
 
 ## Why
 
@@ -141,13 +141,38 @@ firestore.rules             — unchanged, deployed exactly as today (manual
 
 ## Migration order — risk-ascending
 
-**Phase 0 — tooling scaffold, zero behavior change. (Done — this commit.)**
+**Phase 0 — tooling scaffold, zero behavior change. (Done.)**
 
-**Phase 1 — pure, leaf utilities.**
-String/date formatting, id generation, HTML escaping, OPML/Markdown
-converters — no DOM access, no dependency on global state. Lowest possible
-risk, establishes the actual extraction mechanics the rest of the migration
-reuses.
+**Phase 1 — pure, leaf utilities. (Done — this commit.)**
+Extracted three functions, each with full unit-test parity against a pinned copy of the
+original: `escapeHtml` (index.html's `esc()`, used ~183 times — the highest-value, most
+security-relevant target), `generateId` (unifies `genDocId`/`genTemplateId`/`mnUid`, three
+near-identical copies, into one parameterized function), `formatRelativeTime` (needed one
+minimal addition — an injectable `now` parameter, defaulting to `Date.now()` — since the
+original calls `Date.now()` internally, making it untestable without either mocking global
+time or a flaky real-clock wait; every real call site still calls it with one argument,
+unaffected).
+
+**Important: none of these are wired into index.html/hub.html yet.** Production behavior is
+unchanged — verified via an empty `git diff` against both files. This is deliberate, not an
+oversight: the live app is a classic (non-module) `<script>`, executing synchronously in
+document order. A `<script type="module">` is always deferred (runs after parsing, like
+`defer`), so simply adding a module `<script>` importing these utilities and assigning them
+to `window` would NOT make them available in time for the classic script's own top-to-bottom
+execution — they'd be `undefined` at every one of the 183 call sites until the deferred module
+happened to run, which is too late. Solving this properly (most likely: converting the main
+script to `type="module"` itself, a bigger, separately-tested step, since that also changes
+top-level `let`/`function` scoping semantics from global to module-scoped) is real
+infrastructure work belonging to its own deliberate phase — not something to bolt on
+piecemeal, function by function, during extraction. Until then, Phase 1's value is what it
+already provides: a verified-correct, fully typed, fully tested canonical implementation
+ready to become the real one the moment cutover happens, plus the extraction/test
+methodology now proven on real code instead of only placeholders.
+
+Still open within Phase 1 (not done this pass, real candidates for a future session):
+OPML/Markdown/plain-text export converters (larger, more logic per function, worth their own
+focused pass with equally thorough equivalence tests) and a few other small pure helpers
+noticed along the way but not yet inventoried exhaustively.
 
 **Phase 2 — state consolidation.**
 Replace the scattered `let`s with typed state modules, one domain at a time.
