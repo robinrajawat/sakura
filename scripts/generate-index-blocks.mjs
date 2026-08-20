@@ -309,6 +309,27 @@ initHubTodosState({
   generateTodoId:function(){ return todoUid(); }
 });
 `.trim()
+  },
+  {
+    // Second Hub feature-domain slice.
+    name: 'hubJournal',
+    sourceFile: 'src/state/hubJournal.ts',
+    testFile: 'tests/unit/hubJournal.test.ts',
+    targetFile: 'hub.html',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares hub.html's own classic
+// script scope at runtime: idbGet, idbSet, bumpSyncTimestamp, pushMetaToCloud, jnUid, todayStr.
+initHubJournalState({
+  idbGet:function(key){ return idbGet(key); },
+  idbSet:function(key,value){ return idbSet(key,value); },
+  bumpSyncTimestamp:function(metaKey){ bumpSyncTimestamp(metaKey); },
+  pushMetaToCloud:function(metaKey,value){ pushMetaToCloud(metaKey,value); },
+  now:function(){ return Date.now(); },
+  today:function(){ return todayStr(); },
+  generateJournalId:function(){ return jnUid(); }
+});
+`.trim()
   }
 ];
 
