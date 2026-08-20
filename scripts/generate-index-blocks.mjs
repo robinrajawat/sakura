@@ -194,6 +194,16 @@ initTemplatesIndexState({
   now:()=>Date.now()
 });
 `.trim()
+  },
+  {
+    name: 'nodeMutations',
+    sourceFile: 'src/core/nodeMutations.ts',
+    testFile: 'tests/unit/nodeMutations.test.ts',
+    // No production wiring needed — these are pure functions (beyond mutating the nodes array
+    // itself; no DOM/undo-stack/render side effects), same reasoning as nodeQueries.ts. Both
+    // real call sites (indentSelected/outdentSelected's own bodies) were updated in the same
+    // commit that wired this block in.
+    footer: ''
   }
 ];
 
