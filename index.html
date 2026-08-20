@@ -14020,136 +14020,281 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('share-dd-menu'
 // ---------- Notifications (generic inbox — share invites today, reusable for anything later) ----------
 // /notifications/{uid}/items/{id} — see firestore.rules for why a share invite can be written by
 // the SENDER directly into the RECIPIENT's inbox despite the owner-only read/update/delete.
-let notifItems=[];
-let _notifUnsub=null;
-let notifMenuOpen=false;
-// Local (device-only) notifications, alongside the Firestore-backed ones above — for events that
-// have nothing to do with document sharing and can happen whether or not you're signed into a
-// Sakura account at all: Cloud Backup (Gist/Drive) is its own GitHub-PAT/Google-OAuth system,
-// entirely independent of Firebase sign-in, and Trash auto-purge runs regardless of sign-in too.
-// Previously several of these failures produced NO durable trace whatsoever — a silent
-// (background) Gist/Drive sync failure deliberately skips its toast, and a Gist conflict only
-// ever wrote into a <div> buried in a Settings sub-panel, invisible unless that exact panel
-// happened to be open. Stored in localStorage (capped, most-recent-first) rather than Firestore,
-// since these are per-device by nature and shouldn't require an account to exist at all.
-const LOCAL_NOTIF_KEY='sakuraLocalNotifs';
-const LOCAL_NOTIF_CAP=30;
-let localNotifItems=[];
-function loadLocalNotifItems(){
-  try{
-    const raw=localStorage.getItem(LOCAL_NOTIF_KEY);
-    localNotifItems=raw?JSON.parse(raw):[];
-    if(!Array.isArray(localNotifItems))localNotifItems=[];
-  }catch(e){ localNotifItems=[]; }
+//
+// State (notifItems, localNotifItems, notifMenuOpen) and business logic live in
+// src/state/notifications.ts (Phase 2, docs/architecture-plan.md), generated into the block
+// below. renderNotifList() just below the generated block is deliberately hand-written, not
+// generated — see that module's file header for why — and calls straight back into the
+// generated block's exported functions (combinedNotifItems, notifText, markNotificationRead,
+// deleteNotification, toggleNotifMenu) exactly as it always has.
+
+/* GENERATED:notifications:START — DO NOT EDIT BY HAND. Source of truth: src/state/notifications.ts (tests: tests/unit/notificationsState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Notifications inbox state (Firestore-backed share/collab notifications, plus a separate
+ * local/device-only channel for backup and sync events — see the header comment this file's
+ * generated output replaces in index.html for why those two channels exist and are merged
+ * for display via `combinedNotifItems()`).
+ *
+ * Phase 2 (docs/architecture-plan.md) — second state-consolidation slice, same pipeline as
+ * src/state/presence.ts: compiled by scripts/generate-index-blocks.mjs and spliced into
+ * index.html between GENERATED:notifications marker comments, sharing the classic script's
+ * own scope at runtime (no window.* indirection, no signature changes at any existing call
+ * site).
+ *
+ * Scope decision, different from presence: `renderNotifList()` — the function that builds the
+ * actual notification-list DOM (many `document.createElement` calls, nested elements, click
+ * handlers) — is deliberately NOT part of this module. It has no state of its own worth
+ * consolidating and no meaningful pure sub-logic to isolate (unlike presence's chip label/
+ * tooltip math), so moving it here would just be relocating hand-written DOM-building code
+ * without making anything more testable — the actual value in this extraction is the state
+ * machine and the business logic around it (what merges with what, what counts as read, what
+ * a given notification says). `renderNotifList` stays exactly where it is in index.html,
+ * calling this module's exported functions (`combinedNotifItems`, `notifText`,
+ * `markNotificationRead`, `deleteNotification`, `toggleNotifMenu`) exactly as it always has —
+ * so its own body needs zero changes. This module treats it as an injected dependency
+ * (`renderNotifList` on `NotifDeps`) so the handful of internal call sites that used to call it
+ * directly (after pushing a local notification, after the Firestore listener fires, after
+ * deleting/clearing) still trigger it, without this module needing to own DOM construction.
+ */
+const LOCAL_NOTIF_KEY = 'sakuraLocalNotifs';
+const LOCAL_NOTIF_CAP = 30;
+let notifDeps = null;
+let notifItems = [];
+let _notifUnsub = null;
+let notifMenuOpen = false;
+let localNotifItems = [];
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initNotificationsState(injected) {
+    notifDeps = injected;
+    notifItems = [];
+    _notifUnsub = null;
+    notifMenuOpen = false;
+    localNotifItems = [];
 }
-function saveLocalNotifItems(){
-  try{ localStorage.setItem(LOCAL_NOTIF_KEY,JSON.stringify(localNotifItems.slice(0,LOCAL_NOTIF_CAP))); }catch(e){}
+function requireNotifDeps() {
+    if (!notifDeps)
+        throw new Error('notifications state used before initNotificationsState() was called');
+    return notifDeps;
 }
-// id is prefixed 'local_' so markNotificationRead can route to the right storage without needing
-// a separate origin field on every call site.
-function pushLocalNotification(type,message){
-  localNotifItems.unshift({id:'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),type,message,createdAt:Date.now(),read:false});
-  localNotifItems=localNotifItems.slice(0,LOCAL_NOTIF_CAP);
-  saveLocalNotifItems();
-  renderNotifBell();
-  if(notifMenuOpen)renderNotifList();
+/** Whether the notification menu is currently open — read by index.html's outside-click handler. */
+function isNotifMenuOpen() {
+    return notifMenuOpen;
 }
-function combinedNotifItems(){
-  return [...notifItems,...localNotifItems].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+/**
+ * Pure: what a notification's own list-item text should read, given its type and payload.
+ * Extracted unchanged from the original `notifText()`.
+ */
+function notifText(n) {
+    if (n.type === 'share_invite') {
+        const from = n.fromDisplayName || n.fromEmail || 'Someone';
+        const role = n.role === 'editor' ? 'edit' : 'view';
+        return `${from} shared "${n.docTitle || 'a document'}" with you (${role} access)`;
+    }
+    if (n.type === 'access_revoked') {
+        const from = n.fromDisplayName || n.fromEmail || 'The owner';
+        return `${from} removed your access to "${n.docTitle || 'a document'}"`;
+    }
+    if (n.type === 'access_role_changed') {
+        const from = n.fromDisplayName || n.fromEmail || 'The owner';
+        const role = n.role === 'editor' ? 'edit access' : 'view-only access';
+        return `${from} gave you ${role} to "${n.docTitle || 'a document'}"`;
+    }
+    return n.message || 'New notification';
 }
-function startNotificationsListener(){
-  stopNotificationsListener();
-  if(!currentUser)return;
-  loadFirestoreMods().then(({mod,db})=>{
-    if(!currentUser)return; // signed out again before this resolved
-    const q=mod.query(mod.collection(db,'notifications',currentUser.uid,'items'),mod.orderBy('createdAt','desc'),mod.limit(30));
-    _notifUnsub=mod.onSnapshot(q,snap=>{
-      notifItems=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderNotifBell();
-      if(notifMenuOpen)renderNotifList();
-    },err=>console.warn('[sakura] notifications listener error:',err));
-  }).catch(e=>console.warn('[sakura] could not start notifications listener:',e));
+/** The cloud (Firestore) and local (device-only) notification channels merged, newest first. */
+function combinedNotifItems() {
+    return [...notifItems, ...localNotifItems].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
-function stopNotificationsListener(){
-  if(_notifUnsub){ try{_notifUnsub()}catch(e){} _notifUnsub=null; }
-  notifItems=[];
-  renderNotifBell();
+function loadLocalNotifItems() {
+    const d = requireNotifDeps();
+    try {
+        const storage = d.getLocalStorage();
+        const raw = storage ? storage.getItem(LOCAL_NOTIF_KEY) : null;
+        localNotifItems = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(localNotifItems))
+            localNotifItems = [];
+    }
+    catch {
+        localNotifItems = [];
+    }
 }
-function renderNotifBell(){
-  // Always visible now — not just when signed in or holding a local notification. There's no
-  // real reason to hide it: an empty inbox already reads cleanly as "You're all caught up"
-  // (renderNotifList below), and permanently showing it means people don't have to first do
-  // something (sign in, hit a Cloud Backup failure) before they even know the feature exists.
-  const badge=el('notif-badge'); if(!badge)return;
-  const unread=combinedNotifItems().filter(n=>!n.read).length;
-  badge.style.display=unread>0?'flex':'none';
-  badge.textContent=unread>9?'9+':String(unread);
+function saveLocalNotifItems() {
+    const d = requireNotifDeps();
+    try {
+        d.getLocalStorage()?.setItem(LOCAL_NOTIF_KEY, JSON.stringify(localNotifItems.slice(0, LOCAL_NOTIF_CAP)));
+    }
+    catch {
+        // ignore — best-effort persistence, same as the original
+    }
 }
-function notifText(n){
-  if(n.type==='share_invite'){
-    const from=n.fromDisplayName||n.fromEmail||'Someone';
-    const role=n.role==='editor'?'edit':'view';
-    return `${from} shared "${n.docTitle||'a document'}" with you (${role} access)`;
-  }
-  if(n.type==='access_revoked'){
-    const from=n.fromDisplayName||n.fromEmail||'The owner';
-    return `${from} removed your access to "${n.docTitle||'a document'}"`;
-  }
-  if(n.type==='access_role_changed'){
-    const from=n.fromDisplayName||n.fromEmail||'The owner';
-    const role=n.role==='editor'?'edit access':'view-only access';
-    return `${from} gave you ${role} to "${n.docTitle||'a document'}"`;
-  }
-  // Generic fallback so a future notification type "just works" visually without needing a
-  // matching branch here — as long as it carries a plain-language `message` field.
-  return n.message||'New notification';
+function renderNotifBell() {
+    const d = requireNotifDeps();
+    const badge = d.getBadgeElement();
+    if (!badge)
+        return;
+    const unread = combinedNotifItems().filter((n) => !n.read).length;
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+    badge.textContent = unread > 9 ? '9+' : String(unread);
 }
-async function markNotificationRead(id){
-  if(!id)return;
-  if(id.startsWith('local_')){
-    const n=localNotifItems.find(x=>x.id===id); if(n){ n.read=true; saveLocalNotifItems(); renderNotifBell(); }
-    return;
-  }
-  if(!currentUser)return;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',id),{read:true});
-  }catch(e){ console.warn('[sakura] markNotificationRead failed:',e); }
+function pushLocalNotification(type, message) {
+    const d = requireNotifDeps();
+    localNotifItems.unshift({
+        id: 'local_' + d.now() + '_' + d.randomId(),
+        type,
+        message,
+        createdAt: d.now(),
+        read: false
+    });
+    localNotifItems = localNotifItems.slice(0, LOCAL_NOTIF_CAP);
+    saveLocalNotifItems();
+    renderNotifBell();
+    if (notifMenuOpen)
+        d.renderNotifList();
 }
-async function deleteNotification(id){
-  if(!id)return;
-  if(id.startsWith('local_')){
-    localNotifItems=localNotifItems.filter(x=>x.id!==id);
-    saveLocalNotifItems(); renderNotifBell(); if(notifMenuOpen)renderNotifList();
-    return;
-  }
-  if(!currentUser)return;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    await mod.deleteDoc(mod.doc(db,'notifications',currentUser.uid,'items',id));
-    // No local-array splice needed for this branch — the Firestore onSnapshot listener already
-    // updates notifItems and re-renders on its own once the delete round-trips back.
-  }catch(e){ console.warn('[sakura] deleteNotification failed:',e); showToast('Could not dismiss — try again'); }
+function startNotificationsListener() {
+    const d = requireNotifDeps();
+    stopNotificationsListener();
+    if (!d.getCurrentUser())
+        return;
+    d.loadFirestoreMods()
+        .then(({ mod, db }) => {
+        const user = d.getCurrentUser();
+        if (!user)
+            return; // signed out again before this resolved
+        const q = mod.query(mod.collection(db, 'notifications', user.uid, 'items'), mod.orderBy('createdAt', 'desc'), mod.limit(30));
+        _notifUnsub = mod.onSnapshot(q, (snap) => {
+            notifItems = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            renderNotifBell();
+            if (notifMenuOpen)
+                d.renderNotifList();
+        }, (err) => console.warn('[sakura] notifications listener error:', err));
+    })
+        .catch((e) => console.warn('[sakura] could not start notifications listener:', e));
 }
-async function clearAllNotifications(){
-  const items=combinedNotifItems();
-  if(!items.length)return;
-  // Local items: clear synchronously, no round-trip needed.
-  localNotifItems=[]; saveLocalNotifItems();
-  // Cloud items: best-effort parallel delete. A failure on one doesn't block the rest — whatever
-  // doesn't go through just reappears next render (the listener is still live), same recovery
-  // behavior as any other partial-failure case elsewhere in this app rather than leaving things
-  // in a confusing half-cleared state silently.
-  const cloudIds=notifItems.map(n=>n.id);
-  if(cloudIds.length&&currentUser){
-    try{
-      const {mod,db}=await loadFirestoreMods();
-      await Promise.all(cloudIds.map(id=>mod.deleteDoc(mod.doc(db,'notifications',currentUser.uid,'items',id)).catch(e=>console.warn('[sakura] clearAllNotifications: one delete failed:',e))));
-    }catch(e){ console.warn('[sakura] clearAllNotifications failed:',e); }
-  }
-  renderNotifBell(); if(notifMenuOpen)renderNotifList();
+function stopNotificationsListener() {
+    if (_notifUnsub) {
+        try {
+            _notifUnsub();
+        }
+        catch {
+            // ignore
+        }
+        _notifUnsub = null;
+    }
+    notifItems = [];
+    renderNotifBell();
 }
+async function markNotificationRead(id) {
+    const d = requireNotifDeps();
+    if (!id)
+        return;
+    if (id.startsWith('local_')) {
+        const n = localNotifItems.find((x) => x.id === id);
+        if (n) {
+            n.read = true;
+            saveLocalNotifItems();
+            renderNotifBell();
+        }
+        return;
+    }
+    const user = d.getCurrentUser();
+    if (!user)
+        return;
+    try {
+        const { mod, db } = await d.loadFirestoreMods();
+        await mod.updateDoc(mod.doc(db, 'notifications', user.uid, 'items', id), { read: true });
+    }
+    catch (e) {
+        console.warn('[sakura] markNotificationRead failed:', e);
+    }
+}
+async function deleteNotification(id) {
+    const d = requireNotifDeps();
+    if (!id)
+        return;
+    if (id.startsWith('local_')) {
+        localNotifItems = localNotifItems.filter((x) => x.id !== id);
+        saveLocalNotifItems();
+        renderNotifBell();
+        if (notifMenuOpen)
+            d.renderNotifList();
+        return;
+    }
+    const user = d.getCurrentUser();
+    if (!user)
+        return;
+    try {
+        const { mod, db } = await d.loadFirestoreMods();
+        await mod.deleteDoc(mod.doc(db, 'notifications', user.uid, 'items', id));
+        // No local-array splice needed for this branch — the Firestore onSnapshot listener already
+        // updates notifItems and re-renders on its own once the delete round-trips back.
+    }
+    catch (e) {
+        console.warn('[sakura] deleteNotification failed:', e);
+        d.showToast('Could not dismiss — try again');
+    }
+}
+async function clearAllNotifications() {
+    const d = requireNotifDeps();
+    const items = combinedNotifItems();
+    if (!items.length)
+        return;
+    // Local items: clear synchronously, no round-trip needed.
+    localNotifItems = [];
+    saveLocalNotifItems();
+    // Cloud items: best-effort parallel delete. A failure on one doesn't block the rest.
+    const cloudIds = notifItems.map((n) => n.id);
+    const user = d.getCurrentUser();
+    if (cloudIds.length && user) {
+        try {
+            const { mod, db } = await d.loadFirestoreMods();
+            await Promise.all(cloudIds.map((id) => mod.deleteDoc(mod.doc(db, 'notifications', user.uid, 'items', id)).catch((e) => console.warn('[sakura] clearAllNotifications: one delete failed:', e))));
+        }
+        catch (e) {
+            console.warn('[sakura] clearAllNotifications failed:', e);
+        }
+    }
+    renderNotifBell();
+    if (notifMenuOpen)
+        d.renderNotifList();
+}
+function toggleNotifMenu(force) {
+    const d = requireNotifDeps();
+    const menu = d.getMenuElement();
+    if (!menu)
+        return;
+    notifMenuOpen = force !== undefined ? force : !menu.classList.contains('open');
+    menu.classList.toggle('open', notifMenuOpen);
+    d.getToggleElement()?.setAttribute('aria-expanded', String(notifMenuOpen));
+    if (notifMenuOpen)
+        d.renderNotifList();
+}
+/** Called once at startup (mirrors the original's unconditional top-level call). */
+function bootLocalNotifications() {
+    loadLocalNotifItems();
+}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// renderNotifList itself stays hand-written just below this block (see the file header on
+// src/state/notifications.ts for why) — referenced here only as an injected callback.
+initNotificationsState({
+  getCurrentUser:()=>currentUser,
+  loadFirestoreMods:()=>loadFirestoreMods(),
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } },
+  getBadgeElement:()=>el('notif-badge'),
+  getMenuElement:()=>el('notif-menu'),
+  getToggleElement:()=>el('notif-toggle'),
+  showToast:(msg)=>showToast(msg),
+  renderNotifList:()=>renderNotifList(),
+  now:()=>Date.now(),
+  randomId:()=>Math.random().toString(36).slice(2,8)
+});
+bootLocalNotifications();
 el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
+el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
+document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
+/* GENERATED:notifications:END */
+
 function renderNotifList(){
   const list=el('notif-list'); if(!list)return;
   list.innerHTML='';
@@ -14185,16 +14330,6 @@ function renderNotifList(){
     list.appendChild(item);
   });
 }
-loadLocalNotifItems();
-function toggleNotifMenu(force){
-  const menu=el('notif-menu'); if(!menu)return;
-  notifMenuOpen=force!==undefined?force:!menu.classList.contains('open');
-  menu.classList.toggle('open',notifMenuOpen);
-  el('notif-toggle')?.setAttribute('aria-expanded',String(notifMenuOpen));
-  if(notifMenuOpen)renderNotifList();
-}
-el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
-document.addEventListener('click',e=>{ if(notifMenuOpen&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
 
 // _sharedDocUnsub/_sharedDocUnsubId belong to a DIFFERENT feature (shared-doc live sync,
 // stopSharedDocRealtimeSync/startSharedDocRealtimeSyncIfNeeded, defined much further down

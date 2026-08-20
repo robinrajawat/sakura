@@ -61,6 +61,32 @@ initPresenceState({
 });
 window.addEventListener('beforeunload',handlePresenceBeforeUnload);
 `.trim()
+  },
+  {
+    name: 'notifications',
+    sourceFile: 'src/state/notifications.ts',
+    testFile: 'tests/unit/notificationsState.test.ts',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// renderNotifList itself stays hand-written just below this block (see the file header on
+// src/state/notifications.ts for why) — referenced here only as an injected callback.
+initNotificationsState({
+  getCurrentUser:()=>currentUser,
+  loadFirestoreMods:()=>loadFirestoreMods(),
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } },
+  getBadgeElement:()=>el('notif-badge'),
+  getMenuElement:()=>el('notif-menu'),
+  getToggleElement:()=>el('notif-toggle'),
+  showToast:(msg)=>showToast(msg),
+  renderNotifList:()=>renderNotifList(),
+  now:()=>Date.now(),
+  randomId:()=>Math.random().toString(36).slice(2,8)
+});
+bootLocalNotifications();
+el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
+el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
+document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
+`.trim()
   }
 ];
 
