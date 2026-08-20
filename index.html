@@ -8569,36 +8569,133 @@ el('debug-log-clear-btn')?.addEventListener('click',()=>{ _debugLogBuffer=[]; re
 // current session (never persisted), so unlocking is required again after a reload. Reads of
 // those fields throughout the app are synchronous, so decrypted plaintext is cached in memory
 // once per unlock rather than decrypted per-read — see decryptedKeyCache / decryptedGistTokenCache.
-const SAKURA_VAULT_META_KEY='sakura_vault_meta_v1';
-const VAULT_PBKDF2_ITERATIONS=250000;
+//
+// Session state and the pure crypto primitives (vaultActive/vaultUnlocked/b64FromBytes/
+// bytesFromB64/deriveVaultKey/vaultEncrypt/vaultDecrypt) live in src/state/vault.ts (Phase 2,
+// docs/architecture-plan.md), generated into the block below. setupVaultPassphrase/unlockVault/
+// lockVault/disableVaultEncryption/updateVaultStatusUI/updateVaultChip below the generated block
+// are deliberately hand-written, not generated — see that module's file header for why — and
+// call straight back into the generated block's exported functions/state exactly as before.
+
+/* GENERATED:vault:START — DO NOT EDIT BY HAND. Source of truth: src/state/vault.ts (tests: tests/unit/vaultState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Secure Storage vault — the pure crypto primitives and session state only.
+ *
+ * Phase 2 (docs/architecture-plan.md) — fourth state-consolidation slice, same generator
+ * pipeline as presence/notifications/admin. Optional, opt-in passphrase-based encryption for
+ * API keys/tokens at rest (AES-GCM 256, key derived via PBKDF2). Off by default — everything
+ * here is a no-op until the user sets a passphrase in Settings.
+ *
+ * Scope decision, narrower than the other three slices: this module holds ONLY the session
+ * state (vaultCryptoKey/decryptedKeyCache/decryptedGistTokenCache) and the pure Web Crypto
+ * primitives (b64FromBytes/bytesFromB64/deriveVaultKey/vaultEncrypt/vaultDecrypt) plus the two
+ * small status checks (vaultActive/vaultUnlocked). Deliberately NOT extracted:
+ * setupVaultPassphrase/unlockVault/lockVault/disableVaultEncryption/updateVaultStatusUI/
+ * updateVaultChip, which stay hand-written in index.html exactly where they were. Those
+ * functions orchestrate passphrase dialogs (sakuraPasswordPrompt/sakuraConfirm), localStorage
+ * migration across two other subsystems' storage keys (AI_PREFS_KEY, CLOUD_BACKUP_KEY), and
+ * several DOM updates — real value in isolating them would require dependency-injecting all of
+ * that, and getting any of it wrong risks the one thing this subsystem exists to protect
+ * (someone's API keys/tokens). The actual security-critical, error-prone logic — the
+ * cryptographic operations themselves — is what benefits most from real tests and gets them
+ * here; the orchestration around it stays as already-battle-tested code.
+ *
+ * Compatibility note: vaultCryptoKey/decryptedKeyCache/decryptedGistTokenCache keep their exact
+ * original names and are NOT exported (matching admin.ts's isAdmin precedent) specifically so
+ * every external call site that reads/writes them directly as bare identifiers — saveAiKey,
+ * resetAiSettingsToDefault, loadCloudBackupPrefs, the Gist-token-save click handler, all
+ * unchanged elsewhere in index.html — keeps working with zero edits. Same for
+ * vaultActive/vaultUnlocked/vaultEncrypt/vaultDecrypt/deriveVaultKey: every hand-written
+ * function left behind (and every one of those external call sites) calls them as bare
+ * identifiers exactly as before extraction.
+ */
+// Also read directly by hand-written code left in index.html (setupVaultPassphrase,
+// unlockVault, disableVaultEncryption) — see the file header for why these three specifically
+// were not worth pulling those functions in just to keep the constants "inside" too.
+const SAKURA_VAULT_META_KEY = 'sakura_vault_meta_v1';
+const VAULT_PBKDF2_ITERATIONS = 250000;
+let vaultDeps = null;
+let vaultCryptoKey = null; // in-memory CryptoKey; null = locked (or vault not set up)
+// Reset here for session-start consistency, but never read/written from *inside* this module:
+// the hand-written code left in index.html (saveAiKey, resetAiSettingsToDefault,
+// loadCloudBackupPrefs, the Gist-token-save click handler — see the file header) reads/writes
+// these directly as bare identifiers. That's real, load-bearing usage at runtime; ESLint just
+// can't see across the splice boundary.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let decryptedKeyCache = {}; // {'key_groq': 'plaintext', ...} populated on unlock
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- same as decryptedKeyCache above.
+let decryptedGistTokenCache = '';
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initVaultState(injected) {
+    vaultDeps = injected;
+    vaultCryptoKey = null;
+    decryptedKeyCache = {};
+    decryptedGistTokenCache = '';
+}
+function requireVaultDeps() {
+    if (!vaultDeps)
+        throw new Error('vault state used before initVaultState() was called');
+    return vaultDeps;
+}
+/**
+ * Test-only hook: sets the in-memory session key directly. Production wiring never calls this —
+ * setupVaultPassphrase/unlockVault/lockVault/disableVaultEncryption (hand-written, left in
+ * index.html) assign the bare `vaultCryptoKey` variable directly, exactly as before this
+ * extraction. This exists so tests can exercise vaultEncrypt/vaultDecrypt/vaultUnlocked without
+ * needing to reimplement passphrase setup.
+ */
+function setVaultCryptoKeyForTest(key) {
+    vaultCryptoKey = key;
+}
+function vaultActive() {
+    try {
+        return !!requireVaultDeps().getLocalStorage()?.getItem(SAKURA_VAULT_META_KEY);
+    }
+    catch {
+        return false;
+    }
+}
+function vaultUnlocked() {
+    return !!vaultCryptoKey;
+}
+function b64FromBytes(bytes) {
+    let s = '';
+    bytes.forEach((b) => (s += String.fromCharCode(b)));
+    return btoa(s);
+}
+function bytesFromB64(b64) {
+    return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+async function deriveVaultKey(passphrase, saltBytes) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: saltBytes, iterations: VAULT_PBKDF2_ITERATIONS, hash: 'SHA-256' }, baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function vaultEncrypt(plainText) {
+    if (!vaultCryptoKey)
+        throw new Error('Vault is locked');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ctBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, vaultCryptoKey, new TextEncoder().encode(plainText));
+    const combined = new Uint8Array(iv.length + ctBuf.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(ctBuf), iv.length);
+    return b64FromBytes(combined);
+}
+async function vaultDecrypt(b64) {
+    if (!vaultCryptoKey)
+        throw new Error('Vault is locked');
+    const combined = bytesFromB64(b64);
+    const iv = combined.slice(0, 12), ct = combined.slice(12);
+    const ptBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, vaultCryptoKey, ct);
+    return new TextDecoder().decode(ptBuf);
+}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+initVaultState({
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
+});
+/* GENERATED:vault:END */
 const VAULT_VERIFIER_PLAINTEXT='sakura-vault-v1-ok';
-let vaultCryptoKey=null; // in-memory CryptoKey; null = locked (or vault not set up)
-let decryptedKeyCache={}; // {'key_groq': 'plaintext', ...} populated on unlock
-let decryptedGistTokenCache='';
-function vaultActive(){ try{ return !!localStorage.getItem(SAKURA_VAULT_META_KEY) }catch(e){ return false } }
-function vaultUnlocked(){ return !!vaultCryptoKey }
-function b64FromBytes(bytes){ let s=''; bytes.forEach(b=>s+=String.fromCharCode(b)); return btoa(s) }
-function bytesFromB64(b64){ return Uint8Array.from(atob(b64),c=>c.charCodeAt(0)) }
-async function deriveVaultKey(passphrase,saltBytes){
-  const enc=new TextEncoder();
-  const baseKey=await crypto.subtle.importKey('raw',enc.encode(passphrase),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt:saltBytes,iterations:VAULT_PBKDF2_ITERATIONS,hash:'SHA-256'},baseKey,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-async function vaultEncrypt(plainText){
-  if(!vaultCryptoKey)throw new Error('Vault is locked');
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const ctBuf=await crypto.subtle.encrypt({name:'AES-GCM',iv},vaultCryptoKey,new TextEncoder().encode(plainText));
-  const combined=new Uint8Array(iv.length+ctBuf.byteLength);
-  combined.set(iv,0); combined.set(new Uint8Array(ctBuf),iv.length);
-  return b64FromBytes(combined);
-}
-async function vaultDecrypt(b64){
-  if(!vaultCryptoKey)throw new Error('Vault is locked');
-  const combined=bytesFromB64(b64);
-  const iv=combined.slice(0,12), ct=combined.slice(12);
-  const ptBuf=await crypto.subtle.decrypt({name:'AES-GCM',iv},vaultCryptoKey,ct);
-  return new TextDecoder().decode(ptBuf);
-}
 async function setupVaultPassphrase(){
   const p1=await sakuraPasswordPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',title:'Set a Passphrase',body:'Encrypts your AI provider keys and GitHub Gist token at rest — in this browser and in local backup files. There\'s no recovery: if you forget it, you\'ll need to re-enter those keys from scratch.',confirmLabel:'Continue',cancelLabel:'Cancel'});
   if(p1===null)return;

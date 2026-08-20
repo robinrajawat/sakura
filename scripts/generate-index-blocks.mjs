@@ -100,6 +100,17 @@ initAdminState({
   closeFeedbackInboxModal:()=>closeFeedbackInboxModal()
 });
 `.trim()
+  },
+  {
+    name: 'vault',
+    sourceFile: 'src/state/vault.ts',
+    testFile: 'tests/unit/vaultState.test.ts',
+    footer: `
+// --- production wiring (also generated, not hand-written — see the header above) ---
+initVaultState({
+  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
+});
+`.trim()
   }
 ];
 
