@@ -183,10 +183,69 @@ extraction/test methodology now proven across two real batches instead of only p
 
 5 utility files, 53 unit tests total (verified passing), each backed by a pinned oracle copy
 of the actual current index.html implementation asserting exact behavioral equivalence.
-**Phase 2 — state consolidation.**
+**Phase 2 — state consolidation. (In progress — 3 of many domains done.)**
 Replace the scattered `let`s with typed state modules, one domain at a time.
 Purely mechanical — behavior must stay identical, verified against the
 Phase-0 E2E baseline before and after each domain.
+
+Mechanism, established across the first three slices: each domain becomes a
+dependency-injected `src/state/<domain>.ts` (no imports, no re-exports — see
+Phase 1's constraint above, which turned out to matter here too), compiled
+and spliced into `index.html` by `scripts/generate-index-blocks.mjs` between
+`GENERATED:<name>:START`/`END` marker comments. Every generated block shares
+ONE script scope with the rest of `index.html` at runtime (no module
+wrapper, no `window.*` indirection) — this is what lets every existing
+external call site keep calling generated functions exactly as before, with
+zero signature changes, but it also means a top-level identifier declared
+by two different domains is a duplicate declaration (a hard SyntaxError for
+`let`/`const`). `generate-index-blocks.mjs` now checks for this
+automatically after a real instance of exactly this bug shipped between two
+draft slices and was only caught by manually reading the generated output —
+see the git history around that fix for the specific case. Whether a symbol
+is `export`ed from the TS source does NOT provide real runtime privacy in
+this model (every top-level declaration is visible to every other block and
+to the rest of `index.html` either way) — it only controls whether Vitest
+can import it directly and whether the collision checker tracks it. What
+actually preserves an external call site's compatibility is keeping the
+*name* the same (or adding a same-shaped getter, e.g.
+`isPresenceTrackingDocId()`, when a rename is otherwise wanted).
+
+Done so far: `src/state/presence.ts` (live "who's here" tracking),
+`src/state/notifications.ts` (the notification inbox's state and business
+logic — deliberately NOT `renderNotifList()`, which stays hand-written since
+it's pure DOM construction with nothing to consolidate), and
+`src/state/admin.ts` (feedback-inbox access control). Each shipped as its
+own PR: tested module, a real-browser Playwright smoke test exercising the
+generated block against the actual DOM (not stubs), full local verification
+(typecheck/lint/generate:verify/unit/build/e2e/HTML-structure-validator),
+and a diff scoped to exactly its own region of `index.html`.
+
+Candidate-selection lesson from picking these three: the domains that were
+actually safe to extract in isolation shared a shape — self-contained,
+Firestore-adjacent or otherwise I/O-bound, and light on direct DOM
+construction. Domains investigated and set aside as NOT safe for an isolated
+slice:
+- Outline search state (`searchQuery`/`searchMatches`/`searchIndex`/
+  `searchOpen`), tab state (`openTabs`/`tabDragState`/`tabOverviewItems`),
+  diagram-anchor state — all read/write the core `nodes` array and call
+  `render()` directly, which doesn't have a stable module boundary yet.
+  These are more honestly Phase 3 (or a "core outline engine" slice that
+  doesn't exist yet in this plan) than Phase 2 leaf state.
+- Secure Storage vault (`vaultCryptoKey`/`decryptedKeyCache`/
+  `decryptedGistTokenCache`, AES-GCM/PBKDF2) — self-contained in the sense
+  of not touching `nodes`/`render()`, but it's read and written directly
+  from several unrelated external call sites (AI provider settings, Cloud
+  Backup's Gist token handling) AND it's genuinely security-sensitive
+  (in-memory decrypted API keys/tokens). A behavior-preserving mistake here
+  has real stakes. Worth its own deliberately careful pass — auditing every
+  external touchpoint first — rather than folding into the same cadence as
+  the first three slices.
+
+The bulk of the ~300 remaining top-level `let`s fall into one of these two
+harder buckets, not the easy one. Continuing Phase 2 at the same pace
+likely means tackling core-outline coupling (arguably pulling Phase 3's
+`core/` work forward) or accepting the vault's higher risk profile with
+extra care — both real decisions, not more of the same mechanical work.
 
 **Phase 3 — feature domain extraction.**
 Templates, Hub panels (with an eye toward de-duplicating the index.html /
@@ -195,10 +254,14 @@ increasing coupling to sync, each becoming its own module with an explicit
 public interface and its own tests.
 
 **Phase 4 — sync, sharing, presence.**
+Presence (see Phase 2 above) ended up extracted early, as a deliberately
+small pilot for the generate-index-blocks.mjs pipeline itself — this
+doesn't contradict the original "extracted last" reasoning below, which is
+about the bulk of sync/sharing (the notification click-through, the missing
+role-change alert, the live-sync gap) still living in index.html untouched.
 Extracted last, deliberately — this module has already produced the most
-bugs (the notification click-through, the missing role-change alert, the
-missing presence indicator, and the live-sync gap all lived here), so it
-gets the harness only once that harness is proven everywhere else.
+bugs, so it gets the harness only once that harness is proven everywhere
+else.
 
 **Phase 5 — strict mode everywhere.**
 Every module `strict: true` TypeScript, no `allowJs` escape hatch left.
