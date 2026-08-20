@@ -13645,7 +13645,7 @@ function updateProfileDiscoverableToggleUi(){
       ?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>'
       :'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>')
       +'<span>'+(isPublic?'Public':'Private')+'</span>';
-    badge.dataset.tip=isPublic?'Click to make private — no longer discoverable by email':'Click to make public — discoverable by email when someone shares a document with you';
+    badge.dataset.tip=isPublic?'Click to make private — no longer discoverable by name or email':'Click to make public — discoverable by name or email when someone shares a document with you';
   }
 }
 el('account-visibility-badge')?.addEventListener('click',()=>setProfileDiscoverable(profileVisibility!=='public'));
@@ -13657,7 +13657,7 @@ async function setProfileDiscoverable(on){
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.setDoc(mod.doc(db,'profiles',currentUser.uid),{visibility:profileVisibility,updatedAt:Date.now()},{merge:true});
-    showToast(on?'Your profile is now public — discoverable by email when someone shares a document with you':'Your profile is now private — no longer discoverable by email',null,false,2600);
+    showToast(on?'Your profile is now public — discoverable by name or email when someone shares a document with you':'Your profile is now private — no longer discoverable by name or email',null,false,2600);
   }catch(e){
     console.warn('[sakura] setProfileDiscoverable failed:',e);
     profileVisibility=prev; updateProfileDiscoverableToggleUi();
