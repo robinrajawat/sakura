@@ -209,6 +209,17 @@ initAiProvidersState({
 `.trim()
   },
   {
+    name: 'tabOrder',
+    sourceFile: 'src/state/tabOrder.ts',
+    testFile: 'tests/unit/tabOrder.test.ts',
+    // No production wiring needed — pure functions (reorderTabsCore mutates the openTabs array
+    // passed to it, same convention as nodeMutations.ts/nodeSelection.ts's own in-place-mutation
+    // pattern; no DOM/localStorage side effects). The two real call sites (cycleOpenTab/
+    // reorderTab wrapper bodies in index.html) were updated in the same commit that wired this
+    // block in.
+    footer: ''
+  },
+  {
     name: 'nodeSearch',
     sourceFile: 'src/core/nodeSearch.ts',
     testFile: 'tests/unit/nodeSearch.test.ts',
