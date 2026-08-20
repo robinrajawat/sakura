@@ -213,39 +213,51 @@ actually preserves an external call site's compatibility is keeping the
 Done so far: `src/state/presence.ts` (live "who's here" tracking),
 `src/state/notifications.ts` (the notification inbox's state and business
 logic — deliberately NOT `renderNotifList()`, which stays hand-written since
-it's pure DOM construction with nothing to consolidate), and
-`src/state/admin.ts` (feedback-inbox access control). Each shipped as its
-own PR: tested module, a real-browser Playwright smoke test exercising the
-generated block against the actual DOM (not stubs), full local verification
+it's pure DOM construction with nothing to consolidate), `src/state/admin.ts`
+(feedback-inbox access control), and `src/state/vault.ts` (Secure Storage
+session state and pure Web Crypto primitives only — see below for why this
+one shipped narrower than the first three). Each shipped as its own PR:
+tested module, a real-browser Playwright smoke test exercising the generated
+block against the actual DOM (not stubs), full local verification
 (typecheck/lint/generate:verify/unit/build/e2e/HTML-structure-validator),
 and a diff scoped to exactly its own region of `index.html`.
 
-Candidate-selection lesson from picking these three: the domains that were
-actually safe to extract in isolation shared a shape — self-contained,
-Firestore-adjacent or otherwise I/O-bound, and light on direct DOM
-construction. Domains investigated and set aside as NOT safe for an isolated
-slice:
+Candidate-selection lesson from picking the first three: the domains that
+were actually safe to extract in isolation, at full scope, shared a shape —
+self-contained, Firestore-adjacent or otherwise I/O-bound, and light on
+direct DOM construction. Domains investigated and set aside as NOT safe for
+that same full-scope treatment:
 - Outline search state (`searchQuery`/`searchMatches`/`searchIndex`/
   `searchOpen`), tab state (`openTabs`/`tabDragState`/`tabOverviewItems`),
   diagram-anchor state — all read/write the core `nodes` array and call
   `render()` directly, which doesn't have a stable module boundary yet.
   These are more honestly Phase 3 (or a "core outline engine" slice that
-  doesn't exist yet in this plan) than Phase 2 leaf state.
+  doesn't exist yet in this plan) than Phase 2 leaf state. Still set aside —
+  no change here.
 - Secure Storage vault (`vaultCryptoKey`/`decryptedKeyCache`/
-  `decryptedGistTokenCache`, AES-GCM/PBKDF2) — self-contained in the sense
-  of not touching `nodes`/`render()`, but it's read and written directly
-  from several unrelated external call sites (AI provider settings, Cloud
-  Backup's Gist token handling) AND it's genuinely security-sensitive
-  (in-memory decrypted API keys/tokens). A behavior-preserving mistake here
-  has real stakes. Worth its own deliberately careful pass — auditing every
-  external touchpoint first — rather than folding into the same cadence as
-  the first three slices.
+  `decryptedGistTokenCache`, AES-GCM/PBKDF2) — initially deferred whole
+  (self-contained from `nodes`/`render()`, but read/written from several
+  external call sites and genuinely security-sensitive). Revisited
+  deliberately with a narrower scope instead of the first three's full-
+  domain treatment: only the session state and the *pure* Web Crypto
+  primitives (`vaultActive`/`vaultUnlocked`/`b64FromBytes`/`bytesFromB64`/
+  `deriveVaultKey`/`vaultEncrypt`/`vaultDecrypt`) were extracted.
+  `setupVaultPassphrase`/`unlockVault`/`lockVault`/`disableVaultEncryption`/
+  `updateVaultStatusUI`/`updateVaultChip` — the passphrase-dialog
+  orchestration and cross-subsystem localStorage migration — stayed
+  hand-written, exactly where they were, calling the generated exports as
+  bare identifiers. This "extract only the pure, testable core; leave
+  orchestration alone" split is itself a reusable pattern for any future
+  domain that's self-contained but has genuinely risky side effects. Real
+  Web Crypto is natively available in Node (`globalThis.crypto.subtle`), so
+  the resulting tests are real AES-GCM/PBKDF2 round-trips, not mocks.
 
-The bulk of the ~300 remaining top-level `let`s fall into one of these two
-harder buckets, not the easy one. Continuing Phase 2 at the same pace
-likely means tackling core-outline coupling (arguably pulling Phase 3's
-`core/` work forward) or accepting the vault's higher risk profile with
-extra care — both real decisions, not more of the same mechanical work.
+The bulk of the ~300 remaining top-level `let`s still fall into the
+core-outline-coupled bucket, not the easy one. Continuing Phase 2 further
+likely means tackling that coupling directly (arguably pulling Phase 3's
+`core/` work forward), rather than finding more easy, isolated slices —
+the vault turned out to still be tractable, but only by narrowing scope;
+there's no guarantee the next candidate offers even that option.
 
 **Phase 3 — feature domain extraction.**
 Templates, Hub panels (with an eye toward de-duplicating the index.html /
