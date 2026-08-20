@@ -17997,11 +17997,81 @@ function sortChildBlocks(parentIdx,mode){
   showToast(mode==='az'?'Sorted A → Z':mode==='za'?'Sorted Z → A':'Sorted by depth');
   return true;
 }
+/* GENERATED:nodeSelection:START — DO NOT EDIT BY HAND. Source of truth: src/core/nodeSelection.ts (tests: tests/unit/nodeSelection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure selection-computation and parent-id-rebuild logic for the outline — a third `core/`
+ * slice alongside nodeQueries.ts (read-only queries) and nodeMutations.ts (tree mutations).
+ *
+ * These three functions (`getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds`) were
+ * deliberately left out of every nodeMutations.ts slice so far, flagged there as "used far more
+ * widely than any single mutation slice needs" (79 real call sites total across the file). That
+ * framing conflated two different things: how many places CALL a function, and how many places
+ * need to CHANGE to extract it. Re-investigated here: all three functions can keep their exact
+ * original names and signatures — the orchestration wrappers in index.html become thin
+ * delegates to the extracted pure logic, exactly like nodeMutations.ts's own indent/outdent
+ * wrappers delegate to `indentRootIndexes`/`outdentRootIndexes`. Zero of the 79 call sites need
+ * to change. `clearMultiSelection` (the fourth function in that original list) stays
+ * hand-written — a genuine one-line ambient assignment (`multiSelectedIds=[]`) with no logic to
+ * extract, same reasoning as `getAllAiProviders`/`getAiProviderById` staying out of
+ * aiProviders.ts.
+ *
+ * `getParentIndex` (from nodeQueries.ts, already a generated block spliced in elsewhere in
+ * index.html) is referenced as an ambient global via `declare function` below — type-only,
+ * fully erased from the compiled JS output, resolving at runtime to the real already-spliced
+ * nodeQueries function since every generated block shares one script scope. This is NOT a real
+ * import — see nodeMutations.ts's own header for why a real value import would silently kill
+ * the whole script if it survived compilation.
+ */
+/** Pure: the currently-selected node ids, matching the original's three-way fallback exactly —
+ * select-all mode returns every node's id; otherwise the multi-select set (filtered against
+ * nodes that still exist, deduplicated) if non-empty; otherwise the single `selectedId` (or an
+ * empty array if nothing is selected at all). */
+function computeSelectedIds(nodes, selectAllMode, multiSelectedIds, selectedId) {
+    if (selectAllMode)
+        return nodes.map((n) => n.id);
+    const base = multiSelectedIds.filter((id) => nodes.some((n) => n.id === id));
+    if (base.length)
+        return [...new Set(base)];
+    return selectedId !== null ? [selectedId] : [];
+}
+/** Pure: the indexes of the "root" selected nodes — selected nodes whose nearest shallower
+ * ancestor is NOT itself selected, i.e. the top of each selected subtree, so a caller acting on
+ * "the selection" doesn't double-process a child whose parent is also selected. Matches the
+ * original's exact walk-backward-to-find-an-ancestor logic. */
+function computeSelectionRootIndexes(nodes, selectedIds) {
+    const allIds = new Set(selectedIds);
+    const indexes = nodes
+        .map((n, i) => (allIds.has(n.id) ? i : -1))
+        .filter((i) => i >= 0)
+        .sort((a, b) => a - b);
+    return indexes.filter((idx) => {
+        const depth = nodes[idx].depth;
+        for (let i = idx - 1; i >= 0; i--) {
+            if (nodes[i].depth < depth)
+                return !allIds.has(nodes[i].id);
+        }
+        return true;
+    });
+}
+/** Mutates `nodes` in place, recomputing every node's `parentId` from its position/depth via
+ * `getParentIndex` — the same in-place-mutation convention as nodeMutations.ts's `nodes.splice`
+ * pattern, preserved deliberately since callers rely on it updating the array they already hold
+ * a reference to, not on a return value (the original returned nothing either). Called after
+ * any operation that changes node order or depth (indent/outdent/move/paste/delete/etc.), since
+ * parentId is derived state that would otherwise go stale. */
+function rebuildParentIdsCore(nodes) {
+    for (let i = 0; i < nodes.length; i++) {
+        const p = getParentIndex(nodes, i);
+        nodes[i].parentId = p >= 0 ? nodes[p].id : null;
+    }
+}
+
+/* GENERATED:nodeSelection:END */
 function clearMultiSelection(){multiSelectedIds=[]}
-function getSelectedIds(){if(selectAllMode)return nodes.map(n=>n.id); const base=multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)); if(base.length)return [...new Set(base)]; return selectedId!==null?[selectedId]:[]}
+function getSelectedIds(){return computeSelectedIds(nodes,selectAllMode,multiSelectedIds,selectedId)}
 function setSingleSelection(id){selectedId=id; selectionAnchorId=id; selectAllMode=false; clearMultiSelection()}
 function flashNode(id){flashNodeId=id; clearTimeout(flashTimer); flashTimer=setTimeout(()=>{if(flashNodeId===id){flashNodeId=null; render()}},700)}
-function getSelectionRootIndexes(){const allIds=new Set(getSelectedIds()); const indexes=nodes.map((n,i)=>allIds.has(n.id)?i:-1).filter(i=>i>=0).sort((a,b)=>a-b); return indexes.filter(idx=>{const depth=nodes[idx].depth; for(let i=idx-1;i>=0;i--){if(nodes[i].depth<depth)return !allIds.has(nodes[i].id)} return true})}
+function getSelectionRootIndexes(){return computeSelectionRootIndexes(nodes,getSelectedIds())}
 function getDeleteImpactCount(){if(selectAllMode)return nodes.length; const roots=getSelectionRootIndexes(); let total=0; for(const idx of roots) total+=getSubtreeEnd(nodes,idx)-idx; return total}
 /* === Sakura Modal Engine === */
 let _modalResolve=null;
@@ -18141,7 +18211,7 @@ async function sakuraLinkPrompt({title='Insert Link',text='',url=''}){
   return {text:res.inputValue, url:res.inputValue2};
 }
 
-function rebuildParentIds(){for(let i=0;i<nodes.length;i++){const p=getParentIndex(nodes,i); nodes[i].parentId=p>=0?nodes[p].id:null}}
+function rebuildParentIds(){rebuildParentIdsCore(nodes)}
 function ensureSelection(){if(!nodes.length){selectedId=null; editingId=null; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; return} multiSelectedIds=multiSelectedIds.filter(id=>getIndex(nodes,id)>=0); if(selectedId===null||getIndex(nodes,selectedId)<0)selectedId=multiSelectedIds[0]??nodes[0].id; if(selectionAnchorId===null||getIndex(nodes,selectionAnchorId)<0)selectionAnchorId=selectedId; if(flashNodeId!==null&&getIndex(nodes,flashNodeId)<0)flashNodeId=null}
 // Pixel-grid counterpart to buildPrefix's vert loop, used only when hideTreeLines is on. The editor's
 // indentation used to be driven entirely by monospace characters (buildPrefix above), which doesn't
@@ -20042,14 +20112,13 @@ function splitNodeAtCursor(id,caretPos){
  * instead, never a text-split), so it was skipped in favor of `deleteSelected`, which has real,
  * active usage (confirmed via call-site count before starting, same discipline as every slice).
  *
- * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
- * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
- * slice needs (13/18/23/24 real call sites respectively, across moveSelected/moveNodeBlock/
- * insertSiblingBefore/pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them
- * would mean updating every one of those call sites in the same slice, a much larger blast
- * radius than any single slice here is scoped to. They remain hand-written, ambient-global
- * functions/values, called or assigned by the orchestration wrapper exactly as before; this
- * module's functions take or return only what they specifically need (`rootIndexes`, a single
+ * Deliberately NOT extracted here (moved instead to `src/core/nodeSelection.ts`, a later
+ * slice): `getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds` were originally assumed
+ * to need updating every one of their ~79 call sites to extract — re-investigated in
+ * nodeSelection.ts and found untrue; they kept their exact original names/signatures instead,
+ * same as this file's own indent/outdent wrappers. `clearMultiSelection` stays hand-written (a
+ * genuine one-liner, no logic to extract). This module's functions take or return only what
+ * they specifically need (`rootIndexes`, a single
  * `idx`, dragged/target ids, mode, an insertion index and already-built node objects) as plain
  * parameters/return values — selection-state side effects (`selectedId`, `selectionAnchorId`,
  * `multiSelectedIds`, `selectAllMode`, `clearMultiSelection()`) stay in the hand-written

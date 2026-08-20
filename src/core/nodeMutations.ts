@@ -22,14 +22,13 @@
  * instead, never a text-split), so it was skipped in favor of `deleteSelected`, which has real,
  * active usage (confirmed via call-site count before starting, same discipline as every slice).
  *
- * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
- * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
- * slice needs (13/18/23/24 real call sites respectively, across moveSelected/moveNodeBlock/
- * insertSiblingBefore/pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them
- * would mean updating every one of those call sites in the same slice, a much larger blast
- * radius than any single slice here is scoped to. They remain hand-written, ambient-global
- * functions/values, called or assigned by the orchestration wrapper exactly as before; this
- * module's functions take or return only what they specifically need (`rootIndexes`, a single
+ * Deliberately NOT extracted here (moved instead to `src/core/nodeSelection.ts`, a later
+ * slice): `getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds` were originally assumed
+ * to need updating every one of their ~79 call sites to extract — re-investigated in
+ * nodeSelection.ts and found untrue; they kept their exact original names/signatures instead,
+ * same as this file's own indent/outdent wrappers. `clearMultiSelection` stays hand-written (a
+ * genuine one-liner, no logic to extract). This module's functions take or return only what
+ * they specifically need (`rootIndexes`, a single
  * `idx`, dragged/target ids, mode, an insertion index and already-built node objects) as plain
  * parameters/return values — selection-state side effects (`selectedId`, `selectionAnchorId`,
  * `multiSelectedIds`, `selectAllMode`, `clearMultiSelection()`) stay in the hand-written

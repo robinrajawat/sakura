@@ -209,6 +209,17 @@ initAiProvidersState({
 `.trim()
   },
   {
+    name: 'nodeSelection',
+    sourceFile: 'src/core/nodeSelection.ts',
+    testFile: 'tests/unit/nodeSelection.test.ts',
+    // No production wiring needed — these are pure functions (rebuildParentIdsCore mutates the
+    // `nodes` array passed to it, same as nodeMutations.ts's own convention; no DOM/undo-stack/
+    // render side effects). The three real call sites (getSelectedIds/getSelectionRootIndexes/
+    // rebuildParentIds wrapper bodies in index.html) were updated in the same commit that wired
+    // this block in.
+    footer: ''
+  },
+  {
     name: 'nodeMutations',
     sourceFile: 'src/core/nodeMutations.ts',
     testFile: 'tests/unit/nodeMutations.test.ts',

@@ -3,12 +3,13 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 in progress (Templates' storage layer
 done; AI provider prefs storage done; Hub panels/Diagrams/Export and the rest of Templates not
-yet begun). `core/` module boundary started, five slices done (indent/outdent, moveSelected,
-drag-and-drop move, paste, then delete — split turned out to be dead code and was skipped); the
-shared selection helpers (getSelectionRootIndexes/getSelectedIds/rebuildParentIds/
-clearMultiSelection) were investigated (79 real call sites spanning ~15,000 lines of index.html,
-well outside nodeMutations.ts's territory) and deliberately deferred — not the next slice, see
-below. Phases 4–5 still future work.
+yet begun — Hub is also blocked on a structural issue: it lives in a separate `hub.html` file,
+not `index.html`, so extracting it would mean standing up generator infra for a second file).
+`core/` module boundary: six slices done (indent/outdent, moveSelected, drag-and-drop move,
+paste, delete, then the shared selection/parentId helpers — `getSelectionRootIndexes`/
+`getSelectedIds`/`rebuildParentIds` — which turned out to be a small, low-risk slice once
+correctly scoped; see below for why the earlier "79 call sites" framing was too pessimistic).
+Phases 4–5 still future work.
 
 ## Why
 
@@ -597,10 +598,31 @@ branch, and the pure function directly with multiple disjoint subtrees in one ca
 
 `src/core/nodeMutations.ts` now covers indent, outdent, keyboard move, drag-and-drop move,
 paste, and delete — a substantial write-side complement to `nodeQueries.ts`'s read-only queries.
-Not yet started: the shared selection-computation helpers (`getSelectionRootIndexes`/
-`getSelectedIds`/`rebuildParentIds`/`clearMultiSelection`) every slice so far has deliberately
-left hand-written — likely the next real fork, since extracting them would need to touch every
-one of their many call sites across every mutation function, not just one narrow slice's worth.
+
+**Sixth slice: `src/core/nodeSelection.ts`** — `computeSelectedIds`/`computeSelectionRootIndexes`/
+`rebuildParentIdsCore`. Originally flagged (both here and in `nodeMutations.ts`'s own header) as
+the biggest remaining fork — "79 real call sites... extracting them would mean updating every
+one of those call sites." That framing was wrong, caught on re-investigation: it conflated how
+many places CALL a function with how many places need to CHANGE to extract it. Every one of the
+three functions kept its original name and signature exactly, with index.html's
+`getSelectedIds()`/`getSelectionRootIndexes()`/`rebuildParentIds()` becoming thin wrappers that
+delegate to the extracted pure logic — the same pattern `nodeMutations.ts`'s own
+`indentSelected()`/`outdentSelected()` wrappers already used around `indentRootIndexes`/
+`outdentRootIndexes`. Zero of the 79 call sites needed to change; only the three function bodies
+themselves moved. `clearMultiSelection` (the fourth function in the original list) stayed
+hand-written — a genuine one-line ambient assignment with no logic to extract, same reasoning as
+`getAllAiProviders` staying out of `aiProviders.ts`. `rebuildParentIdsCore` references
+`getParentIndex` (from `nodeQueries.ts`) via the same `declare function` ambient-global pattern
+`nodeMutations.ts` established. No name collisions found (checked all new module-level
+identifiers against the rest of index.html). 24 new unit tests, all passing on the first run
+against hand-written oracles pinned from the original inline logic. New
+`tests/e2e/generated-nodeselection-smoke.spec.ts` exercises the wrappers through real editor
+state — a real multi-select followed by a real `indentSelected()` call (which internally calls
+`rebuildParentIds()` as part of its own orchestration) — rather than calling the extracted
+functions directly, plus the standard "unrelated distant function still callable" check.
+
+Not yet attempted for `core/`: nothing else has been identified as a comparably narrow next
+slice — see Phase 3's status above for why Hub/Diagrams/Export don't currently offer one either.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
