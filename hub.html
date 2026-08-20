@@ -2183,27 +2183,126 @@ var journalEntries=[];
 var JOURNAL_MOODS=['great','good','neutral','low','rough'];
 var JOURNAL_MOOD_LABEL={great:'Great',good:'Good',neutral:'Neutral',low:'Low',rough:'Rough'};
 var JOURNAL_MOOD_EMOJI={great:'\ud83d\ude04',good:'\ud83d\ude42',neutral:'\ud83d\ude10',low:'\ud83d\ude41',rough:'\ud83d\ude14'};
+/* GENERATED:hubJournal:START — DO NOT EDIT BY HAND. Source of truth: src/state/hubJournal.ts (tests: tests/unit/hubJournal.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Hub's Journal storage — entry normalization/validation, plus the IndexedDB-backed load/save
+ * layer that the Journal panel in hub.html reads from and writes to.
+ *
+ * Second Hub feature-domain slice, same shape as `hubTodos.ts`'s To-Dos extraction. Journal
+ * uses IndexedDB (`idbGet`/`idbSet`) rather than localStorage — mirroring index.html's own
+ * exact data shape (same field names, same `jnUid()` id scheme, same `JOURNAL_KEY`) so entries
+ * stay fully compatible with the desktop app's own store and cloud sync in both directions, per
+ * hub.html's own comment on this domain.
+ *
+ * Deliberately excluded from this slice, and why:
+ * - `findJournalEntry`/`findOrCreateJournalEntry` — trivial one-line-bodied ambient lookups
+ *   (plus one call into `normalizeJournalEntryCore` for the "create" half), no real validation
+ *   logic of their own to test, same reasoning as `getAllAiProviders` staying out of
+ *   `aiProviders.ts`.
+ * - `stripJournalHtml`/`journalSnippet` — genuinely DOM-dependent (`document.createElement`),
+ *   not safely portable to a Node test environment without a DOM shim; not investigated here.
+ * - `renderJournal`/`journalRowInnerHtml`/swipe-list DOM wiring — stays hand-written, same
+ *   reasoning as `renderTodos` staying out of `hubTodos.ts`.
+ *
+ * Deliberately no module-level constant for the storage key string (`JOURNAL_KEY`) or the mood
+ * enum (`JOURNAL_MOODS`): hub.html already declares both as top-level `var`s, still read
+ * directly by sibling journal functions that remain hand-written. Since a generated block
+ * shares hub.html's own script scope, redeclaring either name here would be a duplicate
+ * declaration. Both are passed in as explicit parameters instead — `validMoods` for the mood
+ * enum, the storage key inlined as a private constant with this comment documenting it must
+ * stay in sync with hub.html's own copy.
+ */
+// Private to this module (deliberately NOT the same name as hub.html's own top-level
+// JOURNAL_KEY — see this file's header comment for why they can't be shared).
+const _JOURNAL_STORAGE_KEY = 'sakura_journal_v1';
+let hubJournalDeps = null;
+/** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
+function initHubJournalState(injected) {
+    hubJournalDeps = injected;
+}
+function requireHubJournalDeps() {
+    if (!hubJournalDeps)
+        throw new Error('hubJournal state used before initHubJournalState() was called');
+    return hubJournalDeps;
+}
+/** Pure (given the injected id/date/time deps): normalizes a possibly-partial/possibly-corrupt
+ * journal entry into a fully-valid one, matching the original's exact per-field validation —
+ * an invalid or missing `date` falls back to today, an invalid `mood` falls back to `''` (not a
+ * default mood), `tags` is filtered to non-empty trimmed strings and capped at 20, and
+ * `createdAt`/`modifiedAt` fall back to "now" independently (not to each other) when missing or
+ * non-finite. */
+function normalizeJournalEntryCore(j, validMoods) {
+    const d = requireHubJournalDeps();
+    const now = d.now();
+    return {
+        id: j && typeof j.id === 'string' ? j.id : d.generateJournalId(),
+        date: j && typeof j.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(j.date) ? j.date : d.today(),
+        mood: j && validMoods.indexOf(j.mood) !== -1 ? j.mood : '',
+        tags: j && Array.isArray(j.tags)
+            ? j.tags
+                .filter((t) => typeof t === 'string' && t.trim().length > 0)
+                .map((t) => t.trim())
+                .slice(0, 20)
+            : [],
+        body: j && typeof j.body === 'string' ? j.body : '',
+        // Deliberately the coercive global isFinite, not Number.isFinite: matches hub.html's
+        // original `isFinite(j.createdAt)` exactly, which type-coerces (e.g. a numeric string
+        // survives), unlike the strict form.
+        createdAt: j && isFinite(j.createdAt) ? j.createdAt : now,
+        modifiedAt: j && isFinite(j.modifiedAt) ? j.modifiedAt : now
+    };
+}
+/** Reads and normalizes the full journal entry list from IndexedDB. Resolves to `[]` on any
+ * failure (missing store, corrupt data, IndexedDB unavailable) rather than rejecting, matching
+ * the original's `.catch()`-to-empty-array behavior. Does NOT assign to any ambient global
+ * itself — returns the resolved list for the caller (the hand-written wrapper) to assign,
+ * since that assignment is the one real side effect beyond storage the original had. */
+function loadJournalLocalCore(validMoods) {
+    const d = requireHubJournalDeps();
+    return d
+        .idbGet(_JOURNAL_STORAGE_KEY)
+        .then((arr) => (Array.isArray(arr) ? arr.map((entry) => normalizeJournalEntryCore(entry, validMoods)) : []))
+        .catch(() => []);
+}
+/** Writes the full journal entry list and fires the same two real side effects the original
+ * did — bumping the local sync timestamp and pushing to cloud sync — both injected, both fired
+ * synchronously and UNCONDITIONALLY (matching the original: the `idbSet` promise's eventual
+ * rejection doesn't gate these two calls, since the original never awaited it before running
+ * them). Returns the `idbSet` promise itself rather than swallowing it, so the hand-written
+ * wrapper can attach its own `.catch()` for the "device storage may be full" toast — the
+ * original's own inline `.catch()` callback is DOM/UI (`showToast`), so it stays out of this
+ * module, same split as every other slice. */
+function saveJournalEntriesCore(journalEntries) {
+    const d = requireHubJournalDeps();
+    const savePromise = d.idbSet(_JOURNAL_STORAGE_KEY, journalEntries);
+    d.bumpSyncTimestamp('journal');
+    d.pushMetaToCloud('journal', journalEntries);
+    return savePromise;
+}
+
+// --- production wiring (also generated, not hand-written — see the header above) ---
+// Real ambient globals, referenced directly since this code shares hub.html's own classic
+// script scope at runtime: idbGet, idbSet, bumpSyncTimestamp, pushMetaToCloud, jnUid, todayStr.
+initHubJournalState({
+  idbGet:function(key){ return idbGet(key); },
+  idbSet:function(key,value){ return idbSet(key,value); },
+  bumpSyncTimestamp:function(metaKey){ bumpSyncTimestamp(metaKey); },
+  pushMetaToCloud:function(metaKey,value){ pushMetaToCloud(metaKey,value); },
+  now:function(){ return Date.now(); },
+  today:function(){ return todayStr(); },
+  generateJournalId:function(){ return jnUid(); }
+});
+/* GENERATED:hubJournal:END */
 function normalizeJournalEntry(j){
-  var now=Date.now();
-  return {
-    id:(j&&typeof j.id==='string')?j.id:jnUid(),
-    date:(j&&typeof j.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(j.date))?j.date:todayStr(),
-    mood:(j&&JOURNAL_MOODS.indexOf(j.mood)!==-1)?j.mood:'',
-    tags:(j&&Array.isArray(j.tags))?j.tags.filter(function(t){return typeof t==='string'&&t.trim();}).map(function(t){return t.trim();}).slice(0,20):[],
-    body:(j&&typeof j.body==='string')?j.body:'',
-    createdAt:(j&&isFinite(j.createdAt))?j.createdAt:now,
-    modifiedAt:(j&&isFinite(j.modifiedAt))?j.modifiedAt:now
-  };
+  return normalizeJournalEntryCore(j,JOURNAL_MOODS);
 }
 function loadJournalLocal(){
-  return idbGet(JOURNAL_KEY).then(function(arr){
-    journalEntries=Array.isArray(arr)?arr.map(normalizeJournalEntry):[];
-  }).catch(function(){ journalEntries=[]; });
+  return loadJournalLocalCore(JOURNAL_MOODS).then(function(entries){
+    journalEntries=entries;
+  });
 }
 function saveJournalEntries(){
-  idbSet(JOURNAL_KEY,journalEntries).catch(function(){ showToast('Could not save — your device storage may be full.'); });
-  bumpSyncTimestamp('journal');
-  pushMetaToCloud('journal',journalEntries);
+  saveJournalEntriesCore(journalEntries).catch(function(){ showToast('Could not save — your device storage may be full.'); });
 }
 function findJournalEntry(date){ return journalEntries.find(function(j){return j.date===date;}); }
 function findOrCreateJournalEntry(date){

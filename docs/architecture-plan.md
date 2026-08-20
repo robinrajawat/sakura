@@ -4,18 +4,18 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done; AI provider prefs storage done; **Hub's first
-feature-domain slice done** — To-Dos creation/load/save (`src/state/hubTodos.ts`, targeting
-`hub.html`); Diagrams/Export and the rest of Templates/Hub not yet begun). `core/` module
-boundary: seven slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete,
-the shared selection/parentId helpers, and outline search matching). Two additional Phase
-2/3-adjacent slices: tab cycling/reordering and diagram-anchor/orphan logic
-(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither touches the
-outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
+progress (Templates' storage layer done; AI provider prefs storage done; Hub's To-Dos and
+Journal feature-domain storage layers done; Diagrams/Export and the rest of Templates/Hub not
+yet begun). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
+drag-and-drop move, paste, delete, the shared selection/parentId helpers, and outline search
+matching). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and diagram-anchor/
+orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither
+touches the outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
 block, collision-checking scoped per file); first proven with an infrastructure-only pilot
-(`hubGenerateId`, reusing Phase 1's `generateId.ts`), then a real feature-domain slice
-(`hubTodos`). Phases 4–5 still future work.
+(`hubGenerateId`, reusing Phase 1's `generateId.ts`), then two real feature-domain slices:
+`hubTodos` (localStorage-backed) and `hubJournal` (IndexedDB-backed). Phases 4–5 still future
+work.
 
 ## Why
 
@@ -518,6 +518,31 @@ deps call too). 12 new unit tests, all passing after those two fixes. New
 
 Not yet started: the rest of Hub's To-Dos domain (subtasks, repeat-date advancement, due-date
 reminder checking), and Hub's other three feature domains entirely (meetings, journal, library).
+
+**Second Hub feature-domain slice: `src/state/hubJournal.ts`** — `normalizeJournalEntryCore`/
+`loadJournalLocalCore`/`saveJournalEntriesCore`, also targeting `hub.html`. Same dependency-
+injected pattern as `hubTodos.ts`, but Journal is IndexedDB-backed (`idbGet`/`idbSet`) rather
+than localStorage — mirroring index.html's own exact data shape (same field names, same
+`jnUid()` id scheme) per hub.html's own comment on this domain, so entries stay compatible with
+the desktop app's store and cloud sync in both directions. `findJournalEntry`/
+`findOrCreateJournalEntry` (trivial lookups) and `stripJournalHtml`/`journalSnippet`
+(genuinely DOM-dependent, not portable to a Node test environment) stayed hand-written, along
+with `renderJournal` and the swipe-list DOM wiring. One subtlety caught and preserved rather
+than "fixed": the original validates `createdAt`/`modifiedAt` with the coercive global
+`isFinite()`, not the strict `Number.isFinite()` — a numeric string like `"500"` passes the
+former but not the latter — matched exactly rather than silently tightened, with a dedicated
+test pinning the distinction. `saveJournalEntriesCore` also preserves a real async-orchestration
+quirk: the original fires `bumpSyncTimestamp`/`pushMetaToCloud` synchronously and
+unconditionally right after calling `idbSet`, without awaiting it first — so those two side
+effects happen regardless of whether the save itself eventually succeeds or fails; the core
+function returns the `idbSet` promise itself (rather than swallowing it) so the hand-written
+wrapper can still attach its own `.catch()` for the "device storage may be full" toast. 21 new
+unit tests, all passing first run, including the `isFinite` and async-ordering pins. New
+`tests/e2e/generated-hubjournal-smoke.spec.ts` exercises all three real, unchanged wrapper
+functions against real (not mocked) browser IndexedDB.
+
+Not yet started: Hub's remaining two feature domains (meetings, library) entirely, and the rest
+of To-Dos/Journal noted above.
 
 Not yet started in Phase 3: the rest of Hub's feature domains (see above), Diagrams, Export, and
 the rest of the Templates domain (rendering, node-array manipulation, sync).
