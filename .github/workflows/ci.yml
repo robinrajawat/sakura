@@ -1,0 +1,61 @@
+name: CI
+
+# Phase 0 (docs/architecture-plan.md): verification only. Deliberately no deploy step —
+# production (www.sakura-notes.com) stays on its current deployment path (GitHub Pages,
+# "legacy" build type, serving main branch root directly) until the build pipeline has
+# proven itself and that's a deliberate, separate decision. This workflow's job is to make
+# sure that decision is well-informed: every push and PR gets typechecked, linted, unit
+# tested, built, and end-to-end tested — the four checks that would have caught this
+# session's bugs (the FOLDERS_KEY-class TDZ crashes) and the RAWTEXT-hijack class of bug
+# scripts/validate_html_structure.py already guards against locally.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (src/)
+        run: npm run typecheck
+
+      - name: Lint (src/, tests/)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: End-to-end tests (includes build-output verification)
+        run: npm run test:e2e
+
+      - name: HTML structure validation (existing repo safeguard)
+        run: |
+          pip install html5lib --break-system-packages --quiet
+          python3 scripts/validate_html_structure.py
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
