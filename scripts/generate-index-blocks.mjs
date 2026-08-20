@@ -25,7 +25,7 @@
  *                                                      index.html (used by CI)
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -111,8 +111,34 @@ initVaultState({
   getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
 });
 `.trim()
+  },
+  {
+    name: 'nodeQueries',
+    sourceFile: 'src/core/nodeQueries.ts',
+    testFile: 'tests/unit/nodeQueries.test.ts',
+    // No production wiring needed — these are pure functions (no ambient-global side effects
+    // to initialize), unlike the Phase 2 state modules above. Every call site elsewhere in
+    // index.html was updated in the same commit that wired this block in, to pass the
+    // now-required explicit arguments (nodes, collapsedIds, treeIndentWidth,
+    // sectionMarkersDepthZero, selectAllMode, multiSelectedIds, selectedId as applicable per
+    // function) instead of relying on this block's functions reading those as ambient globals.
+    footer: ''
   }
 ];
+
+function findFileRecursive(dir, targetName) {
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    const stat = statSync(full);
+    if (stat.isDirectory()) {
+      const found = findFileRecursive(full, targetName);
+      if (found) return found;
+    } else if (entry === targetName) {
+      return full;
+    }
+  }
+  return null;
+}
 
 function compileToPlainJs(sourceFile) {
   const tmpDir = mkdtempSync(path.join(tmpdir(), 'sakura-codegen-'));
@@ -132,7 +158,17 @@ function compileToPlainJs(sourceFile) {
       ],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'] }
     );
-    const outFile = path.join(tmpDir, path.basename(sourceFile).replace(/\.ts$/, '.js'));
+    // tsc places the output flat in tmpDir only when the source file has no imports at all
+    // (true for every Phase 2 state module). nodeQueries.ts has a `import type` reference to
+    // serializeMarkdown.ts — fully erased from the emitted JS (verified: no import statement
+    // in output), but its presence makes tsc infer a shared rootDir across both files, so the
+    // output lands at <tmpDir>/core/nodeQueries.js, mirroring the source's path under src/,
+    // rather than flat. Search for it instead of assuming the flat path.
+    const targetName = path.basename(sourceFile).replace(/\.ts$/, '.js');
+    const outFile = findFileRecursive(tmpDir, targetName);
+    if (!outFile) {
+      throw new Error(`Could not find compiled output "${targetName}" anywhere under ${tmpDir}`);
+    }
     const compiled = readFileSync(outFile, 'utf8');
     // The only post-processing needed: strip the `export ` keyword from top-level
     // declarations. Safe and simple specifically because these source modules are written
@@ -149,7 +185,8 @@ function compileToPlainJs(sourceFile) {
 function buildGeneratedBlock(block, compiled) {
   const startMarker = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.sourceFile} (tests: ${block.testFile}). Regenerate with \`npm run generate\` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */`;
   const endMarker = `/* GENERATED:${block.name}:END */`;
-  return `${startMarker}\n${compiled}\n${block.footer}\n${endMarker}`;
+  const footerPart = block.footer ? `\n${block.footer}` : '';
+  return `${startMarker}\n${compiled}${footerPart}\n${endMarker}`;
 }
 
 function spliceBlock(html, block, compiled) {
