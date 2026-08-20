@@ -1,6 +1,9 @@
 # Sakura: from single-file HTML to a real codebase
 
-**Status:** Phase 0 and Phase 1 complete. Phases 2–5 are still future work.
+**Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
+candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
+Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). Phases 4–5
+still future work.
 
 ## Why
 
@@ -326,11 +329,54 @@ likely means tackling that coupling directly (arguably pulling Phase 3's
 the vault turned out to still be tractable, but only by narrowing scope;
 there's no guarantee the next candidate offers even that option.
 
-**Phase 3 — feature domain extraction.**
+**Phase 3 — feature domain extraction. (Started — Templates' storage layer done, everything
+else in this phase not yet begun.)**
 Templates, Hub panels (with an eye toward de-duplicating the index.html /
 hub.html split noted above), Diagrams, Export, AI providers — in order of
 increasing coupling to sync, each becoming its own module with an explicit
 public interface and its own tests.
+
+First slice: `src/state/templatesIndex.ts` — the templates index's localStorage CRUD and
+trash-state toggling (`templateKey`/`builtinTemplateId`/`getBuiltinTemplateIconById`/
+`loadTemplatesIndex`/`saveTemplatesIndex`/`setTemplateIcon`/`touchTemplateIndex`/
+`loadActiveTemplatesIndex`/`loadTrashedTemplatesIndex`/`moveTemplateToTrashCore`/
+`restoreTemplateFromTrashCore`), using the exact "extract only the pure, testable core; leave
+orchestration alone" pattern the vault extraction established above. Deliberately excluded from
+this slice, and why: DOM rendering (`renderTemplatesList`/`openTemplatesMenu`/
+`renderSidebarTemplates`, same reasoning as `renderNotifList` staying hand-written);
+anything touching the live `nodes` array (`applyTemplateNodes`/`stampTemplateDateAuthor`/
+`applyBuiltinDefaultTemplate`/`applyDefaultTemplate`) — the same core-outline coupling blocking
+Phase 2's remaining candidates, genuinely not extractable until a real `core/` module boundary
+exists; `applyIncomingTemplateData` (Firestore sync, Phase 4 territory); and
+`permanentlyDeleteTemplateCore`, investigated specifically and found to reach into a sibling,
+not-yet-extracted domain (the template/folder map storage) plus a real Firestore delete —
+genuinely cross-domain, unlike `moveTemplateToTrashCore`/`restoreTemplateFromTrashCore`, which
+only touch the templates index itself and so were included.
+
+All 11 extracted functions kept their original names and signatures exactly — the lowest
+call-site risk of any cutover in this project so far (zero call sites needed to change).
+Needed the same relocation-then-splice two-step as `nodeQueries.ts`/`serializeMarkdown.ts`
+(the 11 were scattered across ~170 lines, interleaved with un-extracted siblings like
+`builtinTplIcons`/`getBuiltinTemplateDefs`). Caught two real problems before/during generation:
+a would-be duplicate `const` collision against still-hand-written sibling code that reads the
+same storage-key/version constants (`TEMPLATES_INDEX_KEY`/`TEMPLATE_KEY_PREFIX`/
+`BUILTIN_TEMPLATES_VERSION` — fixed by inlining the literal values instead of redeclaring them),
+and a real cross-block collision the generator's own collision checker caught on the first
+`npm run generate` attempt (this module's internal `deps`/`requireDeps` names collided with
+`presence.ts`'s identically-named internals — fixed with the same prefixing pattern
+`notifications.ts` used for its own past collision). New
+`tests/e2e/generated-templatesindex-smoke.spec.ts` does a full create/list/icon/trash/restore
+round-trip against real localStorage and specifically checks that an unrelated, physically
+distant function is still callable — the check that would have caught the prior cutover's
+import-statement bug that silently killed the whole script.
+
+Not yet started in Phase 3: Hub panels, Diagrams, Export, AI providers, and the rest of the
+Templates domain (rendering, node-array manipulation, sync). The real architectural fork ahead:
+keep picking off narrow, storage-layer-only slices domain by domain (lower risk, incremental,
+what worked here), or invest in scoping a real `core/` module boundary for `nodes`/`render()`
+directly — which is what's actually needed before the DOM- and node-coupled pieces of *any*
+domain (not just Templates) become safely extractable, and before Phase 2's remaining
+core-outline-coupled `let`s can move either. Not decided yet.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
