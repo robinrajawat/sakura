@@ -13,15 +13,17 @@ export interface OutlineNode extends PlainTextNode {
  * Computes a dotted outline number ("1", "1.1", "1.2", "2", ...) for each node in `list`, or
  * an empty string for every node when outline numbering is off.
  *
- * Phase 1 (docs/architecture-plan.md) — extraction of index.html's top-level
- * `computeOutlineNumbers()`. The original reads a global `outlineNumbering` boolean (a user
- * preference toggle) directly; here it's an explicit, REQUIRED second parameter instead —
- * deliberately no default, unlike formatRelativeTime's injectable clock. There's no single
- * universally-correct default for a user preference the way "the current time" is a correct
- * default for "what time is it right now" — silently guessing a default here would risk
- * masking whatever the app's actual current setting is, which is worse than forcing every
- * caller to pass it explicitly. NOT yet wired into index.html/hub.html; see escapeHtml.ts's
- * header comment for why.
+ * Extraction of index.html's top-level `computeOutlineNumbers()`, wired in via
+ * scripts/generate-index-blocks.mjs's `serializeMarkdown` block. The original read a global
+ * `outlineNumbering` boolean (a user preference toggle) directly; here it's an explicit,
+ * REQUIRED second parameter instead — deliberately no default, unlike formatRelativeTime's
+ * injectable clock. There's no single universally-correct default for a user preference the
+ * way "the current time" is a correct default for "what time is it right now" — silently
+ * guessing a default here would risk masking whatever the app's actual current setting is,
+ * which is worse than forcing every caller to pass it explicitly. The functions that used to
+ * read the global directly (serializeTreeText, serializeTreeTextWithNotes,
+ * serializeClipboardHtml, and a docx-export call site) were updated in the same commit that
+ * wired this block in, to pass `outlineNumbering` explicitly.
  */
 export function computeOutlineNumbers(list: OutlineNode[], outlineNumbering: boolean): string[] {
   if (!outlineNumbering) return list.map(() => '');
@@ -39,12 +41,16 @@ export function computeOutlineNumbers(list: OutlineNode[], outlineNumbering: boo
  * numbers and optional depth-rebasing (so a subtree exported on its own starts at the top
  * level rather than keeping its original nesting depth).
  *
- * Phase 1 (docs/architecture-plan.md) — extraction of index.html's top-level
- * `serializeMarkdown()`. The original defaults `scopeNodes` to the live global `nodes` array
- * and reads the `outlineNumbering` global indirectly via `computeOutlineNumbers()` — both
- * removed here in favor of explicit, required parameters, for the same reason given above:
- * a pure leaf function shouldn't reach into global state, and the exact node list / setting
- * value must come from the caller. NOT yet wired into index.html/hub.html.
+ * Extraction of index.html's top-level `serializeMarkdown()`, wired in via
+ * scripts/generate-index-blocks.mjs's `serializeMarkdown` block. The original defaulted
+ * `scopeNodes` to the live global `nodes` array and read the `outlineNumbering` global
+ * indirectly via `computeOutlineNumbers()` — both removed here in favor of explicit, required
+ * parameters, for the same reason given above: a pure leaf function shouldn't reach into
+ * global state, and the exact node list / setting value must come from the caller. Its two
+ * real call sites (exportMarkdown and one other) were updated in the same commit that wired
+ * this block in, to pass `outlineNumbering` explicitly. computeOutlineNumbers/serializeMarkdown
+ * needed a small relocation pass first, since they were originally interleaved with un-extracted
+ * sibling functions (serializeTreeText, serializeClipboardHtml) in index.html.
  */
 export function serializeMarkdown(
   scopeNodes: OutlineNode[],

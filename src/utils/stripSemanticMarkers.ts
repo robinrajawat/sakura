@@ -3,10 +3,10 @@
  * `[section headers]`, `(parenthetical asides)`, `` `code` ``, a leading `!` (highlight
  * marker), and a leading `>` (quote marker) are all unwrapped to their inner text.
  *
- * Phase 1 (docs/architecture-plan.md) — a literal, behavior-preserving extraction of
- * index.html's top-level `stripSemanticMarkers()`. Pure string transform, no DOM, no global
- * state — the cleanest possible Phase 1 candidate. NOT yet wired into index.html/hub.html;
- * see escapeHtml.ts's header comment for why.
+ * A literal, behavior-preserving extraction of index.html's top-level `stripSemanticMarkers()`.
+ * Pure string transform, no DOM, no global state — the cleanest possible Phase 1 candidate.
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block —
+ * name and signature match the original exactly, no wrapper needed.
  */
 export function stripSemanticMarkers(text: string | null | undefined): string {
   return String(text || '')
@@ -31,7 +31,10 @@ export interface PlainTextNode {
 
 /**
  * Returns a node's display text with semantic markup stripped — a literal extraction of
- * index.html's top-level `getNodePlainText()`.
+ * index.html's top-level `getNodePlainText()`. Wired into index.html via
+ * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
+ * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
+ * needed.
  */
 export function getNodePlainText(node: PlainTextNode): string {
   return stripSemanticMarkers(node.text || '');

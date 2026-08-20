@@ -123,6 +123,60 @@ initVaultState({
     // sectionMarkersDepthZero, selectAllMode, multiSelectedIds, selectedId as applicable per
     // function) instead of relying on this block's functions reading those as ambient globals.
     footer: ''
+  },
+  {
+    name: 'escapeHtml',
+    sourceFile: 'src/utils/escapeHtml.ts',
+    testFile: 'tests/unit/escapeHtml.test.ts',
+    // The exported name is `escapeHtml`, but index.html's ~231 real call sites all call the
+    // original short name `esc(...)`. Rather than touch every call site for a pure rename,
+    // this footer adds a thin wrapper preserving the old name — the same
+    // "same-shaped getter when a rename is otherwise wanted" pattern the architecture doc
+    // describes for Phase 2 (e.g. isPresenceTrackingDocId()). Zero call sites changed.
+    footer: 'function esc(value){return escapeHtml(value);}'
+  },
+  {
+    name: 'generateId',
+    sourceFile: 'src/utils/generateId.ts',
+    testFile: 'tests/unit/generateId.test.ts',
+    // generateId(prefix, randomSuffixLength=5) unifies three near-identical hand-written
+    // copies. genDocId's call sites live right where this block splices in, so it gets its
+    // wrapper here; genTemplateId and mnUid live elsewhere in index.html and were hand-edited
+    // in the same commit to delegate to this generated function too (genTemplateId(){return
+    // generateId('t')}, mnUid(){return generateId('mn',6)}) — trivial one-line bodies, not
+    // worth their own generated blocks, but no longer duplicating the id-generation logic.
+    // Zero call sites of any of the three changed.
+    footer: `function genDocId(){return generateId('d');}`
+  },
+  {
+    name: 'formatRelativeTime',
+    sourceFile: 'src/utils/formatRelativeTime.ts',
+    testFile: 'tests/unit/formatRelativeTime.test.ts',
+    // Name and signature both match the original exactly (the added `now` parameter is
+    // optional, defaulting to Date.now() — every real call site still passes one argument).
+    // Zero call sites changed, no wrapper needed.
+    footer: ''
+  },
+  {
+    name: 'stripSemanticMarkers',
+    sourceFile: 'src/utils/stripSemanticMarkers.ts',
+    testFile: 'tests/unit/stripSemanticMarkers.test.ts',
+    // Exports stripSemanticMarkers(text) and getNodePlainText(node) — both names and
+    // signatures match the originals exactly. Zero call sites changed, no wrapper needed.
+    footer: ''
+  },
+  {
+    name: 'serializeMarkdown',
+    sourceFile: 'src/utils/serializeMarkdown.ts',
+    testFile: 'tests/unit/serializeMarkdown.test.ts',
+    // Exports computeOutlineNumbers(list, outlineNumbering) and
+    // serializeMarkdown(scopeNodes, rebaseDepth, outlineNumbering) — both gained a required
+    // explicit outlineNumbering parameter in place of an implicit global read (no default,
+    // same reasoning as nodeQueries.ts's sectionMarkersDepthZero: no universally-correct
+    // default for a user preference). 6 real call sites updated in the same commit that wired
+    // this block in (a relocation pass first made the two functions contiguous, since they
+    // were originally interleaved with un-extracted sibling functions like serializeTreeText).
+    footer: ''
   }
 ];
 
@@ -170,13 +224,29 @@ function compileToPlainJs(sourceFile) {
       throw new Error(`Could not find compiled output "${targetName}" anywhere under ${tmpDir}`);
     }
     const compiled = readFileSync(outFile, 'utf8');
-    // The only post-processing needed: strip the `export ` keyword from top-level
-    // declarations. Safe and simple specifically because these source modules are written
-    // with NO imports and NO re-exports (a deliberate constraint — see each module's own
-    // header comment) — a more complex module graph would need real bundling, not a text
-    // strip. TS already fully erases `interface`/`type` declarations from JS output, so
-    // there's nothing to do about those.
-    return compiled.replace(/^export (?=(?:async function|function|const)\b)/gm, '');
+    // Two post-processing steps, both safe specifically because every generated block shares
+    // ONE script scope with every other block and the rest of index.html at runtime (see the
+    // file header) — there is no real module graph here, so anything a real ES module system
+    // would need an import for is already available as a bare global once the block that
+    // declares it is spliced in, regardless of which physical block appears first (function
+    // declarations hoist within the shared script anyway).
+    //   1. Strip the `export ` keyword from top-level declarations.
+    //   2. Strip any surviving `import ... from '...';` lines. TS erases `import type` entirely
+    //      (verified for nodeQueries.ts's reference to serializeMarkdown.ts's types), but a
+    //      genuine VALUE import — like serializeMarkdown.ts's `import { getNodePlainText } from
+    //      './stripSemanticMarkers'` — survives compilation as a literal top-level `import`
+    //      statement. Spliced into the classic (non-module) script, that's a syntax error that
+    //      silently kills the ENTIRE script block (not just this one function) — the actual
+    //      cause of a real regression caught during this cutover (esc/genDocId/every other
+    //      generated function all went undefined at once, because the whole script never ran).
+    //      Stripping the import line is correct: getNodePlainText is already declared as a
+    //      bare top-level function by the time this code runs, exactly the "no imports, no
+    //      re-exports" constraint the Phase 2 module header comments describe — this file just
+    //      wasn't fully consistent with its own stated constraint. TS already fully erases
+    //      `interface`/`type` declarations from JS output, so there's nothing to do about those.
+    return compiled
+      .replace(/^export (?=(?:async function|function|const)\b)/gm, '')
+      .replace(/^import\s.*$\n?/gm, '');
   } finally {
     rmSync(tmpDir, { recursive: true, force: true });
   }

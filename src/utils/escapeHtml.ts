@@ -2,13 +2,12 @@
  * HTML-escapes a string for safe insertion into text content or an attribute value via
  * `innerHTML`/`outerHTML`.
  *
- * This is a literal, behavior-preserving extraction of the top-level `esc()` function in
- * index.html (currently at the module-level scope, used ~183 times throughout the app).
- * Phase 1 (docs/architecture-plan.md) — extraction and test-equivalence only, this is NOT
- * yet wired into index.html/hub.html. See the Phase 1 section of that doc for why: the live
- * app is a classic (non-module) `<script>`, and safely cutting it over to import from real
- * ES modules requires solving script-execution-order semantics once, deliberately, as its
- * own piece of work — not something to sneak in per-function during extraction.
+ * This is a literal, behavior-preserving extraction of the top-level `esc()` function that
+ * used to live in index.html (currently at the module-level scope, used ~183 times throughout
+ * the app). Wired into index.html via scripts/generate-index-blocks.mjs's `escapeHtml` block;
+ * a thin hand-written wrapper (`function esc(value){return escapeHtml(value);}`) in that
+ * block's footer preserves the original short name so none of index.html's real call sites
+ * needed to change.
  *
  * Deliberately preserved from the original, even though it looks incomplete:
  * - Escapes only `&`, `<`, `>` — NOT `"` or `'`. index.html has a SEPARATE, differently-scoped
