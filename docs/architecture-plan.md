@@ -143,14 +143,17 @@ firestore.rules             — unchanged, deployed exactly as today (manual
 
 **Phase 0 — tooling scaffold, zero behavior change. (Done.)**
 
-**Phase 1 — pure, leaf utilities. (Done.)**
-Two batches. First: `escapeHtml` (index.html's `esc()`, used ~183 times — the highest-value,
+**Phase 1 — pure, leaf utilities. (Done — three batches now; the third came later, once
+investigating what a "core outline engine" extraction would need turned out to have real
+overlap with this phase's own scope.)**
+
+First batch: `escapeHtml` (index.html's `esc()`, used ~183 times — the highest-value,
 most security-relevant target), `generateId` (unifies `genDocId`/`genTemplateId`/`mnUid`,
 three near-identical copies, into one parameterized function), `formatRelativeTime` (needed
 one minimal addition — an injectable `now` parameter, defaulting to `Date.now()` — since the
 original calls `Date.now()` internally, making it untestable without either mocking global
 time or a flaky real-clock wait; every real call site still calls it with one argument,
-unaffected). Second: the complete pure dependency chain behind Markdown export —
+unaffected). Second batch: the complete pure dependency chain behind Markdown export —
 `stripSemanticMarkers`/`getNodePlainText` (fully pure string transforms, no changes needed at
 all), `computeOutlineNumbers` and `serializeMarkdown` (both needed their implicit global-state
 reads — the `outlineNumbering` user-preference toggle, and the live `nodes` array default —
@@ -159,31 +162,54 @@ added for `outlineNumbering`, since there's no universally-correct default for a
 preference the way "the current time" is for a clock, and guessing one would risk silently
 diverging from the app's actual current setting).
 
-Deliberately NOT extracted in this phase: `serializeOpml`, despite looking like a natural
-next target — it calls `getMeta()`, which reads live DOM (`el('header-title')`), so it isn't
-actually a pure leaf function without a real signature change to accept the title as a
+Deliberately NOT extracted in the first two batches: `serializeOpml`, despite looking like a
+natural next target — it calls `getMeta()`, which reads live DOM (`el('header-title')`), so it
+isn't actually a pure leaf function without a real signature change to accept the title as a
 parameter too. Left for a later pass rather than force-fit into "pure, leaf" scope it doesn't
 cleanly meet.
 
-**Important: none of Phase 1's extracted code is wired into index.html/hub.html yet.**
-Production behavior is unchanged — verified via an empty `git diff` against both files across
-every commit in this phase. This is deliberate, not an oversight: the live app is a classic
-(non-module) `<script>`, executing synchronously in document order. A `<script type="module">`
-is always deferred (runs after parsing, like `defer`), so simply adding a module `<script>`
-importing these utilities and assigning them to `window` would NOT make them available in
-time for the classic script's own top-to-bottom execution — they'd be `undefined` at every
-call site until the deferred module happened to run, which is too late. Solving this properly
-(most likely: converting the main script to `type="module"` itself, a bigger, separately-
-tested step, since that also changes top-level `let`/`function` scoping semantics from global
-to module-scoped) is real infrastructure work belonging to its own deliberate phase — not
-something to bolt on piecemeal, function by function, during extraction. Until then, Phase
-1's value is what it already provides: verified-correct, fully typed, fully tested canonical
-implementations ready to become the real ones the moment cutover happens, plus the
-extraction/test methodology now proven across two real batches instead of only placeholders.
+Third batch (`src/core/nodeQueries.ts`): the tree-query layer underneath outline rendering —
+`getIndex`/`getParentIndex`/`getSubtreeEnd`/`countDescendants`/`nodeHasChildren`/
+`getVisibleNodeIndexes`/`getSelectionRangeIds`/`hasLaterSiblingAtDepth`/`buildPrefix`/
+`buildVertFlags`/`isSectionNodeText`/`nodeIsSection`/`isIdSelected`. Found while looking for
+what a genuine "core outline engine" module would need to own (see Phase 2's discussion of why
+its remaining candidates — search/tabs/diagram-anchor state — are blocked on `nodes`/`render()`
+coupling): these turned out to already BE Phase 1 material, not a new category of work.
+`buildPrefix`/`buildVertFlags` already took an optional `scopedNodes` parameter defaulting to
+the live global — literally Phase 1's own pattern, just not carried all the way through yet.
+The rest needed the same treatment as the Markdown-export batch: `nodes`/`collapsedIds`/
+`selectAllMode`/`multiSelectedIds`/`selectedId`/`treeIndentWidth`/`sectionMarkersDepthZero`
+turned from implicit global reads into explicit parameters, zero logic changes otherwise.
 
-5 utility files, 53 unit tests total (verified passing), each backed by a pinned oracle copy
-of the actual current index.html implementation asserting exact behavioral equivalence.
-**Phase 2 — state consolidation. (In progress — 3 of many domains done.)**
+**Important: none of Phase 1's extracted code — any of the three batches — is wired into
+index.html/hub.html yet.** Production behavior is unchanged — verified via an empty `git diff`
+against both files across every commit in this phase, including the third batch's. This is
+deliberate, not an oversight: the live app is a classic (non-module) `<script>`, executing
+synchronously in document order. A `<script type="module">` is always deferred (runs after
+parsing, like `defer`), so simply adding a module `<script>` importing these utilities and
+assigning them to `window` would NOT make them available in time for the classic script's own
+top-to-bottom execution — they'd be `undefined` at every call site until the deferred module
+happened to run, which is too late.
+
+Two realistic paths to an actual cutover, neither attempted yet: (a) extend
+`scripts/generate-index-blocks.mjs` — built for Phase 2's state modules — to support a block
+that replaces several small, non-contiguous marked regions instead of assuming one contiguous
+region per module (`nodeQueries.ts`'s 13 functions are scattered across ~2,000 lines of
+index.html, interleaved with unrelated code, unlike every Phase 2 slice's single contiguous
+block); or (b) a separate, low-risk "just move code, change nothing" pass that physically
+relocates these 13 function declarations to sit together first, making them splice-able as one
+block the same way Phase 2's slices are. Either is real, separately-scoped work — not something
+to bolt on while also writing and verifying the pure logic itself, and not attempted in this
+pass. Until then, Phase 1's value is what it already provides across all three batches:
+verified-correct, fully typed, fully tested canonical implementations ready to become the real
+ones the moment cutover happens, plus the extraction/test methodology now proven across three
+real batches.
+
+6 files (5 in `src/utils/`, 1 in `src/core/`), 75 unit tests total (verified passing), each
+backed by a pinned oracle copy of the actual current index.html implementation asserting exact
+behavioral equivalence.
+
+**Phase 2 — state consolidation. (In progress — 4 of many domains done.)**
 Replace the scattered `let`s with typed state modules, one domain at a time.
 Purely mechanical — behavior must stay identical, verified against the
 Phase-0 E2E baseline before and after each domain.
