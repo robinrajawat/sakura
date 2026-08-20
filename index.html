@@ -3583,6 +3583,9 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 #doc-status-wrap{position:relative;flex:0 0 auto}
 .doc-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);transition:background .12s,color .12s}
+.doc-presence-chip{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;padding:3px 9px 3px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap;background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
+.doc-presence-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fc-green);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-green) 30%,transparent);animation:sakuraPresencePulse 1.8s ease-in-out infinite}
+@keyframes sakuraPresencePulse{0%,100%{opacity:1}50%{opacity:.4}}
 .doc-status-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
 .doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
@@ -5892,7 +5895,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><strong>Share a document</strong> — a "Share" chip appears under the title (next to Status/Author/Link) once you're signed in and a document is open; right-click a document in the file explorer → "Share…" does the same, switching to it first if it isn't already open. Type a name or email to search — results only ever include accounts set to Public, shown with their photo/initial, name, and email so you can tell you've got the right person. Click a result to share immediately with whichever access level ("Can view" / "Can edit") is currently selected. The same panel lists everyone who currently has access, with a dropdown to change their role and a × to remove them, at any time</li>
 <li><strong>View vs. edit access</strong> — a document shared as "Can view" is read-only for that person: their changes won't actually save even if the outline lets them type, since the save itself is rejected without edit access. "Can edit" allows real changes, which sync back to your account the same as your own edits do</li>
 <li><strong>Shared</strong> — a collapsible section in the file explorer, right after your own documents, listing everything other accounts have shared with you (who shared it, and your access level). Click one to open it as a regular tab. Reopening after closing it or reloading the page means going back to the Shared section and opening it again — a shared document doesn't stay in your tab strip across a reload the way your own documents do</li>
-<li>The bell icon next to the account button shows notifications — currently just "someone shared a document with you," more uses planned later. A dot shows how many are unread; click one to mark it read</li>
+<li>The bell icon next to the account button shows notifications for sharing activity — a new share, an access-level change, or your access being removed. A dot shows how many are unread; clicking a share or access-level notification marks it read and jumps straight to that document</li>
+<li><strong>Who's viewing a document</strong> — a green "N is here" chip appears next to the Share button while someone else (owner or another collaborator) has the same shared document open, so you're not editing blind. It only shows up on documents that are actually shared with at least one other person</li>
 </ul>
 </div>
           <div class="help-section" data-cat="toolbar" id="help-section-templates">
@@ -6527,6 +6531,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             </div>
           </div>
         </div>
+        <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
         <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
           <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
           <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
@@ -10285,6 +10290,7 @@ function applyTabSnapshot(tab){
   ensureSelection(); render(); updateDirtyIndicator();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
+  if(typeof startPresenceTrackingIfShared==='function')startPresenceTrackingIfShared(tab.docId);
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   const pane=el('editor-pane'); const restoreScroll=tab.scrollTop||0;
   if(pane){ try{ if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>{ try{pane.scrollTop=restoreScroll}catch(e){} }); else pane.scrollTop=restoreScroll; }catch(e){} }
@@ -10582,6 +10588,7 @@ function clearToNoDocumentState(){
   if(typeof updatePadVisibility==='function') updatePadVisibility();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateSharedDocBanner==='function')updateSharedDocBanner();
+  if(typeof stopPresenceTracking==='function')stopPresenceTracking();
 }
 function startupEnsureBlankDoc(){
   const id=genDocId();
@@ -13258,7 +13265,7 @@ function updateAccountUI(user){
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
   // know "a user just became signed in" rather than repeating the hook at each call site.
   if(user){ ensureUserProfile(user); startNotificationsListener(); }
-  else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; }
+  else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; if(typeof stopPresenceTracking==='function')stopPresenceTracking(); }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
@@ -13930,6 +13937,23 @@ async function changeDocumentAccessRole(docId,uid,role){
   try{
     const {mod,db}=await loadFirestoreMods();
     await mod.updateDoc(mod.doc(db,'users',currentUser.uid,'docs',docId),{['sharedWith.'+uid+'.role']:role});
+    // Same pattern as grantDocumentAccess/revokeDocumentAccess: tell the collaborator directly,
+    // otherwise a view->edit upgrade is invisible until they happen to reopen the doc, and an
+    // edit->view downgrade looks like a bug the next time they try to type. Best-effort — the
+    // role change itself already succeeded above regardless of whether this write goes through.
+    try{
+      await mod.addDoc(mod.collection(db,'notifications',uid,'items'),{
+        type:'access_role_changed',
+        fromUid:currentUser.uid,
+        fromEmail:(currentUser.email||'').toLowerCase(),
+        fromDisplayName:currentUser.displayName||'',
+        docId,
+        docTitle:shareModalDocId===docId?(shareModalDocTitle||'Untitled'):'a document',
+        role,
+        createdAt:Date.now(),
+        read:false
+      });
+    }catch(e){ console.warn('[sakura] access_role_changed notification failed (role change itself still succeeded):',e); }
     return true;
   }catch(e){ console.warn('[sakura] changeDocumentAccessRole failed:',e); return false; }
 }
@@ -13973,6 +13997,16 @@ function renderDocShareChip(docId){
     chip.removeAttribute('data-color');
     label.textContent='Share';
     chip.dataset.tip='Share this document with another Sakura account';
+  }
+  // Share status for an OWNED document only becomes known asynchronously (the fetch in
+  // refreshDocShareChipStatus below); presence tracking for the owner's side gates on that same
+  // count, so re-evaluate it here rather than only at the moment applyTabSnapshot originally ran
+  // — count>0 starts it (first time this doc's status resolves as shared), count going to 0
+  // after a revoke stops it (startPresenceTrackingIfShared's own no-op guard handles the
+  // already-tracking/already-stopped cases either way).
+  if(typeof startPresenceTrackingIfShared==='function'){
+    if(count>0)startPresenceTrackingIfShared(docId);
+    else if(presenceDocId===docId)stopPresenceTracking();
   }
 }
 async function refreshDocShareChipStatus(docId){
@@ -14244,6 +14278,11 @@ function notifText(n){
     const from=n.fromDisplayName||n.fromEmail||'The owner';
     return `${from} removed your access to "${n.docTitle||'a document'}"`;
   }
+  if(n.type==='access_role_changed'){
+    const from=n.fromDisplayName||n.fromEmail||'The owner';
+    const role=n.role==='editor'?'edit access':'view-only access';
+    return `${from} gave you ${role} to "${n.docTitle||'a document'}"`;
+  }
   // Generic fallback so a future notification type "just works" visually without needing a
   // matching branch here — as long as it carries a plain-language `message` field.
   return n.message||'New notification';
@@ -14315,7 +14354,17 @@ function renderNotifList(){
     dismiss.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
     dismiss.addEventListener('click',e=>{ e.stopPropagation(); deleteNotification(n.id); });
     item.appendChild(dismiss);
-    item.addEventListener('click',()=>{ if(!n.read)markNotificationRead(n.id); });
+    item.addEventListener('click',()=>{
+      if(!n.read)markNotificationRead(n.id);
+      // share_invite and access_role_changed both carry enough to jump straight to the document
+      // (owner uid + role + display name for the tab's shared-by chip); other types
+      // (access_revoked, generic local notifications) have nothing to open — clicking those just
+      // marks them read, same as before.
+      if((n.type==='share_invite'||n.type==='access_role_changed')&&n.docId&&n.fromUid){
+        toggleNotifMenu(false);
+        openSharedDocument(n.fromUid,n.docId,n.role||'viewer',n.fromDisplayName||'',n.fromEmail||'');
+      }
+    });
     list.appendChild(item);
   });
 }
@@ -14329,6 +14378,95 @@ function toggleNotifMenu(force){
 }
 el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('more-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
 document.addEventListener('click',e=>{ if(notifMenuOpen&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
+
+// ---------- Live presence ("who's here") on shared documents ----------
+// A lightweight "X is viewing" chip next to the Share button — not full Google-Docs-style live
+// cursors, just an avatar-free name chip so collaborators know they're not editing blind. Each
+// signed-in viewer heartbeats their own presence doc every PRESENCE_HEARTBEAT_MS under
+// users/{ownerUid}/docs/{docId}/presence/{their own uid} (see firestore.rules for why that path
+// mirrors the sharedWith access model instead of a separate top-level collection), and everyone
+// else viewing that same document listens via onSnapshot and filters out anything older than
+// PRESENCE_STALE_MS. Staleness-based expiry (rather than a delete-on-unload we could actually
+// rely on) is deliberate: a closed tab, crashed browser, or lost network connection never fires
+// beforeunload reliably, so "last write is old" is the only signal that's actually trustworthy —
+// the best-effort delete below is just a fast path for the common clean-close case, not the real
+// mechanism.
+const PRESENCE_HEARTBEAT_MS=20000;
+const PRESENCE_STALE_MS=45000;
+let presenceHeartbeatTimer=null;
+let presenceUnsub=null;
+let presenceDocId=null; // which doc the heartbeat+listener above are currently tracking, if any
+function presenceOwnerUidFor(docId){ return sharedDocMeta[docId]?.ownerUid||(currentUser?currentUser.uid:null); }
+async function writePresenceHeartbeat(docId){
+  if(!currentUser)return;
+  const ownerUid=presenceOwnerUidFor(docId); if(!ownerUid)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const meta=sharedDocMeta[docId];
+    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'presence',currentUser.uid),{
+      displayName:currentUser.displayName||currentUser.email||'Someone',
+      role:meta?meta.role:'owner',
+      lastSeen:Date.now()
+    });
+  }catch(e){ console.warn('[sakura] presence heartbeat failed:',e); }
+}
+async function clearPresenceFor(docId){
+  if(!currentUser||!docId)return;
+  const ownerUid=presenceOwnerUidFor(docId); if(!ownerUid)return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    await mod.deleteDoc(mod.doc(db,'users',ownerUid,'docs',docId,'presence',currentUser.uid));
+  }catch(e){ /* best-effort — staleness filter on other clients covers this regardless */ }
+}
+function renderPresenceChip(others){
+  const chip=el('doc-presence-chip'); if(!chip)return;
+  if(!others||!others.length){ chip.style.display='none'; chip.innerHTML=''; return; }
+  const names=others.map(p=>p.displayName||'Someone');
+  const label=names.length===1?(names[0]+' is here'):(names.length+' others are here');
+  chip.style.display='';
+  chip.innerHTML='<span class="doc-presence-dot"></span><span></span>';
+  chip.querySelector('span:last-child').textContent=label;
+  chip.dataset.tip=names.join(', ')+(names.length>1?' are viewing this document':' is viewing this document');
+}
+function stopPresenceTracking(){
+  if(presenceHeartbeatTimer){ clearInterval(presenceHeartbeatTimer); presenceHeartbeatTimer=null; }
+  if(presenceUnsub){ try{presenceUnsub()}catch(e){} presenceUnsub=null; }
+  const prevDocId=presenceDocId; presenceDocId=null;
+  if(prevDocId)clearPresenceFor(prevDocId);
+  renderPresenceChip([]);
+}
+// Only worth tracking when the document actually has more than one person who could be looking
+// at it: unconditionally heartbeating/listening on every document ever opened — including every
+// private, never-shared one — would be a steady stream of pointless Firestore reads/writes for
+// the overwhelming majority of documents. A doc shared TO the current user (sharedDocMeta set)
+// always qualifies; a doc the current user OWNS only qualifies once its own share count is known
+// to be > 0 (see the docShareStatusCache hook in renderDocShareChip below), since that status
+// loads asynchronously and isn't known yet at the moment a tab is switched into.
+function startPresenceTrackingIfShared(docId){
+  if(presenceDocId===docId)return; // already tracking this exact document
+  stopPresenceTracking();
+  if(!currentUser||!docId)return;
+  const sharedToMe=!!sharedDocMeta[docId];
+  const ownedAndShared=!sharedToMe&&Array.isArray(docShareStatusCache[docId])&&docShareStatusCache[docId].length>0;
+  if(!sharedToMe&&!ownedAndShared)return;
+  presenceDocId=docId;
+  writePresenceHeartbeat(docId);
+  presenceHeartbeatTimer=setInterval(()=>writePresenceHeartbeat(docId),PRESENCE_HEARTBEAT_MS);
+  const ownerUid=presenceOwnerUidFor(docId);
+  loadFirestoreMods().then(({mod,db})=>{
+    if(presenceDocId!==docId)return; // switched to a different doc before this resolved
+    const q=mod.collection(db,'users',ownerUid,'docs',docId,'presence');
+    presenceUnsub=mod.onSnapshot(q,snap=>{
+      const now=Date.now();
+      const others=snap.docs
+        .filter(d=>d.id!==currentUser.uid)
+        .map(d=>({uid:d.id,...d.data()}))
+        .filter(p=>typeof p.lastSeen==='number'&&(now-p.lastSeen)<PRESENCE_STALE_MS);
+      renderPresenceChip(others);
+    },err=>console.warn('[sakura] presence listener error:',err));
+  }).catch(e=>console.warn('[sakura] could not start presence listener:',e));
+}
+window.addEventListener('beforeunload',()=>{ if(presenceDocId)clearPresenceFor(presenceDocId); });
 
 // ---------- Feedback & error reporting ----------
 // One write-only Firestore collection ('feedback', see firestore.rules) for both a person's own

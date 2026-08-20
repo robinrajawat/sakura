@@ -134,6 +134,37 @@ service cloud.firestore {
     match /{path=**}/docs/{docId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.sharedWithUids;
     }
+    // Live "who's here" presence — one doc per active viewer/editor, written by that person
+    // only, under the document they're currently looking at. Lives as a subcollection of the
+    // doc itself (mirroring the sharedWith access model) rather than a separate top-level
+    // collection, so access to presence exactly tracks access to the document: the same get()
+    // check used for the parent doc's own read rule, re-run here via get() since a subcollection
+    // match doesn't inherit the parent's `resource`. Client heartbeats every ~20s and treats
+    // entries older than ~45s as stale (index.html: startPresenceTracking) — there's no TTL
+    // policy configured here, so a crashed tab's last-written doc lingers harmlessly until the
+    // next write overwrites it or the client-side staleness filter hides it; not worth a
+    // Cloud Function just to prune a handful of small documents.
+    match /users/{ownerUid}/docs/{docId}/presence/{uid} {
+      allow read: if request.auth != null && (
+        request.auth.uid == ownerUid ||
+        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
+      );
+      // Each person may only write their OWN presence doc (uid must match their auth uid) — no
+      // one can spoof someone else's presence — and only if they'd actually be allowed to read
+      // the document in the first place (same owner-or-collaborator check as above). Shape is
+      // restricted to exactly the three fields the client writes, so this can't become a way to
+      // stash arbitrary data.
+      allow create, update: if request.auth != null && request.auth.uid == uid && (
+        request.auth.uid == ownerUid ||
+        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
+      ) &&
+      request.resource.data.keys().hasOnly(['displayName','role','lastSeen']) &&
+      request.resource.data.lastSeen is number;
+      // Delete needs no access-to-parent-doc check: leaving your own presence marker (tab
+      // closed, doc switched, signed out) should always succeed even if access was revoked in
+      // the same moment — the only requirement is that it's your own entry.
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
