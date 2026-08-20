@@ -8994,7 +8994,34 @@ const AI_CURATED_MODELS={
 };
 function defaultModelForProvider(providerId){const list=AI_CURATED_MODELS[providerId]; return list&&list.length?list[0].v:''}
 const SAKURA_EXPORT_FORMAT_VERSION = 1;
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+/* GENERATED:escapeHtml:START — DO NOT EDIT BY HAND. Source of truth: src/utils/escapeHtml.ts (tests: tests/unit/escapeHtml.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * HTML-escapes a string for safe insertion into text content or an attribute value via
+ * `innerHTML`/`outerHTML`.
+ *
+ * This is a literal, behavior-preserving extraction of the top-level `esc()` function that
+ * used to live in index.html (currently at the module-level scope, used ~183 times throughout
+ * the app). Wired into index.html via scripts/generate-index-blocks.mjs's `escapeHtml` block;
+ * a thin hand-written wrapper (`function esc(value){return escapeHtml(value);}`) in that
+ * block's footer preserves the original short name so none of index.html's real call sites
+ * needed to change.
+ *
+ * Deliberately preserved from the original, even though it looks incomplete:
+ * - Escapes only `&`, `<`, `>` — NOT `"` or `'`. index.html has a SEPARATE, differently-scoped
+ *   `esc()` inside one specific closure (around its Notion-import code) that also escapes
+ *   quotes, for its own attribute-context use — that is a different function with a different
+ *   name collision, not a bug in this one, and not this extraction's concern to unify. Do not
+ *   "fix" this without checking every one of the 183 call sites for reliance on the
+ *   quote-not-escaped behavior in an attribute context first.
+ * - No polymorphism/options — every call site passes a value expected to become plain text
+ *   content, never HTML.
+ */
+function escapeHtml(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function esc(value){return escapeHtml(value);}
+/* GENERATED:escapeHtml:END */
 // Sanitizes rich HTML (Pad content, Note content) before it's ever assigned via innerHTML.
 // These fields are stored as raw HTML (needed for the WYSIWYG editors) and can arrive from
 // three places: this browser's own editing (already trusted), a local file import, or a
@@ -9800,7 +9827,37 @@ function contextualRedo(){
   if(ae && ae.classList && ae.classList.contains('todo-text')){ window.todosTextRedo?.(); return; }
   redo();
 }
-function genDocId(){return 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+/* GENERATED:generateId:START — DO NOT EDIT BY HAND. Source of truth: src/utils/generateId.ts (tests: tests/unit/generateId.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Generates a short, collision-resistant local id: a fixed prefix, a base36 timestamp, and a
+ * short random suffix. NOT a UUID and not cryptographically secure — matches index.html's
+ * original id scheme exactly, used for locally-generated document/template/meeting-note ids
+ * that only need to be unique within one browser's own storage, never across accounts or
+ * exposed as a security boundary.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `generateId` block. This
+ * single parameterized function replaces three near-identical copies that used to live
+ * separately in index.html:
+ *   - genDocId()      → now `function genDocId(){return generateId('d');}` — a thin wrapper
+ *                        in the generated block's own footer, since its call sites live right
+ *                        where the block splices in.
+ *   - genTemplateId() → now `function genTemplateId(){return generateId('t')}` — hand-edited
+ *                        in place elsewhere in index.html to delegate here.
+ *   - mnUid()         → now `function mnUid(){return generateId('mn',6)}` — same treatment.
+ * None of the three original functions' call sites needed to change.
+ *
+ * The random-suffix LENGTH differs between the two groups in the original code (5 vs 6) —
+ * preserved here as an explicit parameter with each wrapper's own default, rather than
+ * silently unified to one length, since collision probability at existing data volumes has
+ * never been an issue at either length and unifying it is a real (if small) behavior change
+ * outside this extraction's scope.
+ */
+function generateId(prefix, randomSuffixLength = 5) {
+    return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 2 + randomSuffixLength);
+}
+
+function genDocId(){return generateId('d');}
+/* GENERATED:generateId:END */
 function docKey(id){return DOC_KEY_PREFIX+id}
 function loadDocsIndex(){try{const raw=localStorage.getItem(DOCS_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
 function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list)); markMetaChanged('docsIndex');}catch(e){}}
@@ -12371,7 +12428,7 @@ function renderDocsList(){
     wrap.appendChild(row);
   });
 }
-function genTemplateId(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function genTemplateId(){return generateId('t')}
 function templateKey(id){return TEMPLATE_KEY_PREFIX+id}
 function loadTemplatesIndex(){try{const raw=localStorage.getItem(TEMPLATES_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
 function saveTemplatesIndex(list){try{localStorage.setItem(TEMPLATES_INDEX_KEY,JSON.stringify(list)); lastAnyDataChangeAt=Date.now(); if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); markMetaChanged('templatesIndex');}catch(e){}}
@@ -13085,7 +13142,41 @@ async function confirmDeleteIfNeeded(){
   if(!extCount&&!intCount&&!linkedParts.length)return true;
   return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\n${blWarning}${linkedWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
-function formatRelativeTime(ts){if(!ts)return '—'; const secs=Math.floor((Date.now()-ts)/1000); if(secs<5)return 'just now'; if(secs<60)return `${secs}s ago`; const mins=Math.floor(secs/60); if(mins<60)return `${mins}m ago`; const hrs=Math.floor(mins/60); if(hrs<24)return `${hrs}h ago`; return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+/* GENERATED:formatRelativeTime:START — DO NOT EDIT BY HAND. Source of truth: src/utils/formatRelativeTime.ts (tests: tests/unit/formatRelativeTime.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Formats a timestamp as a short relative-time string ("just now", "3m ago", "2h ago"), or an
+ * absolute short date once it's a day or more old.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `formatRelativeTime` block —
+ * name and signature both match the original exactly, so no wrapper was needed and none of
+ * index.html's real call sites changed.
+ *
+ * The original index.html function calls `Date.now()` directly inside its own body, making it
+ * untestable without either mocking global time or waiting in real time. `now` is added here
+ * as an optional SECOND parameter defaulting to `Date.now()` — the one addition strictly
+ * needed for deterministic tests, kept as the only change from the original (locale stays
+ * hardcoded to 'en-US' exactly as it was; adding a locale option isn't needed for testability
+ * and belongs to a real feature request, not this extraction). Every real call site calls this
+ * with exactly one argument (`formatRelativeTime(ts)`), unaffected by the added parameter.
+ */
+function formatRelativeTime(ts, now = Date.now()) {
+    if (!ts)
+        return '—';
+    const secs = Math.floor((now - ts) / 1000);
+    if (secs < 5)
+        return 'just now';
+    if (secs < 60)
+        return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60)
+        return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)
+        return `${hrs}h ago`;
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/* GENERATED:formatRelativeTime:END */
 let storageWriteFailed=false;
 function updateSavedIndicator(){
   const elx=el('sb-saved'); if(!elx)return;
@@ -17904,17 +17995,39 @@ function ensureSelection(){if(!nodes.length){selectedId=null; editingId=null; cl
 // level's guide on for as long as its children are on screen, sibling status aside, so a node that
 // happens to be the last branch in the document doesn't lose its children's guide lines. So every
 // ancestor depth is simply on.
-function stripSemanticMarkers(text){
-  return String(text||'')
-    .replace(/\[\[([\s\S]*?)\]\](?!\])/g,'$1')
-    .replace(/\[([^\]]+)\]/g,'$1')
-    .replace(/\(([^)]+)\)/g,'$1')
-    .replace(/`([^`]+)`/g,'$1')
-    .replace(/(^|\s)!(\S)/g,'$1$2')
-    .replace(/^>\s*/,'')
-    .replace(/(\s)>(\S)/g,'$1$2');
+/* GENERATED:stripSemanticMarkers:START — DO NOT EDIT BY HAND. Source of truth: src/utils/stripSemanticMarkers.ts (tests: tests/unit/stripSemanticMarkers.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Strips Sakura's inline semantic-node markup down to plain text: `[[wikilinks]]`,
+ * `[section headers]`, `(parenthetical asides)`, `` `code` ``, a leading `!` (highlight
+ * marker), and a leading `>` (quote marker) are all unwrapped to their inner text.
+ *
+ * A literal, behavior-preserving extraction of index.html's top-level `stripSemanticMarkers()`.
+ * Pure string transform, no DOM, no global state — the cleanest possible Phase 1 candidate.
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block —
+ * name and signature match the original exactly, no wrapper needed.
+ */
+function stripSemanticMarkers(text) {
+    return String(text || '')
+        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
+        .replace(/\[([^\]]+)\]/g, '$1')
+        .replace(/\(([^)]+)\)/g, '$1')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/(^|\s)!(\S)/g, '$1$2')
+        .replace(/^>\s*/, '')
+        .replace(/(\s)>(\S)/g, '$1$2');
 }
-function getNodePlainText(node){return stripSemanticMarkers(node.text||'')}
+/**
+ * Returns a node's display text with semantic markup stripped — a literal extraction of
+ * index.html's top-level `getNodePlainText()`. Wired into index.html via
+ * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
+ * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
+ * needed.
+ */
+function getNodePlainText(node) {
+    return stripSemanticMarkers(node.text || '');
+}
+
+/* GENERATED:stripSemanticMarkers:END */
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
 // OR — when the setting is on — it's simply at depth 0, with no bracket text required.
 // The two are independent and additive, per the setting's own description: [Bracket]
@@ -20004,8 +20117,66 @@ function zenUndockQaFromStatusbar(){
 }
 function setSidebarSearchVisible(on,persist=true){sidebarSearchVisible=!!on; const wrap=el('sidebar-search-wrap'); if(wrap)wrap.style.display=sidebarSearchVisible?'':'none'; if(!sidebarSearchVisible){sbSearchQuery=''; const inp=el('sidebar-search'); if(inp)inp.value=''; const clr=el('sidebar-search-clear'); if(clr)clr.classList.remove('visible'); renderSidebar()} const toggle=el('sidebar-search-bar-toggle'); if(toggle){toggle.classList.toggle('on',sidebarSearchVisible); toggle.setAttribute('aria-checked',String(sidebarSearchVisible))} const quickBtn=el('sb-toggle-search-btn'); if(quickBtn){quickBtn.classList.toggle('active',sidebarSearchVisible); quickBtn.dataset.tip=sidebarSearchVisible?'Hide filter box':'Show filter box'; quickBtn.setAttribute('aria-pressed',String(sidebarSearchVisible))} if(persist){savePrefs(); scheduleAutoSave()}}
 function toggleSidebarSearchBar(){setSidebarSearchVisible(!sidebarSearchVisible); if(sidebarSearchVisible){const inp=el('sidebar-search'); if(inp)inp.focus()}}
-function computeOutlineNumbers(list){if(!outlineNumbering)return list.map(()=>''); const counters=[]; return list.map(node=>{const depth=node.depth||0; counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; return counters.slice(0,depth+1).join('.')})}
-function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes); return scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const num=numbers[idx]; return `${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd()}).join('\n')}
+/* GENERATED:serializeMarkdown:START — DO NOT EDIT BY HAND. Source of truth: src/utils/serializeMarkdown.ts (tests: tests/unit/serializeMarkdown.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Computes a dotted outline number ("1", "1.1", "1.2", "2", ...) for each node in `list`, or
+ * an empty string for every node when outline numbering is off.
+ *
+ * Extraction of index.html's top-level `computeOutlineNumbers()`, wired in via
+ * scripts/generate-index-blocks.mjs's `serializeMarkdown` block. The original read a global
+ * `outlineNumbering` boolean (a user preference toggle) directly; here it's an explicit,
+ * REQUIRED second parameter instead — deliberately no default, unlike formatRelativeTime's
+ * injectable clock. There's no single universally-correct default for a user preference the
+ * way "the current time" is a correct default for "what time is it right now" — silently
+ * guessing a default here would risk masking whatever the app's actual current setting is,
+ * which is worse than forcing every caller to pass it explicitly. The functions that used to
+ * read the global directly (serializeTreeText, serializeTreeTextWithNotes,
+ * serializeClipboardHtml, and a docx-export call site) were updated in the same commit that
+ * wired this block in, to pass `outlineNumbering` explicitly.
+ */
+function computeOutlineNumbers(list, outlineNumbering) {
+    if (!outlineNumbering)
+        return list.map(() => '');
+    const counters = [];
+    return list.map((node) => {
+        const depth = node.depth || 0;
+        counters.length = depth + 1;
+        counters[depth] = (counters[depth] || 0) + 1;
+        return counters.slice(0, depth + 1).join('.');
+    });
+}
+/**
+ * Serializes a list of outline nodes to a Markdown bullet list, with optional outline
+ * numbers and optional depth-rebasing (so a subtree exported on its own starts at the top
+ * level rather than keeping its original nesting depth).
+ *
+ * Extraction of index.html's top-level `serializeMarkdown()`, wired in via
+ * scripts/generate-index-blocks.mjs's `serializeMarkdown` block. The original defaulted
+ * `scopeNodes` to the live global `nodes` array and read the `outlineNumbering` global
+ * indirectly via `computeOutlineNumbers()` — both removed here in favor of explicit, required
+ * parameters, for the same reason given above: a pure leaf function shouldn't reach into
+ * global state, and the exact node list / setting value must come from the caller. Its two
+ * real call sites (exportMarkdown and one other) were updated in the same commit that wired
+ * this block in, to pass `outlineNumbering` explicitly. computeOutlineNumbers/serializeMarkdown
+ * needed a small relocation pass first, since they were originally interleaved with un-extracted
+ * sibling functions (serializeTreeText, serializeClipboardHtml) in index.html.
+ */
+function serializeMarkdown(scopeNodes, rebaseDepth, outlineNumbering) {
+    if (!scopeNodes.length)
+        return '';
+    const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
+    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    return scopeNodes
+        .map((node, idx) => {
+        const indent = '  '.repeat(Math.max(0, node.depth - minDepth));
+        const num = numbers[idx] ? numbers[idx] + ' ' : '';
+        return `${indent}- ${num}${getNodePlainText(node)}`;
+    })
+        .join('\n');
+}
+
+/* GENERATED:serializeMarkdown:END */
+function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering); return scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const num=numbers[idx]; return `${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd()}).join('\n')}
 // Same tree-connector serialization as serializeTreeText, but with each node's note appended
 // as its own indented "Note:" line right under it. Used only where the AI actually needs to
 // reason about note content (currently: generateQaQuestionsAI) — the plain serializeTreeText
@@ -20014,7 +20185,7 @@ function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.le
 function serializeTreeTextWithNotes(scopeNodes=nodes,rebaseDepth=false){
   if(!scopeNodes.length)return '';
   const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0;
-  const numbers=computeOutlineNumbers(scopeNodes);
+  const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering);
   const lines=[];
   scopeNodes.forEach((node,idx)=>{
     const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth);
@@ -20026,7 +20197,6 @@ function serializeTreeTextWithNotes(scopeNodes=nodes,rebaseDepth=false){
   });
   return lines.join('\n');
 }
-function serializeMarkdown(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes); return scopeNodes.map((node,idx)=>`${'  '.repeat(Math.max(0,node.depth-minDepth))}- ${numbers[idx]?numbers[idx]+' ':''}${getNodePlainText(node)}`).join('\n')}
 function getClipboardThemeColors(){const cs=getComputedStyle(document.body); const read=name=>String(cs.getPropertyValue(name)||'').trim(); return {fg:read('--fg')||'#1a1a1a',muted:read('--muted')||'#6b7280',vert:read('--vert')||'#9ca3af',conn:read('--conn')||read('--accent')||'#c96442',semSection:read('--sem-section')||read('--accent')||'#2563eb',semAlert:read('--sem-alert')||'#dc2626',semCode:read('--sem-code')||'#7c3aed',semQuote:read('--sem-quote')||'#6b6240',codeBg:read('--chip')||'#f3f4f6',fcRed:read('--fc-red')||'#c0392b',fcOrange:read('--fc-orange')||'#c2701d',fcGreen:read('--fc-green')||'#27824f',fcBlue:read('--fc-blue')||'#2766c2',fcPurple:read('--fc-purple')||'#7d3fb5',fcGray:read('--fc-gray')||'#6f6b63'}}
 // Fixed light-mode palette for anything copied to the system clipboard as rich text (serializeClipboardHtml,
 // copyPreviewAsRichText, decision-log cards within it). Paste destinations (email, Slack, Word, Notion...) are
@@ -20037,7 +20207,7 @@ function getClipboardExportColors(){return {fg:'#1a1a1a',muted:'#6b7280',vert:'#
 function depthTextColor(depth,fg,muted){if(depth<=0)return fg; if(depth===1)return soften(fg,muted,0.68); if(depth===2)return soften(fg,muted,0.38); return muted}
 function soften(color,base,ratio=0.35){const toRgb=v=>{const s=String(v||'').trim(); const m=s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if(!m)return null; let h=m[1]; if(h.length===3)h=h.split('').map(ch=>ch+ch).join(''); const n=parseInt(h,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}}; const c=toRgb(color), b=toRgb(base); if(!c||!b)return color||base||'#777'; const mix=(x,y)=>Math.round(y*(1-ratio) + x*ratio); return `rgb(${mix(c.r,b.r)}, ${mix(c.g,b.g)}, ${mix(c.b,b.b)})`}
 function parseStyledTextForClipboard(text, colors){const src=String(text||''); const softSection=soften(colors.semSection,colors.muted); const softAlert=soften(colors.semAlert,colors.muted); const softCode=soften(colors.semCode,colors.muted); const mutedStrong=soften(colors.fg,colors.muted); const descTone=soften(colors.muted, colors.fg); const semanticGuide=src.match(/^(\[[^\]]+\]|\([^)]+\)|![^\s]+|`[^`]+`)\s*=\s*(.+)$/); if(semanticGuide){const token=semanticGuide[1]; const desc=semanticGuide[2]; if(token.startsWith('[') && token.endsWith(']')) return `<span style="color:${softSection};">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('(') && token.endsWith(')')) return `<span style="color:${mutedStrong};font-style:italic;">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('!')) return `<span style="color:${softAlert};font-weight:600;">${esc(token.slice(1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('`') && token.endsWith('`')) return `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`;} let out=''; let i=0; while(i<src.length){const ch=src[i]; if(ch==='`'){const end=src.indexOf('`',i+1); if(end>i+1){out+=`<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='['){const end=src.indexOf(']',i+1); if(end>i+1){out+=`<span style="color:${softSection};">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='('){const end=src.indexOf(')',i+1); if(end>i+1){out+=`<span style="color:${mutedStrong};font-style:italic;">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1; while(end<src.length&&!/\s/.test(src[end]))end++; if(end>i+1){out+=`<span style="color:${softAlert};font-weight:600;">${esc(src.slice(i+1,end))}</span>`; i=end; continue}} out+=esc(ch); i++} return out}
-function serializeClipboardHtml(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const colors=getClipboardExportColors(); const numbers=computeOutlineNumbers(scopeNodes); const rows=scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const rawPrefix=`${p.vert}${p.conn}`; const prefixHtml=esc(rawPrefix).replace(/ /g,'&nbsp;'); const numHtml=numbers[idx]?`<span style="color:${colors.muted};">${esc(numbers[idx])}&nbsp;</span>`:''; const deco=[node.styles.underline?'underline':'',node.styles.strike?'line-through':''].filter(Boolean).join(' '); const depth=node.depth||0; const baseColor=depthTextColor(depth,colors.fg,colors.muted); const textStyle=[`color:${baseColor}`,node.styles.bold?'font-weight:700':'',node.styles.italic?'font-style:italic':'',deco?`text-decoration:${deco}`:''].filter(Boolean).join(';'); return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${soften(colors.vert,colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboard(node.text||'',colors)||'&nbsp;'}</span></div>`}).join(''); return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`}
+function serializeClipboardHtml(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const colors=getClipboardExportColors(); const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering); const rows=scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const rawPrefix=`${p.vert}${p.conn}`; const prefixHtml=esc(rawPrefix).replace(/ /g,'&nbsp;'); const numHtml=numbers[idx]?`<span style="color:${colors.muted};">${esc(numbers[idx])}&nbsp;</span>`:''; const deco=[node.styles.underline?'underline':'',node.styles.strike?'line-through':''].filter(Boolean).join(' '); const depth=node.depth||0; const baseColor=depthTextColor(depth,colors.fg,colors.muted); const textStyle=[`color:${baseColor}`,node.styles.bold?'font-weight:700':'',node.styles.italic?'font-style:italic':'',deco?`text-decoration:${deco}`:''].filter(Boolean).join(';'); return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${soften(colors.vert,colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboard(node.text||'',colors)||'&nbsp;'}</span></div>`}).join(''); return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`}
 function getImageExportColors(){
   const cs=getComputedStyle(document.body);
   const read=name=>String(cs.getPropertyValue(name)||'').trim();
@@ -20512,7 +20682,7 @@ function extractSakuraClipPayload(html){
   return null;
 }
 async function exportToClipboard(forceFull=true){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dlCount=clipPayload?clipPayload.extras.filter(x=>x.dl).length:0; const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const extrasLabel=(dlCount||dgCount)?` (incl. ${[dlCount?`${dlCount} decision log${dlCount===1?'':'s'}`:'',dgCount?`${dgCount} diagram${dgCount===1?'':'s'}`:''].filter(Boolean).join(', ')})`:''; const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
-function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false))}
+function exportMarkdown(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.md`,'text/markdown;charset=utf-8',serializeMarkdown(getScopedNodes(true,foldOverride),false,outlineNumbering))}
 function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.txt`,'text/plain;charset=utf-8',serializeTreeText(getScopedNodes(true),false))}
 // === OPML ===
 // Recursively walks a flat depth-tagged node list (already rebased so the first
@@ -22930,7 +23100,7 @@ function docxBuildToc(headingEntries){
 }
 async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTitle=String(meta.title||'Tree'); const rawAuthor=String(meta.author||''); const createdIso=new Date().toISOString(); const docxAccentHex=docxLiveAccentHex(); _docxBookmarkCounter=0; _docxExtraRels=[]; _docxRelIdCounter=100; _docxMediaFiles=[]; _docxImageExtsUsed=new Set(); _docxNoteIconRelId=undefined; _docxIconPlacementCounter=0; const paras=[]; if(coverPageEnabled)paras.push(docxBuildCoverPage(rawTitle,rawAuthor)); paras.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${docxRun(rawTitle,{bold:true,size:32,color:docxAccentHex})}</w:p>`); if(rawAuthor.trim()) paras.push(`<w:p><w:pPr><w:pStyle w:val="Subtitle"/></w:pPr>${docxRun('Author: ',{bold:true,color:'6B7280'})}${docxRun(rawAuthor,{color:'6B7280'})}</w:p>`); paras.push('<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>');
   const scopeForDocx=getScopedNodes(true,foldOverride||previewCollapsedIds);
-  const docxNumbers=computeOutlineNumbers(scopeForDocx);
+  const docxNumbers=computeOutlineNumbers(scopeForDocx,outlineNumbering);
   const {consumed:dlConsumed,groups:dlGroups}=(typeof previewDetectDecisionLogs==='function')?previewDetectDecisionLogs(scopeForDocx):{consumed:new Set(),groups:[]};
   const dlByHeader=new Map(dlGroups.map(g=>[g.headerIdx,g]));
   const docxRemarksRenderedInline=new Set();
@@ -43053,7 +43223,7 @@ function _addTagPopoverFromInput(){
     const scopeNodes=getScopedNodes();
     if(!scopeNodes||!scopeNodes.length){ showTodosToast('Nothing open to extract from'); return; }
     const isSelection=(typeof selectAllMode!=='undefined'&&!selectAllMode&&typeof multiSelectedIds!=='undefined'&&multiSelectedIds.length>0);
-    const text=serializeMarkdown(scopeNodes,false);
+    const text=serializeMarkdown(scopeNodes,false,outlineNumbering);
     if(!text.trim()){ showTodosToast('Nothing to extract from'); return; }
     const btn=document.getElementById('todos-extract-btn');
     if(btn) btn.classList.add('ai-busy');
@@ -44573,7 +44743,7 @@ let meetingExpandedId=null;
 let meetingsPanelOpen=false;
 let meetingSearchOpen=false;
 let meetingSearchQuery='';
-function mnUid(){ return 'mn'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function mnUid(){ return generateId('mn',6); }
 function normalizeMeetingActionItem(it){
   return { id: (it&&typeof it.id==='string')?it.id:mnUid(), text:(it&&typeof it.text==='string')?it.text:'', done:!!(it&&it.done), promotedTodoId:(it&&typeof it.promotedTodoId==='string')?it.promotedTodoId:null };
 }
