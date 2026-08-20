@@ -1,15 +1,17 @@
 # Sakura: from single-file HTML to a real codebase
 
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
-plus two narrower re-investigations: outline search matching and tab cycling/reordering both
-turned out extractable once the `core/` pattern existed, even though both were originally set
-aside as blocked. Phase 3 in progress (Templates' storage layer done; AI provider prefs storage
-done; Hub panels/Diagrams/Export and the rest of Templates not yet begun — Hub is also blocked
-on a structural issue: it lives in a separate `hub.html` file, not `index.html`). `core/` module
-boundary: seven slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete,
-the shared selection/parentId helpers, and outline search matching). One additional Phase 3
-slice: tab cycling/reordering (`src/state/tabOrder.ts` — not `core/`, since it never touches the
-outline `nodes` array). Phases 4–5 still future work.
+plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
+diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
+though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
+progress (Templates' storage layer done; AI provider prefs storage done; Hub panels/Diagrams/
+Export and the rest of Templates not yet begun — Hub is also blocked on a structural issue: it
+lives in a separate `hub.html` file, not `index.html`). `core/` module boundary: seven slices
+done (indent/outdent, moveSelected, drag-and-drop move, paste, delete, the shared selection/
+parentId helpers, and outline search matching). Two additional Phase 2/3-adjacent slices: tab
+cycling/reordering and diagram-anchor/orphan logic (`src/state/tabOrder.ts`,
+`src/state/diagramAnchor.ts` — not `core/`, since neither touches the outline `nodes` array as a
+mutation target). Phases 4–5 still future work.
 
 ## Why
 
@@ -309,16 +311,20 @@ that same full-scope treatment:
   `render()` directly, which doesn't have a stable module boundary yet.
   These are more honestly Phase 3 (or a "core outline engine" slice that
   doesn't exist yet in this plan) than Phase 2 leaf state. Still set aside —
-  no change here. **Update, after the `core/` boundary existed:** outline
-  search's matching logic specifically was re-investigated and turned out to
-  be a false blocker — see `src/core/nodeSearch.ts` under the `core/`
-  section below. Tab state was also re-investigated: `cycleOpenTab`/
-  `reorderTab` specifically never touch `nodes` at all (only `openTabs`/
-  `activeTabDocId`), so the original blocking reason didn't apply to them —
-  see `src/state/tabOrder.ts` below. Diagram-anchor state and the rest of
-  tab state (tab-strip drag visuals, `switchDoc`'s own document-loading
-  orchestration) remain un-investigated/genuinely coupled; no claim either
-  way about whether more of either domain would offer the same opening.
+  no change here. **Update, after the `core/` boundary existed:** all three
+  were re-investigated and turned out narrower than the blanket verdict
+  suggested. Outline search's matching logic — see `src/core/nodeSearch.ts`
+  under the `core/` section below. Tab cycling/reordering — `cycleOpenTab`/
+  `reorderTab` never touch `nodes` at all — see `src/state/tabOrder.ts`.
+  Diagram-anchor labeling/orphan-detection/reordering — reads `nodes`
+  read-only (never mutates it, never calls `render()`) — see
+  `src/state/diagramAnchor.ts`. What remains genuinely coupled in each
+  domain: outline search's `openSearch`/`closeSearch`/UI wiring; tab
+  state's `switchDoc` (full document-load orchestration) and tab-strip
+  drag visuals; diagram state's node-array-touching pieces (diagram
+  creation/deletion tied to node lifecycle, `renderDiagramsList`'s DOM
+  construction). No further claim about whether more of any of these three
+  domains would offer the same opening.
 - Secure Storage vault (`vaultCryptoKey`/`decryptedKeyCache`/
   `decryptedGistTokenCache`, AES-GCM/PBKDF2) — initially deferred whole
   (self-contained from `nodes`/`render()`, but read/written from several
@@ -434,6 +440,22 @@ to the real `sakura_open_tabs_v1` localStorage key.
 
 Not yet started in Phase 3: Hub panels, Diagrams, Export, and the rest of the Templates domain
 (rendering, node-array manipulation, sync).
+
+**Fourth slice: `src/state/diagramAnchor.ts`** — `computeDiagramAnchorLabel`/`isDiagramOrphaned`/
+`diagramNeedsAttentionCore`/`reorderDiagramsCore`. Same shape as `tabOrder.ts`'s revisit: filed
+under Phase 3 rather than `core/` since nothing here mutates the outline `nodes` array — the
+anchor/orphan functions read `nodes` read-only (to check whether an anchored node id still
+exists), and the reorder function only touches the separate `diagrams` array. References
+`stripSemanticMarkers` (already a generated block from Phase 1) via the established
+`declare function` ambient pattern. One genuine behavioral quirk pinned deliberately rather than
+"fixed": `reorderDiagramRow`'s target index is computed *before* the dragged item is spliced out
+and never recomputed afterward, so (unlike `reorderTabsCore`'s explicit `side` parameter)
+dragging forward lands the item just *after* the target while dragging backward lands it just
+*before* — a real asymmetry in the existing drag-and-drop UX, preserved exactly and pinned with
+dedicated tests rather than "corrected" during extraction. 21 new unit tests, all passing first
+run, including that quirk. New `tests/e2e/generated-diagramanchor-smoke.spec.ts` exercises all
+four real, unchanged wrapper functions — including confirming the forward-drag quirk survives
+through real orchestration (`markDirty`/`scheduleAutoSave`), not just the pure function alone.
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
