@@ -2,8 +2,9 @@
 
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
-Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). Phases 4–5
-still future work.
+Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
+boundary started (indent/outdent — the first slice, proving the pure-mutation/orchestration
+decomposition pattern; move/paste/split/delete not yet attempted). Phases 4–5 still future work.
 
 ## Why
 
@@ -324,10 +325,12 @@ that same full-scope treatment:
 
 The bulk of the ~300 remaining top-level `let`s still fall into the
 core-outline-coupled bucket, not the easy one. Continuing Phase 2 further
-likely means tackling that coupling directly (arguably pulling Phase 3's
-`core/` work forward), rather than finding more easy, isolated slices —
-the vault turned out to still be tractable, but only by narrowing scope;
-there's no guarantee the next candidate offers even that option.
+means tackling that coupling directly — the `core/` module boundary work
+below, now started rather than hypothetical — rather than finding more
+easy, isolated slices; the vault turned out to still be tractable, but
+only by narrowing scope, and there's no guarantee the remaining Phase 2
+candidates offer even that option once the `core/` boundary is far enough
+along to revisit them.
 
 **Phase 3 — feature domain extraction. (Started — Templates' storage layer done, everything
 else in this phase not yet begun.)**
@@ -371,12 +374,68 @@ distant function is still callable — the check that would have caught the prio
 import-statement bug that silently killed the whole script.
 
 Not yet started in Phase 3: Hub panels, Diagrams, Export, AI providers, and the rest of the
-Templates domain (rendering, node-array manipulation, sync). The real architectural fork ahead:
-keep picking off narrow, storage-layer-only slices domain by domain (lower risk, incremental,
-what worked here), or invest in scoping a real `core/` module boundary for `nodes`/`render()`
-directly — which is what's actually needed before the DOM- and node-coupled pieces of *any*
-domain (not just Templates) become safely extractable, and before Phase 2's remaining
-core-outline-coupled `let`s can move either. Not decided yet.
+Templates domain (rendering, node-array manipulation, sync).
+
+**`core/` module boundary — started.**
+The real architectural fork the previous paragraph left open — keep picking off narrow,
+storage-layer-only slices domain by domain, or invest in scoping a real `core/` module boundary
+for `nodes`/`render()` directly — was decided: the boundary work started, on the reasoning that
+continued narrow slices avoid the actual bottleneck rather than address it, and every remaining
+Phase 2 candidate and every DOM/node-coupled half of Phase 3's domains stays stuck without it.
+
+First slice: `src/core/nodeMutations.ts` — `canIndentAt`/`indentRootIndexes`/
+`outdentRootIndexes`. A genuinely different kind of extraction than anything before it.
+`nodeQueries.ts` worked because its 13 functions had zero side effects — pure relocation was
+enough. Every mutation function in `index.html` (`insertSiblingBefore`, `moveNodeBlock`,
+`pasteParsedNodes`, `handleDrop`, etc.) fuses pure state mutation with orchestration — undo-stack
+pushes, dirty-flag marking, selection updates, `render()` calls, sometimes edit-mode triggers —
+in the same lines, with no seam to relocate along. Extracting any of them means DECOMPOSING into
+a pure state-transition plus the orchestration that calls it: real editing-logic surgery on a
+production app with live user documents, not a mechanical move.
+
+Given that risk, this started with the single simplest, lowest-risk candidate available:
+indent/outdent. Pure depth-array mutation — no text-splitting, no clipboard, no drag-and-drop
+edge cases — chosen specifically to prove the decomposition pattern holds before attempting
+anything with a larger blast radius (move, paste, split, and delete are all real candidates for
+later slices, each with its own higher-risk edge cases to work through). The extracted functions
+preserve the original's mixed-depth partial-outdent behavior exactly — a root already at depth 0
+is individually skipped, not an all-or-nothing guard for the whole call — verified with a
+dedicated oracle test for that specific edge case.
+
+Scoped deliberately narrow after checking real numbers, the same way every slice in this project
+has been: `getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds` are shared by far more
+than indent/outdent (13/18/23 real call sites respectively, across `moveSelected`/
+`moveNodeBlock`/`pasteParsedNodes`/`handleDrop`/`deleteSelected` and more) — extracting them now
+would have meant updating every one of those call sites in the same slice, blowing well past
+"the simplest possible first case." They stay hand-written; the orchestration wrapper
+(`indentSelected`/`outdentSelected`, still hand-written, only their inner depth-mutation loop
+replaced with calls into the new core functions) computes `rootIndexes` with them exactly as
+before and passes the result in as a plain parameter.
+
+This slice also established a new, reusable pattern for referencing an already-spliced
+generated block's functions from a NEW generated block, without repeating the
+`serializeMarkdown` cutover's mistake: `getSubtreeEnd` (from `nodeQueries.ts`) is referenced via
+a bare `declare function` — a type-only declaration, verified via a minimal compile repro to
+produce zero runtime JS emission, resolving at runtime to the real already-spliced function since
+every generated block shares one script scope. This is deliberately NOT a real value import,
+which would survive compilation as a literal `import` statement and silently kill the entire
+script the way `serializeMarkdown.ts`'s did. The node-shape type (`QueryableNode`) IS a genuine
+`import type` from `nodeQueries.ts` — fully erased, same reasoning as `nodeQueries.ts`'s own
+`import type` reference to `serializeMarkdown.ts`'s types — reused rather than redefining an
+equivalent interface.
+
+New `tests/e2e/generated-nodemutations-smoke.spec.ts` exercises three layers: the pure functions
+directly (including the mixed-depth edge case), the real orchestration wrappers against real app
+state (confirming `pushUndo`/`markDirty`/`rebuildParentIds`/`render` all still fire — checking
+undo-stack growth and `parentId` recomputation, not just the depth values), and the same
+"unrelated, physically distant function still callable" check used since the `serializeMarkdown`
+cutover to catch a script-killing regression before merge, not after.
+
+Not yet started: move, paste, split, delete — the higher-risk mutation operations — and the
+shared selection-computation helpers (`getSelectionRootIndexes`/`getSelectedIds`/
+`rebuildParentIds`) this slice deliberately left hand-written. Each is a real next candidate,
+likely in roughly that order (lowest to highest risk), each needing its own investigation into
+what pure/orchestration seam actually exists before committing to a scope.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
