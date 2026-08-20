@@ -3,9 +3,9 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
 Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
-boundary started, two slices done (indent/outdent, then moveSelected — both keyboard-driven,
-non-drag-and-drop mutations); drag-and-drop move, paste, split, delete not yet attempted. Phases
-4–5 still future work.
+boundary started, three slices done (indent/outdent, moveSelected, then drag-and-drop move — the
+highest-complexity slice yet: 4 modes, depth remapping, a descendant guard, and a multi-block
+reordering algorithm); paste, split, delete not yet attempted. Phases 4–5 still future work.
 
 ## Why
 
@@ -462,6 +462,41 @@ left for its own later, more carefully scoped slice.
 
 Not yet started: drag-and-drop move, paste, split, delete, and the shared selection-computation
 helpers this and the indent/outdent slice both deliberately left hand-written.
+
+**Third slice: drag-and-drop move.** `isDescendantIndex`/`moveNodeBlockCore`/
+`moveMultipleNodeBlocksCore`, added to the same `src/core/nodeMutations.ts` file. Meaningfully
+more complex than the prior two slices — 4 modes (above/below/child/end), depth remapping with
+a defensive floor, a descendant-of-target rejection guard, and a genuinely tricky multi-block
+algorithm (extract every dragged block's position before any removal, remove last-to-first so
+earlier blocks' indexes stay valid, re-resolve the target index after removal since ids stay
+stable across splices but indices don't) — the complexity the previous slice's own "deliberately
+deferred" note anticipated.
+
+Turned out lower-risk on the call-site side than the internal complexity suggested:
+`moveNodeBlock`/`moveMultipleNodeBlocks` were already nearly isolated — each has exactly one
+real external caller (`handleDrop`), confirmed via call-site counts before starting (2 total
+occurrences each = definition + one real call). Only one other real call site needed updating:
+`isDescendantIndex`'s use inside the `dragover` DOM handler's live drag-validity check. Same
+convention as every prior slice: the three new core functions mutate `nodes` in place and report
+success/failure (a boolean, or the surviving dragged ids on success/`null` on rejection), without
+touching `rebuildParentIds()` or any selection state — those stay in the now-thin hand-written
+orchestration wrappers. `handleDrop` itself (`pushUndo`/`markDirty`/`clearDragIndicators`/
+`dragState` reset/`render`/`showToast`, plus its own `undoStack.pop()` rollback on a rejected
+move) is untouched — it already treated `moveNodeBlock`/`moveMultipleNodeBlocks` as a black box
+and still does.
+
+19 new oracle-backed unit tests covering all 4 modes, the subtree-moves-together case, all 4
+single-block rejection guards, and 5 more for the multi-block function (including
+argument-order-independent re-sorting by document position, and the return value preserving
+argument order rather than position order). New e2e coverage calls `handleDrop` directly against
+real app state: single-block move, an invalid multi-block drop that gets rolled back (confirming
+the rollback itself really fires, not just that render still happens afterward), and a valid
+multi-block drop — real array order, depths, undo-stack growth, `dragState` reset, and
+`multiSelectedIds` all checked.
+
+Not yet started: paste, split, delete — still ahead, likely in that order — and the shared
+selection-computation helpers (`getSelectionRootIndexes`/`getSelectedIds`/`rebuildParentIds`/
+`clearMultiSelection`) every slice so far has deliberately left hand-written.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
