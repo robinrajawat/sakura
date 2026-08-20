@@ -3,8 +3,9 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress (4 domains done, remaining
 candidates blocked on core-outline coupling). Phase 3 started (Templates' storage layer done;
 Hub panels/Diagrams/Export/AI providers and the rest of Templates not yet begun). `core/` module
-boundary started (indent/outdent — the first slice, proving the pure-mutation/orchestration
-decomposition pattern; move/paste/split/delete not yet attempted). Phases 4–5 still future work.
+boundary started, two slices done (indent/outdent, then moveSelected — both keyboard-driven,
+non-drag-and-drop mutations); drag-and-drop move, paste, split, delete not yet attempted. Phases
+4–5 still future work.
 
 ## Why
 
@@ -436,6 +437,31 @@ shared selection-computation helpers (`getSelectionRootIndexes`/`getSelectedIds`
 `rebuildParentIds`) this slice deliberately left hand-written. Each is a real next candidate,
 likely in roughly that order (lowest to highest risk), each needing its own investigation into
 what pure/orchestration seam actually exists before committing to a scope.
+
+**Second slice: `moveSelected` (keyboard-driven reorder).** Added to the same
+`src/core/nodeMutations.ts` file (same conceptual domain) rather than a new one — `canMoveUpAt`/
+`canMoveDownAt` (pure guards, relocated with an explicit `nodes` parameter) and `moveNodeUp`/
+`moveNodeDown` (pure mutation — splices the subtree rooted at `idx` past its adjacent sibling's
+*entire* subtree, not just the sibling node, returning the moved root's `id` for `selectedId`
+tracking). Chosen as the next-lowest-risk candidate after indent/outdent: still no
+text-splitting or clipboard interaction, but real array-splice repositioning logic, one step up
+in complexity.
+
+Tight call-site impact, same discipline as every slice before it: only 2 real sites changed
+(`canMoveUpAt`/`canMoveDownAt`, both inside `moveSelected`'s own body) — `moveSelected` itself
+has 7 call sites elsewhere but stays hand-written as the orchestration wrapper, so none of those
+needed to change. Two guard checks in `moveSelected` (`idx===0`, `end>=nodes.length`) were
+already redundant with what `canMoveUpAt`/`canMoveDownAt` check internally — traced through and
+confirmed, then preserved exactly as-is rather than simplified away, to avoid any
+behavior-adjacent change outside this extraction's scope.
+
+Deliberately excludes `moveNodeBlock`/`moveMultipleNodeBlocks`/`handleDrop` (drag-and-drop
+reordering) — a substantially more complex superset of what `moveSelected` does (multiple modes
+— above/below/child/end — depth remapping, descendant-of-target checks, multi-block moves) —
+left for its own later, more carefully scoped slice.
+
+Not yet started: drag-and-drop move, paste, split, delete, and the shared selection-computation
+helpers this and the indent/outdent slice both deliberately left hand-written.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
