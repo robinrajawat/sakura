@@ -285,4 +285,154 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
 
     expect(unexpectedErrors).toEqual([]);
   });
+
+  test('drag-and-drop move (handleDrop): single-block, multi-block, and the descendant-rejection guard, all against real app state', async ({ page }) => {
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
+    });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !KNOWN_NOISE.test(msg.text())) {
+        unexpectedErrors.push('console.error: ' + msg.text());
+      }
+    });
+
+    await page.goto('file://' + indexPath);
+
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => {
+        const el = document.getElementById('sakura-landing-overlay');
+        if (el) el.style.display = 'none';
+      });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    // 1. Pure functions directly — the trickiest case: dragging a subtree onto its own
+    // descendant must be rejected, leaving nodes untouched.
+    const pureRejection = await page.evaluate(() => {
+      const testNodes = [
+        { id: 1, depth: 0 }, // A
+        { id: 2, depth: 1 } // A1, A's child
+      ];
+      // @ts-expect-error — bare globals from index.html
+      const moved = moveNodeBlockCore(testNodes, 1, 2, 'below'); // drag A onto its own child A1
+      return { moved, order: testNodes.map((n) => n.id) };
+    });
+    expect(pureRejection.moved).toBe(false);
+    expect(pureRejection.order).toEqual([1, 2]); // unchanged
+
+    // 2. handleDrop, single-block move: real app state, a 3-node tree, dragging the first node
+    // to become the third node's child. Proves commitEdit/pushUndo/markDirty/clearDragIndicators/
+    // dragState-reset/render/showToast all still fire around the new core call.
+    const singleMoveResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 0, text: 'B', styles: {} },
+        { id: 3, depth: 0, text: 'C', styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = 1;
+      // @ts-expect-error
+      multiSelectedIds = [];
+      // @ts-expect-error
+      selectAllMode = false;
+      // @ts-expect-error
+      focusedId = null;
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      dragState = { draggedId: 1, draggedIds: [1], targetId: null, mode: null };
+      // @ts-expect-error
+      render();
+
+      const undoDepthBefore = undoStack.length;
+      // @ts-expect-error
+      handleDrop(1, 3, 'child'); // drag A as C's child
+
+      return {
+        // @ts-expect-error
+        order: nodes.map((n: any) => n.id),
+        // @ts-expect-error
+        depths: nodes.map((n: any) => n.depth),
+        undoStackGrew: undoStack.length > undoDepthBefore,
+        // @ts-expect-error
+        dragStateReset: dragState.draggedId === null && dragState.draggedIds === null,
+        renderedRows: document.querySelectorAll('.node-row').length
+      };
+    });
+    expect(singleMoveResult.order).toEqual([2, 3, 1]); // B, C, A(child)
+    expect(singleMoveResult.depths).toEqual([0, 0, 1]);
+    expect(singleMoveResult.undoStackGrew).toBe(true);
+    expect(singleMoveResult.dragStateReset).toBe(true);
+    expect(singleMoveResult.renderedRows).toBe(3);
+
+    // 3. handleDrop, multi-block move AND the rejection guard in the same real orchestration
+    // path: first attempt an invalid drop (target is one of the dragged ids) and confirm
+    // nothing changes and undo isn't pushed permanently (the undoStack.pop() rollback on a
+    // rejected move), then a valid multi-block drop.
+    const multiMoveResult = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 0, text: 'B', styles: {} },
+        { id: 3, depth: 0, text: 'C', styles: {} },
+        { id: 4, depth: 0, text: 'D', styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = 1;
+      // @ts-expect-error
+      multiSelectedIds = [1, 3];
+      // @ts-expect-error
+      selectAllMode = false;
+      // @ts-expect-error
+      undoStack = [];
+      // @ts-expect-error
+      dragState = { draggedId: 1, draggedIds: [1, 3], targetId: null, mode: null };
+      // @ts-expect-error
+      render();
+
+      // Invalid: target (id 1) is one of the dragged ids — should be rejected, undo rolled back.
+      // @ts-expect-error
+      handleDrop(1, 1, 'below');
+      const afterRejected = {
+        // @ts-expect-error
+        order: nodes.map((n: any) => n.id),
+        undoStackLength: undoStack.length
+      };
+
+      // Valid: drag A and C below D.
+      // @ts-expect-error
+      handleDrop(1, 4, 'below');
+      const afterValid = {
+        // @ts-expect-error
+        order: nodes.map((n: any) => n.id),
+        // @ts-expect-error
+        multiSelectedIds: [...multiSelectedIds]
+      };
+
+      return { afterRejected, afterValid };
+    });
+    expect(multiMoveResult.afterRejected.order).toEqual([1, 2, 3, 4]); // unchanged
+    expect(multiMoveResult.afterRejected.undoStackLength).toBe(0); // rolled back, not left dangling
+    expect(multiMoveResult.afterValid.order).toEqual([2, 4, 1, 3]); // B, D, A, C
+    expect(multiMoveResult.afterValid.multiSelectedIds).toEqual([1, 3]);
+
+    // 4. Proof the rest of the script still runs.
+    const restOfScriptWorks = await page.evaluate(() => {
+      // @ts-expect-error
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof indentSelected === 'function' && typeof moveSelected === 'function';
+    });
+    expect(restOfScriptWorks).toBe(true);
+
+    expect(unexpectedErrors).toEqual([]);
+  });
 });

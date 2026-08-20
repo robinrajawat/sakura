@@ -6,17 +6,22 @@ import {
   canMoveUpAt,
   canMoveDownAt,
   moveNodeUp,
-  moveNodeDown
+  moveNodeDown,
+  isDescendantIndex,
+  moveNodeBlockCore,
+  moveMultipleNodeBlocksCore
 } from '../../src/core/nodeMutations';
-import { getSubtreeEnd } from '../../src/core/nodeQueries';
+import { getSubtreeEnd, getIndex } from '../../src/core/nodeQueries';
 
-// nodeMutations.ts references getSubtreeEnd as an ambient global (a `declare function`, erased
-// at compile time — see the module's own header comment for why). In the real app that global
-// is provided by nodeQueries.ts's own generated block sharing the same script scope; in this
-// Node test environment there is no such shared scope, so it's wired up explicitly here from
-// the real implementation — not a mock, the actual tested function.
+// nodeMutations.ts references getSubtreeEnd/getIndex as ambient globals (a `declare function`,
+// erased at compile time — see the module's own header comment for why). In the real app those
+// globals are provided by nodeQueries.ts's own generated block sharing the same script scope;
+// in this Node test environment there is no such shared scope, so they're wired up explicitly
+// here from the real implementations — not mocks, the actual tested functions.
 beforeAll(() => {
-  (globalThis as unknown as { getSubtreeEnd: typeof getSubtreeEnd }).getSubtreeEnd = getSubtreeEnd;
+  const g = globalThis as unknown as { getSubtreeEnd: typeof getSubtreeEnd; getIndex: typeof getIndex };
+  g.getSubtreeEnd = getSubtreeEnd;
+  g.getIndex = getIndex;
 });
 
 interface TestNode {
@@ -214,5 +219,219 @@ describe('moveNodeDown', () => {
     const movedId = moveNodeDown(nodes, 0);
     expect(nodes.map((n) => n.id)).toEqual([3, 4, 1, 2]); // B, B1, A, A1
     expect(movedId).toBe(1);
+  });
+});
+
+describe('isDescendantIndex', () => {
+  it('is true when the index falls within the ancestor subtree range', () => {
+    // A(0)=idx0 A1(1)=idx1 B(0)=idx2 — A1 (idx1) is a descendant of A (idx0)
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0]
+    ]);
+    expect(isDescendantIndex(nodes, 1, 0)).toBe(true);
+  });
+
+  it('is false for the ancestor itself (strictly greater-than, not >=)', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 1]
+    ]);
+    expect(isDescendantIndex(nodes, 0, 0)).toBe(false);
+  });
+
+  it('is false for a sibling or later node outside the subtree', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0]
+    ]);
+    expect(isDescendantIndex(nodes, 2, 0)).toBe(false); // B is not inside A's subtree
+  });
+});
+
+describe('moveNodeBlockCore', () => {
+  it("mode='below' places the dragged node as the target's following sibling", () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]); // A B C
+    const moved = moveNodeBlockCore(nodes, 1, 3, 'below'); // drag A below C
+    expect(moved).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([2, 3, 1]); // B C A
+  });
+
+  it("mode='above' places the dragged node as the target's preceding sibling", () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 3, 'above'); // drag A above C
+    expect(moved).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([2, 1, 3]); // B A C
+  });
+
+  it("mode='child' places the dragged node as the target's first child, one depth deeper", () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 3, 'child'); // drag A as C's child
+    expect(moved).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([2, 3, 1]); // B C A(child)
+    expect(nodes.find((n) => n.id === 1)?.depth).toBe(1);
+  });
+
+  it("mode='end' moves the node to the very end of the document at depth 0, ignoring targetId", () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 1], // A's child
+      [3, 0]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 3, 'end'); // drag A (+A1) to the end
+    expect(moved).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([3, 1, 2]); // C, A, A1
+    expect(nodes.find((n) => n.id === 1)?.depth).toBe(0);
+  });
+
+  it("moves the dragged node's entire subtree together, depth-shifted by the same delta as the root", () => {
+    // A(0)=1 A1(1)=2 A1a(2)=3 B(0)=4 — drag A (with A1, A1a) as B's child
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 2],
+      [4, 0]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 4, 'child');
+    expect(moved).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([4, 1, 2, 3]); // B, A(1), A1(2), A1a(3)
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1, 2, 3]);
+  });
+
+  it('rejects when draggedId===targetId, leaving nodes unchanged', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 1, 'below');
+    expect(moved).toBe(false);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2]);
+  });
+
+  it('rejects an unknown draggedId or targetId, leaving nodes unchanged', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0]
+    ]);
+    expect(moveNodeBlockCore(nodes, 999, 2, 'below')).toBe(false);
+    expect(moveNodeBlockCore(nodes, 1, 999, 'below')).toBe(false);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2]);
+  });
+
+  it("rejects moving a node into its own descendant, leaving nodes unchanged", () => {
+    // A(0)=1 A1(1)=2 — dragging A onto its own child A1 would orphan it
+    const nodes = idTree([
+      [1, 0],
+      [2, 1]
+    ]);
+    const moved = moveNodeBlockCore(nodes, 1, 2, 'below');
+    expect(moved).toBe(false);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2]);
+  });
+});
+
+describe('moveMultipleNodeBlocksCore', () => {
+  it('moves two disjoint blocks together as one combined block, preserving each block\'s internal structure', () => {
+    // A(0)=1 A1(1)=2 B(0)=3 C(0)=4 — drag A(+A1) and C to below B
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0],
+      [4, 0]
+    ]);
+    const survivors = moveMultipleNodeBlocksCore(nodes, [1, 4], 3, 'below');
+    expect(survivors).toEqual([1, 4]);
+    expect(nodes.map((n) => n.id)).toEqual([3, 1, 2, 4]); // B, A, A1, C
+  });
+
+  it('re-sorts blocks by original document position regardless of the order ids were passed in', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]); // A B C
+    // Pass ids in reverse document order (3 then 1) — should still combine as A-then-C internally
+    const survivors = moveMultipleNodeBlocksCore(nodes, [3, 1], 2, 'child');
+    expect(survivors).toEqual([3, 1]); // return preserves the ARGUMENT order, not position order
+    expect(nodes.map((n) => n.id)).toEqual([2, 1, 3]); // B, then A, C as its children (in position order)
+  });
+
+  it("mode='end' moves the combined block to the end at depth 0, ignoring targetId", () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]);
+    const survivors = moveMultipleNodeBlocksCore(nodes, [1, 2], 3, 'end');
+    expect(survivors).toEqual([1, 2]);
+    expect(nodes.map((n) => n.id)).toEqual([3, 1, 2]);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 0, 0]);
+  });
+
+  it('rejects fewer than 2 dragged ids, leaving nodes unchanged', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0]
+    ]);
+    expect(moveMultipleNodeBlocksCore(nodes, [1], 2, 'below')).toBeNull();
+    expect(nodes.map((n) => n.id)).toEqual([1, 2]);
+  });
+
+  it('rejects when the target is itself one of the dragged ids (non-end mode)', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]);
+    const survivors = moveMultipleNodeBlocksCore(nodes, [1, 2], 2, 'below'); // target=2 is in draggedIds
+    expect(survivors).toBeNull();
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 3]);
+  });
+
+  it('rejects an unknown targetId, leaving nodes unchanged', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0]
+    ]);
+    expect(moveMultipleNodeBlocksCore(nodes, [1, 2], 999, 'below')).toBeNull();
+    expect(nodes.map((n) => n.id)).toEqual([1, 2]);
+  });
+
+  it('rejects when the target is a descendant of one of the dragged blocks', () => {
+    // A(0)=1 A1(1)=2 B(0)=3 — dragging [A, B] onto A1 (A's own descendant) must be rejected
+    const nodes = idTree([
+      [1, 0],
+      [2, 1],
+      [3, 0]
+    ]);
+    const survivors = moveMultipleNodeBlocksCore(nodes, [1, 3], 2, 'below');
+    expect(survivors).toBeNull();
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 3]);
+  });
+
+  it('drops any dragged id not found in nodes, then still requires at least 2 valid ones', () => {
+    const nodes = idTree([
+      [1, 0],
+      [2, 0],
+      [3, 0]
+    ]);
+    // Only id 1 is valid — 999 doesn't exist — leaving fewer than 2 valid blocks
+    const survivors = moveMultipleNodeBlocksCore(nodes, [1, 999], 3, 'below');
+    expect(survivors).toBeNull();
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 3]);
   });
 });

@@ -18851,8 +18851,7 @@ function cancelEdit(){editingId=null; render()}
 function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(nodes,idx); if(direction<0){ if(idx===0||!canMoveUpAt(nodes,idx))return; pushUndo(); selectedId=moveNodeUp(nodes,idx) } else { if(end>=nodes.length||!canMoveDownAt(nodes,idx,end))return; pushUndo(); selectedId=moveNodeDown(nodes,idx) } rebuildParentIds(); markDirty(); render(); showToast(direction<0?'Moved up':'Moved down') }
 function clearDragIndicators(){document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child,.node-row.dragging').forEach(row=>row.classList.remove('drag-over-above','drag-over-below','drag-over-child','dragging')); el('editor-pane').classList.remove('drag-over-end')}
 function getDropModeFromEvent(e,row){const rect=row.getBoundingClientRect(); const y=e.clientY-rect.top; if(y<rect.height*0.28)return 'above'; if(y>rect.height*0.72)return 'below'; return 'child'}
-function isDescendantIndex(maybeDescendantIdx,ancestorIdx){return maybeDescendantIdx>ancestorIdx && maybeDescendantIdx<getSubtreeEnd(nodes,ancestorIdx)}
-function moveNodeBlock(draggedId,targetId,mode='below'){if(mode==='end'){const fromIdx=getIndex(nodes,draggedId); if(fromIdx<0)return false; const fromEnd=getSubtreeEnd(nodes,fromIdx); const sourceDepth=nodes[fromIdx].depth; const block=nodes.slice(fromIdx,fromEnd).map(n=>({...n})); if(sourceDepth!==0)block.forEach(n=>n.depth=Math.max(0,n.depth-sourceDepth)); nodes.splice(fromIdx,fromEnd-fromIdx); nodes.push(...block); rebuildParentIds(); selectedId=draggedId; selectionAnchorId=draggedId; clearMultiSelection(); selectAllMode=false; return true} if(draggedId===targetId)return false; const fromIdx=getIndex(nodes,draggedId); const targetIdxOriginal=getIndex(nodes,targetId); if(fromIdx<0||targetIdxOriginal<0)return false; if(isDescendantIndex(targetIdxOriginal,fromIdx))return false; const fromEnd=getSubtreeEnd(nodes,fromIdx); const sourceDepth=nodes[fromIdx].depth; let insertAtOriginal=targetIdxOriginal; let newDepth=sourceDepth; if(mode==='above'){insertAtOriginal=targetIdxOriginal; newDepth=nodes[targetIdxOriginal].depth} else if(mode==='below'){insertAtOriginal=getSubtreeEnd(nodes,targetIdxOriginal); newDepth=nodes[targetIdxOriginal].depth} else {insertAtOriginal=targetIdxOriginal+1; newDepth=nodes[targetIdxOriginal].depth+1} const block=nodes.slice(fromIdx,fromEnd).map(n=>({...n})); const depthDelta=newDepth-sourceDepth; if(depthDelta!==0)block.forEach(n=>n.depth=Math.max(0,n.depth+depthDelta)); nodes.splice(fromIdx,fromEnd-fromIdx); const insertAt=insertAtOriginal>fromIdx?insertAtOriginal-(fromEnd-fromIdx):insertAtOriginal; nodes.splice(insertAt,0,...block); rebuildParentIds(); selectedId=draggedId; selectionAnchorId=draggedId; clearMultiSelection(); selectAllMode=false; return true}
+function moveNodeBlock(draggedId,targetId,mode='below'){const moved=moveNodeBlockCore(nodes,draggedId,targetId,mode); if(!moved)return false; rebuildParentIds(); selectedId=draggedId; selectionAnchorId=draggedId; clearMultiSelection(); selectAllMode=false; return true}
 // Multi-node counterpart to moveNodeBlock, for dragging a node that's part of an active
 // multi-selection — moves every top-level selected node's full subtree together, preserving
 // their relative document order, rather than only the one row the drag physically started on.
@@ -18860,39 +18859,11 @@ function moveNodeBlock(draggedId,targetId,mode='below'){if(mode==='end'){const f
 // a selected node whose ancestor is also selected doesn't need its own entry, moving the
 // ancestor already carries it along.
 function moveMultipleNodeBlocks(draggedIds,targetId,mode='below'){
-  if(!draggedIds||draggedIds.length<2)return false;
-  const draggedSet=new Set(draggedIds);
-  if(mode!=='end'&&draggedSet.has(targetId))return false;
-  // Extract every dragged block's current position/subtree BEFORE any removal, in document order.
-  const blocks=draggedIds.map(id=>{const idx=getIndex(nodes,id); return idx<0?null:{id,fromIdx:idx,endIdx:getSubtreeEnd(nodes,idx),sourceDepth:nodes[idx].depth}}).filter(Boolean).sort((a,b)=>a.fromIdx-b.fromIdx);
-  if(blocks.length<2)return false;
-  if(mode!=='end'){
-    const targetIdxOriginal=getIndex(nodes,targetId); if(targetIdxOriginal<0)return false;
-    // Target can't be a descendant of any dragged block either — same guard moveNodeBlock
-    // applies for the single-node case, checked here against every block.
-    if(blocks.some(b=>isDescendantIndex(targetIdxOriginal,b.fromIdx)))return false;
-  }
-  const copies=blocks.map(b=>({...b,copy:nodes.slice(b.fromIdx,b.endIdx).map(n=>({...n}))}));
-  // Remove last-to-first so earlier blocks' indexes stay valid while later ones are spliced out.
-  for(let i=copies.length-1;i>=0;i--)nodes.splice(copies[i].fromIdx,copies[i].endIdx-copies[i].fromIdx);
-  let insertAt, newDepth;
-  if(mode==='end'){
-    insertAt=nodes.length; newDepth=0;
-  } else {
-    const tIdxNow=getIndex(nodes,targetId); // ids are stable across splice, so re-resolve post-removal
-    if(mode==='above'){ insertAt=tIdxNow; newDepth=nodes[tIdxNow].depth }
-    else if(mode==='below'){ insertAt=getSubtreeEnd(nodes,tIdxNow); newDepth=nodes[tIdxNow].depth }
-    else { insertAt=tIdxNow+1; newDepth=nodes[tIdxNow].depth+1 }
-  }
-  const combined=[];
-  copies.forEach(b=>{
-    const depthDelta=newDepth-b.sourceDepth;
-    b.copy.forEach(n=>{ combined.push({...n,depth:Math.max(0,n.depth+depthDelta)}) });
-  });
-  nodes.splice(insertAt,0,...combined);
+  const survivingIds=moveMultipleNodeBlocksCore(nodes,draggedIds,targetId,mode);
+  if(!survivingIds)return false;
   rebuildParentIds();
   selectedId=draggedIds[0]; selectionAnchorId=draggedIds[0];
-  multiSelectedIds=draggedIds.filter(id=>getIndex(nodes,id)>=0);
+  multiSelectedIds=survivingIds;
   selectAllMode=false;
   return true;
 }
@@ -19907,7 +19878,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.draggable=true; row.addEventListener('dragstart',e=>{if(e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.node-input')||e.target.closest('.node-note-line')||e.target.closest('.node-remark-text-inline')){e.preventDefault(); return} const isMultiDrag=multiSelectedIds.length>1&&multiSelectedIds.includes(node.id); const draggedIds=isMultiDrag?getSelectionRootIndexes().map(idx=>nodes[idx].id):[node.id]; dragState={draggedId:node.id,draggedIds,targetId:null,mode:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(node.id))}catch(err){} row.classList.add('dragging'); if(draggedIds.length>1)draggedIds.forEach(did=>{document.querySelector(`.node-row[data-id="${did}"]`)?.classList.add('dragging')}); hideContextMenu()}); row.addEventListener('dragover',e=>{ const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); const draggedIds=(dragState.draggedIds&&dragState.draggedIds.length)?dragState.draggedIds:[draggedId]; if(!draggedId||draggedIds.includes(node.id))return; const targetIdx=getIndex(nodes,node.id); if(targetIdx<0)return; const invalid=draggedIds.some(did=>{const fromIdx=getIndex(nodes,did); return fromIdx<0||isDescendantIndex(targetIdx,fromIdx)}); if(invalid)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); dragState.targetId=node.id; dragState.mode=mode; clearDragIndicators(); row.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'))}); row.addEventListener('dragleave',e=>{if(!row.contains(e.relatedTarget)){row.classList.remove('drag-over-above','drag-over-below','drag-over-child')}}); row.addEventListener('drop',e=>{const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); clearDragIndicators(); handleDrop(draggedId,node.id,mode)}); row.addEventListener('dragend',()=>{dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators()}); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.draggable=true; row.addEventListener('dragstart',e=>{if(e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.node-input')||e.target.closest('.node-note-line')||e.target.closest('.node-remark-text-inline')){e.preventDefault(); return} const isMultiDrag=multiSelectedIds.length>1&&multiSelectedIds.includes(node.id); const draggedIds=isMultiDrag?getSelectionRootIndexes().map(idx=>nodes[idx].id):[node.id]; dragState={draggedId:node.id,draggedIds,targetId:null,mode:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(node.id))}catch(err){} row.classList.add('dragging'); if(draggedIds.length>1)draggedIds.forEach(did=>{document.querySelector(`.node-row[data-id="${did}"]`)?.classList.add('dragging')}); hideContextMenu()}); row.addEventListener('dragover',e=>{ const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); const draggedIds=(dragState.draggedIds&&dragState.draggedIds.length)?dragState.draggedIds:[draggedId]; if(!draggedId||draggedIds.includes(node.id))return; const targetIdx=getIndex(nodes,node.id); if(targetIdx<0)return; const invalid=draggedIds.some(did=>{const fromIdx=getIndex(nodes,did); return fromIdx<0||isDescendantIndex(nodes,targetIdx,fromIdx)}); if(invalid)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); dragState.targetId=node.id; dragState.mode=mode; clearDragIndicators(); row.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'))}); row.addEventListener('dragleave',e=>{if(!row.contains(e.relatedTarget)){row.classList.remove('drag-over-above','drag-over-below','drag-over-child')}}); row.addEventListener('drop',e=>{const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); clearDragIndicators(); handleDrop(draggedId,node.id,mode)}); row.addEventListener('dragend',()=>{dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators()}); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
   if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&(!folded||forceInlineNoteId===node.id)&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -20061,22 +20032,24 @@ function splitNodeAtCursor(id,caretPos){
  * real risk of a subtle bug in core editing logic (indent/outdent/move/paste all mutate a live
  * user's document), slices are picked in roughly ascending risk order — indent/outdent first
  * (pure depth-array mutation, no text-splitting/clipboard/drag-drop edge cases), then
- * moveSelected here (keyboard-driven single-block reordering — still no text-splitting or
- * clipboard, but real array-splice repositioning logic, one step up in complexity) — to prove
- * the decomposition pattern incrementally before attempting anything larger.
+ * moveSelected (keyboard-driven single-block reordering — still no text-splitting or clipboard,
+ * but real array-splice repositioning logic), then the drag-and-drop move functions here
+ * (multiple modes — above/below/child/end — depth remapping, a descendant-of-target guard, and
+ * a genuinely tricky multi-block reordering algorithm) — to prove the decomposition pattern
+ * incrementally before attempting anything larger (paste, split, delete are still ahead).
  *
  * Deliberately NOT extracted here, and why: `getSelectionRootIndexes`/`getSelectedIds`/
- * `rebuildParentIds` are used far more widely than any single mutation slice needs (13/18/23
- * real call sites respectively, across moveSelected/moveNodeBlock/insertSiblingBefore/
- * pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them would mean updating
- * every one of those call sites in the same slice, a much larger blast radius than any single
- * slice here is scoped to. They remain hand-written, ambient-global functions, called by the
- * orchestration wrapper exactly as before; this module takes their output (`rootIndexes`, a
- * single `idx`) as plain parameters. Likewise `moveNodeBlock`/`moveMultipleNodeBlocks`/
- * `handleDrop` (drag-and-drop reordering — mode='above'/'below'/'child'/'end', depth remapping,
- * descendant-of-target checks, multi-block moves) are a substantially more complex superset of
- * what `moveSelected` does and are deliberately deferred to their own later, more carefully
- * scoped slice rather than folded into this one.
+ * `rebuildParentIds`/`clearMultiSelection` are used far more widely than any single mutation
+ * slice needs (13/18/23/24 real call sites respectively, across moveSelected/moveNodeBlock/
+ * insertSiblingBefore/pasteParsedNodes/handleDrop/deleteSelected and more) — extracting them
+ * would mean updating every one of those call sites in the same slice, a much larger blast
+ * radius than any single slice here is scoped to. They remain hand-written, ambient-global
+ * functions/values, called or assigned by the orchestration wrapper exactly as before; this
+ * module's functions take or return only what they specifically need (`rootIndexes`, a single
+ * `idx`, dragged/target ids, mode) as plain parameters/return values — selection-state side
+ * effects (`selectedId`, `selectionAnchorId`, `multiSelectedIds`, `selectAllMode`,
+ * `clearMultiSelection()`) stay in the hand-written wrappers, assigned based on what the core
+ * function reports happened.
  *
  * `getSubtreeEnd` (from nodeQueries.ts, already a generated block spliced in elsewhere in
  * index.html) is referenced as an ambient global via `declare function` below — type-only,
@@ -20182,6 +20155,150 @@ function moveNodeDown(nodes, idx) {
     const insertAt = nextEnd - (end - idx);
     nodes.splice(insertAt, 0, ...block);
     return block[0].id;
+}
+/** Pure: is `maybeDescendantIdx` inside `ancestorIdx`'s subtree? Used to reject a drag-and-drop
+ * that would move a node into its own descendant (which would orphan the moved subtree). */
+function isDescendantIndex(nodes, maybeDescendantIdx, ancestorIdx) {
+    return maybeDescendantIdx > ancestorIdx && maybeDescendantIdx < getSubtreeEnd(nodes, ancestorIdx);
+}
+/** Moves the single subtree rooted at `draggedId` to a new position relative to `targetId`,
+ * per `mode`: 'above'/'below' place it as `targetId`'s preceding/following sibling (same
+ * depth as `targetId`); 'child' places it as `targetId`'s first child (depth + 1); 'end'
+ * ignores `targetId` and moves it to the very end of the document at depth 0. The moved
+ * subtree's OWN descendants move with it, depth-shifted by the same delta as the root
+ * (floored at 0 via `Math.max(0, ...)` — preserved exactly from the original, which guards
+ * against a negative depth in edge cases rather than assuming the delta math can never
+ * produce one). Rejects the move (returns `false`, `nodes` unchanged) if: `draggedId===
+ * targetId`; either id isn't found; or `targetId` is inside `draggedId`'s own subtree (via
+ * `isDescendantIndex` — moving a node into its own descendant would orphan it). Mutates
+ * `nodes` in place; does NOT call `rebuildParentIds()` or touch any selection state
+ * (`selectedId`/`selectionAnchorId`/`multiSelectedIds`/`selectAllMode`) — all of that stays
+ * the orchestration wrapper's responsibility, assigned only when this returns `true`. */
+function moveNodeBlockCore(nodes, draggedId, targetId, mode = 'below') {
+    if (mode === 'end') {
+        const fromIdx = getIndex(nodes, draggedId);
+        if (fromIdx < 0)
+            return false;
+        const fromEnd = getSubtreeEnd(nodes, fromIdx);
+        const sourceDepth = nodes[fromIdx].depth;
+        const block = nodes.slice(fromIdx, fromEnd).map((n) => ({ ...n }));
+        if (sourceDepth !== 0) {
+            block.forEach((n) => {
+                n.depth = Math.max(0, n.depth - sourceDepth);
+            });
+        }
+        nodes.splice(fromIdx, fromEnd - fromIdx);
+        nodes.push(...block);
+        return true;
+    }
+    if (draggedId === targetId)
+        return false;
+    const fromIdx = getIndex(nodes, draggedId);
+    const targetIdxOriginal = getIndex(nodes, targetId);
+    if (fromIdx < 0 || targetIdxOriginal < 0)
+        return false;
+    if (isDescendantIndex(nodes, targetIdxOriginal, fromIdx))
+        return false;
+    const fromEnd = getSubtreeEnd(nodes, fromIdx);
+    const sourceDepth = nodes[fromIdx].depth;
+    let insertAtOriginal = targetIdxOriginal;
+    let newDepth = sourceDepth;
+    if (mode === 'above') {
+        insertAtOriginal = targetIdxOriginal;
+        newDepth = nodes[targetIdxOriginal].depth;
+    }
+    else if (mode === 'below') {
+        insertAtOriginal = getSubtreeEnd(nodes, targetIdxOriginal);
+        newDepth = nodes[targetIdxOriginal].depth;
+    }
+    else {
+        insertAtOriginal = targetIdxOriginal + 1;
+        newDepth = nodes[targetIdxOriginal].depth + 1;
+    }
+    const block = nodes.slice(fromIdx, fromEnd).map((n) => ({ ...n }));
+    const depthDelta = newDepth - sourceDepth;
+    if (depthDelta !== 0) {
+        block.forEach((n) => {
+            n.depth = Math.max(0, n.depth + depthDelta);
+        });
+    }
+    nodes.splice(fromIdx, fromEnd - fromIdx);
+    const insertAt = insertAtOriginal > fromIdx ? insertAtOriginal - (fromEnd - fromIdx) : insertAtOriginal;
+    nodes.splice(insertAt, 0, ...block);
+    return true;
+}
+/** Moves 2+ subtrees (identified by `draggedIds`, in whatever order the caller selected them)
+ * to a new position relative to `targetId`, as one contiguous combined block, preserving each
+ * dragged subtree's own internal structure and RELATIVE document order (re-sorted by original
+ * position before processing, regardless of selection order) but not necessarily their
+ * original adjacency to each other. Same `mode` semantics as `moveNodeBlockCore`. Rejects the
+ * move (returns `null`, `nodes` unchanged) if: fewer than 2 valid dragged ids remain after
+ * filtering out any not found; `mode!=='end'` and `targetId` is itself one of the dragged ids;
+ * `targetId` isn't found; or `targetId` is inside ANY dragged block's own subtree. On success,
+ * returns the subset of `draggedIds` that still exist post-move (matching the original's
+ * `multiSelectedIds` recomputation) — always all of them in practice, since ids are stable
+ * across the internal splice operations, but recomputed rather than assumed, exactly as the
+ * original did. Mutates `nodes` in place; does NOT call `rebuildParentIds()` or touch any
+ * selection state itself — see moveNodeBlockCore's own comment for why. */
+function moveMultipleNodeBlocksCore(nodes, draggedIds, targetId, mode = 'below') {
+    if (!draggedIds || draggedIds.length < 2)
+        return null;
+    const draggedSet = new Set(draggedIds);
+    if (mode !== 'end' && draggedSet.has(targetId))
+        return null;
+    // Extract every dragged block's current position/subtree BEFORE any removal, in document order.
+    const blocks = draggedIds
+        .map((id) => {
+        const idx = getIndex(nodes, id);
+        return idx < 0 ? null : { id, fromIdx: idx, endIdx: getSubtreeEnd(nodes, idx), sourceDepth: nodes[idx].depth };
+    })
+        .filter((b) => b !== null)
+        .sort((a, b) => a.fromIdx - b.fromIdx);
+    if (blocks.length < 2)
+        return null;
+    if (mode !== 'end') {
+        const targetIdxOriginal = getIndex(nodes, targetId);
+        if (targetIdxOriginal < 0)
+            return null;
+        // Target can't be a descendant of any dragged block either — same guard moveNodeBlockCore
+        // applies for the single-node case, checked here against every block.
+        if (blocks.some((b) => isDescendantIndex(nodes, targetIdxOriginal, b.fromIdx)))
+            return null;
+    }
+    const copies = blocks.map((b) => ({ ...b, copy: nodes.slice(b.fromIdx, b.endIdx).map((n) => ({ ...n })) }));
+    // Remove last-to-first so earlier blocks' indexes stay valid while later ones are spliced out.
+    for (let i = copies.length - 1; i >= 0; i--)
+        nodes.splice(copies[i].fromIdx, copies[i].endIdx - copies[i].fromIdx);
+    let insertAt;
+    let newDepth;
+    if (mode === 'end') {
+        insertAt = nodes.length;
+        newDepth = 0;
+    }
+    else {
+        const tIdxNow = getIndex(nodes, targetId); // ids are stable across splice, so re-resolve post-removal
+        if (mode === 'above') {
+            insertAt = tIdxNow;
+            newDepth = nodes[tIdxNow].depth;
+        }
+        else if (mode === 'below') {
+            insertAt = getSubtreeEnd(nodes, tIdxNow);
+            newDepth = nodes[tIdxNow].depth;
+        }
+        else {
+            insertAt = tIdxNow + 1;
+            newDepth = nodes[tIdxNow].depth + 1;
+        }
+    }
+    const combined = [];
+    copies.forEach((b) => {
+        const depthDelta = newDepth - b.sourceDepth;
+        b.copy.forEach((n) => {
+            combined.push({ ...n, depth: Math.max(0, n.depth + depthDelta) });
+        });
+    });
+    nodes.splice(insertAt, 0, ...combined);
+    return draggedIds.filter((id) => getIndex(nodes, id) >= 0);
 }
 
 /* GENERATED:nodeMutations:END */
