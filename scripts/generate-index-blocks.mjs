@@ -122,14 +122,13 @@ function compileToPlainJs(sourceFile) {
   }
 }
 
-function buildGeneratedBlock(block) {
-  const compiled = compileToPlainJs(block.sourceFile);
+function buildGeneratedBlock(block, compiled) {
   const startMarker = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.sourceFile} (tests: ${block.testFile}). Regenerate with \`npm run generate\` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */`;
   const endMarker = `/* GENERATED:${block.name}:END */`;
   return `${startMarker}\n${compiled}\n${block.footer}\n${endMarker}`;
 }
 
-function spliceBlock(html, block) {
+function spliceBlock(html, block, compiled) {
   const startTag = `GENERATED:${block.name}:START`;
   const endTag = `GENERATED:${block.name}:END`;
   const startIdx = html.indexOf(startTag);
@@ -144,14 +143,68 @@ function spliceBlock(html, block) {
   // not just the tag text, so the whole old comment+code+comment gets replaced cleanly.
   const commentStart = html.lastIndexOf('/*', startIdx);
   const commentEnd = html.indexOf('*/', endIdx) + 2;
-  const generated = buildGeneratedBlock(block);
+  const generated = buildGeneratedBlock(block, compiled);
   return html.slice(0, commentStart) + generated + html.slice(commentEnd);
+}
+
+function extractTopLevelIdentifiers(compiledJs) {
+  // Matches this project's actual compiled shape (tsc target ES2020, no minification): each
+  // top-level declaration starts at column 0. Covers what these modules use: `function name`,
+  // `async function name`, `let name`, `const name`, and comma-joined `let a = 1, b = 2;`.
+  const names = new Set();
+  const declRe = /^(?:async function|function)\s+([A-Za-z_$][\w$]*)/gm;
+  let m;
+  while ((m = declRe.exec(compiledJs))) names.add(m[1]);
+  const varRe = /^(?:let|const)\s+(.+);$/gm;
+  while ((m = varRe.exec(compiledJs))) {
+    for (const part of m[1].split(',')) {
+      const nameMatch = part.trim().match(/^([A-Za-z_$][\w$]*)/);
+      if (nameMatch) names.add(nameMatch[1]);
+    }
+  }
+  return names;
+}
+
+/**
+ * All generated blocks share ONE script scope at runtime (see the file header) — a top-level
+ * `let`/`const`/`function` name reused across two blocks is a duplicate declaration, which is a
+ * hard SyntaxError for `let`/`const` (and silent, order-dependent shadowing for `function`,
+ * which is barely better). This caught a real instance of exactly that bug during development
+ * (both presence.ts and notifications.ts independently declared `deps`/`requireDeps`) — that
+ * was found by manually grepping the generated output; this check makes it impossible to miss
+ * again, for this block or any future one.
+ */
+function checkForCrossBlockNameCollisions(compiledByBlock) {
+  const ownerOf = new Map(); // name -> block name that declared it first
+  const collisions = [];
+  for (const { name: blockName, compiled } of compiledByBlock) {
+    for (const identifier of extractTopLevelIdentifiers(compiled)) {
+      const existingOwner = ownerOf.get(identifier);
+      if (existingOwner && existingOwner !== blockName) {
+        collisions.push(`"${identifier}" declared by both "${existingOwner}" and "${blockName}"`);
+      } else {
+        ownerOf.set(identifier, blockName);
+      }
+    }
+  }
+  if (collisions.length) {
+    throw new Error(
+      'Top-level identifier collision(s) between generated blocks — these share one script ' +
+        'scope at runtime, so this would be a duplicate declaration (SyntaxError for let/const):\n' +
+        collisions.map((c) => '  - ' + c).join('\n') +
+        '\nRename the colliding identifier(s) in the source module(s) (e.g. prefix module-' +
+        'private internals with the domain name, as notifications.ts does with notifDeps/' +
+        'requireNotifDeps) and regenerate.'
+    );
+  }
 }
 
 function generate() {
   let html = readFileSync(indexPath, 'utf8');
-  for (const block of BLOCKS) {
-    html = spliceBlock(html, block);
+  const compiledByBlock = BLOCKS.map((block) => ({ name: block.name, compiled: compileToPlainJs(block.sourceFile) }));
+  checkForCrossBlockNameCollisions(compiledByBlock);
+  for (let i = 0; i < BLOCKS.length; i++) {
+    html = spliceBlock(html, BLOCKS[i], compiledByBlock[i].compiled);
   }
   return html;
 }
