@@ -22,13 +22,18 @@ export interface QueryableNode extends BaseOutlineNode {
  * optional `scopedNodes` parameter defaulting to the live global; the rest read `nodes` and a
  * handful of other globals directly).
  *
- * Same status as every other Phase 1 extraction: pure, tested, behavior-verified against a
- * pinned oracle copy of the actual current index.html implementation — and NOT yet wired into
- * index.html/hub.html. That cutover is real, separate infrastructure work (either extending
- * scripts/generate-index-blocks.mjs, built for Phase 2's state modules, to splice a set of
- * scattered, non-contiguous function replacements instead of one contiguous block per module;
- * or physically relocating these ~13 functions to sit together first) — deliberately not
- * attempted in the same pass as writing and verifying the pure logic itself.
+ * Wired into index.html (not hub.html — none of these 13 are used there) via
+ * scripts/generate-index-blocks.mjs's `nodeQueries` block. The cutover happened in two
+ * sequential commits: first a pure code-motion pass relocating all 13 hand-written definitions
+ * into one contiguous, splice-able region; then this file's compiled output was spliced into
+ * that region in the same commit that updated every real external call site (268 of them) to
+ * pass the explicit arguments these functions now require — `nodes`, `collapsedIds`,
+ * `treeIndentWidth`, `sectionMarkersDepthZero`, `selectAllMode`, `multiSelectedIds`,
+ * `selectedId` — instead of reading them as ambient globals the way the original hand-written
+ * versions did. `buildPrefix`/`buildVertFlags` call sites also needed their positional
+ * arguments reordered, not just extended, since `scopedNodes` moved from a trailing optional
+ * parameter to a required leading one. See git history around the cutover commit for the
+ * codemod used and its verification.
  */
 
 export function getIndex(nodes: QueryableNode[], id: number | null): number {
