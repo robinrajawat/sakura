@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Phase 2 (docs/architecture-plan.md) codegen: compiles a tested src/state/*.ts module to
- * plain JS and splices it into index.html between a pair of marker comments, replacing what
+ * Phase 2 (docs/architecture-plan.md) codegen: compiles a tested src/state/*.ts (or src/core/,
+ * src/utils/) module to plain JS and splices it into a target HTML file (index.html or
+ * hub.html — see each block's `targetFile`) between a pair of marker comments, replacing what
  * used to be hand-written code with output mechanically produced from tested source.
  *
- * index.html itself is UNCHANGED as a deployment artifact: still one file, still a classic
+ * The target file itself is UNCHANGED as a deployment artifact: still one file, still a classic
  * (non-module) <script>, still served exactly as before. Only how one clearly-marked block
  * within it is produced has changed — from "typed by hand" to "generated from src/, and
  * checked in CI to never silently drift from it again" (see --verify below).
@@ -12,17 +13,23 @@
  * How a module reaches the classic script's shared scope: the compiled output keeps its
  * top-level `function`/`let`/`const` declarations exactly as tsc emits them (only the
  * `export ` keyword is stripped) and is spliced in-place, textually, into the SAME <script>
- * tag as the rest of the app — no import/export, no IIFE wrapper, no window.* indirection.
+ * tag as the rest of that file — no import/export, no IIFE wrapper, no window.* indirection.
  * Because it's literally sharing the same script-level scope at runtime, it can reference
  * true ambient globals (currentUser, sharedDocMeta, el, loadFirestoreMods, ...) directly, and
  * the rest of the file can keep calling its exported functions (startPresenceTrackingIfShared,
  * stopPresenceTracking, ...) exactly as it always did — this is why every existing external
- * call site in index.html needed zero changes.
+ * call site needed zero changes.
+ *
+ * index.html and hub.html are entirely SEPARATE runtime script scopes — a block targeting
+ * hub.html can reuse the exact same `sourceFile` as a block targeting index.html (see
+ * `hubGenerateId` below reusing generateId.ts) without any collision, since the two compiled
+ * copies never coexist in the same <script> tag. Collision-checking is scoped per target file
+ * accordingly (see `generate()` below).
  *
  * Usage:
- *   node scripts/generate-index-blocks.mjs           regenerate index.html in place
- *   node scripts/generate-index-blocks.mjs --verify   exit 1 if regenerating would change
- *                                                      index.html (used by CI)
+ *   node scripts/generate-index-blocks.mjs           regenerate index.html and hub.html in place
+ *   node scripts/generate-index-blocks.mjs --verify   exit 1 if regenerating would change either
+ *                                                      file (used by CI)
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, readdirSync, statSync } from 'node:fs';
@@ -33,6 +40,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const indexPath = path.join(repoRoot, 'index.html');
+const hubPath = path.join(repoRoot, 'hub.html');
+const TARGET_FILE_PATHS = { 'index.html': indexPath, 'hub.html': hubPath };
 
 /**
  * One entry per generated block. Each block owns a contiguous region of index.html between
@@ -259,6 +268,27 @@ initAiProvidersState({
     // real call sites (indentSelected/outdentSelected's own bodies) were updated in the same
     // commit that wired this block in.
     footer: ''
+  },
+  {
+    // hub.html's own generated-blocks pilot — the first block targeting a file other than
+    // index.html, proving the generator's multi-file support with the lowest possible risk:
+    // reusing an ALREADY-TESTED source module (generateId.ts, Phase 1) rather than writing new
+    // source, since hub.html's todoUid/jnUid/subUid turned out to be exact matches for
+    // generateId(prefix, 6) — same `.slice(2,8)` (suffix length 6), just different prefixes.
+    // Zero new tests needed; the existing tests/unit/generateId.test.ts already covers this
+    // exact function. See this file's header for why targetFile defaults to 'index.html' and
+    // must be set explicitly here.
+    name: 'hubGenerateId',
+    sourceFile: 'src/utils/generateId.ts',
+    testFile: 'tests/unit/generateId.test.ts',
+    targetFile: 'hub.html',
+    // todoUid/jnUid/subUid all become thin wrappers, same names/signatures — zero call sites
+    // in hub.html needed to change.
+    footer: `
+function todoUid(){return generateId('t',6);}
+function jnUid(){return generateId('jn',6);}
+function subUid(){return generateId('sub',6);}
+`.trim()
   }
 ];
 
@@ -348,7 +378,7 @@ function spliceBlock(html, block, compiled) {
   const endIdx = html.indexOf(endTag);
   if (startIdx === -1 || endIdx === -1) {
     throw new Error(
-      `Marker comments for block "${block.name}" not found in index.html (looked for ${startTag} / ${endTag}). ` +
+      `Marker comments for block "${block.name}" not found in ${block.targetFile || 'index.html'} (looked for ${startTag} / ${endTag}). ` +
         `These must exist already — this script replaces content BETWEEN existing markers, it doesn't create them.`
     );
   }
@@ -413,29 +443,56 @@ function checkForCrossBlockNameCollisions(compiledByBlock) {
 }
 
 function generate() {
-  let html = readFileSync(indexPath, 'utf8');
-  const compiledByBlock = BLOCKS.map((block) => ({ name: block.name, compiled: compileToPlainJs(block.sourceFile) }));
-  checkForCrossBlockNameCollisions(compiledByBlock);
-  for (let i = 0; i < BLOCKS.length; i++) {
-    html = spliceBlock(html, BLOCKS[i], compiledByBlock[i].compiled);
+  // Blocks are grouped by targetFile since each HTML file has its own independent classic
+  // <script> scope — a name collision only matters between blocks sharing the SAME file, not
+  // across files (hub.html's block reusing generateId.ts's `generateId` identifier is not a
+  // collision with index.html's own `generateId` block, since they're never in the same
+  // runtime scope together).
+  const byFile = new Map(); // targetFile -> block[]
+  for (const block of BLOCKS) {
+    const targetFile = block.targetFile || 'index.html';
+    if (!byFile.has(targetFile)) byFile.set(targetFile, []);
+    byFile.get(targetFile).push(block);
   }
-  return html;
+
+  const htmlByFile = new Map();
+  for (const [targetFile, blocks] of byFile) {
+    const filePath = TARGET_FILE_PATHS[targetFile];
+    if (!filePath) {
+      throw new Error(`Unknown targetFile "${targetFile}" — add it to TARGET_FILE_PATHS at the top of this script.`);
+    }
+    let html = readFileSync(filePath, 'utf8');
+    const compiledByBlock = blocks.map((block) => ({ name: block.name, compiled: compileToPlainJs(block.sourceFile) }));
+    checkForCrossBlockNameCollisions(compiledByBlock);
+    for (let i = 0; i < blocks.length; i++) {
+      html = spliceBlock(html, blocks[i], compiledByBlock[i].compiled);
+    }
+    htmlByFile.set(targetFile, html);
+  }
+  return htmlByFile;
 }
 
 const verifyMode = process.argv.includes('--verify');
-const newHtml = generate();
+const newHtmlByFile = generate();
 
 if (verifyMode) {
-  const currentHtml = readFileSync(indexPath, 'utf8');
-  if (currentHtml !== newHtml) {
-    console.error(
-      '✖ index.html has drifted from what scripts/generate-index-blocks.mjs would produce ' +
-        'from the tested source in src/state/. Run `npm run generate` and commit the result.'
-    );
-    process.exit(1);
+  let anyDrift = false;
+  for (const [targetFile, newHtml] of newHtmlByFile) {
+    const filePath = TARGET_FILE_PATHS[targetFile];
+    const currentHtml = readFileSync(filePath, 'utf8');
+    if (currentHtml !== newHtml) {
+      console.error(
+        `✖ ${targetFile} has drifted from what scripts/generate-index-blocks.mjs would produce ` +
+          `from the tested source. Run \`npm run generate\` and commit the result.`
+      );
+      anyDrift = true;
+    }
   }
-  console.log('✓ index.html matches the generated output — no drift.');
+  if (anyDrift) process.exit(1);
+  console.log('✓ index.html and hub.html both match the generated output — no drift.');
 } else {
-  writeFileSync(indexPath, newHtml, 'utf8');
-  console.log('✓ Regenerated index.html from src/state/.');
+  for (const [targetFile, newHtml] of newHtmlByFile) {
+    writeFileSync(TARGET_FILE_PATHS[targetFile], newHtml, 'utf8');
+  }
+  console.log('✓ Regenerated index.html and hub.html from src/.');
 }

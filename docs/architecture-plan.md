@@ -4,14 +4,18 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done; AI provider prefs storage done; Hub panels/Diagrams/
-Export and the rest of Templates not yet begun — Hub is also blocked on a structural issue: it
-lives in a separate `hub.html` file, not `index.html`). `core/` module boundary: seven slices
-done (indent/outdent, moveSelected, drag-and-drop move, paste, delete, the shared selection/
-parentId helpers, and outline search matching). Two additional Phase 2/3-adjacent slices: tab
-cycling/reordering and diagram-anchor/orphan logic (`src/state/tabOrder.ts`,
-`src/state/diagramAnchor.ts` — not `core/`, since neither touches the outline `nodes` array as a
-mutation target). Phases 4–5 still future work.
+progress (Templates' storage layer done; AI provider prefs storage done; Diagrams/Export and the
+rest of Templates not yet begun). `core/` module boundary: seven slices done (indent/outdent,
+moveSelected, drag-and-drop move, paste, delete, the shared selection/parentId helpers, and
+outline search matching). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
+diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not
+`core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
+structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
+HTML files (`targetFile` per block, collision-checking scoped per file); a first pilot block
+(`hubGenerateId`) is live in `hub.html`, reusing the already-tested `generateId.ts` from Phase 1.
+Hub's own feature domains (todos/meetings/journal/library) are not yet extracted — only the
+generator infrastructure and this one proof-of-concept slice exist so far. Phases 4–5 still
+future work.
 
 ## Why
 
@@ -352,12 +356,13 @@ only by narrowing scope, and there's no guarantee the remaining Phase 2
 candidates offer even that option once the `core/` boundary is far enough
 along to revisit them.
 
-**Phase 3 — feature domain extraction. (Started — Templates' storage layer done, everything
-else in this phase not yet begun.)**
+**Phase 3 — feature domain extraction. (In progress — Templates' storage layer and AI provider
+prefs done; Hub's generator infrastructure exists but no Hub feature domain extracted yet;
+everything else in this phase not yet begun.)**
 Templates, Hub panels (with an eye toward de-duplicating the index.html /
-hub.html split noted above), Diagrams, Export, AI providers — in order of
-increasing coupling to sync, each becoming its own module with an explicit
-public interface and its own tests.
+hub.html split noted above — still just an aspiration, not attempted), Diagrams, Export, AI
+providers — in order of increasing coupling to sync, each becoming its own module with an
+explicit public interface and its own tests.
 
 First slice: `src/state/templatesIndex.ts` — the templates index's localStorage CRUD and
 trash-state toggling (`templateKey`/`builtinTemplateId`/`getBuiltinTemplateIconById`/
@@ -438,9 +443,6 @@ arguments. New `tests/e2e/generated-taborder-smoke.spec.ts` exercises the real, 
 `loadTabFromStorageObj` produces for a real document), including confirming the reorder persists
 to the real `sakura_open_tabs_v1` localStorage key.
 
-Not yet started in Phase 3: Hub panels, Diagrams, Export, and the rest of the Templates domain
-(rendering, node-array manipulation, sync).
-
 **Fourth slice: `src/state/diagramAnchor.ts`** — `computeDiagramAnchorLabel`/`isDiagramOrphaned`/
 `diagramNeedsAttentionCore`/`reorderDiagramsCore`. Same shape as `tabOrder.ts`'s revisit: filed
 under Phase 3 rather than `core/` since nothing here mutates the outline `nodes` array — the
@@ -456,6 +458,48 @@ dedicated tests rather than "corrected" during extraction. 21 new unit tests, al
 run, including that quirk. New `tests/e2e/generated-diagramanchor-smoke.spec.ts` exercises all
 four real, unchanged wrapper functions — including confirming the forward-drag quirk survives
 through real orchestration (`markDirty`/`scheduleAutoSave`), not just the pure function alone.
+
+**Hub's structural blocker — resolved (generator infrastructure only, no Hub feature domains
+extracted yet).** Hub panels (todos/meetings/journal/library) had been un-investigated all
+session, blocked on a real structural issue distinct from every other Phase 2/3 domain: Hub
+isn't code living inside `index.html` at all — it's `hub.html`, a genuinely separate ~148 KB
+file with its own independent classic `<script>` and its own top-level global scope. Every
+extraction so far assumed one target file; `scripts/generate-index-blocks.mjs` had `index.html`
+hardcoded as *the* target.
+
+Generalized the generator to support multiple target files: each block now carries an optional
+`targetFile` (defaulting to `'index.html'` for every existing block, so nothing about any prior
+slice changed), blocks are grouped by target file before compiling/splicing/collision-checking,
+and `generate()`/`--verify` operate per-file — writing or checking each target's own HTML
+against its own generated output independently. Collision-checking is deliberately scoped per
+file rather than globally: `index.html` and `hub.html` are separate runtime script scopes, so
+the same top-level identifier existing in a block for each isn't a real collision the way it
+would be between two blocks in the *same* file.
+
+First (and so far only) `hub.html` block: `hubGenerateId`, deliberately the lowest-risk possible
+pilot — not new source, but a *reuse* of the already-tested `src/utils/generateId.ts` from Phase
+1. `hub.html`'s own `todoUid`/`jnUid`/`subUid` turned out to be exact matches for
+`generateId(prefix, 6)` (same `.slice(2,8)` — suffix length 6 — just different prefixes), so no
+new unit tests were needed at all; the existing `tests/unit/generateId.test.ts` already covers
+this exact function, now exercised through a second, independent call path. New
+`tests/e2e/generated-hubgenerateid-smoke.spec.ts` loads `hub.html` directly (not through
+`index.html`) and confirms all three wrapper functions produce correctly-prefixed ids, two
+back-to-back calls stay distinct, and the standard "unrelated distant function still callable"
+check passes for `hub.html`'s own separate script — proving the multi-file mechanism end to end,
+not just that the generator's own collision checker didn't complain.
+
+Explicitly NOT done here: no Hub feature-domain logic (todos/meetings/journal/library CRUD,
+sync, rendering) has been investigated or extracted — this work was scoped narrowly to proving
+the file-targeting mechanism itself works, the same "prove the pattern with a deliberately small
+pilot" discipline `presence.ts` used for the original `index.html`-only pipeline. Hub's real
+feature domains remain a substantial, unscoped body of work — `scripts/validate_html_structure.py`
+(the RAWTEXT-hijack guard wired into the pre-commit hook) also still only checks `index.html`;
+extending it to `hub.html` would need its own pass, since `hub.html`'s script is far smaller than
+the 1MB-minimum heuristic that guard uses for `index.html` and naively reusing that threshold
+would make it fail immediately.
+
+Not yet started in Phase 3: Hub's own feature domains (see above), Diagrams, Export, and the
+rest of the Templates domain (rendering, node-array manipulation, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
