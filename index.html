@@ -23327,6 +23327,75 @@ async function generateDiagramFromOutline(){
 // The actual deterministic renderer — everything from here down only runs once a person has
 // confirmed nodeMeta from the review screen (see diagramGenOpenReview / diagramGenConfirmReview).
 // Colors, dims, and layout all read confirmed nodeMeta, never AI output or numbering regexes.
+/* GENERATED:diagramGenRects:START — DO NOT EDIT BY HAND. Source of truth: src/state/diagramGenRects.ts (tests: tests/unit/diagramGenRects.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure final-rect computation from the `diagramGen*` subsystem — the deterministic tree-diagram
+ * generator ("Generate rough diagram from outline", see docs/architecture-plan.md for the wider
+ * feature and `diagramGenLayout.ts` for the tree-layout engine this module consumes the output
+ * of). Sixth slice: `computeDiagramGenFinalRects` — given the raw x/y `positions` from
+ * `layoutDiagramGenTreeCore` and each node's box `dimsByIdx`, computes the final rendered
+ * `{x, y, w, h}` rect for every node, snapped to a 10px grid in a center-preserving way (the box
+ * center rounds to the nearest 10px, not its top-left corner, so a box's midpoint stays close to
+ * its unsnapped layout position even as its edges land on round numbers) and shifted so the
+ * whole diagram's leftmost edge sits at a fixed 40px margin. Computed once, consumed both by each
+ * node's own box AND by any container built around a group of nodes (see
+ * `diagramGenFinishGenerate`'s own comment on this) — the two need to agree exactly on where a
+ * node actually sits.
+ *
+ * Also returns `minX`/`maxX`/`maxY`/`offsetX` — the same bounds pass computes them alongside
+ * `finalRect`, and the caller (`diagramGenFinishGenerate`) needs `maxX`/`maxY` later for the
+ * legend's own x position and the generated XML's overall page width/height, and `minX`/
+ * `offsetX` are needed nowhere else once `finalRect` exists but are returned anyway since they
+ * were part of the same original pass and cost nothing extra to expose.
+ *
+ * Genuinely pure math with zero dependencies on any other `diagramGen*` function or constant —
+ * no `declare function` ambient references needed at all, the only slice in this subsystem where
+ * that's true. Takes `positions`/`dimsByIdx` as plain arguments rather than reading anything
+ * ambient.
+ *
+ * The much larger XML-cell-string-assembly pass this feeds into (`diagramGenFinishGenerate`
+ * itself, plus `mergedChildOf`/`dimsByIdx` computation immediately before this in the original
+ * function) remains deliberately excluded — real orchestration and string-template construction,
+ * not pure logic, and correspondingly a separate future scoping question.
+ *
+ * Lives in `src/state/`, matching every other Diagrams-domain slice in this subsystem.
+ */
+/** Pure: matches index.html's own `diagramGenFinishGenerate` fragment exactly (the `minX`/
+ * `maxX`/`maxY`/`snap10`/`offsetX`/`finalRect` computation, before any XML cell string is
+ * built). Skips a `scopeIdx` with no position or dims entry rather than throwing — matches the
+ * original's own "last-resort safety net" comment: a genuinely position-less node degrades to
+ * being missing from the diagram, not a thrown error that kills the whole generation. */
+function computeDiagramGenFinalRectsCore(scopeIdxs, positions, dimsByIdx) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    scopeIdxs.forEach((idx) => {
+        const p = positions.get(idx);
+        const d = dimsByIdx.get(idx);
+        if (!p || !d)
+            return;
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x + d.w);
+        maxY = Math.max(maxY, p.y + d.h);
+    });
+    const snap10 = (n) => Math.round(n / 10) * 10;
+    const offsetX = 40 - minX;
+    const finalRect = new Map();
+    scopeIdxs.forEach((idx) => {
+        const p = positions.get(idx);
+        const d = dimsByIdx.get(idx);
+        if (!p || !d)
+            return;
+        const w = Math.round(d.w);
+        const h = Math.round(d.h);
+        const x = snap10(p.x + offsetX + d.w / 2) - Math.round(w / 2);
+        const y = snap10(p.y + 40);
+        finalRect.set(idx, { x, y, w, h });
+    });
+    return { finalRect, minX, maxX, maxY, offsetX };
+}
+
+/* GENERATED:diagramGenRects:END */
 function diagramGenFinishGenerate(scope,labels,nodeMeta,existing){
   const colorByIdx=assignDiagramGenColors(scope,nodeMeta);
   const anyShapeSet=scope.scopeIdxs.some(idx=>{ const m=nodeMeta.get(nodes[idx].id); return !!(m&&m.shape); });
@@ -23366,30 +23435,14 @@ function diagramGenFinishGenerate(scope,labels,nodeMeta,existing){
     dimsByIdx.set(idx,dims);
   });
   const positions=layoutDiagramGenTree(scope,dimsByIdx,nodeMeta);
-  let minX=Infinity,maxX=-Infinity,maxY=-Infinity;
   // Every scope idx should have a position from the layout walk above — this guard is a
   // last-resort safety net, not an expected path: skipping a genuinely position-less node here
   // degrades to "that one node's missing from the diagram" rather than throwing and killing the
   // whole generation.
-  scope.scopeIdxs.forEach(idx=>{
-    const p=positions.get(idx), d=dimsByIdx.get(idx);
-    if(!p||!d)return;
-    minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x+d.w); maxY=Math.max(maxY,p.y+d.h);
-  });
-  const snap10=n=>Math.round(n/10)*10;
-  const offsetX=40-minX;
   // Pass 1: the final rendered rect for every node, using the same center-preserving snap used
   // everywhere else in this function — computed once so both the node's own box AND any
   // container built from it (see below) agree exactly on where it actually sits.
-  const finalRect=new Map();
-  scope.scopeIdxs.forEach(idx=>{
-    const p=positions.get(idx), d=dimsByIdx.get(idx);
-    if(!p||!d)return;
-    const w=Math.round(d.w), h=Math.round(d.h);
-    const x=snap10(p.x+offsetX+d.w/2)-Math.round(w/2);
-    const y=snap10(p.y+40);
-    finalRect.set(idx,{x,y,w,h});
-  });
+  const {finalRect,minX,maxX,maxY,offsetX}=computeDiagramGenFinalRectsCore(scope.scopeIdxs,positions,dimsByIdx);
   let cells='';
   // A container (nodeMeta.container — see the block above diagramGenValidateGuideline) reads as
   // "one titled region" on the page rather than only being implied by shared color. Drawn first,
