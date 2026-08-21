@@ -9,6 +9,18 @@ accessed only via the hosted URL. See `docs/framework-migration-plan.md` for tha
 plan — it's a different kind of change from everything else in this document, not
 a continuation of it.
 
+**Path note:** as of that plan's Phase 0, everything this document refers to by a
+root-relative path (`index.html`, `src/core/`, `tests/e2e/`, `public/`,
+`scripts/generate-index-blocks.mjs`, `npm run build`, etc.) now lives under
+`legacy/` instead — e.g. `legacy/index.html`, `legacy/src/core/`,
+`legacy/public/`, `npm run build -w sakura-legacy`. **Every passage below,
+including the "Resolved" sections just above "Open items," describes paths
+exactly as they were at the time each event actually happened** — none of
+this document has been retroactively rewritten for the move, the same way
+Phase 0–5's own write-ups were never rewritten when Stage 1/2 or the repo
+hygiene work changed what "the deployment" meant. Read every root-relative
+path in this file as historical, not current.
+
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even

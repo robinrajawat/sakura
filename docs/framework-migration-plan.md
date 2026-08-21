@@ -17,9 +17,16 @@ downloaded and opened as a file.** Once that's true, the reasons to avoid a real
 frontend framework — the biggest one being "we ship one HTML file, so we can't ship
 compiled JS chunks" — no longer apply. This plan is about actually adopting one.
 
-**Decisions are locked in as of 2026-08-21** — see "Decisions (resolved — Phase
-0 can proceed)" below: React, Zustand, no routing, GitHub Pages, npm
-workspaces. Phase 0 work starts immediately below that section.
+**Decisions locked in 2026-08-21:** React, Zustand, no routing, GitHub Pages,
+npm workspaces. **Phase 0 (repo scaffolding) complete same day** — the
+`legacy/`+`web/` npm-workspaces split is live, `web/`'s React + Vite +
+TypeScript + Zustand toolchain is proven end to end (typecheck, lint, unit
+test, build, and a real dev-server render all verified), and `legacy/`'s full
+gauntlet re-verified green after the move with zero behavioral change.
+Production (`www.sakura-notes.com`) is unaffected — `deploy.yml` still builds
+and publishes `legacy/` exclusively. See "Decisions" and "Interim repo
+structure" below for what actually landed; **Phase 1 (porting the pure logic
+layer) is next.**
 
 ## Decisions (resolved — Phase 0 can proceed)
 
@@ -120,15 +127,18 @@ fix twice.
 
 ## Phased plan
 
-**Phase 0 — Repo scaffolding + validation spike.** Decisions resolved above.
-Set up the `legacy/` + `web/` npm-workspaces split (see "Interim repo
-structure" below) without touching production at all — `deploy.yml` keeps
-building the exact same `legacy/` files, just from a moved path. Then, before
-committing further effort, spend a short, timeboxed spike building one
-genuinely representative slice end-to-end in React — the outline tree itself
-(render, indent/outdent, drag reorder), since it's the single most
-DOM-manipulation-heavy, highest-risk piece in the whole app, wired to the
-*already-ported* `nodeMutations`/`nodeQueries` core modules from Phase 1
+**Phase 0 — Repo scaffolding (done) + validation spike (next).** Repo
+scaffolding: the `legacy/` + `web/` npm-workspaces split (see "Interim repo
+structure" below) landed without touching production at all — `deploy.yml`
+builds the exact same `legacy/` files it always did, just from a moved path,
+verified via a full gauntlet re-run post-move. `web/` has a minimal
+React + Vite + TypeScript + Zustand scaffold (a placeholder component and
+store, one passing unit test) proving the toolchain, not real UI. **Still to
+do:** the validation spike itself — before committing further effort, a
+short, timeboxed build of one genuinely representative slice end-to-end in
+React: the outline tree (render, indent/outdent, drag reorder), the single
+most DOM-manipulation-heavy, highest-risk piece in the whole app, wired to
+the *already-ported* `nodeMutations`/`nodeQueries` core modules from Phase 1
 below. This is a validation spike, not a framework comparison (that decision
 is made) — its purpose is surfacing any real friction in the
 React+Zustand+tree-editing combination early, while it's still cheap to
@@ -187,40 +197,53 @@ sits in a half-migrated, unreleasable state for long stretches.
 The legacy app must keep working and stay deployable throughout the migration —
 `www.sakura-notes.com` doesn't go dark while the new app is built. That means a
 real coexistence period, not a big-bang swap. Recommended structure using plain
-npm workspaces (no need for Nx/Turborepo at this scale — see open decision #5):
+npm workspaces (no need for Nx/Turborepo at this scale — see open decision #5).
+**As actually implemented in Phase 0** (this is no longer aspirational):
 
 ```
 sakura/
 ├── legacy/                    # today's whole app, moved as-is
 │   ├── index.html
 │   ├── hub.html
-│   ├── sw.js, manifest.json, hub-manifest.json, icon-*.png, flower-glyph.svg
-│   ├── scripts/generate-index-blocks.mjs
+│   ├── public/                # sw.js, both manifests, icons, CNAME — Vite's
+│   │                           # own static-passthrough convention (see
+│   │                           # "Repo hygiene" below)
+│   ├── src/                   # core/, state/, utils/ — unchanged by the move
+│   ├── tests/                 # unit/, e2e/ — colocated with the package, not split
+│   │                           # out to a root-level tests/ the way an earlier
+│   │                           # draft of this diagram sketched
+│   ├── scripts/                # generate-index-blocks.mjs, validate_html_structure.py
+│   │                           # (setup-git-identity.sh stays at the repo root — see below)
+│   ├── package.json           # name: sakura-legacy
 │   └── vite.config.js         # legacy's own build config
-├── web/                       # the new framework app
+├── web/                       # the new React app
 │   ├── src/
-│   │   ├── core/              # ported from src/core/, unwrapped logic
-│   │   ├── state/              # ported from src/state/, as stores/hooks
-│   │   ├── utils/               # ported from src/utils/, unchanged
-│   │   ├── components/         # new — tree, panels, Hub, etc.
-│   │   └── main.tsx            # or main.ts for Svelte
-│   ├── public/                 # sw.js, manifests, icons — see "repo hygiene" below
+│   │   ├── App.tsx, main.tsx, counterStore.ts   # Phase 0 scaffold only —
+│   │   │                                          # proves the toolchain, not real UI
+│   │   ├── core/               # Phase 1: ported from legacy/src/core/
+│   │   ├── state/              # Phase 1: ported from legacy/src/state/, as Zustand stores
+│   │   └── utils/               # Phase 1: ported from legacy/src/utils/, unchanged
+│   ├── package.json           # name: sakura-web
 │   └── vite.config.ts
 ├── docs/
 │   ├── architecture-plan.md          # legacy modularization history (frozen once Phase 6 lands)
 │   └── framework-migration-plan.md   # this doc
-├── tests/                     # split legacy/ vs web/ subfolders, or colocate per-package
-├── scripts/setup-git-identity.sh     # shared, repo-root-level
-├── package.json               # root: npm workspaces, points at legacy/ and web/
+├── scripts/setup-git-identity.sh     # shared, repo-root-level — NOT under legacy/scripts/,
+│                                       # since it configures the whole repo's git identity
+│                                       # and .githooks wiring, not anything legacy-specific
+├── package.json               # root: declares the legacy/web npm workspaces
 └── .github/workflows/
-    ├── verify-legacy.yml      # today's verify.yml, scoped to legacy/
-    ├── verify-web.yml         # same shape, scoped to web/
-    └── deploy.yml             # publishes legacy/ today; repointed at web/ in Phase 5's cutover
+    ├── ci.yml                 # verify-legacy + verify-web jobs in one workflow file
+    │                           # (simpler than two separate files for two jobs sharing
+    │                           # the same triggers; revisit if that stops being true)
+    └── deploy.yml              # builds+publishes legacy/dist/ today; repointed at
+                                  # web/dist/ in Phase 5's cutover
 ```
 
 `docs/architecture-plan.md` stays exactly where it is and keeps being the
 authoritative record for `legacy/` until Phase 6 retires it — no need to move or
-rewrite that history mid-migration.
+rewrite that history mid-migration; see that file's own "Path note" for how it
+handles now-stale root-relative paths in its historical narration.
 
 ## Repo hygiene — root clutter (done)
 

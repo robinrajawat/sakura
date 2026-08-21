@@ -1,15 +1,16 @@
 name: Deploy
 
-# Stage 2 of "properly deployable dist/" (docs/architecture-plan.md). Builds the exact same
-# dist/ the `verify` workflow already builds and tests on every PR, and publishes it via
-# actions/deploy-pages. The repo's Pages source is now "GitHub Actions" (flipped from
-# "Deploy from a branch" as part of this same change) — www.sakura-notes.com is served from
-# this workflow's output on every push to main. See docs/architecture-plan.md for the full
-# history: Stage 1 (build + upload the artifact without publishing it) ran unpublished across
-# the whole migration to prove the pipeline end-to-end before this cutover.
+# Publishes legacy/'s dist/ — the current production single-file app (index.html/hub.html)
+# — via actions/deploy-pages. www.sakura-notes.com is served from this workflow's output on
+# every push to main. See docs/architecture-plan.md for Stage 1/2's full history, and
+# docs/framework-migration-plan.md for the legacy/+web/ npm-workspaces split this workflow
+# was updated for — legacy/'s build output and behavior are otherwise unchanged by that
+# split; web/ (the new React app) is not deployed anywhere yet, and won't be until the
+# migration's own Phase 5 cutover, made deliberately and separately, same discipline Stage 2
+# itself followed.
 #
-# Runs on push to main only (not every branch/PR — that's what `verify` is for), so what's
-# published always matches what's actually on main.
+# Runs on push to main only (not every branch/PR — that's what `verify` (ci.yml) is for), so
+# what's published always matches what's actually on main.
 
 on:
   push:
@@ -36,16 +37,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies (root — installs both workspaces)
         run: npm ci
 
-      - name: Build (vite build; public/ handles static passthrough natively)
-        run: npm run build
+      - name: Build legacy/ (vite build; legacy/public/ handles static passthrough natively)
+        run: npm run build -w sakura-legacy
 
-      - name: Upload dist/ as a Pages artifact
+      - name: Upload legacy/dist/ as a Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: legacy/dist
 
   deploy:
     needs: build
