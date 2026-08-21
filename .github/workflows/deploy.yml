@@ -1,17 +1,15 @@
-name: Deploy (build dist/ artifact only — not yet published)
+name: Deploy
 
-# Stage 1 of "properly deployable dist/" (docs/architecture-plan.md, Open items). Builds the
-# exact same dist/ the `verify` workflow already builds and tests on every PR, and uploads it
-# as a GitHub Pages artifact — proving the CI-built pipeline works end-to-end. Deliberately
-# does NOT run actions/deploy-pages: the repo's Pages source is still "Deploy from a branch"
-# (main root, today's "legacy" model, see vite.config.js's own header), so this artifact is
-# never actually published or served to anyone. Publishing it is Stage 2 — a real production
-# change to how www.sakura-notes.com is served, made deliberately, separately, and only after
-# this workflow itself has a track record. See docs/architecture-plan.md for the full plan.
+# Stage 2 of "properly deployable dist/" (docs/architecture-plan.md). Builds the exact same
+# dist/ the `verify` workflow already builds and tests on every PR, and publishes it via
+# actions/deploy-pages. The repo's Pages source is now "GitHub Actions" (flipped from
+# "Deploy from a branch" as part of this same change) — www.sakura-notes.com is served from
+# this workflow's output on every push to main. See docs/architecture-plan.md for the full
+# history: Stage 1 (build + upload the artifact without publishing it) ran unpublished across
+# the whole migration to prove the pipeline end-to-end before this cutover.
 #
-# Runs on push to main only (not every branch/PR — that's what `verify` is for) so the
-# artifact this produces reflects what's actually on main, matching what a future Stage 2
-# publish step would deploy.
+# Runs on push to main only (not every branch/PR — that's what `verify` is for), so what's
+# published always matches what's actually on main.
 
 on:
   push:
@@ -22,6 +20,10 @@ permissions:
   contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -40,7 +42,18 @@ jobs:
       - name: Build (vite build + static passthrough assets — see scripts/copy-static-assets.mjs)
         run: npm run build
 
-      - name: Upload dist/ as a Pages artifact (NOT published — see this workflow's own header)
+      - name: Upload dist/ as a Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
