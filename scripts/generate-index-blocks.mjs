@@ -409,6 +409,18 @@ initHubJournalState({
     // IsPassthrough/IsMergeCandidate/RenderChildIdxs/ChainTailIdx/EdgeLabelBefore wrapper bodies
     // in index.html) were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Third slice of the diagramGen* subsystem — the nodeMeta classification-proposal and
+    // plain-object (de)serialization layer (see this module's own header for full scope notes).
+    // Already contiguous in index.html, no pure-code-motion commit needed.
+    name: 'diagramGenNodeMeta',
+    sourceFile: 'src/state/diagramGenNodeMeta.ts',
+    testFile: 'tests/unit/diagramGenNodeMeta.test.ts',
+    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. The three
+    // real call sites (diagramGenProposeNodeMeta/NodeMetaFromPlain/NodeMetaToPlain wrapper
+    // bodies in index.html) were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
