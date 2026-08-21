@@ -1,28 +1,17 @@
 {
-  "name": "sakura",
+  "name": "sakura-monorepo",
   "private": true,
-  "version": "0.0.0",
-  "description": "Sakura — outliner app. This package.json is DEV TOOLING (Phase 0 of the modularization plan, see docs/architecture-plan.md). It does not change how the app is deployed today: index.html and hub.html at the repo root remain the live, hand-maintained production files served directly by GitHub Pages. .github/workflows/deploy.yml builds dist/ (via `npm run build`) and uploads it as a Pages artifact on every push to main, but does not publish it — nothing built here is served to anyone yet; that's a deliberate, separate Stage 2 decision.",
-  "type": "module",
+  "description": "Sakura's npm-workspaces monorepo, covering the coexistence period of docs/framework-migration-plan.md. legacy/ is the current production single-file app (index.html/hub.html), unchanged in behavior by this restructuring — deploy.yml still builds and publishes legacy/ exclusively. web/ is the new React app; not deployed anywhere until the migration's own Phase 5 cutover.",
+  "workspaces": [
+    "legacy",
+    "web"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "generate": "node scripts/generate-index-blocks.mjs",
-    "generate:verify": "node scripts/generate-index-blocks.mjs --verify",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src tests --ext .ts,.js",
-    "test:unit": "vitest run",
-    "test:e2e": "playwright test",
-    "test": "npm run test:unit && npm run test:e2e"
-  },
-  "devDependencies": {
-    "@playwright/test": "1.56.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^9.0.0",
-    "typescript": "^5.5.0",
-    "vite": "^5.4.0",
-    "vitest": "^2.0.0"
+    "legacy:dev": "npm run dev -w sakura-legacy",
+    "legacy:build": "npm run build -w sakura-legacy",
+    "legacy:test": "npm run test:unit -w sakura-legacy",
+    "web:dev": "npm run dev -w sakura-web",
+    "web:build": "npm run build -w sakura-web",
+    "web:test": "npm run test:unit -w sakura-web"
   }
 }

@@ -1,0 +1,28 @@
+{
+  "name": "sakura-legacy",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Sakura — the single-file HTML outliner app (index.html/hub.html), part of the sakura-monorepo npm workspace (see root package.json and docs/framework-migration-plan.md). Moved into legacy/ from the repo root during Phase 0 of the React migration; this package is otherwise unchanged — .github/workflows/deploy.yml builds legacy/dist/ (via `npm run build -w sakura-legacy`) and publishes it via actions/deploy-pages on every push to main, same as before the move.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate": "node scripts/generate-index-blocks.mjs",
+    "generate:verify": "node scripts/generate-index-blocks.mjs --verify",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src tests --ext .ts,.js",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
