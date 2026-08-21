@@ -12547,12 +12547,13 @@ function genTemplateId(){return generateId('t')}
  * Explicitly NOT extracted here, and why:
  * - renderTemplatesList/openTemplatesMenu/renderSidebarTemplates — DOM construction, stays
  *   hand-written, same reasoning as renderNotifList staying out of notifications.ts.
- * - applyTemplateNodes/applyBuiltinDefaultTemplate/applyDefaultTemplate — genuinely coupled to
- *   the ambient node-id counter: `makeNode()` mutates the shared `nextId` global as it
- *   constructs each node (`id: nextId++`), so cleanly extracting these means either injecting
- *   the real `makeNode` as a dependency (safe, but not yet attempted) or reimplementing node
- *   construction from scratch (risky — could drift from the real field set). Left for a future,
- *   deliberately scoped pass rather than folded in here. **Correction:** this is a narrower,
+ * - applyBuiltinDefaultTemplate/applyDefaultTemplate — genuinely coupled to the ambient node-id
+ *   counter: `makeNode()` mutates the shared `nextId` global as it constructs each node
+ *   (`id: nextId++`). `applyTemplateNodes` itself has since been extracted (see
+ *   src/core/templatesApply.ts, which injects the real `makeNode` as a dependency);
+ *   `applyBuiltinDefaultTemplate`'s much larger, fixed 15-node hardcoded tree is left for its
+ *   own dedicated follow-up slice, and `applyDefaultTemplate` is trivial branching orchestration
+ *   with nothing to extract. **Correction:** this is a narrower,
  *   different coupling than the original note below about `stampTemplateDateAuthor` — see that
  *   function's own inclusion below for why the same "core-outline coupling, no `core/` boundary
  *   yet" reasoning doesn't actually apply to every node-touching function equally.
@@ -12907,9 +12908,61 @@ async function permanentlyDeleteTemplate(id){
   renderTemplatesList(); renderSidebar();
   showToast('Template permanently deleted');
 }
+/* GENERATED:templatesApply:START — DO NOT EDIT BY HAND. Source of truth: src/core/templatesApply.ts (tests: tests/unit/templatesApply.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Template application — the node-construction core of loading a saved template's raw node
+ * data into the live outline (`applyTemplateNodes` in index.html).
+ *
+ * Phase 3 (docs/architecture-plan.md) — first of the "most promising, most novel" candidates
+ * flagged in the architecture doc and in templatesIndex.ts's own header: `applyTemplateNodes`
+ * is coupled to the ambient node-id counter because `makeNode()` mutates the shared `nextId`
+ * global as it constructs each node (`id: nextId++`). Unlike every prior generated block,
+ * which references already-extracted pure logic via the `declare function` ambient-global
+ * pattern, `makeNode` is hand-written and used in ~30 other places in index.html unrelated to
+ * templates (paste, drag-and-drop, import) — it isn't itself a candidate for extraction here,
+ * and the `declare function` pattern is reserved for already-generated blocks (see
+ * nodeMutations.ts / nodeSelection.ts's own use of it against nodeQueries.ts). So this module
+ * takes the real `makeNode` (and `emptyStyles`) as injected dependencies instead — the same
+ * `initXState(deps)` shape every other Phase 2/3 module uses, just injecting a hand-written
+ * function rather than a storage/DOM primitive.
+ *
+ * Explicitly NOT extracted here, and why:
+ * - applyBuiltinDefaultTemplate — a much larger, separate function: ~20 sequential `makeNode`
+ *   calls building a fixed 15-node tree with intermediate `.id` references for parenting.
+ *   Same DI pattern would apply, but transcribing that exact call sequence correctly is far
+ *   more failure-prone (a single reordered push silently changes the tree shape) than this
+ *   module's single `.map()`. Left for a dedicated follow-up slice once this pattern has a
+ *   track record, per the architecture doc's explicit scoping note.
+ * - applyDefaultTemplate — trivial orchestration (branches to the custom-template path via
+ *   applyTemplateNodes, or to applyBuiltinDefaultTemplate), no logic of its own to extract.
+ * - The post-construction selection reset (`selectedId`/`editingId`/`selectAllMode`/
+ *   `clearMultiSelection()`/`selectionAnchorId`/`flashNodeId`) and the `rebuildParentIds()`
+ *   call — same "orchestration wrapper does the side-effecting/DOM-adjacent part by hand"
+ *   split every prior slice has used (e.g. nodeSelection.ts, hubTodos.ts).
+ */
+/** Pure given its injected dependencies: constructs one fresh node per raw template node
+ * (always as a flat, depth-preserving, parent-less list — matching the original, which never
+ * set a `parentId` here and instead relied on the caller's `rebuildParentIds()` to derive
+ * parentage from `depth`), then computes the next free id the same way the original did
+ * (`max existing id + 1`, or `1` for an empty template). Every `makeNode` call happens through
+ * the injected function, so id minting and the `nextId` global it mutates behave identically
+ * to every other real call site — this function only reads back the ids afterward to compute
+ * the returned `nextId`, never mutates any global itself. */
+function applyTemplateNodesCore(rawNodes, deps) {
+    const nodes = (rawNodes || []).map((n) => {
+        const nd = deps.makeNode(n.text || '', n.depth || 0, null, n.styles || deps.emptyStyles(), n.note || '', !!n.isCheckbox);
+        nd.checked = !!n.checked;
+        nd.tags = Array.isArray(n.tags) ? n.tags : [];
+        return nd;
+    });
+    const nextId = nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+    return { nodes, nextId };
+}
+
+/* GENERATED:templatesApply:END */
 function applyTemplateNodes(rawNodes){
-  nodes=(rawNodes||[]).map(n=>{const nd=makeNode(n.text||'',n.depth||0,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox); nd.checked=!!n.checked; nd.tags=Array.isArray(n.tags)?n.tags:[]; return nd;});
-  nextId=nodes.reduce((max,n)=>Math.max(max,n.id),0)+1;
+  const result=applyTemplateNodesCore(rawNodes,{makeNode,emptyStyles});
+  nodes=result.nodes; nextId=result.nextId;
   rebuildParentIds();
   selectedId=nodes[0]?.id??null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null;
 }

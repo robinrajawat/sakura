@@ -12,12 +12,13 @@
  * Explicitly NOT extracted here, and why:
  * - renderTemplatesList/openTemplatesMenu/renderSidebarTemplates — DOM construction, stays
  *   hand-written, same reasoning as renderNotifList staying out of notifications.ts.
- * - applyTemplateNodes/applyBuiltinDefaultTemplate/applyDefaultTemplate — genuinely coupled to
- *   the ambient node-id counter: `makeNode()` mutates the shared `nextId` global as it
- *   constructs each node (`id: nextId++`), so cleanly extracting these means either injecting
- *   the real `makeNode` as a dependency (safe, but not yet attempted) or reimplementing node
- *   construction from scratch (risky — could drift from the real field set). Left for a future,
- *   deliberately scoped pass rather than folded in here. **Correction:** this is a narrower,
+ * - applyBuiltinDefaultTemplate/applyDefaultTemplate — genuinely coupled to the ambient node-id
+ *   counter: `makeNode()` mutates the shared `nextId` global as it constructs each node
+ *   (`id: nextId++`). `applyTemplateNodes` itself has since been extracted (see
+ *   src/core/templatesApply.ts, which injects the real `makeNode` as a dependency);
+ *   `applyBuiltinDefaultTemplate`'s much larger, fixed 15-node hardcoded tree is left for its
+ *   own dedicated follow-up slice, and `applyDefaultTemplate` is trivial branching orchestration
+ *   with nothing to extract. **Correction:** this is a narrower,
  *   different coupling than the original note below about `stampTemplateDateAuthor` — see that
  *   function's own inclusion below for why the same "core-outline coupling, no `core/` boundary
  *   yet" reasoning doesn't actually apply to every node-touching function equally.
