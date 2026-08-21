@@ -16,13 +16,14 @@ color-assignment layer, the pure tree-layout engine, and the final-rect/bounds c
 layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration);
 **Export domain in progress** (`serializeTreeText` — the plain-text ASCII tree serializer used
 by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` — the OPML 2.0
-serializer); the much larger remaining
+serializer; `serializeClipboardHtml` and its color/parsing helpers — the rich-text HTML half of
+copy-to-clipboard); the much larger remaining
 XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
 `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the rest of Export
-(`serializeClipboardHtml`/`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
-image export — canvas-dependent), and the rest of Templates/Journal not yet begun).
+(`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`; image export —
+canvas-dependent), and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1124,6 +1125,46 @@ depth-rebasing, and a full end-to-end fixture). New
 against real `nodes`/`nodeContentExportEnabled` globals and the real `getMeta()` DOM read via
 `#header-title`.
 
+**Export domain — third slice: `src/utils/serializeClipboardHtml.ts`.** `serializeClipboardHtml`,
+the rich-text (HTML) half of copy-to-clipboard — the `text/html` clipboard item
+`exportToClipboard` writes alongside `serializeTreeText`'s plain-text version.
+
+Investigated as a whole before scoping, per this project's own "investigate before assuming"
+lesson — and it caught a real mistake in this very doc: an earlier status note (this file's own
+prior revision) lumped `serializeClipboardHtml` together with `serializeTreeTextWithNotes` as
+"DOM-dependent via `stripHtmlToText`." Wrong for this function specifically —
+`serializeClipboardHtml` never calls `stripHtmlToText` at all. Tracing its real dependencies
+(`getClipboardExportColors`, `depthTextColor`, `soften`, `parseStyledTextForClipboard`) finds
+zero DOM calls anywhere in the chain — every one is plain string/math manipulation. All four are
+included in this slice since they exist for no purpose other than this call chain.
+
+`soften`/`getClipboardExportColors` turn out to already be reused by several other hand-written
+call sites elsewhere in `index.html` (image export's own color pipeline, decision-log card
+rendering) — extracting them doesn't touch those call sites, since every generated block is
+available as an ambient global to hand-written code exactly the same way it is to other
+generated blocks. Confirmed via the e2e smoke test: `getImageExportColors` (image export's real,
+unchanged color pipeline) still resolves `soften` correctly after the splice, not just
+`serializeClipboardHtml`'s own internal use.
+
+`buildPrefix`/`hasLaterSiblingAtDepth`, `computeOutlineNumbers`, and `escapeHtml` are already
+generated elsewhere and referenced as ambient globals via `declare function`. The hand-written
+`esc()` one-liner wrapping `escapeHtml` is bypassed in favor of calling `escapeHtml` directly,
+same reasoning `serializeOpml.ts`'s slice used for `escAttr`. `treeIndentWidth`/`hideTreeLines`/
+`outlineNumbering` are promoted to explicit required parameters, same reasoning this domain's
+first two slices established.
+
+24 new unit tests: `soften`'s ratio/fallback behavior (pure-base/pure-color endpoints,
+intermediate mixing, 3-digit hex expansion, unparseable-input fallback to `'#777'`),
+`depthTextColor`'s fade curve, the fixed color palette, `parseStyledTextForClipboard`'s
+semantic-guide parsing (`[section]`/`(note)`/`!alert`/`` `code` `` = description, each form) and
+inline-span parsing within ordinary text, plus HTML escaping of unmarked text, and
+`serializeClipboardHtmlCore`'s row rendering, bold/italic/underline/strike style application,
+outline numbering, empty-text/rebase/`hideTreeLines` behavior. New
+`tests/e2e/generated-serializeclipboardhtml-smoke.spec.ts` exercises the real, unchanged wrapper
+functions — the same call path `exportToClipboard` uses — against real `nodes`/
+`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` globals, plus confirms `soften`'s other real
+hand-written caller (`getImageExportColors`) still resolves correctly.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
@@ -1131,7 +1172,7 @@ string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
 editor DOM wiring, the rest of Export (
-`serializeClipboardHtml`/`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
+`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
 image export — canvas-dependent), and the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
