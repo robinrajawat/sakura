@@ -12,12 +12,14 @@ Diagrams' display-list filtering/sorting done, plus six slices of the `diagramGe
 subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
 nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
 color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation);
-**Decision Log domain in progress** (normalization layer, and lookup/anchor-label/status-query
-layer — a domain untouched elsewhere in this migration); the much larger remaining
+**Decision Log domain in progress** (normalization layer, lookup/anchor-label/status-query
+layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration); the
+much larger remaining
 XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
 `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(DOM-dependent row/candidate helpers), Export, and the rest of Templates/Journal not yet begun).
+(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), Export, and the rest of
+Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1027,12 +1029,37 @@ ever ran, so `npm run generate` never had a chance to fail on it.
 unchanged wrapper functions against real `decisionLogs`/`nodes` global state, plus the standard
 distant-function-still-callable check.
 
+**Decision Log domain — third slice: `getDecisionAnchorCandidates`, added to the existing
+`src/state/decisionLogQueries.ts`.** The doc's own prior caveat bundled `decisionRowSnippet` and
+`getDecisionAnchorCandidates` together as "both call the DOM-dependent `stripHtmlToText`" — true
+only of the former. `getDecisionAnchorCandidates` has no DOM dependency once traced: it calls
+`stripSemanticMarkers` (already ambient) and `decisionLogForNode`, whose real logic is
+`decisionLogForNodeCore` — already generated *in this same file*, so referenced directly as an
+ordinary in-scope call rather than via `declare function` (that pattern is reserved for functions
+generated in a *different* file/block). Filters candidates by case-insensitive substring match,
+flags each as `taken` if already anchored to a decision log (excluding one matching `excludeId`,
+so a log being reassigned doesn't grey out its own current anchor), sorts depth-first (same
+stable-sort reasoning as the Diagrams tab's `getDiagramAnchorCandidates`, deliberately not
+touched here), caps at 50. Single real call site, already contiguous with this file's existing
+exports — no pure-code-motion commit needed. Added `depth` as an optional field to the existing
+exported `AnchorableNode` interface rather than introducing a duplicate node-shape type.
+
+`decisionRowSnippet` stays hand-written — 4 trivial lines with zero orchestration/branching
+complexity, not worth injecting `stripHtmlToText` as a dependency (the DI pattern
+`templatesApply.ts` established) for something this small.
+
+8 new unit tests (empty-query pass-through, marker-stripping/untitled-fallback, substring
+filtering, `taken`/`excludeId` flagging, depth-first stable sort, missing-depth default, the
+50-item cap). Extended the existing `tests/e2e/generated-decisionlogqueries-smoke.spec.ts` (same
+generated block, no new file) to exercise the real, unchanged `getDecisionAnchorCandidates`
+wrapper against real `nodes`/`decisionLogs` globals — including the `excludeId` case.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(DOM-dependent row/candidate helpers — `decisionRowSnippet`/`getDecisionAnchorCandidates`), CRUD/
+(`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
 editor DOM wiring, Export, and the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
