@@ -4,14 +4,16 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and
-`applyTemplateNodes`'s node-construction core; AI provider prefs storage done; Hub's To-Dos and
-Journal feature-domain storage layers done; `applyBuiltinDefaultTemplate`, Diagrams/Export, and
-the rest of Hub not yet begun). `core/` module boundary: eight slices done (indent/outdent,
-moveSelected, drag-and-drop move, paste, delete, the shared selection/parentId helpers, outline
-search matching, and template node-construction via injected `makeNode`/`emptyStyles` — the
-first slice to inject a hand-written function as a dependency rather than reference an
-already-generated block). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
+progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and both
+`applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
+needed no new source at all, see below; AI provider prefs storage done; Hub's To-Dos and Journal
+feature-domain storage layers done; Diagrams/Export and the rest of Hub not yet begun). `core/`
+module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop move, paste,
+delete, the shared selection/parentId helpers, outline search matching, and template
+node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
+hand-written function as a dependency rather than reference an already-generated block, and
+later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
+to be dead code). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
 diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not
 `core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
 structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
@@ -863,6 +865,29 @@ single `.map()` — left for a dedicated follow-up slice now that the injected-h
 function pattern has a track record. `applyDefaultTemplate` itself is trivial branching
 orchestration (custom-template path via `applyTemplateNodes`, or built-in path via
 `applyBuiltinDefaultTemplate`) with no logic of its own to extract.
+
+**Immediate follow-up: `applyBuiltinDefaultTemplate` turned out to need no new source at all.**
+Before writing a second DI'd core, investigation checked whether the function's explicit
+`.id`-based parenting (`makeNode('UI Layer',1,root.id)`, etc.) actually matters. It doesn't:
+the function's own trailing `rebuildParentIds()` call unconditionally overwrites every node's
+`parentId` from `depth` alone (`getParentIndex`'s nearest-preceding-node-at-depth-minus-1
+scan) — verified byte-for-byte against the original's explicit parentIds before touching
+production code (a small standalone script reproducing both the original construction and the
+depth-derived rebuild, confirmed identical parentId arrays across all 16 nodes). Once the
+explicit parenting is known to be dead, the whole function collapses to exactly the flat
+`{text, depth, styles}` shape `applyTemplateNodesCore` already handles. The fix: a new
+hand-written `DEFAULT_TEMPLATE_RAW_NODES` data array in `index.html` (same construction order,
+16 entries) plus a rewritten `applyBuiltinDefaultTemplate()` that resets `nextId=1` and calls
+the *same* generated `applyTemplateNodesCore` `applyTemplateNodes()` already uses — no new
+`src/` module, no generator changes, since this is hand-written code calling an already-spliced
+ambient function exactly the way every wrapper already does. A second test added to
+`tests/e2e/generated-templatesapply-smoke.spec.ts` (same generated block, no new file) pins the
+real wrapper's output against the exact original tree shape — every section's parentId chain,
+the five-level-deep `Business Object → Root View Entity → Behaviour → Definition →
+Implementation` nesting, `rootBold`, fresh id minting off a real `nextId=1` reset, and the
+selection reset — rather than just "some 16-node tree." A good example of the "investigate
+before assuming an ordering guess is right" lesson from earlier in this project: the doc's own
+prior write-up assumed this would need its own DI'd core module; it didn't.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately

@@ -16,14 +16,16 @@
  * function rather than a storage/DOM primitive.
  *
  * Explicitly NOT extracted here, and why:
- * - applyBuiltinDefaultTemplate — a much larger, separate function: ~20 sequential `makeNode`
- *   calls building a fixed 15-node tree with intermediate `.id` references for parenting.
- *   Same DI pattern would apply, but transcribing that exact call sequence correctly is far
- *   more failure-prone (a single reordered push silently changes the tree shape) than this
- *   module's single `.map()`. Left for a dedicated follow-up slice once this pattern has a
- *   track record, per the architecture doc's explicit scoping note.
- * - applyDefaultTemplate — trivial orchestration (branches to the custom-template path via
- *   applyTemplateNodes, or to applyBuiltinDefaultTemplate), no logic of its own to extract.
+ * - applyBuiltinDefaultTemplate — reuses THIS module's applyTemplateNodesCore directly (see
+ *   index.html's DEFAULT_TEMPLATE_RAW_NODES + docs/architecture-plan.md's ninth-slice
+ *   follow-up), rather than needing its own core: investigation found its original explicit
+ *   `.id`-based parenting was dead code, unconditionally overwritten by its own trailing
+ *   rebuildParentIds() call, which derives every parentId purely from depth. Once that's true,
+ *   its ~20 sequential makeNode calls collapse to the exact same flat-data shape this module
+ *   already handles — no new source needed.
+ * - applyDefaultTemplate — trivial branching orchestration (custom-template path via
+ *   applyTemplateNodes, or built-in path via applyBuiltinDefaultTemplate), no logic of its own
+ *   to extract.
  * - The post-construction selection reset (`selectedId`/`editingId`/`selectAllMode`/
  *   `clearMultiSelection()`/`selectionAnchorId`/`flashNodeId`) and the `rebuildParentIds()`
  *   call — same "orchestration wrapper does the side-effecting/DOM-adjacent part by hand"
