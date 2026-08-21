@@ -1,5 +1,14 @@
 # Sakura: from single-file HTML to a real codebase
 
+**Note:** this doc covers the TypeScript modularization of the existing
+single-file app — logic extracted into tested `src/` modules, spliced back into
+`index.html`/`hub.html` at build time, while the single-file distribution model
+itself is preserved. A separate, larger decision is now in planning: moving off
+the single-file model entirely onto a real frontend framework (React/Svelte/Vue),
+accessed only via the hosted URL. See `docs/framework-migration-plan.md` for that
+plan — it's a different kind of change from everything else in this document, not
+a continuation of it.
+
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
