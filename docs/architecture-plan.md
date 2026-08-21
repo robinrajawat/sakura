@@ -4,9 +4,9 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done; AI provider prefs storage done; Hub's To-Dos and
-Journal feature-domain storage layers done; Diagrams/Export and the rest of Templates/Hub not
-yet begun). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
+progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up; AI
+provider prefs storage done; Hub's To-Dos and Journal feature-domain storage layers done;
+Diagrams/Export and the rest of Templates/Hub not yet begun). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
 drag-and-drop move, paste, delete, the shared selection/parentId helpers, and outline search
 matching). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and diagram-anchor/
 orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither
@@ -397,6 +397,21 @@ and a real cross-block collision the generator's own collision checker caught on
 round-trip against real localStorage and specifically checks that an unrelated, physically
 distant function is still callable — the check that would have caught the prior cutover's
 import-statement bug that silently killed the whole script.
+
+**Follow-up addition to `templatesIndex.ts`: `stampTemplateDateAuthorCore`.** Re-investigated,
+much later in the project (after `core/` existed and after `tabOrder.ts`/`diagramAnchor.ts`/
+`nodeSearch.ts` had each already shown that "touches `nodes`" was too broad a reason to exclude
+something). `stampTemplateDateAuthor` mutates existing nodes' `text` fields in place via exact
+string matching (`"Date:"`, `"Author:"`, `"Date · Author"`) — no node construction, no ambient
+id-counter involvement, no selection-state side effects, genuinely different from
+`applyTemplateNodes`/`applyBuiltinDefaultTemplate`/`applyDefaultTemplate` (still excluded,
+correctly this time: those construct new nodes via `makeNode()`, which mutates the shared
+`nextId` id-counter global as it goes — a real coupling this function doesn't have). `dateStr`/
+`authorName` are passed in already-computed, keeping the DOM read (`el('doc-author')?.value`)
+and date formatting in the hand-written wrapper. 10 new unit tests, all passing first run.
+Extended `tests/e2e/generated-templatesindex-smoke.spec.ts` (same generated block, no new file)
+with a second test exercising the real wrapper against a real `nodes` array and the real
+`#doc-author` input.
 
 Second slice: `src/state/aiProviders.ts` — the AI settings panel's prefs storage
 (`computeLoadedAiPrefs`/`loadAiPrefsCore`/`saveAiPrefsCore`). Scope was narrowed during
