@@ -34,14 +34,19 @@ genuinely canvas/DOM-dependent, correctly staying hand-written). **Image export:
 (`parseInlineSegments` — the pure inline-marker parser behind the tree-image renderer, a
 genuinely pure fragment inside an otherwise correctly-labeled-canvas-dependent feature), the
 rest correctly staying hand-written per the above. Templates' remaining rendering/sync surface
-investigated this session and confirmed closed for now — `collectTemplateMatches` is
-genuinely DOM/UI-callback-bound, correctly excluded; `applyIncomingTemplateData`'s pure fragment
-is part of a much larger, not-yet-scoped **sync subsystem** shared identically across every
-synced domain (todos/meetings/journal/library/templates) — a genuinely new investigation area,
-not part of Phase 3's original scope, and worth its own explicit decision before opening (a
-natural Phase 4 candidate, not yet started). **What remains overall:** the sync subsystem (new,
-unscoped, not started) and CRUD/editor DOM wiring (meant to stay hand-written by this project's
-own consistent rule throughout — not a gap).
+investigated and confirmed closed for the pure-logic extraction this migration otherwise does —
+`collectTemplateMatches` is genuinely DOM/UI-callback-bound, correctly excluded.
+**Phase 4 (sync subsystem) started:** the shared "should this incoming cloud update actually be
+applied" decision predicate — echo-suppression plus a staleness check — extracted from the three
+`applyIncoming*Data` functions (Doc/Template/Meta), which had each duplicated it inline with one
+real, preserved behavioral difference (whether a missing local record bypasses the staleness
+check) found and pinned rather than unified away. Everything else in those three functions —
+storage writes, cross-tab banners, collaborator notifications, IndexedDB-vs-localStorage
+branching — stays hand-written. **What remains in Phase 4:** the rest of the sync subsystem
+(the real-time Firestore listeners, the actual push/pull orchestration, and whatever further
+duplication or pure fragments turn up once those are read closely — not yet investigated) and
+CRUD/editor DOM wiring (meant to stay hand-written by this project's own consistent rule
+throughout — not a gap).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1400,6 +1405,50 @@ see above.
   mid-session. `renderTemplatesList`/`openTemplatesMenu` are DOM-list-rendering/menu-toggling,
   correctly excluded the same way every other domain's `render*`/`open*Menu` functions have been
   throughout this migration.
+
+
+## Phase 4: the sync subsystem
+
+**First slice: `src/state/syncApply.ts`.** The three `applyIncoming*Data` functions
+(`applyIncomingDocData`, `applyIncomingTemplateData`, `applyIncomingMetaData`) each
+independently inlined the same "should this incoming cloud update actually be applied"
+decision: is it our own write echoing back (guarded via `_lastPushedTs`), and if not, is it
+actually newer than what's stored locally. Real, genuine duplication — three near-identical
+three-line blocks — worth sharing, unlike the much larger sync pattern surrounding each one
+(storage-layer writes, cross-tab banners, collaborator notifications, IndexedDB-vs-localStorage
+branching), which stays hand-written orchestration.
+
+Investigated the three blocks closely before assuming they were interchangeable, per this
+project's own "investigate before assuming" discipline — and they weren't quite.
+`applyIncomingDocData`/`applyIncomingTemplateData` both special-case "no local record exists
+yet" as an unconditional bypass of the staleness check (`if(localEntry&&...)` short-circuits to
+false, so a genuinely new item always gets applied regardless of its cloud timestamp).
+`applyIncomingMetaData` has no such bypass — it always compares against a default-zero local
+timestamp even when the key was never set before, so a cloud update with a falsy/zero
+`updatedAt` for a brand-new key would actually be REJECTED there, not applied. A real, preserved
+behavioral difference between the three, not a bug to fix or a distinction to unify away.
+`localUpdatedAt: null` expresses the first two functions' bypass case explicitly; passing a real
+number — including `0` — expresses the third's "always compare, no bypass" case; the caller
+chooses per its own original semantics, the shared core doesn't collapse the distinction.
+
+10 new unit tests: the shared logic (applies when genuinely newer or when there's no local
+record at all, rejects when not strictly newer, rejects an exact-echo match against
+`lastPushedTsForKey`, coerces a missing/non-numeric cloud timestamp to `0` the same way
+`Number(x)||0` does) plus, side by side, the two callers' different null-vs-zero bypass
+semantics pinned explicitly with their own dedicated tests and comments explaining why each
+exists. New `tests/e2e/generated-syncapply-smoke.spec.ts` exercises all three real, unchanged
+`applyIncoming*Data` functions — the same call paths `pullAndMergeFromCloud` and the realtime
+`onSnapshot` listeners use — against real `localStorage`/`_lastPushedTs` global state: a
+brand-new document/template applies regardless of timestamp, a subsequent stale update is
+rejected, an exact-echo update is rejected, and the real localStorage-backed Meta path
+(`prefs`) both applies a genuine update and rejects a stale one.
+
+Not yet started in Phase 4: the rest of the sync subsystem — the real-time Firestore
+`onSnapshot` listeners themselves (deep async/subscription-lifecycle orchestration, likely
+correctly out of scope the same way `generateDiagramFromOutline` was), the actual push
+side (`bumpSyncTimestamp`/`pushMetaToCloud`/`queueSync` and friends, not yet read closely), and
+whatever further genuine duplication or pure fragments turn up once those are investigated —
+none of it assumed yet, each to be read and judged the same way this slice was.
 
 
 **`core/` module boundary — started.**
