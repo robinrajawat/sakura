@@ -21134,21 +21134,35 @@ function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){return serializeT
 // reason about note content (currently: generateQaQuestionsAI) — the plain serializeTreeText
 // stays note-free everywhere else (export/restructure) so this doesn't change any output that
 // wasn't asked for.
-function serializeTreeTextWithNotes(scopeNodes=nodes,rebaseDepth=false){
-  if(!scopeNodes.length)return '';
-  const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0;
-  const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering);
-  const lines=[];
-  scopeNodes.forEach((node,idx)=>{
-    const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth);
-    if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn='';}
-    const num=numbers[idx];
-    lines.push(`${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd());
-    const noteText=node.note?stripHtmlToText(node.note):'';
-    if(noteText)lines.push(`${p.vert}    Note: ${noteText}`);
-  });
-  return lines.join('\n');
+/* GENERATED:serializeTreeTextWithNotes:START — DO NOT EDIT BY HAND. Source of truth: src/utils/serializeTreeTextWithNotes.ts (tests: tests/unit/serializeTreeTextWithNotes.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/** Pure once `stripHtmlToText` is supplied: matches index.html's own `serializeTreeTextWithNotes`
+ * exactly — same ASCII-tree rendering `serializeTreeTextCore` produces, but appending each
+ * node's note (plain-texted via the injected `stripHtmlToText`, only when non-blank) as its own
+ * indented `    Note: ...` line directly under that node's own line, indented to match the
+ * node's own tree-connector prefix. */
+function serializeTreeTextWithNotesCore(scopeNodes, rebaseDepth, outlineNumbering, treeIndentWidth, hideTreeLines, stripHtmlToText) {
+    if (!scopeNodes.length)
+        return '';
+    const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
+    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const lines = [];
+    scopeNodes.forEach((node, idx) => {
+        const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);
+        if (hideTreeLines) {
+            p.vert = p.vert.replace(/[│]/g, ' ');
+            p.conn = '';
+        }
+        const num = numbers[idx];
+        lines.push(`${p.vert}${p.conn}${num ? num + ' ' : ''}${getNodePlainText(node)}`.trimEnd());
+        const noteText = node.note ? stripHtmlToText(node.note) : '';
+        if (noteText)
+            lines.push(`${p.vert}    Note: ${noteText}`);
+    });
+    return lines.join('\n');
 }
+
+/* GENERATED:serializeTreeTextWithNotes:END */
+function serializeTreeTextWithNotes(scopeNodes=nodes,rebaseDepth=false){return serializeTreeTextWithNotesCore(scopeNodes,rebaseDepth,outlineNumbering,treeIndentWidth,hideTreeLines,stripHtmlToText)}
 function getClipboardThemeColors(){const cs=getComputedStyle(document.body); const read=name=>String(cs.getPropertyValue(name)||'').trim(); return {fg:read('--fg')||'#1a1a1a',muted:read('--muted')||'#6b7280',vert:read('--vert')||'#9ca3af',conn:read('--conn')||read('--accent')||'#c96442',semSection:read('--sem-section')||read('--accent')||'#2563eb',semAlert:read('--sem-alert')||'#dc2626',semCode:read('--sem-code')||'#7c3aed',semQuote:read('--sem-quote')||'#6b6240',codeBg:read('--chip')||'#f3f4f6',fcRed:read('--fc-red')||'#c0392b',fcOrange:read('--fc-orange')||'#c2701d',fcGreen:read('--fc-green')||'#27824f',fcBlue:read('--fc-blue')||'#2766c2',fcPurple:read('--fc-purple')||'#7d3fb5',fcGray:read('--fc-gray')||'#6f6b63'}}
 // Fixed light-mode palette for anything copied to the system clipboard as rich text (serializeClipboardHtml,
 // copyPreviewAsRichText, decision-log cards within it). Paste destinations (email, Slack, Word, Notion...) are
