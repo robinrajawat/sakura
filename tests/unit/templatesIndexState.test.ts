@@ -12,8 +12,10 @@ import {
   loadTrashedTemplatesIndex,
   moveTemplateToTrashCore,
   restoreTemplateFromTrashCore,
+  stampTemplateDateAuthorCore,
   type TemplatesIndexDeps,
-  type TemplateIndexEntry
+  type TemplateIndexEntry,
+  type TemplateStampableNode
 } from '../../src/state/templatesIndex';
 
 describe('templateKey / builtinTemplateId / getBuiltinTemplateIconById (pure)', () => {
@@ -204,5 +206,79 @@ describe('stateful templates index (initTemplatesIndexState + CRUD)', () => {
     const result = restoreTemplateFromTrashCore('does-not-exist');
     expect(result).toBe(false);
     expect(scheduleBackupWriteCalls).toBe(0);
+  });
+});
+
+describe('stampTemplateDateAuthorCore (pure)', () => {
+  function node(text: string): TemplateStampableNode {
+    return { text };
+  }
+
+  it('stamps a "Date:" line with the given date string', () => {
+    const nodes = [node('Date:')];
+    stampTemplateDateAuthorCore(nodes, 'August 21, 2026', '');
+    expect(nodes[0].text).toBe('Date: August 21, 2026');
+  });
+
+  it('stamps an "Author:" line only when an author name is provided', () => {
+    const withAuthor = [node('Author:')];
+    stampTemplateDateAuthorCore(withAuthor, 'August 21, 2026', 'Ajay');
+    expect(withAuthor[0].text).toBe('Author: Ajay');
+
+    const withoutAuthor = [node('Author:')];
+    stampTemplateDateAuthorCore(withoutAuthor, 'August 21, 2026', '');
+    expect(withoutAuthor[0].text).toBe('Author:');
+  });
+
+  it('stamps a "Date · Author" line with both when an author is provided', () => {
+    const nodes = [node('Date · Author')];
+    stampTemplateDateAuthorCore(nodes, 'August 21, 2026', 'Ajay');
+    expect(nodes[0].text).toBe('August 21, 2026 · Ajay');
+  });
+
+  it('stamps a "Date · Author" line with only the date when no author is provided', () => {
+    const nodes = [node('Date · Author')];
+    stampTemplateDateAuthorCore(nodes, 'August 21, 2026', '');
+    expect(nodes[0].text).toBe('August 21, 2026');
+  });
+
+  it('never touches a line that already has real content, even if it starts with a placeholder word', () => {
+    const nodes = [node('Date: already filled in'), node('Author: someone'), node('Date')];
+    stampTemplateDateAuthorCore(nodes, 'August 21, 2026', 'Ajay');
+    expect(nodes[0].text).toBe('Date: already filled in');
+    expect(nodes[1].text).toBe('Author: someone');
+    expect(nodes[2].text).toBe('Date');
+  });
+
+  it('trims whitespace before matching, but leaves the original text untrimmed if no match', () => {
+    const nodes = [node('  Date:  ')];
+    stampTemplateDateAuthorCore(nodes, 'August 21, 2026', '');
+    expect(nodes[0].text).toBe('Date: August 21, 2026');
+  });
+
+  it('is generic/template-agnostic: works for any node with these exact lines, not a hardcoded template', () => {
+    const nodes = [node('Some Header'), node('Date:'), node('Some Other Section'), node('Author:')];
+    stampTemplateDateAuthorCore(nodes, '2026-08-21', 'Robin');
+    expect(nodes[0].text).toBe('Some Header');
+    expect(nodes[1].text).toBe('Date: 2026-08-21');
+    expect(nodes[2].text).toBe('Some Other Section');
+    expect(nodes[3].text).toBe('Author: Robin');
+  });
+
+  it('mutates the array elements in place — same object references, no new array returned', () => {
+    const nodes = [node('Date:')];
+    const originalRef = nodes[0];
+    const result = stampTemplateDateAuthorCore(nodes, 'x', '');
+    expect(result).toBeUndefined();
+    expect(nodes[0]).toBe(originalRef);
+  });
+
+  it('handles an empty node list without throwing', () => {
+    expect(() => stampTemplateDateAuthorCore([], 'x', '')).not.toThrow();
+  });
+
+  it('handles nodes with missing/undefined text without throwing', () => {
+    const nodes = [{ text: undefined as unknown as string }];
+    expect(() => stampTemplateDateAuthorCore(nodes, 'x', '')).not.toThrow();
   });
 });

@@ -12,10 +12,15 @@
  * Explicitly NOT extracted here, and why:
  * - renderTemplatesList/openTemplatesMenu/renderSidebarTemplates — DOM construction, stays
  *   hand-written, same reasoning as renderNotifList staying out of notifications.ts.
- * - applyTemplateNodes/stampTemplateDateAuthor/applyBuiltinDefaultTemplate/applyDefaultTemplate
- *   — touch the live `nodes` array directly, the same core-outline coupling that blocks
- *   Phase 2's remaining candidates (search/tabs/diagram-anchor state). Not safely extractable
- *   until a real `core/` module boundary exists.
+ * - applyTemplateNodes/applyBuiltinDefaultTemplate/applyDefaultTemplate — genuinely coupled to
+ *   the ambient node-id counter: `makeNode()` mutates the shared `nextId` global as it
+ *   constructs each node (`id: nextId++`), so cleanly extracting these means either injecting
+ *   the real `makeNode` as a dependency (safe, but not yet attempted) or reimplementing node
+ *   construction from scratch (risky — could drift from the real field set). Left for a future,
+ *   deliberately scoped pass rather than folded in here. **Correction:** this is a narrower,
+ *   different coupling than the original note below about `stampTemplateDateAuthor` — see that
+ *   function's own inclusion below for why the same "core-outline coupling, no `core/` boundary
+ *   yet" reasoning doesn't actually apply to every node-touching function equally.
  * - applyIncomingTemplateData — Firestore sync, explicitly Phase 4 territory (extracted last
  *   on purpose, per the architecture doc's own reasoning: this area has produced the most
  *   bugs historically).
@@ -183,4 +188,33 @@ export function restoreTemplateFromTrashCore(id: string): boolean {
   list[i] = rest;
   saveTemplatesIndex(list);
   return true;
+}
+
+/** A node shape narrow enough for `stampTemplateDateAuthorCore`: just the mutable `text` field
+ * it reads and rewrites. Re-investigated and included here (unlike `applyTemplateNodes` etc.,
+ * still excluded above): this function only mutates existing nodes' `text` fields in place —
+ * no node construction, no ambient id-counter involvement, no selection-state side effects. The
+ * original "core-outline coupling" reasoning that excluded this function turned out to be too
+ * broad, the same over-broad-original-judgment shape as `nodeSearch.ts`'s and `tabOrder.ts`'s
+ * own revisits: "touches `nodes`" isn't automatically the same risk as "constructs new nodes"
+ * or "resets selection state." */
+export interface TemplateStampableNode {
+  text: string;
+}
+
+/** Mutates `nodes` in place (same convention as `nodeMutations.ts`'s own `nodes.splice`
+ * pattern): any node whose text is EXACTLY `"Date:"`, `"Author:"`, or `"Date · Author"` gets
+ * that placeholder auto-filled — matching the original's generic, template-agnostic behavior
+ * (works for any template with these exact lines, not just a specific named one; never touches
+ * a line that already has real content, since the match is exact-string, not prefix). `dateStr`
+ * and `authorName` are passed in already-formatted/already-trimmed rather than computed here,
+ * since formatting a date and reading a DOM input's value are both presentation-layer concerns
+ * that stay with the hand-written caller — this function's only job is the placeholder logic. */
+export function stampTemplateDateAuthorCore(nodes: TemplateStampableNode[], dateStr: string, authorName: string): void {
+  nodes.forEach((n) => {
+    const t = String(n.text || '').trim();
+    if (t === 'Date:') n.text = 'Date: ' + dateStr;
+    else if (t === 'Author:' && authorName) n.text = 'Author: ' + authorName;
+    else if (t === 'Date · Author') n.text = authorName ? dateStr + ' · ' + authorName : dateStr;
+  });
 }

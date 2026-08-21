@@ -113,4 +113,62 @@ test.describe('generated templatesIndex block (src/state/templatesIndex.ts splic
 
     expect(unexpectedErrors).toEqual([]);
   });
+
+  test('stampTemplateDateAuthor fills in Date:/Author:/Date · Author placeholders via the real wrapper function', async ({ page }) => {
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
+    });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !KNOWN_NOISE.test(msg.text())) {
+        unexpectedErrors.push('console.error: ' + msg.text());
+      }
+    });
+
+    await page.goto('file://' + indexPath);
+
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => {
+        const el = document.getElementById('sakura-landing-overlay');
+        if (el) el.style.display = 'none';
+      });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    // Real stampTemplateDateAuthor() call, through the real (unchanged) wrapper — builds a real
+    // `nodes` array with placeholder lines, sets the real #doc-author input's value (the DOM
+    // read the wrapper itself still owns), and confirms the placeholders get filled correctly.
+    const result = await page.evaluate(() => {
+      // @ts-expect-error — bare globals from index.html
+      nodes = [
+        { id: 1, text: 'Date:', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Author:', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'Unrelated line', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+      ];
+      const authorInput = document.getElementById('doc-author') as HTMLInputElement | null;
+      if (authorInput) authorInput.value = 'Ajay';
+      // @ts-expect-error
+      stampTemplateDateAuthor();
+      // @ts-expect-error
+      return { dateLine: nodes[0].text, authorLine: nodes[1].text, unrelatedLine: nodes[2].text };
+    });
+
+    expect(result.dateLine).toMatch(/^Date: /);
+    expect(result.authorLine).toBe('Author: Ajay');
+    expect(result.unrelatedLine).toBe('Unrelated line');
+
+    // Proof the rest of the script still runs — an unrelated, physically-distant function
+    // (defined tens of thousands of characters later in the file) is still callable.
+    const restOfScriptWorks = await page.evaluate(() => {
+      // @ts-expect-error
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function';
+    });
+    expect(restOfScriptWorks).toBe(true);
+
+    expect(unexpectedErrors).toEqual([]);
+  });
 });
