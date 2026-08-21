@@ -1813,10 +1813,48 @@ compiles to, only what the compiler would have caught if something had been wron
 
 ## Open items for a later, deliberate decision (not blocking Phase 0)
 
-- **Deployment mechanism.** Whether/when to switch from the current
-  "legacy" GitHub Pages build (serving `main` root directly) to a
-  GitHub-Actions-built-and-deployed `dist/`. Not part of this plan's scope
-  until the build pipeline has a real track record.
+- **Deployment mechanism — Stage 1 done, Stage 2 still a deliberate later decision.**
+  The build pipeline now has the track record this item was waiting on (green on
+  every PR for the whole migration). Stage 1: `.github/workflows/deploy.yml`
+  builds `dist/` on every push to `main` and uploads it as a GitHub Pages
+  artifact via `actions/upload-pages-artifact` — proving the CI-built pipeline
+  end-to-end. Deliberately does NOT run `actions/deploy-pages`; the repo's
+  Pages source setting is untouched (still "Deploy from a branch", serving
+  `main` root directly — today's "legacy" model), so this artifact is built
+  and verified but never actually published or served to anyone.
+
+  Building this surfaced a real gap in `npm run build` itself, not just the
+  new workflow — worth fixing at the source rather than working around in
+  deploy.yml. Investigated concretely (checked what actually landed in
+  `dist/`, not assumed from the build succeeding without error): `vite
+  build` alone silently drops `sw.js` entirely (registered via a JS string
+  literal, invisible to Vite's HTML asset scanner — a deployed `dist/` would
+  404 on the service worker with no visible error) and breaks
+  `manifest.json`/`hub-manifest.json`'s own `start_url`/icon resolution by
+  hashing and relocating them into `dist/assets/` (the Web App Manifest spec
+  resolves both relative to the manifest's own URL, which only stays correct
+  at its original root path). Fixed with a new
+  `scripts/copy-static-assets.mjs`, run right after `vite build` — copies all
+  seven real passthrough files (`sw.js`, both manifests, three PWA icons,
+  `CNAME`) byte-identical into `dist/`, then rewrites the built HTML's
+  manifest `<link>` back to the plain unhashed path. These six source files
+  are deliberately kept at the repo root rather than moved into a Vite
+  `public/` dir — moving them would remove them from the root the CURRENT
+  legacy deployment actually reads them from, breaking the live site
+  immediately on merge. `index.html`/`hub.html` themselves have zero diff
+  from this fix. New regression coverage:
+  `tests/e2e/dist-static-assets.spec.ts` (10 tests) checks every passthrough
+  file lands byte-identical in `dist/`, both manifest links point at the
+  real unhashed copies, and the manifest's own `start_url`/icon paths
+  actually resolve given where it ends up in `dist/`.
+
+  Stage 2 — flipping the repo's Pages source from "branch" to "GitHub
+  Actions" (the moment `www.sakura-notes.com` actually starts being served
+  from CI-built `dist/` instead of raw root files) — is a real production
+  change to the live site's serving mechanism, not a code refactor with
+  provably-identical output the way every other PR in this migration has
+  been. Left as its own deliberate decision, made explicitly, not bundled
+  into Stage 1.
 - **`hub.html` code duplication.** It re-implements its own sync logic for
   To-Dos/Journal, separate from `index.html`'s. Phase 3's Hub extraction is
   the natural point to unify this, but it's a real behavior-risk area (two

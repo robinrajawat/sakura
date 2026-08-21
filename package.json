@@ -2,11 +2,11 @@
   "name": "sakura",
   "private": true,
   "version": "0.0.0",
-  "description": "Sakura — outliner app. This package.json is DEV TOOLING ONLY (Phase 0 of the modularization plan, see docs/architecture-plan.md). It does not change how the app is deployed today: index.html and hub.html at the repo root remain the live, hand-maintained production files served directly by GitHub Pages. Nothing here runs in production yet.",
+  "description": "Sakura — outliner app. This package.json is DEV TOOLING (Phase 0 of the modularization plan, see docs/architecture-plan.md). It does not change how the app is deployed today: index.html and hub.html at the repo root remain the live, hand-maintained production files served directly by GitHub Pages. .github/workflows/deploy.yml builds dist/ (via `npm run build`) and uploads it as a Pages artifact on every push to main, but does not publish it — nothing built here is served to anyone yet; that's a deliberate, separate Stage 2 decision.",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-static-assets.mjs",
     "preview": "vite preview",
     "generate": "node scripts/generate-index-blocks.mjs",
     "generate:verify": "node scripts/generate-index-blocks.mjs --verify",
