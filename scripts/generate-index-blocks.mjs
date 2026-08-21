@@ -394,6 +394,21 @@ initHubJournalState({
     // diagramGenBoxDims/diagramGenMergedBoxDims wrapper bodies in index.html) were updated in
     // the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Second slice of the diagramGen* subsystem — the pure topology/confirmed-nodeMeta query
+    // layer (see this module's own header for full scope notes). 15 functions, relocated next to
+    // each other in a separate pure-code-motion commit first (diagramGenIsContainer/IsSequence/
+    // IsHorizontal were ~320 lines away from the rest).
+    name: 'diagramGenTopology',
+    sourceFile: 'src/state/diagramGenTopology.ts',
+    testFile: 'tests/unit/diagramGenTopology.test.ts',
+    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. All 15 real
+    // call sites (the original diagramGenIsContainer/IsSequence/IsHorizontal/AllChildIdxs/
+    // HasEdgeLabelTag/ChildIdxs/IsLeaf/IsChainGroup/ChainHeaderSuppressed/IsConfirmedEdgeLabel/
+    // IsPassthrough/IsMergeCandidate/RenderChildIdxs/ChainTailIdx/EdgeLabelBefore wrapper bodies
+    // in index.html) were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 

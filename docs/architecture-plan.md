@@ -8,19 +8,21 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, plus a first slice of the `diagramGen*`
-generation subsystem itself (pure box-sizing/color math); the rest of `diagramGen*`, Export, and
-the rest of Templates/Journal not yet begun).
+Diagrams' display-list filtering/sorting done, plus two slices of the `diagramGen*` generation
+subsystem itself (pure box-sizing/color math, then the topology/confirmed-nodeMeta query layer);
+the much larger XML-emission/tree-layout/color-assignment/AI-classification remainder of
+`diagramGen*`, Export, and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
-`diagramGen*` subsystem with zero injected dependencies at all). Three additional Phase 2/3-adjacent
-slices: tab cycling/reordering, diagram-anchor/orphan logic, and diagram-list filtering/sorting
-(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts` — not
-`core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
+`diagramGen*` subsystem with zero injected dependencies at all). Four additional Phase 2/3-adjacent
+slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting, and
+diagramGen*'s own topology/confirmed-nodeMeta query layer (`src/state/tabOrder.ts`,
+`src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`, `src/state/diagramGenTopology.ts`
+— not `core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
 blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
 block, collision-checking scoped per file); first proven with an infrastructure-only pilot
@@ -736,6 +738,61 @@ extracted code, fixed by recounting against the actual algorithm). New
 `diagramGenHardTruncate`/`diagramGenLighten`/`diagramGenAdjustDimsForShape`/`diagramGenBoxDims`/
 `diagramGenMergedBoxDims` wrapper functions directly, plus the standard distant-function-still-
 callable check.
+
+**Second slice of `diagramGen*`: `src/state/diagramGenTopology.ts`.** The pure topology/
+confirmed-nodeMeta query layer — 15 functions answering "what does this node's position in the
+render tree actually look like" once nodeMeta has been confirmed via the review screen:
+`diagramGenIsContainer`/`IsSequence`/`IsHorizontal` (nodeMeta field reads), `diagramGenAllChildIdxs`/
+`ChildIdxs`/`IsLeaf`/`IsChainGroup`/`HasEdgeLabelTag` (raw tree-topology queries),
+`diagramGenChainHeaderSuppressed`/`IsConfirmedEdgeLabel`/`IsPassthrough`/`IsMergeCandidate`
+(per-node classification against confirmed nodeMeta), and `diagramGenRenderChildIdxs`/
+`ChainTailIdx`/`EdgeLabelBefore` (the render-filtered child list the actual XML-emission pass
+consumes, recursive through passthrough/sequence chains). `diagramGenProposeNodeMeta`/
+`diagramGenValidateGuideline`/`diagramGenLegend*` (the review-screen proposal/validation/legend
+layer — classification heuristics and AI-response validation, a different concern) are
+deliberately excluded, not attempted in this pass.
+
+Lives in `src/state/`, not `src/core/` — this is Diagrams-domain logic reading the outline
+`nodes` array read-only for context, not outline-mutation-domain logic itself, matching
+`diagramAnchor.ts`/`diagramDisplayList.ts`'s own placement (`diagramGenDims.ts` is the one
+`core/` exception among this subsystem's slices, and only because it has zero `nodes` coupling
+at all — see its own header).
+
+Like the first `diagramGenDims.ts` slice, three of the fifteen target functions
+(`diagramGenIsContainer`/`IsSequence`/`IsHorizontal`) were ~320 lines away from the rest
+(`diagramGenAllChildIdxs` onward) in index.html — relocated next to them in a separate
+pure-code-motion commit first, since function declarations are hoisted so physical order never
+affected runtime behavior.
+
+**The generator's own collision checker (added in an earlier PR specifically to catch this bug
+class) caught a real mistake before it ever reached index.html.** The module's first draft
+duplicated `DIAGRAM_GEN_MAX_W`/`PAD`/`CHAR_PX` as private consts (to compute its own copy of
+`DIAGRAM_GEN_CHAR_BUDGET`, needed by `diagramGenEdgeLabelBeforeCore`'s AI-shortening-truncation
+call) — using the exact same private names `diagramGenDims.ts` had already claimed for the same
+purpose. `npm run generate` refused to run, listing the three colliding identifiers by name.
+Fixed by duplicating only the single derived value this module actually needs
+(`_DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET = 66`) under a module-scoped private name, rather than the
+three separate inputs — narrower, and avoids the collision entirely rather than needing a
+same-purpose-different-name workaround. `getSubtreeEnd`/`getParentIndex` (from `nodeQueries.ts`),
+`stripSemanticMarkers` (from its own Phase 1 block), and `diagramGenHardTruncateCore` (from this
+subsystem's own first slice) are referenced via `declare function`, all already-generated
+blocks; `getNodePlainText` (a hand-written one-liner wrapping `stripSemanticMarkers`, not itself
+generated) is inlined as a private helper instead, same precedent as `diagramGenDims.ts`/
+`nodeSearch.ts`/`diagramDisplayList.ts` inlining their own trivial hand-written dependencies. A
+real collision check (grep against the rest of index.html and every other module) was run for
+every new identifier — including the two non-exported private helpers, which still compile to
+top-level declarations sharing the same script scope — before treating any of them as safe.
+
+38 new unit tests, including an oracle-comparison suite run across 5 representative tree shapes
+(nested depths, chain groups, confirmed/unconfirmed edge labels, sequences). Five of the
+hand-written test expectations were wrong on the first pass — not bugs in the extracted logic,
+which is a verbatim copy, but genuine misunderstandings of the original's own edge-label/
+merge-candidate interaction (e.g. a real leaf sibling can itself become a merge candidate once an
+edge-label sibling is excluded, and a passthrough child that doesn't consume a pending edge-label
+lets it carry through to the next real child instead) — traced by hand against the original logic
+and fixed before commit. New `tests/e2e/generated-diagramgentopology-smoke.spec.ts` exercises the
+real, unchanged wrapper functions against a real `nodes` array and real `nodeMeta` Map, plus the
+standard distant-function-still-callable check.
 
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission, tree layout,
