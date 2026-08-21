@@ -1,32 +1,45 @@
-import { useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 
 /**
- * Phase 0 validation spike (docs/framework-migration-plan.md). Renders the outline tree
- * seeded in outlineStore.ts, wired to the real ported nodeMutations/nodeQueries/nodeSelection
- * logic — not a mockup or a hardcoded static list. Purpose: surface any real friction in the
- * React+Zustand+tree-editing combination early, before Phase 2 commits to building the whole
- * real editor on top of this pattern.
- *
- * Scoped down deliberately (see outlineStore.ts's own header for the full list) — no
- * multi-select, no undo, no fold/collapse, no 'child'-mode drag target (drop-to-nest). Native
- * HTML5 drag-and-drop is used rather than a library (@dnd-kit etc.) specifically because this
- * spike's job is validating the *core logic wiring*, not settling on final drag tooling —
- * that choice belongs to Phase 2, informed by whatever this spike surfaces.
+ * Phase 0's validation spike, now carrying Phase 2's first slice (docs/framework-migration-plan.md)
+ * — real node create/edit/delete and fold/collapse, still wired to the real ported core logic,
+ * still deliberately scoped down from the full README "Core Editing" feature set. Explicitly
+ * NOT in this slice (see the plan doc for the full list): multi-select, Shift+Enter split,
+ * sort children, semantic markup ([Section]/(note)/!alert/`code`), checkboxes, 'child'-mode
+ * drag target (drop-to-nest). Each is a real, separately-scoped follow-up slice, not an
+ * oversight here.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
   const selectedId = useOutlineStore((s) => s.selectedId);
+  const editingId = useOutlineStore((s) => s.editingId);
+  const collapsedIds = useOutlineStore((s) => s.collapsedIds);
   const selectNode = useOutlineStore((s) => s.selectNode);
   const indentSelected = useOutlineStore((s) => s.indentSelected);
   const outdentSelected = useOutlineStore((s) => s.outdentSelected);
   const moveNode = useOutlineStore((s) => s.moveNode);
+  const visibleIndexes = useOutlineStore((s) => s.visibleIndexes);
+  const nodeHasChildrenFn = useOutlineStore((s) => s.nodeHasChildren);
+  const startEditing = useOutlineStore((s) => s.startEditing);
+  const commitEdit = useOutlineStore((s) => s.commitEdit);
+  const cancelEdit = useOutlineStore((s) => s.cancelEdit);
+  const newSiblingBelow = useOutlineStore((s) => s.newSiblingBelow);
+  const newChild = useOutlineStore((s) => s.newChild);
+  const deleteNode = useOutlineStore((s) => s.deleteNode);
+  const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: number; mode: DropMode } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+  useEffect(() => {
+    if (editingId !== null) inputRef.current?.focus();
+  }, [editingId]);
+
+  function handleTreeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (editingId !== null || selectedId === null) return;
     if (e.key === 'Tab') {
       e.preventDefault();
       if (e.shiftKey) {
@@ -34,6 +47,37 @@ export function OutlineTree() {
       } else {
         indentSelected();
       }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (e.metaKey || e.ctrlKey) {
+        newChild(selectedId);
+      } else {
+        newSiblingBelow(selectedId);
+      }
+    } else if (e.key === 'Backspace') {
+      const node = nodes.find((n) => n.id === selectedId);
+      if (node && !node.text) {
+        e.preventDefault();
+        deleteNode(selectedId);
+      }
+    }
+  }
+
+  function handleInputKeyDown(e: KeyboardEvent<HTMLInputElement>, id: number) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitEdit(id, e.currentTarget.value);
+      if (e.metaKey || e.ctrlKey) {
+        newChild(id);
+      } else {
+        newSiblingBelow(id);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
+    } else if (e.key === 'Backspace' && e.currentTarget.value === '') {
+      e.preventDefault();
+      deleteNode(id);
     }
   }
 
@@ -61,11 +105,13 @@ export function OutlineTree() {
     setDropTarget(null);
   }
 
+  const visible = visibleIndexes();
+
   return (
     <div
       role="tree"
       tabIndex={0}
-      onKeyDown={handleKeyDown}
+      onKeyDown={handleTreeKeyDown}
       style={{
         fontFamily: 'sans-serif',
         border: '1px solid #ddd',
@@ -74,16 +120,20 @@ export function OutlineTree() {
         outline: 'none'
       }}
     >
-      {nodes.map((node) => {
+      {visible.map((idx) => {
+        const node = nodes[idx];
         const isSelected = node.id === selectedId;
+        const isEditing = node.id === editingId;
         const isDragging = node.id === draggedId;
         const showDropAbove = dropTarget?.id === node.id && dropTarget.mode === 'above';
         const showDropBelow = dropTarget?.id === node.id && dropTarget.mode === 'below';
+        const hasChildren = nodeHasChildrenFn(node.id);
+        const isCollapsed = collapsedIds.has(node.id);
 
         return (
           <div
             key={node.id}
-            draggable
+            draggable={!isEditing}
             onDragStart={() => handleDragStart(node.id)}
             onDragOver={(e) => handleDragOver(e, node.id)}
             onDrop={(e) => handleDrop(e, node.id)}
@@ -91,12 +141,13 @@ export function OutlineTree() {
               setDraggedId(null);
               setDropTarget(null);
             }}
-            onClick={() => selectNode(node.id)}
             style={{
+              display: 'flex',
+              alignItems: 'center',
               paddingLeft: `${node.depth * 24 + 8}px`,
               paddingTop: 4,
               paddingBottom: 4,
-              cursor: 'grab',
+              cursor: isEditing ? 'text' : 'grab',
               opacity: isDragging ? 0.4 : 1,
               backgroundColor: isSelected ? '#e8f0fe' : 'transparent',
               borderTop: showDropAbove ? '2px solid #4285f4' : '2px solid transparent',
@@ -104,7 +155,46 @@ export function OutlineTree() {
               borderRadius: 4
             }}
           >
-            {node.text}
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hasChildren) toggleCollapse(node.id);
+              }}
+              style={{
+                width: 16,
+                display: 'inline-block',
+                textAlign: 'center',
+                cursor: hasChildren ? 'pointer' : 'default',
+                color: '#888',
+                userSelect: 'none'
+              }}
+            >
+              {hasChildren ? (isCollapsed ? '▸' : '▾') : ''}
+            </span>
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                defaultValue={node.text ?? ''}
+                onKeyDown={(e) => handleInputKeyDown(e, node.id)}
+                onBlur={(e) => commitEdit(node.id, e.currentTarget.value)}
+                style={{
+                  flex: 1,
+                  font: 'inherit',
+                  border: 'none',
+                  outline: '1px solid #4285f4',
+                  borderRadius: 3,
+                  padding: '0 4px'
+                }}
+              />
+            ) : (
+              <span
+                onClick={() => selectNode(node.id)}
+                onDoubleClick={() => startEditing(node.id)}
+                style={{ flex: 1 }}
+              >
+                {node.text || <span style={{ color: '#bbb' }}>(empty)</span>}
+              </span>
+            )}
           </div>
         );
       })}

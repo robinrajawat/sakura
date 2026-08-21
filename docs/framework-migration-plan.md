@@ -246,11 +246,51 @@ Test count as of the spike: 744 (738 ported + 6 new `outlineStore` tests,
 `counterStore`'s 2 removed as redundant).
 
 
-**Phase 2 — Core outline UI.** Build the tree editor itself: render, select,
-edit, indent/outdent, drag-and-drop, fold/unfold — the features documented under
-"Core Editing" in the README. This is the highest-risk phase (see spike above)
-and deliberately comes right after the logic layer, before any of the panels or
-Hub features, so the hardest part is de-risked early rather than left for last.
+**Phase 2 — Core outline UI (in progress).** Build the tree editor itself:
+render, select, edit, indent/outdent, drag-and-drop, fold/unfold — the
+features documented under "Core Editing" in the README. This is the
+highest-risk phase (see spike above) and deliberately comes right after the
+logic layer, before any of the panels or Hub features, so the hardest part
+is de-risked early rather than left for last.
+
+**First slice landed:** real node create/edit/delete and fold/collapse, on
+top of the validation spike's existing select/indent/outdent/drag-reorder,
+still wired to the same ported core logic
+(`insertParsedNodesCore`/`deleteRootIndexes` for create/delete,
+`getVisibleNodeIndexes`/`nodeHasChildren` for fold-aware rendering) —
+`Enter` for a new sibling, `Ctrl/Cmd+Enter` for a new child (inserted after
+the *whole* subtree when the source node has children, not wedged
+immediately after it — verified with a dedicated test, since that's an easy
+detail to get wrong), `Backspace` on empty text to delete a node (refusing
+to delete the last remaining node), double-click or `Enter` to start
+editing, `Escape`/blur to commit or cancel. Node id generation deliberately
+does *not* reuse `generateId()` from the ported `utils/` — that produces
+string ids for documents/templates/meeting notes, a different namespace
+entirely. Outline node ids are numeric, generated via a simple incrementing
+counter in the store — the same role legacy's hand-written `makeNode()`
+(`id: nextId++`) plays, per `templatesApply.ts`'s own header comment
+explaining why `makeNode` itself was never extracted as core logic (it's
+construction/orchestration, not a pure query or mutation) — this store's own
+counter is the correct, expected place for that responsibility to live in
+the new app too, not a gap in the Phase 1 port.
+
+**Deliberately deferred, not oversights** (each is its own future slice):
+multi-select (the ported `computeSelectedIds`/`computeSelectionRootIndexes`
+support it; the UI for range/multi-select doesn't exist yet), `Shift+Enter`
+split-at-cursor (needs real cursor-position tracking, more involved than a
+plain `<input>` currently used for inline editing supports), sort children,
+semantic markup styling (`[Section]`/`(note)`/`!alert`/`` `code` ``),
+checkboxes, and `'child'`-mode drag target (drop-to-nest — the ported
+`moveNodeBlockCore` already supports it; no UI affordance wired yet, same as
+noted in the validation spike).
+
+Verified: `web` typecheck clean; `test:unit` 757/757 (744 prior + 13 new,
+covering editing, both subtree-boundary cases of node creation, delete
+(including the whole-subtree-not-just-the-node case and the
+refuse-to-delete-the-last-node guard), collapse, and the ported
+`getVisibleNodeIndexes`/`nodeHasChildren` wiring); `lint` 0 errors, 1
+pre-existing warning; `build` clean; dev server manually confirmed serving
+the updated `App.tsx`. `legacy/` completely unaffected throughout.
 
 **Phase 3 — Panels and secondary features.** Note, Code block, Pad (all seven
 tabs), Preview/Presenter Mode, exports (Word/PDF/PowerPoint/Markdown/OPML),
