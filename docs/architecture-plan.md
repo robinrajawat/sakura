@@ -19,12 +19,14 @@ by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` 
 serializer; `serializeClipboardHtml` and its color/parsing helpers — the rich-text HTML half of
 copy-to-clipboard; `serializeTreeTextWithNotes` — same ASCII tree with each node's note appended,
 using an injected `stripHtmlToText` dependency); the much larger remaining
-XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
-`generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
-`diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
+XML-cell-string-assembly and orchestration portions of `diagramGen*`
+(`diagramGenFinishGenerate`/`generateDiagramFromOutline` — 241 and 102 lines respectively, real
+mutation-fused orchestration; legend generation now done, see below), the rest of the Decision
+Log domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
 (canvas-dependent — the last piece of the Export domain), and the rest of Templates/Journal not
-yet begun).
+yet begun. `diagramGenValidateGuideline`/`requestDiagramGenGuideline` investigated and confirmed
+genuinely dead code — zero real call sites anywhere, parked for a future AI feature, nothing to
+extract).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1203,12 +1205,49 @@ against real `nodes`/`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` global
 real, unchanged, genuinely DOM-touching `stripHtmlToText` (not a fake), proving the injected
 wiring resolves correctly through the real call path, not just in isolation.
 
+**Fifth slice of `diagramGen*`: `src/state/diagramGenLegend.ts`.** `diagramGenLegendEntries`/
+`diagramGenLegendCells` — the legend-generation layer: which shape/marker categories actually
+appear anywhere in a diagram (the legend only ever shows what's really on the page, never a
+static "here are all N possible shapes" block), rendered as a column of draw.io `<mxCell>` XML.
+Genuinely pure once traced: `nodes` promoted to an explicit first parameter, same pattern
+`diagramGenColors.ts`'s `assignDiagramGenColorsCore`/`applyDiagramGenShapeColorOverridesCore`
+already established.
+
+`escXmlAttr` (HTML-entity-escapes a value for a safe XML attribute) is inlined directly rather
+than referenced via `declare function` — it has real other callers outside this slice
+(`diagramGenFinishGenerate`, deliberately not touched here), same reasoning `serializeOpml.ts`'s
+slice used for `escAttr`. Eight color/label constants
+(`DIAGRAM_GEN_PALETTE`/`DIAGRAM_GEN_LAYER_ORDER`/`DIAGRAM_GEN_SHAPE_COLOR`/
+`DIAGRAM_GEN_SHAPE_LABEL`/`DIAGRAM_GEN_NOTE_COLOR`/`DIAGRAM_GEN_EXCLUDED_COLOR`/
+`DIAGRAM_GEN_MARKER_COLOR`/`DIAGRAM_GEN_MARKER_LABEL`) duplicated as private literals with
+module-unique names, same precedent every other `diagramGen*` slice has used — verified via a
+real grep against every other module's identifiers before wiring this file in.
+
+**Also investigated this session, not extracted: `diagramGenValidateGuideline`/
+`requestDiagramGenGuideline`.** Before scoping a slice for these, a real grep across
+`index.html`, `hub.html`, `src/`, and `tests/` found `requestDiagramGenGuideline` (the only real
+caller of `diagramGenValidateGuideline`) has zero real call sites of its own anywhere — both are
+genuinely dead code, matching their own comment ("kept ready for when an AI pass is layered back
+on top"). Nothing to extract until that AI pass actually lands — same resolution
+`applyBuiltinDefaultTemplate` reached earlier in this project, another case of "investigate
+before assuming an ordering guess is right" saving a slice that would have tested nothing real.
+
+14 new unit tests (empty scope producing no entries, shape/marker inclusion filtering, the
+`'process'` shape's exclusion as the default/unremarkable shape, the fixed layer-then-
+decision/note/excluded/datastore ordering, `note`/`excluded`'s bespoke non-palette colors,
+unrecognized-marker rejection, combined shape+marker ordering, deduplication of repeated
+shapes/markers across nodes, `scopeIdxs` filtering out-of-scope nodes, empty/single/multi-entry
+XML rendering, 22px vertical stacking, HTML escaping of the label). New
+`tests/e2e/generated-diagramgenlegend-smoke.spec.ts` exercises the real, unchanged
+`diagramGenLegendEntries`/`diagramGenLegendCells` wrapper functions — the same call path
+`diagramGenFinishGenerate` uses — against real `nodes`/`nodeMeta`.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
-string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
-`diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
-`diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
+dependent), the real remaining `diagramGen*` orchestration (`diagramGenFinishGenerate`, 241
+lines, and `generateDiagramFromOutline`, 102 lines — genuine mutation-fused orchestration
+needing real decomposition surgery, not a mechanical extraction, flagged since Phase 2 as
+deserving its own dedicated session), the rest of the Decision Log domain (`decisionRowSnippet`
+— genuinely DOM-dependent via `stripHtmlToText`), CRUD/
 editor DOM wiring, image export (canvas-dependent — the last piece of Export), and the rest of
 the Templates domain (rendering, sync).
 
