@@ -144,30 +144,52 @@ is made) — its purpose is surfacing any real friction in the
 React+Zustand+tree-editing combination early, while it's still cheap to
 adjust course, rather than discovering it deep into Phase 2.
 
-**Phase 1 — Port the pure logic layer (in progress).** Copy `legacy/src/core/`,
-`legacy/src/state/`, `legacy/src/utils/` into `web/` largely unchanged (per
-"What ports directly" above), each eventually wrapped in a thin
-framework-idiomatic store/hook. Bring the existing Vitest suite over
-unchanged — it's already framework-agnostic and gives immediate regression
-coverage for the layer least likely to have bugs introduced by the rewrite.
-No UI yet; this phase is done when `npm run test:unit -w sakura-web` passes
-with (nearly) the same test count as `sakura-legacy`'s own suite.
+**Phase 1 — Port the pure logic layer (complete).** All of `legacy/src/core/`,
+`legacy/src/state/`, `legacy/src/utils/` copied into the equivalent `web/`
+paths, largely unchanged (per "What ports directly" above) — wrapping any of
+it in a thin framework-idiomatic store/hook is deferred to Phase 2, when
+there's real UI to wire it into; this phase's own completion bar was purely
+"the logic and its test coverage exist in `web/`," not "the logic is wired
+up." The existing Vitest suite came over unchanged — framework-agnostic
+already, giving immediate regression coverage for the layer least likely to
+have bugs introduced by the rewrite.
 
-**First slice landed:** all 10 `legacy/src/utils/*.ts` files, plus
-`legacy/src/core/nodeQueries.ts` (pulled in early — three of the ten utils
-depend on its `buildPrefix` function and `QueryableNode` type at runtime/
-compile-time respectively, a genuine shared dependency rather than something
-worth artificially splitting across two separate slices). Tests moved to
-`web/`'s colocated convention (`Module.test.ts` next to `Module.ts`, matching
-Phase 0's `counterStore.ts`/`counterStore.test.ts` scaffold) rather than
-`legacy/`'s separate `tests/unit/` directory — only the import paths changed,
-never a single assertion or test case. Verified test-count-identical against
-`legacy/` file-by-file (22/24/18/12/13/10/14/8/9/10/13 — an exact match, not
-just an aggregate total that could hide a dropped test). `web/`'s `App.tsx`
-doesn't import any of this yet — that wiring is Phase 2's job, once there's
-real UI to wire it into. Remaining Phase 1 work: the rest of `core/`
-(`nodeMutations`, `nodeSearch`, `nodeSelection`, `templatesApply`,
-`diagramGenDims`) and all of `state/`.
+**Landed across two slices, both PR-sized:**
+
+1. All 10 `legacy/src/utils/*.ts` files, plus `legacy/src/core/nodeQueries.ts`
+   (pulled in early — three of the ten utils depend on its `buildPrefix`
+   function and `QueryableNode` type at runtime/compile-time respectively, a
+   genuine shared dependency rather than something worth artificially
+   splitting across two separate slices).
+2. The rest of `core/` (`nodeMutations`, `nodeSearch`, `nodeSelection`,
+   `templatesApply`, `diagramGenDims`) and all 25 files of `state/`.
+   Dependency-checked first (`grep -n "^import"` across every remaining file)
+   before copying anything — confirmed the whole remaining `core/` set only
+   depends on the already-ported `nodeQueries`, and every single `state/`
+   file has zero cross-module imports at all — so this landed as one clean
+   sweep with no ordering constraints to work around.
+
+Tests moved to `web/`'s colocated convention (`Module.test.ts` next to
+`Module.ts`, matching Phase 0's `counterStore.ts`/`counterStore.test.ts`
+scaffold) rather than `legacy/`'s separate `tests/unit/` directory — only
+import paths changed, never a single assertion or test case. Six state test
+files (`admin`, `aiProviders`, `notifications`, `presence`, `templatesIndex`,
+`vault`) used a `*State.test.ts` naming convention in `legacy/`'s flat
+`tests/unit/` directory to avoid ambiguity there; renamed to match their
+source module directly now that colocation makes the disambiguating suffix
+redundant.
+
+Verified test-count-identical against `legacy/`, file by file across the
+entire suite (a full diff of every file's own test count, not just an
+aggregate total that could hide a dropped test) — the only differences were
+the six intentional filename normalizations above; every count itself
+matched exactly. Final tally: **740 tests in `web/` = 738 ported from
+`legacy/` + 2 from the Phase 0 `counterStore` scaffold**, across **42 files =
+41 ported + 1 scaffold**. `legacy/` itself untouched by either slice
+(`git status --short legacy/` empty both times) and re-verified fully green
+after each. `web/`'s `App.tsx` still doesn't import any of this — Phase 2's
+job, once there's real UI to wire it into.
+
 
 **Phase 2 — Core outline UI.** Build the tree editor itself: render, select,
 edit, indent/outdent, drag-and-drop, fold/unfold — the features documented under
