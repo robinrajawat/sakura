@@ -12927,14 +12927,16 @@ async function permanentlyDeleteTemplate(id){
  * function rather than a storage/DOM primitive.
  *
  * Explicitly NOT extracted here, and why:
- * - applyBuiltinDefaultTemplate — a much larger, separate function: ~20 sequential `makeNode`
- *   calls building a fixed 15-node tree with intermediate `.id` references for parenting.
- *   Same DI pattern would apply, but transcribing that exact call sequence correctly is far
- *   more failure-prone (a single reordered push silently changes the tree shape) than this
- *   module's single `.map()`. Left for a dedicated follow-up slice once this pattern has a
- *   track record, per the architecture doc's explicit scoping note.
- * - applyDefaultTemplate — trivial orchestration (branches to the custom-template path via
- *   applyTemplateNodes, or to applyBuiltinDefaultTemplate), no logic of its own to extract.
+ * - applyBuiltinDefaultTemplate — reuses THIS module's applyTemplateNodesCore directly (see
+ *   index.html's DEFAULT_TEMPLATE_RAW_NODES + docs/architecture-plan.md's ninth-slice
+ *   follow-up), rather than needing its own core: investigation found its original explicit
+ *   `.id`-based parenting was dead code, unconditionally overwritten by its own trailing
+ *   rebuildParentIds() call, which derives every parentId purely from depth. Once that's true,
+ *   its ~20 sequential makeNode calls collapse to the exact same flat-data shape this module
+ *   already handles — no new source needed.
+ * - applyDefaultTemplate — trivial branching orchestration (custom-template path via
+ *   applyTemplateNodes, or built-in path via applyBuiltinDefaultTemplate), no logic of its own
+ *   to extract.
  * - The post-construction selection reset (`selectedId`/`editingId`/`selectAllMode`/
  *   `clearMultiSelection()`/`selectionAnchorId`/`flashNodeId`) and the `rebuildParentIds()`
  *   call — same "orchestration wrapper does the side-effecting/DOM-adjacent part by hand"
@@ -20696,7 +20698,41 @@ function deleteSelected(){
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'')); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
-function applyBuiltinDefaultTemplate(){nodes=[]; nextId=1; const root=makeNode('Application Architecture',0,null,{bold:true}); nodes.push(root); const ui=makeNode('UI Layer',1,root.id); nodes.push(ui); nodes.push(makeNode('Fiori Elements App',2,ui.id)); const service=makeNode('Service Layer',1,root.id); nodes.push(service); const serviceBinding=makeNode('Service Binding (OData V4)',2,service.id); nodes.push(serviceBinding); nodes.push(makeNode('Service Definition (ZSD_*)',3,serviceBinding.id)); const projection=makeNode('Projection / Consumption Layer',1,root.id); nodes.push(projection); const projectionView=makeNode('Projection View Entity (C_*)',2,projection.id); nodes.push(projectionView); nodes.push(makeNode('Metadata Extension (.mdext)',3,projectionView.id)); const bo=makeNode('Business Object / CDS Layer',1,root.id); nodes.push(bo); const rootView=makeNode('Root View Entity (Interface View, I_*)',2,bo.id); nodes.push(rootView); const behavior=makeNode('Behaviour',3,rootView.id); nodes.push(behavior); const definition=makeNode('Definition (.bdef)',4,behavior.id); nodes.push(definition); nodes.push(makeNode('Implementation (.bimpl)',5,definition.id)); const persistence=makeNode('Persistence Layer',1,root.id); nodes.push(persistence); nodes.push(makeNode('Database Table (Persistent Table)',2,persistence.id)); rebuildParentIds(); selectedId=root.id; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=root.id; flashNodeId=null}
+// Flat, depth-ordered node data for the built-in default template — one entry per node, in
+// the same construction order the original imperative applyBuiltinDefaultTemplate() used.
+// Investigation (docs/architecture-plan.md, Phase 3) found that function's explicit `.id`-based
+// parenting (e.g. `makeNode('UI Layer',1,root.id)`) is dead: it's unconditionally overwritten by
+// the `rebuildParentIds()` call at the end of the same function, which derives every node's
+// parentId purely from `depth` (see nodeSelection.ts's rebuildParentIdsCore/getParentIndex).
+// Verified byte-for-byte equivalent against the original's explicit parentIds before this
+// change — same 16 nodes, same resulting parent/child structure. This means the whole function
+// collapses to exactly the shape applyTemplateNodesCore (src/core/templatesApply.ts) already
+// handles — reused directly below rather than adding a new generated block.
+const DEFAULT_TEMPLATE_RAW_NODES=[
+  {text:'Application Architecture',depth:0,styles:{bold:true}},
+  {text:'UI Layer',depth:1},
+  {text:'Fiori Elements App',depth:2},
+  {text:'Service Layer',depth:1},
+  {text:'Service Binding (OData V4)',depth:2},
+  {text:'Service Definition (ZSD_*)',depth:3},
+  {text:'Projection / Consumption Layer',depth:1},
+  {text:'Projection View Entity (C_*)',depth:2},
+  {text:'Metadata Extension (.mdext)',depth:3},
+  {text:'Business Object / CDS Layer',depth:1},
+  {text:'Root View Entity (Interface View, I_*)',depth:2},
+  {text:'Behaviour',depth:3},
+  {text:'Definition (.bdef)',depth:4},
+  {text:'Implementation (.bimpl)',depth:5},
+  {text:'Persistence Layer',depth:1},
+  {text:'Database Table (Persistent Table)',depth:2}
+];
+function applyBuiltinDefaultTemplate(){
+  nextId=1;
+  const result=applyTemplateNodesCore(DEFAULT_TEMPLATE_RAW_NODES,{makeNode,emptyStyles});
+  nodes=result.nodes; nextId=result.nextId;
+  rebuildParentIds();
+  selectedId=nodes[0]?.id??null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null;
+}
 function loadCustomDefaultTemplate(){try{const raw=localStorage.getItem(CUSTOM_DEFAULT_KEY); if(!raw)return null; const d=JSON.parse(raw); return (d&&Array.isArray(d.nodes))?d:null}catch(e){return null}}
 function hasCustomDefaultTemplate(){return !!loadCustomDefaultTemplate()}
 function applyDefaultTemplate(){

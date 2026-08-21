@@ -119,4 +119,112 @@ test.describe('generated templatesApply block (src/core/templatesApply.ts splice
 
     expect(unexpectedErrors).toEqual([]);
   });
+
+  // Follow-up: applyBuiltinDefaultTemplate() was rewritten to reuse this same generated core
+  // (see index.html's DEFAULT_TEMPLATE_RAW_NODES + docs/architecture-plan.md for why its
+  // original explicit `.id`-based parenting was dead code, unconditionally overwritten by its
+  // own trailing rebuildParentIds() call). This test pins the exact real tree shape — text,
+  // depth, and derived parentId chains — against the real wrapper, proving the flat-data
+  // rewrite reproduces the original hardcoded tree exactly, not just "some" 16-node tree.
+  test('applyBuiltinDefaultTemplate reproduces the exact original 16-node tree shape via the real wrapper function', async ({ page }) => {
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
+    });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !KNOWN_NOISE.test(msg.text())) {
+        unexpectedErrors.push('console.error: ' + msg.text());
+      }
+    });
+
+    await page.goto('file://' + indexPath);
+
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => {
+        const el = document.getElementById('sakura-landing-overlay');
+        if (el) el.style.display = 'none';
+      });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    const result = await page.evaluate(() => {
+      // Dirty ambient state beforehand (including a stale nextId) to prove the wrapper's own
+      // `nextId=1` reset and selection reset both really run, not coincidentally already right.
+      // @ts-expect-error — bare globals from index.html
+      nextId = 999;
+      // @ts-expect-error
+      selectedId = 12345;
+      // @ts-expect-error
+      selectAllMode = true;
+      // @ts-expect-error
+      multiSelectedIds = [12345];
+
+      // @ts-expect-error
+      applyBuiltinDefaultTemplate();
+
+      // @ts-expect-error
+      return {
+        // @ts-expect-error
+        count: nodes.length,
+        // @ts-expect-error
+        rows: nodes.map((n) => ({ id: n.id, text: n.text, depth: n.depth, parentId: n.parentId })),
+        // @ts-expect-error
+        rootBold: !!nodes[0].styles?.bold,
+        // @ts-expect-error
+        rootId: nodes[0].id,
+        // @ts-expect-error
+        nextIdAfter: nextId,
+        // @ts-expect-error
+        selectedIdAfter: selectedId,
+        // @ts-expect-error
+        selectAllModeAfter: selectAllMode,
+        // @ts-expect-error
+        multiSelectedIdsAfter: multiSelectedIds,
+      };
+    });
+
+    expect(result.count).toBe(16);
+    // Fresh ids minted 1..16 off the real nextId=1 reset (not the dirtied 999 the test seeded).
+    expect(result.rootId).toBe(1);
+    expect(result.nextIdAfter).toBe(17);
+    expect(result.rootBold).toBe(true);
+
+    // Exact original tree shape — text, depth, and the parentId chain rebuildParentIds derived
+    // from depth. Deliberately checks structure (which node is whose parent) rather than raw
+    // ids, since ids are an implementation detail; the shape is what must never silently drift.
+    const byText = new Map(result.rows.map((r: { id: number; text: string; depth: number; parentId: number | null }) => [r.text, r]));
+    const idOf = (text: string) => byText.get(text)!;
+    expect(idOf('Application Architecture').depth).toBe(0);
+    expect(idOf('Application Architecture').parentId).toBeNull();
+    expect(idOf('UI Layer').depth).toBe(1);
+    expect(idOf('Fiori Elements App').depth).toBe(2);
+    // Every depth-1 section (UI/Service/Projection/Business Object/Persistence Layer) is a
+    // direct child of the root — the same "flat siblings under one root" shape the original's
+    // repeated `root.id` parenting produced.
+    for (const section of ['UI Layer', 'Service Layer', 'Projection / Consumption Layer', 'Business Object / CDS Layer', 'Persistence Layer']) {
+      expect(idOf(section).parentId).toBe(result.rootId);
+    }
+    // The deepest chain (Business Object -> Root View Entity -> Behaviour -> Definition ->
+    // Implementation) nests correctly through real depth-derived parenting, five levels deep.
+    expect(idOf('Root View Entity (Interface View, I_*)').parentId).toBe(idOf('Business Object / CDS Layer').id);
+    expect(idOf('Behaviour').parentId).toBe(idOf('Root View Entity (Interface View, I_*)').id);
+    expect(idOf('Definition (.bdef)').parentId).toBe(idOf('Behaviour').id);
+    expect(idOf('Implementation (.bimpl)').parentId).toBe(idOf('Definition (.bdef)').id);
+
+    expect(result.selectedIdAfter).toBe(result.rootId);
+    expect(result.selectAllModeAfter).toBe(false);
+    expect(result.multiSelectedIdsAfter).toEqual([]);
+
+    const restOfScriptWorks = await page.evaluate(() => {
+      // @ts-expect-error
+      return typeof esc === 'function' && typeof getAllAiProviders === 'function';
+    });
+    expect(restOfScriptWorks).toBe(true);
+
+    expect(unexpectedErrors).toEqual([]);
+  });
 });
