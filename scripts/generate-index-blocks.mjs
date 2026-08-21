@@ -549,6 +549,21 @@ initHubJournalState({
     // side effects. The one real call site (serializeTreeTextWithNotes wrapper body, called
     // from generateQaQuestionsAI) was updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // diagramGen* subsystem — fifth slice (alongside diagramGenDims/Topology/NodeMeta/Colors,
+    // and diagramGenLayout/Rects). Legend-generation layer: diagramGenLegendEntries/
+    // diagramGenLegendCells turned out pure once traced — nodes promoted to an explicit
+    // parameter, same pattern diagramGenColors.ts already established. escXmlAttr is inlined
+    // (has real other callers outside this slice, in still-hand-written
+    // diagramGenFinishGenerate) rather than referenced via declare function.
+    name: 'diagramGenLegend',
+    sourceFile: 'src/state/diagramGenLegend.ts',
+    testFile: 'tests/unit/diagramGenLegend.test.ts',
+    // No production wiring needed — pure functions, no DOM/side effects. Both real call sites
+    // (diagramGenLegendEntries/diagramGenLegendCells wrapper bodies, called from
+    // diagramGenFinishGenerate) were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
