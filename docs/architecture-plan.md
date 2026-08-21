@@ -15,13 +15,14 @@ color-assignment layer, the pure tree-layout engine, and the final-rect/bounds c
 **Decision Log domain in progress** (normalization layer, lookup/anchor-label/status-query
 layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration);
 **Export domain in progress** (`serializeTreeText` — the plain-text ASCII tree serializer used
-by the `.txt` export and copy-to-clipboard); the much larger remaining
+by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` — the OPML 2.0
+serializer); the much larger remaining
 XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
 `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the rest of Export
-(`serializeOpml`/`serializeClipboardHtml`/image export — larger and DOM/`getMeta()`-coupled),
-and the rest of Templates/Journal not yet begun).
+(`serializeClipboardHtml`/`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
+image export — canvas-dependent), and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1088,13 +1089,48 @@ glyphs, a custom `treeIndentWidth` producing wider output, trailing-whitespace t
 against real `nodes`/`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` globals, plus the
 standard distant-function-still-callable check.
 
+**Export domain — second slice: `src/utils/serializeOpml.ts`.** `serializeOpml`/
+`nodesToOutlineXml`, the OPML 2.0 serializer behind the `.opml` export. Investigated as a whole
+before scoping — the doc's own "investigate before assuming" lesson applied again:
+`serializeOpml` itself calls `getMeta()` (reads `#header-title`/`#doc-author` DOM inputs
+directly) for the title, and `new Date()` for `<dateCreated>`, genuinely impure/DOM-dependent
+respectively. Both promoted to explicit parameters rather than left as ambient reads. `title`
+gets no default (same "no silent default for live external state" reasoning
+`computeOutlineNumbers`'s header established for `outlineNumbering` — no title fallback is more
+correct than any other). `dateCreated` DOES get a `new Date()` default, matching
+`formatRelativeTime.ts`'s established injectable-clock pattern — a deterministic override exists
+for tests, and the one real caller (`exportOpml`) never needs to override it.
+
+`nodesToOutlineXml` (the recursive per-node `<outline>` XML-emission helper) turned out
+genuinely pure once traced: no DOM, only reads `node.isCheckbox`/`node.checked`/`node.note`/
+`node.text` plus the `nodeContentExportEnabled` user-preference global — promoted to an explicit
+required parameter, same pattern this slice uses for `title` and `serializeTreeText`'s slice used
+for `treeIndentWidth`/`hideTreeLines`.
+
+`escAttr`'s own logic (HTML-escape plus quote-escaping for a safe XML attribute value) is
+inlined directly rather than referenced via `declare function` — `escAttr` is a hand-written
+one-liner wrapping the already-generated `escapeHtml`, not itself a generated block, same
+reasoning `nodeSearch.ts` used for inlining `escapeRegExpLiteral` instead of extending the
+ambient-reference pattern to hand-written code. `getNodePlainText`/`escapeHtml` themselves are
+referenced as ambient globals via `declare function`.
+
+18 new unit tests (leaf/nested-child `<outline>` rendering, HTML/quote escaping, marker
+stripping, checkbox-state prefix, `_note` attribute inclusion/omission — including the
+blank-note and `nodeContentExportEnabled`-off cases — sibling rendering, multi-level nesting,
+empty-document OPML, title fallback/escaping, `<dateCreated>` presence/format/default,
+depth-rebasing, and a full end-to-end fixture). New
+`tests/e2e/generated-serializeopml-smoke.spec.ts` exercises the real, unchanged
+`nodesToOutlineXml`/`serializeOpml` wrapper functions — the same call path `exportOpml` uses —
+against real `nodes`/`nodeContentExportEnabled` globals and the real `getMeta()` DOM read via
+`#header-title`.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
-editor DOM wiring, the rest of Export (`serializeOpml` — `getMeta()`/current-date-coupled;
+editor DOM wiring, the rest of Export (
 `serializeClipboardHtml`/`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
 image export — canvas-dependent), and the rest of the Templates domain (rendering, sync).
 
