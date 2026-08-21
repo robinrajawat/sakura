@@ -22,13 +22,17 @@ using an injected `stripHtmlToText` dependency); Diagrams' `diagramGen*` generat
 at **eight slices** (adding legend generation and the entire XML-cell-string-assembly core of
 `diagramGenFinishGenerate` — ~210 lines, the single largest slice in this migration, everything
 from color assignment through the fully assembled draw.io XML string, every dependency already
-a generated `*Core` function). What remains: `generateDiagramFromOutline` (102 lines — genuine
-async/AI-call orchestration, not a pure-extraction candidate), the rest of the Decision Log
-domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
-(canvas-dependent — the last piece of the Export domain), and the rest of Templates/Journal not
-yet begun. `diagramGenValidateGuideline`/`requestDiagramGenGuideline` investigated and confirmed
-genuinely dead code — zero real call sites anywhere, parked for a future AI feature, nothing to
-extract).
+a generated `*Core` function). **Image export in progress** (`parseInlineSegments` — the pure
+inline-marker parser behind the tree-image renderer, a genuinely pure fragment inside an
+otherwise correctly-labeled-canvas-dependent feature). What remains:
+`generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration, investigated and
+confirmed not a pure-extraction candidate, along with its own `pickDiagramGenScope` helper — both
+genuinely DOM/selection-state-bound), the rest of the Decision Log domain (`decisionRowSnippet`,
+genuinely DOM-dependent via `stripHtmlToText`), the rest of image export (`measureTreeImage`/
+`exportTreeAsImage`/`getImageExportColors` — genuinely canvas/DOM-dependent), and the rest of
+Templates/Journal not yet begun. `diagramGenValidateGuideline`/`requestDiagramGenGuideline`
+investigated and confirmed genuinely dead code — zero real call sites anywhere, parked for a
+future AI feature, nothing to extract).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1308,14 +1312,59 @@ orchestration paths — a new diagram via `addDiagramFromXml`, and regenerating 
 diagram in place (mutating `xml`/`pageCount`/`modifiedAt`/`nodeMeta`, never exercised by
 `diagramGenRects.ts`'s own earlier smoke test) — against real `nodes`/`diagrams` global state.
 
+**Also investigated this session, confirmed closed, not extracted: `generateDiagramFromOutline`/
+`pickDiagramGenScope`.** With `diagramGenFinishGenerate` done, this was the next natural
+candidate — but tracing both functions found neither has a real pure fragment worth its own
+module. `generateDiagramFromOutline` reads `padDiagramsTabEnabled`/DOM (`el('dtb-generate')`
+busy-spinner toggling), calls `pickDiagramGenScope()` (itself genuinely
+selection-state/DOM-dependent — `getSelectedIds()`, several `showToast` early-return branches),
+and makes real network round-trips via `diagramGenTrimText` (AI-shortening calls, `await
+Promise.all(...)`) before branching into either the already-thin `diagramGenFinishGenerate` or
+the hand-written `diagramGenOpenReview` modal. Every remaining pure fragment inside it (the
+`rawTexts`/`labels` construction) is a one-to-three-line map/forEach, the same "too small to be
+worth the module overhead" territory `decisionRowSnippet` occupies. Confirmed via direct reading
+rather than assumed — matching this project's own "investigate before assuming" discipline —
+and the conclusion holds: this is genuine orchestration through and through, not a slice.
+
+**Image export — first slice: `src/utils/parseInlineSegments.ts`.** A domain not touched
+anywhere else in this migration, previously labeled "canvas-dependent" as a whole — investigation
+found that label doesn't hold uniformly. `parseInlineSegments` splits one node's text into typed
+inline segments (`link`/`code`/`section`/`note`/`quote`/`alert`/`text`) for the tree-image
+renderer's layout pass — the same semantic-marker syntax the editor and clipboard export both
+recognize, parsed here purely for measurement rather than HTML color styling. Zero DOM
+dependency: everything around it (`measureTreeImage`, `exportTreeAsImage`,
+`getImageExportColors`) genuinely touches `document.createElement('canvas')`/`getContext`/
+`getComputedStyle` directly and stays hand-written, but this one function doesn't.
+
+Not merged with `serializeClipboardHtml.ts`'s own `parseStyledTextForClipboardCore` sibling
+parser despite the near-identical marker syntax — genuinely different output shapes (typed
+segments for canvas layout vs. ready-made HTML spans) for genuinely different consumers, so two
+separate small parsers rather than one shared one with two output modes.
+
+Single real call site (`measureTreeImage`), but substantial real branching structure across
+seven segment types — worth its own tested module rather than staying hand-written the way
+`decisionRowSnippet`'s four trivial lines did.
+
+14 new unit tests (empty/null/undefined input, plain text with no markers, each of the seven
+segment types individually, the `[[wiki link]]` double-bracket lookahead and its fallback to
+plain `[section]` parsing when only a single bracket is present, `!alert` requiring the token to
+start the text or follow whitespace — a mid-word `!` is NOT treated as an alert opener,
+`>quote` consuming the entire rest of the string from wherever it starts, multiple different
+marker types combined in one string, an unterminated backtick's real split-into-two-segments
+behavior — verified against actual output after an initial wrong assumption, not assumed
+correct — and empty-segment filtering). New `tests/e2e/generated-parseinlinesegments-smoke.spec.ts`
+exercises the real, unchanged `parseInlineSegments()` wrapper directly, plus confirms
+`measureTreeImage` (genuinely canvas-bound, deliberately not touched by this slice) still
+resolves it correctly and produces real pixel measurements.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), `generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration
-around `diagramGenTrimText`'s network round-trips and the review-screen skip-review branch, not
-a pure-extraction candidate the way `diagramGenFinishGenerate` turned out to be), the rest of the
-Decision Log domain (`decisionRowSnippet`
-— genuinely DOM-dependent via `stripHtmlToText`), CRUD/
-editor DOM wiring, image export (canvas-dependent — the last piece of Export), and the rest of
-the Templates domain (rendering, sync).
+dependent, not yet investigated in detail), the rest of the Decision Log domain
+(`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), the rest of image export
+(`measureTreeImage`/`exportTreeAsImage`/`getImageExportColors` — genuinely canvas/DOM-dependent,
+confirmed via this session's own investigation), CRUD/editor DOM wiring, and the rest of the
+Templates domain (rendering, sync). `generateDiagramFromOutline`/`pickDiagramGenScope`
+investigated and confirmed genuinely orchestration-bound — no pure fragment worth extracting,
+see above.
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
