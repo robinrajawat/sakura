@@ -1,3 +1,5 @@
+import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+
 /**
  * Pure diagram-anchoring/orphan-detection and diagram-list-reorder logic — a Phase 2
  * (docs/architecture-plan.md) slice, revisiting "diagram-anchor state" after it was originally
@@ -18,7 +20,6 @@
  * kill the whole script if it survived compilation.
  */
 
-declare function stripSemanticMarkers(text: string | null | undefined): string;
 
 interface AnchorableNode {
   id: number;

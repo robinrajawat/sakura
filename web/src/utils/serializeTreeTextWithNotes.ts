@@ -1,4 +1,7 @@
 import type { QueryableNode } from '../core/nodeQueries';
+import { buildPrefix } from '../core/nodeQueries';
+import { computeOutlineNumbers } from './serializeMarkdown';
+import { getNodePlainText } from './stripSemanticMarkers';
 
 /**
  * Export domain — fourth slice. `serializeTreeTextWithNotes` renders the same ASCII tree
@@ -27,16 +30,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  * required parameters, same reasoning this domain's every prior slice established.
  */
 
-declare function buildPrefix(
-  scopedNodes: QueryableNode[],
-  idx: number,
-  treeIndentWidth: number,
-  depthOffset?: number
-): { vert: string; conn: string };
 
-declare function computeOutlineNumbers(list: QueryableNode[], outlineNumbering: boolean): string[];
-
-declare function getNodePlainText(node: QueryableNode): string;
 
 /** The subset of a real outline node this module reads. `note` is optional/loose — a node
  * without one is the common case, matching the original's `node.note?...` defensive check. */

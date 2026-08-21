@@ -1,3 +1,7 @@
+import { getParentIndex, getSubtreeEnd } from '../core/nodeQueries';
+import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+import { diagramGenHardTruncateCore } from '../core/diagramGenDims';
+
 /**
  * Pure topology and confirmed-nodeMeta query layer from the `diagramGen*` subsystem — the
  * deterministic tree-diagram generator ("Generate rough diagram from outline", see
@@ -48,10 +52,6 @@
  * same discipline `diagramDisplayList.ts`'s own `DIAGRAM_STATUSES` near-miss established.
  */
 
-declare function getSubtreeEnd(nodes: TopologyNode[], idx: number): number;
-declare function getParentIndex(nodes: TopologyNode[], idx: number): number;
-declare function stripSemanticMarkers(text: string | null | undefined): string;
-declare function diagramGenHardTruncateCore(text: string, budget: number): string;
 
 // index.html's own DIAGRAM_GEN_CHAR_BUDGET = 2 * Math.floor((DIAGRAM_GEN_MAX_W - DIAGRAM_GEN_PAD)
 // / DIAGRAM_GEN_CHAR_PX) = 2 * Math.floor((260 - 24) / 7) = 66. Duplicated here as the single

@@ -1,3 +1,11 @@
+import { getParentIndex, getSubtreeEnd } from '../core/nodeQueries';
+import { applyDiagramGenShapeColorOverridesCore, assignDiagramGenColorsCore } from './diagramGenColors';
+import { diagramGenAdjustDimsForShapeCore, diagramGenBoxDimsCore, diagramGenHardTruncateCore, diagramGenLightenCore, diagramGenMergedBoxDimsCore } from '../core/diagramGenDims';
+import { diagramGenAllChildIdxsCore, diagramGenChainHeaderSuppressedCore, diagramGenChainTailIdxCore, diagramGenEdgeLabelBeforeCore, diagramGenIsConfirmedEdgeLabelCore, diagramGenIsContainerCore, diagramGenIsHorizontalCore, diagramGenIsMergeCandidateCore, diagramGenIsPassthroughCore, diagramGenIsSequenceCore, diagramGenRenderChildIdxsCore } from './diagramGenTopology';
+import { layoutDiagramGenTreeCore } from './diagramGenLayout';
+import { computeDiagramGenFinalRectsCore } from './diagramGenRects';
+import { diagramGenLegendCellsCore, diagramGenLegendEntriesCore } from './diagramGenLegend';
+
 /**
  * diagramGen* subsystem — sixth slice, the XML-cell-string-assembly pass `diagramGenRects.ts`'s
  * own header flagged as "a separate future scoping question" when that slice deliberately
@@ -63,11 +71,6 @@ interface FGBoxDims {
   h: number;
 }
 
-interface FGPosition {
-  x: number;
-  y: number;
-}
-
 interface FGRect {
   x: number;
   y: number;
@@ -75,64 +78,12 @@ interface FGRect {
   h: number;
 }
 
-interface FGBoundsResult {
-  finalRect: Map<number, FGRect>;
-  minX: number;
-  maxX: number;
-  maxY: number;
-  offsetX: number;
-}
 
-interface FGLegendEntry {
-  label: string;
-  color: { fill: string; stroke: string; font: string };
-}
 
-declare function getSubtreeEnd(nodes: FGNode[], idx: number): number;
-declare function getParentIndex(nodes: FGNode[], idx: number): number;
 
-declare function assignDiagramGenColorsCore(nodes: FGNode[], scope: { rootIdxs: number[] }, nodeMeta: FGNodeMetaMap): Map<number, string>;
-declare function applyDiagramGenShapeColorOverridesCore(
-  nodes: FGNode[],
-  scope: { scopeIdxs: number[] },
-  colorByIdx: Map<number, string>,
-  nodeMeta: FGNodeMetaMap,
-  anyShapeSet: boolean
-): void;
 
-declare function diagramGenHardTruncateCore(text: string, budget: number): string;
-declare function diagramGenLightenCore(hex: string, amount: number): string;
-declare function diagramGenAdjustDimsForShapeCore(dims: FGBoxDims, shape: string): FGBoxDims;
-declare function diagramGenBoxDimsCore(text: string): FGBoxDims;
-declare function diagramGenMergedBoxDimsCore(titleText: string, detailText: string): FGBoxDims;
 
-declare function diagramGenAllChildIdxsCore(nodes: FGNode[], idx: number): number[];
-declare function diagramGenIsMergeCandidateCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenChainHeaderSuppressedCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenIsContainerCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenIsPassthroughCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenIsConfirmedEdgeLabelCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenRenderChildIdxsCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): number[];
-declare function diagramGenChainTailIdxCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): number;
-declare function diagramGenEdgeLabelBeforeCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): Map<number, string>;
-declare function diagramGenIsSequenceCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
-declare function diagramGenIsHorizontalCore(nodes: FGNode[], idx: number, nodeMeta: FGNodeMetaMap): boolean;
 
-declare function layoutDiagramGenTreeCore(
-  nodes: FGNode[],
-  scope: { rootIdxs: number[] },
-  dimsByIdx: Map<number, FGBoxDims>,
-  nodeMeta: FGNodeMetaMap
-): Map<number, FGPosition>;
-
-declare function computeDiagramGenFinalRectsCore(
-  scopeIdxs: number[],
-  positions: Map<number, FGPosition>,
-  dimsByIdx: Map<number, FGBoxDims>
-): FGBoundsResult;
-
-declare function diagramGenLegendEntriesCore(nodes: FGNode[], scope: { scopeIdxs: number[] }, nodeMeta: FGNodeMetaMap): FGLegendEntry[];
-declare function diagramGenLegendCellsCore(entries: FGLegendEntry[], x: number, y: number): string;
 
 // Duplicated from index.html's own DIAGRAM_GEN_DECISION_CHAR_BUDGET — see this file's header.
 const _DIAGRAM_GEN_DECISION_CHAR_BUDGET_FG = 42;
@@ -406,7 +357,16 @@ export function diagramGenFinishGenerateXmlCore(
     }
   });
 
-  const legendEntries = diagramGenLegendEntriesCore(nodes, scope, nodeMeta);
+  // nodeMeta is nullable throughout this function (every other use above reads it via
+  // `nodeMeta?.get(...)`); diagramGenLegendEntriesCore's own real signature requires a
+  // non-null map. `?? new Map()` is behaviorally identical to every other `?.get()` call
+  // site above (an empty map's `.get()` also returns undefined) — this fallback wasn't
+  // needed before because the old `declare function` ambient stub declared its OWN
+  // (nullable) parameter type here rather than the real function's, so TypeScript never
+  // actually checked this call against diagramGenLegendEntriesCore's true signature. A
+  // real cross-module import surfaces this for the first time; the fix preserves the
+  // exact existing behavior rather than changing it.
+  const legendEntries = diagramGenLegendEntriesCore(nodes, scope, nodeMeta ?? new Map());
   let legendW = 0;
   if (legendEntries.length) {
     cells += diagramGenLegendCellsCore(legendEntries, Math.round(maxX + offsetX + 40), 40);

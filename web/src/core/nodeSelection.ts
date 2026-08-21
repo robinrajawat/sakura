@@ -24,8 +24,8 @@
  */
 
 import type { QueryableNode } from './nodeQueries';
+import { getParentIndex } from './nodeQueries';
 
-declare function getParentIndex(nodes: QueryableNode[], idx: number): number;
 
 /** The node shape `rebuildParentIds` needs beyond `QueryableNode`: a mutable `parentId` field. */
 export interface ParentLinkedNode extends QueryableNode {

@@ -1,3 +1,5 @@
+import { diagramGenChainHeaderSuppressedCore, diagramGenIsHorizontalCore, diagramGenIsSequenceCore, diagramGenRenderChildIdxsCore } from './diagramGenTopology';
+
 /**
  * Pure tree-layout engine from the `diagramGen*` subsystem — the deterministic tree-diagram
  * generator ("Generate rough diagram from outline", see docs/architecture-plan.md for the wider
@@ -43,10 +45,6 @@
  * throughout this subsystem.
  */
 
-declare function diagramGenRenderChildIdxsCore(nodes: LayoutNode[], idx: number, nodeMeta: LayoutNodeMetaMap): number[];
-declare function diagramGenIsSequenceCore(nodes: LayoutNode[], idx: number, nodeMeta: LayoutNodeMetaMap): boolean;
-declare function diagramGenIsHorizontalCore(nodes: LayoutNode[], idx: number, nodeMeta: LayoutNodeMetaMap): boolean;
-declare function diagramGenChainHeaderSuppressedCore(nodes: LayoutNode[], idx: number, nodeMeta: LayoutNodeMetaMap): boolean;
 
 // Duplicated from index.html's own DIAGRAM_GEN_GAP_X/GAP_Y/GROUP_TITLE_GAP — see this file's
 // header for why.
