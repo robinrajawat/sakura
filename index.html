@@ -22675,12 +22675,6 @@ function diagramGenLegendCells(entries,x,y){
   return out;
 }
 function escXmlAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-// Deterministic per-document: same tag text always picks the same reserved hue, without a
-// hardcoded keyword dictionary that would only fit one person's vocabulary.
-function diagramGenTagColorKey(tag){
-  let h=0; for(let i=0;i<tag.length;i++)h=(h+tag.charCodeAt(i))%DIAGRAM_GEN_TAG_CYCLE.length;
-  return DIAGRAM_GEN_TAG_CYCLE[h];
-}
 // Picks the scope to diagram: a single selected node's subtree, or (nothing selected) the
 // whole document treated as an implicit multi-root tree. Returns null (after a toast) if the
 // scope is empty, spans more than one explicit selection, or exceeds the size/depth cap —
@@ -22723,6 +22717,12 @@ function pickDiagramGenScope(){
   // shares one fixed key since there's only ever one "whole document" diagram to regenerate.
   const genKey=rootIdxs.length===1?('node:'+nodes[rootIdxs[0]].id):'wholedoc';
   return {rootIdxs,baseDepth,scopeIdxs,genKey};
+}
+// Deterministic per-document: same tag text always picks the same reserved hue, without a
+// hardcoded keyword dictionary that would only fit one person's vocabulary.
+function diagramGenTagColorKey(tag){
+  let h=0; for(let i=0;i<tag.length;i++)h=(h+tag.charCodeAt(i))%DIAGRAM_GEN_TAG_CYCLE.length;
+  return DIAGRAM_GEN_TAG_CYCLE[h];
 }
 // Assigns a palette key to every node in scope: multi-root docs use a virtual root (gray,
 // never drawn) so each top-level item still gets its own branch color. A tag on a node (or an
