@@ -8,25 +8,26 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, plus four slices of the `diagramGen*` generation
+Diagrams' display-list filtering/sorting done, plus five slices of the `diagramGen*` generation
 subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
-nodeMeta classification-proposal/plain-object bridge, and the branch/tag/marker/shape
-color-assignment layer, the last including a small follow-up companion function added to the
-same module); the much larger XML-emission/tree-layout/AI-classification remainder of
-`diagramGen*` (plus `diagramGenValidateGuideline`/`diagramGenLegend*`), Export, and the rest of
-Templates/Journal not yet begun).
+nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
+color-assignment layer, and the pure tree-layout engine); the much larger XML-emission/AI-
+classification remainder of `diagramGen*` (plus `generateDiagramFromOutline`/
+`diagramGenFinishGenerate` orchestration, `diagramGenValidateGuideline`/`diagramGenLegend*`),
+Export, and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
-`diagramGen*` subsystem with zero injected dependencies at all). Six additional Phase 2/3-adjacent
+`diagramGen*` subsystem with zero injected dependencies at all). Seven additional Phase 2/3-adjacent
 slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting, and
 diagramGen*'s own topology/confirmed-nodeMeta query layer, nodeMeta classification-proposal
-layer, and branch/tag/marker color-assignment layer (`src/state/tabOrder.ts`,
+layer, branch/tag/marker color-assignment layer, and tree-layout engine (`src/state/tabOrder.ts`,
 `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`,
-`src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`, `src/state/diagramGenColors.ts`
+`src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`, `src/state/diagramGenColors.ts`,
+`src/state/diagramGenLayout.ts`
 — not `core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
 blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
@@ -883,10 +884,51 @@ added to the existing `generated-diagramgencolors-smoke.spec.ts` (same generated
 file), following this project's established "second test on a follow-up to an already-tested
 block" precedent.
 
+**Fifth slice of `diagramGen*`: `src/state/diagramGenLayout.ts`.** `layoutDiagramGenTree` — the
+pure tree-layout engine: bottom-up subtree-width computation, then top-down x/y assignment, using
+each node's own (label-derived) box dims rather than one fixed size throughout. A chain group's
+column width is the widest box among the group members, so shorter step boxes still center under
+the parent. Driven entirely by confirmed `nodeMeta.sequence`/`.direction` — a sequence's
+width/placement always recurses into each child's own subtree, working identically whether that
+child is a bare leaf or has its own further structure, so one code path covers both what used to
+be "chain group" and "numbered sequence" as separate cases. Genuinely pure layout math: a
+`Map<idx, {x,y}>` computed entirely from `scope`, the caller's already-computed `dimsByIdx` (from
+`diagramGenDims.ts`'s own functions), and confirmed `nodeMeta` — no DOM, no canvas measurement,
+no randomness.
+
+`generateDiagramFromOutline` (the Generate-button entry point) and `diagramGenFinishGenerate`
+(the actual XML-emission renderer that calls this layout function) remain deliberately excluded
+— both are real orchestration (DOM, `diagrams` array mutation, AI calls, XML string assembly),
+not pure logic, and are a much larger future scoping question of their own.
+
+Already an isolated, self-contained function in index.html (unlike the first four `diagramGen*`
+slices, none of its own logic was interleaved with anything else) — no pure-code-motion commit
+needed this time.
+
+`diagramGenRenderChildIdxsCore`/`diagramGenIsSequenceCore`/`diagramGenIsHorizontalCore`/
+`diagramGenChainHeaderSuppressedCore` (from `diagramGenTopology.ts`, already generated) are
+referenced via `declare function`. `DIAGRAM_GEN_GAP_X`/`DIAGRAM_GEN_GAP_Y`/
+`DIAGRAM_GEN_GROUP_TITLE_GAP` (small numeric constants) are duplicated as private literals, same
+precedent as every prior slice. The module's `LayoutNodeMetaEntry` type includes a `shape` field
+it never reads directly — included for structural compatibility with the real, full nodeMeta
+shape, since the ambient `diagramGenRenderChildIdxsCore` it delegates to DOES read `shape` for
+merge-candidate/passthrough/edge-label exclusion; a caller passing the real nodeMeta Map needs
+this to typecheck without a cast.
+
+11 new unit tests, including a 4-tree oracle-comparison suite (fan-out, vertical sequence,
+horizontal sequence, and a mixed container+sequence tree) pinned against a literal copy of the
+original algorithm. One test needed the same merge-candidate-exclusion fix already established in
+`diagramGenTopology.test.ts`/`diagramGenColors.test.ts` (a lone real leaf child with no
+shape/container folds into its parent and never gets its own render slot or position) — not a bug
+in the extracted code. New `tests/e2e/generated-diagramgenlayout-smoke.spec.ts` exercises the
+real, unchanged `layoutDiagramGenTree` wrapper against a real `nodes` array, plus the standard
+distant-function-still-callable check.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission, tree layout,
-AI classification, plus `diagramGenValidateGuideline`/`diagramGenLegend*`) and CRUD/editor DOM
-wiring, Export, and the rest of the Templates domain (rendering, sync).
+dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission,
+`generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration, AI classification, plus
+`diagramGenValidateGuideline`/`diagramGenLegend*`) and CRUD/editor DOM wiring, Export, and the
+rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
