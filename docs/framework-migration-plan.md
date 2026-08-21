@@ -17,54 +17,38 @@ downloaded and opened as a file.** Once that's true, the reasons to avoid a real
 frontend framework — the biggest one being "we ship one HTML file, so we can't ship
 compiled JS chunks" — no longer apply. This plan is about actually adopting one.
 
-**Framework choice is a genuinely open decision requiring sign-off before Phase 1
-starts** — see "Open decisions" below. Everything after that section assumes React
-as a working default so the plan has something concrete to describe, but the same
-phase structure applies almost unchanged if Svelte or Vue is chosen instead.
+**Decisions are locked in as of 2026-08-21** — see "Decisions (resolved — Phase
+0 can proceed)" below: React, Zustand, no routing, GitHub Pages, npm
+workspaces. Phase 0 work starts immediately below that section.
 
-## Open decisions (need explicit sign-off before starting)
+## Decisions (resolved — Phase 0 can proceed)
 
-1. **Framework: React vs. Svelte vs. Vue.**
-   - **React** — largest ecosystem (component libraries, state managers like
-     Zustand/Redux, easiest to hire for or get outside help with later), most
-     AI-tooling familiarity, but the most boilerplate and the heaviest runtime of
-     the three.
-   - **Svelte/SvelteKit** — compiles away at build time, smallest bundles, least
-     boilerplate, and arguably the best philosophical fit given Sakura's own
-     performance-consciousness (the single-file era was partly a performance
-     discipline, not just a distribution one). Smaller ecosystem, fewer
-     off-the-shelf component libraries.
-   - **Vue** — a middle point on both axes. Not recommended unless there's a
-     specific reason to prefer it; listed for completeness.
-   - **Recommendation if a default is needed:** Svelte, on the reasoning above,
-     but React is a perfectly reasonable choice if ecosystem breadth or future
-     hiring matters more than bundle size. This is Robin's call, not a technical
-     dead heat resolvable from first principles alone.
-2. **State management approach.** React: Zustand (simplest, closest analogue to
-   the existing hand-rolled `state/` modules) vs. Redux Toolkit (more structure,
-   more ceremony) vs. plain Context+useReducer (no new dependency, more manual
-   wiring). Svelte's own stores largely make this moot. Recommendation: Zustand
-   (or Svelte stores) — the existing `src/state/*.ts` modules are already small,
-   focused, mostly-pure state containers; that maps onto a lightweight store
-   library far more directly than onto a heavier framework-prescribed pattern.
-3. **Routing.** Sakura currently has no client-side routing at all — `index.html`
-   and `hub.html` are two entirely separate pages, and "documents" are switched
-   via in-app tab state, not URLs. Introducing a router (React Router /
-   SvelteKit's file-based routing) raises a real product question: should
-   individual documents get their own URLs (`/doc/:id`), enabling direct links
-   and browser back/forward through document switches? This is a genuine
-   opportunity the current architecture doesn't offer, worth deciding
-   deliberately rather than defaulting to "no routes, same tab-switching model
-   as today."
-4. **Hosting.** Recommendation: **stay on GitHub Pages via the existing
-   `deploy.yml`** — nothing about a React/Svelte build output changes the
-   hosting story (see "Hosting stays the same" below). Vercel/Netlify would add
-   preview-deploy-per-PR convenience but also a second platform account and a
-   dependency outside GitHub; not recommended unless that convenience turns out
-   to matter in practice.
-5. **Monorepo tooling during the transition.** See "Interim repo structure"
-   below — plain npm workspaces are almost certainly enough; Nx/Turborepo would
-   be overkill for a two-package repo.
+1. **Framework: React.** Ecosystem maturity was the deciding factor over Svelte,
+   given the actual shape of this app — heavy drag-and-drop tree editing, rich
+   text, diagram embedding all have first-class, battle-tested React libraries
+   (`@dnd-kit`/`react-dnd`, Tiptap/Slate, React Flow), thinner equivalents in
+   Svelte's ecosystem. Also the safer bet for future hiring/outside help, and
+   the deepest AI-tooling familiarity, which matters given how much of this
+   migration will be AI-assisted. Tradeoff accepted knowingly: React's runtime
+   is heavier than Svelte's compile-away model, so bundle size and initial load
+   need active, ongoing attention (route/panel-level code-splitting, per Phase 3
+   below) rather than coming for free.
+2. **State management: Zustand.** Closest analogue to the existing hand-rolled
+   `src/state/*.ts` modules' shape — small, focused, mostly-pure state
+   containers map onto a lightweight store library far more directly than onto
+   Redux Toolkit's heavier ceremony or plain Context+useReducer's manual wiring.
+3. **Routing: none.** Documents keep the current tab-switching model, not
+   per-document URLs. Simpler migration surface, and the GitHub-Pages
+   `404.html`-fallback wrinkle for path-based SPA routing (noted in "Hosting
+   stays the same" below) doesn't apply — no client-side router needed at all
+   for Phase 0–5's scope. Revisit only if a concrete need for shareable
+   document links comes up later; not a blocker either way if it does, since
+   adding a router afterward doesn't require re-architecting the state layer.
+4. **Hosting: stays on GitHub Pages**, via the existing `deploy.yml` — no new
+   platform, no new cost. See "Hosting stays the same" below for why a React
+   build output needs no structural change to the pipeline.
+5. **Monorepo tooling: plain npm workspaces.** Nx/Turborepo would be overkill
+   for a two-package repo — see "Interim repo structure" below.
 
 ## Hosting stays the same
 
@@ -79,12 +63,13 @@ instead of `vite build` + `copy-static-assets.mjs` against a single HTML entry).
 Custom domain, HTTPS, and the free-tier hosting all carry over unchanged. No new
 cost, no new platform, no purchase required.
 
-One real technical wrinkle, not a blocker: if routing is introduced (open
-decision #3 above) and it uses real paths rather than hash-based routing, GitHub
-Pages needs a `404.html` fallback trick (or hash routing, which sidesteps this
-entirely) since Pages has no server-side rewrite rules for SPA deep links. Small,
-well-documented, standard for GitHub-Pages-hosted SPAs — not a reason to avoid
-path-based routing, just a step to include in Phase 3.
+One real technical wrinkle, not a blocker, and currently moot given decision
+#3 above (no routing): if a router is ever introduced later using real paths
+rather than hash-based routing, GitHub Pages needs a `404.html` fallback trick
+(or hash routing, which sidesteps this entirely) since Pages has no
+server-side rewrite rules for SPA deep links. Small, well-documented, standard
+for GitHub-Pages-hosted SPAs — noted here only so it isn't a surprise if
+routing gets revisited down the line.
 
 ## What ports directly vs. what needs rework
 
@@ -135,15 +120,19 @@ fix twice.
 
 ## Phased plan
 
-**Phase 0 — Decisions + spike.** Resolve the "Open decisions" above. Before
-committing the whole project to a framework, spend a short, timeboxed spike
-building one genuinely representative slice end-to-end in the two top framework
-candidates — recommend the outline tree itself (render, indent/outdent, drag
-reorder) since it's the single most DOM-manipulation-heavy, highest-risk piece in
-the whole app, wired to the *already-ported* `nodeMutations`/`nodeQueries` core
-modules from Phase 1 below. If that slice feels right in one framework and
-awkward in the other, that's a far better signal than a decision made on paper
-alone.
+**Phase 0 — Repo scaffolding + validation spike.** Decisions resolved above.
+Set up the `legacy/` + `web/` npm-workspaces split (see "Interim repo
+structure" below) without touching production at all — `deploy.yml` keeps
+building the exact same `legacy/` files, just from a moved path. Then, before
+committing further effort, spend a short, timeboxed spike building one
+genuinely representative slice end-to-end in React — the outline tree itself
+(render, indent/outdent, drag reorder), since it's the single most
+DOM-manipulation-heavy, highest-risk piece in the whole app, wired to the
+*already-ported* `nodeMutations`/`nodeQueries` core modules from Phase 1
+below. This is a validation spike, not a framework comparison (that decision
+is made) — its purpose is surfacing any real friction in the
+React+Zustand+tree-editing combination early, while it's still cheap to
+adjust course, rather than discovering it deep into Phase 2.
 
 **Phase 1 — Port the pure logic layer.** Copy `src/core/`, `src/state/`,
 `src/utils/` into the new app largely unchanged (per "What ports directly"
@@ -162,8 +151,9 @@ Hub features, so the hardest part is de-risked early rather than left for last.
 **Phase 3 — Panels and secondary features.** Note, Code block, Pad (all seven
 tabs), Preview/Presenter Mode, exports (Word/PDF/PowerPoint/Markdown/OPML),
 theming, PWA install — the bulk of the README's feature surface, each panel a
-largely independent component once Phase 2's core tree exists to attach to. If
-routing was chosen in Phase 0, wire it up here.
+largely independent component once Phase 2's core tree exists to attach to.
+No routing to wire up here (decision #3, resolved: none) — documents keep the
+current tab-switching model.
 
 **Phase 4 — Hub (To-Dos, Meeting Notes, Journal, Library, Recap) and account/sync
 features.** Deliberately last among feature work — these are the most
