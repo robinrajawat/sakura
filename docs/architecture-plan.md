@@ -8,26 +8,28 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, plus five slices of the `diagramGen*` generation
+Diagrams' display-list filtering/sorting done, plus six slices of the `diagramGen*` generation
 subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
 nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
-color-assignment layer, and the pure tree-layout engine); the much larger XML-emission/AI-
-classification remainder of `diagramGen*` (plus `generateDiagramFromOutline`/
-`diagramGenFinishGenerate` orchestration, `diagramGenValidateGuideline`/`diagramGenLegend*`),
-Export, and the rest of Templates/Journal not yet begun).
+color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation); the
+much larger remaining XML-cell-string-assembly and AI-classification portions of `diagramGen*`
+(plus `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
+`diagramGenValidateGuideline`/`diagramGenLegend*`), Export, and the rest of Templates/Journal not
+yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
-`diagramGen*` subsystem with zero injected dependencies at all). Seven additional Phase 2/3-adjacent
+`diagramGen*` subsystem with zero injected dependencies at all). Eight additional Phase 2/3-adjacent
 slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting, and
 diagramGen*'s own topology/confirmed-nodeMeta query layer, nodeMeta classification-proposal
-layer, branch/tag/marker color-assignment layer, and tree-layout engine (`src/state/tabOrder.ts`,
+layer, branch/tag/marker color-assignment layer, tree-layout engine, and final-rect/bounds
+computation (`src/state/tabOrder.ts`,
 `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`,
 `src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`, `src/state/diagramGenColors.ts`,
-`src/state/diagramGenLayout.ts`
+`src/state/diagramGenLayout.ts`, `src/state/diagramGenRects.ts`
 — not `core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
 blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
@@ -924,9 +926,50 @@ in the extracted code. New `tests/e2e/generated-diagramgenlayout-smoke.spec.ts` 
 real, unchanged `layoutDiagramGenTree` wrapper against a real `nodes` array, plus the standard
 distant-function-still-callable check.
 
+**Sixth slice of `diagramGen*`: `src/state/diagramGenRects.ts`.** `computeDiagramGenFinalRects` —
+the pure final-rect/bounds computation: given the raw x/y `positions` from
+`layoutDiagramGenTreeCore` and each node's box `dimsByIdx`, computes the final rendered
+`{x, y, w, h}` rect for every node, snapped to a 10px grid in a center-preserving way and shifted
+so the whole diagram's leftmost edge sits at a fixed 40px margin — plus `minX`/`maxX`/`maxY`/
+`offsetX`, which `diagramGenFinishGenerate` needs later for the legend's x position and the
+generated XML's overall page width/height. Genuinely pure math with **zero dependencies on any
+other `diagramGen*` function or constant** — the only slice in this subsystem needing no
+`declare function` ambient references at all.
+
+**Unlike every prior slice, this was never a standalone named function in index.html** — an
+inline fragment (`minX`/`maxX`/`maxY`/`snap10`/`offsetX`/`finalRect` computation) inside the much
+larger `diagramGenFinishGenerate`. Two consequences: no pure-code-motion commit was possible or
+needed (there was no self-contained function to relocate), and there's no original wrapper name
+to preserve — the hand-written "wrapper" here is a single glue statement
+(`const {finalRect,minX,maxX,maxY,offsetX}=computeDiagramGenFinalRectsCore(...)`) destructuring
+the Core function's result into the exact same local names the rest of
+`diagramGenFinishGenerate` already reads, so nothing downstream needed to change.
+
+**A placement mistake caught and corrected before commit, not shipped.** The first attempt
+placed the `GENERATED:diagramGenRects` markers *inside* `diagramGenFinishGenerate`'s own body
+(between two of its statements), rather than at top level like every other slice. This would
+still have worked functionally (nested function declarations are hoisted within their enclosing
+function), but breaks the subsystem's own established contract that every generated block shares
+one top-level script scope — a nested block would give the collision-checker and every other
+generated block's assumptions about ambient global availability an inconsistent case to reason
+about. Caught via a straightforward marker-position check before running the generator at all;
+fixed by moving the markers to top level, immediately before `diagramGenFinishGenerate` itself,
+matching every other slice's placement — the glue statement stayed inside the function body,
+unchanged.
+
+9 new unit tests, including an oracle-comparison suite across 3 representative position/dims
+combinations, pinned against a literal copy of the original fragment. New
+`tests/e2e/generated-diagramgenrects-smoke.spec.ts` calls the real, generated
+`computeDiagramGenFinalRectsCore` directly by name (no wrapper exists to call instead), plus an
+end-to-end check that a real `diagramGenFinishGenerate` call still produces well-formed XML
+(inspected via the real `diagrams` array it pushes to as a side effect, since the function itself
+has no return value) — proving the glue statement resolves correctly through the real
+orchestration, not just in isolation.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission,
-`generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration, AI classification, plus
+dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
+string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
+`diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
 `diagramGenValidateGuideline`/`diagramGenLegend*`) and CRUD/editor DOM wiring, Export, and the
 rest of the Templates domain (rendering, sync).
 

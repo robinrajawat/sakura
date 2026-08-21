@@ -446,6 +446,21 @@ initHubJournalState({
     // call site (layoutDiagramGenTree's own wrapper body in index.html) was updated in the same
     // commit that wired this block in.
     footer: ''
+  },
+  {
+    // Sixth slice of the diagramGen* subsystem — the pure final-rect/bounds computation (see
+    // this module's own header for full scope notes). Unlike every prior slice, this was never
+    // a standalone named function — an inline fragment inside diagramGenFinishGenerate. The
+    // hand-written glue right after this block's markers destructures the Core function's
+    // result into the same local names (finalRect/minX/maxX/maxY/offsetX) the rest of
+    // diagramGenFinishGenerate already reads, so nothing downstream needed to change.
+    name: 'diagramGenRects',
+    sourceFile: 'src/state/diagramGenRects.ts',
+    testFile: 'tests/unit/diagramGenRects.test.ts',
+    // No production wiring needed — pure function, zero dependencies on any other diagramGen*
+    // function or constant. The one real call site (inside diagramGenFinishGenerate) was
+    // updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
