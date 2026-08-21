@@ -503,6 +503,20 @@ initHubJournalState({
     // block in, to call the hand-written serializeTreeText wrapper which now just forwards to
     // serializeTreeTextCore with treeIndentWidth/hideTreeLines passed explicitly.
     footer: ''
+  },
+  {
+    // Export domain — second slice. serializeOpml/nodesToOutlineXml turned out pure once
+    // traced: getMeta() (DOM) and new Date() (impure) promoted to explicit params (title,
+    // dateCreated — the latter with an injectable-clock default matching
+    // formatRelativeTime.ts's established pattern), nodeContentExportEnabled promoted the same
+    // way treeIndentWidth/hideTreeLines were for serializeTreeText.
+    name: 'serializeOpml',
+    sourceFile: 'src/utils/serializeOpml.ts',
+    testFile: 'tests/unit/serializeOpml.test.ts',
+    // No production wiring needed — pure functions, no DOM/side effects. The one real call site
+    // (serializeOpml wrapper body, called from exportOpml) was updated in the same commit that
+    // wired this block in.
+    footer: ''
   }
 ];
 

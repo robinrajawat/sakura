@@ -21641,31 +21641,62 @@ function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:
 // row sits at depth 0) and emits nested <outline> elements — the standard OPML
 // representation of an outline tree. parentDepth starts at -1 so top-level rows
 // (depth 0) are picked up on the first pass.
-function nodesToOutlineXml(list,startIdx,parentDepth){
-  let xml=''; let i=startIdx;
-  while(i<list.length && list[i].depth>parentDepth){
-    if(list[i].depth===parentDepth+1){
-      const node=list[i];
-      let j=i+1; while(j<list.length && list[j].depth>parentDepth+1) j++;
-      const hasKids=j>i+1;
-      const label=getNodePlainText(node);
-      const checkboxPrefix=node.isCheckbox?(node.checked?'[x] ':'[ ] '):'';
-      const text=escAttr(checkboxPrefix+label);
-      const noteAttr=(nodeContentExportEnabled&&node.note&&node.note.trim())?` _note="${escAttr(node.note)}"`:'';
-      xml+= hasKids ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXml(list,i+1,parentDepth+1)}</outline>` : `<outline text="${text}"${noteAttr}/>`;
-      i=j;
-    } else i++;
-  }
-  return xml;
+/* GENERATED:serializeOpml:START — DO NOT EDIT BY HAND. Source of truth: src/utils/serializeOpml.ts (tests: tests/unit/serializeOpml.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+function escAttrLocal(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function serializeOpml(scopeNodes=nodes){
-  const title=escAttr(getMeta().title||'Untitled');
-  if(!scopeNodes.length) return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head><title>${title}</title></head>\n<body></body>\n</opml>`;
-  const minDepth=Math.min(...scopeNodes.map(n=>n.depth));
-  const rebased=scopeNodes.map(n=>({...n,depth:n.depth-minDepth}));
-  const body=nodesToOutlineXml(rebased,0,-1);
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${title}</title>\n<dateCreated>${new Date().toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
+/** Pure: matches index.html's own `nodesToOutlineXml` exactly — recursively renders `list`
+ * starting at `startIdx`, emitting an `<outline>` element per node deeper than `parentDepth`
+ * (self-closing for a leaf, wrapping nested `<outline>`s for a node with children), a leading
+ * `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set, and — only when
+ * `nodeContentExportEnabled` is true and the node has a non-blank note — a `_note` attribute
+ * carrying the note text. */
+function nodesToOutlineXmlCore(list, startIdx, parentDepth, nodeContentExportEnabled) {
+    let xml = '';
+    let i = startIdx;
+    while (i < list.length && list[i].depth > parentDepth) {
+        if (list[i].depth === parentDepth + 1) {
+            const node = list[i];
+            let j = i + 1;
+            while (j < list.length && list[j].depth > parentDepth + 1)
+                j++;
+            const hasKids = j > i + 1;
+            const label = getNodePlainText(node);
+            const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
+            const text = escAttrLocal(checkboxPrefix + label);
+            const noteAttr = nodeContentExportEnabled && node.note && node.note.trim()
+                ? ` _note="${escAttrLocal(node.note)}"`
+                : '';
+            xml += hasKids
+                ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled)}</outline>`
+                : `<outline text="${text}"${noteAttr}/>`;
+            i = j;
+        }
+        else {
+            i++;
+        }
+    }
+    return xml;
 }
+/** Pure: matches index.html's own `serializeOpml` exactly — renders `scopeNodes` as an OPML 2.0
+ * document, `title` falling back to `'Untitled'` when blank, depths rebased so the shallowest
+ * node sits at the OPML root, `<dateCreated>` from `dateCreated` (defaulting to `new Date()`,
+ * see this module's own header for why). An empty `scopeNodes` still produces a valid, empty
+ * OPML document with the title but no `<dateCreated>` — matching the original exactly. */
+function serializeOpmlCore(scopeNodes, title, nodeContentExportEnabled, dateCreated = new Date()) {
+    const safeTitle = escAttrLocal(title || 'Untitled');
+    if (!scopeNodes.length) {
+        return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head><title>${safeTitle}</title></head>\n<body></body>\n</opml>`;
+    }
+    const minDepth = Math.min(...scopeNodes.map((n) => n.depth));
+    const rebased = scopeNodes.map((n) => ({ ...n, depth: n.depth - minDepth }));
+    const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${safeTitle}</title>\n<dateCreated>${dateCreated.toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
+}
+
+/* GENERATED:serializeOpml:END */
+function nodesToOutlineXml(list,startIdx,parentDepth){return nodesToOutlineXmlCore(list,startIdx,parentDepth,nodeContentExportEnabled)}
+function serializeOpml(scopeNodes=nodes){return serializeOpmlCore(scopeNodes,getMeta().title,nodeContentExportEnabled)}
 function exportOpml(foldOverride){commitOpenNodePanelEdits(); const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(getScopedNodes(true,foldOverride)))}
 
 // === Sakura Document (full-fidelity single-document share) ===
