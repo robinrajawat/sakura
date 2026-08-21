@@ -36,17 +36,32 @@ genuinely pure fragment inside an otherwise correctly-labeled-canvas-dependent f
 rest correctly staying hand-written per the above. Templates' remaining rendering/sync surface
 investigated and confirmed closed for the pure-logic extraction this migration otherwise does —
 `collectTemplateMatches` is genuinely DOM/UI-callback-bound, correctly excluded.
-**Phase 4 (sync subsystem) started:** the shared "should this incoming cloud update actually be
-applied" decision predicate — echo-suppression plus a staleness check — extracted from the three
-`applyIncoming*Data` functions (Doc/Template/Meta), which had each duplicated it inline with one
-real, preserved behavioral difference (whether a missing local record bypasses the staleness
-check) found and pinned rather than unified away. Everything else in those three functions —
-storage writes, cross-tab banners, collaborator notifications, IndexedDB-vs-localStorage
-branching — stays hand-written. **What remains in Phase 4:** the rest of the sync subsystem
-(the real-time Firestore listeners, the actual push/pull orchestration, and whatever further
-duplication or pure fragments turn up once those are read closely — not yet investigated) and
-CRUD/editor DOM wiring (meant to stay hand-written by this project's own consistent rule
-throughout — not a gap).
+**Phase 4 (sync subsystem): complete.** Three slices. First: the shared "should this incoming
+cloud update actually be applied" decision predicate — echo-suppression plus a staleness check —
+extracted from the three `applyIncoming*Data` functions (Doc/Template/Meta), which had each
+duplicated it inline with one real, preserved behavioral difference (whether a missing local
+record bypasses the staleness check) found and pinned rather than unified away
+(`src/state/syncApply.ts`, also reused as-is for `hub.html`'s own `pullMetaFromCloud`, a second
+real call site with zero new source needed). Second: `pullAndMergeFromCloud`'s two near-identical
+"which local ids does the cloud not have" loops (docs, templates) — real duplication, same shape
+as the first slice's own rationale — collapsed into one pure `findIdsMissingFromCloud`
+(`src/state/syncReconcile.ts`). Third: `startSharedDocRealtimeSyncIfNeeded`'s own inlined
+first-snapshot/existence/echo/open-tab apply-decision, a distinct simpler variant of the first
+slice's predicate (no staleness check — a shared doc has no local index entry to compare against)
+(`src/state/sharedDocSync.ts`). Investigated and confirmed to have no further pure core worth
+extracting: `queueSync`/`flushSyncQueue` (debounce timer + Map + async Firestore loop);
+`push*ToCloud` (real Firestore/IndexedDB/localStorage I/O — `pushMetaToCloud`'s transient-read-
+failure abort logic is a real decision but entangled with the `await` itself, not cleanly
+isolable); the `onSnapshot` listener wiring itself in `startRealtimeSync`/`stopRealtimeSync`/
+`startSharedDocRealtimeSyncIfNeeded` (subscription setup and unsubscribe bookkeeping, inherently
+side-effecting like Presence's own listeners); `pullAndMergeFromCloud`'s outer orchestration
+(fetch-then-gate ordering, toast messages, `refreshHubPanelAfterSync` calls) beyond the one loop
+extracted above. Also investigated: the collaborator-notification cooldown gate inside
+`applyIncomingDocData` is single-use within sync, so not extracted on its own; the same "time
+since last event" shape does repeat five more times, but in an unrelated domain (auto-revision-
+snapshot debouncing for docs/todos/meetings/journal/library via `*_REVISION_MIN_GAP_MS`) —
+flagged below as a future candidate, out of this phase's own scope. CRUD/editor DOM wiring stays
+hand-written throughout, per this project's own consistent rule — not a gap.
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1752,15 +1767,20 @@ selection reset — rather than just "some 16-node tree." A good example of the 
 before assuming an ordering guess is right" lesson from earlier in this project: the doc's own
 prior write-up assumed this would need its own DI'd core module; it didn't.
 
-**Phase 4 — sync, sharing, presence.**
+**Phase 4 — sync, sharing, presence: complete.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately
 small pilot for the generate-index-blocks.mjs pipeline itself — this
-doesn't contradict the original "extracted last" reasoning below, which is
-about the bulk of sync/sharing (the notification click-through, the missing
-role-change alert, the live-sync gap) still living in index.html untouched.
-Extracted last, deliberately — this module has already produced the most
-bugs, so it gets the harness only once that harness is proven everywhere
-else.
+doesn't contradict the original "extracted last" reasoning, which was about
+the bulk of sync/sharing. That bulk turned out to genuinely warrant it: read
+closely rather than assumed risky-and-skipped, three real pure fragments
+came out of it (`syncApply.ts`'s shared apply-decision predicate, reused
+across three callers plus a second cross-file call site in `hub.html`;
+`syncReconcile.ts`'s missing-from-cloud reconciliation, deduplicating two
+near-identical loops; `sharedDocSync.ts`'s shared-doc realtime apply
+decision) — see the Phase 4 section above for the full breakdown, including
+what was investigated and confirmed to have no further pure core (the
+Firestore listener wiring itself, the push functions' real I/O, the
+surrounding pull/push orchestration).
 
 **Phase 5 — strict mode everywhere.**
 Every module `strict: true` TypeScript, no `allowJs` escape hatch left.
@@ -1782,3 +1802,14 @@ Every module `strict: true` TypeScript, no `allowJs` escape hatch left.
   nothing in `dist/` or the deployed site runs esbuild's dev server. Left
   as-is for Phase 0 rather than force-upgrading to a new Vite major mid-scaffold;
   worth revisiting in a future, deliberate dependency-upgrade pass.
+- **Revision-snapshot debounce duplication.** The same "has enough time
+  passed since the last checkpoint" gate (`if(last&&(Date.now()-last.ts)<MIN_GAP_MS)return`)
+  is hand-copied five times — once each for docs, To-Dos, Meetings, Journal,
+  and Library auto-revision snapshots (`REVISION_MIN_GAP_MS`,
+  `TODOS_REVISION_MIN_GAP_MS`, `MEETINGS_REVISION_MIN_GAP_MS`,
+  `JOURNAL_REVISION_MIN_GAP_MS`, `LIBRARY_REVISION_MIN_GAP_MS`, all currently
+  10 minutes). Noticed during Phase 4's own investigation of a structurally
+  similar single-use cooldown gate in the sync subsystem, but this is a
+  separate, untouched domain (revision-history debouncing, not sync) and not
+  part of any phase's scope so far — worth its own dedicated look rather than
+  folded opportunistically into Phase 4.
