@@ -594,6 +594,21 @@ initHubJournalState({
     // (parseInlineSegments wrapper body, called from measureTreeImage) was updated in the same
     // commit that wired this block in.
     footer: ''
+  },
+  {
+    // Sync subsystem — Phase 4, first slice. The shared "should this incoming cloud update
+    // actually be applied" decision predicate, duplicated three times across
+    // applyIncomingDocData/applyIncomingTemplateData/applyIncomingMetaData with one real,
+    // preserved behavioral difference (whether a missing local record bypasses the staleness
+    // check). Everything else in those three functions — storage writes, cross-tab banners,
+    // collaborator notifications, IndexedDB-vs-localStorage branching — stays hand-written.
+    name: 'syncApply',
+    sourceFile: 'src/state/syncApply.ts',
+    testFile: 'tests/unit/syncApply.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. All three real call
+    // sites (the decision fragment inside applyIncomingDocData/applyIncomingTemplateData/
+    // applyIncomingMetaData) were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
