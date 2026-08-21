@@ -8,17 +8,20 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, first slice of its larger remainder; Diagrams'
-`diagramGen*` generation subsystem, Export, and the rest of Templates/Journal not yet begun).
-`core/` module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop move,
-paste, delete, the shared selection/parentId helpers, outline search matching, and template
+Diagrams' display-list filtering/sorting done, plus a first slice of the `diagramGen*`
+generation subsystem itself (pure box-sizing/color math); the rest of `diagramGen*`, Export, and
+the rest of Templates/Journal not yet begun).
+`core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
+paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
-to be dead code). Three additional Phase 2/3-adjacent slices: tab cycling/reordering,
-diagram-anchor/orphan logic, and diagram-list filtering/sorting (`src/state/tabOrder.ts`,
-`src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts` — not `core/`, since none
-touches the outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
+to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
+`diagramGen*` subsystem with zero injected dependencies at all). Three additional Phase 2/3-adjacent
+slices: tab cycling/reordering, diagram-anchor/orphan logic, and diagram-list filtering/sorting
+(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts` — not
+`core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
+blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
 block, collision-checking scoped per file); first proven with an infrastructure-only pilot
 (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then four real feature-domain slices:
@@ -687,9 +690,57 @@ layout-generation subsystem, diagram CRUD/editor DOM wiring, and `renderDiagrams
 `updateDiagramBulkBar`'s own DOM construction — all left for dedicated future investigation, not
 attempted here.
 
+**First slice of `diagramGen*` itself: `src/core/diagramGenDims.ts`.** Of the ~32 `diagramGen*`
+functions making up the deterministic tree-diagram generator ("Generate rough diagram from
+outline"), investigation found five with zero DOM/canvas/measurement-API dependency and zero
+reliance on the generator's own mutable traversal state (`nodes`, `nodeMeta`, id counters) —
+`diagramGenHardTruncate` (text truncation), `diagramGenLighten` (hex color blend toward white),
+and `diagramGenAdjustDimsForShape`/`diagramGenBoxDims`/`diagramGenMergedBoxDims` (label-fit box
+sizing, estimated from character count rather than real canvas text measurement, so accurate to
+extract without a browser). The much larger XML-emission/tree-layout/color-assignment/AI-
+classification remainder (~27 functions) is still a genuinely separate, dedicated future scoping
+session — not attempted here.
+
+Lives in `src/core/` rather than `src/state/`, despite touching neither `nodes` nor `diagrams`:
+the project's real core/-vs-state/ distinction is DI style (per-call-parameter vs.
+`initXState(deps)` singleton — see `templatesApply.ts`'s own header), not nodes-touching. These
+five have even less coupling than `templatesApply.ts` — no injected dependencies at all, every
+input is a plain argument — but that's the `core/` shape with the DI step skipped entirely since
+there's nothing to inject.
+
+`diagramGenAdjustDimsForShape`/`diagramGenBoxDims`/`diagramGenMergedBoxDims` were originally
+~500 lines away from `diagramGenHardTruncate`/`diagramGenLighten` in index.html — per this
+project's "generator splices one contiguous block" constraint, relocated next to them in a
+separate pure-code-motion commit first. That relocation caught its own near-miss: the
+hand-written `DIAGRAM_GEN_PALETTE` const (unrelated to this slice) sat between
+`diagramGenHardTruncate` and `diagramGenLighten`, which would have broken contiguity for the
+generated block — moved ahead of `diagramGenHardTruncate` instead, before the marker/generator
+work began, so the actual generated-block region ended up genuinely contiguous.
+
+`DIAGRAM_GEN_MIN_W`/`MAX_W`/`PAD`/`CHAR_PX`/`ONE_LINE_H`/`TWO_LINE_H` are index.html's own
+top-level consts, also read by hand-written code this slice doesn't touch (`diagramGenTrimText`'s
+AI-shortening path, `DIAGRAM_GEN_CHAR_BUDGET`'s own computation) — so they couldn't be relocated
+out of index.html entirely. Duplicated as private literals in the module instead, same precedent
+as `diagramDisplayList.ts` duplicating `DIAGRAM_STATUSES`: every generated block shares one
+script scope with the rest of index.html, so reusing the real names would be a duplicate
+top-level `const` — the same SyntaxError-kills-the-whole-script failure mode documented
+elsewhere in this file. A real collision check (grep, not just "it's underscore-prefixed") was
+run against the rest of index.html for all five new private consts and all five new `*Core`
+function names before treating them as safe, same discipline `diagramDisplayList.ts`'s own
+`DIAGRAM_STATUSES` near-miss established.
+
+67 new unit tests (46 pure logic + oracle-comparison, one test-authoring mistake caught before
+commit — a miscounted truncation cut point in a hand-written expectation, not a real bug in the
+extracted code, fixed by recounting against the actual algorithm). New
+`tests/e2e/generated-diagramgendims-smoke.spec.ts` exercises the real, unchanged
+`diagramGenHardTruncate`/`diagramGenLighten`/`diagramGenAdjustDimsForShape`/`diagramGenBoxDims`/
+`diagramGenMergedBoxDims` wrapper functions directly, plus the standard distant-function-still-
+callable check.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), Diagrams' `diagramGen*` generation subsystem and CRUD/editor DOM wiring, Export, and
-the rest of the Templates domain (rendering, sync).
+dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission, tree layout,
+color assignment, AI classification) and CRUD/editor DOM wiring, Export, and the rest of the
+Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,

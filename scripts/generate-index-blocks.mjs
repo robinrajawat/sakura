@@ -380,6 +380,20 @@ initHubJournalState({
     // of its own). The one real call site (checkDueReminders's own body) was updated in the
     // same commit that wired this block in.
     footer: ''
+  },
+  {
+    // First slice of the diagramGen* subsystem (see this module's own header for scope notes
+    // and why it lives in src/core/ despite not touching `nodes`). The five target functions
+    // were ~500 lines apart in index.html — relocated next to each other in a separate
+    // pure-code-motion commit first, so this one contiguous block can replace all five.
+    name: 'diagramGenDims',
+    sourceFile: 'src/core/diagramGenDims.ts',
+    testFile: 'tests/unit/diagramGenDims.test.ts',
+    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. The five
+    // real call sites (diagramGenHardTruncate/diagramGenLighten/diagramGenAdjustDimsForShape/
+    // diagramGenBoxDims/diagramGenMergedBoxDims wrapper bodies in index.html) were updated in
+    // the same commit that wired this block in.
+    footer: ''
   }
 ];
 
