@@ -12,10 +12,9 @@
  * - `findTodo` — a trivial one-line ambient lookup (`todos.find(...)`), no real logic to test,
  *   same reasoning as `getAllAiProviders`/`getAiProviderById` staying out of `aiProviders.ts`.
  * - `renderTodos`/swipe-list wiring — DOM construction, stays hand-written.
- * - Subtask CRUD, repeat-date advancement, due-date reminder checking — genuinely separate
- *   pieces of the todos domain, not investigated here; this slice is deliberately narrow (the
- *   creation factory plus the load/save storage layer only), matching the "small pilot first"
- *   discipline used for every other first-slice-in-a-new-domain so far.
+ * - Subtask CRUD, due-date reminder checking (real `Notification` API + DOM click handler) —
+ *   genuinely separate pieces of the todos domain, not investigated here. `nextRepeatDate` WAS
+ *   added in a follow-up pass, once identified as pure date arithmetic with no such coupling.
  *
  * Deliberately no module-level constant for the storage key string (`TODOS_KEY`): hub.html
  * already declares this as a top-level `var`, still read directly by sibling todo functions
@@ -122,4 +121,24 @@ export function saveTodosCore(todos: Todo[]): boolean {
   } catch {
     return false;
   }
+}
+
+/** Pure: the next due date for a repeating todo, given the date it was last due (or `null` to
+ * mean "today") and a repeat mode. `'daily'` advances one day, `'weekly'` advances seven,
+ * `'weekdays'` advances one day at a time until landing on a non-weekend day (so a Friday task
+ * repeats to the following Monday, not Saturday) — matching hub.html's own comment that this
+ * mirrors index.html's `nextRepeatDate()` exactly. Any other `repeat` value is a no-op (returns
+ * the same date formatted back out), matching the original's fall-through behavior. */
+export function nextRepeatDate(fromDateStr: string | null | undefined, repeat: string | null | undefined): string {
+  const d = fromDateStr ? new Date(fromDateStr + 'T00:00:00') : new Date(new Date().setHours(0, 0, 0, 0));
+  if (repeat === 'daily') {
+    d.setDate(d.getDate() + 1);
+  } else if (repeat === 'weekly') {
+    d.setDate(d.getDate() + 7);
+  } else if (repeat === 'weekdays') {
+    do {
+      d.setDate(d.getDate() + 1);
+    } while (d.getDay() === 0 || d.getDay() === 6);
+  }
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
