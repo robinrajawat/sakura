@@ -62,6 +62,12 @@ since last event" shape does repeat five more times, but in an unrelated domain 
 snapshot debouncing for docs/todos/meetings/journal/library via `*_REVISION_MIN_GAP_MS`) —
 flagged below as a future candidate, out of this phase's own scope. CRUD/editor DOM wiring stays
 hand-written throughout, per this project's own consistent rule — not a gap.
+**Phase 5 (strict mode everywhere): complete.** `tsconfig.json` and the generator's own separate
+`tsc` invocation both flipped to `strict: true`; `allowJs`/`checkJs` removed as vestigial (nothing
+under `include` was ever `.js`). One real fix needed (a test helper's parameter type, not a
+production module); every `src/` module already compiled clean, and regenerating produced
+byte-identical output to what was already spliced in — see the Phase 5 section below for the full
+investigation.
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1782,8 +1788,28 @@ what was investigated and confirmed to have no further pure core (the
 Firestore listener wiring itself, the push functions' real I/O, the
 surrounding pull/push orchestration).
 
-**Phase 5 — strict mode everywhere.**
-Every module `strict: true` TypeScript, no `allowJs` escape hatch left.
+**Phase 5 — strict mode everywhere: complete.**
+Every module `strict: true` TypeScript, no `allowJs` escape hatch left. Two separate places
+carried the non-strict setting, both flipped: `tsconfig.json` (governs `npm run typecheck` and
+Vitest) and `scripts/generate-index-blocks.mjs`'s own `compileToPlainJs` (a completely separate
+`tsc` invocation, used only by `npm run generate` to compile each `src/` module before splicing
+it into `index.html`/`hub.html` — easy to miss since `npm run typecheck` passing says nothing
+about it). `allowJs`/`checkJs` in `tsconfig.json` turned out to be pure vestige — `include` was
+already scoped to `src/**/*`/`tests/unit/**/*`, and every file under both is already `.ts`, so
+there was never a `.js` file for either flag to actually affect; removed rather than set to their
+already-true defaults.
+
+Investigated before assuming this would need real fixes across many modules — it didn't. Flipping
+`tsconfig.json`'s `strict: true` surfaced exactly one error, confined to one test file
+(`tests/unit/diagramGenTopology.test.ts`'s own local `tree()` helper declared its `texts` param as
+`string[]`, but the helper's own body — `texts?.[i]` — already treats a hole as `undefined`, and
+several tests pass exactly that; widened the param to `(string | undefined)[]`, matching what the
+helper actually does, not a workaround). Flipping the generator's separate `--strict false` to
+`true` compiled every existing `src/` module — `core/`, `state/`, `utils/` alike — with zero
+errors, and regenerating produced byte-identical output to what was already spliced into
+`index.html`/`hub.html` (confirmed via `git diff`, not assumed): none of strict mode's checks
+(`strictNullChecks`, `noImplicitAny`, etc.) changed what any already-correct module actually
+compiles to, only what the compiler would have caught if something had been wrong.
 
 ## Open items for a later, deliberate decision (not blocking Phase 0)
 

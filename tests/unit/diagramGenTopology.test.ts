@@ -41,7 +41,7 @@ beforeAll(() => {
   g.diagramGenHardTruncateCore = diagramGenHardTruncateCore;
 });
 
-function tree(depths: number[], texts?: string[], tags?: (string[] | undefined)[]): TopologyNode[] {
+function tree(depths: number[], texts?: (string | undefined)[], tags?: (string[] | undefined)[]): TopologyNode[] {
   return depths.map((depth, i) => ({ id: i + 1, depth, text: texts?.[i], tags: tags?.[i] }));
 }
 

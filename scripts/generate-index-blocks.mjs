@@ -684,7 +684,7 @@ function compileToPlainJs(sourceFile) {
         '--moduleResolution', 'Bundler',
         '--lib', 'ES2020,DOM',
         '--skipLibCheck',
-        '--strict', 'false'
+        '--strict', 'true'
       ],
       { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'] }
     );
