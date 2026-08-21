@@ -581,6 +581,19 @@ initHubJournalState({
     // (the hand-written orchestration wrapper) was updated in the same commit that wired this
     // block in to call diagramGenFinishGenerateXmlCore for the xml string.
     footer: ''
+  },
+  {
+    // Image export — first slice. parseInlineSegments turned out genuinely pure once traced —
+    // an earlier "canvas-dependent" blanket label for image export didn't apply uniformly; this
+    // one function has zero DOM dependency, unlike measureTreeImage/exportTreeAsImage around it
+    // (deliberately not touched, genuinely canvas-bound).
+    name: 'parseInlineSegments',
+    sourceFile: 'src/utils/parseInlineSegments.ts',
+    testFile: 'tests/unit/parseInlineSegments.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. The one real call site
+    // (parseInlineSegments wrapper body, called from measureTreeImage) was updated in the same
+    // commit that wired this block in.
+    footer: ''
   }
 ];
 
