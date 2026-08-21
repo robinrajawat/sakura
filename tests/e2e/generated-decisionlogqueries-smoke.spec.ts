@@ -8,11 +8,12 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
-// Second slice of the Decision Log domain — the pure lookup/anchor-label/status-query layer.
-// Exercises the real, unchanged findDecisionLog/decisionLogForNode/decisionStatusLabel/
-// decisionStatusOf/decisionLogAnchorLabel wrapper functions — not the extracted *Core functions
-// directly — against real global state, to prove the real call sites still resolve correctly
-// after the splice.
+// Second and third slices of the Decision Log domain — the pure lookup/anchor-label/status-query
+// layer, plus (third slice) getDecisionAnchorCandidates. Exercises the real, unchanged
+// findDecisionLog/decisionLogForNode/decisionStatusLabel/decisionStatusOf/decisionLogAnchorLabel/
+// getDecisionAnchorCandidates wrapper functions — not the extracted *Core functions directly —
+// against real global state, to prove the real call sites still resolve correctly after the
+// splice.
 test.describe('generated decisionLogQueries block (src/state/decisionLogQueries.ts spliced into index.html)', () => {
   test('decision log lookup/anchor/status wrapper functions all work through real decisionLogs and nodes', async ({ page }) => {
     const unexpectedErrors: string[] = [];
@@ -41,7 +42,10 @@ test.describe('generated decisionLogQueries block (src/state/decisionLogQueries.
 
     const result = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
-      nodes = [{ id: 1, text: '[Project Plan] overview', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }];
+      nodes = [
+        { id: 1, text: '[Project Plan] overview', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Budget review', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+      ];
       // @ts-expect-error
       decisionLogs = [
         { id: 'dl1', anchorNodeId: 1, status: 'approved' },
@@ -66,7 +70,13 @@ test.describe('generated decisionLogQueries block (src/state/decisionLogQueries.
         // @ts-expect-error
         anchorLinked: decisionLogAnchorLabel({ anchorNodeId: 1 }),
         // @ts-expect-error
-        anchorUnlinked: decisionLogAnchorLabel({ anchorNodeId: null })
+        anchorUnlinked: decisionLogAnchorLabel({ anchorNodeId: null }),
+        // @ts-expect-error
+        candidatesAll: getDecisionAnchorCandidates(''),
+        // @ts-expect-error
+        candidatesFiltered: getDecisionAnchorCandidates('budget'),
+        // @ts-expect-error
+        candidatesExcluded: getDecisionAnchorCandidates('', 'dl1')
       };
     });
 
@@ -79,6 +89,16 @@ test.describe('generated decisionLogQueries block (src/state/decisionLogQueries.
     expect(result.statusOfUnknown).toBe('proposed');
     expect(result.anchorLinked).toBe('Under: Project Plan overview');
     expect(result.anchorUnlinked).toBe('Not linked to a node');
+    // node 1 has a real decision log (dl1) anchored to it -> taken; node 2 doesn't.
+    expect(result.candidatesAll).toEqual([
+      { id: 1, text: 'Project Plan overview', taken: true, depth: 0 },
+      { id: 2, text: 'Budget review', taken: false, depth: 1 }
+    ]);
+    expect(result.candidatesFiltered).toEqual([
+      { id: 2, text: 'Budget review', taken: false, depth: 1 }
+    ]);
+    // excluding dl1 itself means node 1 is no longer shown as taken.
+    expect(result.candidatesExcluded[0]).toEqual({ id: 1, text: 'Project Plan overview', taken: false, depth: 0 });
 
     // Proof the rest of the script still runs — an unrelated, physically-distant function is
     // still callable, the standard check for every cutover.

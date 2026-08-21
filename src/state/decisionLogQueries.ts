@@ -11,8 +11,20 @@
  * already-extracted `computeDiagramAnchorLabel` (same three-way branch: never linked /
  * linked-but-node-deleted / linked-with-text, same 60-character truncation).
  *
- * `decisionRowSnippet`/`getDecisionAnchorCandidates` (which call the DOM-dependent
- * `stripHtmlToText`) remain deliberately excluded — a different concern, not attempted here.
+ * `decisionRowSnippet` remains deliberately excluded — the original doc-level caveat bundled it
+ * with `getDecisionAnchorCandidates` as "both call the DOM-dependent `stripHtmlToText`," but
+ * investigation for this (third) slice found that's only true of `decisionRowSnippet` itself.
+ * `decisionRowSnippet` is 4 trivial lines with zero orchestration/branching complexity — not
+ * worth injecting `stripHtmlToText` as a dependency (the DI pattern `templatesApply.ts`
+ * established) for a function this small. Stays hand-written.
+ *
+ * `getDecisionAnchorCandidates`, by contrast, has no DOM dependency once traced: it calls
+ * `stripSemanticMarkers` (already ambient, see below) and `decisionLogForNode`, whose real logic
+ * is `decisionLogForNodeCore` — already generated in THIS file, so referenced directly rather
+ * than via `declare function` (that pattern is reserved for functions generated in a *different*
+ * file/block; same-file generated functions are just ordinary in-scope calls). Reads `nodes`/
+ * `decisionLogs` read-only, single real call site (the anchor-picker popover), already
+ * contiguous with this file's existing exports — no pure-code-motion commit needed.
  *
  * `stripSemanticMarkers` (from `src/utils/stripSemanticMarkers.ts`, already a generated block)
  * is referenced as an ambient global via `declare function`, same pattern `diagramAnchor.ts`
@@ -48,6 +60,14 @@ export interface DecisionLogRecord {
 export interface AnchorableNode {
   id: number;
   text?: string;
+  depth?: number;
+}
+
+export interface DecisionAnchorCandidate {
+  id: number;
+  text: string;
+  taken: boolean;
+  depth: number;
 }
 
 /** Pure: matches index.html's own `findDecisionLog` exactly. */
@@ -96,4 +116,27 @@ export function decisionLogAnchorLabelCore(
   if (!node) return 'Linked node no longer exists';
   const text = stripSemanticMarkers(node.text || '').trim();
   return 'Under: ' + (text ? text.slice(0, 60) : '(untitled node)');
+}
+
+/** Pure: matches index.html's own `getDecisionAnchorCandidates` exactly — candidate list for the
+ * anchor-picker popover, filtered by `query` (case-insensitive substring match against each
+ * node's stripped text), each entry flagged `taken` if it already has a decision log (excluding
+ * `excludeId`, so a log being reassigned doesn't grey out its own current anchor), sorted
+ * depth-first (same stable-sort reasoning as the Diagrams tab's `getDiagramAnchorCandidates`,
+ * which this deliberately doesn't touch — see this file's header) and capped at 50 results. */
+export function getDecisionAnchorCandidatesCore(
+  nodes: AnchorableNode[],
+  decisionLogs: DecisionLogRecord[],
+  query: string | null | undefined,
+  excludeId?: DecisionLogRecord['id']
+): DecisionAnchorCandidate[] {
+  const q = String(query || '').trim().toLowerCase();
+  const list: DecisionAnchorCandidate[] = nodes.map((n) => ({
+    id: n.id,
+    text: stripSemanticMarkers(n.text || '').trim() || '(untitled node)',
+    taken: !!decisionLogForNodeCore(decisionLogs, n.id, excludeId),
+    depth: n.depth || 0,
+  }));
+  const filtered = q ? list.filter((n) => n.text.toLowerCase().includes(q)) : list;
+  return filtered.slice().sort((a, b) => a.depth - b.depth).slice(0, 50);
 }

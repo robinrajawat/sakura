@@ -5,6 +5,7 @@ import {
   decisionStatusLabelCore,
   decisionStatusOfCore,
   decisionLogAnchorLabelCore,
+  getDecisionAnchorCandidatesCore,
   type DecisionLogRecord,
   type AnchorableNode
 } from '../../src/state/decisionLogQueries';
@@ -118,5 +119,65 @@ describe('decisionLogAnchorLabelCore', () => {
     const longNodes: AnchorableNode[] = [{ id: 3, text: longText }];
     const result = decisionLogAnchorLabelCore({ anchorNodeId: 3 }, longNodes);
     expect(result).toBe('Under: ' + longText.slice(0, 60));
+  });
+});
+
+describe('getDecisionAnchorCandidatesCore', () => {
+  const nodes: AnchorableNode[] = [
+    { id: 1, text: '[Project Plan] overview', depth: 0 },
+    { id: 2, text: 'Architecture decisions', depth: 1 },
+    { id: 3, text: '', depth: 2 },
+    { id: 4, text: 'Budget review', depth: 0 },
+  ];
+
+  it('returns every node as a candidate when query is empty', () => {
+    const result = getDecisionAnchorCandidatesCore(nodes, [], '');
+    expect(result.map((c) => c.id)).toEqual(expect.arrayContaining([1, 2, 3, 4]));
+    expect(result).toHaveLength(4);
+  });
+
+  it('strips semantic markers and falls back to "(untitled node)" for empty text', () => {
+    const result = getDecisionAnchorCandidatesCore(nodes, [], '');
+    expect(result.find((c) => c.id === 1)?.text).toBe('Project Plan overview');
+    expect(result.find((c) => c.id === 3)?.text).toBe('(untitled node)');
+  });
+
+  it('filters case-insensitively by substring against the stripped text', () => {
+    const result = getDecisionAnchorCandidatesCore(nodes, [], 'BUDGET');
+    expect(result.map((c) => c.id)).toEqual([4]);
+  });
+
+  it('flags a node as taken when a decision log is anchored to it', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 2 }];
+    const result = getDecisionAnchorCandidatesCore(nodes, logsList, '');
+    expect(result.find((c) => c.id === 2)?.taken).toBe(true);
+    expect(result.find((c) => c.id === 1)?.taken).toBe(false);
+  });
+
+  it('does not flag a node as taken when its only anchoring log matches excludeId', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 2 }];
+    const result = getDecisionAnchorCandidatesCore(nodes, logsList, '', 'dl1');
+    expect(result.find((c) => c.id === 2)?.taken).toBe(false);
+  });
+
+  it('sorts depth-first, preserving document order within a depth (stable sort)', () => {
+    const result = getDecisionAnchorCandidatesCore(nodes, [], '');
+    expect(result.map((c) => c.id)).toEqual([1, 4, 2, 3]);
+  });
+
+  it('defaults a missing depth to 0', () => {
+    const noDepth: AnchorableNode[] = [{ id: 9, text: 'x' }];
+    const result = getDecisionAnchorCandidatesCore(noDepth, [], '');
+    expect(result[0].depth).toBe(0);
+  });
+
+  it('caps results at 50', () => {
+    const many: AnchorableNode[] = Array.from({ length: 75 }, (_, i) => ({
+      id: i,
+      text: `node ${i}`,
+      depth: 0,
+    }));
+    const result = getDecisionAnchorCandidatesCore(many, [], '');
+    expect(result).toHaveLength(50);
   });
 });
