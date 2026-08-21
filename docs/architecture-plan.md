@@ -4,18 +4,21 @@
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up; AI
-provider prefs storage done; Hub's To-Dos and Journal feature-domain storage layers done;
-Diagrams/Export and the rest of Templates/Hub not yet begun). `core/` module boundary: seven slices done (indent/outdent, moveSelected,
-drag-and-drop move, paste, delete, the shared selection/parentId helpers, and outline search
-matching). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and diagram-anchor/
-orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither
-touches the outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
-`scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
-block, collision-checking scoped per file); first proven with an infrastructure-only pilot
-(`hubGenerateId`, reusing Phase 1's `generateId.ts`), then two real feature-domain slices:
-`hubTodos` (localStorage-backed) and `hubJournal` (IndexedDB-backed). Phases 4–5 still future
-work.
+progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and
+`applyTemplateNodes`'s node-construction core; AI provider prefs storage done; Hub's To-Dos and
+Journal feature-domain storage layers done; `applyBuiltinDefaultTemplate`, Diagrams/Export, and
+the rest of Hub not yet begun). `core/` module boundary: eight slices done (indent/outdent,
+moveSelected, drag-and-drop move, paste, delete, the shared selection/parentId helpers, outline
+search matching, and template node-construction via injected `makeNode`/`emptyStyles` — the
+first slice to inject a hand-written function as a dependency rather than reference an
+already-generated block). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
+diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not
+`core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
+structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
+HTML files (`targetFile` per block, collision-checking scoped per file); first proven with an
+infrastructure-only pilot (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then two real
+feature-domain slices: `hubTodos` (localStorage-backed) and `hubJournal` (IndexedDB-backed).
+Phases 4–5 still future work.
 
 ## Why
 
@@ -822,6 +825,44 @@ New `tests/e2e/generated-nodesearch-smoke.spec.ts` exercises the real, unchanged
 `computeSearchMatches()` wrapper against a real multi-node tree — including a deliberately
 stale/out-of-range `searchIndex` to prove `resolveSearchIndex`'s reset logic works through the
 real call path, not just in isolation — plus the standard distant-function-still-callable check.
+
+**Ninth slice, and the first of the "most promising, most novel" candidates flagged above:
+`src/core/templatesApply.ts`** — `applyTemplateNodesCore`. Revisits the coupling
+`templatesIndex.ts`'s own header originally flagged: `applyTemplateNodes` constructs nodes via
+`makeNode()`, which mutates the shared `nextId` id-counter global as it goes
+(`id: nextId++`). Unlike every prior generated block, which references already-extracted pure
+logic via the `declare function` ambient-global pattern, `makeNode` is hand-written and used in
+~30 other places in `index.html` unrelated to templates (paste, drag-and-drop, import) — not
+itself a candidate for extraction, and the `declare function` pattern is reserved for
+already-generated blocks. So this module takes the real `makeNode` and `emptyStyles` as
+injected parameters instead — the first time a hand-written function has been injected as a
+dependency rather than referenced ambiently, proving the pattern flagged as an open option in
+lesson 4 of prior handoffs. Lives in `src/core/` (not `src/state/`) since it follows `core/`'s
+per-call-parameter DI convention (matching `nodeMutations.ts`/`nodeSelection.ts`) rather than
+`state/`'s `initXState(deps)` singleton — there is exactly one real call site
+(`applyTemplateNodes`'s own wrapper body) passing deps directly, so a singleton would add
+indirection for no benefit. The wrapper stays a thin pass-through: constructs `{makeNode,
+emptyStyles}`, calls the core, assigns `nodes`/`nextId` from the result, then does
+`rebuildParentIds()` and the selection reset by hand — same split every prior slice uses. 11 new
+unit tests against a fake injected `makeNode` (a local id-minting counter standing in for the
+real ambient one), covering defaulting, `isCheckbox`/`checked`/`tags` coercion, the
+`emptyStyles()` fallback only firing when a raw node has no `styles`, and `nextId` being purely
+derived from the ids the injected `makeNode` actually returned (never tracked independently).
+New `tests/e2e/generated-templatesapply-smoke.spec.ts` calls the real `applyTemplateNodes()`
+wrapper directly (not through `loadTemplateById()`, which also touches an unrelated
+`#templates-menu` DOM element not relevant to this slice) with a seeded high `nextId`, confirming
+fresh ids are really minted by the real `makeNode` rather than stale/hardcoded, that
+`rebuildParentIds()` correctly derives `parentId` from `depth` afterward, and that the dirtied
+selection state is genuinely reset — plus the standard distant-function-still-callable check.
+
+**Deliberately excluded from this slice — `applyBuiltinDefaultTemplate`.** ~20 sequential
+`makeNode` calls building a fixed 15-node tree with intermediate `.id` references for parenting.
+Same DI pattern would apply, but transcribing that exact call sequence correctly is far more
+failure-prone (a single reordered `push` silently changes the tree shape) than this module's
+single `.map()` — left for a dedicated follow-up slice now that the injected-hand-written-
+function pattern has a track record. `applyDefaultTemplate` itself is trivial branching
+orchestration (custom-template path via `applyTemplateNodes`, or built-in path via
+`applyBuiltinDefaultTemplate`) with no logic of its own to extract.
 
 **Phase 4 — sync, sharing, presence.**
 Presence (see Phase 2 above) ended up extracted early, as a deliberately

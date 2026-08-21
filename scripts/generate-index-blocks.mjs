@@ -270,6 +270,20 @@ initAiProvidersState({
     footer: ''
   },
   {
+    // First of the "most promising, most novel" Phase 3 candidates flagged in
+    // templatesIndex.ts's own header: applyTemplateNodes is coupled to the ambient nextId
+    // counter via makeNode(). See templatesApply.ts's own header for why this is DI'd
+    // (injecting the real, hand-written makeNode/emptyStyles as parameters) rather than
+    // referenced via the declare-function ambient pattern used elsewhere.
+    name: 'templatesApply',
+    sourceFile: 'src/core/templatesApply.ts',
+    testFile: 'tests/unit/templatesApply.test.ts',
+    // No production wiring needed — pure function, deps passed directly by the one real call
+    // site (applyTemplateNodes's own wrapper body in index.html), updated in the same commit
+    // that wired this block in.
+    footer: ''
+  },
+  {
     // hub.html's own generated-blocks pilot — the first block targeting a file other than
     // index.html, proving the generator's multi-file support with the lowest possible risk:
     // reusing an ALREADY-TESTED source module (generateId.ts, Phase 1) rather than writing new
