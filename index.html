@@ -21101,7 +21101,34 @@ function serializeMarkdown(scopeNodes, rebaseDepth, outlineNumbering) {
 }
 
 /* GENERATED:serializeMarkdown:END */
-function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering); return scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const num=numbers[idx]; return `${p.vert}${p.conn}${num?num+' ':''}${getNodePlainText(node)}`.trimEnd()}).join('\n')}
+/* GENERATED:serializeTreeText:START — DO NOT EDIT BY HAND. Source of truth: src/utils/serializeTreeText.ts (tests: tests/unit/serializeTreeText.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/** Pure: matches index.html's own `serializeTreeText` exactly — renders `scopeNodes` as an
+ * ASCII tree (`├──`/`└──`/`│` connectors from `buildPrefix`, one line per node, optional
+ * dotted outline numbers, semantic markers stripped from each node's text). When `rebaseDepth`
+ * is true the whole tree is shifted so its shallowest node renders at depth 0 (used when
+ * exporting/copying a subset of the document, e.g. Focus mode or a partial selection) — when
+ * false, depths render exactly as stored. `hideTreeLines` on suppresses the `│` continuation
+ * columns, leaving only the connector glyphs. */
+function serializeTreeTextCore(scopeNodes, rebaseDepth, outlineNumbering, treeIndentWidth, hideTreeLines) {
+    if (!scopeNodes.length)
+        return '';
+    const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
+    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    return scopeNodes
+        .map((node, idx) => {
+        const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);
+        if (hideTreeLines) {
+            p.vert = p.vert.replace(/[│]/g, ' ');
+            p.conn = '';
+        }
+        const num = numbers[idx];
+        return `${p.vert}${p.conn}${num ? num + ' ' : ''}${getNodePlainText(node)}`.trimEnd();
+    })
+        .join('\n');
+}
+
+/* GENERATED:serializeTreeText:END */
+function serializeTreeText(scopeNodes=nodes,rebaseDepth=false){return serializeTreeTextCore(scopeNodes,rebaseDepth,outlineNumbering,treeIndentWidth,hideTreeLines)}
 // Same tree-connector serialization as serializeTreeText, but with each node's note appended
 // as its own indented "Note:" line right under it. Used only where the AI actually needs to
 // reason about note content (currently: generateQaQuestionsAI) — the plain serializeTreeText

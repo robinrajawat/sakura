@@ -486,6 +486,23 @@ initHubJournalState({
     // decisionLogAnchorLabel wrapper bodies in index.html) were updated in the same commit that
     // wired this block in.
     footer: ''
+  },
+  {
+    // Export domain — first slice. Pure once traced: every function it calls is already a
+    // generated ambient global (buildPrefix/hasLaterSiblingAtDepth from nodeQueries.ts,
+    // computeOutlineNumbers from serializeMarkdown.ts, getNodePlainText from
+    // stripSemanticMarkers.ts). treeIndentWidth/hideTreeLines promoted to explicit required
+    // params, same reasoning computeOutlineNumbers's own header established for
+    // outlineNumbering. serializeTreeTextWithNotes stays hand-written (DOM-dependent via
+    // stripHtmlToText) — see this module's own header.
+    name: 'serializeTreeText',
+    sourceFile: 'src/utils/serializeTreeText.ts',
+    testFile: 'tests/unit/serializeTreeText.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. Both real call sites
+    // (exportToClipboard, exportTreeFormat) were updated in the same commit that wired this
+    // block in, to call the hand-written serializeTreeText wrapper which now just forwards to
+    // serializeTreeTextCore with treeIndentWidth/hideTreeLines passed explicitly.
+    footer: ''
   }
 ];
 
