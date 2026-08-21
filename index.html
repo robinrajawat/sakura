@@ -15764,13 +15764,53 @@ async function pushMetaToCloud(mod,db,metaKey){
 // same UI already used for the same-browser-other-tab case) so the person can choose to reload
 // rather than staying silently stale indefinitely while the app is open live.
 let _lastCollabEditNotifAt={}; // per-docId cooldown for the collaborator-edit notification below — see applyIncomingDocData
+/* GENERATED:syncApply:START — DO NOT EDIT BY HAND. Source of truth: src/state/syncApply.ts (tests: tests/unit/syncApply.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Sync subsystem — Phase 4, first slice. The three `applyIncoming*Data` functions
+ * (`applyIncomingDocData`, `applyIncomingTemplateData`, `applyIncomingMetaData` in `index.html`)
+ * each independently inline the same "should this incoming cloud update actually be applied"
+ * decision: is it our own write echoing back (guarded via `_lastPushedTs`), and if not, is it
+ * actually newer than what's stored locally. Real duplication — three near-identical
+ * three-line blocks — genuinely worth sharing, unlike the systemic-but-far-larger sync pattern
+ * (storage-layer writes, cross-tab banners, collaborator notifications, IndexedDB-vs-localStorage
+ * branching) that surrounds each one, which stays hand-written orchestration.
+ *
+ * Investigated the three blocks closely before assuming they were interchangeable — they
+ * weren't quite. `applyIncomingDocData`/`applyIncomingTemplateData` both special-case "no local
+ * record exists yet" as an unconditional bypass of the staleness check (`if(localEntry&&...)` —
+ * short-circuits to false, so a genuinely new item always gets applied regardless of its cloud
+ * timestamp). `applyIncomingMetaData` has no such bypass — it always compares against a
+ * default-zero local timestamp even when the key was never set before, so a cloud update with a
+ * falsy/zero `updatedAt` for a brand-new key would actually be REJECTED, not applied — a real,
+ * preserved behavioral difference between the three, not a bug to fix. `localUpdatedAt: null`
+ * expresses the first two functions' bypass case explicitly; passing a real number (including
+ * `0`) expresses the third's "always compare, no bypass" case — the caller chooses per its own
+ * original semantics, this module doesn't collapse the distinction.
+ */
+/** Pure: matches the shared decision fragment inside `applyIncomingDocData`/
+ * `applyIncomingTemplateData`/`applyIncomingMetaData` exactly. `cloudUpdatedAt` is coerced the
+ * same way the originals do (`Number(x)||0`, so a missing/non-numeric value reads as `0`).
+ * Returns `false` (don't apply) when `lastPushedTsForKey` exactly equals the coerced cloud
+ * timestamp — our own write echoing back, not a genuinely external change — or when
+ * `localUpdatedAt` is a real number and the cloud timestamp isn't strictly newer than it.
+ * `localUpdatedAt: null` means "no local record exists for this key" and unconditionally
+ * bypasses the staleness comparison (matches `applyIncomingDocData`/`applyIncomingTemplateData`'s
+ * own "new item" bypass); a real number — including `0` — always compares (matches
+ * `applyIncomingMetaData`'s own no-bypass behavior). */
+function shouldApplyIncomingSyncCore(cloudUpdatedAt, localUpdatedAt, lastPushedTsForKey) {
+    const cloudTs = Number(cloudUpdatedAt) || 0;
+    if (lastPushedTsForKey === cloudTs)
+        return false;
+    if (localUpdatedAt !== null && cloudTs <= localUpdatedAt)
+        return false;
+    return true;
+}
+
+/* GENERATED:syncApply:END */
 function applyIncomingDocData(id,cloud,viaRealtime){
-  const cloudTs=Number(cloud.updatedAt)||0;
-  if(_lastPushedTs['doc:'+id]===cloudTs)return false; // our own echo
   const localIndex=loadDocsIndex();
   const localEntry=localIndex.find(d=>d.id===id);
-  const localTsDoc=localEntry?Number(localEntry.updatedAt)||0:0;
-  if(localEntry&&cloudTs<=localTsDoc)return false; // local is at least as new
+  if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localEntry?Number(localEntry.updatedAt)||0:null,_lastPushedTs['doc:'+id]))return false;
   if(id===currentDocId){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
     const {updatedAt,...docData}=cloud;
@@ -15807,11 +15847,8 @@ function applyIncomingDocData(id,cloud,viaRealtime){
   return true;
 }
 function applyIncomingTemplateData(id,cloud){
-  const cloudTs=Number(cloud.updatedAt)||0;
-  if(_lastPushedTs['tpl:'+id]===cloudTs)return false;
   const localEntry=loadTemplatesIndex().find(t=>t.id===id);
-  const localTsT=localEntry?Number(localEntry.updatedAt)||0:0;
-  if(localEntry&&cloudTs<=localTsT)return false;
+  if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localEntry?Number(localEntry.updatedAt)||0:null,_lastPushedTs['tpl:'+id]))return false;
   const {updatedAt,...tplData}=cloud;
   localStorage.setItem(templateKey(id),JSON.stringify(tplData));
   touchTemplateIndex(id,tplData?.title||localEntry?.title||'Untitled template');
@@ -15821,10 +15858,9 @@ async function applyIncomingMetaData(metaKey,cloud){
   const idbKeyName=getIdbSyncMetaKeys()[metaKey];
   const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
   if(!idbKeyName&&!localKeyName)return false;
-  const cloudTs=Number(cloud.updatedAt)||0;
-  if(_lastPushedTs['meta:'+metaKey]===cloudTs)return false;
   const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
-  if(cloudTs<=localT)return false;
+  if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localT,_lastPushedTs['meta:'+metaKey]))return false;
+  const cloudTs=Number(cloud.updatedAt)||0;
   if(idbKeyName){
     if(cloud.value===null||cloud.value===undefined){ try{await idbDelete(idbKeyName)}catch(e){} }
     else{ try{await idbSet(idbKeyName,cloud.value)}catch(e){return false} }
