@@ -533,6 +533,22 @@ initHubJournalState({
     // serializeClipboardHtml wrapper bodies in index.html) were updated in the same commit that
     // wired this block in.
     footer: ''
+  },
+  {
+    // Export domain — fourth slice. serializeTreeTextWithNotes's only genuine impurity is
+    // stripHtmlToText(node.note) — a hand-written, DOM-touching function, so it's injected as
+    // an explicit parameter (the second real instance of the DI pattern templatesApply.ts
+    // established with makeNode/emptyStyles) rather than referenced via declare function
+    // (reserved for already-generated functions). Everything else is the same
+    // already-ambient buildPrefix/computeOutlineNumbers/getNodePlainText serializeTreeText.ts
+    // uses, plus the same treeIndentWidth/hideTreeLines/outlineNumbering promotion.
+    name: 'serializeTreeTextWithNotes',
+    sourceFile: 'src/utils/serializeTreeTextWithNotes.ts',
+    testFile: 'tests/unit/serializeTreeTextWithNotes.test.ts',
+    // No production wiring needed — pure function once stripHtmlToText is injected, no other
+    // side effects. The one real call site (serializeTreeTextWithNotes wrapper body, called
+    // from generateQaQuestionsAI) was updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
