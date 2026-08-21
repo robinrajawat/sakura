@@ -434,6 +434,18 @@ initHubJournalState({
     // call sites (diagramGenTagColorKey/assignDiagramGenColors wrapper bodies in index.html)
     // were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Fifth slice of the diagramGen* subsystem — the pure tree-layout engine (see this module's
+    // own header for full scope notes). Already an isolated, self-contained function in
+    // index.html, no pure-code-motion commit needed.
+    name: 'diagramGenLayout',
+    sourceFile: 'src/state/diagramGenLayout.ts',
+    testFile: 'tests/unit/diagramGenLayout.test.ts',
+    // No production wiring needed — pure function, no DOM/canvas/AI side effects. The one real
+    // call site (layoutDiagramGenTree's own wrapper body in index.html) was updated in the same
+    // commit that wired this block in.
+    footer: ''
   }
 ];
 
