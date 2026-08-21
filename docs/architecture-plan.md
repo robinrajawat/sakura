@@ -6,22 +6,25 @@ diagram-anchor/orphan logic all turned out extractable once the `core/` pattern 
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
 progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and both
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
-needed no new source at all, see below; AI provider prefs storage done; Hub's To-Dos, Journal,
-and subtask CRUD feature domains done; Diagrams/Export and Hub's due-date reminders not yet
-begun). `core/` module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop
-move, paste, delete, the shared selection/parentId helpers, outline search matching, and
-template node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
-hand-written function as a dependency rather than reference an already-generated block, and
-later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
-to be dead code). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
-diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not
-`core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
-structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
-HTML files (`targetFile` per block, collision-checking scoped per file); first proven with an
-infrastructure-only pilot (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then three real
-feature-domain slices: `hubTodos` (localStorage-backed), `hubJournal` (IndexedDB-backed), and
-`hubSubtasks` (subtask toggle/remove/add, exercised through real DOM event listeners since the
-logic lives in anonymous handlers rather than named wrappers). Phases 4–5 still future work.
+needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
+feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
+Diagrams/Export and the rest of Templates/Journal not yet begun). `core/` module boundary:
+eight slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete, the shared
+selection/parentId helpers, outline search matching, and template node-construction via
+injected `makeNode`/`emptyStyles` — the first slice to inject a hand-written function as a
+dependency rather than reference an already-generated block, and later reused as-is for
+`applyBuiltinDefaultTemplate` once its own explicit parenting was found to be dead code). Two
+additional Phase 2/3-adjacent slices: tab cycling/reordering and diagram-anchor/orphan logic
+(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither touches the
+outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
+`scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
+block, collision-checking scoped per file); first proven with an infrastructure-only pilot
+(`hubGenerateId`, reusing Phase 1's `generateId.ts`), then four real feature-domain slices:
+`hubTodos` (localStorage-backed), `hubJournal` (IndexedDB-backed), `hubSubtasks` (subtask
+toggle/remove/add, exercised through real DOM event listeners since the logic lives in
+anonymous handlers rather than named wrappers), and `hubReminders` (due-date notification
+filtering/dedup, with the real `Notification` API construction staying hand-written). Phases
+4–5 still future work.
 
 ## Why
 
@@ -608,10 +611,37 @@ empty-input/repeat-preservation edge case and 300-character truncation. New
 and confirms both in-memory state and the real `localStorage` entry reflect each step — plus the
 standard distant-function-still-callable check, now proven for `hub.html`'s own script scope.
 
-Not yet started in Phase 3: the rest of Hub's feature domains (due-date reminders — real
-`Notification` API + DOM click handler — and Journal's rich-text stripping display logic, both
-genuinely DOM-dependent), Diagrams, Export, and the rest of the Templates domain (rendering,
-sync).
+**Fourth Hub feature-domain slice: `src/state/hubReminders.ts`** — `computeDueRemindersCore`.
+The last domain flagged as "not investigated" in `hubTodos.ts`'s own header. The original's
+`checkDueReminders()` fused three things in one `forEach`: pure filtering (skip done/no-due-
+date/not-yet-due tasks, dedup by "already notified today"), the real `new Notification(...)`
+construction, and its `onclick` handler (`window.focus()`, `openTaskDetail()`). Extracted only
+the filtering/dedup logic — computing which tasks need a reminder and the exact title text
+(`"Overdue: X"` / `"Due today: X"`) — leaving the real Notification construction and click
+wiring hand-written in the wrapper, same split as every prior slice. One behavior deliberately
+preserved rather than "improved": the original marks a task as notified for today
+UNCONDITIONALLY after the `try{ new Notification(...) }catch(e){}` block, even if the
+constructor itself throws — so a task that fails to notify still won't be retried until
+tomorrow. The core function can't know whether the real constructor will throw (that's the
+wrapper's job), so it always marks every task it decides is due as notified in the map it
+returns, matching the original's actual behavior. 12 new unit tests, all passing first run,
+including the never-mutates-the-input-map check and the multi-task ordering/mixed-eligibility
+case. New `tests/e2e/generated-hubreminders-smoke.spec.ts` calls the real, unchanged
+`checkDueReminders()` wrapper with a spy `Notification` constructor installed (a fresh headless
+browser context never has real notification permission, so `remindersEnabled()` — a real
+top-level `function` binding — is reassigned to bypass that gate rather than mocking the
+extracted core itself) — confirms the real wrapper constructs the right title/tag, dedups a
+second same-day call, and that the real `onclick` handler it attaches correctly calls the real
+`openTaskDetail()`/`window.focus()`/`n.close()`.
+
+All four of Hub's real feature domains (confirmed earlier as only these two panels, To-Dos and
+Journal — see the correction note above) now have their non-DOM logic extracted at every layer
+this project's discipline reaches: storage, subtask CRUD, and reminder checking. Remaining Hub
+work is genuinely DOM-dependent (rendering, rich-text stripping) and stays hand-written by
+design, not by omission.
+
+Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
+dependent), Diagrams, Export, and the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,

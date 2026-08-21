@@ -358,6 +358,18 @@ initHubJournalState({
     // of their own). The three real call sites (the subtask toggle/remove click handler and the
     // subtask-input keydown handler) were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Fourth Hub feature-domain slice — due-date reminder checking, the last domain flagged as
+    // "not investigated" in hubTodos.ts's own header.
+    name: 'hubReminders',
+    sourceFile: 'src/state/hubReminders.ts',
+    testFile: 'tests/unit/hubReminders.test.ts',
+    targetFile: 'hub.html',
+    // No production wiring needed — pure function (no DOM/Notification-API/storage side effects
+    // of its own). The one real call site (checkDueReminders's own body) was updated in the
+    // same commit that wired this block in.
+    footer: ''
   }
 ];
 

@@ -713,22 +713,79 @@ function loadNotifiedMap(){
 function saveNotifiedMap(m){
   try{ localStorage.setItem(REMINDERS_NOTIFIED_KEY,JSON.stringify(m)); }catch(e){}
 }
+/* GENERATED:hubReminders:START — DO NOT EDIT BY HAND. Source of truth: src/state/hubReminders.ts (tests: tests/unit/hubReminders.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Hub's due-date reminder checking — the decision logic behind `checkDueReminders()` in
+ * hub.html: given the current todo list, today's date, and the "already notified today" map,
+ * which tasks need a browser Notification fired right now, and what should the updated
+ * notified map look like afterward.
+ *
+ * Fourth Hub feature-domain slice, after `hubTodos.ts`/`hubJournal.ts`/`hubSubtasks.ts`.
+ * Revisits the "due-date reminder checking (real `Notification` API + DOM click handler)"
+ * domain flagged as not-yet-investigated in `hubTodos.ts`'s own header. The real `Notification`
+ * construction, its `onclick` handler (`window.focus()`, `openTaskDetail()` — real DOM/window
+ * APIs), and the `localStorage` read/write around the notified map all stay hand-written in the
+ * wrapper, exactly the split every prior slice uses — this module owns only the filtering and
+ * per-day dedup logic, which was genuinely tangled together with the real Notification
+ * construction inside a single `forEach` in the original.
+ *
+ * A behavior worth calling out, preserved deliberately rather than "fixed": the original marks
+ * a task as notified (`notified[t.id]=today`) UNCONDITIONALLY after the `try{ new
+ * Notification(...) }catch(e){}` block — even if constructing the real Notification throws
+ * (e.g. an unexpected runtime error), the task still gets marked as notified for today and
+ * won't be retried until tomorrow. This module can't reproduce "did the real Notification
+ * constructor throw" (that's the wrapper's job, using the real API), so it deliberately always
+ * marks every task it decides is due for a reminder as notified in the returned map, matching
+ * the original's actual behavior rather than a "more correct" retry-on-failure version it never
+ * had.
+ *
+ * Explicitly NOT extracted here, and why:
+ * - `remindersEnabled`/`updateRemindersLabel`/`loadNotifiedMap`/`saveNotifiedMap` — trivial
+ *   one-line-plus-try/catch ambient localStorage/Notification-API reads, no real logic to test,
+ *   same reasoning as `getAllAiProviders` staying out of `aiProviders.ts`.
+ * - The actual `new Notification(...)` construction and its `onclick` handler — real
+ *   side-effecting browser API calls, stays hand-written.
+ * - `isIOS`/`isStandaloneDisplay` — simple ambient `navigator`/`window` reads with no
+ *   meaningful decision logic of their own, same reasoning as the storage-read functions above.
+ */
+/** Pure: computes which tasks are due/overdue and not yet notified today, and the resulting
+ * notified map. A task is skipped (no reminder, `notifiedMap` unchanged for it) if: it's
+ * already done; it has no due date; its due date is still in the future (`dueDate > today`);
+ * or it was already notified today (`notifiedMap[id] === today`) — all four conditions match
+ * the original's exact `if(t.done || !t.dueDate || t.dueDate>today)return;` / `if(notified[t.id]
+ * ===today)return;` guards. `dueDate`/`today` are plain `YYYY-MM-DD` strings compared
+ * lexicographically, same as the original (valid because that format sorts the same
+ * lexicographically as chronologically). */
+function computeDueRemindersCore(todos, today, notifiedMap) {
+    const updated = { ...notifiedMap };
+    const reminders = [];
+    for (const t of todos) {
+        if (t.done || !t.dueDate || t.dueDate > today)
+            continue;
+        if (updated[t.id] === today)
+            continue;
+        const title = t.dueDate < today ? 'Overdue: ' + t.text : 'Due today: ' + t.text;
+        reminders.push({ taskId: t.id, title });
+        updated[t.id] = today;
+    }
+    return { reminders, notifiedMap: updated };
+}
+
+/* GENERATED:hubReminders:END */
 function checkDueReminders(){
   if(!remindersEnabled())return;
   var today=todayStr();
   var notified=loadNotifiedMap();
-  todos.forEach(function(t){
-    if(t.done || !t.dueDate || t.dueDate>today)return;
-    if(notified[t.id]===today)return; // already notified for this due/overdue day
+  var result=computeDueRemindersCore(todos,today,notified);
+  result.reminders.forEach(function(r){
     try{
-      var n=new Notification(t.dueDate<today ? 'Overdue: '+t.text : 'Due today: '+t.text,{
-        body:'Sakura To-Dos', tag:'sakura-todo-'+t.id, icon:'icon-glyph-192.png'
+      var n=new Notification(r.title,{
+        body:'Sakura To-Dos', tag:'sakura-todo-'+r.taskId, icon:'icon-glyph-192.png'
       });
-      n.onclick=function(){ try{ window.focus(); }catch(e){} openTaskDetail(t.id); n.close(); };
+      n.onclick=function(){ try{ window.focus(); }catch(e){} openTaskDetail(r.taskId); n.close(); };
     }catch(e){}
-    notified[t.id]=today;
   });
-  saveNotifiedMap(notified);
+  saveNotifiedMap(result.notifiedMap);
 }
 function isIOS(){
   return /iP(hone|od|ad)/.test(navigator.platform) || (navigator.userAgent.indexOf('Mac')!==-1 && 'ontouchend' in document);
@@ -1600,9 +1657,9 @@ updateOfflineBanner();
  *   same reasoning as `getAllAiProviders`/`getAiProviderById` staying out of `aiProviders.ts`.
  * - `renderTodos`/swipe-list wiring — DOM construction, stays hand-written.
  * - Subtask CRUD — since extracted separately, see `src/state/hubSubtasks.ts`. Due-date
- *   reminder checking (real `Notification` API + DOM click handler) — genuinely separate,
- *   still not investigated. `nextRepeatDate` WAS added in a follow-up pass, once identified as
- *   pure date arithmetic with no such coupling.
+ *   reminder checking — since extracted separately, see `src/state/hubReminders.ts`.
+ *   `nextRepeatDate` WAS added in a follow-up pass, once identified as pure date arithmetic
+ *   with no such coupling.
  *
  * Deliberately no module-level constant for the storage key string (`TODOS_KEY`): hub.html
  * already declares this as a top-level `var`, still read directly by sibling todo functions
