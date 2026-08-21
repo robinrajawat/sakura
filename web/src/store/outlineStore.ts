@@ -4,24 +4,27 @@ import {
   outdentRootIndexes,
   canIndentAt,
   moveNodeBlockCore,
+  insertParsedNodesCore,
+  deleteRootIndexes,
   type DropMode
 } from '../core/nodeMutations';
-import { getIndex } from '../core/nodeQueries';
+import { getIndex, nodeHasChildren, getVisibleNodeIndexes } from '../core/nodeQueries';
 import { rebuildParentIdsCore, type ParentLinkedNode } from '../core/nodeSelection';
 
 /**
- * Phase 0 validation spike (docs/framework-migration-plan.md) — NOT the real outline store.
- * Its only job is proving the React+Zustand+ported-core-logic combination works for the
- * single riskiest slice of the whole app: the outline tree (render, select, indent/outdent,
- * drag reorder). Deliberately scoped down from the real app's needs:
- *   - Single selection only (selectedId), no multi-select/range-select — the real app's
- *     computeSelectedIds/computeSelectionRootIndexes handle that, and porting the full
- *     multi-select UI is Phase 2's job, not this spike's.
- *   - No undo/redo, no persistence, no collapse/fold — a seeded in-memory tree is enough to
- *     validate the mutation plumbing itself.
- *   - Drag reorder supports 'above'/'below' only, not 'child' (nesting via drag) — the ported
- *     moveNodeBlockCore already supports 'child' and 'end' too; this spike just doesn't wire
- *     a UI affordance for them yet (see OutlineTree.tsx's own comment on this).
+ * Phase 0 validation spike, now carrying Phase 2's first slice (docs/framework-migration-plan.md)
+ * — still not the real outline store (no undo/redo, no persistence, no multi-select), but no
+ * longer just a validation exercise either: real create/edit/delete and fold/collapse, wired to
+ * the same ported core logic as before, plus the ported `getVisibleNodeIndexes` for fold-aware
+ * rendering.
+ *
+ * Node id generation deliberately does NOT reuse `generateId()` from utils/generateId.ts — that
+ * produces string ids for documents/templates/meeting notes, a completely different id
+ * namespace. Outline node ids are numeric, generated via a simple incrementing counter — the
+ * same role legacy's hand-written `makeNode()` (`id: nextId++`) plays, per templatesApply.ts's
+ * own header comment explaining why `makeNode` itself was never extracted as core logic (it's
+ * orchestration/construction, not a pure query/mutation), so this store's own `nextId` counter
+ * is the correct, expected place for that responsibility to live now.
  */
 
 function seedNodes(): ParentLinkedNode[] {
@@ -32,26 +35,51 @@ function seedNodes(): ParentLinkedNode[] {
     { id: 4, depth: 2, text: 'nodeQueries.ts — the same tree-query functions legacy uses' },
     { id: 5, depth: 1, text: 'Try it — click a row, then Tab / Shift+Tab' },
     { id: 6, depth: 1, text: 'Drag a row onto another to reorder it' },
-    { id: 7, depth: 2, text: 'Drop on the top half to go above, bottom half to go below' }
+    { id: 7, depth: 2, text: 'Drop on the top half to go above, bottom half to go below' },
+    { id: 8, depth: 1, text: 'Enter creates a sibling, Ctrl/Cmd+Enter creates a child' },
+    { id: 9, depth: 1, text: 'Click the fold arrow to collapse/expand a subtree' },
+    { id: 10, depth: 2, text: 'Backspace on empty text deletes the node' }
   ];
   const nodes: ParentLinkedNode[] = raw.map((n) => ({ ...n, parentId: null }));
   rebuildParentIdsCore(nodes);
   return nodes;
 }
 
+const SEED_MAX_ID = 10;
+
 interface OutlineState {
   nodes: ParentLinkedNode[];
   selectedId: number | null;
+  editingId: number | null;
+  collapsedIds: Set<number>;
+  nextId: number;
+
   selectNode: (id: number) => void;
   indentSelected: () => void;
   outdentSelected: () => void;
   canIndentSelected: () => boolean;
   moveNode: (draggedId: number, targetId: number, mode: DropMode) => boolean;
+
+  visibleIndexes: () => number[];
+  nodeHasChildren: (id: number) => boolean;
+
+  startEditing: (id: number) => void;
+  commitEdit: (id: number, text: string) => void;
+  cancelEdit: () => void;
+
+  newSiblingBelow: (id: number) => void;
+  newChild: (id: number) => void;
+  deleteNode: (id: number) => void;
+
+  toggleCollapse: (id: number) => void;
 }
 
 export const useOutlineStore = create<OutlineState>((set, get) => ({
   nodes: seedNodes(),
   selectedId: 1,
+  editingId: null,
+  collapsedIds: new Set(),
+  nextId: SEED_MAX_ID + 1,
 
   selectNode: (id) => set({ selectedId: id }),
 
@@ -92,5 +120,85 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     rebuildParentIdsCore(next);
     set({ nodes: next });
     return true;
+  },
+
+  visibleIndexes: () => {
+    const { nodes, collapsedIds } = get();
+    return getVisibleNodeIndexes(nodes, collapsedIds);
+  },
+
+  nodeHasChildren: (id) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    return idx >= 0 && nodeHasChildren(nodes, idx);
+  },
+
+  startEditing: (id) => set({ selectedId: id, editingId: id }),
+
+  commitEdit: (id, text) => {
+    const { nodes } = get();
+    const next = nodes.map((n) => (n.id === id ? { ...n, text } : n));
+    set({ nodes: next, editingId: null });
+  },
+
+  cancelEdit: () => set({ editingId: null }),
+
+  newSiblingBelow: (id) => {
+    const { nodes, nextId } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => ({ ...n }));
+    const newNode: ParentLinkedNode = { id: nextId, depth: nodes[idx].depth, text: '', parentId: null };
+    insertParsedNodesCore(next, idx, [newNode]);
+    rebuildParentIdsCore(next);
+    set({ nodes: next, nextId: nextId + 1, selectedId: newNode.id, editingId: newNode.id });
+  },
+
+  newChild: (id) => {
+    const { nodes, nextId } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => ({ ...n }));
+    const newNode: ParentLinkedNode = { id: nextId, depth: nodes[idx].depth + 1, text: '', parentId: null };
+    insertParsedNodesCore(next, idx, [newNode]);
+    rebuildParentIdsCore(next);
+    set({ nodes: next, nextId: nextId + 1, selectedId: newNode.id, editingId: newNode.id, collapsedIds: withoutCollapse(get().collapsedIds, id) });
+  },
+
+  deleteNode: (id) => {
+    const { nodes } = get();
+    if (nodes.length <= 1) return;
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    // Select whatever comes right before the deleted node in document order, or the next
+    // remaining node if it was first — a reasonable, simple choice for this slice; the real
+    // app's own delete-selection logic (nearest visible neighbor, respecting fold state) is
+    // more nuanced and deferred, same as multi-select delete (deleteRootIndexes already
+    // supports multiple root indexes at once — this wrapper only ever passes a single one
+    // for now).
+    const next = nodes.map((n) => ({ ...n }));
+    deleteRootIndexes(next, [idx]);
+    rebuildParentIdsCore(next);
+    const fallbackSelection = idx > 0 ? nodes[idx - 1].id : next[0]?.id ?? null;
+    set({ nodes: next, selectedId: fallbackSelection, editingId: null });
+  },
+
+  toggleCollapse: (id) => {
+    const { collapsedIds } = get();
+    const next = new Set(collapsedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    set({ collapsedIds: next });
   }
 }));
+
+function withoutCollapse(collapsedIds: Set<number>, id: number): Set<number> {
+  if (!collapsedIds.has(id)) return collapsedIds;
+  const next = new Set(collapsedIds);
+  next.delete(id);
+  return next;
+}
+
