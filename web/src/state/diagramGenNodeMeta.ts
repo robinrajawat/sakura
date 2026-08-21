@@ -1,3 +1,5 @@
+import { diagramGenChildIdxsCore, diagramGenHasEdgeLabelTagCore, diagramGenIsChainGroupCore } from './diagramGenTopology';
+
 /**
  * Pure nodeMeta classification-proposal and plain-object (de)serialization layer from the
  * `diagramGen*` subsystem — the deterministic tree-diagram generator ("Generate rough diagram
@@ -38,9 +40,6 @@
  * cross-module collision with `diagramGenDims.ts`.
  */
 
-declare function diagramGenChildIdxsCore(nodes: NodeMetaSourceNode[], idx: number): number[];
-declare function diagramGenIsChainGroupCore(nodes: NodeMetaSourceNode[], idx: number): boolean;
-declare function diagramGenHasEdgeLabelTagCore(nodes: NodeMetaSourceNode[], idx: number): boolean;
 
 // Duplicated from index.html's own DIAGRAM_GEN_TAG_SHAPE_MAP — see this file's header for why.
 const _DIAGRAM_GEN_TAG_SHAPE_MAP: Record<string, string> = {

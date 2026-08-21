@@ -1,4 +1,7 @@
 import type { QueryableNode } from '../core/nodeQueries';
+import { buildPrefix } from '../core/nodeQueries';
+import { computeOutlineNumbers } from './serializeMarkdown';
+import { getNodePlainText } from './stripSemanticMarkers';
 
 /**
  * Export domain — first slice. `serializeTreeText` renders the outline as the plain-text ASCII
@@ -28,16 +31,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  * `getDecisionAnchorCandidates`.
  */
 
-declare function buildPrefix(
-  scopedNodes: QueryableNode[],
-  idx: number,
-  treeIndentWidth: number,
-  depthOffset?: number
-): { vert: string; conn: string };
 
-declare function computeOutlineNumbers(list: QueryableNode[], outlineNumbering: boolean): string[];
-
-declare function getNodePlainText(node: QueryableNode): string;
 
 /** Pure: matches index.html's own `serializeTreeText` exactly — renders `scopeNodes` as an
  * ASCII tree (`├──`/`└──`/`│` connectors from `buildPrefix`, one line per node, optional

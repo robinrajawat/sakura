@@ -1,4 +1,7 @@
 import type { QueryableNode } from '../core/nodeQueries';
+import { buildPrefix } from '../core/nodeQueries';
+import { computeOutlineNumbers } from './serializeMarkdown';
+import { escapeHtml } from './escapeHtml';
 
 /**
  * Export domain — third slice. `serializeClipboardHtml` renders the rich-text (HTML) half of
@@ -28,16 +31,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  * first two slices already established.
  */
 
-declare function buildPrefix(
-  scopedNodes: QueryableNode[],
-  idx: number,
-  treeIndentWidth: number,
-  depthOffset?: number
-): { vert: string; conn: string };
 
-declare function computeOutlineNumbers(list: QueryableNode[], outlineNumbering: boolean): string[];
-
-declare function escapeHtml(value: unknown): string;
 
 /** Fixed light-mode palette for anything copied to the system clipboard as rich text. Paste
  * destinations (email, Slack, Word, Notion...) are almost always light-background regardless of

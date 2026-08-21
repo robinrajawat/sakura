@@ -1,4 +1,6 @@
 import type { QueryableNode } from '../core/nodeQueries';
+import { escapeHtml } from './escapeHtml';
+import { getNodePlainText } from './stripSemanticMarkers';
 
 /**
  * Export domain — second slice. `serializeOpml` renders the outline as OPML 2.0 XML, used by
@@ -30,8 +32,6 @@ import type { QueryableNode } from '../core/nodeQueries';
  * globals via `declare function`.
  */
 
-declare function escapeHtml(value: unknown): string;
-declare function getNodePlainText(node: QueryableNode): string;
 
 function escAttrLocal(s: string): string {
   return escapeHtml(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');

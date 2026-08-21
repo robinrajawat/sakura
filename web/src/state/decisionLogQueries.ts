@@ -1,3 +1,5 @@
+import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+
 /**
  * Pure lookup/anchor-label/status-query layer for the Decision Log domain — second slice (see
  * `decisionLog.ts` for the first, `normalizeDecisionLog`). `findDecisionLog`/`decisionLogForNode`
@@ -41,7 +43,6 @@
  * touches `nodes` as a mutation target.
  */
 
-declare function stripSemanticMarkers(text: string | null | undefined): string;
 
 // Duplicated from index.html's own DECISION_STATUSES — see this file's header for why. Named
 // distinctly from decisionLog.ts's own private copy of the same array (both are generated

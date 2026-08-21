@@ -1,3 +1,5 @@
+import { diagramNeedsAttentionCore, isDiagramOrphaned } from './diagramAnchor';
+
 /**
  * Diagram list filtering/sorting — the decision logic behind `getDiagramDisplayList()`/
  * `diagramCanReorder()` in index.html: given the raw `diagrams` array and the current
@@ -29,11 +31,6 @@
  *   filter/sort logic this module owns.
  */
 
-declare function isDiagramOrphaned(
-  diagram: { anchorNodeId?: number | null },
-  nodes: { id: number }[]
-): boolean;
-declare function diagramNeedsAttentionCore(diagram: { isWhiteboard?: boolean; anchorNodeId?: number | null }, orphaned: boolean): boolean;
 
 // Private names, deliberately NOT matching index.html's own top-level `DIAGRAM_STATUSES` const
 // (see this file's header for why: every generated block shares one script scope with the rest

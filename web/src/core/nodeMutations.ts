@@ -1,3 +1,5 @@
+import { getIndex, getSubtreeEnd } from './nodeQueries';
+
 /**
  * Pure tree-mutation logic for the outline — the `core/` module boundary for the tree-mutation
  * engine, complementing nodeQueries.ts's read-only tree queries with the write side.
@@ -52,8 +54,6 @@
 
 import type { QueryableNode } from './nodeQueries';
 
-declare function getSubtreeEnd(nodes: QueryableNode[], idx: number): number;
-declare function getIndex(nodes: QueryableNode[], id: QueryableNode['id']): number;
 
 /** Pure: can the node at `idx` be indented — i.e. does it have an earlier sibling at the same
  * depth to become a child of? Walks backward from `idx`; an earlier node at a shallower depth

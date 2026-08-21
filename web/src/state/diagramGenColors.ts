@@ -1,3 +1,5 @@
+import { diagramGenIsSequenceCore, diagramGenRenderChildIdxsCore } from './diagramGenTopology';
+
 /**
  * Pure color-assignment layer from the `diagramGen*` subsystem — the deterministic tree-diagram
  * generator ("Generate rough diagram from outline", see docs/architecture-plan.md for the wider
@@ -44,8 +46,6 @@
  * cross-module collision with `diagramGenDims.ts`.
  */
 
-declare function diagramGenRenderChildIdxsCore(nodes: ColorAssignNode[], idx: number, nodeMeta: ColorAssignNodeMetaMap): number[];
-declare function diagramGenIsSequenceCore(nodes: ColorAssignNode[], idx: number, nodeMeta: ColorAssignNodeMetaMap): boolean;
 
 // Duplicated from index.html's own DIAGRAM_GEN_TAG_CYCLE — see this file's header for why.
 const _DIAGRAM_GEN_TAG_CYCLE = ['blue', 'green', 'amber', 'red', 'purple', 'teal', 'coral', 'pink'];

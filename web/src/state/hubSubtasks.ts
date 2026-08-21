@@ -47,7 +47,15 @@ export interface SubtaskHost {
   repeat?: unknown;
 }
 
-declare function subUid(): string;
+import { generateId } from '../utils/generateId';
+
+/** Matches the `hubGenerateId` generated block's own thin wrapper exactly (see this file's
+ * own header) — `subUid` is `generateId('sub', 6)`, not a separately-defined function. The
+ * legacy splice pipeline could reference it as an ambient global from that already-spliced
+ * block; a real ES module needs the actual wrapper defined once, here. */
+function subUid(): string {
+  return generateId('sub', 6);
+}
 
 /** Pure (beyond the in-place mutation): flips the `done` flag of the subtask with the given id,
  * if found. Returns whether a matching subtask was found and toggled — the original's inline

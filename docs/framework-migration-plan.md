@@ -127,22 +127,72 @@ fix twice.
 
 ## Phased plan
 
-**Phase 0 — Repo scaffolding (done) + validation spike (next).** Repo
+**Phase 0 — Repo scaffolding + validation spike (both complete).** Repo
 scaffolding: the `legacy/` + `web/` npm-workspaces split (see "Interim repo
 structure" below) landed without touching production at all — `deploy.yml`
 builds the exact same `legacy/` files it always did, just from a moved path,
-verified via a full gauntlet re-run post-move. `web/` has a minimal
-React + Vite + TypeScript + Zustand scaffold (a placeholder component and
-store, one passing unit test) proving the toolchain, not real UI. **Still to
-do:** the validation spike itself — before committing further effort, a
-short, timeboxed build of one genuinely representative slice end-to-end in
-React: the outline tree (render, indent/outdent, drag reorder), the single
-most DOM-manipulation-heavy, highest-risk piece in the whole app, wired to
-the *already-ported* `nodeMutations`/`nodeQueries` core modules from Phase 1
-below. This is a validation spike, not a framework comparison (that decision
-is made) — its purpose is surfacing any real friction in the
-React+Zustand+tree-editing combination early, while it's still cheap to
-adjust course, rather than discovering it deep into Phase 2.
+verified via a full gauntlet re-run post-move.
+
+**Validation spike:** a real outline tree (`web/src/components/OutlineTree.tsx`
++ `web/src/store/outlineStore.ts`) — render, click-to-select,
+`Tab`/`Shift+Tab` indent/outdent, native-HTML5-drag-and-drop reorder — wired
+to the genuinely-ported `nodeMutations`/`nodeQueries`/`nodeSelection` core
+logic from Phase 1, not a mockup. This is a validation spike, not a framework
+comparison (that decision was already made) — its purpose was surfacing real
+friction in the React+Zustand+tree-editing combination early, and it did,
+twice, both fixed:
+
+1. **The legacy splice model's `declare function` ambient-global pattern
+   doesn't work as real ES modules — at all.** 15 of the 41 files ported in
+   Phase 1 used `declare function foo(...): T;` to reference another
+   already-spliced generated block's function as a same-scope ambient global
+   (a real, deliberate, well-documented pattern for the classic-script splice
+   pipeline — see `docs/architecture-plan.md`'s own critical-lessons section).
+   In a real module system that function is simply `undefined` at runtime; the
+   spike's very first render threw `ReferenceError: getParentIndex is not
+   defined`. Fixed by converting every `declare function` stub across all 15
+   files into a real `import` from wherever the function is actually defined
+   (mapped by grepping every ported file's real `export function` — a fully
+   mechanical, zero-logic-change fix once the mapping was built). This is
+   necessary follow-up work for **any** Phase 1 module to actually function
+   as a real ES module, not spike-specific — it was always going to be needed
+   before Phase 2 could wire any of this in; the spike just surfaced it
+   immediately instead of thirty files into Phase 2.
+2. **Real imports let TypeScript cross-check types across module boundaries
+   for the first time — and it found a real latent bug.**
+   `diagramGenFinishGenerate.ts` called `diagramGenLegendEntriesCore` with a
+   nullable `nodeMeta` against a signature requiring non-null. Invisible
+   before, because the old ambient `declare function` stub declared its
+   *own*, more permissive parameter type rather than the real function's —
+   TypeScript never actually checked the call against the true signature.
+   Fixed with `nodeMeta ?? new Map()`, behaviorally identical to the
+   `?.get(...)` pattern every other use of `nodeMeta` in that same function
+   already uses (an empty map's `.get()` also returns `undefined`) — a
+   zero-behavior-change fix, not a logic change.
+
+An automated first attempt at fix #1 (a Python script matching
+`declare function` blocks by balancing parens to find the statement
+terminator) corrupted 3 files whose declared return type was itself an object
+literal containing a semicolon (`{ vert: string; conn: string }`) — the
+script matched that inner semicolon as the statement end. Caught immediately
+by `tsc` (`error TS1128: Declaration or statement expected`), not silently;
+those 3 files were restored from the last good commit and fixed by hand.
+
+Also found and removed during this cleanup: 3 now-genuinely-dead local
+interfaces (`FGPosition`, `FGBoundsResult`, `FGLegendEntry` in
+`diagramGenFinishGenerate.ts`) that existed only to type the old ambient
+stubs' return values — orphaned the moment those stubs became real imports
+carrying their own real types, caught by ESLint's `no-unused-vars` (0 → 3
+new warnings, confirmed via a side-by-side lint of the same file in
+`legacy/`, which has zero) rather than left as silent clutter.
+
+Fully verified: `npm run typecheck -w sakura-web` clean; `test:unit` 744/744
+(738 ported + 6 new `outlineStore` tests exercising the real wired
+indent/outdent/move calls, replacing the Phase 0 `counterStore` scaffold
+which is now redundant and was removed); `lint` 0 errors, 1 warning
+(pre-existing, identical to `legacy/`'s own); `build` clean. `legacy/`
+completely unaffected throughout (`git status --short legacy/` empty,
+re-verified fully green).
 
 **Phase 1 — Port the pure logic layer (complete).** All of `legacy/src/core/`,
 `legacy/src/state/`, `legacy/src/utils/` copied into the equivalent `web/`
@@ -183,12 +233,17 @@ Verified test-count-identical against `legacy/`, file by file across the
 entire suite (a full diff of every file's own test count, not just an
 aggregate total that could hide a dropped test) — the only differences were
 the six intentional filename normalizations above; every count itself
-matched exactly. Final tally: **740 tests in `web/` = 738 ported from
-`legacy/` + 2 from the Phase 0 `counterStore` scaffold**, across **42 files =
-41 ported + 1 scaffold**. `legacy/` itself untouched by either slice
-(`git status --short legacy/` empty both times) and re-verified fully green
-after each. `web/`'s `App.tsx` still doesn't import any of this — Phase 2's
-job, once there's real UI to wire it into.
+matched exactly. Tally at Phase 1's own completion: 740 tests in `web/` (738
+ported + 2 from the then-current `counterStore` scaffold), across 42 files.
+`legacy/` itself untouched by either slice (`git status --short legacy/`
+empty both times) and re-verified fully green after each. At the time Phase
+1 itself completed, `web/`'s `App.tsx` didn't yet import any of this —
+that changed immediately after, during Phase 0's own validation spike (see
+above), which wired `nodeMutations`/`nodeQueries`/`nodeSelection` into a
+real rendered tree and, in doing so, found and fixed the `declare function`
+ambient-global issue affecting all 15 non-trivially-dependent Phase 1 files.
+Test count as of the spike: 744 (738 ported + 6 new `outlineStore` tests,
+`counterStore`'s 2 removed as redundant).
 
 
 **Phase 2 — Core outline UI.** Build the tree editor itself: render, select,
