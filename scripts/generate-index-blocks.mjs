@@ -564,6 +564,23 @@ initHubJournalState({
     // (diagramGenLegendEntries/diagramGenLegendCells wrapper bodies, called from
     // diagramGenFinishGenerate) were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // diagramGen* subsystem — sixth slice, the XML-cell-string-assembly pass diagramGenRects.ts's
+    // own header flagged as a separate future scoping question. Everything from color assignment
+    // through the fully assembled draw.io XML string turned out pure — every dependency is
+    // already a generated *Core function. escXmlAttr is inlined (no real caller left anywhere
+    // after this slice). Date.now() promoted to an injectable `now` parameter, matching
+    // formatRelativeTime.ts's established pattern. diagramGenFinishGenerate itself stays
+    // hand-written — only real orchestration (diagrams array mutation, markDirty/
+    // scheduleAutoSave, toast) is left in it once this slice's XML-assembly core is factored out.
+    name: 'diagramGenFinishGenerate',
+    sourceFile: 'src/state/diagramGenFinishGenerate.ts',
+    testFile: 'tests/unit/diagramGenFinishGenerate.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. diagramGenFinishGenerate
+    // (the hand-written orchestration wrapper) was updated in the same commit that wired this
+    // block in to call diagramGenFinishGenerateXmlCore for the xml string.
+    footer: ''
   }
 ];
 

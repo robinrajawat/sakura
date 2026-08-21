@@ -48,15 +48,51 @@ export interface LegendEntry {
 
 // Duplicated from index.html's own DIAGRAM_GEN_PALETTE — see this file's header for why.
 const _DIAGRAM_GEN_PALETTE_LEGEND: Record<string, { fill: string; stroke: string; font: string }> = {
-  gray: { fill: '#F1EFE8', stroke: '#5F5E5A', font: '#2C2C2A' },
-  purple: { fill: '#EEEDFE', stroke: '#534AB7', font: '#3C3489' },
-  teal: { fill: '#E1F5EE', stroke: '#0F6E56', font: '#085041' },
-  coral: { fill: '#FAECE7', stroke: '#993C1D', font: '#712B13' },
-  pink: { fill: '#FBEAF0', stroke: '#993556', font: '#72243E' },
-  blue: { fill: '#E6F1FB', stroke: '#185FA5', font: '#0C447C' },
-  green: { fill: '#EAF3DE', stroke: '#3B6D11', font: '#27500A' },
-  amber: { fill: '#FAEEDA', stroke: '#854F0B', font: '#633806' },
-  red: { fill: '#FCEBEB', stroke: '#A32D2D', font: '#791F1F' },
+  gray: {
+    fill: '#F1EFE8',
+    stroke: '#5F5E5A',
+    font: '#2C2C2A',
+  },
+  purple: {
+    fill: '#EEEDFE',
+    stroke: '#534AB7',
+    font: '#3C3489',
+  },
+  teal: {
+    fill: '#E1F5EE',
+    stroke: '#0F6E56',
+    font: '#085041',
+  },
+  coral: {
+    fill: '#FAECE7',
+    stroke: '#993C1D',
+    font: '#712B13',
+  },
+  pink: {
+    fill: '#FBEAF0',
+    stroke: '#993556',
+    font: '#72243E',
+  },
+  blue: {
+    fill: '#E6F1FB',
+    stroke: '#185FA5',
+    font: '#0C447C',
+  },
+  green: {
+    fill: '#EAF3DE',
+    stroke: '#3B6D11',
+    font: '#27500A',
+  },
+  amber: {
+    fill: '#FAEEDA',
+    stroke: '#854F0B',
+    font: '#633806',
+  },
+  red: {
+    fill: '#FCEBEB',
+    stroke: '#A32D2D',
+    font: '#791F1F',
+  },
 };
 
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
@@ -84,10 +120,18 @@ const _DIAGRAM_GEN_SHAPE_COLOR_LEGEND: Record<string, string> = {
 };
 
 // Duplicated from index.html's own DIAGRAM_GEN_NOTE_COLOR — see this file's header for why.
-const _DIAGRAM_GEN_NOTE_COLOR_LEGEND = { fill: '#FBF8EF', stroke: '#B8AF8C', font: '#5B5540' };
+const _DIAGRAM_GEN_NOTE_COLOR_LEGEND = {
+  fill: '#FBF8EF',
+  stroke: '#B8AF8C',
+  font: '#5B5540',
+};
 
 // Duplicated from index.html's own DIAGRAM_GEN_EXCLUDED_COLOR — see this file's header for why.
-const _DIAGRAM_GEN_EXCLUDED_COLOR_LEGEND = { fill: '#F7F7F5', stroke: '#C7C4BA', font: '#9A978C' };
+const _DIAGRAM_GEN_EXCLUDED_COLOR_LEGEND = {
+  fill: '#F7F7F5',
+  stroke: '#C7C4BA',
+  font: '#9A978C',
+};
 
 // Duplicated from index.html's own DIAGRAM_GEN_SHAPE_LABEL — see this file's header for why.
 const _DIAGRAM_GEN_SHAPE_LABEL_LEGEND: Record<string, string> = {
