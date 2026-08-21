@@ -3,42 +3,45 @@
 **Status:** Phase 0 and Phase 1 complete. Phase 2 in progress — 4 fully-extracted domains done,
 plus three narrower re-investigations: outline search matching, tab cycling/reordering, and
 diagram-anchor/orphan logic all turned out extractable once the `core/` pattern existed, even
-though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
-progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and both
-`applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
-needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
-feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, plus six slices of the `diagramGen*` generation
-subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
-nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
-color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation);
-**Decision Log domain in progress** (normalization layer, lookup/anchor-label/status-query
-layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration);
-**Export domain in progress** (`serializeTreeText` — the plain-text ASCII tree serializer used
-by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` — the OPML 2.0
-serializer; `serializeClipboardHtml` and its color/parsing helpers — the rich-text HTML half of
-copy-to-clipboard; `serializeTreeTextWithNotes` — same ASCII tree with each node's note appended,
-using an injected `stripHtmlToText` dependency); Diagrams' `diagramGen*` generation subsystem now
-at **eight slices** (adding legend generation and the entire XML-cell-string-assembly core of
-`diagramGenFinishGenerate` — ~210 lines, the single largest slice in this migration, everything
-from color assignment through the fully assembled draw.io XML string, every dependency already
-a generated `*Core` function). **Image export in progress** (`parseInlineSegments` — the pure
-inline-marker parser behind the tree-image renderer, a genuinely pure fragment inside an
-otherwise correctly-labeled-canvas-dependent feature). What remains: `generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration,
-investigated and confirmed not a pure-extraction candidate, along with its own
-`pickDiagramGenScope` helper — both genuinely DOM/selection-state-bound), the rest of the
-Decision Log domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the
-rest of image export (`measureTreeImage`/`exportTreeAsImage`/`getImageExportColors` — genuinely
-canvas/DOM-dependent). `diagramGenValidateGuideline`/`requestDiagramGenGuideline` investigated
-and confirmed genuinely dead code — zero real call sites anywhere, parked for a future AI
-feature, nothing to extract. Journal's rich-text stripping and Templates' remaining
-rendering/sync surface also investigated this session and confirmed closed — genuinely
-DOM/UI-callback-bound, or (for Templates' sync piece specifically) part of a much larger,
-not-yet-scoped sync-subsystem investigation rather than a narrow item. **With this, every
-domain named in this migration's own original scope has either been extracted down to its pure
-core or investigated and confirmed to have none — remaining work is CRUD/editor DOM wiring
-(meant to stay hand-written by this project's own consistent rule) plus any newly-scoped
-investigation, like the sync subsystem, that would need its own explicit decision to open.**
+though all three were originally set aside as blocked in one blanket judgment. **Phase 3:
+original scope complete.** Every domain named in Phase 3's own original list has now either
+been extracted down to its pure core, or investigated and confirmed to have no pure core worth
+extracting — nothing from that original list is still open. Templates' storage layer done, plus
+the `stampTemplateDateAuthor` follow-up and both `applyTemplateNodes`'s and
+`applyBuiltinDefaultTemplate`'s node-construction logic — the latter needed no new source at
+all, see below; AI provider prefs storage done; **all four of Hub's feature domains done** —
+To-Dos, Journal, subtask CRUD, and due-date reminder checking (Journal's rich-text stripping
+investigated and confirmed genuinely DOM-dependent, correctly staying hand-written); Diagrams'
+display-list filtering/sorting done, plus **all eight slices** of the `diagramGen*` generation
+subsystem (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the nodeMeta
+classification-proposal/plain-object bridge, the branch/tag/marker/shape color-assignment layer,
+the pure tree-layout engine, the final-rect/bounds computation, legend generation, and — the
+single largest slice in this migration — the entire XML-cell-string-assembly core of
+`diagramGenFinishGenerate`, ~210 lines, every dependency already a generated `*Core` function);
+`generateDiagramFromOutline`/`pickDiagramGenScope` investigated and confirmed genuinely
+orchestration-bound, no pure fragment worth extracting; `diagramGenValidateGuideline`/
+`requestDiagramGenGuideline` investigated and confirmed genuinely dead code, parked for a future
+AI feature. **Decision Log domain done** (normalization layer, lookup/anchor-label/status-query
+layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration;
+`decisionRowSnippet` investigated and confirmed genuinely DOM-dependent, correctly staying
+hand-written). **Export domain done** (`serializeTreeText` — the plain-text ASCII tree
+serializer used by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml`
+— the OPML 2.0 serializer; `serializeClipboardHtml` and its color/parsing helpers — the
+rich-text HTML half of copy-to-clipboard; `serializeTreeTextWithNotes` — same ASCII tree with
+each node's note appended, using an injected `stripHtmlToText` dependency; image export's
+`measureTreeImage`/`exportTreeAsImage`/`getImageExportColors` investigated and confirmed
+genuinely canvas/DOM-dependent, correctly staying hand-written). **Image export: one slice done**
+(`parseInlineSegments` — the pure inline-marker parser behind the tree-image renderer, a
+genuinely pure fragment inside an otherwise correctly-labeled-canvas-dependent feature), the
+rest correctly staying hand-written per the above. Templates' remaining rendering/sync surface
+investigated this session and confirmed closed for now — `collectTemplateMatches` is
+genuinely DOM/UI-callback-bound, correctly excluded; `applyIncomingTemplateData`'s pure fragment
+is part of a much larger, not-yet-scoped **sync subsystem** shared identically across every
+synced domain (todos/meetings/journal/library/templates) — a genuinely new investigation area,
+not part of Phase 3's original scope, and worth its own explicit decision before opening (a
+natural Phase 4 candidate, not yet started). **What remains overall:** the sync subsystem (new,
+unscoped, not started) and CRUD/editor DOM wiring (meant to stay hand-written by this project's
+own consistent rule throughout — not a gap).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
