@@ -6,11 +6,11 @@ diagram-anchor/orphan logic all turned out extractable once the `core/` pattern 
 though all three were originally set aside as blocked in one blanket judgment. Phase 3 in
 progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` follow-up and both
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
-needed no new source at all, see below; AI provider prefs storage done; Hub's To-Dos and Journal
-feature-domain storage layers done; Diagrams/Export and the rest of Hub not yet begun). `core/`
-module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop move, paste,
-delete, the shared selection/parentId helpers, outline search matching, and template
-node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
+needed no new source at all, see below; AI provider prefs storage done; Hub's To-Dos, Journal,
+and subtask CRUD feature domains done; Diagrams/Export and Hub's due-date reminders not yet
+begun). `core/` module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop
+move, paste, delete, the shared selection/parentId helpers, outline search matching, and
+template node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code). Two additional Phase 2/3-adjacent slices: tab cycling/reordering and
@@ -18,9 +18,10 @@ diagram-anchor/orphan logic (`src/state/tabOrder.ts`, `src/state/diagramAnchor.t
 `core/`, since neither touches the outline `nodes` array as a mutation target). **Hub's
 structural blocker resolved:** `scripts/generate-index-blocks.mjs` now supports multiple target
 HTML files (`targetFile` per block, collision-checking scoped per file); first proven with an
-infrastructure-only pilot (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then two real
-feature-domain slices: `hubTodos` (localStorage-backed) and `hubJournal` (IndexedDB-backed).
-Phases 4–5 still future work.
+infrastructure-only pilot (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then three real
+feature-domain slices: `hubTodos` (localStorage-backed), `hubJournal` (IndexedDB-backed), and
+`hubSubtasks` (subtask toggle/remove/add, exercised through real DOM event listeners since the
+logic lives in anonymous handlers rather than named wrappers). Phases 4–5 still future work.
 
 ## Why
 
@@ -585,8 +586,32 @@ Not yet started: the rest of the Journal domain (rich-text stripping display log
 genuinely DOM-dependent). Hub's actual feature-domain scope (To-Dos + Journal only — see the
 correction note above) is now fully covered at the storage/validation layer.
 
-Not yet started in Phase 3: the rest of Hub's feature domains (see above), Diagrams, Export, and
-the rest of the Templates domain (rendering, node-array manipulation, sync).
+**Third Hub feature-domain slice: `src/state/hubSubtasks.ts`** — `toggleSubtaskCore`/
+`removeSubtaskCore`/`addSubtaskCore`, targeting `hub.html`. Revisits the "genuinely separate...
+not investigated" note `hubTodos.ts`'s own header left for subtask CRUD. Unlike every prior
+slice, the original logic lived entirely inside three anonymous DOM event-listener callbacks
+(a subtask-list click handler and a subtask-input keydown handler), not named wrapper
+functions — so this is the first slice whose e2e test drives real UI interaction (typing into
+the real subtask input and pressing Enter, clicking the real toggle/remove buttons) rather than
+calling a directly-nameable wrapper. Each operation's core logic is small (flip a boolean,
+filter an array, push an object) but genuinely worth pinning: `addSubtaskCore` truncates to 300
+characters and unconditionally clears the parent task's `repeat` on every successful add
+(subtasks and repeat are mutually exclusive in the UI) — but does neither when the trimmed
+input is empty, matching the original's exact `if(!val)return` ordering (clearing repeat only
+after confirming something was actually added). `subUid` (from the already-generated
+`hubGenerateId` block) is referenced via the `declare function` ambient pattern, not DI — the
+correct choice here since it's an already-generated block, unlike `templatesApply.ts`'s
+`makeNode` which is hand-written. 15 new unit tests, all passing first run, including the
+empty-input/repeat-preservation edge case and 300-character truncation. New
+`tests/e2e/generated-hubsubtasks-smoke.spec.ts` opens a real task detail sheet via the real
+`openTaskDetail()`, adds/toggles/removes a subtask through the real DOM (not direct core calls),
+and confirms both in-memory state and the real `localStorage` entry reflect each step — plus the
+standard distant-function-still-callable check, now proven for `hub.html`'s own script scope.
+
+Not yet started in Phase 3: the rest of Hub's feature domains (due-date reminders — real
+`Notification` API + DOM click handler — and Journal's rich-text stripping display logic, both
+genuinely DOM-dependent), Diagrams, Export, and the rest of the Templates domain (rendering,
+sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,

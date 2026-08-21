@@ -12,9 +12,10 @@
  * - `findTodo` — a trivial one-line ambient lookup (`todos.find(...)`), no real logic to test,
  *   same reasoning as `getAllAiProviders`/`getAiProviderById` staying out of `aiProviders.ts`.
  * - `renderTodos`/swipe-list wiring — DOM construction, stays hand-written.
- * - Subtask CRUD, due-date reminder checking (real `Notification` API + DOM click handler) —
- *   genuinely separate pieces of the todos domain, not investigated here. `nextRepeatDate` WAS
- *   added in a follow-up pass, once identified as pure date arithmetic with no such coupling.
+ * - Subtask CRUD — since extracted separately, see `src/state/hubSubtasks.ts`. Due-date
+ *   reminder checking (real `Notification` API + DOM click handler) — genuinely separate,
+ *   still not investigated. `nextRepeatDate` WAS added in a follow-up pass, once identified as
+ *   pure date arithmetic with no such coupling.
  *
  * Deliberately no module-level constant for the storage key string (`TODOS_KEY`): hub.html
  * already declares this as a top-level `var`, still read directly by sibling todo functions
