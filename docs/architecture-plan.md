@@ -10,10 +10,11 @@ needed no new source at all, see below; AI provider prefs storage done; **all fo
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
 Diagrams' display-list filtering/sorting done, plus four slices of the `diagramGen*` generation
 subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
-nodeMeta classification-proposal/plain-object bridge, and the branch/tag/marker color-assignment
-layer); the much larger XML-emission/tree-layout/AI-classification remainder of `diagramGen*`
-(plus `applyDiagramGenShapeColorOverrides`/`diagramGenValidateGuideline`/`diagramGenLegend*`),
-Export, and the rest of Templates/Journal not yet begun).
+nodeMeta classification-proposal/plain-object bridge, and the branch/tag/marker/shape
+color-assignment layer, the last including a small follow-up companion function added to the
+same module); the much larger XML-emission/tree-layout/AI-classification remainder of
+`diagramGen*` (plus `diagramGenValidateGuideline`/`diagramGenLegend*`), Export, and the rest of
+Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -825,15 +826,14 @@ wrapper functions — including the `ToPlain`/`FromPlain` round trip — against
 array, plus the standard distant-function-still-callable check.
 
 **Fourth slice of `diagramGen*`: `src/state/diagramGenColors.ts`.** The pure branch/tag/marker
-color-assignment layer: `assignDiagramGenColors` walks the render tree (via
+color-assignment layer, two functions: `assignDiagramGenColors` walks the render tree (via
 `diagramGenTopology.ts`'s already-generated `diagramGenRenderChildIdxsCore`) assigning a palette
 key to every node — multi-root docs get a cycled branch color per root; a tag on a node (or
 inherited from a tagged ancestor) overrides branch color; an explicit node marker outranks both.
 `diagramGenTagColorKey` (its sole caller, verified via grep) hashes a tag string to a
 deterministic reserved hue, extracted alongside it in the same module.
-`applyDiagramGenShapeColorOverrides` (a related function applying AI-classified shape colors on
-top of this output) and `diagramGenLegend*`/`diagramGenValidateGuideline` remain deliberately
-excluded — different concerns, not attempted in this pass either.
+`diagramGenLegend*`/`diagramGenValidateGuideline` remain deliberately excluded — different
+concerns, not attempted in this pass either.
 
 `diagramGenTagColorKey` (its only caller) and `assignDiagramGenColors` were separated by
 `pickDiagramGenScope` in index.html — relocated next to each other in a separate
@@ -866,11 +866,27 @@ extracted logic. New `tests/e2e/generated-diagramgencolors-smoke.spec.ts` exerci
 unchanged wrapper functions against a real `nodes` array, plus the standard
 distant-function-still-callable check.
 
+**Immediate follow-up, same module: `applyDiagramGenShapeColorOverridesCore`.** A small,
+self-contained companion — runs after `assignDiagramGenColorsCore`, mutating its `colorByIdx`
+output in place with AI-classified shape colors once a real shape classification exists anywhere
+in scope (a no-op otherwise), with an explicit node marker still outranking shape here too. Added
+directly to `diagramGenColors.ts` (same file, same generated block, no new markers) rather than
+its own module, since it's a direct, small companion sharing the same domain and one of the same
+duplicated constants (`DIAGRAM_GEN_MARKER_COLOR`); a new `DIAGRAM_GEN_SHAPE_COLOR` duplicate was
+added alongside it, collision-checked the same way as every other duplicated constant in this
+subsystem. No separate pure-code-motion commit was needed this time — the hand-written function
+was removed outright and replaced by a generated wrapper, rather than needing to stay physically
+in place while the generator was wired around it (the code-motion constraint only applies when
+existing hand-written code must remain contiguous with itself before extraction; here there was
+nothing to preserve in situ). 7 more unit tests (18 total in the file now) and a second `test()`
+added to the existing `generated-diagramgencolors-smoke.spec.ts` (same generated block, no new
+file), following this project's established "second test on a follow-up to an already-tested
+block" precedent.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission, tree layout,
-AI classification, plus `applyDiagramGenShapeColorOverrides`/`diagramGenValidateGuideline`/
-`diagramGenLegend*`) and CRUD/editor DOM wiring, Export, and the rest of the Templates domain
-(rendering, sync).
+AI classification, plus `diagramGenValidateGuideline`/`diagramGenLegend*`) and CRUD/editor DOM
+wiring, Export, and the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,

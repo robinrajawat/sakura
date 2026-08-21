@@ -3,19 +3,22 @@
  * generator ("Generate rough diagram from outline", see docs/architecture-plan.md for the wider
  * feature, `diagramGenDims.ts` for the first slice's box-sizing/color math, `diagramGenTopology.ts`
  * for the second slice's render-topology queries, and `diagramGenNodeMeta.ts` for the third
- * slice's classification-proposal layer). Fourth slice: `assignDiagramGenColors` walks the
- * render tree (via `diagramGenTopology.ts`'s already-generated `diagramGenRenderChildIdxsCore`)
- * assigning a palette key to every node — multi-root docs get a cycled branch color per root; a
- * tag on a node (or inherited from a tagged ancestor) overrides branch color; an explicit node
- * marker outranks both. `diagramGenTagColorKey` (its only caller) hashes a tag string to a
- * deterministic reserved hue, extracted alongside it rather than as a separate ambient
- * reference, since it has no other caller (verified via a real grep).
+ * slice's classification-proposal layer). Fourth slice, two functions: `assignDiagramGenColors`
+ * walks the render tree (via `diagramGenTopology.ts`'s already-generated
+ * `diagramGenRenderChildIdxsCore`) assigning a palette key to every node — multi-root docs get a
+ * cycled branch color per root; a tag on a node (or inherited from a tagged ancestor) overrides
+ * branch color; an explicit node marker outranks both. `diagramGenTagColorKey` (its only caller)
+ * hashes a tag string to a deterministic reserved hue, extracted alongside it rather than as a
+ * separate ambient reference, since it has no other caller (verified via a real grep).
+ * `applyDiagramGenShapeColorOverrides` runs after `assignDiagramGenColors`, overriding its output
+ * with AI-classified shape colors once a real shape classification exists anywhere in scope —
+ * added to this module (rather than its own) since it's a direct, small companion to
+ * `assignDiagramGenColors` sharing the same domain and one of the same duplicated constants
+ * (`DIAGRAM_GEN_MARKER_COLOR`).
  *
- * `applyDiagramGenShapeColorOverrides` (a related but separate function applying AI-classified
- * shape colors on top of `assignDiagramGenColors`'s output) and `diagramGenLegend*` (legend-XML
- * generation, which reads several of the same color constants plus several more not needed
- * here) are deliberately excluded from this slice — different concerns, not attempted in this
- * pass either.
+ * `diagramGenLegend*`/`diagramGenValidateGuideline` (legend-XML generation and AI-response
+ * validation, which read several of the same color constants plus several more not needed here)
+ * are deliberately excluded — different concerns, not attempted in this pass either.
  *
  * Lives in `src/state/`, matching every other Diagrams-domain slice in this subsystem
  * (Diagrams-domain logic reading the outline `nodes` array read-only for context, not
@@ -26,9 +29,9 @@
  * `declare function` — type-only, fully erased from the compiled output, resolving at runtime to
  * the real already-spliced functions, same pattern every other slice in this subsystem uses.
  *
- * `DIAGRAM_GEN_TAG_CYCLE`/`DIAGRAM_GEN_BRANCH_CYCLE`/`DIAGRAM_GEN_MARKER_COLOR` are index.html's
- * own top-level consts, also read by hand-written code this slice doesn't touch
- * (`diagramGenLegendEntries`, `applyDiagramGenShapeColorOverrides`, and comments referencing the
+ * `DIAGRAM_GEN_TAG_CYCLE`/`DIAGRAM_GEN_BRANCH_CYCLE`/`DIAGRAM_GEN_MARKER_COLOR`/
+ * `DIAGRAM_GEN_SHAPE_COLOR` are index.html's own top-level consts, also read by hand-written code
+ * this slice doesn't touch (`diagramGenLegendEntries`, and comments referencing the
  * pigeonhole-collision reasoning behind the 8-hue cycles). Duplicated here as private literals,
  * same reasoning as every other duplicated-constant precedent in this subsystem: every generated
  * block shares one script scope with the rest of index.html, so reusing the real names would be
@@ -50,6 +53,8 @@ const _DIAGRAM_GEN_TAG_CYCLE = ['blue', 'green', 'amber', 'red', 'purple', 'teal
 const _DIAGRAM_GEN_BRANCH_CYCLE = ['purple', 'teal', 'coral', 'pink', 'blue', 'green', 'amber', 'red'];
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
 const _DIAGRAM_GEN_MARKER_COLOR: Record<string, string> = { confirmed: 'green', issue: 'red', parked: 'gray', followup: 'amber', na: 'pink' };
+// Duplicated from index.html's own DIAGRAM_GEN_SHAPE_COLOR — see this file's header for why.
+const _DIAGRAM_GEN_SHAPE_COLOR: Record<string, string> = { ui: 'blue', service: 'teal', middleware: 'purple', backend: 'coral', datastore: 'coral', external: 'gray', actor: 'pink', decision: 'amber' };
 
 export interface ColorAssignNode {
   id: number;
@@ -69,6 +74,10 @@ export type ColorAssignNodeMetaMap = Map<number, ColorAssignNodeMetaEntry> | nul
 
 export interface ColorAssignScope {
   rootIdxs: number[];
+}
+
+export interface ShapeOverrideScope {
+  scopeIdxs: number[];
 }
 
 /** Pure: matches index.html's own `diagramGenTagColorKey` exactly — a deterministic per-document
@@ -136,4 +145,36 @@ export function assignDiagramGenColorsCore(
   }
 
   return colorByIdx;
+}
+
+/** Pure: matches index.html's own `applyDiagramGenShapeColorOverrides` exactly. Runs after
+ * `assignDiagramGenColorsCore`, mutating its `colorByIdx` output in place. A no-op unless
+ * `nodeMeta` is non-empty AND `anyShapeSet` is true (computed by the caller: does any node in
+ * this scope have a real shape?) — once a real, deliberate shape classification exists anywhere
+ * in scope, every other color on the page needs to mean something too, so an unclassified node's
+ * arbitrary branch-cycle hue falls back to neutral gray instead of reading as an unexplained
+ * color next to classified ones. A node with an explicit marker is skipped entirely (marker
+ * color already won in `assignDiagramGenColorsCore` and stays outranking shape here too); a
+ * classified shape with a known palette color overrides to that color; `'note'`/`'excluded'`
+ * shapes get their own bespoke, non-palette color elsewhere and are left untouched; everything
+ * else falls back to gray. */
+export function applyDiagramGenShapeColorOverridesCore(
+  nodes: ColorAssignNode[],
+  scope: ShapeOverrideScope,
+  colorByIdx: Map<number, string>,
+  nodeMeta: ColorAssignNodeMetaMap,
+  anyShapeSet: boolean
+): void {
+  if (!nodeMeta || !nodeMeta.size || !anyShapeSet) return;
+  scope.scopeIdxs.forEach((idx) => {
+    const node = nodes[idx];
+    if (node.marker && _DIAGRAM_GEN_MARKER_COLOR[node.marker]) return;
+    const meta = nodeMeta.get(node.id);
+    if (meta && meta.shape && _DIAGRAM_GEN_SHAPE_COLOR[meta.shape]) {
+      colorByIdx.set(idx, _DIAGRAM_GEN_SHAPE_COLOR[meta.shape]);
+      return;
+    }
+    if (meta && (meta.shape === 'note' || meta.shape === 'excluded')) return;
+    colorByIdx.set(idx, 'gray');
+  });
 }
