@@ -260,6 +260,16 @@ initAiProvidersState({
     footer: ''
   },
   {
+    // First slice of Diagrams' larger remainder (see this module's own header for scope notes).
+    name: 'diagramDisplayList',
+    sourceFile: 'src/state/diagramDisplayList.ts',
+    testFile: 'tests/unit/diagramDisplayList.test.ts',
+    // No production wiring needed — pure functions, no DOM/undo-stack/render side effects. The
+    // real call sites (getDiagramDisplayList/diagramCanReorder wrapper bodies in index.html)
+    // were updated in the same commit that wired this block in.
+    footer: ''
+  },
+  {
     name: 'nodeMutations',
     sourceFile: 'src/core/nodeMutations.ts',
     testFile: 'tests/unit/nodeMutations.test.ts',
