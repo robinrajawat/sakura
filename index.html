@@ -22675,12 +22675,6 @@ function diagramGenLegendCells(entries,x,y){
   return out;
 }
 function escXmlAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-// Deterministic per-document: same tag text always picks the same reserved hue, without a
-// hardcoded keyword dictionary that would only fit one person's vocabulary.
-function diagramGenTagColorKey(tag){
-  let h=0; for(let i=0;i<tag.length;i++)h=(h+tag.charCodeAt(i))%DIAGRAM_GEN_TAG_CYCLE.length;
-  return DIAGRAM_GEN_TAG_CYCLE[h];
-}
 // Picks the scope to diagram: a single selected node's subtree, or (nothing selected) the
 // whole document treated as an implicit multi-root tree. Returns null (after a toast) if the
 // scope is empty, spans more than one explicit selection, or exceeds the size/depth cap —
@@ -22724,58 +22718,124 @@ function pickDiagramGenScope(){
   const genKey=rootIdxs.length===1?('node:'+nodes[rootIdxs[0]].id):'wholedoc';
   return {rootIdxs,baseDepth,scopeIdxs,genKey};
 }
-// Assigns a palette key to every node in scope: multi-root docs use a virtual root (gray,
-// never drawn) so each top-level item still gets its own branch color. A tag on a node (or an
-// inherited one from a tagged ancestor) overrides branch color; an explicit node marker
-// outranks both, since it's the most deliberate signal of the three.
+/* GENERATED:diagramGenColors:START — DO NOT EDIT BY HAND. Source of truth: src/state/diagramGenColors.ts (tests: tests/unit/diagramGenColors.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure color-assignment layer from the `diagramGen*` subsystem — the deterministic tree-diagram
+ * generator ("Generate rough diagram from outline", see docs/architecture-plan.md for the wider
+ * feature, `diagramGenDims.ts` for the first slice's box-sizing/color math, `diagramGenTopology.ts`
+ * for the second slice's render-topology queries, and `diagramGenNodeMeta.ts` for the third
+ * slice's classification-proposal layer). Fourth slice: `assignDiagramGenColors` walks the
+ * render tree (via `diagramGenTopology.ts`'s already-generated `diagramGenRenderChildIdxsCore`)
+ * assigning a palette key to every node — multi-root docs get a cycled branch color per root; a
+ * tag on a node (or inherited from a tagged ancestor) overrides branch color; an explicit node
+ * marker outranks both. `diagramGenTagColorKey` (its only caller) hashes a tag string to a
+ * deterministic reserved hue, extracted alongside it rather than as a separate ambient
+ * reference, since it has no other caller (verified via a real grep).
+ *
+ * `applyDiagramGenShapeColorOverrides` (a related but separate function applying AI-classified
+ * shape colors on top of `assignDiagramGenColors`'s output) and `diagramGenLegend*` (legend-XML
+ * generation, which reads several of the same color constants plus several more not needed
+ * here) are deliberately excluded from this slice — different concerns, not attempted in this
+ * pass either.
+ *
+ * Lives in `src/state/`, matching every other Diagrams-domain slice in this subsystem
+ * (Diagrams-domain logic reading the outline `nodes` array read-only for context, not
+ * outline-mutation-domain logic itself).
+ *
+ * `diagramGenRenderChildIdxsCore`/`diagramGenIsSequenceCore` (from `diagramGenTopology.ts`, this
+ * subsystem's own second slice, already generated) are referenced as ambient globals via
+ * `declare function` — type-only, fully erased from the compiled output, resolving at runtime to
+ * the real already-spliced functions, same pattern every other slice in this subsystem uses.
+ *
+ * `DIAGRAM_GEN_TAG_CYCLE`/`DIAGRAM_GEN_BRANCH_CYCLE`/`DIAGRAM_GEN_MARKER_COLOR` are index.html's
+ * own top-level consts, also read by hand-written code this slice doesn't touch
+ * (`diagramGenLegendEntries`, `applyDiagramGenShapeColorOverrides`, and comments referencing the
+ * pigeonhole-collision reasoning behind the 8-hue cycles). Duplicated here as private literals,
+ * same reasoning as every other duplicated-constant precedent in this subsystem: every generated
+ * block shares one script scope with the rest of index.html, so reusing the real names would be
+ * a duplicate top-level `const`. This comment is the single place documenting they must stay in
+ * sync with index.html's own copies if they ever change.
+ *
+ * A real collision check (grep against the rest of index.html and every other module) was run
+ * for every new identifier here before treating it as safe, same discipline established after
+ * `diagramDisplayList.ts`'s `DIAGRAM_STATUSES` near-miss and `diagramGenTopology.ts`'s own
+ * cross-module collision with `diagramGenDims.ts`.
+ */
+// Duplicated from index.html's own DIAGRAM_GEN_TAG_CYCLE — see this file's header for why.
+const _DIAGRAM_GEN_TAG_CYCLE = ['blue', 'green', 'amber', 'red', 'purple', 'teal', 'coral', 'pink'];
+// Duplicated from index.html's own DIAGRAM_GEN_BRANCH_CYCLE — see this file's header for why.
+const _DIAGRAM_GEN_BRANCH_CYCLE = ['purple', 'teal', 'coral', 'pink', 'blue', 'green', 'amber', 'red'];
+// Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
+const _DIAGRAM_GEN_MARKER_COLOR = { confirmed: 'green', issue: 'red', parked: 'gray', followup: 'amber', na: 'pink' };
+/** Pure: matches index.html's own `diagramGenTagColorKey` exactly — a deterministic per-document
+ * hash from tag text to one of 8 reserved hues (no hardcoded keyword dictionary that would only
+ * fit one person's vocabulary). */
+function diagramGenTagColorKeyCore(tag) {
+    let h = 0;
+    for (let i = 0; i < tag.length; i++)
+        h = (h + tag.charCodeAt(i)) % _DIAGRAM_GEN_TAG_CYCLE.length;
+    return _DIAGRAM_GEN_TAG_CYCLE[h];
+}
+/** Pure: matches index.html's own `assignDiagramGenColors` exactly. Assigns a palette key to
+ * every node in scope: multi-root docs use a virtual root (gray, never drawn) so each top-level
+ * item still gets its own branch color. A tag on a node (or an inherited one from a tagged
+ * ancestor) overrides branch color; an explicit node marker outranks both, since it's the most
+ * deliberate signal of the three. A genuine fan-out below the top level (2+ rendered children
+ * that aren't a confirmed sequence) is a real branch point and gets each path its own cycled
+ * color the same way the tree's top level does; a confirmed sequence inherits the parent's color
+ * unchanged, since those steps are meant to read as one continuous flow. */
+function assignDiagramGenColorsCore(nodes, scope, nodeMeta) {
+    const colorByIdx = new Map();
+    let branchCursor = 0;
+    function walk(idx, inheritedKey) {
+        const node = nodes[idx];
+        let key = inheritedKey;
+        const tag = Array.isArray(node.tags) && node.tags.length ? node.tags[0] : null;
+        if (tag)
+            key = diagramGenTagColorKeyCore(tag);
+        const markerKey = node.marker && _DIAGRAM_GEN_MARKER_COLOR[node.marker];
+        if (markerKey)
+            key = markerKey;
+        colorByIdx.set(idx, key);
+        const kids = diagramGenRenderChildIdxsCore(nodes, idx, nodeMeta);
+        const isRealBranch = kids.length > 1 && !diagramGenIsSequenceCore(nodes, idx, nodeMeta);
+        kids.forEach((ci) => {
+            const childKey = isRealBranch
+                ? _DIAGRAM_GEN_BRANCH_CYCLE[branchCursor++ % _DIAGRAM_GEN_BRANCH_CYCLE.length]
+                : key;
+            walk(ci, childKey);
+        });
+    }
+    if (scope.rootIdxs.length > 1) {
+        scope.rootIdxs.forEach((ri) => {
+            const key = _DIAGRAM_GEN_BRANCH_CYCLE[branchCursor % _DIAGRAM_GEN_BRANCH_CYCLE.length];
+            branchCursor++;
+            walk(ri, key);
+        });
+    }
+    else {
+        colorByIdx.set(scope.rootIdxs[0], 'gray');
+        const rootIdx = scope.rootIdxs[0];
+        const topKids = diagramGenRenderChildIdxsCore(nodes, rootIdx, nodeMeta);
+        let assignedRoot = false;
+        topKids.forEach((ci) => {
+            const key = _DIAGRAM_GEN_BRANCH_CYCLE[branchCursor % _DIAGRAM_GEN_BRANCH_CYCLE.length];
+            branchCursor++;
+            walk(ci, key);
+            assignedRoot = true;
+        });
+        if (!assignedRoot)
+            colorByIdx.set(rootIdx, 'gray');
+    }
+    return colorByIdx;
+}
+
+/* GENERATED:diagramGenColors:END */
+function diagramGenTagColorKey(tag){
+  return diagramGenTagColorKeyCore(tag);
+}
 function assignDiagramGenColors(scope,nodeMeta){
-  const colorByIdx=new Map();
-  let branchCursor=0;
-  function walk(idx,inheritedKey){
-    const node=nodes[idx];
-    let key=inheritedKey;
-    const tag=Array.isArray(node.tags)&&node.tags.length?node.tags[0]:null;
-    if(tag)key=diagramGenTagColorKey(tag);
-    const markerKey=node.marker&&DIAGRAM_GEN_MARKER_COLOR[node.marker];
-    if(markerKey)key=markerKey;
-    colorByIdx.set(idx,key);
-    // A genuine fan-out below the top level — 2+ RENDERED children that AREN'T a confirmed
-    // sequence — is a real branch point (alternate paths, not stages of one flow), and gets
-    // each path its own cycled color the same way the tree's very top level already does below.
-    // Without this, everything under a single top-level node inherited one flat color no matter
-    // how many real branches appeared further down. A confirmed sequence still inherits the
-    // parent's color unchanged — those steps are meant to read as one continuous flow.
-    //
-    // Walks diagramGenRenderChildIdxs (not the raw child list) so an edge-label or
-    // merged-into-parent child is never visited at all (nothing to waste a color on), and a
-    // passthrough child's OWN children are visited HERE, at this level, in its place — exactly
-    // the splice diagramGenRenderChildIdxs already does — so branch-cycle colors land on the
-    // real, visible boxes regardless of how many organizational wrapper nodes sit between them
-    // and this one.
-    const kids=diagramGenRenderChildIdxs(idx,nodeMeta);
-    const isRealBranch=kids.length>1&&!diagramGenIsSequence(idx,nodeMeta);
-    kids.forEach(ci=>{
-      const childKey=isRealBranch?DIAGRAM_GEN_BRANCH_CYCLE[branchCursor++%DIAGRAM_GEN_BRANCH_CYCLE.length]:key;
-      walk(ci,childKey);
-    });
-  }
-  if(scope.rootIdxs.length>1){
-    scope.rootIdxs.forEach(ri=>{
-      const key=DIAGRAM_GEN_BRANCH_CYCLE[branchCursor%DIAGRAM_GEN_BRANCH_CYCLE.length]; branchCursor++;
-      walk(ri,key);
-    });
-  } else {
-    colorByIdx.set(scope.rootIdxs[0],'gray');
-    const rootIdx=scope.rootIdxs[0];
-    const topKids=diagramGenRenderChildIdxs(rootIdx,nodeMeta);
-    let assignedRoot=false;
-    topKids.forEach(ci=>{
-      const key=DIAGRAM_GEN_BRANCH_CYCLE[branchCursor%DIAGRAM_GEN_BRANCH_CYCLE.length]; branchCursor++;
-      walk(ci,key); assignedRoot=true;
-    });
-    if(!assignedRoot)colorByIdx.set(rootIdx,'gray');
-  }
-  return colorByIdx;
+  return assignDiagramGenColorsCore(nodes,scope,nodeMeta);
 }
 // Only ever shortens text — never asked to restructure, summarize away meaning, or touch
 // anything but the string itself. Silent, safe fallback to plain truncation. Only called at

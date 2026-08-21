@@ -421,6 +421,19 @@ initHubJournalState({
     // real call sites (diagramGenProposeNodeMeta/NodeMetaFromPlain/NodeMetaToPlain wrapper
     // bodies in index.html) were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Fourth slice of the diagramGen* subsystem — the pure branch/tag/marker color-assignment
+    // layer (see this module's own header for full scope notes). diagramGenTagColorKey (its
+    // sole caller, assignDiagramGenColors) was relocated next to it in a separate
+    // pure-code-motion commit first (they were separated by pickDiagramGenScope).
+    name: 'diagramGenColors',
+    sourceFile: 'src/state/diagramGenColors.ts',
+    testFile: 'tests/unit/diagramGenColors.test.ts',
+    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. Both real
+    // call sites (diagramGenTagColorKey/assignDiagramGenColors wrapper bodies in index.html)
+    // were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
