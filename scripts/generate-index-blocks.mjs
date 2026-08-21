@@ -609,6 +609,22 @@ initHubJournalState({
     // sites (the decision fragment inside applyIncomingDocData/applyIncomingTemplateData/
     // applyIncomingMetaData) were updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Sync subsystem — Phase 4, second real call site of the same already-tested syncApply.ts
+    // module, this time targeting hub.html: pullMetaFromCloud's own inline `cloudTs>localTs`
+    // check is exactly shouldApplyIncomingSyncCore's own logic with no echo-suppression (a
+    // one-shot poll, not a live listener, so lastPushedTsForKey is always undefined — which
+    // degrades the shared predicate to plain always-compare, matching pullMetaFromCloud's real
+    // original behavior exactly, verified before reusing rather than assumed). Zero new source,
+    // same low-risk reuse pattern hubGenerateId established for a cross-file shared module.
+    name: 'hubSyncApply',
+    sourceFile: 'src/state/syncApply.ts',
+    testFile: 'tests/unit/syncApply.test.ts',
+    targetFile: 'hub.html',
+    // No production wiring needed — pure function, no DOM/side effects. The one real call site
+    // (pullMetaFromCloud's own body) was updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
