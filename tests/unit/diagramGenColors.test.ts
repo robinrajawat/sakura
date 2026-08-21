@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import {
   diagramGenTagColorKeyCore,
   assignDiagramGenColorsCore,
+  applyDiagramGenShapeColorOverridesCore,
   type ColorAssignNode,
   type ColorAssignNodeMetaEntry
 } from '../../src/state/diagramGenColors';
@@ -127,5 +128,73 @@ describe('assignDiagramGenColorsCore', () => {
     const snapshot = JSON.stringify(t);
     assignDiagramGenColorsCore(t, { rootIdxs: [0] }, undefined);
     expect(JSON.stringify(t)).toBe(snapshot);
+  });
+});
+
+describe('applyDiagramGenShapeColorOverridesCore', () => {
+  it('is a no-op when nodeMeta is missing/empty', () => {
+    const t = tree([0, 1]);
+    const colorByIdx = new Map([[0, 'gray'], [1, 'purple']]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, undefined, true);
+    expect(colorByIdx.get(1)).toBe('purple'); // unchanged
+    const emptyMeta = new Map<number, ColorAssignNodeMetaEntry>();
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, emptyMeta, true);
+    expect(colorByIdx.get(1)).toBe('purple'); // still unchanged
+  });
+
+  it('is a no-op when anyShapeSet is false, even with real nodeMeta', () => {
+    const t = tree([0, 1]);
+    const colorByIdx = new Map([[1, 'purple']]);
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, nodeMeta, false);
+    expect(colorByIdx.get(1)).toBe('purple'); // unchanged
+  });
+
+  it('overrides to the shape\'s palette color when a classified shape has one', () => {
+    const t = tree([0, 1]);
+    const colorByIdx = new Map([[1, 'purple']]);
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, nodeMeta, true);
+    expect(colorByIdx.get(1)).toBe('blue'); // DIAGRAM_GEN_SHAPE_COLOR.ui
+  });
+
+  it('skips a node with an explicit recognized marker — marker keeps outranking shape', () => {
+    const t = tree([0, 1], undefined, [undefined, 'issue']);
+    const colorByIdx = new Map([[1, 'red']]); // set by assignDiagramGenColorsCore's own marker logic
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, nodeMeta, true);
+    expect(colorByIdx.get(1)).toBe('red'); // untouched, marker still wins
+  });
+
+  it('leaves note/excluded shapes untouched — they use a bespoke color elsewhere', () => {
+    const t = tree([0, 1, 1]);
+    const colorByIdx = new Map([[1, 'purple'], [2, 'teal']]);
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([
+      [2, { shape: 'note' }],
+      [3, { shape: 'excluded' }]
+    ]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1, 2] }, colorByIdx, nodeMeta, true);
+    expect(colorByIdx.get(1)).toBe('purple'); // untouched
+    expect(colorByIdx.get(2)).toBe('teal'); // untouched
+  });
+
+  it('falls back to gray for an unclassified node once any real shape exists in scope', () => {
+    const t = tree([0, 1, 1]);
+    const colorByIdx = new Map([[1, 'purple'], [2, 'teal']]);
+    // Only node at idx1 (id 2) has a real shape; idx2 (id 3) has none — anyShapeSet is still
+    // true (computed by the caller from the whole scope), so idx2 falls back to gray.
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
+    applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1, 2] }, colorByIdx, nodeMeta, true);
+    expect(colorByIdx.get(1)).toBe('blue');
+    expect(colorByIdx.get(2)).toBe('gray');
+  });
+
+  it('mutates colorByIdx in place rather than returning a new map', () => {
+    const t = tree([0, 1]);
+    const colorByIdx = new Map([[1, 'purple']]);
+    const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
+    const returnValue = applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, nodeMeta, true);
+    expect(returnValue).toBeUndefined();
+    expect(colorByIdx.get(1)).toBe('blue');
   });
 });
