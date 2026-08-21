@@ -277,6 +277,12 @@ Sakura works in any modern browser. Two features are the exception:
 
 After cloning, run `sh scripts/setup-git-identity.sh` once — it sets the correct commit author and enables a pre-commit guard (`.githooks/pre-commit`) that blocks any commit made under a different email. This exists because a placeholder email used in an earlier session turned out to belong to someone else's real GitHub account and got silently listed as a contributor; the guard catches that before it happens again.
 
+### Deployment
+
+This section covers how the maintainer's copy is built and published — it doesn't change anything about running Sakura yourself (see [Overview](#overview): still just an `.html` file you open in a browser, no build step required).
+
+`www.sakura-notes.com` is published by `.github/workflows/deploy.yml`: every push to `main` runs `npm run build` (Vite plus a static-asset passthrough step for `sw.js`, the PWA manifests, and icons — see `scripts/copy-static-assets.mjs`) and publishes the result via GitHub Actions' native Pages deployment. There's no separate `dist/` branch or manual publish step; `index.html`/`hub.html` in the repo are the real source, and CI builds and serves them on every merge. See `docs/architecture-plan.md`'s "Deployment mechanism" section for the full history of how this was verified before being switched on.
+
 ## License
 
 All rights reserved — see [LICENSE](LICENSE). Public visibility of this repository does not grant permission to reuse, redistribute, or incorporate any part of it into another work.
