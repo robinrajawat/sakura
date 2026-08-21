@@ -13,13 +13,15 @@ subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta qu
 nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
 color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation);
 **Decision Log domain in progress** (normalization layer, lookup/anchor-label/status-query
-layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration); the
-much larger remaining
+layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in this migration);
+**Export domain in progress** (`serializeTreeText` — the plain-text ASCII tree serializer used
+by the `.txt` export and copy-to-clipboard); the much larger remaining
 XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
 `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), Export, and the rest of
-Templates/Journal not yet begun).
+(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the rest of Export
+(`serializeOpml`/`serializeClipboardHtml`/image export — larger and DOM/`getMeta()`-coupled),
+and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1054,13 +1056,47 @@ filtering, `taken`/`excludeId` flagging, depth-first stable sort, missing-depth 
 generated block, no new file) to exercise the real, unchanged `getDecisionAnchorCandidates`
 wrapper against real `nodes`/`decisionLogs` globals — including the `excludeId` case.
 
+**Export domain — first slice: `src/utils/serializeTreeText.ts`.** A domain not touched
+anywhere else in this migration. `serializeTreeText` renders the outline as the plain-text ASCII
+tree used by the `.txt` export and the plaintext half of copy-to-clipboard (via
+`exportToClipboard`'s `plain` value). Genuinely pure once traced: every function it calls is
+already a generated ambient global — `buildPrefix`/`hasLaterSiblingAtDepth` (from
+`src/core/nodeQueries.ts`, computes the `├──`/`└──`/`│` tree-connector prefix per row),
+`computeOutlineNumbers` (from `src/utils/serializeMarkdown.ts`), `getNodePlainText` (from
+`src/utils/stripSemanticMarkers.ts`) — all referenced via `declare function`, the pattern
+reserved for functions generated in a *different* file/block.
+
+`outlineNumbering` was already an explicit parameter by the time this slice started (see
+`serializeMarkdown.ts`'s own header — updated in that commit). `treeIndentWidth`/`hideTreeLines`
+(also live user-preference globals in the original) are promoted to explicit required
+parameters here, same "no silent default for a live toggle" reasoning `computeOutlineNumbers`'s
+header already established for `outlineNumbering`. Both real call sites (`exportToClipboard`,
+`exportTreeFormat`) already passed `scopeNodes`/`rebaseDepth` explicitly, so no call-site
+scope-widening was needed beyond the hand-written wrapper itself.
+
+**`serializeTreeTextWithNotes`** — near-identical, but appends each node's `note` via the
+DOM-dependent `stripHtmlToText` — stays hand-written. Same split `decisionLogQueries.ts`'s third
+slice used for `decisionRowSnippet` vs. `getDecisionAnchorCandidates`: a function whose only
+real complexity is delegating to something genuinely DOM-bound isn't worth DI-injecting for.
+
+10 new unit tests (empty list, single root with no connectors, connector shape on a two-level
+tree, marker-stripping via `getNodePlainText`, outline numbers on/off, `rebaseDepth` shifting the
+shallowest node to depth 0, `hideTreeLines` dropping both the `│` columns and the connector
+glyphs, a custom `treeIndentWidth` producing wider output, trailing-whitespace trim). New
+`tests/e2e/generated-serializetreetext-smoke.spec.ts` exercises the real, unchanged
+`serializeTreeText()` wrapper — the same call path `exportTreeFormat`/`exportToClipboard` use —
+against real `nodes`/`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` globals, plus the
+standard distant-function-still-callable check.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
-editor DOM wiring, Export, and the rest of the Templates domain (rendering, sync).
+editor DOM wiring, the rest of Export (`serializeOpml` — `getMeta()`/current-date-coupled;
+`serializeClipboardHtml`/`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
+image export — canvas-dependent), and the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
