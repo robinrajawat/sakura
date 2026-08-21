@@ -232,40 +232,22 @@ sakura/
 authoritative record for `legacy/` until Phase 6 retires it — no need to move or
 rewrite that history mid-migration.
 
-## Repo hygiene — root clutter, independent of the framework decision
+## Repo hygiene — root clutter (done)
 
-Separate from the migration itself: the repo root currently has real clutter —
-`index.html`/`hub.html` sit alongside `sw.js`, `manifest.json`,
-`hub-manifest.json`, seven icon PNGs, `flower-glyph.svg`, `social-card.png`, and
-`CNAME`, all loose at top level, with no `public/`, `static/`, or `assets/`
-folder grouping them. This predates the framework question and was previously a
-deliberate constraint (`docs/architecture-plan.md`'s Stage 1/2 write-up:
-"deliberately kept at the repo root rather than moved into a Vite `public/`
-dir — moving them would have removed them from the root the then-current legacy
-deployment actually read them from").
-
-**That constraint is gone as of Stage 2 landing.** `www.sakura-notes.com` is now
-served from CI-built `dist/`, not raw root files — nothing reads these files
-directly off the branch anymore, only `scripts/copy-static-assets.mjs` at build
-time. That means:
-
-- These files could move into a `public/` folder today, independent of the
-  framework migration — Vite's `publicDir` convention copies everything in
-  `public/` into `dist/` root verbatim at build time with zero configuration,
-  which would let `copy-static-assets.mjs` be deleted entirely rather than
-  maintained by hand (it exists specifically because these files currently
-  *aren't* in a Vite-recognized static folder).
-- **The one thing this breaks:** opening `index.html` directly from disk
-  (double-click, no dev server) currently resolves `./sw.js`,
-  `./manifest.json`, etc. via plain relative paths that exist right next to it.
-  Moving those into `public/` breaks that specific workflow — the file would
-  need `npm run dev` (or a build) to see its own manifest/service worker
-  correctly again.
-- Given the stated direction — hosted-URL-only, no more file distribution —
-  that tradeoff is likely fine and this cleanup is worth doing on its own,
-  ahead of and independent from the framework migration. Recommend as a small,
-  separate PR: **flag this to Robin as a quick near-term win, not bundled into
-  Phase 0 above.**
+**Done separately from this plan, ahead of any framework decision** — see
+`docs/architecture-plan.md`'s "Repo hygiene" section for the full write-up.
+`sw.js`, both manifests, every icon, `flower-glyph.svg`, `social-card.png`, and
+`CNAME` now live in `public/`; `scripts/copy-static-assets.mjs` is deleted;
+Vite's own `publicDir` convention handles the passthrough with zero custom
+code. Doing this surfaced and fixed a real, previously-invisible production
+bug: `social-card.png` (Open Graph/Twitter preview image, referenced only via
+an absolute URL) and `icon-glyph-192.png` (notification icon, referenced only
+via a JS string) were both silently 404ing in production since Stage 2's
+cutover — neither was ever in the old script's passthrough list, since both
+reference patterns share the same "invisible to Vite's HTML scanner" blind
+spot `sw.js` originally had. Fixed as a side effect of the reorg, not a
+separate change. `web/`'s `public/` folder (once the framework migration
+starts) inherits this same structure from day one.
 
 For the eventual `web/` app once the framework migration is underway, `public/`
 should be the structure from day one — no retrofitting needed there since it

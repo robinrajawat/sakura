@@ -1,12 +1,11 @@
 name: CI
 
-# Phase 0 (docs/architecture-plan.md): verification only. Deliberately no deploy step —
-# production (www.sakura-notes.com) stays on its current deployment path (GitHub Pages,
-# "legacy" build type, serving main branch root directly) until the build pipeline has
-# proven itself and that's a deliberate, separate decision. This workflow's job is to make
-# sure that decision is well-informed: every push and PR gets typechecked, linted, unit
-# tested, built, and end-to-end tested — the four checks that would have caught this
-# session's bugs (the FOLDERS_KEY-class TDZ crashes) and the RAWTEXT-hijack class of bug
+# Verification only — see .github/workflows/deploy.yml for the separate publish workflow
+# (production, www.sakura-notes.com, is served from CI-built dist/ via GitHub Actions as of
+# Stage 2, docs/architecture-plan.md). This workflow's job is to make sure every change is
+# well-verified before it ever reaches deploy.yml: every push and PR gets typechecked,
+# linted, unit tested, built, and end-to-end tested — the four checks that would have caught
+# this session's bugs (the FOLDERS_KEY-class TDZ crashes) and the RAWTEXT-hijack class of bug
 # scripts/validate_html_structure.py already guards against locally.
 
 on:
