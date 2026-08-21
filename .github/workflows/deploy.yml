@@ -1,0 +1,46 @@
+name: Deploy (build dist/ artifact only — not yet published)
+
+# Stage 1 of "properly deployable dist/" (docs/architecture-plan.md, Open items). Builds the
+# exact same dist/ the `verify` workflow already builds and tests on every PR, and uploads it
+# as a GitHub Pages artifact — proving the CI-built pipeline works end-to-end. Deliberately
+# does NOT run actions/deploy-pages: the repo's Pages source is still "Deploy from a branch"
+# (main root, today's "legacy" model, see vite.config.js's own header), so this artifact is
+# never actually published or served to anyone. Publishing it is Stage 2 — a real production
+# change to how www.sakura-notes.com is served, made deliberately, separately, and only after
+# this workflow itself has a track record. See docs/architecture-plan.md for the full plan.
+#
+# Runs on push to main only (not every branch/PR — that's what `verify` is for) so the
+# artifact this produces reflects what's actually on main, matching what a future Stage 2
+# publish step would deploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (vite build + static passthrough assets — see scripts/copy-static-assets.mjs)
+        run: npm run build
+
+      - name: Upload dist/ as a Pages artifact (NOT published — see this workflow's own header)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
