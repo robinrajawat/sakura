@@ -21155,11 +21155,186 @@ function getClipboardThemeColors(){const cs=getComputedStyle(document.body); con
 // almost always light-background regardless of Sakura's own theme, and most of them don't honor a background
 // color set on the copied HTML — so text colors pulled from a dark theme (light-on-dark) come out unreadable
 // once pasted onto a light background. Deliberately theme-independent: always light, never reads currentTheme.
-function getClipboardExportColors(){return {fg:'#1a1a1a',muted:'#6b7280',vert:'#9ca3af',conn:'#c96442',semSection:'#2563eb',semAlert:'#dc2626',semCode:'#7c3aed',semQuote:'#6b6240',codeBg:'#f3f4f6',fcRed:'#c0392b',fcOrange:'#c2701d',fcGreen:'#27824f',fcBlue:'#2766c2',fcPurple:'#7d3fb5',fcGray:'#6f6b63'}}
-function depthTextColor(depth,fg,muted){if(depth<=0)return fg; if(depth===1)return soften(fg,muted,0.68); if(depth===2)return soften(fg,muted,0.38); return muted}
-function soften(color,base,ratio=0.35){const toRgb=v=>{const s=String(v||'').trim(); const m=s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if(!m)return null; let h=m[1]; if(h.length===3)h=h.split('').map(ch=>ch+ch).join(''); const n=parseInt(h,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}}; const c=toRgb(color), b=toRgb(base); if(!c||!b)return color||base||'#777'; const mix=(x,y)=>Math.round(y*(1-ratio) + x*ratio); return `rgb(${mix(c.r,b.r)}, ${mix(c.g,b.g)}, ${mix(c.b,b.b)})`}
-function parseStyledTextForClipboard(text, colors){const src=String(text||''); const softSection=soften(colors.semSection,colors.muted); const softAlert=soften(colors.semAlert,colors.muted); const softCode=soften(colors.semCode,colors.muted); const mutedStrong=soften(colors.fg,colors.muted); const descTone=soften(colors.muted, colors.fg); const semanticGuide=src.match(/^(\[[^\]]+\]|\([^)]+\)|![^\s]+|`[^`]+`)\s*=\s*(.+)$/); if(semanticGuide){const token=semanticGuide[1]; const desc=semanticGuide[2]; if(token.startsWith('[') && token.endsWith(']')) return `<span style="color:${softSection};">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('(') && token.endsWith(')')) return `<span style="color:${mutedStrong};font-style:italic;">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('!')) return `<span style="color:${softAlert};font-weight:600;">${esc(token.slice(1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`; if(token.startsWith('`') && token.endsWith('`')) return `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${esc(token.slice(1,-1))}</span>`+`<span style="color:${descTone};"> = ${esc(desc)}</span>`;} let out=''; let i=0; while(i<src.length){const ch=src[i]; if(ch==='`'){const end=src.indexOf('`',i+1); if(end>i+1){out+=`<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='['){const end=src.indexOf(']',i+1); if(end>i+1){out+=`<span style="color:${softSection};">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='('){const end=src.indexOf(')',i+1); if(end>i+1){out+=`<span style="color:${mutedStrong};font-style:italic;">${esc(src.slice(i+1,end))}</span>`; i=end+1; continue}} if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1; while(end<src.length&&!/\s/.test(src[end]))end++; if(end>i+1){out+=`<span style="color:${softAlert};font-weight:600;">${esc(src.slice(i+1,end))}</span>`; i=end; continue}} out+=esc(ch); i++} return out}
-function serializeClipboardHtml(scopeNodes=nodes,rebaseDepth=false){if(!scopeNodes.length)return ''; const minDepth=rebaseDepth?Math.min(...scopeNodes.map(n=>n.depth)):0; const colors=getClipboardExportColors(); const numbers=computeOutlineNumbers(scopeNodes,outlineNumbering); const rows=scopeNodes.map((node,idx)=>{const p=buildPrefix(scopeNodes,idx,treeIndentWidth,-minDepth); if(hideTreeLines){p.vert=p.vert.replace(/[│]/g,' '); p.conn=''} const rawPrefix=`${p.vert}${p.conn}`; const prefixHtml=esc(rawPrefix).replace(/ /g,'&nbsp;'); const numHtml=numbers[idx]?`<span style="color:${colors.muted};">${esc(numbers[idx])}&nbsp;</span>`:''; const deco=[node.styles.underline?'underline':'',node.styles.strike?'line-through':''].filter(Boolean).join(' '); const depth=node.depth||0; const baseColor=depthTextColor(depth,colors.fg,colors.muted); const textStyle=[`color:${baseColor}`,node.styles.bold?'font-weight:700':'',node.styles.italic?'font-style:italic':'',deco?`text-decoration:${deco}`:''].filter(Boolean).join(';'); return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${soften(colors.vert,colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboard(node.text||'',colors)||'&nbsp;'}</span></div>`}).join(''); return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`}
+/* GENERATED:serializeClipboardHtml:START — DO NOT EDIT BY HAND. Source of truth: src/utils/serializeClipboardHtml.ts (tests: tests/unit/serializeClipboardHtml.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/** Fixed light-mode palette for anything copied to the system clipboard as rich text. Paste
+ * destinations (email, Slack, Word, Notion...) are almost always light-background regardless of
+ * Sakura's own theme, and most don't honor a background color set on the copied HTML — so text
+ * colors pulled from a dark theme come out unreadable once pasted onto a light background.
+ * Deliberately theme-independent: always light, never reads the app's live `currentTheme`. */
+function getClipboardExportColorsCore() {
+    return {
+        fg: '#1a1a1a',
+        muted: '#6b7280',
+        vert: '#9ca3af',
+        conn: '#c96442',
+        semSection: '#2563eb',
+        semAlert: '#dc2626',
+        semCode: '#7c3aed',
+        semQuote: '#6b6240',
+        codeBg: '#f3f4f6',
+        fcRed: '#c0392b',
+        fcOrange: '#c2701d',
+        fcGreen: '#27824f',
+        fcBlue: '#2766c2',
+        fcPurple: '#7d3fb5',
+        fcGray: '#6f6b63',
+    };
+}
+/** Pure: mixes `base` toward `color` by `ratio` (0 = pure `base`, 1 = pure `color`) in RGB
+ * space, returning an `rgb(...)` string. Falls back to whichever of `color`/`base` parses as a
+ * valid `#rgb`/`#rrggbb` hex color (or `'#777'` if neither does) when the other doesn't parse. */
+function softenCore(color, base, ratio = 0.35) {
+    const toRgb = (v) => {
+        const s = String(v || '').trim();
+        const m = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (!m)
+            return null;
+        let h = m[1];
+        if (h.length === 3)
+            h = h.split('').map((ch) => ch + ch).join('');
+        const n = parseInt(h, 16);
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    };
+    const c = toRgb(color);
+    const b = toRgb(base);
+    if (!c || !b)
+        return color || base || '#777';
+    const mix = (x, y) => Math.round(y * (1 - ratio) + x * ratio);
+    return `rgb(${mix(c.r, b.r)}, ${mix(c.g, b.g)}, ${mix(c.b, b.b)})`;
+}
+/** Pure: matches index.html's own `depthTextColor` exactly — a node's base text color fades
+ * from `fg` at depth 0/negative toward `muted` as depth increases (68% muted at depth 1, 38% at
+ * depth 2, fully `muted` from depth 3 on). */
+function depthTextColorCore(depth, fg, muted) {
+    if (depth <= 0)
+        return fg;
+    if (depth === 1)
+        return softenCore(fg, muted, 0.68);
+    if (depth === 2)
+        return softenCore(fg, muted, 0.38);
+    return muted;
+}
+/** Pure: matches index.html's own `parseStyledTextForClipboard` exactly — renders one node's
+ * text as clipboard-safe inline HTML, recognizing the same semantic-marker syntax the editor
+ * itself uses: a leading `[Section]`/`(muted note)`/`!alert`/`` `code` `` token followed by
+ * `= description` renders as a colored label plus a muted description (the "semantic guide"
+ * shorthand); otherwise each inline `` `code` ``/`[section]`/`(note)`/`!alert` span found
+ * anywhere in the text is individually colored, with everything else HTML-escaped plain text. */
+function parseStyledTextForClipboardCore(text, colors) {
+    const src = String(text || '');
+    const softSection = softenCore(colors.semSection, colors.muted);
+    const softAlert = softenCore(colors.semAlert, colors.muted);
+    const softCode = softenCore(colors.semCode, colors.muted);
+    const mutedStrong = softenCore(colors.fg, colors.muted);
+    const descTone = softenCore(colors.muted, colors.fg);
+    const semanticGuide = src.match(/^(\[[^\]]+\]|\([^)]+\)|![^\s]+|`[^`]+`)\s*=\s*(.+)$/);
+    if (semanticGuide) {
+        const token = semanticGuide[1];
+        const desc = semanticGuide[2];
+        if (token.startsWith('[') && token.endsWith(']'))
+            return (`<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
+                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
+        if (token.startsWith('(') && token.endsWith(')'))
+            return (`<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(token.slice(1, -1))}</span>` +
+                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
+        if (token.startsWith('!'))
+            return (`<span style="color:${softAlert};font-weight:600;">${escapeHtml(token.slice(1))}</span>` +
+                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
+        if (token.startsWith('`') && token.endsWith('`'))
+            return (`<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(token.slice(1, -1))}</span>` +
+                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
+    }
+    let out = '';
+    let i = 0;
+    while (i < src.length) {
+        const ch = src[i];
+        if (ch === '`') {
+            const end = src.indexOf('`', i + 1);
+            if (end > i + 1) {
+                out += `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(src.slice(i + 1, end))}</span>`;
+                i = end + 1;
+                continue;
+            }
+        }
+        if (ch === '[') {
+            const end = src.indexOf(']', i + 1);
+            if (end > i + 1) {
+                out += `<span style="color:${softSection};">${escapeHtml(src.slice(i + 1, end))}</span>`;
+                i = end + 1;
+                continue;
+            }
+        }
+        if (ch === '(') {
+            const end = src.indexOf(')', i + 1);
+            if (end > i + 1) {
+                out += `<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(src.slice(i + 1, end))}</span>`;
+                i = end + 1;
+                continue;
+            }
+        }
+        if (ch === '!' && (i === 0 || /\s/.test(src[i - 1]))) {
+            let end = i + 1;
+            while (end < src.length && !/\s/.test(src[end]))
+                end++;
+            if (end > i + 1) {
+                out += `<span style="color:${softAlert};font-weight:600;">${escapeHtml(src.slice(i + 1, end))}</span>`;
+                i = end;
+                continue;
+            }
+        }
+        out += escapeHtml(ch);
+        i++;
+    }
+    return out;
+}
+/** Pure: matches index.html's own `serializeClipboardHtml` exactly — renders `scopeNodes` as a
+ * self-contained HTML document (the `text/html` clipboard payload `exportToClipboard` writes
+ * alongside `serializeTreeText`'s plain-text version): one `<div>` per node, each showing the
+ * same ASCII tree-connector prefix `serializeTreeText` uses (rendered as literal `&nbsp;`-padded
+ * text so it survives a paste), an optional outline-number span, and the node's text rendered
+ * via `parseStyledTextForClipboard` with bold/italic/underline/strikethrough applied from
+ * `node.styles` and its color faded by depth via `depthTextColor`. */
+function serializeClipboardHtmlCore(scopeNodes, rebaseDepth, outlineNumbering, treeIndentWidth, hideTreeLines) {
+    if (!scopeNodes.length)
+        return '';
+    const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
+    const colors = getClipboardExportColorsCore();
+    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const rows = scopeNodes
+        .map((node, idx) => {
+        const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);
+        if (hideTreeLines) {
+            p.vert = p.vert.replace(/[│]/g, ' ');
+            p.conn = '';
+        }
+        const rawPrefix = `${p.vert}${p.conn}`;
+        const prefixHtml = escapeHtml(rawPrefix).replace(/ /g, '&nbsp;');
+        const numHtml = numbers[idx] ? `<span style="color:${colors.muted};">${escapeHtml(numbers[idx])}&nbsp;</span>` : '';
+        const deco = [node.styles.underline ? 'underline' : '', node.styles.strike ? 'line-through' : '']
+            .filter(Boolean)
+            .join(' ');
+        const depth = node.depth || 0;
+        const baseColor = depthTextColorCore(depth, colors.fg, colors.muted);
+        const textStyle = [
+            `color:${baseColor}`,
+            node.styles.bold ? 'font-weight:700' : '',
+            node.styles.italic ? 'font-style:italic' : '',
+            deco ? `text-decoration:${deco}` : '',
+        ]
+            .filter(Boolean)
+            .join(';');
+        return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${softenCore(colors.vert, colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboardCore(node.text || '', colors) || '&nbsp;'}</span></div>`;
+    })
+        .join('');
+    return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`;
+}
+
+/* GENERATED:serializeClipboardHtml:END */
+function getClipboardExportColors(){return getClipboardExportColorsCore()}
+function depthTextColor(depth,fg,muted){return depthTextColorCore(depth,fg,muted)}
+function soften(color,base,ratio=0.35){return softenCore(color,base,ratio)}
+function parseStyledTextForClipboard(text,colors){return parseStyledTextForClipboardCore(text,colors)}
+function serializeClipboardHtml(scopeNodes=nodes,rebaseDepth=false){return serializeClipboardHtmlCore(scopeNodes,rebaseDepth,outlineNumbering,treeIndentWidth,hideTreeLines)}
 function getImageExportColors(){
   const cs=getComputedStyle(document.body);
   const read=name=>String(cs.getPropertyValue(name)||'').trim();
