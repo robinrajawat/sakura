@@ -22377,9 +22377,6 @@ Correct "edges" for this input: [{"from":11,"to":12},{"from":11,"to":13}] — mo
 //               fanning out independently. Independent of container — a container's children can
 //               still fan out inside it (e.g. two unrelated sub-branches under one section).
 //   direction — 'vertical' (default) or 'horizontal'; only meaningful when sequence is true.
-function diagramGenIsContainer(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.container); }
-function diagramGenIsSequence(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.sequence); }
-function diagramGenIsHorizontal(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.direction==='horizontal'); }
 // Structural defaults, used only to seed the review screen's first proposal (never applied
 // silently at render time — everything downstream reads confirmed nodeMeta only). A flat run of
 // 2+ leaf children reads as one continuous sequence far more often than as parallel branches
@@ -22701,6 +22698,16 @@ async function diagramGenTrimText(text){
   if(lastSpace>20)cut=cut.slice(0,lastSpace);
   return cut+'…';
 }
+// Four independent fields per node, all unset (false/null) until a person sets them via the
+// review screen: shape (one of DIAGRAM_GEN_SHAPE_WHITELIST, or null for a plain box);
+// container (wrap this node's WHOLE subtree in one titled, tinted region; the node's own box is
+// never drawn separately — see diagramGenChainHeaderSuppressed; mutually exclusive with shape in
+// the review UI); sequence (this node's direct children chain to each other instead of fanning
+// out independently — independent of container); direction ('vertical' default or 'horizontal',
+// only meaningful when sequence is true).
+function diagramGenIsContainer(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.container); }
+function diagramGenIsSequence(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.sequence); }
+function diagramGenIsHorizontal(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.direction==='horizontal'); }
 // Returns a node's direct children (one depth level down, within its own subtree).
 // Every direct child one depth level down, with no filtering — the true outline structure.
 function diagramGenAllChildIdxs(idx){
