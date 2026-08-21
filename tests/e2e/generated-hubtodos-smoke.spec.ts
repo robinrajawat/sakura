@@ -70,6 +70,24 @@ test.describe('generated hubTodos block (src/state/hubTodos.ts spliced into hub.
     expect(result.reloadedLength).toBe(2);
     expect(result.reloadedTexts).toEqual(['Buy milk', 'Walk the dog']);
 
+    // Real nextRepeatDate() call, through hub.html's own ambient global (no wrapper needed —
+    // fully pure, same name/signature as before the extraction). Added in a follow-up to this
+    // slice once identified as pure date arithmetic with no todos-array coupling.
+    const repeatResult = await page.evaluate(() => {
+      return {
+        // @ts-expect-error
+        daily: nextRepeatDate('2026-08-21', 'daily'),
+        // @ts-expect-error
+        weekly: nextRepeatDate('2026-08-21', 'weekly'),
+        // Friday 2026-08-21 -> next weekday should skip the weekend to Monday 2026-08-24
+        // @ts-expect-error
+        weekdaysSkipsWeekend: nextRepeatDate('2026-08-21', 'weekdays')
+      };
+    });
+    expect(repeatResult.daily).toBe('2026-08-22');
+    expect(repeatResult.weekly).toBe('2026-08-28');
+    expect(repeatResult.weekdaysSkipsWeekend).toBe('2026-08-24');
+
     // Proof the rest of hub.html's script still runs — an unrelated, physically-distant
     // function is still callable. Same "entire script silently died" check as every other
     // cutover, now proven for hub.html's own separate script scope too.

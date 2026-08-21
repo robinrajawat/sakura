@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTodo, initHubTodosState, loadTodosLocalCore, saveTodosCore, type HubTodosDeps, type Todo } from '../../src/state/hubTodos';
+import { createTodo, initHubTodosState, loadTodosLocalCore, saveTodosCore, nextRepeatDate, type HubTodosDeps, type Todo } from '../../src/state/hubTodos';
 
 interface LocalStorageLike {
   getItem: (key: string) => string | null;
@@ -168,5 +168,45 @@ describe('stateful todos storage (initHubTodosState + load/save)', () => {
     );
     expect(() => saveTodosCore([])).not.toThrow();
     expect(saveTodosCore([])).toBe(false);
+  });
+});
+
+describe('nextRepeatDate (pure)', () => {
+  it('advances daily by exactly one day', () => {
+    expect(nextRepeatDate('2026-08-21', 'daily')).toBe('2026-08-22');
+  });
+
+  it('advances weekly by exactly seven days', () => {
+    expect(nextRepeatDate('2026-08-21', 'weekly')).toBe('2026-08-28');
+  });
+
+  it('advances weekdays by one day when the next day is not a weekend', () => {
+    // 2026-08-24 is a Monday
+    expect(nextRepeatDate('2026-08-24', 'weekdays')).toBe('2026-08-25');
+  });
+
+  it('advances weekdays past a weekend to the following Monday', () => {
+    // 2026-08-21 is a Friday — the next weekday is Monday 2026-08-24
+    expect(nextRepeatDate('2026-08-21', 'weekdays')).toBe('2026-08-24');
+  });
+
+  it('handles a daily repeat that crosses a month boundary', () => {
+    expect(nextRepeatDate('2026-08-31', 'daily')).toBe('2026-09-01');
+  });
+
+  it('handles a daily repeat that crosses a year boundary', () => {
+    expect(nextRepeatDate('2026-12-31', 'daily')).toBe('2027-01-01');
+  });
+
+  it('is a no-op (returns the same date) for an unrecognized repeat mode', () => {
+    expect(nextRepeatDate('2026-08-21', 'monthly')).toBe('2026-08-21');
+    expect(nextRepeatDate('2026-08-21', null)).toBe('2026-08-21');
+  });
+
+  it('falls back to today (start of day) when fromDateStr is null/undefined', () => {
+    const today = new Date();
+    const expected =
+      today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    expect(nextRepeatDate(null, null)).toBe(expected);
   });
 });

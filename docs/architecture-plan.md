@@ -516,8 +516,28 @@ deps call too). 12 new unit tests, all passing after those two fixes. New
 `newTodo()`/`saveTodos()`/`loadTodosLocal()` wrapper functions against real localStorage in
 `hub.html`'s own script scope, plus the standard distant-function-still-callable check.
 
-Not yet started: the rest of Hub's To-Dos domain (subtasks, repeat-date advancement, due-date
-reminder checking), and Hub's other three feature domains entirely (meetings, journal, library).
+**Follow-up addition to `hubTodos.ts`: `nextRepeatDate`.** Once identified as pure date
+arithmetic (daily/weekly/weekdays advancement for a recurring todo's due date) with no
+`todos`-array coupling at all, added to the same module in a second pass rather than treated as
+a separate slice — same file, since it's squarely part of the To-Dos domain. No wrapper needed
+in `hub.html` at all: fully pure, same name/signature, so the two real call sites (both inside
+todo-completion handlers) keep referencing it as an ambient global exactly as before, now
+supplied by the generated block instead of hand-written. 8 new unit tests, including the
+weekday-skip-a-weekend case (a Friday due date repeats to the following Monday, not Saturday)
+and month/year-boundary date arithmetic, all passing first run. Extended
+`tests/e2e/generated-hubtodos-smoke.spec.ts` (rather than adding a new file, since it's the same
+generated block) to cover daily/weekly/weekend-skipping through the real ambient global.
+
+**Correction, since an earlier session note assumed Hub had more panels than it does:** Hub's
+own header comment (`hub.html`, near the top) states its scope is deliberately **only** To-Dos
+and Journal — Meeting Notes, Library, Recap, AI features, PDF export, and version history are
+explicitly desktop-only and don't exist in `hub.html` at all, not merely "not yet extracted."
+With `hubJournal.ts` (below) landed, both of Hub's actual feature domains now have their
+storage/validation layers extracted.
+
+Not yet started: the rest of Hub's To-Dos domain (subtasks, due-date reminder checking — the
+latter genuinely coupled to the real `Notification` API and a DOM click handler, not
+investigated here), and the rest of the Journal domain noted in its own write-up below.
 
 **Second Hub feature-domain slice: `src/state/hubJournal.ts`** — `normalizeJournalEntryCore`/
 `loadJournalLocalCore`/`saveJournalEntriesCore`, also targeting `hub.html`. Same dependency-
@@ -541,8 +561,9 @@ unit tests, all passing first run, including the `isFinite` and async-ordering p
 `tests/e2e/generated-hubjournal-smoke.spec.ts` exercises all three real, unchanged wrapper
 functions against real (not mocked) browser IndexedDB.
 
-Not yet started: Hub's remaining two feature domains (meetings, library) entirely, and the rest
-of To-Dos/Journal noted above.
+Not yet started: the rest of the Journal domain (rich-text stripping display logic, which is
+genuinely DOM-dependent). Hub's actual feature-domain scope (To-Dos + Journal only — see the
+correction note above) is now fully covered at the storage/validation layer.
 
 Not yet started in Phase 3: the rest of Hub's feature domains (see above), Diagrams, Export, and
 the rest of the Templates domain (rendering, node-array manipulation, sync).
