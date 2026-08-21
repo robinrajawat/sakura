@@ -24,15 +24,21 @@ at **eight slices** (adding legend generation and the entire XML-cell-string-ass
 from color assignment through the fully assembled draw.io XML string, every dependency already
 a generated `*Core` function). **Image export in progress** (`parseInlineSegments` — the pure
 inline-marker parser behind the tree-image renderer, a genuinely pure fragment inside an
-otherwise correctly-labeled-canvas-dependent feature). What remains:
-`generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration, investigated and
-confirmed not a pure-extraction candidate, along with its own `pickDiagramGenScope` helper — both
-genuinely DOM/selection-state-bound), the rest of the Decision Log domain (`decisionRowSnippet`,
-genuinely DOM-dependent via `stripHtmlToText`), the rest of image export (`measureTreeImage`/
-`exportTreeAsImage`/`getImageExportColors` — genuinely canvas/DOM-dependent), and the rest of
-Templates/Journal not yet begun. `diagramGenValidateGuideline`/`requestDiagramGenGuideline`
-investigated and confirmed genuinely dead code — zero real call sites anywhere, parked for a
-future AI feature, nothing to extract).
+otherwise correctly-labeled-canvas-dependent feature). What remains: `generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration,
+investigated and confirmed not a pure-extraction candidate, along with its own
+`pickDiagramGenScope` helper — both genuinely DOM/selection-state-bound), the rest of the
+Decision Log domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the
+rest of image export (`measureTreeImage`/`exportTreeAsImage`/`getImageExportColors` — genuinely
+canvas/DOM-dependent). `diagramGenValidateGuideline`/`requestDiagramGenGuideline` investigated
+and confirmed genuinely dead code — zero real call sites anywhere, parked for a future AI
+feature, nothing to extract. Journal's rich-text stripping and Templates' remaining
+rendering/sync surface also investigated this session and confirmed closed — genuinely
+DOM/UI-callback-bound, or (for Templates' sync piece specifically) part of a much larger,
+not-yet-scoped sync-subsystem investigation rather than a narrow item. **With this, every
+domain named in this migration's own original scope has either been extracted down to its pure
+core or investigated and confirmed to have none — remaining work is CRUD/editor DOM wiring
+(meant to stay hand-written by this project's own consistent rule) plus any newly-scoped
+investigation, like the sync subsystem, that would need its own explicit decision to open.**
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1357,14 +1363,41 @@ exercises the real, unchanged `parseInlineSegments()` wrapper directly, plus con
 `measureTreeImage` (genuinely canvas-bound, deliberately not touched by this slice) still
 resolves it correctly and produces real pixel measurements.
 
-Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent, not yet investigated in detail), the rest of the Decision Log domain
-(`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), the rest of image export
+Not yet started in Phase 3: the rest of the Decision Log domain (`decisionRowSnippet` —
+genuinely DOM-dependent via `stripHtmlToText`), the rest of image export
 (`measureTreeImage`/`exportTreeAsImage`/`getImageExportColors` — genuinely canvas/DOM-dependent,
 confirmed via this session's own investigation), CRUD/editor DOM wiring, and the rest of the
 Templates domain (rendering, sync). `generateDiagramFromOutline`/`pickDiagramGenScope`
 investigated and confirmed genuinely orchestration-bound — no pure fragment worth extracting,
 see above.
+
+**Also investigated and closed this session:**
+
+- **Journal's rich-text stripping (`stripJournalHtml`/`journalSnippet`, `hub.html`).** Verified
+  directly rather than trusted from the earlier note (which turned out right this time, unlike
+  two other "DOM-dependent" labels this same session): `stripJournalHtml` genuinely constructs a
+  real `document.createElement('div')`, sets its `innerHTML`, and reads `.textContent` back — an
+  actual DOM round-trip HTML-to-text conversion, the same shape as `stripHtmlToText` in
+  `index.html`. `journalSnippet` is a thin wrapper around it. No pure fragment to extract; both
+  stay hand-written. Hub's Journal domain remains fully covered at the storage/validation layer
+  (see the second Hub feature-domain slice above) with nothing further pending.
+
+- **Templates' remaining rendering/sync surface.** `collectTemplateMatches` (the global-search
+  palette's Templates-group contributor) returns result objects whose `action` fields are DOM
+  callback closures (`closeAllPanelsExceptGlobalSearch`, `loadTemplateById`,
+  `revealTrashedTemplateInSidebar`) — genuinely UI-callback-bound, the same shape every other
+  domain's `collect*Matches` sibling in the global search palette uses, correctly out of scope
+  for this migration's pure-logic extraction. `applyIncomingTemplateData`'s only pure fragment
+  (a timestamp "should this incoming sync update win" comparison) is a small piece of a much
+  larger, systemic pattern shared identically across every synced domain — todos, meetings,
+  journal, library, templates all follow the same `applyIncoming*Data`/`_lastPushedTs`/local-vs-
+  cloud-timestamp shape. Extracting it here would mean scoping the whole sync subsystem, a
+  genuinely new and much larger investigation area, not a narrow "Templates" item — a real
+  decision point worth its own explicit scoping conversation rather than picked up unilaterally
+  mid-session. `renderTemplatesList`/`openTemplatesMenu` are DOM-list-rendering/menu-toggling,
+  correctly excluded the same way every other domain's `render*`/`open*Menu` functions have been
+  throughout this migration.
+
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
