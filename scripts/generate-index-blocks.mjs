@@ -344,6 +344,20 @@ initHubJournalState({
   generateJournalId:function(){ return jnUid(); }
 });
 `.trim()
+  },
+  {
+    // Third Hub feature-domain slice — subtask CRUD, flagged as "genuinely separate... not
+    // investigated" in hubTodos.ts's own header. subUid comes from the already-generated
+    // hubGenerateId block (declare function, not DI — see this module's own header for why).
+    name: 'hubSubtasks',
+    sourceFile: 'src/state/hubSubtasks.ts',
+    testFile: 'tests/unit/hubSubtasks.test.ts',
+    targetFile: 'hub.html',
+    // No production wiring needed — pure functions (mutate the passed-in task in place, same
+    // convention as nodeMutations.ts/tabOrder.ts/diagramAnchor.ts; no DOM/storage side effects
+    // of their own). The three real call sites (the subtask toggle/remove click handler and the
+    // subtask-input keydown handler) were updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
