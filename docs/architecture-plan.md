@@ -18,11 +18,13 @@ layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in thi
 by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` — the OPML 2.0
 serializer; `serializeClipboardHtml` and its color/parsing helpers — the rich-text HTML half of
 copy-to-clipboard; `serializeTreeTextWithNotes` — same ASCII tree with each node's note appended,
-using an injected `stripHtmlToText` dependency); the much larger remaining
-XML-cell-string-assembly and orchestration portions of `diagramGen*`
-(`diagramGenFinishGenerate`/`generateDiagramFromOutline` — 241 and 102 lines respectively, real
-mutation-fused orchestration; legend generation now done, see below), the rest of the Decision
-Log domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
+using an injected `stripHtmlToText` dependency); Diagrams' `diagramGen*` generation subsystem now
+at **eight slices** (adding legend generation and the entire XML-cell-string-assembly core of
+`diagramGenFinishGenerate` — ~210 lines, the single largest slice in this migration, everything
+from color assignment through the fully assembled draw.io XML string, every dependency already
+a generated `*Core` function). What remains: `generateDiagramFromOutline` (102 lines — genuine
+async/AI-call orchestration, not a pure-extraction candidate), the rest of the Decision Log
+domain (`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
 (canvas-dependent — the last piece of the Export domain), and the rest of Templates/Journal not
 yet begun. `diagramGenValidateGuideline`/`requestDiagramGenGuideline` investigated and confirmed
 genuinely dead code — zero real call sites anywhere, parked for a future AI feature, nothing to
@@ -1242,11 +1244,75 @@ XML rendering, 22px vertical stacking, HTML escaping of the label). New
 `diagramGenLegendEntries`/`diagramGenLegendCells` wrapper functions — the same call path
 `diagramGenFinishGenerate` uses — against real `nodes`/`nodeMeta`.
 
+**Sixth slice of `diagramGen*` (the big one): `src/state/diagramGenFinishGenerate.ts`.**
+`diagramGenRects.ts`'s own header, when it extracted the final-rect/bounds computation, had
+flagged "the much larger XML-cell-string-assembly pass this feeds into... remains deliberately
+excluded — real orchestration and string-template construction, not pure logic, and
+correspondingly a separate future scoping question." That question got answered this session:
+everything from color assignment through the fully assembled draw.io `<mxfile>` XML string
+(~210 lines, by far the largest slice in this migration) turned out to be genuinely pure once
+traced. Every single dependency — `getSubtreeEnd`/`getParentIndex` (`nodeQueries.ts`),
+`assignDiagramGenColorsCore`/`applyDiagramGenShapeColorOverridesCore` (`diagramGenColors.ts`),
+five functions from `diagramGenDims.ts`, eleven from `diagramGenTopology.ts`,
+`layoutDiagramGenTreeCore`, `computeDiagramGenFinalRectsCore`, and this same session's own
+`diagramGenLegendEntriesCore`/`diagramGenLegendCellsCore` — was already a generated `*Core`
+function taking `nodes` as an explicit parameter, so this module's own `nodes` parameter threads
+straight through every `declare function` reference with zero ambient-global reads anywhere in
+the pure zone.
+
+`diagramGenFinishGenerate` itself stays hand-written — the only thing left in it once this
+slice's XML-assembly core is factored out is genuine orchestration: mutating the `diagrams`
+array, `markDirty`/`scheduleAutoSave`, opening the Pad panel, re-rendering the diagrams list,
+regenerating a thumbnail, a toast. The wrapper is now a thin pass-through: call
+`diagramGenFinishGenerateXmlCore` for the `xml` string, `diagramGenNodeMetaToPlain` (already
+ambient, unaffected) for the saved `nodeMeta`, then the existing/new-diagram branch exactly as
+before.
+
+`escXmlAttr` is inlined directly — after this slice, it has no real caller left anywhere in
+`index.html`. `Date.now()` (for the generated `<diagram id="gd-...">` id) is promoted to an
+optional `now` parameter defaulting to `Date.now()`, matching `formatRelativeTime.ts`'s
+established injectable-clock pattern.
+
+**A real, pre-existing bug in the generator's own collision checker surfaced and got worked
+around here** (not introduced by this slice): its `varRe` regex matches an entire
+`const NAME = {...};` line at once, then naively splits that whole match on commas to find
+comma-joined `let a = 1, b = 2;` declarations — which also fires on any *single-line object
+literal* with 2+ comma-separated properties, misreading each property name as its own fake
+top-level identifier. Both this slice's and `diagramGenLegend.ts`'s color-palette objects
+independently declared the same `{fill, stroke, font}` shape on one line, so `stroke`/`font`
+collided with each other as soon as both existed in the same generated output. Reformatted both
+files' palette-shaped object literals to multi-line — the checker's per-line regex doesn't match
+a `{` that isn't followed by `};$` on the same line, so the false positive disappears. Verified
+via a directly-compiled minimal reproduction before trusting the fix. Worked around exactly the
+way the checker's own error message prescribes ("rename the colliding identifier(s)... e.g.
+prefix module-private internals with the domain name") — reshaping instead of renaming, since
+the real identifiers here were never actually declared at module scope in the first place.
+
+12 new unit tests: a valid `mxfile` document for a simple tree — including catching a wrong test
+assumption against the *real* merge-candidate behavior (a childless leaf under a plain
+non-sequence parent genuinely folds into its parent's box by the function's own existing rules;
+the first draft of this test assumed otherwise and was corrected against actual behavior, not
+the other way around); the injectable `now` clock (deterministic given an explicit value, varies
+with it, defaults to real `Date.now()`); decision-shaped labels hard-truncated past their own
+tighter budget, non-decision labels never truncated however long; container background
+rendering; a child with its own classified shape correctly NOT merging (proving this module
+orchestrates `diagramGenIsMergeCandidateCore`'s real verdict rather than re-testing that
+function's own exclusion rules, already covered in `diagramGenTopology.test.ts`); legend
+inclusion/omission; dashed edges into excluded-shaped nodes; a documented precondition (an empty
+scope throws, matching `generateDiagramFromOutline`'s own `pickDiagramGenScope()` null-bail
+precondition — the original function was never designed to handle this input, so this documents
+the invariant rather than adding defensive handling the original never had); and XML-escaping of
+raw untrusted text. New `tests/e2e/generated-diagramgenfinishgenerate-smoke.spec.ts` exercises
+the real, unchanged `diagramGenFinishGenerate()` wrapper end-to-end for **both** real
+orchestration paths — a new diagram via `addDiagramFromXml`, and regenerating an existing
+diagram in place (mutating `xml`/`pageCount`/`modifiedAt`/`nodeMeta`, never exercised by
+`diagramGenRects.ts`'s own earlier smoke test) — against real `nodes`/`diagrams` global state.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), the real remaining `diagramGen*` orchestration (`diagramGenFinishGenerate`, 241
-lines, and `generateDiagramFromOutline`, 102 lines — genuine mutation-fused orchestration
-needing real decomposition surgery, not a mechanical extraction, flagged since Phase 2 as
-deserving its own dedicated session), the rest of the Decision Log domain (`decisionRowSnippet`
+dependent), `generateDiagramFromOutline` (102 lines — genuine async/AI-call orchestration
+around `diagramGenTrimText`'s network round-trips and the review-screen skip-review branch, not
+a pure-extraction candidate the way `diagramGenFinishGenerate` turned out to be), the rest of the
+Decision Log domain (`decisionRowSnippet`
 — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
 editor DOM wiring, image export (canvas-dependent — the last piece of Export), and the rest of
 the Templates domain (rendering, sync).
