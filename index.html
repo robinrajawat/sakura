@@ -15908,6 +15908,29 @@ async function refreshHubPanelAfterSync(metaKey){
 // whatever's being typed right now). Left as a known gap rather than solved riskily — the
 // live cross-device case is Phase 3's job, with a real-time listener instead of this periodic
 // pull.
+/* GENERATED:syncReconcile:START — DO NOT EDIT BY HAND. Source of truth: src/state/syncReconcile.ts (tests: tests/unit/syncReconcile.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Sync subsystem — Phase 4, second slice. `pullAndMergeFromCloud` (in `index.html`) has two
+ * near-identical loops — one for docs, one for templates — each deciding "which locally-known
+ * ids does the cloud NOT have, so they need pushing up." Real duplication, same shape as
+ * `syncApply.ts`'s own rationale for extraction: two independent copies of one decision, not two
+ * genuinely different decisions. Everything else in both loops — calling `queueSync`, counting
+ * `pushedUpCount`, and the outer `docsFetchOk`/`tplFetchOk`/`justRestored` gating that decides
+ * whether to run the loop at all — stays hand-written orchestration; this module only decides
+ * WHICH ids are missing.
+ */
+/** Pure: returns the subset of `localIds` not present in `cloudIds`, preserving `localIds`'
+ * original order — matches the original loops' own iteration order (`for(const entry of
+ * localIndex)`), so the push order (and therefore `queueSync` call order) stays identical to
+ * before. Does not deduplicate `localIds`: if the same id appears twice (not expected from either
+ * `loadDocsIndex()` or `loadTemplatesIndex()`, but not this function's job to guard against),
+ * it's returned twice, matching the original loop's own behavior of simply iterating the array
+ * as given. */
+function findIdsMissingFromCloud(localIds, cloudIds) {
+    return localIds.filter((id) => !cloudIds.has(id));
+}
+
+/* GENERATED:syncReconcile:END */
 let _lastPullAt=0;
 async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
@@ -15987,7 +16010,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     // know what the cloud has — an empty cloudIds set caused by the fetch above failing
     // isn't the same as a genuinely empty cloud collection. Also never do this right after a
     // Restore (see justRestored above) — see the top of this function for why.
-    if(docsFetchOk&&!justRestored){ for(const entry of localIndex){ if(!cloudIds.has(entry.id)){queueSync('doc',entry.id); pushedUpCount++;} } }
+    if(docsFetchOk&&!justRestored){ const missingDocIds=findIdsMissingFromCloud(localIndex.map(e=>e.id),cloudIds); missingDocIds.forEach(id=>{queueSync('doc',id); pushedUpCount++}); }
 
     const localTplIndex=loadTemplatesIndex();
     const cloudTplIds=new Set();
@@ -15997,7 +16020,7 @@ async function pullAndMergeFromCloud(isInitial=false){
         if(applyIncomingTemplateData(id,docSnap.data()))pulledInCount++;
       }
     }
-    if(tplFetchOk&&!justRestored){ for(const entry of localTplIndex){ if(!cloudTplIds.has(entry.id)){queueSync('tpl',entry.id); pushedUpCount++;} } }
+    if(tplFetchOk&&!justRestored){ const missingTplIds=findIdsMissingFromCloud(localTplIndex.map(e=>e.id),cloudTplIds); missingTplIds.forEach(id=>{queueSync('tpl',id); pushedUpCount++}); }
 
     loadPrefs();
     renderSidebar();

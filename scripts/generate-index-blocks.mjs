@@ -625,6 +625,19 @@ initHubJournalState({
     // No production wiring needed — pure function, no DOM/side effects. The one real call site
     // (pullMetaFromCloud's own body) was updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Sync subsystem — Phase 4, second slice. `pullAndMergeFromCloud`'s two near-identical
+    // "which local ids does the cloud not have" loops (docs, templates) — real duplication, same
+    // shape as syncApply.ts's own rationale. Everything else in both loops (queueSync,
+    // pushedUpCount, the docsFetchOk/tplFetchOk/justRestored gating) stays hand-written.
+    name: 'syncReconcile',
+    sourceFile: 'src/state/syncReconcile.ts',
+    testFile: 'tests/unit/syncReconcile.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. Both real call sites
+    // (the docs loop and the templates loop inside pullAndMergeFromCloud) were updated in the
+    // same commit that wired this block in.
+    footer: ''
   }
 ];
 
