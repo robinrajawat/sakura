@@ -22377,9 +22377,6 @@ Correct "edges" for this input: [{"from":11,"to":12},{"from":11,"to":13}] — mo
 //               fanning out independently. Independent of container — a container's children can
 //               still fan out inside it (e.g. two unrelated sub-branches under one section).
 //   direction — 'vertical' (default) or 'horizontal'; only meaningful when sequence is true.
-function diagramGenIsContainer(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.container); }
-function diagramGenIsSequence(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.sequence); }
-function diagramGenIsHorizontal(idx,nodeMeta){ const m=nodeMeta&&nodeMeta.get(nodes[idx].id); return !!(m&&m.direction==='horizontal'); }
 // Structural defaults, used only to seed the review screen's first proposal (never applied
 // silently at render time — everything downstream reads confirmed nodeMeta only). A flat run of
 // 2+ leaf children reads as one continuous sequence far more often than as parallel branches
@@ -22701,143 +22698,267 @@ async function diagramGenTrimText(text){
   if(lastSpace>20)cut=cut.slice(0,lastSpace);
   return cut+'…';
 }
-// Returns a node's direct children (one depth level down, within its own subtree).
-// Every direct child one depth level down, with no filtering — the true outline structure.
-function diagramGenAllChildIdxs(idx){
-  const node=nodes[idx]; const end=getSubtreeEnd(nodes,idx); const out=[];
-  for(let i=idx+1;i<end;i++){ if(nodes[i].depth===node.depth+1)out.push(i); }
-  return out;
+/* GENERATED:diagramGenTopology:START — DO NOT EDIT BY HAND. Source of truth: src/state/diagramGenTopology.ts (tests: tests/unit/diagramGenTopology.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure topology and confirmed-nodeMeta query layer from the `diagramGen*` subsystem — the
+ * deterministic tree-diagram generator ("Generate rough diagram from outline", see
+ * docs/architecture-plan.md for the wider feature and `diagramGenDims.ts` for the first slice,
+ * pure box-sizing/color math). Second slice: every function here answers "what does this node's
+ * position in the render tree actually look like" — its real children (raw and render-filtered),
+ * leaf/chain-group/container/sequence status, and edge-label attachment — once nodeMeta has been
+ * confirmed via the review screen. The much larger XML-emission/tree-layout/color-assignment/AI-
+ * classification remainder is still a genuinely separate, dedicated future scoping session — not
+ * attempted here. `diagramGenProposeNodeMeta`/`diagramGenValidateGuideline`/`diagramGenLegend*`
+ * (the review-screen proposal/validation/legend layer) are also deliberately excluded: a
+ * different concern (classification heuristics and AI-response validation, not render topology)
+ * with its own scoping question, not attempted in this pass either.
+ *
+ * Lives in `src/state/`, not `src/core/`, matching `diagramAnchor.ts`/`diagramDisplayList.ts`:
+ * this is Diagrams-domain logic that reads the outline `nodes` array read-only for context, not
+ * outline-mutation-domain logic itself (the `core/` modules construct/mutate `nodes`;
+ * `diagramGenDims.ts` is the one `core/` exception, and only because it has zero `nodes`
+ * coupling at all — see its own header).
+ *
+ * All 15 functions here take `nodes`/`idx`/`nodeMeta` as explicit parameters rather than reading
+ * them as ambient globals, matching `nodeQueries.ts`'s own conversion — the 15 original
+ * hand-written versions in index.html read `nodes` (and, for three of them, `getSubtreeEnd`/
+ * `getParentIndex`) as true ambient globals. The thin hand-written wrappers spliced back into
+ * index.html supply `nodes` explicitly so every existing external call site keeps working with
+ * zero call-site changes (only the wrapper bodies themselves needed updating).
+ *
+ * `getSubtreeEnd`/`getParentIndex` (from `src/core/nodeQueries.ts`, already a generated block)
+ * and `stripSemanticMarkers` (from `src/utils/stripSemanticMarkers.ts`, likewise already
+ * generated) are referenced as ambient globals via `declare function` below — type-only, fully
+ * erased from the compiled output, resolving at runtime to the real already-spliced functions.
+ * `diagramGenHardTruncateCore` (from `src/core/diagramGenDims.ts`, this subsystem's own first
+ * slice, already generated) is referenced the same way. `getNodePlainText` (a hand-written
+ * one-liner in index.html wrapping `stripSemanticMarkers`, NOT itself a generated block) is
+ * inlined directly as a private helper instead — same precedent as `nodeSearch.ts` inlining
+ * `escapeRegExpLiteral` and `diagramDisplayList.ts` inlining `diagramStatusOf`/`diagramStatusLabel`.
+ *
+ * `DIAGRAM_GEN_CHAR_BUDGET` is index.html's own top-level const (`2 * Math.floor((MAX_W - PAD) /
+ * CHAR_PX)`, currently 66), also read by hand-written code this slice doesn't touch
+ * (`diagramGenTrimText`'s AI-shortening path). Duplicated here as a private literal, computed
+ * the same way from the same duplicated inputs `diagramGenDims.ts` already uses — same reasoning
+ * as that module's own header: every generated block shares one script scope with the rest of
+ * index.html, so reusing the real name would be a duplicate top-level `const`. This comment is
+ * the single place documenting it must stay in sync with index.html's own copy if it changes.
+ *
+ * A real collision check (grep against the rest of index.html, not just "the name looks
+ * private") was run for every new private/exported identifier here before treating it as safe,
+ * same discipline `diagramDisplayList.ts`'s own `DIAGRAM_STATUSES` near-miss established.
+ */
+// index.html's own DIAGRAM_GEN_CHAR_BUDGET = 2 * Math.floor((DIAGRAM_GEN_MAX_W - DIAGRAM_GEN_PAD)
+// / DIAGRAM_GEN_CHAR_PX) = 2 * Math.floor((260 - 24) / 7) = 66. Duplicated here as the single
+// derived literal this module actually needs, rather than the three separate inputs — those are
+// already duplicated once in diagramGenDims.ts, and reusing THOSE names here would itself be a
+// duplicate top-level const across two generated blocks sharing one script scope (caught by the
+// generator's own collision checker before this fix). This comment is the single place
+// documenting the value must stay in sync with index.html's own DIAGRAM_GEN_CHAR_BUDGET.
+const _DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET = 66;
+/** Pure: matches index.html's own `getNodePlainText` exactly — duplicated here rather than
+ * referenced via `declare function`, see this file's header for why. */
+function nodePlainText(node) {
+    return stripSemanticMarkers(node.text || '');
 }
-// Legacy tag check — #edge-label / #edgelabel — used ONLY as a one-time hint when proposing a
-// node's initial classification (see diagramGenProposeNodeMeta). Never authoritative on its own
-// past that point: once nodeMeta exists for a node, this is never consulted again, so the tag
-// can be left on an old document without it silently reappearing as an edge label after someone
-// has deliberately un-set it in the review screen.
-function diagramGenHasEdgeLabelTag(idx){
-  const node=nodes[idx];
-  return Array.isArray(node.tags)&&node.tags.some(t=>{ const s=String(t||'').toLowerCase(); return s==='edge-label'||s==='edgelabel'; });
+function metaFor(nodeMeta, node) {
+    return nodeMeta ? nodeMeta.get(node.id) : undefined;
 }
-// Plain alias — kept as its own name since most callers read more clearly as "this node's
-// children" than "all child idxs", but there's no filtering left to justify a separate
-// implementation now that edge-label/passthrough/merge are manual, per-diagram nodeMeta
-// decisions rather than something inferable from the outline alone. Pre-confirm code (scope
-// picking, structural-default proposals) uses this; the render pipeline, once nodeMeta is
-// confirmed, uses diagramGenRenderChildIdxs below instead.
-function diagramGenChildIdxs(idx){
-  return diagramGenAllChildIdxs(idx);
+/** Pure: matches index.html's own `diagramGenIsContainer` exactly. */
+function diagramGenIsContainerCore(nodes, idx, nodeMeta) {
+    return !!metaFor(nodeMeta, nodes[idx])?.container;
 }
-function diagramGenIsLeaf(idx){ return diagramGenChildIdxs(idx).length===0; }
-// A "chain group": more than one child, and every one of them is a leaf. Almost always means
-// a flat list of sequential steps rather than genuine parallel branches (a real branch usually
-// has its own sub-detail) — used only to seed the review screen's initial sequence/container
-// proposal (see diagramGenProposeNodeMeta); the render pipeline reads confirmed nodeMeta only.
-function diagramGenIsChainGroup(idx){
-  const kids=diagramGenChildIdxs(idx);
-  return kids.length>1&&kids.every(diagramGenIsLeaf);
+/** Pure: matches index.html's own `diagramGenIsSequence` exactly. */
+function diagramGenIsSequenceCore(nodes, idx, nodeMeta) {
+    return !!metaFor(nodeMeta, nodes[idx])?.sequence;
 }
-// A chain-group header's text moves onto its group's background container as a title instead
-// of getting its own box (see the render pass and layoutDiagramGenTree, both of which call
-// this). Shared between the render passes (which need to know whether to draw/skip a box) and
-// the tree layout (which needs to reserve less vertical space above a suppressed header than a
-// real box would need) so the two can never disagree about which nodes are suppressed.
-function diagramGenChainHeaderSuppressed(idx,nodeMeta){
-  return diagramGenIsContainer(idx,nodeMeta);
+/** Pure: matches index.html's own `diagramGenIsHorizontal` exactly. */
+function diagramGenIsHorizontalCore(nodes, idx, nodeMeta) {
+    return metaFor(nodeMeta, nodes[idx])?.direction === 'horizontal';
 }
-// Whether `idx` is confirmed (via nodeMeta.shape==='edge-label', set from the review screen —
-// see diagramGenOpenReview) to contribute its text as a label on the edge connecting the two
-// real siblings around it, rather than rendering as a box of its own. Only actually treated
-// this way if a real (non-edge-label) sibling follows it somewhere among the same parent's
-// children — otherwise there's nothing for its text to ever attach to as a label, and excluding
-// it from the diagram anyway would silently delete that node's content for no reason a person
-// could see. Falls back to being an ordinary node in that case.
-function diagramGenIsConfirmedEdgeLabel(idx,nodeMeta){
-  const meta=nodeMeta&&nodeMeta.get(nodes[idx].id);
-  if(!meta||meta.shape!=='edge-label')return false;
-  const parentIdx=getParentIndex(nodes,idx);
-  if(parentIdx<0)return false;
-  const siblings=diagramGenAllChildIdxs(parentIdx);
-  const pos=siblings.indexOf(idx);
-  return siblings.slice(pos+1).some(si=>{ const sm=nodeMeta.get(nodes[si].id); return !(sm&&sm.shape==='edge-label'); });
-}
-// Whether `idx` is confirmed (nodeMeta.shape==='passthrough') to be a purely organizational
-// wrapper — its own box is never drawn, and its children are spliced directly into its PARENT's
-// position instead (see diagramGenRenderChildIdxs), as if the wrapper node didn't exist in the
-// tree at all. Meant for outline headings like "Logic Steps" that group content for reading but
-// aren't themselves a step in the process being diagrammed.
-function diagramGenIsPassthrough(idx,nodeMeta){
-  const meta=nodeMeta&&nodeMeta.get(nodes[idx].id);
-  return !!(meta&&meta.shape==='passthrough');
-}
-// Whether `idx` should fold into its PARENT's own box as a second line of text instead of
-// getting a separate connected box — the common "step title, with one line of supporting detail
-// right under it" shape (e.g. a numbered step whose only child is "PRIO-1 → PRIO-2 → Blank").
-// Deliberately narrow, so it only ever removes a redundant extra box rather than hiding real
-// structure: the node must be the ONLY real (non-edge-label) child its parent has, it must
-// itself be a leaf (no grandchildren to lose), it must carry no shape/container/edge-label
-// classification of its own (that would be a distinct, meaningful box to keep), and its parent
-// must actually draw a box of its own for it to fold INTO — a container (its own header is
-// already a title, not a box), a passthrough node (draws no box at all — merging into one would
-// silently drop this node's text with nothing left to hold it), or a confirmed edge-label parent
-// (same reason, defensively, though a childful edge-label node should be rare in practice) are
-// all disqualified for that same underlying reason.
-function diagramGenIsMergeCandidate(idx,nodeMeta){
-  const meta=nodeMeta&&nodeMeta.get(nodes[idx].id);
-  if(meta&&(meta.shape||meta.container))return false;
-  if(diagramGenAllChildIdxs(idx).length>0)return false;
-  const parentIdx=getParentIndex(nodes,idx);
-  if(parentIdx<0)return false;
-  if(diagramGenIsContainer(parentIdx,nodeMeta)||diagramGenIsPassthrough(parentIdx,nodeMeta)||diagramGenIsConfirmedEdgeLabel(parentIdx,nodeMeta))return false;
-  const realSiblings=diagramGenAllChildIdxs(parentIdx).filter(si=>!diagramGenIsConfirmedEdgeLabel(si,nodeMeta));
-  return realSiblings.length===1&&realSiblings[0]===idx;
-}
-// The single source of truth for "what does this node's box actually connect to" once nodeMeta
-// is confirmed — every layout/color/edge function in the render pipeline (diagramGenFinishGenerate
-// and everything it calls) uses this instead of the raw diagramGenChildIdxs. Recursively splices
-// through a passthrough child (its own rendered children take its place in the list, in order,
-// as if the passthrough node itself were never there) and drops any confirmed edge-label or
-// merge-candidate child (neither gets its own box or layout slot — see diagramGenIsConfirmedEdgeLabel
-// / diagramGenIsMergeCandidate above).
-function diagramGenRenderChildIdxs(idx,nodeMeta){
-  const out=[];
-  diagramGenAllChildIdxs(idx).forEach(ci=>{
-    if(diagramGenIsConfirmedEdgeLabel(ci,nodeMeta))return;
-    if(diagramGenIsMergeCandidate(ci,nodeMeta))return;
-    if(diagramGenIsPassthrough(ci,nodeMeta)){ out.push(...diagramGenRenderChildIdxs(ci,nodeMeta)); return; }
-    out.push(ci);
-  });
-  return out;
-}
-// The terminal node of a sequence — the box a NEXT sibling's edge should connect from, rather
-// than from the stage's own header (which would skip over everything the stage actually
-// contains). Recurses through nested sequences; a fan-out (or a leaf) has no further "last" box
-// to point past, so it falls back to the node itself.
-function diagramGenChainTailIdx(idx,nodeMeta){
-  const kids=diagramGenRenderChildIdxs(idx,nodeMeta);
-  if(!kids.length)return idx;
-  if(!diagramGenIsSequence(idx,nodeMeta))return idx;
-  return diagramGenChainTailIdx(kids[kids.length-1],nodeMeta);
-}
-// Maps a real rendered child idx to the text of the edge-label node (if any) that sat directly
-// before it among idx's TRUE children — i.e. the label for whichever edge ends up arriving at
-// that child from its predecessor. Walks diagramGenAllChildIdxs (unfiltered, so label nodes are
-// visible in their actual position) rather than the render-filtered list, precisely because this
-// is the one place that needs to see them. KNOWN LIMITATION: only looks one structural level
-// down, so an edge-label sitting inside a passthrough node's own children won't be found when
-// this is called on the passthrough's parent (the level the spliced-in children now render at)
-// — a rare combination or two features rarely used together in practice.
-function diagramGenEdgeLabelBefore(idx,nodeMeta){
-  const map=new Map();
-  let pending=null;
-  diagramGenAllChildIdxs(idx).forEach(ci=>{
-    if(diagramGenIsConfirmedEdgeLabel(ci,nodeMeta)){
-      const text=getNodePlainText(nodes[ci]).trim();
-      pending=text?diagramGenHardTruncate(text,DIAGRAM_GEN_CHAR_BUDGET):null;
-      return;
+/** Pure: matches index.html's own `diagramGenAllChildIdxs` exactly — every direct child one
+ * depth level down, within `idx`'s own subtree, with no filtering. */
+function diagramGenAllChildIdxsCore(nodes, idx) {
+    const node = nodes[idx];
+    const end = getSubtreeEnd(nodes, idx);
+    const out = [];
+    for (let i = idx + 1; i < end; i++) {
+        if (nodes[i].depth === node.depth + 1)
+            out.push(i);
     }
-    if(diagramGenIsMergeCandidate(ci,nodeMeta)||diagramGenIsPassthrough(ci,nodeMeta))return;
-    if(pending){ map.set(ci,pending); pending=null; }
-  });
-  return map;
+    return out;
+}
+/** Pure: matches index.html's own `diagramGenHasEdgeLabelTag` exactly — legacy #edge-label/
+ * #edgelabel tag check, used only as a one-time hint when proposing a node's initial
+ * classification. */
+function diagramGenHasEdgeLabelTagCore(nodes, idx) {
+    const node = nodes[idx];
+    return Array.isArray(node.tags) && node.tags.some((t) => {
+        const s = String(t || '').toLowerCase();
+        return s === 'edge-label' || s === 'edgelabel';
+    });
+}
+/** Pure: matches index.html's own `diagramGenChildIdxs` exactly — a plain alias for
+ * `diagramGenAllChildIdxsCore`, kept as its own name since most callers read more clearly as
+ * "this node's children" than "all child idxs". */
+function diagramGenChildIdxsCore(nodes, idx) {
+    return diagramGenAllChildIdxsCore(nodes, idx);
+}
+/** Pure: matches index.html's own `diagramGenIsLeaf` exactly. */
+function diagramGenIsLeafCore(nodes, idx) {
+    return diagramGenChildIdxsCore(nodes, idx).length === 0;
+}
+/** Pure: matches index.html's own `diagramGenIsChainGroup` exactly — more than one child, and
+ * every one of them is a leaf. */
+function diagramGenIsChainGroupCore(nodes, idx) {
+    const kids = diagramGenChildIdxsCore(nodes, idx);
+    return kids.length > 1 && kids.every((ci) => diagramGenIsLeafCore(nodes, ci));
+}
+/** Pure: matches index.html's own `diagramGenChainHeaderSuppressed` exactly — a plain alias for
+ * `diagramGenIsContainerCore`. */
+function diagramGenChainHeaderSuppressedCore(nodes, idx, nodeMeta) {
+    return diagramGenIsContainerCore(nodes, idx, nodeMeta);
+}
+/** Pure: matches index.html's own `diagramGenIsConfirmedEdgeLabel` exactly — whether `idx` is
+ * confirmed (nodeMeta.shape === 'edge-label') to contribute its text as an edge label rather
+ * than rendering as a box of its own, and only actually treated that way if a real
+ * (non-edge-label) sibling follows it. */
+function diagramGenIsConfirmedEdgeLabelCore(nodes, idx, nodeMeta) {
+    const meta = metaFor(nodeMeta, nodes[idx]);
+    if (!meta || meta.shape !== 'edge-label')
+        return false;
+    const parentIdx = getParentIndex(nodes, idx);
+    if (parentIdx < 0)
+        return false;
+    const siblings = diagramGenAllChildIdxsCore(nodes, parentIdx);
+    const pos = siblings.indexOf(idx);
+    return siblings.slice(pos + 1).some((si) => {
+        const sm = nodeMeta.get(nodes[si].id);
+        return !(sm && sm.shape === 'edge-label');
+    });
+}
+/** Pure: matches index.html's own `diagramGenIsPassthrough` exactly — whether `idx` is confirmed
+ * (nodeMeta.shape === 'passthrough') to be a purely organizational wrapper. */
+function diagramGenIsPassthroughCore(nodes, idx, nodeMeta) {
+    const meta = metaFor(nodeMeta, nodes[idx]);
+    return !!(meta && meta.shape === 'passthrough');
+}
+/** Pure: matches index.html's own `diagramGenIsMergeCandidate` exactly — whether `idx` should
+ * fold into its parent's own box as a second line of text instead of getting a separate
+ * connected box. */
+function diagramGenIsMergeCandidateCore(nodes, idx, nodeMeta) {
+    const meta = metaFor(nodeMeta, nodes[idx]);
+    if (meta && (meta.shape || meta.container))
+        return false;
+    if (diagramGenAllChildIdxsCore(nodes, idx).length > 0)
+        return false;
+    const parentIdx = getParentIndex(nodes, idx);
+    if (parentIdx < 0)
+        return false;
+    if (diagramGenIsContainerCore(nodes, parentIdx, nodeMeta) ||
+        diagramGenIsPassthroughCore(nodes, parentIdx, nodeMeta) ||
+        diagramGenIsConfirmedEdgeLabelCore(nodes, parentIdx, nodeMeta)) {
+        return false;
+    }
+    const realSiblings = diagramGenAllChildIdxsCore(nodes, parentIdx).filter((si) => !diagramGenIsConfirmedEdgeLabelCore(nodes, si, nodeMeta));
+    return realSiblings.length === 1 && realSiblings[0] === idx;
+}
+/** Pure: matches index.html's own `diagramGenRenderChildIdxs` exactly — the single source of
+ * truth for what a node's box actually connects to once nodeMeta is confirmed. Recursively
+ * splices through a passthrough child and drops any confirmed edge-label or merge-candidate
+ * child. */
+function diagramGenRenderChildIdxsCore(nodes, idx, nodeMeta) {
+    const out = [];
+    diagramGenAllChildIdxsCore(nodes, idx).forEach((ci) => {
+        if (diagramGenIsConfirmedEdgeLabelCore(nodes, ci, nodeMeta))
+            return;
+        if (diagramGenIsMergeCandidateCore(nodes, ci, nodeMeta))
+            return;
+        if (diagramGenIsPassthroughCore(nodes, ci, nodeMeta)) {
+            out.push(...diagramGenRenderChildIdxsCore(nodes, ci, nodeMeta));
+            return;
+        }
+        out.push(ci);
+    });
+    return out;
+}
+/** Pure: matches index.html's own `diagramGenChainTailIdx` exactly — the terminal node of a
+ * sequence, recursing through nested sequences. */
+function diagramGenChainTailIdxCore(nodes, idx, nodeMeta) {
+    const kids = diagramGenRenderChildIdxsCore(nodes, idx, nodeMeta);
+    if (!kids.length)
+        return idx;
+    if (!diagramGenIsSequenceCore(nodes, idx, nodeMeta))
+        return idx;
+    return diagramGenChainTailIdxCore(nodes, kids[kids.length - 1], nodeMeta);
+}
+/** Pure: matches index.html's own `diagramGenEdgeLabelBefore` exactly — maps a real rendered
+ * child idx to the (truncated) text of the edge-label node that sat directly before it among
+ * `idx`'s true (unfiltered) children. */
+function diagramGenEdgeLabelBeforeCore(nodes, idx, nodeMeta) {
+    const map = new Map();
+    let pending = null;
+    diagramGenAllChildIdxsCore(nodes, idx).forEach((ci) => {
+        if (diagramGenIsConfirmedEdgeLabelCore(nodes, ci, nodeMeta)) {
+            const text = nodePlainText(nodes[ci]).trim();
+            pending = text ? diagramGenHardTruncateCore(text, _DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET) : null;
+            return;
+        }
+        if (diagramGenIsMergeCandidateCore(nodes, ci, nodeMeta) || diagramGenIsPassthroughCore(nodes, ci, nodeMeta))
+            return;
+        if (pending) {
+            map.set(ci, pending);
+            pending = null;
+        }
+    });
+    return map;
+}
+
+/* GENERATED:diagramGenTopology:END */
+function diagramGenIsContainer(idx,nodeMeta){
+  return diagramGenIsContainerCore(nodes,idx,nodeMeta);
+}
+function diagramGenIsSequence(idx,nodeMeta){
+  return diagramGenIsSequenceCore(nodes,idx,nodeMeta);
+}
+function diagramGenIsHorizontal(idx,nodeMeta){
+  return diagramGenIsHorizontalCore(nodes,idx,nodeMeta);
+}
+function diagramGenAllChildIdxs(idx){
+  return diagramGenAllChildIdxsCore(nodes,idx);
+}
+function diagramGenHasEdgeLabelTag(idx){
+  return diagramGenHasEdgeLabelTagCore(nodes,idx);
+}
+function diagramGenChildIdxs(idx){
+  return diagramGenChildIdxsCore(nodes,idx);
+}
+function diagramGenIsLeaf(idx){
+  return diagramGenIsLeafCore(nodes,idx);
+}
+function diagramGenIsChainGroup(idx){
+  return diagramGenIsChainGroupCore(nodes,idx);
+}
+function diagramGenChainHeaderSuppressed(idx,nodeMeta){
+  return diagramGenChainHeaderSuppressedCore(nodes,idx,nodeMeta);
+}
+function diagramGenIsConfirmedEdgeLabel(idx,nodeMeta){
+  return diagramGenIsConfirmedEdgeLabelCore(nodes,idx,nodeMeta);
+}
+function diagramGenIsPassthrough(idx,nodeMeta){
+  return diagramGenIsPassthroughCore(nodes,idx,nodeMeta);
+}
+function diagramGenIsMergeCandidate(idx,nodeMeta){
+  return diagramGenIsMergeCandidateCore(nodes,idx,nodeMeta);
+}
+function diagramGenRenderChildIdxs(idx,nodeMeta){
+  return diagramGenRenderChildIdxsCore(nodes,idx,nodeMeta);
+}
+function diagramGenChainTailIdx(idx,nodeMeta){
+  return diagramGenChainTailIdxCore(nodes,idx,nodeMeta);
+}
+function diagramGenEdgeLabelBefore(idx,nodeMeta){
+  return diagramGenEdgeLabelBeforeCore(nodes,idx,nodeMeta);
 }
 // Bottom-up subtree-width computation, then top-down x/y assignment, using each node's own
 // (label-derived) box dims rather than one fixed size throughout. A chain group's column
