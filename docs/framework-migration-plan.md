@@ -144,13 +144,30 @@ is made) — its purpose is surfacing any real friction in the
 React+Zustand+tree-editing combination early, while it's still cheap to
 adjust course, rather than discovering it deep into Phase 2.
 
-**Phase 1 — Port the pure logic layer.** Copy `src/core/`, `src/state/`,
-`src/utils/` into the new app largely unchanged (per "What ports directly"
-above), each wrapped in a thin framework-idiomatic store/hook. Bring the
-existing Vitest suite over unchanged — it's already framework-agnostic and gives
-immediate regression coverage for the layer least likely to have bugs introduced
-by the rewrite. No UI yet; this phase is done when `npm run test:unit` passes in
-the new app with (nearly) the same test count as today.
+**Phase 1 — Port the pure logic layer (in progress).** Copy `legacy/src/core/`,
+`legacy/src/state/`, `legacy/src/utils/` into `web/` largely unchanged (per
+"What ports directly" above), each eventually wrapped in a thin
+framework-idiomatic store/hook. Bring the existing Vitest suite over
+unchanged — it's already framework-agnostic and gives immediate regression
+coverage for the layer least likely to have bugs introduced by the rewrite.
+No UI yet; this phase is done when `npm run test:unit -w sakura-web` passes
+with (nearly) the same test count as `sakura-legacy`'s own suite.
+
+**First slice landed:** all 10 `legacy/src/utils/*.ts` files, plus
+`legacy/src/core/nodeQueries.ts` (pulled in early — three of the ten utils
+depend on its `buildPrefix` function and `QueryableNode` type at runtime/
+compile-time respectively, a genuine shared dependency rather than something
+worth artificially splitting across two separate slices). Tests moved to
+`web/`'s colocated convention (`Module.test.ts` next to `Module.ts`, matching
+Phase 0's `counterStore.ts`/`counterStore.test.ts` scaffold) rather than
+`legacy/`'s separate `tests/unit/` directory — only the import paths changed,
+never a single assertion or test case. Verified test-count-identical against
+`legacy/` file-by-file (22/24/18/12/13/10/14/8/9/10/13 — an exact match, not
+just an aggregate total that could hide a dropped test). `web/`'s `App.tsx`
+doesn't import any of this yet — that wiring is Phase 2's job, once there's
+real UI to wire it into. Remaining Phase 1 work: the rest of `core/`
+(`nodeMutations`, `nodeSearch`, `nodeSelection`, `templatesApply`,
+`diagramGenDims`) and all of `state/`.
 
 **Phase 2 — Core outline UI.** Build the tree editor itself: render, select,
 edit, indent/outdent, drag-and-drop, fold/unfold — the features documented under
