@@ -11,25 +11,27 @@ feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder 
 Diagrams' display-list filtering/sorting done, plus six slices of the `diagramGen*` generation
 subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
 nodeMeta classification-proposal/plain-object bridge, the branch/tag/marker/shape
-color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation); the
-much larger remaining XML-cell-string-assembly and AI-classification portions of `diagramGen*`
-(plus `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
-`diagramGenValidateGuideline`/`diagramGenLegend*`), Export, and the rest of Templates/Journal not
-yet begun).
+color-assignment layer, the pure tree-layout engine, and the final-rect/bounds computation);
+**Decision Log domain started** (first slice: `normalizeDecisionLog`, a domain untouched
+elsewhere in this migration); the much larger remaining XML-cell-string-assembly and
+AI-classification portions of `diagramGen*` (plus `generateDiagramFromOutline`/
+`diagramGenFinishGenerate` orchestration as a whole, `diagramGenValidateGuideline`/
+`diagramGenLegend*`), the rest of the Decision Log domain, Export, and the rest of
+Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
-`diagramGen*` subsystem with zero injected dependencies at all). Eight additional Phase 2/3-adjacent
-slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting, and
+`diagramGen*` subsystem with zero injected dependencies at all). Nine additional Phase 2/3-adjacent
+slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting,
 diagramGen*'s own topology/confirmed-nodeMeta query layer, nodeMeta classification-proposal
 layer, branch/tag/marker color-assignment layer, tree-layout engine, and final-rect/bounds
-computation (`src/state/tabOrder.ts`,
+computation, plus Decision Log's own normalization layer (`src/state/tabOrder.ts`,
 `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`,
 `src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`, `src/state/diagramGenColors.ts`,
-`src/state/diagramGenLayout.ts`, `src/state/diagramGenRects.ts`
+`src/state/diagramGenLayout.ts`, `src/state/diagramGenRects.ts`, `src/state/decisionLog.ts`
 — not `core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
 blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
@@ -966,11 +968,40 @@ end-to-end check that a real `diagramGenFinishGenerate` call still produces well
 has no return value) — proving the glue statement resolves correctly through the real
 orchestration, not just in isolation.
 
+**Decision Log domain — first slice: `src/state/decisionLog.ts`.** A domain not touched
+anywhere else in this migration. `normalizeDecisionLog` validates and coerces an arbitrary raw
+object (an imported/restored document's raw JSON, or legacy data from before decision logs were
+split into their own top-level array — see `migrateNodeDecisionLogsToArray`'s own comment) into
+a safe, well-typed shape: every string field defaults to `''` if not a string, `status` is
+whitelisted against the three known statuses (defaulting to `'proposed'`), and `timestamp`
+defaults to `null` unless it's a genuine finite number. Called from `normalizeNode`'s own
+decisionLog-field normalization — the one real call site.
+
+Genuinely standalone: zero dependencies on any other function or constant, no `declare function`
+ambient references needed, no pure-code-motion commit required. Sibling normalizers
+(`normalizeStyles`/`normalizeCodeBlock`/`normalizeTags`, also called from `normalizeNode`) remain
+hand-written — a different, adjacent domain (general node-field normalization), not attempted
+here.
+
+Investigation found several more Decision-Log-domain candidates worth a future slice:
+`findDecisionLog`/`decisionLogForNode` (pure array lookups over the `decisionLogs` array, the
+latter enforcing the app's one-decision-log-per-node rule), `decisionStatusLabel`/
+`decisionStatusOf` (trivial status label/whitelist helpers), and `decisionLogAnchorLabel` (near-
+identical in shape to `diagramAnchor.ts`'s already-extracted `computeDiagramAnchorLabel` — same
+`declare function` reference to `stripSemanticMarkers` would apply). `decisionRowSnippet`/
+`getDecisionAnchorCandidates` read `nodes` and call the DOM-dependent `stripHtmlToText` — a
+different concern, not attempted here.
+
+10 new unit tests. New `tests/e2e/generated-decisionlog-smoke.spec.ts` exercises the real,
+unchanged wrapper function plus its one real call site (`normalizeNode`), and the standard
+distant-function-still-callable check.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
-`diagramGenValidateGuideline`/`diagramGenLegend*`) and CRUD/editor DOM wiring, Export, and the
+`diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain (anchor/
+status query layer, DOM-dependent row/candidate helpers), CRUD/editor DOM wiring, Export, and the
 rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**

@@ -9719,19 +9719,57 @@ function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlig
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
 function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
+/* GENERATED:decisionLog:START — DO NOT EDIT BY HAND. Source of truth: src/state/decisionLog.ts (tests: tests/unit/decisionLog.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure validation/normalization layer for the Decision Log domain — first slice of a domain not
+ * touched elsewhere in this migration (see docs/architecture-plan.md for the wider project).
+ * `normalizeDecisionLog` validates and coerces an arbitrary object (an imported/restored
+ * document's raw JSON, or legacy data from before decision logs were split into their own
+ * top-level array — see `migrateNodeDecisionLogsToArray`'s own comment) into a safe, well-typed
+ * DecisionLog shape: every string field defaults to `''` if not a string, `status` is
+ * whitelisted against the three known statuses (defaulting to `'proposed'`), and `timestamp`
+ * defaults to `null` unless it's a genuine finite number. Returns `null` for anything that isn't
+ * a real object to begin with — the same "safe to store, safe to render" contract
+ * `normalizeStyles`/`normalizeCodeBlock`/`normalizeTags` (this decision log's sibling
+ * node-field normalizers, still hand-written, not part of this slice) already provide.
+ *
+ * Called from `normalizeNode` (index.html) when normalizing a node's legacy embedded
+ * `decisionLog` field during load/restore/import — the one real call site, unchanged after this
+ * extraction.
+ *
+ * Zero dependencies on any other function or constant — genuinely standalone, no
+ * `declare function` ambient references needed.
+ *
+ * Lives in `src/state/` — Decision-Log-domain logic, not outline-mutation-domain logic (matches
+ * `diagramAnchor.ts`'s own placement reasoning: reads/validates its own domain's data, never
+ * touches the outline `nodes` array as a mutation target).
+ */
+const _DECISION_STATUSES = ['proposed', 'approved', 'rejected'];
+/** Pure: matches index.html's own `normalizeDecisionLog` exactly. Returns `null` for anything
+ * that isn't a real object; otherwise coerces every field to a safe type, defaulting `status` to
+ * `'proposed'` when missing or unrecognized and `timestamp` to `null` unless it's a genuine
+ * finite number. */
+function normalizeDecisionLogCore(dl) {
+    if (!dl || typeof dl !== 'object')
+        return null;
+    const status = _DECISION_STATUSES.includes(String(dl.status || '').toLowerCase())
+        ? String(dl.status).toLowerCase()
+        : 'proposed';
+    return {
+        context: typeof dl.context === 'string' ? dl.context : '',
+        decision: typeof dl.decision === 'string' ? dl.decision : '',
+        rationale: typeof dl.rationale === 'string' ? dl.rationale : '',
+        alternatives: typeof dl.alternatives === 'string' ? dl.alternatives : '',
+        impact: typeof dl.impact === 'string' ? dl.impact : '',
+        status,
+        author: typeof dl.author === 'string' ? dl.author : '',
+        timestamp: Number.isFinite(dl.timestamp) ? dl.timestamp : null
+    };
+}
+
+/* GENERATED:decisionLog:END */
 function normalizeDecisionLog(dl){
-  if(!dl||typeof dl!=='object')return null;
-  const status=['proposed','approved','rejected'].includes(String(dl.status||'').toLowerCase())?String(dl.status).toLowerCase():'proposed';
-  return {
-    context:typeof dl.context==='string'?dl.context:'',
-    decision:typeof dl.decision==='string'?dl.decision:'',
-    rationale:typeof dl.rationale==='string'?dl.rationale:'',
-    alternatives:typeof dl.alternatives==='string'?dl.alternatives:'',
-    impact:typeof dl.impact==='string'?dl.impact:'',
-    status,
-    author:typeof dl.author==='string'?dl.author:'',
-    timestamp:Number.isFinite(dl.timestamp)?dl.timestamp:null
-  };
+  return normalizeDecisionLogCore(dl);
 }
 function newDecisionLogId(){ return 'dl'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 // One-time, idempotent upgrade path: decision logs used to live embedded directly on

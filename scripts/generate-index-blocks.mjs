@@ -461,6 +461,18 @@ initHubJournalState({
     // function or constant. The one real call site (inside diagramGenFinishGenerate) was
     // updated in the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // First slice of the Decision Log domain — a domain not touched elsewhere in this
+    // migration. normalizeDecisionLog validates/coerces an arbitrary raw object into a safe
+    // DecisionLog shape, called from normalizeNode's own decisionLog field normalization.
+    // Genuinely standalone, no pure-code-motion commit needed.
+    name: 'decisionLog',
+    sourceFile: 'src/state/decisionLog.ts',
+    testFile: 'tests/unit/decisionLog.test.ts',
+    // No production wiring needed — pure function, zero dependencies. The one real call site
+    // (normalizeNode's own body) was updated in the same commit that wired this block in.
+    footer: ''
   }
 ];
 
