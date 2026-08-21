@@ -517,6 +517,22 @@ initHubJournalState({
     // (serializeOpml wrapper body, called from exportOpml) was updated in the same commit that
     // wired this block in.
     footer: ''
+  },
+  {
+    // Export domain — third slice. serializeClipboardHtml and its color/parsing helpers
+    // (getClipboardExportColors, depthTextColor, soften, parseStyledTextForClipboard) turned
+    // out to have zero DOM dependency once traced — an earlier status note wrongly lumped this
+    // together with serializeTreeTextWithNotes as DOM-dependent. soften/getClipboardExportColors
+    // are also reused by several hand-written call sites elsewhere (image export, decision-log
+    // cards) — unaffected, since ambient globals work identically for hand-written callers.
+    name: 'serializeClipboardHtml',
+    sourceFile: 'src/utils/serializeClipboardHtml.ts',
+    testFile: 'tests/unit/serializeClipboardHtml.test.ts',
+    // No production wiring needed — pure functions, no DOM/side effects. All five real call
+    // sites (getClipboardExportColors/depthTextColor/soften/parseStyledTextForClipboard/
+    // serializeClipboardHtml wrapper bodies in index.html) were updated in the same commit that
+    // wired this block in.
+    footer: ''
   }
 ];
 
