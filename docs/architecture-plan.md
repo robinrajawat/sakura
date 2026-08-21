@@ -8,23 +8,24 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams' display-list filtering/sorting done, plus three slices of the `diagramGen*` generation
-subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, and
-the nodeMeta classification-proposal/plain-object bridge); the much larger XML-emission/
-tree-layout/color-assignment/AI-classification remainder of `diagramGen*` (plus
-`diagramGenValidateGuideline`/`diagramGenLegend*`), Export, and the rest of Templates/Journal not
-yet begun).
+Diagrams' display-list filtering/sorting done, plus four slices of the `diagramGen*` generation
+subsystem itself (pure box-sizing/color math, the topology/confirmed-nodeMeta query layer, the
+nodeMeta classification-proposal/plain-object bridge, and the branch/tag/marker color-assignment
+layer); the much larger XML-emission/tree-layout/AI-classification remainder of `diagramGen*`
+(plus `applyDiagramGenShapeColorOverrides`/`diagramGenValidateGuideline`/`diagramGenLegend*`),
+Export, and the rest of Templates/Journal not yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
 hand-written function as a dependency rather than reference an already-generated block, and
 later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
 to be dead code — and `diagramGenDims.ts`, five pure text/color/box-sizing functions from the
-`diagramGen*` subsystem with zero injected dependencies at all). Five additional Phase 2/3-adjacent
+`diagramGen*` subsystem with zero injected dependencies at all). Six additional Phase 2/3-adjacent
 slices: tab cycling/reordering, diagram-anchor/orphan logic, diagram-list filtering/sorting, and
-diagramGen*'s own topology/confirmed-nodeMeta query layer and nodeMeta classification-proposal
-layer (`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`,
-`src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`
+diagramGen*'s own topology/confirmed-nodeMeta query layer, nodeMeta classification-proposal
+layer, and branch/tag/marker color-assignment layer (`src/state/tabOrder.ts`,
+`src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts`,
+`src/state/diagramGenTopology.ts`, `src/state/diagramGenNodeMeta.ts`, `src/state/diagramGenColors.ts`
 — not `core/`, since none touches the outline `nodes` array as a mutation target). **Hub's structural
 blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
@@ -823,10 +824,53 @@ entry). New `tests/e2e/generated-diagramgennodemeta-smoke.spec.ts` exercises the
 wrapper functions — including the `ToPlain`/`FromPlain` round trip — against a real `nodes`
 array, plus the standard distant-function-still-callable check.
 
+**Fourth slice of `diagramGen*`: `src/state/diagramGenColors.ts`.** The pure branch/tag/marker
+color-assignment layer: `assignDiagramGenColors` walks the render tree (via
+`diagramGenTopology.ts`'s already-generated `diagramGenRenderChildIdxsCore`) assigning a palette
+key to every node — multi-root docs get a cycled branch color per root; a tag on a node (or
+inherited from a tagged ancestor) overrides branch color; an explicit node marker outranks both.
+`diagramGenTagColorKey` (its sole caller, verified via grep) hashes a tag string to a
+deterministic reserved hue, extracted alongside it in the same module.
+`applyDiagramGenShapeColorOverrides` (a related function applying AI-classified shape colors on
+top of this output) and `diagramGenLegend*`/`diagramGenValidateGuideline` remain deliberately
+excluded — different concerns, not attempted in this pass either.
+
+`diagramGenTagColorKey` (its only caller) and `assignDiagramGenColors` were separated by
+`pickDiagramGenScope` in index.html — relocated next to each other in a separate
+pure-code-motion commit first, same discipline as every prior slice.
+
+`diagramGenRenderChildIdxsCore`/`diagramGenIsSequenceCore` (from `diagramGenTopology.ts`,
+already generated) are referenced via `declare function`.
+`DIAGRAM_GEN_TAG_CYCLE`/`DIAGRAM_GEN_BRANCH_CYCLE`/`DIAGRAM_GEN_MARKER_COLOR` (small constants,
+also read by hand-written code this slice doesn't touch) are duplicated as private literals,
+same precedent as every prior slice.
+
+**A real type-accuracy bug caught before it caused a subtle production issue, not by luck.**
+The module's first draft declared its own `ColorAssignNode` interface without a `depth` field —
+compiled clean (TypeScript had no way to know the `declare function` ambient signatures for
+`diagramGenRenderChildIdxsCore`/`diagramGenIsSequenceCore` actually require `depth` internally,
+since those signatures were typed against the same too-narrow interface). Direct debugging when
+early unit tests returned unexpectedly empty results traced it to `diagramGenAllChildIdxsCore`
+(several layers down the call chain) silently receiving `undefined` for every node's depth.
+Fixed by adding `depth: number` to `ColorAssignNode`. In the real app this would have worked by
+accident (index.html's real node objects always carry `depth`), but the module's own type
+contract was lying about what it actually needed — exactly the kind of drift this project's
+TypeScript adoption exists to catch before it does matter.
+
+11 new unit tests. Four were initially wrong for a different, well-established reason (not a bug
+in the extracted code): a lone real leaf sibling with no shape/container folds into its parent as
+a merge candidate and never gets its own render slot or color (see `diagramGenTopology.ts`'s own
+tests for the same rule) — fixed by giving the relevant test node an explicit `shape` in
+nodeMeta, which disqualifies it from merge-candidate exclusion, rather than changing the
+extracted logic. New `tests/e2e/generated-diagramgencolors-smoke.spec.ts` exercises the real,
+unchanged wrapper functions against a real `nodes` array, plus the standard
+distant-function-still-callable check.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (XML emission, tree layout,
-color assignment, AI classification, plus `diagramGenValidateGuideline`/`diagramGenLegend*`) and
-CRUD/editor DOM wiring, Export, and the rest of the Templates domain (rendering, sync).
+AI classification, plus `applyDiagramGenShapeColorOverrides`/`diagramGenValidateGuideline`/
+`diagramGenLegend*`) and CRUD/editor DOM wiring, Export, and the rest of the Templates domain
+(rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
