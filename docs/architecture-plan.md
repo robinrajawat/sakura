@@ -17,13 +17,14 @@ layer, and `getDecisionAnchorCandidates` — a domain untouched elsewhere in thi
 **Export domain in progress** (`serializeTreeText` — the plain-text ASCII tree serializer used
 by the `.txt` export and copy-to-clipboard; `serializeOpml`/`nodesToOutlineXml` — the OPML 2.0
 serializer; `serializeClipboardHtml` and its color/parsing helpers — the rich-text HTML half of
-copy-to-clipboard); the much larger remaining
+copy-to-clipboard; `serializeTreeTextWithNotes` — same ASCII tree with each node's note appended,
+using an injected `stripHtmlToText` dependency); the much larger remaining
 XML-cell-string-assembly and AI-classification portions of `diagramGen*` (plus
 `generateDiagramFromOutline`/`diagramGenFinishGenerate` orchestration as a whole,
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
-(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), the rest of Export
-(`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`; image export —
-canvas-dependent), and the rest of Templates/Journal not yet begun).
+(`decisionRowSnippet`, genuinely DOM-dependent via `stripHtmlToText`), image export
+(canvas-dependent — the last piece of the Export domain), and the rest of Templates/Journal not
+yet begun).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1165,15 +1166,51 @@ functions — the same call path `exportToClipboard` uses — against real `node
 `treeIndentWidth`/`hideTreeLines`/`outlineNumbering` globals, plus confirms `soften`'s other real
 hand-written caller (`getImageExportColors`) still resolves correctly.
 
+**Export domain — fourth slice: `src/utils/serializeTreeTextWithNotes.ts`.**
+`serializeTreeTextWithNotes` — the same ASCII tree `serializeTreeText` renders, but with each
+node's note appended as its own indented `Note:` line right under it. Used only where the AI
+actually needs to reason about note content (`generateQaQuestionsAI`) — the plain
+`serializeTreeText` stays note-free everywhere else so this doesn't change any output that
+wasn't asked for.
+
+Unlike the third slice's finding, this one genuinely does call `stripHtmlToText`
+(`node.note`'s only consumer) — correctly flagged as DOM-dependent, no doc mistake to correct
+this time. But the dependency is narrow (exactly one call site inside the function) against a
+function with real structure — a tree walk reusing three already-generated ambient functions —
+so rather than leave the whole function hand-written, `stripHtmlToText` is injected as an
+explicit parameter: the **second real instance** of the pattern `templatesApply.ts` established
+with its injected `makeNode`/`emptyStyles` (`declare function` stays reserved for
+already-*generated* functions; `stripHtmlToText` is hand-written, so it can't use that pattern).
+
+Distinguished deliberately from `decisionRowSnippet`'s own case (`decisionLogQueries.ts`'s third
+slice, left fully hand-written): `decisionRowSnippet` is 4 trivial lines with zero real
+structure, not worth the DI machinery. This function has real structure worth protecting with
+tests, which is what tips the scales toward injecting rather than leaving it alone.
+
+`buildPrefix`/`hasLaterSiblingAtDepth`, `computeOutlineNumbers`, and `getNodePlainText` are
+referenced via `declare function`, identical to `serializeTreeText.ts`'s own slice.
+`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` are promoted to explicit required
+parameters, same reasoning this domain's every prior slice established.
+
+12 new unit tests (empty list, no-note single line matching `serializeTreeText`'s own output,
+`Note:` line appended/omitted — including when the injected function itself returns an empty
+string — exact-argument and not-called-when-no-note spy assertions against the injected
+`stripHtmlToText`, note-line indentation matching its own node's tree-connector prefix, outline
+numbering, `rebaseDepth`, `hideTreeLines`, mixed notes/no-notes across multiple nodes). New
+`tests/e2e/generated-serializetreetextwithnotes-smoke.spec.ts` exercises the real, unchanged
+`serializeTreeTextWithNotes()` wrapper — the same call path `generateQaQuestionsAI` uses —
+against real `nodes`/`treeIndentWidth`/`hideTreeLines`/`outlineNumbering` globals **and** the
+real, unchanged, genuinely DOM-touching `stripHtmlToText` (not a fake), proving the injected
+wiring resolves correctly through the real call path, not just in isolation.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
 dependent), the rest of Diagrams' `diagramGen*` generation subsystem (the remaining XML-cell
 string assembly inside `diagramGenFinishGenerate`, `generateDiagramFromOutline`/
 `diagramGenFinishGenerate` orchestration as a whole, AI classification, plus
 `diagramGenValidateGuideline`/`diagramGenLegend*`), the rest of the Decision Log domain
 (`decisionRowSnippet` — genuinely DOM-dependent via `stripHtmlToText`), CRUD/
-editor DOM wiring, the rest of Export (
-`serializeTreeTextWithNotes` — DOM-dependent via `stripHtmlToText`;
-image export — canvas-dependent), and the rest of the Templates domain (rendering, sync).
+editor DOM wiring, image export (canvas-dependent — the last piece of Export), and the rest of
+the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
