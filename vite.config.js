@@ -15,13 +15,18 @@ import { resolve } from 'path';
 // "GitHub Actions" instead (deploy.yml publishes dist/ directly), but the custom domain and
 // base '/' are unaffected either way.
 //
-// "Properly deployable dist/" (see docs/architecture-plan.md): Vite's own asset pipeline
-// can't see everything the app needs — sw.js (registered via a JS string, not an HTML
-// attribute) and the PWA manifests' own icon/start_url resolution (broken by Vite hashing and
-// relocating them). `npm run build` covers this with a second step,
-// scripts/copy-static-assets.mjs, run right after `vite build` — see that script's own header
-// for the full investigation. This file's own `input`/`chunkSizeWarningLimit` config is
-// unaffected; the fix lives entirely in that separate script.
+// Static passthrough assets (service worker, both PWA manifests, icons, social-card image,
+// CNAME) live in public/ — Vite's own publicDir convention (the default, so no explicit
+// `publicDir` option is needed here). Files there are copied verbatim into dist/ at build
+// time, with their HTML references left completely untouched (not hashed/relocated the way
+// Vite treats assets inside its own module graph) — this is what actually fixes the
+// historical gap here: `vite build` alone used to silently drop sw.js (registered via a JS
+// string, invisible to Vite's HTML scanner) and mis-hash the manifests, breaking their own
+// start_url/icon resolution (the Web App Manifest spec resolves both relative to the
+// manifest's own URL). See docs/architecture-plan.md's "Repo hygiene" note for the history —
+// these files used to sit at the repo root with a hand-rolled copy script
+// (scripts/copy-static-assets.mjs, now deleted) working around exactly this; moving them into
+// public/ fixes the underlying cause instead.
 export default defineConfig({
   base: '/',
   build: {

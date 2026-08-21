@@ -1871,6 +1871,55 @@ Revert path if anything surfaces later: flip the Pages source setting back to
 "Deploy from a branch" — a one-line setting change, not a code rollback,
 since `main`'s root files are untouched by any of this.
 
+## Resolved — Repo hygiene: static assets moved into public/
+
+Following Stage 2, the constraint that used to keep static assets pinned at
+the repo root ("moving them would remove them from the root the legacy
+deployment actually read them from") no longer applied — nothing reads these
+files directly off the branch anymore, only the build. `sw.js`,
+`manifest.json`, `hub-manifest.json`, every icon PNG actually referenced
+anywhere in the app, `flower-glyph.svg`, `social-card.png`, and `CNAME` all
+moved into a new `public/` directory — Vite's own static-passthrough
+convention, no configuration needed (`publicDir` defaults to `public/`).
+`scripts/copy-static-assets.mjs` — the hand-rolled script that used to work
+around `vite build`'s blind spots for these files — is deleted; Vite leaves
+any HTML reference to a `public/`-resident file completely untouched (no
+hashing, no relocation), which is exactly the behavior the old script had to
+force manually. `index.html`/`hub.html`'s own markup needed zero changes,
+since every reference to these files was already a plain relative path
+(`sw.js`, `manifest.json`, `icon-192.png`, etc.) that resolves identically
+whether the file sits at the repo root or in `public/`.
+
+**This surfaced and fixed a real, previously-invisible production bug.**
+Auditing every reference to these files while doing the move found two files
+that were silently 404ing in production since Stage 2's cutover, neither of
+which was ever in the old script's `PASSTHROUGH_FILES` list:
+`social-card.png` (the Open Graph/Twitter-card preview image, referenced only
+via an absolute `https://www.sakura-notes.com/...` URL in `<meta>` tags —
+never an HTML-relative reference Vite's scanner or the old script's
+file-existence check would have flagged) and `icon-glyph-192.png` (the
+notification icon, referenced only via a JS string inside a `Notification()`
+call in `hub.html` — the exact same "invisible to Vite's HTML scanner" blind
+spot `sw.js` itself used to sit in, just never audited for on these two files
+specifically when the original script was written). Both now correctly land
+in `dist/` via the blanket `public/` passthrough, which by design copies
+every file it contains regardless of whether anything in the app happens to
+reference it — the reference-blind-spot class of bug this project already hit
+once with `sw.js` structurally can't recur for anything living in `public/`.
+
+Two long-dead, entirely unreferenced files (`icon-512.png`, `icon-512-dark.png`
+— superseded by `icon-512-pwa.png`/`icon-512-maskable.png` at some earlier
+point, with no reference anywhere in `index.html`, `hub.html`, either
+manifest, or `src/`) were deleted rather than moved, confirmed unreferenced
+via a full-repo grep before removal.
+
+`tests/e2e/dist-static-assets.spec.ts` rewritten to check byte-identity
+against `public/` rather than the repo root, and to assert the (now simpler)
+untouched-relative-href behavior instead of the old script's
+`/manifest.json`-style rewritten absolute path. A new assertion confirms
+`dist/` has no orphaned `dist/assets/` directory left over from the old
+hashing behavior.
+
 ## Open items for a later, deliberate decision (not blocking Phase 0)
 
 - **`hub.html` code duplication.** It re-implements its own sync logic for
