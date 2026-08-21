@@ -8,15 +8,17 @@ progress (Templates' storage layer done, plus the `stampTemplateDateAuthor` foll
 `applyTemplateNodes`'s and `applyBuiltinDefaultTemplate`'s node-construction logic — the latter
 needed no new source at all, see below; AI provider prefs storage done; **all four of Hub's
 feature domains done** — To-Dos, Journal, subtask CRUD, and due-date reminder checking;
-Diagrams/Export and the rest of Templates/Journal not yet begun). `core/` module boundary:
-eight slices done (indent/outdent, moveSelected, drag-and-drop move, paste, delete, the shared
-selection/parentId helpers, outline search matching, and template node-construction via
-injected `makeNode`/`emptyStyles` — the first slice to inject a hand-written function as a
-dependency rather than reference an already-generated block, and later reused as-is for
-`applyBuiltinDefaultTemplate` once its own explicit parenting was found to be dead code). Two
-additional Phase 2/3-adjacent slices: tab cycling/reordering and diagram-anchor/orphan logic
-(`src/state/tabOrder.ts`, `src/state/diagramAnchor.ts` — not `core/`, since neither touches the
-outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
+Diagrams' display-list filtering/sorting done, first slice of its larger remainder; Diagrams'
+`diagramGen*` generation subsystem, Export, and the rest of Templates/Journal not yet begun).
+`core/` module boundary: eight slices done (indent/outdent, moveSelected, drag-and-drop move,
+paste, delete, the shared selection/parentId helpers, outline search matching, and template
+node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
+hand-written function as a dependency rather than reference an already-generated block, and
+later reused as-is for `applyBuiltinDefaultTemplate` once its own explicit parenting was found
+to be dead code). Three additional Phase 2/3-adjacent slices: tab cycling/reordering,
+diagram-anchor/orphan logic, and diagram-list filtering/sorting (`src/state/tabOrder.ts`,
+`src/state/diagramAnchor.ts`, `src/state/diagramDisplayList.ts` — not `core/`, since none
+touches the outline `nodes` array as a mutation target). **Hub's structural blocker resolved:**
 `scripts/generate-index-blocks.mjs` now supports multiple target HTML files (`targetFile` per
 block, collision-checking scoped per file); first proven with an infrastructure-only pilot
 (`hubGenerateId`, reusing Phase 1's `generateId.ts`), then four real feature-domain slices:
@@ -640,8 +642,54 @@ this project's discipline reaches: storage, subtask CRUD, and reminder checking.
 work is genuinely DOM-dependent (rendering, rich-text stripping) and stays hand-written by
 design, not by omission.
 
+**First slice of Diagrams' larger remainder: `src/state/diagramDisplayList.ts`** —
+`computeDiagramDisplayListCore`/`computeDiagramCanReorderCore`. Investigation of the `diagram*`
+domain (102 top-level functions matching that name pattern, the large majority in a genuinely
+separate `diagramGen*` XML/canvas-layout-generation subsystem — 32+ functions on their own,
+deliberately NOT touched here, a real future scoping session) found `getDiagramDisplayList()`/
+`diagramCanReorder()` were the closest match to this project's established narrow-slice shape:
+pure filter/sort/pin logic over the `diagrams` array plus UI filter state, structurally similar
+to `nodeSearch.ts`/`tabOrder.ts`'s own earlier revisits. `isDiagramOrphaned`/
+`diagramNeedsAttentionCore` (already a generated block, `diagramAnchor.ts`) are referenced via
+the established `declare function` ambient pattern; `diagramStatusOf`/`diagramStatusLabel` are
+trivial hand-written one-liners (not a generated block), so their equivalent logic is inlined
+directly into the new module instead, same precedent as `nodeSearch.ts` inlining
+`escapeRegExpLiteral`.
+
+**A real bug caught by the generator/build pipeline before merge, not by chance:** the new
+module's first draft declared a private module-level `const DIAGRAM_STATUSES` — colliding with
+index.html's own already-existing top-level `const DIAGRAM_STATUSES` (a hand-written array used
+by several sibling diagram functions). Every generated block shares one script scope with the
+rest of index.html, so this was a duplicate `const` declaration — a hard `SyntaxError` that
+silently killed the ENTIRE script the moment the page loaded, not just this one function
+(exactly the catastrophic failure mode `templatesIndex.ts`/`aiProviders.ts`'s own headers warn
+about for storage-key constants). Caught immediately by the new e2e test failing with
+`getDiagramDisplayList is not defined` — traced via a direct headless page-load check showing
+the real `PAGEERROR: Identifier 'DIAGRAM_STATUSES' has already been declared`. Fixed by renaming
+the module's private constants to `_DIAGRAM_STATUS_ORDER`/`_DIAGRAM_STATUS_LABELS`, the same
+underscore-prefixed-private convention already used elsewhere for exactly this reason. A
+reminder that every new module-level identifier needs a real collision check against the rest
+of the target file before it's assumed safe — grep alone would have caught this before the test
+run did.
+
+21 new unit tests, all passing after the fix, including: never mutating the input `diagrams`
+array, the search filter matching title OR status label, the "needs attention" filter never
+matching a whiteboard, both sort modes (including an unknown/missing status sorting as
+`'draft'`, and a missing `modifiedAt` sorting as `0`), the whiteboard-pin running only after the
+search filter (so a whiteboard that doesn't match an active search stays excluded, not pinned
+anyway), and all four of `diagramCanReorder`'s conditions independently. New
+`tests/e2e/generated-diagramdisplaylist-smoke.spec.ts` exercises the real, unchanged
+`getDiagramDisplayList()`/`diagramCanReorder()` wrappers against a real `diagrams` array and
+real UI filter-state globals, plus the standard distant-function-still-callable check.
+
+Deliberately excluded from this slice, per the scoping note above: `diagramGen*`'s XML/canvas
+layout-generation subsystem, diagram CRUD/editor DOM wiring, and `renderDiagramsList`/
+`updateDiagramBulkBar`'s own DOM construction — all left for dedicated future investigation, not
+attempted here.
+
 Not yet started in Phase 3: Journal's rich-text stripping display logic (genuinely DOM-
-dependent), Diagrams, Export, and the rest of the Templates domain (rendering, sync).
+dependent), Diagrams' `diagramGen*` generation subsystem and CRUD/editor DOM wiring, Export, and
+the rest of the Templates domain (rendering, sync).
 
 **`core/` module boundary — started.**
 The real architectural fork the previous paragraph left open — keep picking off narrow,
