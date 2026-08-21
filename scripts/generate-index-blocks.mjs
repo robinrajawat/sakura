@@ -638,6 +638,21 @@ initHubJournalState({
     // (the docs loop and the templates loop inside pullAndMergeFromCloud) were updated in the
     // same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Sync subsystem — Phase 4, third slice. The shared-doc realtime "should this incoming
+    // update actually be applied" decision (first-snapshot/existence/echo/open-tab checks) from
+    // startSharedDocRealtimeSyncIfNeeded's own onSnapshot callback — a distinct, simpler variant
+    // of shouldApplyIncomingSyncCore (no staleness check, since a shared doc has no local index
+    // entry to compare against). Everything else in that callback — localStorage.setItem, the
+    // cross-tab banner — stays hand-written.
+    name: 'sharedDocSync',
+    sourceFile: 'src/state/sharedDocSync.ts',
+    testFile: 'tests/unit/sharedDocSync.test.ts',
+    // No production wiring needed — pure function, no DOM/side effects. The one real call site
+    // (the onSnapshot callback body inside startSharedDocRealtimeSyncIfNeeded) was updated in
+    // the same commit that wired this block in.
+    footer: ''
   }
 ];
 
