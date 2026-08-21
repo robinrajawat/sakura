@@ -36,17 +36,22 @@ genuinely pure fragment inside an otherwise correctly-labeled-canvas-dependent f
 rest correctly staying hand-written per the above. Templates' remaining rendering/sync surface
 investigated and confirmed closed for the pure-logic extraction this migration otherwise does —
 `collectTemplateMatches` is genuinely DOM/UI-callback-bound, correctly excluded.
-**Phase 4 (sync subsystem) started:** the shared "should this incoming cloud update actually be
-applied" decision predicate — echo-suppression plus a staleness check — extracted from the three
-`applyIncoming*Data` functions (Doc/Template/Meta), which had each duplicated it inline with one
-real, preserved behavioral difference (whether a missing local record bypasses the staleness
-check) found and pinned rather than unified away. Everything else in those three functions —
-storage writes, cross-tab banners, collaborator notifications, IndexedDB-vs-localStorage
-branching — stays hand-written. **What remains in Phase 4:** the rest of the sync subsystem
-(the real-time Firestore listeners, the actual push/pull orchestration, and whatever further
-duplication or pure fragments turn up once those are read closely — not yet investigated) and
-CRUD/editor DOM wiring (meant to stay hand-written by this project's own consistent rule
-throughout — not a gap).
+**Phase 4 (sync subsystem) in progress:** the shared "should this incoming cloud update actually
+be applied" decision predicate — echo-suppression plus a staleness check — extracted from the
+three `applyIncoming*Data` functions (Doc/Template/Meta) in `index.html`, which had each
+duplicated it inline with one real, preserved behavioral difference (whether a missing local
+record bypasses the staleness check) found and pinned rather than unified away, then reused
+as-is (zero new source) for `hub.html`'s own `pullMetaFromCloud` — a second, genuinely different
+real caller (a one-shot poll with no echo-suppression) verified to degrade correctly to the
+shared predicate before reusing it, the same low-risk cross-file reuse pattern
+`hubGenerateId` established. Everything else in these functions — storage writes, cross-tab
+banners, collaborator notifications, IndexedDB-vs-localStorage branching, the real Firestore
+calls — stays hand-written. **What remains in Phase 4:** the rest of the sync subsystem (the
+real-time Firestore `onSnapshot` listeners, the actual push orchestration itself
+`bumpSyncTimestamp`/`pushMetaToCloud`/`queueSync`, and whatever further duplication or pure
+fragments turn up once those are read closely — not yet investigated) and CRUD/editor DOM
+wiring (meant to stay hand-written by this project's own consistent rule throughout — not a
+gap).
 `core/` module boundary: nine slices done (indent/outdent, moveSelected, drag-and-drop move,
 paste, delete, the shared selection/parentId helpers, outline search matching, template
 node-construction via injected `makeNode`/`emptyStyles` — the first slice to inject a
@@ -1442,6 +1447,27 @@ exists. New `tests/e2e/generated-syncapply-smoke.spec.ts` exercises all three re
 brand-new document/template applies regardless of timestamp, a subsequent stale update is
 rejected, an exact-echo update is rejected, and the real localStorage-backed Meta path
 (`prefs`) both applies a genuine update and rejects a stale one.
+
+**Second real call site: `hub.html`'s own `pullMetaFromCloud`.** A genuinely different real
+caller of the same already-tested `shouldApplyIncomingSyncCore` — `pullMetaFromCloud`'s own
+inline `cloudTs>localTs` check turned out to be exactly the shared predicate with no
+echo-suppression at all (a one-shot poll, called from `pullAndMergeFromCloud`-equivalent code
+in `hub.html`, not a live listener with its own `_lastPushedTs` tracking). Verified this
+degrades correctly before reusing it, rather than assumed: passing `lastPushedTsForKey:
+undefined` can never match a real coerced cloud timestamp (`Number(x)||0` is always a real
+number), so the shared predicate's echo-check is a permanent no-op here, leaving exactly
+`pullMetaFromCloud`'s own original always-compare behavior.
+
+Zero new source needed — reused `src/state/syncApply.ts` as-is via a second generated block
+(`targetFile: 'hub.html'`), the same low-risk cross-file reuse pattern `hubGenerateId`
+established for the Phase 1→Hub infrastructure pilot. Zero new unit tests needed either,
+already fully covered by `tests/unit/syncApply.test.ts`'s existing 10 tests. New
+`tests/e2e/generated-hubsyncapply-smoke.spec.ts` proves `shouldApplyIncomingSyncCore` is a
+real, correctly-behaving ambient global in `hub.html`'s own separate script scope (not just
+`index.html`'s), and that `pullMetaFromCloud` itself stays correctly shaped and callable after
+the edit — its `currentUser` guard, unaffected by this change, is what a fresh test load
+actually exercises, the same scope `hubGenerateId`'s own smoke test used for a
+Firestore-gated function it couldn't fully drive without a real backend.
 
 Not yet started in Phase 4: the rest of the sync subsystem — the real-time Firestore
 `onSnapshot` listeners themselves (deep async/subscription-lifecycle orchestration, likely
