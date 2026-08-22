@@ -84,17 +84,24 @@ describe('documentsStore', () => {
     expect(() => useDocumentsStore.getState().saveActiveDocNodes()).not.toThrow();
   });
 
-  it('init() on first-ever launch adopts outlineStore\'s current content as the first document', () => {
+  it('init() on first-ever launch creates its own explicit welcome document, independent of outlineStore\'s current content', () => {
+    // Deliberately set outlineStore to something that must NOT leak into the new document --
+    // this is the regression test for the real bug this decoupling fixes: init() used to
+    // adopt whatever was transiently sitting in outlineStore at that moment, which meant a
+    // fresh visitor's permanent first document was outlineStore.ts's own module-level default
+    // content, whatever that happened to be.
     useOutlineStore.setState({
-      nodes: [{ id: 1, depth: 0, text: 'seed content', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
+      nodes: [{ id: 1, depth: 0, text: 'should not leak into the new document', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
     });
     useDocumentsStore.getState().init();
     const { docsIndex, openTabs, activeDocId } = useDocumentsStore.getState();
     expect(docsIndex).toHaveLength(1);
+    expect(docsIndex[0].title).toBe('Welcome');
     expect(openTabs).toEqual([docsIndex[0].id]);
     expect(activeDocId).toBe(docsIndex[0].id);
-    // The seed content itself is preserved, not replaced with a blank node.
-    expect(useOutlineStore.getState().nodes[0].text).toBe('seed content');
+    // The document has its own explicit welcome content -- not the pre-init outlineStore state.
+    expect(useOutlineStore.getState().nodes[0].text).toBe('Welcome to Sakura');
+    expect(useOutlineStore.getState().nodes.some((n) => n.text?.includes('should not leak'))).toBe(false);
   });
 
   it('init() is idempotent -- calling it twice does not create a second document', () => {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useOutlineStore, type OutlineNode } from './outlineStore';
+import { rebuildParentIdsCore } from '../core/nodeSelection';
 
 export interface DocSummary {
   id: string;
@@ -113,20 +114,38 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => get().saveActiveDocNodes(), 800);
     });
-    // First-ever launch (nothing in the index at all) -- adopt outlineStore's own current seed
-    // content (the welcome/tutorial nodes) as the first real document, rather than either
-    // leaving it with no document/tab backing it at all, or discarding it in favor of
-    // newDocument()'s blank template.
+    // First-ever launch (nothing in the index at all) -- create a real first document with its
+    // own explicit welcome content, rather than adopting whatever happens to be sitting in
+    // outlineStore's transient in-memory state at this exact moment. This used to read
+    // useOutlineStore.getState().nodes directly, which meant a fresh visitor's permanent first
+    // document was whatever outlineStore.ts's own module-level seedNodes() produced -- when
+    // that was Phase 0's dev/validation-spike tutorial text ("Welcome to the Sakura web spike",
+    // "nodeMutations.ts — indent/outdent/move, byte-identical to legacy", etc.), every new
+    // visitor's first document was permanently saved with that text as its content. Explicit
+    // ownership of this content here means the two can never drift apart like that again,
+    // regardless of what outlineStore's own default happens to be at any point.
     if (docsIndex.length === 0) {
       const id = generateDocId();
       const now = Date.now();
-      const nodes = useOutlineStore.getState().nodes;
+      const nodes: OutlineNode[] = [
+        { id: 1, depth: 0, text: 'Welcome to Sakura', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'This is your first document — start typing to replace this', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'Enter creates a new line, Tab indents it', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ];
+      rebuildParentIdsCore(nodes);
       const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now };
       writeJson(docStorageKey(id), { title: summary.title, nodes });
       writeJson(_DOCS_INDEX_KEY, [summary]);
       writeJson(_OPEN_TABS_KEY, [id]);
       writeJson(_ACTIVE_DOC_KEY, id);
       set({ docsIndex: [summary], openTabs: [id], activeDocId: id });
+      useOutlineStore.setState({
+        nodes,
+        selectedId: nodes[0]?.id ?? null,
+        editingId: null,
+        multiSelectedIds: [],
+        selectionAnchorId: nodes[0]?.id ?? null
+      });
     }
   },
 
