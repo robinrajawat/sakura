@@ -3,6 +3,8 @@ import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
+import PptxGenJS from 'pptxgenjs';
+import { groupIntoSlides } from './PresenterMode';
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown, OPML, and this slice's
@@ -99,6 +101,39 @@ export function ExportButtons() {
     URL.revokeObjectURL(url);
   }
 
+  // PowerPoint export -- reuses the same slide breakdown as Presenter Mode (groupIntoSlides:
+  // one slide per top-level/depth-0 node plus its whole subtree), matching legacy's own
+  // PowerPoint export's stated approach ("same slide breakdown as Preview's Presenter mode").
+  // pptxgenjs (npm, MIT-licensed) is the same library legacy itself uses, pinned to the same
+  // 4.0.1 version, so this genuinely produces the same kind of native, fully-editable OOXML
+  // slide deck legacy's own export does -- text boxes and bullets are real shapes, not a
+  // flattened image. Scoped way down from legacy's real PowerPoint export otherwise: no title
+  // slide, no images/diagrams, no decision cards, no Notepad/Q&A sections, no branding, no
+  // marker glyphs, no auto-overflow onto a "(cont'd)" slide, no closing slide. Each a real,
+  // separately-scoped follow-up.
+  async function exportPowerpoint() {
+    const pptx = new PptxGenJS();
+    const slides = groupIntoSlides(nodes);
+    for (const slideNodes of slides) {
+      const slide = pptx.addSlide();
+      const minDepth = slideNodes[0].depth;
+      slide.addText(getNodePlainText(slideNodes[0]) || '(empty)', {
+        x: 0.5,
+        y: 0.4,
+        fontSize: 28,
+        bold: true
+      });
+      const bulletLines = slideNodes.slice(1).map((node) => ({
+        text: (node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '') + (getNodePlainText(node) || '(empty)'),
+        options: { bullet: true, indentLevel: node.depth - minDepth - 1, fontSize: 16 }
+      }));
+      if (bulletLines.length) {
+        slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+      }
+    }
+    await pptx.writeFile({ fileName: 'outline.pptx' });
+  }
+
   return (
     <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
       <button type="button" onClick={exportMarkdown}>
@@ -112,6 +147,9 @@ export function ExportButtons() {
       </button>
       <button type="button" onClick={exportWord}>
         Export .docx
+      </button>
+      <button type="button" onClick={exportPowerpoint}>
+        Export .pptx
       </button>
     </div>
   );
