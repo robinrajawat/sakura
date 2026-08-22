@@ -9,6 +9,7 @@ import { HubJournalPanel } from './components/HubJournalPanel';
 import { HubMeetingsPanel } from './components/HubMeetingsPanel';
 import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
+import { AuthPanel } from './components/AuthPanel';
 
 /**
  * Phase 3 in progress (docs/framework-migration-plan.md). Edit/Preview/Present toggle -- the
@@ -79,6 +80,10 @@ export function App() {
       <div style={{ marginTop: 16 }}>
         <h2 style={{ fontSize: 16 }}>Hub — Recap</h2>
         <HubRecapPanel />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <h2 style={{ fontSize: 16 }}>Account</h2>
+        <AuthPanel />
       </div>
     </div>
   );
