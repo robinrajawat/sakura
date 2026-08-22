@@ -4,6 +4,7 @@ import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
 import { PadPanel } from './components/PadPanel';
+import { HubTodosPanel } from './components/HubTodosPanel';
 
 /**
  * Phase 3 in progress (docs/framework-migration-plan.md). Edit/Preview/Present toggle -- the
@@ -54,6 +55,10 @@ export function App() {
       </div>
       <div style={{ marginTop: 16 }}>
         <PadPanel />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <h2 style={{ fontSize: 16 }}>Hub — To-Dos</h2>
+        <HubTodosPanel />
       </div>
     </div>
   );
