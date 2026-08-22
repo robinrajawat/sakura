@@ -2,7 +2,7 @@
 
 ## Why this doc exists, and why it's separate from architecture-plan.md
 
-`docs/architecture-plan.md` covers the TypeScript modularization of the *existing*
+`docs/history/architecture-plan.md` covers the TypeScript modularization of the *existing*
 single-file app — extracting logic out of `index.html`/`hub.html` into tested `src/`
 modules, spliced back into those same two files at build time. That plan's whole
 premise is preserving the single-file, download-and-open distribution model while
@@ -62,7 +62,7 @@ layer) is next.**
 This is worth stating plainly since it came up directly: a React or Svelte
 production build is `vite build` output — static HTML/CSS/JS files, exactly the
 same *category* of artifact `dist/` already is today after Stage 2
-(`docs/architecture-plan.md`). GitHub Pages doesn't care what produced those
+(`docs/history/architecture-plan.md`). GitHub Pages doesn't care what produced those
 files. The existing pipeline — `.github/workflows/deploy.yml` builds via
 `npm run build` and publishes via `actions/deploy-pages` — needs no structural
 change, only a different `npm run build` underneath it (a real framework build
@@ -80,7 +80,7 @@ routing gets revisited down the line.
 
 ## What ports directly vs. what needs rework
 
-The modularization project (Phases 0–5, `docs/architecture-plan.md`) turns out to
+The modularization project (Phases 0–5, `docs/history/architecture-plan.md`) turns out to
 be exactly the right preparation for this, even though it wasn't done with this in
 mind. Breaking it down honestly:
 
@@ -119,7 +119,7 @@ mind. Breaking it down honestly:
   framework-appropriate wrapper; these are the highest-effort, highest-risk
   individual pieces since they're not pure logic and not simple to test.
 
-**A useful side effect:** `docs/architecture-plan.md`'s own "Open items" list
+**A useful side effect:** `docs/history/architecture-plan.md`'s own "Open items" list
 (hub.html sync duplication, revision-snapshot debounce duplication) becomes
 largely moot post-migration — a proper component/store architecture makes that
 kind of duplication structurally harder to reintroduce, rather than something to
@@ -147,7 +147,7 @@ twice, both fixed:
    Phase 1 used `declare function foo(...): T;` to reference another
    already-spliced generated block's function as a same-scope ambient global
    (a real, deliberate, well-documented pattern for the classic-script splice
-   pipeline — see `docs/architecture-plan.md`'s own critical-lessons section).
+   pipeline — see `docs/history/architecture-plan.md`'s own critical-lessons section).
    In a real module system that function is simply `undefined` at runtime; the
    spike's very first render threw `ReferenceError: getParentIndex is not
    defined`. Fixed by converting every `declare function` stub across all 15
@@ -362,7 +362,7 @@ data layer patterns) already being proven out.
 
 **Phase 5 — Parity audit.** ✅ Complete. Full feature-by-feature check against the current
 README as the source of truth for what "done" means — not a guess, an explicit checklist walk
-(`docs/phase5-parity-checklist.md`). Deliberately scoped as an audit only, not a cutover
+(`docs/history/phase5-parity-checklist.md`). Deliberately scoped as an audit only, not a cutover
 milestone: cutover can't honestly happen until the gap that audit surfaced is closed, which is
 exactly Phase 6's job. Two feature slices also landed while this phase was underway (Documents &
 Tabs, Tags & Focus) — real, merged work, not blocked on Phase 6 either.
@@ -430,18 +430,19 @@ sakura/
     │                           # (simpler than two separate files for two jobs sharing
     │                           # the same triggers; revisit if that stops being true)
     └── deploy.yml              # builds+publishes legacy/dist/ today; repointed at
-                                  # web/dist/ in Phase 5's cutover
+                                  # web/dist/ once Phase 6's cutover gate clears
 ```
 
-`docs/architecture-plan.md` stays exactly where it is and keeps being the
-authoritative record for `legacy/` until Phase 6 retires it — no need to move or
-rewrite that history mid-migration; see that file's own "Path note" for how it
-handles now-stale root-relative paths in its historical narration.
+`docs/history/architecture-plan.md` was moved into `docs/history/` (see `docs/README.md`) once
+Phase 5 closed and this repo had more than one truly historical/closed doc worth separating from
+active ones — its content is otherwise unchanged and keeps being the authoritative record for
+`legacy/` until Phase 6 retires it; see that file's own "Path note" for how it handles now-stale
+root-relative paths in its historical narration.
 
 ## Repo hygiene — root clutter (done)
 
 **Done separately from this plan, ahead of any framework decision** — see
-`docs/architecture-plan.md`'s "Repo hygiene" section for the full write-up.
+`docs/history/architecture-plan.md`'s "Repo hygiene" section for the full write-up.
 `sw.js`, both manifests, every icon, `flower-glyph.svg`, `social-card.png`, and
 `CNAME` now live in `public/`; `scripts/copy-static-assets.mjs` is deleted;
 Vite's own `publicDir` convention handles the passthrough with zero custom
@@ -487,6 +488,6 @@ starts clean.
 - **PWA/offline behavior regression.** Framework builds can accidentally break
   service-worker registration or manifest resolution if not configured
   carefully (this project already hit exactly this class of bug once, in
-  Stage 1 — see `docs/architecture-plan.md`). Mitigation: carry
+  Stage 1 — see `docs/history/architecture-plan.md`). Mitigation: carry
   `tests/e2e/dist-static-assets.spec.ts`'s spirit forward into the new app's own
   test suite from Phase 3 onward, when PWA features are built.

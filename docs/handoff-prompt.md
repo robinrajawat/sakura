@@ -28,11 +28,11 @@ current after every merge and may have drifted since this prompt was written,
 so re-verify state against them yourself rather than trusting this prompt's
 own "Current state" section below if the two disagree:
 
-- docs/architecture-plan.md — legacy/'s own modularization history (frozen,
+- docs/history/architecture-plan.md — legacy/'s own modularization history (frozen,
   historical reference only, not where current work happens)
 - docs/framework-migration-plan.md — the legacy/+web/ split, and the full
   phase history of the React rewrite (Phases 0–6)
-- docs/phase5-parity-checklist.md — the row-by-row audit of what web/ can
+- docs/history/phase5-parity-checklist.md — the row-by-row audit of what web/ can
   and can't do yet vs. legacy/'s real feature set (Phase 5, closed)
 - docs/phase6-full-parity-plan.md — the actual current work: sequencing plan
   for closing every remaining gap toward full feature AND pixel-close visual

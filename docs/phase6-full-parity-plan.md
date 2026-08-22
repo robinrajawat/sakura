@@ -14,7 +14,7 @@ would, then cut over — not the other way around.
 ## Goal
 
 Full feature and visual parity with `legacy/` as it exists today, not a prioritized subset.
-`docs/phase5-parity-checklist.md` is the authoritative, row-by-row record of every gap; this
+`docs/history/phase5-parity-checklist.md` is the authoritative, row-by-row record of every gap; this
 document is the sequencing plan for closing all of them. Visual parity means **pixel-close**,
 not "same spirit" — legacy's actual colors, typography, spacing, and layout chrome, not a
 React-flavored reinterpretation of them.
@@ -49,13 +49,13 @@ this phase, not leave them for later: a real file explorer (folders/templates �
 has no document-management shell at all beyond the flat tab strip from Phase 5), a searchable
 tab-switcher dropdown for overflow, drag-to-reorder tabs, and per-tab independent scroll
 position/selection (switching tabs currently resets selection). All four are explicitly named as
-deferred in `docs/phase5-parity-checklist.md`'s "Documents & Tabs" section and have no other
+deferred in `docs/history/phase5-parity-checklist.md`'s "Documents & Tabs" section and have no other
 natural home in this plan — building the real shell without them would just recreate the same
 gap one level up.
 
 ### 6.2 — Undo/redo (foundational) & core editing parity
 `outlineStore.ts` has no undo/redo at all yet — not a per-tab gap, a store-level absence
-(`docs/phase5-parity-checklist.md`'s Documents & Tabs section and its Keyboard Shortcuts table
+(`docs/history/phase5-parity-checklist.md`'s Documents & Tabs section and its Keyboard Shortcuts table
 both name this). Build it first in this phase, before the other core-editing items below, since
 several of them (Duplication, checkbox toggling, sort) should push onto the same undo stack
 rather than each growing its own ad hoc history later. Once it exists, per-tab independent
@@ -130,7 +130,7 @@ that drifted from the shared system during individual feature phases.
 
 Every item below, checked in that order, before any cutover PR is even opened:
 
-1. `docs/phase5-parity-checklist.md` shows no remaining `❌` or `⚠` rows against this plan's scope.
+1. `docs/history/phase5-parity-checklist.md` shows no remaining `❌` or `⚠` rows against this plan's scope.
 2. A person — not a build log — opens the actual built `web/dist/` output (locally or on a
    preview URL) and uses it end-to-end: create a document, edit, sign in, sync, export, and
    exercise Hub/Pad/Presenter, watching for anything that doesn't look or behave like `legacy/`.
@@ -145,7 +145,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 Not started. `web/` is currently mid-Phase-5 (Documents & Tabs, Tags & Focus shipped; this plan
 is what comes after). Update each phase's own section above with a `Status:` line and PR numbers
-as work lands, the same way `docs/phase5-parity-checklist.md`'s own "Update" notes track
+as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own "Update" notes track
 progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
