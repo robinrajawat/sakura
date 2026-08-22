@@ -83,4 +83,23 @@ describe('documentsStore', () => {
   it('saveActiveDocNodes is a no-op when nothing is active', () => {
     expect(() => useDocumentsStore.getState().saveActiveDocNodes()).not.toThrow();
   });
+
+  it('init() on first-ever launch adopts outlineStore\'s current content as the first document', () => {
+    useOutlineStore.setState({
+      nodes: [{ id: 1, depth: 0, text: 'seed content', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }]
+    });
+    useDocumentsStore.getState().init();
+    const { docsIndex, openTabs, activeDocId } = useDocumentsStore.getState();
+    expect(docsIndex).toHaveLength(1);
+    expect(openTabs).toEqual([docsIndex[0].id]);
+    expect(activeDocId).toBe(docsIndex[0].id);
+    // The seed content itself is preserved, not replaced with a blank node.
+    expect(useOutlineStore.getState().nodes[0].text).toBe('seed content');
+  });
+
+  it('init() is idempotent -- calling it twice does not create a second document', () => {
+    useDocumentsStore.getState().init();
+    useDocumentsStore.getState().init();
+    expect(useDocumentsStore.getState().docsIndex).toHaveLength(1);
+  });
 });

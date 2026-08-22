@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { OutlineTree } from './components/OutlineTree';
+import { DocumentTabs } from './components/DocumentTabs';
 import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
@@ -22,7 +23,8 @@ export function App() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: 640 }}>
-      <h1>Sakura (web) — Phase 3, in progress</h1>
+      <h1>Sakura (web) — Phase 5, in progress</h1>
+      <DocumentTabs />
       <div style={{ marginBottom: 12 }}>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
