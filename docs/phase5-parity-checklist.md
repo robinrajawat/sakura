@@ -38,7 +38,7 @@ already made and already documented at the time.
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Basic slide grouping + Prev/Next/arrow-keys (Phase 3) — no laser pointer, blackout, grid, timer, floating notes, Whiteboard, closing slide |
 | Export: Word/PDF/PowerPoint/Markdown/OPML | ⚠️ | All 5 exist (Phase 3) at a genuinely functional but heavily scoped-down level — see Export section below. No plain text, Excel, or clipboard export; no Sakura Document (.sakura.json) format |
-| Multiple document tabs | ❌ | web/ edits a single in-memory document; no tab strip, no document switching |
+| Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
 | Deep theming | ⚠️ | Light/Dark toggle only (Phase 3) — no System/Schedule auto-theme, accent colors, Chrome backgrounds, node-text color presets |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
 | Two-tier automatic backup | ❌ | No local safety copy (IndexedDB mirror), no auto-backup-to-file |
@@ -61,9 +61,18 @@ already made and already documented at the time.
 
 ## Documents & Tabs
 
-❌ Entirely not built — web/ has no document-management shell (no file explorer, no tabs, no
-per-document undo/redo history, no rename). This is the single largest structural gap: every
-other section below implicitly assumes a document container that doesn't exist yet in `web/`.
+✅ **Closed** (Phase 5, PRs #115–#116). A real multi-document model exists: `documentsStore.ts`
+manages a document index, an open-tab strip, and the active document, persisted to
+`localStorage` under a distinct `sakura_web_*` namespace. `DocumentTabs.tsx` provides the tab
+strip (rename via double-click, close-preserves-content vs. delete-removes-it, matching
+README's own distinction) plus a picker to reopen any existing document. Debounced autosave
+(800ms) and first-launch content adoption were both caught and fixed before shipping.
+
+Still gaps from the README's fuller description: no per-tab independent undo/redo (outlineStore
+itself has no undo/redo at all yet, tabbed or not — broader than this slice), no per-tab
+independent scroll position/selection (switching tabs resets selection), no folders/templates,
+no searchable tab-switcher dropdown for overflow, no drag-to-reorder tabs. Each a real,
+separately-scoped follow-up building on this foundation.
 
 ## Panels
 
@@ -87,7 +96,7 @@ other section below implicitly assumes a document container that doesn't exist y
 | To-Dos | ⚠️ | Create/toggle/delete only (Phase 4, wraps real ported hubTodos.ts); no priority/status/due-dates/subtasks/repeat/filtering/sorting/bulk-actions/AI/tags/PDF export/Version History/Share |
 | Journal | ⚠️ | Create/delete + mood (Phase 4, wraps real ported hubJournal.ts); no editing, tags, rich text, AI rewrite, calendar popover, PDF export, Version History, search |
 | Library | ⚠️ | Title/URL/description CRUD (Phase 4); no favorites, tag filtering, rich text, images, AI, Version History |
-| Recap | ⚠️ | Basic counts + recent-N lists derived from the other 4 stores (Phase 4); no Today/This Week/Last Week grouping, no click-to-jump, no AI summarize, no document-level activity (web/ has no multi-document concept yet) |
+| Recap | ⚠️ | Basic counts + recent-N lists derived from the other 4 stores (Phase 4); no Today/This Week/Last Week grouping, no click-to-jump, no AI summarize, no document-level activity grouping (Documents & Tabs now exists as of Phase 5, but Recap itself hasn't been updated to read from it yet) |
 | Mobile Hub (hub.html equivalent) | ❌ | Not built — web/ has no responsive breakpoint redirect or mobile-specific UI |
 
 ## Tags, Focus & Backlinks
@@ -198,21 +207,23 @@ README.md's own Deployment section, both of which explicitly say so).
 
 ## What this means for the rest of Phase 5
 
-The gap is large and, per the reasoning at the top of this doc, expected — every slice in
-Phases 2–4 was deliberately scoped down and documented as such at the time. This checklist's
-job was just to make that accumulated gap visible in one place, not to be surprised by it.
+**Update (Phase 5, PRs #115–#116): the Documents & Tabs gap flagged below as the top priority
+has been closed.** A real multi-document model now exists — see that section above for the
+full picture and its own remaining sub-gaps.
+
+The overall gap is still large, and still expected — every slice in Phases 2–4 was deliberately
+scoped down and documented as such at the time. This checklist's job was to make that
+accumulated gap visible in one place, not to be surprised by it.
 
 Two honest paths forward from here, worth an explicit decision rather than silently picking one:
 
-1. **Close a meaningful chunk of this gap before any preview deployment** — the biggest
-   structural miss is Documents & Tabs (no file explorer, no multi-document concept, no
-   folders/templates), which several other sections implicitly depend on (Recap's
-   document-grouping, Sharing, multi-doc sync). Building that shell would unblock a lot of
-   downstream parity work at once.
-2. **Deploy to a preview URL now, with this checklist attached as the honest "here's exactly
-   what this build can and can't do yet" note**, and continue closing gaps against a live,
-   soakable target rather than only in local dev — matching Stage 1/Stage 2's own "prove it
-   before the mechanism changes" discipline from the legacy deployment work.
+1. **Keep closing the largest remaining ❌ sections** — Tags/Focus/Backlinks and AI Features are
+   now the biggest fully-unbuilt sections; Quick Assist and most of Theming & Appearance are
+   close behind.
+2. **Deploy to a preview URL now, with this checklist as the honest "here's exactly what this
+   build can and can't do yet" note**, and continue closing gaps against a live, soakable target
+   rather than only in local dev — matching Stage 1/Stage 2's own "prove it before the mechanism
+   changes" discipline from the legacy deployment work.
 
 Either way, actual **cutover** (pointing `www.sakura-notes.com` at this build) remains its own
 separate, explicit decision, not something this checklist or a preview deployment authorizes on
