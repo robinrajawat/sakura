@@ -394,3 +394,62 @@ describe('outlineStore sortChildren', () => {
     expect(useOutlineStore.getState().nodes).toBe(before);
   });
 });
+
+describe('outlineStore splitAtCursor', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null },
+        { id: 2, depth: 1, text: 'hello world', parentId: 1 },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1 }
+      ],
+      selectedId: 2,
+      editingId: 2,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2
+    });
+  });
+
+  it('keeps the text before the caret on the original node, moving the rest to a new sibling', () => {
+    useOutlineStore.getState().splitAtCursor(2, 'hello world', 5);
+    const { nodes } = useOutlineStore.getState();
+    expect(nodes.find((n) => n.id === 2)?.text).toBe('hello');
+    const newNode = nodes.find((n) => n.id === 100);
+    expect(newNode?.text).toBe(' world');
+    expect(newNode?.depth).toBe(1);
+    expect(newNode?.parentId).toBe(1);
+  });
+
+  it('inserts the new sibling right after the whole subtree, not immediately after the node', () => {
+    useOutlineStore.getState().newChild(2); // gives node 2 a child, id 100
+    useOutlineStore.getState().splitAtCursor(2, 'hello world', 5);
+    const { nodes } = useOutlineStore.getState();
+    // node 2's subtree is [2, 100(child)]; the split-off sibling (id 101) must land after
+    // both, not wedged between node 2 and its existing child.
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 100, 101, 3]);
+  });
+
+  it('selects and begins editing the new node, clearing any stale multi-selection', () => {
+    useOutlineStore.getState().splitAtCursor(2, 'hello world', 5);
+    const { selectedId, editingId, multiSelectedIds, selectionAnchorId } = useOutlineStore.getState();
+    expect(selectedId).toBe(100);
+    expect(editingId).toBe(100);
+    expect(multiSelectedIds).toEqual([]);
+    expect(selectionAnchorId).toBe(100);
+  });
+
+  it('clamps an out-of-range caret position to the text bounds', () => {
+    useOutlineStore.getState().splitAtCursor(2, 'hello world', 9999);
+    const { nodes } = useOutlineStore.getState();
+    expect(nodes.find((n) => n.id === 2)?.text).toBe('hello world');
+    expect(nodes.find((n) => n.id === 100)?.text).toBe('');
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().splitAtCursor(9999, 'anything', 3);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+});
