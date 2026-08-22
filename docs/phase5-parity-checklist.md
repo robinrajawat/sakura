@@ -24,9 +24,9 @@ already made and already documented at the time.
 | Heading 1–6 per node | ❌ | Not built |
 | Semantic styling `[Section]`/`(note)`/`!alert`/`` `code` `` | ✅ | Phase 2, matches legacy exactly |
 | Fold/unfold, "+N hidden" badge | ⚠️ | Fold/unfold works; no "+N" badge UI |
-| `#tags` | ❌ | Not built |
-| `[[@mention]]` backlinks | ❌ | Not built |
-| Focus mode | ❌ | Not built |
+| `#tags` | ✅ | Phase 5 (PRs #118–#119) — toggle, filter, chips |
+| `[[@mention]]` backlinks | ❌ | Not built — tracked in docs/phase6-full-parity-plan.md §6.4 |
+| Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
 | Note panel | ⚠️ | Plain text only (Phase 3) — no rich text, images, tables, AI, backlinks section |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
 | Decision Log | ⚠️ | Pad's Decision Log tab exists (Phase 3) as a flat list — not node-linked, no accent dot, no card rendering in exports, no Excel export |
@@ -101,7 +101,13 @@ separately-scoped follow-up building on this foundation.
 
 ## Tags, Focus & Backlinks
 
-❌ Entirely not built.
+✅ **Tags and Focus mode closed** (Phase 5, PRs #118–#119) — see the Overview table above and
+`web/src/store/outlineStore.ts`'s `toggleTag`/`setTagFilter`/`zoomIntoNode`/`focusPath` for the
+real implementation. Deliberately flat tag-filter scoping (no ancestor-context restoration),
+same "honest first pass" convention as every other slice in this project.
+
+❌ `[[@mention]]` backlinks still entirely not built — tracked in
+`docs/phase6-full-parity-plan.md` §6.4.
 
 ## AI Features
 
@@ -207,24 +213,9 @@ README.md's own Deployment section, both of which explicitly say so).
 
 ## What this means for the rest of Phase 5
 
-**Update (Phase 5, PRs #115–#116): the Documents & Tabs gap flagged below as the top priority
-has been closed.** A real multi-document model now exists — see that section above for the
-full picture and its own remaining sub-gaps.
-
-The overall gap is still large, and still expected — every slice in Phases 2–4 was deliberately
-scoped down and documented as such at the time. This checklist's job was to make that
-accumulated gap visible in one place, not to be surprised by it.
-
-Two honest paths forward from here, worth an explicit decision rather than silently picking one:
-
-1. **Keep closing the largest remaining ❌ sections** — Tags/Focus/Backlinks and AI Features are
-   now the biggest fully-unbuilt sections; Quick Assist and most of Theming & Appearance are
-   close behind.
-2. **Deploy to a preview URL now, with this checklist as the honest "here's exactly what this
-   build can and can't do yet" note**, and continue closing gaps against a live, soakable target
-   rather than only in local dev — matching Stage 1/Stage 2's own "prove it before the mechanism
-   changes" discipline from the legacy deployment work.
-
-Either way, actual **cutover** (pointing `www.sakura-notes.com` at this build) remains its own
-separate, explicit decision, not something this checklist or a preview deployment authorizes on
-its own — same rule Stage 2 established for the legacy deployment mechanism itself.
+**Update: Phase 5 is complete as scoped.** Documents & Tabs (PRs #115–#116) and Tags & Focus
+(PRs #118–#119) are both closed. The remaining gap documented throughout this checklist is now
+tracked as its own sequenced plan: **`docs/phase6-full-parity-plan.md`**. That plan also states
+the rule this checklist's own honest accounting exists to support: `www.sakura-notes.com` stays
+on `legacy/` until Phase 6's pre-cutover gate is explicitly cleared, not on the strength of a
+passing build alone.
