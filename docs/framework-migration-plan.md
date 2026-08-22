@@ -371,11 +371,14 @@ larger change. Cutover itself (pointing the custom domain at the new build) is
 the second "the mechanism itself changes" moment in this project, same rule as
 Stage 2: explicit, separate sign-off, not bundled into a routine merge.
 
-**Phase 6 — Retire the legacy single-file app.** Once the new app has run
-successfully in production for a deliberate soak period, remove
-`index.html`/`hub.html`, `scripts/generate-index-blocks.mjs`, and the whole
-splice-based build pipeline. Not automatic — a explicit decision once confidence
-is actually earned, not scheduled in advance.
+**Phase 6 — Full parity migration and legacy retirement.** Full plan:
+`docs/phase6-full-parity-plan.md`. `www.sakura-notes.com` stays on `legacy/` until that plan's
+own pre-cutover gate is explicitly satisfied — not before, and not on the strength of a passing
+build alone (see that document's own opening section for why this rule exists). Once `web/`
+reaches full feature and pixel-close visual parity with `legacy/` and the gate is cleared: cut
+over, run a deliberate soak period in production, then remove `index.html`/`hub.html`,
+`scripts/generate-index-blocks.mjs`, and the whole splice-based build pipeline. Retirement itself
+remains its own explicit decision once confidence is actually earned, not scheduled in advance.
 
 Each phase should land as its own sequence of small, reviewable PRs (same
 discipline as the current modularization project), not one giant branch — easier
