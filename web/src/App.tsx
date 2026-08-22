@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { OutlineTree } from './components/OutlineTree';
 import { PreviewPane } from './components/PreviewPane';
+import { PresenterMode } from './components/PresenterMode';
 
 /**
- * Phase 3 in progress (docs/framework-migration-plan.md). Adds an Edit/Preview toggle -- the
- * simplest possible entry point for Preview Mode (see PreviewPane.tsx's own header for what's
+ * Phase 3 in progress (docs/framework-migration-plan.md). Edit/Preview/Present toggle -- the
+ * simplest possible entry point for each mode (see each component's own header for what's
  * deliberately not in scope yet). Still not the real Sakura UI shell.
  */
 export function App() {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: 640 }}>
@@ -17,8 +18,11 @@ export function App() {
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
         </button>
-        <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'}>
+        <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'} style={{ marginRight: 6 }}>
           Preview
+        </button>
+        <button type="button" onClick={() => setMode('present')} disabled={mode === 'present'}>
+          Present
         </button>
       </div>
       <ul style={{ fontSize: '0.9em', color: '#555' }}>
@@ -42,7 +46,7 @@ export function App() {
           <code>`code`</code> — matches legacy's real styling, delimiters hidden
         </li>
       </ul>
-      {mode === 'edit' ? <OutlineTree /> : <PreviewPane />}
+      {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
     </div>
   );
 }
