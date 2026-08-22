@@ -2,7 +2,7 @@
 
 An explicit, section-by-section walk of README.md (the source of truth for what "done" means)
 against `web/`'s actual current state — not a guess, a checklist. Written at the start of Phase
-5 (docs/framework-migration-plan.md), before any preview deployment or cutover work.
+5 (docs/framework-migration-plan.md), as that phase's own audit deliverable.
 
 Status key: ✅ Done · ⚠️ Partial (a real, deliberately scoped-down slice exists) · ❌ Not started
 
@@ -211,11 +211,15 @@ README.md's own Deployment section, both of which explicitly say so).
 
 ---
 
-## What this means for the rest of Phase 5
+## Phase 5 status: closed
 
-**Update: Phase 5 is complete as scoped.** Documents & Tabs (PRs #115–#116) and Tags & Focus
-(PRs #118–#119) are both closed. The remaining gap documented throughout this checklist is now
-tracked as its own sequenced plan: **`docs/phase6-full-parity-plan.md`**. That plan also states
-the rule this checklist's own honest accounting exists to support: `www.sakura-notes.com` stays
-on `legacy/` until Phase 6's pre-cutover gate is explicitly cleared, not on the strength of a
-passing build alone.
+Phase 5 was scoped as an audit, not a cutover milestone (see `docs/framework-migration-plan.md`'s
+Phase 5 entry) — this checklist is that audit, and it's done. Two feature slices also landed
+while Phase 5 was underway: Documents & Tabs (PRs #115–#116) and Tags & Focus (PRs #118–#119),
+both real, merged, closed.
+
+Everything else this checklist found still missing is tracked as its own sequenced plan:
+**`docs/phase6-full-parity-plan.md`**. That plan owns the remaining feature work and the cutover
+itself, and states the rule this checklist's audit exists to support: `www.sakura-notes.com`
+stays on `legacy/` until Phase 6's own pre-cutover gate is explicitly cleared — a real person
+using the actual built app, not a passing build alone.
