@@ -2,6 +2,7 @@ import { useOutlineStore } from '../store/outlineStore';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown, OPML, and this slice's
@@ -67,6 +68,37 @@ export function ExportButtons() {
     printWindow.print();
   }
 
+  // Word export -- unlike PDF, there's no browser-native equivalent, so this genuinely needs a
+  // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
+  // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
+  // bindings. Scoped way down from legacy's real Word export (no images, tables, decision
+  // cards, Notepad/Q&A sections, branding, or heading-level styling by depth) -- one paragraph
+  // per node, indented via docx's own `indent` property (720 twips = 0.5in per depth level,
+  // the standard Word indent unit), with a literal "[ ] "/"[x] " checkbox prefix since a real
+  // interactive checkbox isn't something a static Word paragraph can represent.
+  async function exportWord() {
+    const doc = new Document({
+      sections: [
+        {
+          children: nodes.map((node) => {
+            const prefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
+            return new Paragraph({
+              indent: { left: node.depth * 720 },
+              children: [new TextRun(prefix + (getNodePlainText(node) || '(empty)'))]
+            });
+          })
+        }
+      ]
+    });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'outline.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
       <button type="button" onClick={exportMarkdown}>
@@ -77,6 +109,9 @@ export function ExportButtons() {
       </button>
       <button type="button" onClick={exportPdf}>
         Export .pdf
+      </button>
+      <button type="button" onClick={exportWord}>
+        Export .docx
       </button>
     </div>
   );
