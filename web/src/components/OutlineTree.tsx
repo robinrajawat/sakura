@@ -93,8 +93,13 @@ export function OutlineTree() {
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
-    const isTopHalf = e.clientY - rect.top < rect.height / 2;
-    setDropTarget({ id, mode: isTopHalf ? 'above' : 'below' });
+    const fraction = (e.clientY - rect.top) / rect.height;
+    // Top third = above, middle third = nest as child, bottom third = below — matches the
+    // ported moveNodeBlockCore's own 'above'/'child'/'below' modes exactly (see that
+    // function's own header: 'child' inserts right after the target as its first child,
+    // depth+1). No separate UI affordance needed beyond a wider middle drop zone.
+    const mode: DropMode = fraction < 0.33 ? 'above' : fraction > 0.67 ? 'below' : 'child';
+    setDropTarget({ id, mode });
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>, targetId: number) {
@@ -128,6 +133,7 @@ export function OutlineTree() {
         const isDragging = node.id === draggedId;
         const showDropAbove = dropTarget?.id === node.id && dropTarget.mode === 'above';
         const showDropBelow = dropTarget?.id === node.id && dropTarget.mode === 'below';
+        const showDropChild = dropTarget?.id === node.id && dropTarget.mode === 'child';
         const hasChildren = nodeHasChildrenFn(node.id);
         const isCollapsed = collapsedIds.has(node.id);
 
@@ -150,7 +156,8 @@ export function OutlineTree() {
               paddingBottom: 4,
               cursor: isEditing ? 'text' : 'grab',
               opacity: isDragging ? 0.4 : 1,
-              backgroundColor: isSelected ? '#e8f0fe' : 'transparent',
+              backgroundColor: showDropChild ? 'rgba(66, 133, 244, 0.12)' : isSelected ? '#e8f0fe' : 'transparent',
+              boxShadow: showDropChild ? 'inset 0 0 0 1.5px #4285f4' : 'none',
               borderTop: showDropAbove ? '2px solid #4285f4' : '2px solid transparent',
               borderBottom: showDropBelow ? '2px solid #4285f4' : '2px solid transparent',
               borderRadius: 4

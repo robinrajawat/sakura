@@ -69,6 +69,26 @@ describe('outlineStore', () => {
     expect(nodes.find((n) => n.id === 3)?.depth).toBe(0);
   });
 
+  it("moveNode with 'child' mode nests the dragged node as the target's first child, depth+1", () => {
+    const moved = useOutlineStore.getState().moveNode(3, 1, 'child');
+    expect(moved).toBe(true);
+    const nodes = useOutlineStore.getState().nodes;
+    // node 3 (originally depth 1, a sibling of node 2 under node 1) becomes node 1's own
+    // first child instead — inserted right after node 1, at depth 1 (1's depth 0 + 1),
+    // ahead of node 1's existing child (node 2).
+    expect(nodes.map((n) => n.id)).toEqual([1, 3, 2]);
+    const node3 = nodes.find((n) => n.id === 3);
+    expect(node3?.depth).toBe(1);
+    expect(node3?.parentId).toBe(1);
+  });
+
+  it("moveNode with 'child' mode un-collapses the target so the newly-nested node is visible", () => {
+    useOutlineStore.getState().toggleCollapse(1);
+    expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(true);
+    useOutlineStore.getState().moveNode(3, 1, 'child');
+    expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(false);
+  });
+
   it('moveNode returns false and leaves nodes unchanged for an invalid move (dragging onto itself)', () => {
     const before = useOutlineStore.getState().nodes;
     const moved = useOutlineStore.getState().moveNode(2, 2, 'above');

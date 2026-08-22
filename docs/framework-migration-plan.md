@@ -279,9 +279,23 @@ multi-select (the ported `computeSelectedIds`/`computeSelectionRootIndexes`
 support it; the UI for range/multi-select doesn't exist yet), `Shift+Enter`
 split-at-cursor (needs real cursor-position tracking, more involved than a
 plain `<input>` currently used for inline editing supports), sort children,
-checkboxes, and `'child'`-mode drag target (drop-to-nest — the ported
-`moveNodeBlockCore` already supports it; no UI affordance wired yet, same as
-noted in the validation spike).
+and checkboxes.
+
+**Third slice landed: drag-to-nest.** The ported `moveNodeBlockCore` already
+supported `'child'` mode from the start (insert right after the target as
+its first child, depth+1) — this slice was purely a UI affordance, not new
+core logic. Extended the existing above/below drop-zone detection from a
+simple top-half/bottom-half split to thirds: top third = above, bottom third
+= below, middle third = nest as child, with its own distinct visual
+treatment (an inset highlight rather than a border line, so it reads as
+"drop inside" rather than "drop between"). Nesting under a collapsed target
+un-collapses it, matching `newChild`'s existing behavior — a node you just
+dropped somewhere shouldn't immediately vanish from view.
+
+Verified: `web` typecheck clean; `test:unit` 770/770 (768 prior + 2 new,
+covering the nest-and-reparent case and the un-collapse-on-nest case);
+`lint` 0 errors, 1 pre-existing warning; `build` clean. `legacy/` completely
+unaffected.
 
 **Second slice landed: semantic markup styling** (`[Section]`, `(note)`,
 `!alert`, `` `code` ``). Investigated legacy's real rendering path before
