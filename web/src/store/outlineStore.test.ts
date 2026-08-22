@@ -17,9 +17,9 @@ describe('outlineStore', () => {
     // equivalent shape directly here instead.
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null },
-        { id: 2, depth: 1, text: 'child', parentId: 1 },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1 }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
       ],
       selectedId: 2,
       editingId: null,
@@ -173,7 +173,7 @@ describe('outlineStore', () => {
   });
 
   it('deleteNode refuses to delete the last remaining node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null }], selectedId: 1 });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false }], selectedId: 1 });
     useOutlineStore.getState().deleteNode(1);
     expect(useOutlineStore.getState().nodes).toHaveLength(1);
   });
@@ -218,11 +218,11 @@ describe('outlineStore multi-select', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null },
-        { id: 2, depth: 1, text: 'child-a', parentId: 1 },
-        { id: 3, depth: 2, text: 'grandchild', parentId: 2 },
-        { id: 4, depth: 1, text: 'child-b', parentId: 1 },
-        { id: 5, depth: 1, text: 'child-c', parentId: 1 }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false },
+        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false },
+        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false }
       ],
       selectedId: null,
       editingId: null,
@@ -332,10 +332,10 @@ describe('outlineStore sortChildren', () => {
     // Charlie(0)=1, Alice(0)=2 -> child(1)=3, Bob(0)=4
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Charlie', parentId: null },
-        { id: 2, depth: 0, text: 'Alice', parentId: null },
-        { id: 3, depth: 1, text: 'Alice-child', parentId: 2 },
-        { id: 4, depth: 0, text: 'Bob', parentId: null }
+        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false },
+        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false },
+        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false }
       ],
       selectedId: 1,
       editingId: null,
@@ -362,9 +362,9 @@ describe('outlineStore sortChildren', () => {
   it('sorts an existing node\'s children when given a specific parentId, not root blocks', () => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Root', parentId: null },
-        { id: 2, depth: 1, text: 'Zed', parentId: 1 },
-        { id: 3, depth: 1, text: 'Amy', parentId: 1 }
+        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false },
+        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false }
       ]
     });
     const sorted = useOutlineStore.getState().sortChildren(1, 'az');
@@ -387,7 +387,7 @@ describe('outlineStore sortChildren', () => {
   });
 
   it('returns false and leaves nodes unchanged when there are fewer than 2 blocks to sort', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false }] });
     const before = useOutlineStore.getState().nodes;
     const sorted = useOutlineStore.getState().sortChildren(null, 'az');
     expect(sorted).toBe(false);
@@ -399,9 +399,9 @@ describe('outlineStore splitAtCursor', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null },
-        { id: 2, depth: 1, text: 'hello world', parentId: 1 },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1 }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
       ],
       selectedId: 2,
       editingId: 2,
@@ -450,6 +450,76 @@ describe('outlineStore splitAtCursor', () => {
   it('is a no-op for an unknown node id', () => {
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().splitAtCursor(9999, 'anything', 3);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+});
+
+describe('outlineStore checkboxes', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
+      ],
+      selectedId: 2,
+      editingId: 2,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2
+    });
+  });
+
+  it('commitEdit auto-converts "[ ] text" into an unchecked checkbox node', () => {
+    useOutlineStore.getState().commitEdit(2, '[ ] buy milk');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.isCheckbox).toBe(true);
+    expect(node?.checked).toBe(false);
+    expect(node?.text).toBe('buy milk');
+  });
+
+  it('commitEdit auto-converts "[x] text" (case-insensitive) into a checked checkbox node', () => {
+    useOutlineStore.getState().commitEdit(2, '[X] done already');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.isCheckbox).toBe(true);
+    expect(node?.checked).toBe(true);
+    expect(node?.text).toBe('done already');
+  });
+
+  it('commitEdit leaves ordinary text alone (no accidental checkbox conversion)', () => {
+    useOutlineStore.getState().commitEdit(2, 'just a normal node');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.isCheckbox).toBe(false);
+    expect(node?.text).toBe('just a normal node');
+  });
+
+  it('toggleCheckbox flips .checked on a checkbox node', () => {
+    useOutlineStore.getState().commitEdit(2, '[ ] task');
+    useOutlineStore.getState().toggleCheckbox(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.checked).toBe(true);
+    useOutlineStore.getState().toggleCheckbox(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.checked).toBe(false);
+  });
+
+  it('toggleCheckbox cascades down and propagates up via the real ported toggleCheckboxCore', () => {
+    // root(1, checkbox) -> child(2, checkbox, unchecked, currently the only child)
+    useOutlineStore.getState().commitEdit(1, '[ ] parent task');
+    useOutlineStore.getState().commitEdit(2, '[ ] child task');
+    // node 3 (sibling) stays a non-checkbox plain node -- but it's also a sibling of node 2 at
+    // depth 1, not a child of node 1... wait, per the seeded tree, node 3 IS depth 1 under
+    // node 1 too (both 2 and 3 are node 1's children). Convert it too, so completing "parent"
+    // requires both.
+    useOutlineStore.getState().commitEdit(3, '[ ] sibling task');
+    useOutlineStore.getState().toggleCheckbox(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.checked).toBe(false); // sibling still unchecked
+    useOutlineStore.getState().toggleCheckbox(3);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.checked).toBe(true); // now both done
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().toggleCheckbox(9999);
     expect(useOutlineStore.getState().nodes).toBe(before);
   });
 });

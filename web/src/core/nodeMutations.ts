@@ -1,4 +1,13 @@
-import { getIndex, getSubtreeEnd, getChildBlocks, subtreeHeight } from './nodeQueries';
+import {
+  getIndex,
+  getSubtreeEnd,
+  getParentIndex,
+  getChildBlocks,
+  subtreeHeight,
+  isCheckboxNode,
+  getCheckboxChildStats,
+  type CheckboxNode
+} from './nodeQueries';
 
 /**
  * Pure tree-mutation logic for the outline — the `core/` module boundary for the tree-mutation
@@ -398,4 +407,54 @@ export function sortChildBlocksCore(nodes: QueryableNode[], parentIdx: number | 
   const reordered = sorted.flatMap((b) => nodes.slice(b.start, b.end));
   nodes.splice(rangeStart, rangeEnd - rangeStart, ...reordered);
   return true;
+}
+
+/** Mutates `nodes` in place: sets `.checked` on every checkbox descendant of `idx`'s subtree to
+ * `checked` — a checked/unchecked parent checkbox cascades the same state down to every
+ * checkbox node beneath it (non-checkbox descendants are left untouched, matching legacy's own
+ * `isCheckboxNode` filter). Same never-extracted-in-legacy status as `getChildBlocks`/
+ * `sortChildBlocksCore` above — index.html's real `cascadeCheckboxDown` was never one of the
+ * `src/core/` generated blocks either. */
+export function cascadeCheckboxDown(nodes: CheckboxNode[], idx: number, checked: boolean): void {
+  const end = getSubtreeEnd(nodes, idx);
+  for (let i = idx + 1; i < end; i++) {
+    if (isCheckboxNode(nodes[i])) nodes[i].checked = checked;
+  }
+}
+
+/** Mutates `nodes` in place: walks upward from `idx`, auto-completing (or un-completing) each
+ * checkbox ANCESTOR whose direct checkbox children are all checked (or no longer all checked),
+ * recursing further up only when an ancestor's own checked state actually changes — matching
+ * legacy's own `propagateCheckboxUp` exactly, including the "only walk further if something
+ * changed" short-circuit that keeps this from doing needless work on every toggle. A non-
+ * checkbox parent, or a checkbox parent with zero checkbox children, stops the walk at that
+ * level (total===0 is treated as "nothing to auto-complete from", not "vacuously all done"). */
+export function propagateCheckboxUp(nodes: CheckboxNode[], idx: number): void {
+  const pIdx = getParentIndex(nodes, idx);
+  if (pIdx < 0) return;
+  const parent = nodes[pIdx];
+  if (!isCheckboxNode(parent)) return;
+  const { total, checked } = getCheckboxChildStats(nodes, pIdx);
+  if (total > 0) {
+    const allDone = checked === total;
+    if (parent.checked !== allDone) {
+      parent.checked = allDone;
+      propagateCheckboxUp(nodes, pIdx);
+    }
+  }
+}
+
+/** Mutates `nodes` in place: flips `idx`'s own `.checked`, then cascades that new state down to
+ * every checkbox descendant and propagates completion status up to every checkbox ancestor —
+ * the single entry point orchestrating both directions, matching legacy's own `toggleCheckbox`
+ * (minus the undo/dirty/render side effects, which stay the caller's responsibility, same
+ * convention as every other mutation in this module). Does NOT check `isCheckboxNode(nodes[idx])`
+ * first — same as legacy, which only ever calls this from a UI element that already only exists
+ * on checkbox nodes; toggling `.checked` on a non-checkbox node is harmless (nothing reads it)
+ * but not this function's job to prevent. */
+export function toggleCheckboxCore(nodes: CheckboxNode[], idx: number): void {
+  const newChecked = !nodes[idx].checked;
+  nodes[idx].checked = newChecked;
+  cascadeCheckboxDown(nodes, idx, newChecked);
+  propagateCheckboxUp(nodes, idx);
 }

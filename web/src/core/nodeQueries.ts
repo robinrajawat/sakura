@@ -232,3 +232,38 @@ export function subtreeHeight(nodes: QueryableNode[], start: number, end: number
   for (let i = start; i < end; i++) if (nodes[i].depth > max) max = nodes[i].depth;
   return max - nodes[start].depth;
 }
+
+/** The extra fields a checkbox-aware node needs beyond `QueryableNode`: whether it IS a
+ * checkbox node, and if so, whether it's currently checked. Every node carries these two
+ * fields regardless of `isCheckbox`'s value (matching legacy's own `normalizeNode`, which
+ * always sets `checked`/`isCheckbox`, not just on nodes that use them) — `checked` is simply
+ * meaningless for a non-checkbox node. */
+export interface CheckboxNode extends QueryableNode {
+  isCheckbox: boolean;
+  checked: boolean;
+}
+
+/** Pure: is this node currently a checkbox node? Same never-extracted-in-legacy status as
+ * `getChildBlocks`/`subtreeHeight` above (see that comment) — index.html's real
+ * `isCheckboxNode` was never one of the `src/core/` generated blocks either. */
+export function isCheckboxNode(node: CheckboxNode | null | undefined): boolean {
+  return !!(node && node.isCheckbox);
+}
+
+/** Pure: how many of `idx`'s immediate (depth+1) children are checkbox nodes, and how many of
+ * those are checked — the input `propagateCheckboxUp` needs to decide whether a parent
+ * checkbox should auto-complete. Deliberately depth+1 only, not every descendant: a checkbox
+ * parent's own checked state reflects its DIRECT checkbox children, not the whole subtree
+ * (matching legacy's `getCheckboxChildStats` exactly). */
+export function getCheckboxChildStats(nodes: CheckboxNode[], idx: number): { total: number; checked: number } {
+  let total = 0;
+  let checked = 0;
+  const end = getSubtreeEnd(nodes, idx);
+  for (let i = idx + 1; i < end; i++) {
+    if (nodes[i].depth === nodes[idx].depth + 1 && isCheckboxNode(nodes[i])) {
+      total++;
+      if (nodes[i].checked) checked++;
+    }
+  }
+  return { total, checked };
+}

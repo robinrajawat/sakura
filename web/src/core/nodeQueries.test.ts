@@ -15,6 +15,9 @@ import {
   getSelectionRangeIds,
   getChildBlocks,
   subtreeHeight,
+  isCheckboxNode,
+  getCheckboxChildStats,
+  type CheckboxNode,
   type QueryableNode
 } from './nodeQueries';
 
@@ -377,5 +380,37 @@ describe('getChildBlocks / subtreeHeight', () => {
     expect(subtreeHeight(tree, 3, 6)).toBe(1); // D -> E/F: one level deeper than D itself
     expect(subtreeHeight(tree, 4, 5)).toBe(0); // E alone: no descendants
     expect(subtreeHeight(tree, 0, 3)).toBe(2); // A -> B -> C: two levels deeper than A itself
+  });
+});
+
+function cb(id: number, depth: number, isCheckbox: boolean, checked = false): CheckboxNode {
+  return { id, depth, text: 't' + id, isCheckbox, checked };
+}
+
+describe('isCheckboxNode / getCheckboxChildStats', () => {
+  it('isCheckboxNode is true only for nodes with isCheckbox set, including null/undefined safety', () => {
+    expect(isCheckboxNode(cb(1, 0, true))).toBe(true);
+    expect(isCheckboxNode(cb(1, 0, false))).toBe(false);
+    expect(isCheckboxNode(null)).toBe(false);
+    expect(isCheckboxNode(undefined)).toBe(false);
+  });
+
+  it("counts only DIRECT (depth+1) checkbox children, not the whole subtree", () => {
+    // Parent(0, checkbox) -> ChildA(1, checkbox, checked) -> Grandchild(2, checkbox, unchecked)
+    //                      -> ChildB(1, checkbox, unchecked)
+    //                      -> ChildC(1, not a checkbox)
+    const nodes: CheckboxNode[] = [
+      cb(1, 0, true),
+      cb(2, 1, true, true),
+      cb(3, 2, true, false), // grandchild -- must NOT be counted at the parent's level
+      cb(4, 1, true, false),
+      cb(5, 1, false) // not a checkbox at all -- must not be counted
+    ];
+    expect(getCheckboxChildStats(nodes, 0)).toEqual({ total: 2, checked: 1 });
+  });
+
+  it('a childless node has zero total (nothing to auto-complete from)', () => {
+    const nodes: CheckboxNode[] = [cb(1, 0, true)];
+    expect(getCheckboxChildStats(nodes, 0)).toEqual({ total: 0, checked: 0 });
   });
 });

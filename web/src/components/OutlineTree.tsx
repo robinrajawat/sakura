@@ -14,14 +14,17 @@ const sortButtonStyle: CSSProperties = {
 };
 
 /**
- * Phase 0's validation spike, now carrying Phase 2's first six slices
+ * Phase 0's validation spike, now carrying all seven of Phase 2's slices
  * (docs/framework-migration-plan.md) — real node create/edit/delete, fold/collapse, semantic
  * markup, drag-to-nest, multi-select (Ctrl/Cmd-click toggle, Shift-click range, multi-select
  * indent/outdent/delete/move), sort children (toolbar-level "sort top-level nodes" only — see
  * sortChildren's own comment in outlineStore.ts for why the per-node context-menu entry point
- * is deferred), and this slice: Shift+Enter split-at-cursor. Still deliberately scoped down
- * from the full README "Core Editing" feature set. Explicitly NOT in this slice: checkboxes —
- * a real, separately-scoped follow-up slice, not an oversight here.
+ * is deferred), Shift+Enter split-at-cursor, and this slice: checkboxes. Type `[ ]` or `[x]` at
+ * the start of a line and commit (blur or Enter) to auto-convert to a checkbox node — matches
+ * legacy's own autoConvertCheckboxSyntax. Clicking the checkbox cascades its new state down to
+ * every checkbox descendant and propagates completion status up to every checkbox ancestor via
+ * the real ported toggleCheckboxCore. Phase 2 is now feature-complete against the deferred list
+ * in the plan doc.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
@@ -46,6 +49,7 @@ export function OutlineTree() {
   const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
   const sortChildren = useOutlineStore((s) => s.sortChildren);
+  const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -248,6 +252,15 @@ export function OutlineTree() {
             >
               {hasChildren ? (isCollapsed ? '▸' : '▾') : ''}
             </span>
+            {node.isCheckbox && (
+              <input
+                type="checkbox"
+                checked={node.checked}
+                onChange={() => toggleCheckbox(node.id)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ marginRight: 6, cursor: 'pointer' }}
+              />
+            )}
             {isEditing ? (
               <input
                 ref={inputRef}
@@ -267,7 +280,7 @@ export function OutlineTree() {
               <span
                 onClick={(e) => clickNode(node.id, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey || e.metaKey })}
                 onDoubleClick={() => startEditing(node.id)}
-                style={{ flex: 1 }}
+                style={{ flex: 1, textDecoration: node.isCheckbox && node.checked ? 'line-through' : 'none' }}
               >
                 {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>
