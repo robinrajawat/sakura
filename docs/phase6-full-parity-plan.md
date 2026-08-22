@@ -53,6 +53,15 @@ deferred in `docs/history/phase5-parity-checklist.md`'s "Documents & Tabs" secti
 natural home in this plan — building the real shell without them would just recreate the same
 gap one level up.
 
+**Status: in progress.** Part 1 (#129) — real design tokens (24-field `ThemeTokens`, 7 accent
+presets) extracted from `legacy/index.html`'s actual CSS into `themeStore.ts`, replacing the
+placeholder Google-blue-ish values. Part 2 (#130) — the real app shell itself (`AppShell.tsx`):
+header/app bar, left sidebar, tab-bar dock, status bar, dimensions copied directly from
+`legacy/index.html`'s own CSS. Still open from this section's own scope: real file explorer
+(folders/templates), searchable tab-switcher dropdown for overflow, drag-to-reorder tabs,
+per-tab independent scroll/selection, sidebar resize/collapse, CSS custom properties (still
+plain `THEME_TOKENS` via inline styles).
+
 ### 6.2 — Undo/redo (foundational) & core editing parity
 `outlineStore.ts` has no undo/redo at all yet — not a per-tab gap, a store-level absence
 (`docs/history/phase5-parity-checklist.md`'s Documents & Tabs section and its Keyboard Shortcuts table
@@ -143,10 +152,10 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-Not started. `web/` is currently mid-Phase-5 (Documents & Tabs, Tags & Focus shipped; this plan
-is what comes after). Update each phase's own section above with a `Status:` line and PR numbers
-as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own "Update" notes track
-progress.
+In progress. §6.1 is underway — see that section's own `Status:` line for what's landed (#129,
+#130) and what's still open. §6.2 onward not started. Update each phase's own section above with
+a `Status:` line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s
+own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
 
