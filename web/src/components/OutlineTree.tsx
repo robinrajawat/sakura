@@ -19,14 +19,17 @@ function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
 }
 
 /**
- * Phase 2 complete (docs/framework-migration-plan.md); Phase 3 in progress: Note, Code block,
- * PWA install, and this slice: theming. Reads color tokens from themeStore.ts (light/dark only
- * -- no system-preference auto-detection or persistence, both deferred) and applies them via
- * plain inline styles, matching the rest of this component's existing styling approach rather
- * than introducing CSS custom properties for just this one feature. Not every color in this
- * file is tokenized yet (e.g. the '#4285f4' drag/drop-indicator blue, error/warning colors from
- * semantic markup) -- those read fine on both themes for now and are a real, separately-scoped
- * follow-up if that stops being true.
+ * Phase 2 complete (docs/framework-migration-plan.md); Phase 3: Note, Code block, PWA install,
+ * and theming. Reads color tokens from themeStore.ts, applied via plain inline styles, matching
+ * the rest of this component's existing styling approach rather than introducing CSS custom
+ * properties for just this one feature (that comes in a later Phase 6.1 slice, once the app
+ * shell exists for real CSS custom properties to actually theme). Phase 6.1 (docs/phase6-full-
+ * parity-plan.md, "Design tokens & app shell") replaced themeStore.ts's placeholder color
+ * values with real ones extracted from legacy/index.html's own CSS -- the drag/drop-indicator
+ * blue below now reads `t.dropIndicator` (the real accent color) instead of a hardcoded
+ * '#4285f4' that never matched legacy's actual palette. Not every color in this file is
+ * tokenized yet (e.g. error/warning colors from semantic markup) -- those read fine on both
+ * themes for now and are a real, separately-scoped follow-up if that stops being true.
  */
 export function OutlineTree() {
   const theme = useThemeStore((s) => s.theme);
@@ -283,15 +286,15 @@ export function OutlineTree() {
               cursor: isEditing ? 'text' : 'grab',
               opacity: isDragging ? 0.4 : 1,
               backgroundColor: showDropChild
-                ? 'rgba(66, 133, 244, 0.12)'
+                ? `${t.dropIndicator}1f`
                 : isSelected
                   ? t.selectedBg
                   : isMultiSelected
                     ? t.multiSelectedBg
                     : 'transparent',
-              boxShadow: showDropChild ? 'inset 0 0 0 1.5px #4285f4' : 'none',
-              borderTop: showDropAbove ? '2px solid #4285f4' : '2px solid transparent',
-              borderBottom: showDropBelow ? '2px solid #4285f4' : '2px solid transparent',
+              boxShadow: showDropChild ? `inset 0 0 0 1.5px ${t.dropIndicator}` : 'none',
+              borderTop: showDropAbove ? `2px solid ${t.dropIndicator}` : '2px solid transparent',
+              borderBottom: showDropBelow ? `2px solid ${t.dropIndicator}` : '2px solid transparent',
               borderRadius: 4
             }}
           >
@@ -330,7 +333,7 @@ export function OutlineTree() {
                   flex: 1,
                   font: 'inherit',
                   border: 'none',
-                  outline: '1px solid #4285f4',
+                  outline: `1px solid ${t.dropIndicator}`,
                   borderRadius: 3,
                   padding: '0 4px'
                 }}
