@@ -22,7 +22,7 @@ describe('documentsStore', () => {
     useDocumentsStore.getState().newDocument();
     const firstId = useDocumentsStore.getState().activeDocId!;
     useOutlineStore.setState({
-      nodes: [{ id: 1, depth: 0, text: 'edited', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }]
+      nodes: [{ id: 1, depth: 0, text: 'edited', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
     });
     useDocumentsStore.getState().newDocument();
     // Switch back to the first document -- its edit should have been persisted.
@@ -86,7 +86,7 @@ describe('documentsStore', () => {
 
   it('init() on first-ever launch adopts outlineStore\'s current content as the first document', () => {
     useOutlineStore.setState({
-      nodes: [{ id: 1, depth: 0, text: 'seed content', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }]
+      nodes: [{ id: 1, depth: 0, text: 'seed content', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
     });
     useDocumentsStore.getState().init();
     const { docsIndex, openTabs, activeDocId } = useDocumentsStore.getState();

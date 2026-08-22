@@ -29,6 +29,12 @@ function getDb() {
  * is always DERIVED from depth + array order via rebuildParentIdsCore, never read from stored
  * data directly, so this intentionally sets it to `null` as a placeholder the caller
  * immediately overwrites.
+ *
+ * `tags` is a KNOWN, read/write field here (Tags & Focus slice) -- not blindly preserved as an
+ * unknown legacy field the way `styles`/`marker`/`noteTitle`/etc. still are below. Legacy's own
+ * per-node `tags` array is exactly web/'s OutlineNode `tags` shape already (a flat string
+ * array), so this is a direct, honest round-trip: a document tagged in legacy shows those tags
+ * in web/, and tags added/removed in web/ get written back, same as `note`/`codeBlock`.
  */
 export function cloudNodeToOutlineNode(raw: RawNode): OutlineNode {
   return {
@@ -42,16 +48,19 @@ export function cloudNodeToOutlineNode(raw: RawNode): OutlineNode {
     codeBlock:
       raw.codeBlock && typeof raw.codeBlock === 'object'
         ? (raw.codeBlock as OutlineNode['codeBlock'])
-        : null
+        : null,
+    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : []
   };
 }
 
 /**
  * Editable OutlineNode -> the raw object actually written back to Firestore. Spreads the
- * node's ORIGINAL raw cloud fields first (styles, noteTitle, decisionLog, tags, marker,
- * slideDivider, createdAt, modifiedAt, completedAt -- everything legacy's real node schema has
- * that web/'s OutlineNode doesn't yet surface), then overwrites only the fields web/ actually
- * edits on top. This is the whole reason `rawNodesById` exists: a plain `JSON.stringify(node)`
+ * node's ORIGINAL raw cloud fields first (styles, noteTitle, decisionLog, marker, slideDivider,
+ * createdAt, modifiedAt, completedAt -- everything legacy's real node schema has that web/'s
+ * OutlineNode doesn't yet surface; `tags` USED to be in this preserved-but-unsurfaced list but
+ * is now a known field web/ edits, same as `note`/`codeBlock` below), then overwrites only the
+ * fields web/ actually edits on top. This is the whole reason `rawNodesById` exists: a plain
+ * `JSON.stringify(node)`
  * here would silently strip every legacy-only field from every node on the very first push,
  * corrupting real production data for any legacy user who opens their document in the web app.
  * A node with no raw counterpart (created fresh in the web app, never existed in the cloud
@@ -68,7 +77,8 @@ export function outlineNodeToRawNode(node: OutlineNode, raw: RawNode | undefined
     isCheckbox: node.isCheckbox,
     checked: node.checked,
     note: node.note,
-    codeBlock: node.codeBlock
+    codeBlock: node.codeBlock,
+    tags: node.tags
   };
 }
 

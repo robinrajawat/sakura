@@ -3,7 +3,7 @@ import { groupIntoSlides } from './PresenterMode';
 import type { OutlineNode } from '../store/outlineStore';
 
 function n(id: number, depth: number): OutlineNode {
-  return { id, depth, text: 't' + id, parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null };
+  return { id, depth, text: 't' + id, parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] };
 }
 
 describe('groupIntoSlides', () => {

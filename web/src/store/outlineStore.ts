@@ -17,6 +17,8 @@ import {
   nodeHasChildren,
   getVisibleNodeIndexes,
   getSelectionRangeIds,
+  getSubtreeEnd,
+  getParentIndex,
   type CheckboxNode
 } from '../core/nodeQueries';
 import {
@@ -38,6 +40,11 @@ export interface CodeBlock {
 export interface OutlineNode extends ParentLinkedNode, CheckboxNode {
   note: string;
   codeBlock: CodeBlock | null;
+  /** `#tags` attached to this node (Tags & Focus slice). Plain string array, matching legacy's
+   * own per-node `tags` field shape -- deliberately flat, no hierarchy/nesting/color-per-tag
+   * yet (README describes richer tag chrome this doesn't attempt). Read/write, not just
+   * preserved-as-unknown, in docSyncStore.ts's cloud round-trip (see that file's own header). */
+  tags: string[];
 }
 
 export const CODE_LANGS = ['plain', 'abap', 'sql', 'javascript', 'python', 'json', 'markup', 'markdown'];
@@ -94,7 +101,8 @@ function seedNodes(): OutlineNode[] {
     isCheckbox: false,
     checked: false,
     note: '',
-      codeBlock: null
+      codeBlock: null,
+      tags: []
   }));
   rebuildParentIdsCore(nodes);
   return nodes;
@@ -110,6 +118,26 @@ interface OutlineState {
   nextId: number;
   multiSelectedIds: number[];
   selectionAnchorId: number | null;
+
+  /** Tags & Focus mode slice (docs/phase5-parity-checklist.md, "Tags, Focus & Backlinks").
+   * `activeTagFilter`: when set, `visibleIndexes()` restricts to nodes carrying that tag, as a
+   * flat list -- deliberately no ancestor-context breadcrumbing in this first pass, same
+   * "honest first pass" scoping every other Phase 3/4/5 slice in this project uses (see e.g.
+   * Pad/Hub's own header comments for the same pattern). `focusedId`: when set, `visibleIndexes()`
+   * restricts to that node's own subtree (via `getSubtreeEnd`), for a "zoom in" experience.
+   * Focus and tag-filter can theoretically both be active at once; focus's subtree scoping is
+   * applied first, then the tag filter narrows within it -- not a combination the UI in this
+   * slice actually exposes a way to reach yet, but the store supports it correctly regardless. */
+  activeTagFilter: string | null;
+  focusedId: number | null;
+
+  toggleTag: (id: number, tag: string) => void;
+  setTagFilter: (tag: string | null) => void;
+  zoomIntoNode: (id: number) => void;
+  exitFocus: () => void;
+  /** Ancestor chain from the root down to (not including) `focusedId` itself, for a breadcrumb
+   * UI. Empty array when nothing is focused. */
+  focusPath: () => OutlineNode[];
 
   selectNode: (id: number) => void;
   clickNode: (id: number, modifiers: { shiftKey?: boolean; ctrlKey?: boolean }) => void;
@@ -148,6 +176,46 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
   nextId: SEED_MAX_ID + 1,
   multiSelectedIds: [],
   selectionAnchorId: 1,
+  activeTagFilter: null,
+  focusedId: null,
+
+  toggleTag: (id, tag) => {
+    const trimmed = tag.trim();
+    if (!trimmed) return;
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => {
+      if (n.id !== id) return n;
+      const has = n.tags.includes(trimmed);
+      return { ...n, tags: has ? n.tags.filter((t) => t !== trimmed) : [...n.tags, trimmed] };
+    });
+    set({ nodes: next });
+  },
+
+  setTagFilter: (tag) => set({ activeTagFilter: tag }),
+
+  zoomIntoNode: (id) => {
+    const { nodes } = get();
+    if (getIndex(nodes, id) < 0) return;
+    set({ focusedId: id });
+  },
+
+  exitFocus: () => set({ focusedId: null }),
+
+  focusPath: () => {
+    const { nodes, focusedId } = get();
+    if (focusedId === null) return [];
+    const path: OutlineNode[] = [];
+    let idx = getIndex(nodes, focusedId);
+    if (idx < 0) return [];
+    idx = getParentIndex(nodes, idx);
+    while (idx >= 0) {
+      path.unshift(nodes[idx]);
+      idx = getParentIndex(nodes, idx);
+    }
+    return path;
+  },
 
   selectNode: (id) => set({ selectedId: id, multiSelectedIds: [], selectionAnchorId: id }),
 
@@ -254,9 +322,37 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     return true;
   },
 
+  // Layers focus-subtree scoping and/or tag-filter scoping on top of the existing fold-aware
+  // `getVisibleNodeIndexes` output -- post-hoc filtering, no core-layer (nodeQueries.ts/
+  // nodeMutations.ts) changes needed, matching the "narrow, don't touch core" approach every
+  // other store-level scoping decision in this file already uses (e.g. selectionRootIndexes).
   visibleIndexes: () => {
-    const { nodes, collapsedIds } = get();
-    return getVisibleNodeIndexes(nodes, collapsedIds);
+    const { nodes, collapsedIds, focusedId, activeTagFilter } = get();
+    let indexes = getVisibleNodeIndexes(nodes, collapsedIds);
+
+    if (focusedId !== null) {
+      const focusIdx = getIndex(nodes, focusedId);
+      if (focusIdx >= 0) {
+        const end = getSubtreeEnd(nodes, focusIdx);
+        // Subtree only, not the focused node's own row -- the breadcrumb (focusPath) is what
+        // surfaces the focused node itself in the UI, same "zoom past it, don't re-show it"
+        // convention as most outliner "zoom in" affordances.
+        indexes = indexes.filter((idx) => idx > focusIdx && idx < end);
+      } else {
+        // Focused node no longer exists (deleted out from under an active focus) -- fail open
+        // to the un-focused view rather than showing nothing.
+        indexes = getVisibleNodeIndexes(nodes, collapsedIds);
+      }
+    }
+
+    if (activeTagFilter !== null) {
+      // Deliberately flat: filters straight to tagged nodes with no ancestor context restored,
+      // same "honest first pass" scoping documented on activeTagFilter's own field comment
+      // above -- a later slice can add breadcrumbed/tree-shaped filtering if that's wanted.
+      indexes = indexes.filter((idx) => nodes[idx].tags.includes(activeTagFilter));
+    }
+
+    return indexes;
   },
 
   nodeHasChildren: (id) => {
@@ -298,7 +394,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       isCheckbox: false,
       checked: false,
       note: '',
-      codeBlock: null
+      codeBlock: null,
+      tags: []
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -325,7 +422,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       isCheckbox: false,
       checked: false,
       note: '',
-      codeBlock: null
+      codeBlock: null,
+      tags: []
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -365,7 +463,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       isCheckbox: false,
       checked: false,
       note: '',
-      codeBlock: null
+      codeBlock: null,
+      tags: []
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
