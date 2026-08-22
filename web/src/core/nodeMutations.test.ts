@@ -13,9 +13,12 @@ import {
   computePasteOffsetDepth,
   insertParsedNodesCore,
   deleteRootIndexes,
-  sortChildBlocksCore
+  sortChildBlocksCore,
+  cascadeCheckboxDown,
+  propagateCheckboxUp,
+  toggleCheckboxCore
 } from './nodeMutations';
-import { getSubtreeEnd, getIndex } from './nodeQueries';
+import { getSubtreeEnd, getIndex, type CheckboxNode } from './nodeQueries';
 
 // nodeMutations.ts references getSubtreeEnd/getIndex as ambient globals (a `declare function`,
 // erased at compile time — see the module's own header comment for why). In the real app those
@@ -650,5 +653,131 @@ describe('sortChildBlocksCore', () => {
     ]);
     expect(sortChildBlocksCore(nodes, 0, 'az')).toBe(true);
     expect(nodes.map((n) => n.id)).toEqual([1, 3, 2, 4]); // Root, Amy, Zed, Sibling (untouched)
+  });
+});
+
+function cbTree(entries: [number, number, boolean, boolean?][]): CheckboxNode[] {
+  return entries.map(([id, depth, isCheckbox, checked = false]) => ({
+    id,
+    depth,
+    text: 't' + id,
+    isCheckbox,
+    checked
+  }));
+}
+
+describe('cascadeCheckboxDown', () => {
+  it('sets .checked on every checkbox descendant, leaving non-checkbox descendants untouched', () => {
+    // Parent(0, cb) -> ChildA(1, cb) -> Grandchild(2, cb), ChildB(1, not cb)
+    const nodes = cbTree([
+      [1, 0, true],
+      [2, 1, true],
+      [3, 2, true],
+      [4, 1, false]
+    ]);
+    cascadeCheckboxDown(nodes, 0, true);
+    expect(nodes[1].checked).toBe(true);
+    expect(nodes[2].checked).toBe(true);
+    expect(nodes[3].checked).toBe(false); // not a checkbox -- untouched
+  });
+
+  it('does not touch the root node itself, only its descendants', () => {
+    const nodes = cbTree([
+      [1, 0, true],
+      [2, 1, true]
+    ]);
+    cascadeCheckboxDown(nodes, 0, true);
+    expect(nodes[0].checked).toBe(false); // root's own .checked is the caller's job, not this function's
+  });
+});
+
+describe('propagateCheckboxUp', () => {
+  it('auto-completes a checkbox parent once every direct checkbox child is checked', () => {
+    const nodes = cbTree([
+      [1, 0, true], // parent, starts unchecked
+      [2, 1, true, true],
+      [3, 1, true, true]
+    ]);
+    propagateCheckboxUp(nodes, 1); // walk up from either child
+    expect(nodes[0].checked).toBe(true);
+  });
+
+  it('does not complete a parent while any direct checkbox child is still unchecked', () => {
+    const nodes = cbTree([
+      [1, 0, true],
+      [2, 1, true, true],
+      [3, 1, true, false]
+    ]);
+    propagateCheckboxUp(nodes, 1);
+    expect(nodes[0].checked).toBe(false);
+  });
+
+  it('un-completes a previously-complete parent once a child becomes unchecked', () => {
+    const nodes = cbTree([
+      [1, 0, true, true], // parent starts checked
+      [2, 1, true, false],
+      [3, 1, true, true]
+    ]);
+    propagateCheckboxUp(nodes, 1);
+    expect(nodes[0].checked).toBe(false);
+  });
+
+  it('recurses further up only when an ancestor actually changes state', () => {
+    // Grandparent(0,cb) -> Parent(1,cb) -> Child(2,cb,checked) -- Parent has only one child,
+    // so it completes; Grandparent has only Parent as its own direct checkbox child, so it
+    // should complete too, two levels up from where the toggle happened.
+    const nodes = cbTree([
+      [1, 0, true],
+      [2, 1, true],
+      [3, 2, true, true]
+    ]);
+    propagateCheckboxUp(nodes, 2); // walk up from the checked grandchild
+    expect(nodes[1].checked).toBe(true); // Parent completes (its one child is checked)
+    expect(nodes[0].checked).toBe(true); // Grandparent completes too (Parent is now checked)
+  });
+
+  it('stops at a non-checkbox parent without throwing', () => {
+    const nodes = cbTree([
+      [1, 0, false],
+      [2, 1, true, true]
+    ]);
+    expect(() => propagateCheckboxUp(nodes, 1)).not.toThrow();
+    expect(nodes[0].checked).toBe(false);
+  });
+
+  it('is a no-op at the root (no parent to propagate to)', () => {
+    const nodes = cbTree([[1, 0, true]]);
+    expect(() => propagateCheckboxUp(nodes, 0)).not.toThrow();
+  });
+});
+
+describe('toggleCheckboxCore', () => {
+  it("flips the node's own .checked", () => {
+    const nodes = cbTree([[1, 0, true, false]]);
+    toggleCheckboxCore(nodes, 0);
+    expect(nodes[0].checked).toBe(true);
+    toggleCheckboxCore(nodes, 0);
+    expect(nodes[0].checked).toBe(false);
+  });
+
+  it('cascades down to checkbox children when checking a parent', () => {
+    const nodes = cbTree([
+      [1, 0, true],
+      [2, 1, true],
+      [3, 1, true]
+    ]);
+    toggleCheckboxCore(nodes, 0);
+    expect(nodes[1].checked).toBe(true);
+    expect(nodes[2].checked).toBe(true);
+  });
+
+  it('propagates up to an ancestor once checking the last remaining unchecked sibling', () => {
+    const nodes = cbTree([
+      [1, 0, true], // parent
+      [2, 1, true, true], // already checked
+      [3, 1, true, false] // about to be checked
+    ]);
+    toggleCheckboxCore(nodes, 2);
+    expect(nodes[0].checked).toBe(true);
   });
 });

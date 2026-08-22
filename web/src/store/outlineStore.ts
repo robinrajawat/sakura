@@ -8,16 +8,29 @@ import {
   insertParsedNodesCore,
   deleteRootIndexes,
   sortChildBlocksCore,
+  toggleCheckboxCore,
   type DropMode,
   type SortMode
 } from '../core/nodeMutations';
-import { getIndex, nodeHasChildren, getVisibleNodeIndexes, getSelectionRangeIds } from '../core/nodeQueries';
+import {
+  getIndex,
+  nodeHasChildren,
+  getVisibleNodeIndexes,
+  getSelectionRangeIds,
+  type CheckboxNode
+} from '../core/nodeQueries';
 import {
   rebuildParentIdsCore,
   computeSelectedIds,
   computeSelectionRootIndexes,
   type ParentLinkedNode
 } from '../core/nodeSelection';
+
+/** The real outline node shape this store works with: parent-linked (nodeSelection.ts) plus
+ * checkbox-aware (nodeQueries.ts's `CheckboxNode`) — every node carries both sets of fields
+ * regardless of whether it's actually used as a checkbox, same as legacy's own
+ * always-populated `normalizeNode` output (see toggleCheckbox's own comment below). */
+export interface OutlineNode extends ParentLinkedNode, CheckboxNode {}
 
 /**
  * Phase 0 validation spike, carrying Phase 2's first three slices (create/edit/delete+fold,
@@ -46,7 +59,7 @@ import {
  * is the correct, expected place for that responsibility to live now.
  */
 
-function seedNodes(): ParentLinkedNode[] {
+function seedNodes(): OutlineNode[] {
   const raw: Array<{ id: number; depth: number; text: string }> = [
     { id: 1, depth: 0, text: 'Welcome to the Sakura web spike' },
     { id: 2, depth: 1, text: 'This tree is wired to the real ported core logic' },
@@ -62,17 +75,18 @@ function seedNodes(): ParentLinkedNode[] {
       id: 11,
       depth: 1,
       text: '[Semantic markup] now renders `like this` for code and !urgent for alerts (matches legacy exactly)'
-    }
+    },
+    { id: 12, depth: 1, text: 'Type [ ] or [x] at the start of a line, then commit, for a checkbox' }
   ];
-  const nodes: ParentLinkedNode[] = raw.map((n) => ({ ...n, parentId: null }));
+  const nodes: OutlineNode[] = raw.map((n) => ({ ...n, parentId: null, isCheckbox: false, checked: false }));
   rebuildParentIdsCore(nodes);
   return nodes;
 }
 
-const SEED_MAX_ID = 11;
+const SEED_MAX_ID = 12;
 
 interface OutlineState {
-  nodes: ParentLinkedNode[];
+  nodes: OutlineNode[];
   selectedId: number | null;
   editingId: number | null;
   collapsedIds: Set<number>;
@@ -102,6 +116,7 @@ interface OutlineState {
   deleteNode: (id: number) => void;
   deleteSelected: () => void;
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
+  toggleCheckbox: (id: number) => void;
 
   toggleCollapse: (id: number) => void;
 }
@@ -235,7 +250,17 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
 
   commitEdit: (id, text) => {
     const { nodes } = get();
-    const next = nodes.map((n) => (n.id === id ? { ...n, text } : n));
+    // Auto-convert `[ ] text` / `[x] text` at commit time into a real checkbox node — matches
+    // legacy's own autoConvertCheckboxSyntax exactly, including running unconditionally on
+    // every commit (not just changed text) and stripping the marker from the stored text.
+    const checkboxMatch = text.match(/^\[( |x)\]\s?(.*)$/i);
+    const next = nodes.map((n) => {
+      if (n.id !== id) return n;
+      if (checkboxMatch) {
+        return { ...n, text: checkboxMatch[2], isCheckbox: true, checked: checkboxMatch[1].toLowerCase() === 'x' };
+      }
+      return { ...n, text };
+    });
     set({ nodes: next, editingId: null });
   },
 
@@ -246,7 +271,14 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
     const next = nodes.map((n) => ({ ...n }));
-    const newNode: ParentLinkedNode = { id: nextId, depth: nodes[idx].depth, text: '', parentId: null };
+    const newNode: OutlineNode = {
+      id: nextId,
+      depth: nodes[idx].depth,
+      text: '',
+      parentId: null,
+      isCheckbox: false,
+      checked: false
+    };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
     set({
@@ -264,7 +296,14 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
     const next = nodes.map((n) => ({ ...n }));
-    const newNode: ParentLinkedNode = { id: nextId, depth: nodes[idx].depth + 1, text: '', parentId: null };
+    const newNode: OutlineNode = {
+      id: nextId,
+      depth: nodes[idx].depth + 1,
+      text: '',
+      parentId: null,
+      isCheckbox: false,
+      checked: false
+    };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
     set({
@@ -295,7 +334,14 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const after = fullText.slice(pos);
     const next = nodes.map((n) => ({ ...n }));
     next[idx] = { ...next[idx], text: before };
-    const newNode: ParentLinkedNode = { id: nextId, depth: next[idx].depth, text: after, parentId: null };
+    const newNode: OutlineNode = {
+      id: nextId,
+      depth: next[idx].depth,
+      text: after,
+      parentId: null,
+      isCheckbox: false,
+      checked: false
+    };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
     set({
@@ -372,6 +418,22 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     rebuildParentIdsCore(next);
     set({ nodes: next });
     return true;
+  },
+
+  // Flips a node's checked state, cascading down to its checkbox descendants and propagating
+  // completion status up to its checkbox ancestors via the real ported toggleCheckboxCore —
+  // no rebuildParentIdsCore needed here, unlike almost every other mutation above, since
+  // toggling .checked never changes a node's depth or position. Matches legacy's own
+  // toggleCheckbox in not guarding on isCheckboxNode(node) first (see toggleCheckboxCore's own
+  // header) -- the UI below only ever wires this to elements that already only render for
+  // checkbox nodes.
+  toggleCheckbox: (id) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => ({ ...n }));
+    toggleCheckboxCore(next, idx);
+    set({ nodes: next });
   },
 
   toggleCollapse: (id) => {
