@@ -17,9 +17,9 @@ describe('outlineStore', () => {
     // equivalent shape directly here instead.
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "" }
       ],
       selectedId: 2,
       editingId: null,
@@ -173,7 +173,7 @@ describe('outlineStore', () => {
   });
 
   it('deleteNode refuses to delete the last remaining node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false }], selectedId: 1 });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "" }], selectedId: 1 });
     useOutlineStore.getState().deleteNode(1);
     expect(useOutlineStore.getState().nodes).toHaveLength(1);
   });
@@ -218,11 +218,11 @@ describe('outlineStore multi-select', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false },
-        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false },
-        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false },
-        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: "" },
+        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false, note: "" }
       ],
       selectedId: null,
       editingId: null,
@@ -332,10 +332,10 @@ describe('outlineStore sortChildren', () => {
     // Charlie(0)=1, Alice(0)=2 -> child(1)=3, Bob(0)=4
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false },
-        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false },
-        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false, note: "" },
+        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false, note: "" }
       ],
       selectedId: 1,
       editingId: null,
@@ -362,9 +362,9 @@ describe('outlineStore sortChildren', () => {
   it('sorts an existing node\'s children when given a specific parentId, not root blocks', () => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false },
-        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false, note: "" }
       ]
     });
     const sorted = useOutlineStore.getState().sortChildren(1, 'az');
@@ -387,7 +387,7 @@ describe('outlineStore sortChildren', () => {
   });
 
   it('returns false and leaves nodes unchanged when there are fewer than 2 blocks to sort', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "" }] });
     const before = useOutlineStore.getState().nodes;
     const sorted = useOutlineStore.getState().sortChildren(null, 'az');
     expect(sorted).toBe(false);
@@ -399,9 +399,9 @@ describe('outlineStore splitAtCursor', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "" }
       ],
       selectedId: 2,
       editingId: 2,
@@ -458,9 +458,9 @@ describe('outlineStore checkboxes', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "" },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "" },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "" }
       ],
       selectedId: 2,
       editingId: 2,
@@ -520,6 +520,21 @@ describe('outlineStore checkboxes', () => {
   it('is a no-op for an unknown node id', () => {
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().toggleCheckbox(9999);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+});
+
+describe('outlineStore setNote', () => {
+  it('sets a note on a node', () => {
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '' }] });
+    useOutlineStore.getState().setNote(1, 'remember this');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.note).toBe('remember this');
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '' }] });
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().setNote(9999, 'x');
     expect(useOutlineStore.getState().nodes).toBe(before);
   });
 });

@@ -30,7 +30,9 @@ import {
  * checkbox-aware (nodeQueries.ts's `CheckboxNode`) — every node carries both sets of fields
  * regardless of whether it's actually used as a checkbox, same as legacy's own
  * always-populated `normalizeNode` output (see toggleCheckbox's own comment below). */
-export interface OutlineNode extends ParentLinkedNode, CheckboxNode {}
+export interface OutlineNode extends ParentLinkedNode, CheckboxNode {
+  note: string;
+}
 
 /**
  * Phase 0 validation spike, carrying Phase 2's first three slices (create/edit/delete+fold,
@@ -78,7 +80,13 @@ function seedNodes(): OutlineNode[] {
     },
     { id: 12, depth: 1, text: 'Type [ ] or [x] at the start of a line, then commit, for a checkbox' }
   ];
-  const nodes: OutlineNode[] = raw.map((n) => ({ ...n, parentId: null, isCheckbox: false, checked: false }));
+  const nodes: OutlineNode[] = raw.map((n) => ({
+    ...n,
+    parentId: null,
+    isCheckbox: false,
+    checked: false,
+    note: ''
+  }));
   rebuildParentIdsCore(nodes);
   return nodes;
 }
@@ -117,6 +125,7 @@ interface OutlineState {
   deleteSelected: () => void;
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
   toggleCheckbox: (id: number) => void;
+  setNote: (id: number, note: string) => void;
 
   toggleCollapse: (id: number) => void;
 }
@@ -277,7 +286,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       text: '',
       parentId: null,
       isCheckbox: false,
-      checked: false
+      checked: false,
+      note: ''
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -302,7 +312,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       text: '',
       parentId: null,
       isCheckbox: false,
-      checked: false
+      checked: false,
+      note: ''
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -340,7 +351,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       text: after,
       parentId: null,
       isCheckbox: false,
-      checked: false
+      checked: false,
+      note: ''
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -433,6 +445,16 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     if (idx < 0) return;
     const next = nodes.map((n) => ({ ...n }));
     toggleCheckboxCore(next, idx);
+    set({ nodes: next });
+  },
+
+  // Plain text field, no rich-HTML/sanitization (deferred) -- matches legacy's `node.note`
+  // field but scoped down for this first Phase 3 slice.
+  setNote: (id, note) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => (n.id === id ? { ...n, note } : n));
     set({ nodes: next });
   },
 

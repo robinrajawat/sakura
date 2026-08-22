@@ -14,17 +14,11 @@ const sortButtonStyle: CSSProperties = {
 };
 
 /**
- * Phase 0's validation spike, now carrying all seven of Phase 2's slices
- * (docs/framework-migration-plan.md) — real node create/edit/delete, fold/collapse, semantic
- * markup, drag-to-nest, multi-select (Ctrl/Cmd-click toggle, Shift-click range, multi-select
- * indent/outdent/delete/move), sort children (toolbar-level "sort top-level nodes" only — see
- * sortChildren's own comment in outlineStore.ts for why the per-node context-menu entry point
- * is deferred), Shift+Enter split-at-cursor, and this slice: checkboxes. Type `[ ]` or `[x]` at
- * the start of a line and commit (blur or Enter) to auto-convert to a checkbox node — matches
- * legacy's own autoConvertCheckboxSyntax. Clicking the checkbox cascades its new state down to
- * every checkbox descendant and propagates completion status up to every checkbox ancestor via
- * the real ported toggleCheckboxCore. Phase 2 is now feature-complete against the deferred list
- * in the plan doc.
+ * Phase 2 complete (docs/framework-migration-plan.md); this is Phase 3's first slice: a Note
+ * field per node. Plain text only for now (no rich HTML/sanitization) — click the note icon or
+ * an existing note's text to open an inline textarea, blur to commit via the new setNote store
+ * action. Deliberately scoped down from legacy's full note feature set (noteTitle, rich HTML,
+ * diagram images embedded in notes) — each a real, separately-scoped follow-up.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
@@ -50,6 +44,8 @@ export function OutlineTree() {
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
   const sortChildren = useOutlineStore((s) => s.sortChildren);
   const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
+  const setNote = useOutlineStore((s) => s.setNote);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -204,8 +200,8 @@ export function OutlineTree() {
         const isCollapsed = collapsedIds.has(node.id);
 
         return (
+          <div key={node.id}>
           <div
-            key={node.id}
             draggable={!isEditing}
             onDragStart={() => handleDragStart(node.id)}
             onDragOver={(e) => handleDragOver(e, node.id)}
@@ -285,6 +281,43 @@ export function OutlineTree() {
                 {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>
             )}
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingNoteId(editingNoteId === node.id ? null : node.id);
+              }}
+              title={node.note ? 'Edit note' : 'Add note'}
+              style={{ fontSize: 11, color: '#aaa', cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+            >
+              {node.note ? '📝' : '+note'}
+            </span>
+          </div>
+          {editingNoteId === node.id && (
+            <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
+              <textarea
+                defaultValue={node.note}
+                autoFocus
+                rows={2}
+                onBlur={(e) => setNote(node.id, e.currentTarget.value)}
+                style={{ width: '90%', font: 'inherit', fontSize: 13, border: '1px solid #ddd', borderRadius: 4 }}
+              />
+            </div>
+          )}
+          {editingNoteId !== node.id && node.note && (
+            <div
+              onClick={() => setEditingNoteId(node.id)}
+              style={{
+                paddingLeft: `${node.depth * 24 + 32}px`,
+                paddingBottom: 4,
+                fontSize: 13,
+                color: '#666',
+                cursor: 'text',
+                whiteSpace: 'pre-wrap'
+              }}
+            >
+              {node.note}
+            </div>
+          )}
           </div>
         );
       })}
