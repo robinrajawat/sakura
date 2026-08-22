@@ -103,6 +103,31 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       const stored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
       if (stored) useOutlineStore.setState({ nodes: stored.nodes });
     }
+    // Debounced autosave: without this, an edit is only ever persisted the next time a store
+    // action (switch/close/new) happens to call saveActiveDocNodes -- a user who edits and
+    // then just closes the tab or reloads without switching documents would silently lose
+    // that work. 800ms matches the general shape of legacy's own debounced autosave (though
+    // not its exact ~1.2s figure -- not verified against that specific number here).
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+    useOutlineStore.subscribe(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => get().saveActiveDocNodes(), 800);
+    });
+    // First-ever launch (nothing in the index at all) -- adopt outlineStore's own current seed
+    // content (the welcome/tutorial nodes) as the first real document, rather than either
+    // leaving it with no document/tab backing it at all, or discarding it in favor of
+    // newDocument()'s blank template.
+    if (docsIndex.length === 0) {
+      const id = generateDocId();
+      const now = Date.now();
+      const nodes = useOutlineStore.getState().nodes;
+      const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now };
+      writeJson(docStorageKey(id), { title: summary.title, nodes });
+      writeJson(_DOCS_INDEX_KEY, [summary]);
+      writeJson(_OPEN_TABS_KEY, [id]);
+      writeJson(_ACTIVE_DOC_KEY, id);
+      set({ docsIndex: [summary], openTabs: [id], activeDocId: id });
+    }
   },
 
   newDocument: () => {
