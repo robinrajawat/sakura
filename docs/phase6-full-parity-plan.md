@@ -130,3 +130,36 @@ Not started. `web/` is currently mid-Phase-5 (Documents & Tabs, Tags & Focus shi
 is what comes after). Update each phase's own section above with a `Status:` line and PR numbers
 as work lands, the same way `docs/phase5-parity-checklist.md`'s own "Update" notes track
 progress.
+
+## Appendix — AI key vault (Cloudflare Worker), proposed
+
+A separate proposal, not yet started, not yet scheduled against a specific phase: a Cloudflare
+Worker exposing `POST /vault/key` (Firebase ID token auth, encrypts a pasted AI provider key at
+rest via a Worker secret, stores it in KV keyed by Firebase UID) and `POST /ai/complete`
+(same auth, decrypts in-memory only, forwards to the existing Groq → Gemini → Cerebras →
+OpenRouter fallback chain, never returns the decrypted key). Goal: paste an AI key once, it
+follows every device, and after that first paste the key never touches the browser again.
+
+**This is new capability beyond parity, not a parity item.** Legacy's current BYOK story is
+client-side only (per-device key entry, optionally synced via Secure Storage + Cloud Backup to
+Gist/Drive) — there's no server-side proxy in legacy at all. Scoping this into the "look exactly
+like today" goal would be a category error; it belongs here as an explicit addition on top of
+parity, not folded into any phase's definition of "done."
+
+**A simpler alternative exists using infrastructure already in place**: sync the (client-side
+encrypted) key through Firestore the same way documents already sync, skipping a new
+Cloudflare project/KV/secret-management surface entirely. The Worker's genuine differentiator
+over that is that the key never touches the browser again after first entry (server-side decrypt
++ forward, vs. client-side decrypt each use) — worth it if that stronger guarantee is the actual
+goal; not worth the added operational surface if "follows me across devices" is all that's
+needed.
+
+**Risk to flag if built as proposed**: a single Worker secret encrypting every user's stored key
+is a single point of failure — acceptable at this project's current scale (a handful of users),
+just don't let it read as more hardened than it is.
+
+**Natural connection point**: this overlaps directly with §6.9 (AI Features, where `web/` first
+gets any client-side AI provider calls to route through such a proxy) and the Firestore
+debounce/`onSnapshot` concerns already named in §6.8. Building the vault meaningfully earlier
+than §6.9 means it has nothing real to validate end-to-end against until then. Revisit and
+decide final sequencing at that point, rather than committing to a slot now.
