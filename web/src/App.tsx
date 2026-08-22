@@ -3,6 +3,7 @@ import { OutlineTree } from './components/OutlineTree';
 import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
+import { PadPanel } from './components/PadPanel';
 
 /**
  * Phase 3 in progress (docs/framework-migration-plan.md). Edit/Preview/Present toggle -- the
@@ -50,6 +51,9 @@ export function App() {
       {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
       <div style={{ marginTop: 16 }}>
         <ExportButtons />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <PadPanel />
       </div>
     </div>
   );
