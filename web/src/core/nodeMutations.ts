@@ -1,4 +1,4 @@
-import { getIndex, getSubtreeEnd } from './nodeQueries';
+import { getIndex, getSubtreeEnd, getChildBlocks, subtreeHeight } from './nodeQueries';
 
 /**
  * Pure tree-mutation logic for the outline — the `core/` module boundary for the tree-mutation
@@ -359,4 +359,43 @@ export function deleteRootIndexes(nodes: QueryableNode[], rootIndexes: number[])
     const end = getSubtreeEnd(nodes, idx);
     nodes.splice(idx, end - idx);
   }
+}
+
+/** How child blocks under a parent get reordered: alphabetical by the child's own root text
+ * (HTML-stripped, case-insensitive), reverse-alphabetical, or shallowest-subtree-first (stable
+ * on ties, by original position). */
+export type SortMode = 'az' | 'za' | 'depth';
+
+/**
+ * Mutates `nodes` in place, reordering the immediate child blocks under `parentIdx` (or every
+ * top-level root block, if `parentIdx` is `null`) according to `mode` — each child's whole
+ * subtree moves together via `getChildBlocks`, never just the child node itself. Returns `false`
+ * (no-op, `nodes` unchanged) if there are fewer than 2 blocks to sort; `true` otherwise. Does
+ * NOT call `rebuildParentIds()` itself — same convention as every other mutation in this module.
+ *
+ * NOT a Phase 1 port, same status as `getChildBlocks`/`subtreeHeight` in nodeQueries.ts (see
+ * that file's own header): index.html's real `sortChildBlocks` was never one of the extracted
+ * `src/core/` generated blocks, so this is freshly written to match it exactly rather than
+ * copied from an existing module.
+ */
+export function sortChildBlocksCore(nodes: QueryableNode[], parentIdx: number | null, mode: SortMode): boolean {
+  const blocks = getChildBlocks(nodes, parentIdx);
+  if (blocks.length < 2) return false;
+  const decorated = blocks.map((b) => ({
+    ...b,
+    text: String(nodes[b.start].text || '')
+      .replace(/<[^>]*>/g, '')
+      .toLowerCase(),
+    height: subtreeHeight(nodes, b.start, b.end)
+  }));
+  let sorted: typeof decorated;
+  if (mode === 'az') sorted = decorated.slice().sort((a, b) => a.text.localeCompare(b.text));
+  else if (mode === 'za') sorted = decorated.slice().sort((a, b) => b.text.localeCompare(a.text));
+  // 'depth': shallowest subtree first, stable for ties (falls back to original position).
+  else sorted = decorated.slice().sort((a, b) => a.height - b.height || a.start - b.start);
+  const rangeStart = blocks[0].start;
+  const rangeEnd = blocks[blocks.length - 1].end;
+  const reordered = sorted.flatMap((b) => nodes.slice(b.start, b.end));
+  nodes.splice(rangeStart, rangeEnd - rangeStart, ...reordered);
+  return true;
 }

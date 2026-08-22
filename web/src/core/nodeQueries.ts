@@ -174,3 +174,61 @@ export function getSelectionRangeIds(
   const [vs, ve] = visFrom <= visTo ? [visFrom, visTo] : [visTo, visFrom];
   return visible.slice(vs, ve + 1).map((idx) => nodes[idx].id);
 }
+
+/** One immediate child's whole subtree span under some parent — `start` inclusive, `end`
+ * exclusive, same convention as `getSubtreeEnd`. */
+export interface ChildBlock {
+  start: number;
+  end: number;
+}
+
+/**
+ * Pure: the immediate child blocks under `parentIdx` — or, when `parentIdx` is `null`, every
+ * top-level root block in the whole tree. Each block spans one child's entire subtree, not just
+ * the child node itself, so a caller reordering blocks moves each child's descendants along
+ * with it.
+ *
+ * NOT a Phase 1 port — unlike every other function in this file, `getChildBlocks` was never one
+ * of index.html's extracted `src/core/` generated blocks; it's freshly written here to match
+ * the real hand-written `getChildBlocks` in index.html exactly (same category as
+ * `parseSemanticMarkup.ts`'s relationship to the never-extracted `parseStyledText` — see that
+ * file's own header for the fuller explanation of why "not a port" doesn't mean "not faithful").
+ */
+export function getChildBlocks(nodes: QueryableNode[], parentIdx: number | null): ChildBlock[] {
+  const blocks: ChildBlock[] = [];
+  if (parentIdx === null) {
+    let i = 0;
+    while (i < nodes.length) {
+      if (nodes[i].depth === 0) {
+        const end = getSubtreeEnd(nodes, i);
+        blocks.push({ start: i, end });
+        i = end;
+      } else {
+        i++;
+      }
+    }
+  } else {
+    const parentDepth = nodes[parentIdx].depth;
+    let i = parentIdx + 1;
+    while (i < nodes.length && nodes[i].depth > parentDepth) {
+      if (nodes[i].depth === parentDepth + 1) {
+        const end = getSubtreeEnd(nodes, i);
+        blocks.push({ start: i, end });
+        i = end;
+      } else {
+        i++;
+      }
+    }
+  }
+  return blocks;
+}
+
+/** Pure: how many depth levels deep the block `[start, end)` goes, relative to its own root —
+ * 0 for a childless node, 1 if it has direct children only but no grandchildren, etc. Same
+ * "freshly written, faithfully matching a never-extracted legacy function" status as
+ * `getChildBlocks` above. */
+export function subtreeHeight(nodes: QueryableNode[], start: number, end: number): number {
+  let max = nodes[start].depth;
+  for (let i = start; i < end; i++) if (nodes[i].depth > max) max = nodes[i].depth;
+  return max - nodes[start].depth;
+}

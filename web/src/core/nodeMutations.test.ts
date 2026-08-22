@@ -12,7 +12,8 @@ import {
   moveMultipleNodeBlocksCore,
   computePasteOffsetDepth,
   insertParsedNodesCore,
-  deleteRootIndexes
+  deleteRootIndexes,
+  sortChildBlocksCore
 } from './nodeMutations';
 import { getSubtreeEnd, getIndex } from './nodeQueries';
 
@@ -563,5 +564,91 @@ describe('deleteRootIndexes', () => {
     const nodes = idTree([[1, 0]]);
     deleteRootIndexes(nodes, []);
     expect(nodes.map((n) => n.id)).toEqual([1]);
+  });
+});
+
+interface TextNode {
+  id: number;
+  depth: number;
+  text: string;
+}
+
+function textTree(entries: [number, number, string][]): TextNode[] {
+  return entries.map(([id, depth, text]) => ({ id, depth, text }));
+}
+
+describe('sortChildBlocksCore', () => {
+  it('is a no-op (returns false, nodes unchanged) with fewer than 2 blocks to sort', () => {
+    const nodes = textTree([[1, 0, 'only']]);
+    const before = nodes.slice();
+    expect(sortChildBlocksCore(nodes, null, 'az')).toBe(false);
+    expect(nodes).toEqual(before);
+  });
+
+  it("sorts root blocks (parentIdx null) A -> Z by each block's own root text", () => {
+    // Charlie(0)=1, Alice(0)=2, Bob(0)=3
+    const nodes = textTree([
+      [1, 0, 'Charlie'],
+      [2, 0, 'Alice'],
+      [3, 0, 'Bob']
+    ]);
+    expect(sortChildBlocksCore(nodes, null, 'az')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([2, 3, 1]); // Alice, Bob, Charlie
+  });
+
+  it('sorts root blocks Z -> A', () => {
+    const nodes = textTree([
+      [1, 0, 'Charlie'],
+      [2, 0, 'Alice'],
+      [3, 0, 'Bob']
+    ]);
+    expect(sortChildBlocksCore(nodes, null, 'za')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([1, 3, 2]); // Charlie, Bob, Alice
+  });
+
+  it('carries each block\'s whole subtree along with it, not just the root node', () => {
+    // Charlie(0)=1 -> child(1)=2, Alice(0)=3
+    const nodes = textTree([
+      [1, 0, 'Charlie'],
+      [2, 1, 'child of Charlie'],
+      [3, 0, 'Alice']
+    ]);
+    expect(sortChildBlocksCore(nodes, null, 'az')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([3, 1, 2]); // Alice, then Charlie's whole subtree
+  });
+
+  it("sorts A -> Z case-insensitively and ignores HTML tags in the compared text", () => {
+    const nodes = textTree([
+      [1, 0, '<b>banana</b>'],
+      [2, 0, 'APPLE']
+    ]);
+    expect(sortChildBlocksCore(nodes, null, 'az')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([2, 1]); // apple, banana
+  });
+
+  it("sorts by depth (shallowest subtree first), stable on ties by original position", () => {
+    // A(0)=1 -> child(1)=2 -> grandchild(2)=3 [height 2], B(0)=4 [height 0], C(0)=5 -> child(1)=6 [height 1]
+    const nodes = textTree([
+      [1, 0, 'A'],
+      [2, 1, 'A-child'],
+      [3, 2, 'A-grandchild'],
+      [4, 0, 'B'],
+      [5, 0, 'C'],
+      [6, 1, 'C-child']
+    ]);
+    expect(sortChildBlocksCore(nodes, null, 'depth')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([4, 5, 6, 1, 2, 3]); // B, C(+child), A(+child+grandchild)
+  });
+
+  it('only sorts a specific parentIdx\'s immediate children, leaving the rest of the tree untouched', () => {
+    // Root(0)=1 -> Zed(1)=2, Amy(1)=3 ; Sibling(0)=4
+    const nodes = textTree([
+      [1, 0, 'Root'],
+      [2, 1, 'Zed'],
+      [3, 1, 'Amy'],
+      [4, 0, 'Sibling']
+    ]);
+    expect(sortChildBlocksCore(nodes, 0, 'az')).toBe(true);
+    expect(nodes.map((n) => n.id)).toEqual([1, 3, 2, 4]); // Root, Amy, Zed, Sibling (untouched)
   });
 });
