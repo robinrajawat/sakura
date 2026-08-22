@@ -1,13 +1,23 @@
 name: Deploy
 
-# Publishes web/'s dist/ — the React rewrite (docs/framework-migration-plan.md), live at
-# www.sakura-notes.com as of Phase 5's cutover. Previously published legacy/'s dist/ (the
-# original single-file app); legacy/ is kept in the repo, still fully verified by ci.yml, and
-# can be repointed back here in one revert if a real regression surfaces post-cutover — this
-# is Stage 2's own "mechanism itself changes, explicit and separate" cutover discipline,
-# applied a second time (see docs/architecture-plan.md for Stage 1/2's history, and
-# docs/phase5-parity-checklist.md for the honest, checked-in record of exactly what this
-# build can and can't do yet as of this cutover).
+# Publishes legacy/'s dist/ (the current production single-file app) via actions/deploy-pages.
+# www.sakura-notes.com is served from this workflow's output on every push to main.
+#
+# TEMPORARY REVERT (see git history for the full story): briefly repointed at web/dist/ for a
+# Phase 5 cutover, then reverted back here within the hour -- web/'s outlineStore.ts still
+# boots every visitor into its Phase 0 validation-spike seed content ("Welcome to the Sakura
+# web spike", "nodeMutations.ts — indent/outdent/move, byte-identical to legacy", etc.) by
+# default, since documentsStore's real multi-doc model was never wired to auto-load on boot --
+# App.tsx has no useEffect or store call that replaces the seed with a real document, signed in
+# or not. That's fine for local dev (it's what the Phase 0 spike comment in outlineStore.ts
+# always said it was) but is not acceptable production content, and shipping it was a real
+# review miss before the cutover PR was proposed and merged -- it should have been checked by
+# actually loading the built app, not just verifying the build succeeded and the bundle
+# contained the right files. legacy/ is back live until that gap is closed and re-verified by
+# actually opening the deployed build, not just checking that it builds.
+#
+# See docs/architecture-plan.md for Stage 1/2's full history, and docs/framework-migration-plan.md
+# for the legacy/+web/ npm-workspaces split this workflow was updated for.
 #
 # Runs on push to main only (not every branch/PR — that's what `verify` (ci.yml) is for), so
 # what's published always matches what's actually on main.
@@ -40,13 +50,13 @@ jobs:
       - name: Install dependencies (root — installs both workspaces)
         run: npm ci
 
-      - name: Build web/ (vite build; web/public/ handles static passthrough natively)
-        run: npm run build -w sakura-web
+      - name: Build legacy/ (vite build; legacy/public/ handles static passthrough natively)
+        run: npm run build -w sakura-legacy
 
-      - name: Upload web/dist/ as a Pages artifact
+      - name: Upload legacy/dist/ as a Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web/dist
+          path: legacy/dist
 
   deploy:
     needs: build
