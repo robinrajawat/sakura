@@ -1,14 +1,26 @@
+import { useState } from 'react';
 import { OutlineTree } from './components/OutlineTree';
+import { PreviewPane } from './components/PreviewPane';
 
 /**
- * Phase 0's validation spike, now carrying Phase 2's first slice
- * (docs/framework-migration-plan.md). Real create/edit/delete/fold, still wired to the
- * ported core logic, still not the real Sakura UI — gets replaced as Phase 2 continues.
+ * Phase 3 in progress (docs/framework-migration-plan.md). Adds an Edit/Preview toggle -- the
+ * simplest possible entry point for Preview Mode (see PreviewPane.tsx's own header for what's
+ * deliberately not in scope yet). Still not the real Sakura UI shell.
  */
 export function App() {
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: 640 }}>
-      <h1>Sakura (web) — Phase 2, in progress</h1>
+      <h1>Sakura (web) — Phase 3, in progress</h1>
+      <div style={{ marginBottom: 12 }}>
+        <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
+          Edit
+        </button>
+        <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'}>
+          Preview
+        </button>
+      </div>
       <ul style={{ fontSize: '0.9em', color: '#555' }}>
         <li>Click to select, double-click to edit</li>
         <li>
@@ -30,7 +42,7 @@ export function App() {
           <code>`code`</code> — matches legacy's real styling, delimiters hidden
         </li>
       </ul>
-      <OutlineTree />
+      {mode === 'edit' ? <OutlineTree /> : <PreviewPane />}
     </div>
   );
 }
