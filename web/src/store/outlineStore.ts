@@ -30,9 +30,17 @@ import {
  * checkbox-aware (nodeQueries.ts's `CheckboxNode`) — every node carries both sets of fields
  * regardless of whether it's actually used as a checkbox, same as legacy's own
  * always-populated `normalizeNode` output (see toggleCheckbox's own comment below). */
+export interface CodeBlock {
+  lang: string;
+  code: string;
+}
+
 export interface OutlineNode extends ParentLinkedNode, CheckboxNode {
   note: string;
+  codeBlock: CodeBlock | null;
 }
+
+export const CODE_LANGS = ['plain', 'abap', 'sql', 'javascript', 'python', 'json', 'markup', 'markdown'];
 
 /**
  * Phase 0 validation spike, carrying Phase 2's first three slices (create/edit/delete+fold,
@@ -85,7 +93,8 @@ function seedNodes(): OutlineNode[] {
     parentId: null,
     isCheckbox: false,
     checked: false,
-    note: ''
+    note: '',
+      codeBlock: null
   }));
   rebuildParentIdsCore(nodes);
   return nodes;
@@ -126,6 +135,7 @@ interface OutlineState {
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
   toggleCheckbox: (id: number) => void;
   setNote: (id: number, note: string) => void;
+  setCodeBlock: (id: number, codeBlock: CodeBlock | null) => void;
 
   toggleCollapse: (id: number) => void;
 }
@@ -287,7 +297,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       parentId: null,
       isCheckbox: false,
       checked: false,
-      note: ''
+      note: '',
+      codeBlock: null
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -313,7 +324,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       parentId: null,
       isCheckbox: false,
       checked: false,
-      note: ''
+      note: '',
+      codeBlock: null
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -352,7 +364,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       parentId: null,
       isCheckbox: false,
       checked: false,
-      note: ''
+      note: '',
+      codeBlock: null
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -455,6 +468,16 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
     const next = nodes.map((n) => (n.id === id ? { ...n, note } : n));
+    set({ nodes: next });
+  },
+
+  // A node's optional code block: {lang, code} or null. Same plain-field pattern as setNote
+  // (no syntax highlighting yet, deferred).
+  setCodeBlock: (id, codeBlock) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const next = nodes.map((n) => (n.id === id ? { ...n, codeBlock } : n));
     set({ nodes: next });
   },
 

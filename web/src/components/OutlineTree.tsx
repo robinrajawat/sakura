@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
+import { CODE_LANGS } from '../store/outlineStore';
 import { NodeText } from './NodeText';
 
 const sortButtonStyle: CSSProperties = {
@@ -14,11 +15,11 @@ const sortButtonStyle: CSSProperties = {
 };
 
 /**
- * Phase 2 complete (docs/framework-migration-plan.md); this is Phase 3's first slice: a Note
- * field per node. Plain text only for now (no rich HTML/sanitization) — click the note icon or
- * an existing note's text to open an inline textarea, blur to commit via the new setNote store
- * action. Deliberately scoped down from legacy's full note feature set (noteTitle, rich HTML,
- * diagram images embedded in notes) — each a real, separately-scoped follow-up.
+ * Phase 2 complete (docs/framework-migration-plan.md); Phase 3 in progress: Note (plain text,
+ * no rich HTML/sanitization) and Code block (lang + code, no syntax highlighting) per node —
+ * each a click-to-edit inline textarea toggle via setNote/setCodeBlock. Both deliberately
+ * scoped down from legacy's full feature set (noteTitle, rich HTML, highlighting) — each a
+ * real, separately-scoped follow-up.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
@@ -45,7 +46,9 @@ export function OutlineTree() {
   const sortChildren = useOutlineStore((s) => s.sortChildren);
   const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
   const setNote = useOutlineStore((s) => s.setNote);
+  const setCodeBlock = useOutlineStore((s) => s.setCodeBlock);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
+  const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -291,6 +294,16 @@ export function OutlineTree() {
             >
               {node.note ? '📝' : '+note'}
             </span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingCodeId(editingCodeId === node.id ? null : node.id);
+              }}
+              title={node.codeBlock ? 'Edit code block' : 'Add code block'}
+              style={{ fontSize: 11, color: '#aaa', cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+            >
+              {node.codeBlock ? '💻' : '+code'}
+            </span>
           </div>
           {editingNoteId === node.id && (
             <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
@@ -317,6 +330,57 @@ export function OutlineTree() {
             >
               {node.note}
             </div>
+          )}
+          {editingCodeId === node.id && (
+            <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
+              <select
+                defaultValue={node.codeBlock?.lang ?? 'plain'}
+                onChange={(e) =>
+                  setCodeBlock(node.id, { lang: e.currentTarget.value, code: node.codeBlock?.code ?? '' })
+                }
+                style={{ fontSize: 12, marginBottom: 4 }}
+              >
+                {CODE_LANGS.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {lang}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                defaultValue={node.codeBlock?.code ?? ''}
+                rows={4}
+                onBlur={(e) =>
+                  setCodeBlock(node.id, { lang: node.codeBlock?.lang ?? 'plain', code: e.currentTarget.value })
+                }
+                style={{
+                  display: 'block',
+                  width: '90%',
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  border: '1px solid #ddd',
+                  borderRadius: 4
+                }}
+              />
+            </div>
+          )}
+          {editingCodeId !== node.id && node.codeBlock && (
+            <pre
+              onClick={() => setEditingCodeId(node.id)}
+              style={{
+                marginLeft: `${node.depth * 24 + 32}px`,
+                marginTop: 0,
+                marginBottom: 4,
+                padding: 6,
+                background: '#f6f6f6',
+                borderRadius: 4,
+                fontSize: 13,
+                cursor: 'text',
+                maxWidth: '85%',
+                overflowX: 'auto'
+              }}
+            >
+              {node.codeBlock.code}
+            </pre>
           )}
           </div>
         );
