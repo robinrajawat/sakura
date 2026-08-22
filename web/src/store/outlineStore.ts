@@ -118,12 +118,15 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
   },
 
   moveNode: (draggedId, targetId, mode) => {
-    const { nodes } = get();
+    const { nodes, collapsedIds } = get();
     const next = nodes.map((n) => ({ ...n }));
     const moved = moveNodeBlockCore(next, draggedId, targetId, mode);
     if (!moved) return false;
     rebuildParentIdsCore(next);
-    set({ nodes: next });
+    // Nesting a node under a collapsed target would hide it immediately — same
+    // un-collapse-on-arrival behavior newChild already uses.
+    const nextCollapsed = mode === 'child' ? withoutCollapse(collapsedIds, targetId) : collapsedIds;
+    set({ nodes: next, collapsedIds: nextCollapsed });
     return true;
   },
 

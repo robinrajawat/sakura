@@ -21,7 +21,10 @@ export function App() {
           <kbd>Backspace</kbd> on empty text — delete the node
         </li>
         <li>Click the ▾/▸ arrow to collapse/expand a subtree</li>
-        <li>Drag a row onto another (top half = above, bottom half = below) to reorder</li>
+        <li>
+          Drag a row onto another — top third = above, bottom third = below, middle third =
+          nest as child
+        </li>
         <li>
           Semantic markup: <code>[Section]</code>, <code>(note)</code>, <code>!alert</code>,{' '}
           <code>`code`</code> — matches legacy's real styling, delimiters hidden
