@@ -360,25 +360,25 @@ features.** Deliberately last among feature work — these are the most
 sync/Firebase-dependent surfaces and benefit most from the core app (and its
 data layer patterns) already being proven out.
 
-**Phase 5 — Parity verification and cutover.** Full feature-by-feature check
-against the current README as the source of truth for what "done" means — not a
-guess, an explicit checklist walk. Deploy the new app to a **separate preview
-URL** (e.g. a `deploy-preview` GitHub Pages environment, or a subdomain) run in
-parallel with the live legacy site for a real-world soak period before touching
-`www.sakura-notes.com` — the same "prove it before the production cutover"
-discipline Stage 1/Stage 2 of the deployment work followed, applied to a much
-larger change. Cutover itself (pointing the custom domain at the new build) is
-the second "the mechanism itself changes" moment in this project, same rule as
-Stage 2: explicit, separate sign-off, not bundled into a routine merge.
+**Phase 5 — Parity audit.** ✅ Complete. Full feature-by-feature check against the current
+README as the source of truth for what "done" means — not a guess, an explicit checklist walk
+(`docs/phase5-parity-checklist.md`). Deliberately scoped as an audit only, not a cutover
+milestone: cutover can't honestly happen until the gap that audit surfaced is closed, which is
+exactly Phase 6's job. Two feature slices also landed while this phase was underway (Documents &
+Tabs, Tags & Focus) — real, merged work, not blocked on Phase 6 either.
 
-**Phase 6 — Full parity migration and legacy retirement.** Full plan:
-`docs/phase6-full-parity-plan.md`. `www.sakura-notes.com` stays on `legacy/` until that plan's
-own pre-cutover gate is explicitly satisfied — not before, and not on the strength of a passing
-build alone (see that document's own opening section for why this rule exists). Once `web/`
-reaches full feature and pixel-close visual parity with `legacy/` and the gate is cleared: cut
-over, run a deliberate soak period in production, then remove `index.html`/`hub.html`,
-`scripts/generate-index-blocks.mjs`, and the whole splice-based build pipeline. Retirement itself
-remains its own explicit decision once confidence is actually earned, not scheduled in advance.
+**Phase 6 — Full parity build-out, cutover & legacy retirement.** Full plan:
+`docs/phase6-full-parity-plan.md`. Owns everything Phase 5's audit found still missing, plus the
+cutover itself — `www.sakura-notes.com` stays on `legacy/` until that plan's own pre-cutover gate
+is explicitly satisfied (see that document's own opening section for why this rule exists; the
+short version: it's the "prove it before the production cutover" discipline Stage 1/Stage 2 of
+the deployment work established, applied a second time — a real person opening the actual built
+app, not a passing build alone). Once `web/` reaches full feature and pixel-close visual parity
+with `legacy/` and the gate is cleared: cut over — the second "the mechanism itself changes"
+moment in this project, same explicit-and-separate rule as Stage 2 — run a deliberate soak
+period in production, then remove `index.html`/`hub.html`, `scripts/generate-index-blocks.mjs`,
+and the whole splice-based build pipeline. Retirement itself remains its own explicit decision
+once confidence is actually earned, not scheduled in advance.
 
 Each phase should land as its own sequence of small, reviewable PRs (same
 discipline as the current modularization project), not one giant branch — easier
