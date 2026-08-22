@@ -57,8 +57,16 @@ export function OutlineTree() {
   const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
   const setNote = useOutlineStore((s) => s.setNote);
   const setCodeBlock = useOutlineStore((s) => s.setCodeBlock);
+  const toggleTag = useOutlineStore((s) => s.toggleTag);
+  const activeTagFilter = useOutlineStore((s) => s.activeTagFilter);
+  const setTagFilter = useOutlineStore((s) => s.setTagFilter);
+  const focusedId = useOutlineStore((s) => s.focusedId);
+  const zoomIntoNode = useOutlineStore((s) => s.zoomIntoNode);
+  const exitFocus = useOutlineStore((s) => s.exitFocus);
+  const focusPath = useOutlineStore((s) => s.focusPath);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
+  const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -168,10 +176,47 @@ export function OutlineTree() {
     setDropTarget(null);
   }
 
+  function handleTagInputKeyDown(e: KeyboardEvent<HTMLInputElement>, id: number) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = e.currentTarget.value;
+      if (value.trim()) toggleTag(id, value);
+      e.currentTarget.value = '';
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditingTagsId(null);
+    }
+  }
+
   const visible = visibleIndexes();
+  const focusedNode = focusedId !== null ? nodes.find((n) => n.id === focusedId) : undefined;
 
   return (
     <div>
+      {/* Focus (zoom-in) breadcrumb + active tag-filter indicator -- Tags & Focus mode slice
+          (docs/phase5-parity-checklist.md). Only rendered when relevant, matching the rest of
+          this file's "no chrome for inactive state" convention (e.g. note/code preview rows). */}
+      {(focusedNode || activeTagFilter !== null) && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6, fontFamily: 'sans-serif', fontSize: 12, flexWrap: 'wrap' }}>
+          {focusedNode && (
+            <span style={{ color: t.mutedText }}>
+              🔍 {focusPath().map((n) => (n.text || '(empty)') + ' › ').join('')}
+              <strong style={{ color: t.text }}>{focusedNode.text || '(empty)'}</strong>{' '}
+              <button type="button" onClick={exitFocus} style={sortButtonStyle(t)}>
+                Exit focus
+              </button>
+            </span>
+          )}
+          {activeTagFilter !== null && (
+            <span style={{ color: t.mutedText }}>
+              Filtering: <strong style={{ color: t.text }}>#{activeTagFilter}</strong>{' '}
+              <button type="button" onClick={() => setTagFilter(null)} style={sortButtonStyle(t)}>
+                Clear filter
+              </button>
+            </span>
+          )}
+        </div>
+      )}
       {/* Sort top-level nodes — the toolbar-level entry point legacy exposes via its "Extras"
           menu (sort-root-az-btn/sort-root-za-btn/sort-root-depth-btn), always operating on
           root blocks (parentId null). The per-node "sort this node's children" context-menu
@@ -299,6 +344,70 @@ export function OutlineTree() {
                 {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>
             )}
+            {node.tags.map((tag) => (
+              <span
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTagFilter(tag);
+                }}
+                title={`Filter by #${tag} (click chip to filter, click × to remove)`}
+                style={{
+                  fontSize: 11,
+                  color: t.mutedText,
+                  border: `1px solid ${t.border}`,
+                  borderRadius: 10,
+                  padding: '0 6px',
+                  marginRight: 4,
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                #{tag}{' '}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleTag(node.id, tag);
+                  }}
+                  title="Remove tag"
+                  style={{ marginLeft: 2 }}
+                >
+                  ×
+                </span>
+              </span>
+            ))}
+            {editingTagsId === node.id ? (
+              <input
+                autoFocus
+                placeholder="tag + Enter"
+                onKeyDown={(e) => handleTagInputKeyDown(e, node.id)}
+                onBlur={() => setEditingTagsId(null)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ fontSize: 11, width: 80, marginRight: 4 }}
+              />
+            ) : (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingTagsId(node.id);
+                }}
+                title="Add tag"
+                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              >
+                +tag
+              </span>
+            )}
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                zoomIntoNode(node.id);
+              }}
+              title="Zoom into this node (Focus mode)"
+              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+            >
+              🔍
+            </span>
             <span
               onClick={(e) => {
                 e.stopPropagation();
