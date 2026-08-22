@@ -1,13 +1,19 @@
 import { useOutlineStore } from '../store/outlineStore';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
+import { getNodePlainText } from '../utils/stripSemanticMarkers';
 
 /**
- * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown and OPML only for this
- * slice -- both reuse serializeMarkdown.ts/serializeOpml.ts, already ported in Phase 1 and
- * otherwise unused until now. Word/PDF/PowerPoint deferred: each needs a real document-
- * generation library (docx/pdf-lib/pptxgenjs) wired into the build, a meaningfully bigger and
- * separately-scoped follow-up rather than something this slice should absorb.
+ * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown, OPML, and this slice's
+ * addition, PDF -- all reuse existing logic/browser capability rather than adding a new
+ * document-generation dependency for this one format. PDF specifically uses the browser's own
+ * print-to-PDF via window.print() over a temporary print-only window rendering the same node
+ * list PreviewPane.tsx renders, rather than a PDF-generation library (jsPDF/pdf-lib) -- every
+ * modern browser's native print dialog already produces a real, selectable-text PDF this way,
+ * so pulling in a whole PDF-rendering library for this slice would be solving an already-solved
+ * problem. Word/PowerPoint remain deferred: unlike PDF, there's no browser-native equivalent,
+ * so those genuinely need a real document-generation library (docx/pptxgenjs) wired into the
+ * build -- a meaningfully bigger, separately-scoped follow-up.
  */
 function download(filename: string, mimeType: string, content: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -17,6 +23,13 @@ function download(filename: string, mimeType: string, content: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function escapeHtmlForPrint(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 export function ExportButtons() {
@@ -35,6 +48,25 @@ export function ExportButtons() {
     download('outline.opml', 'text/x-opml;charset=utf-8', serializeOpmlCore(nodes, 'Untitled', true));
   }
 
+  function exportPdf() {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
+    const rows = nodes
+      .map(
+        (node) =>
+          `<div style="padding-left:${node.depth * 24}px;margin-bottom:4px;">${
+            node.isCheckbox ? `<input type="checkbox" disabled ${node.checked ? 'checked' : ''}/> ` : ''
+          }${escapeHtmlForPrint(getNodePlainText(node)) || '<span style="color:#999">(empty)</span>'}</div>`
+      )
+      .join('');
+    printWindow.document.write(
+      `<!doctype html><html><head><title>Outline</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body>${rows}</body></html>`
+    );
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }
+
   return (
     <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
       <button type="button" onClick={exportMarkdown}>
@@ -42,6 +74,9 @@ export function ExportButtons() {
       </button>
       <button type="button" onClick={exportOpml}>
         Export .opml
+      </button>
+      <button type="button" onClick={exportPdf}>
+        Export .pdf
       </button>
     </div>
   );
