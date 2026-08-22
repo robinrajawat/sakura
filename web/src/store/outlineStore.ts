@@ -38,14 +38,19 @@ function seedNodes(): ParentLinkedNode[] {
     { id: 7, depth: 2, text: 'Drop on the top half to go above, bottom half to go below' },
     { id: 8, depth: 1, text: 'Enter creates a sibling, Ctrl/Cmd+Enter creates a child' },
     { id: 9, depth: 1, text: 'Click the fold arrow to collapse/expand a subtree' },
-    { id: 10, depth: 2, text: 'Backspace on empty text deletes the node' }
+    { id: 10, depth: 2, text: 'Backspace on empty text deletes the node' },
+    {
+      id: 11,
+      depth: 1,
+      text: '[Semantic markup] now renders `like this` for code and !urgent for alerts (matches legacy exactly)'
+    }
   ];
   const nodes: ParentLinkedNode[] = raw.map((n) => ({ ...n, parentId: null }));
   rebuildParentIdsCore(nodes);
   return nodes;
 }
 
-const SEED_MAX_ID = 10;
+const SEED_MAX_ID = 11;
 
 interface OutlineState {
   nodes: ParentLinkedNode[];

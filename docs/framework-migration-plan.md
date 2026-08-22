@@ -279,10 +279,52 @@ multi-select (the ported `computeSelectedIds`/`computeSelectionRootIndexes`
 support it; the UI for range/multi-select doesn't exist yet), `Shift+Enter`
 split-at-cursor (needs real cursor-position tracking, more involved than a
 plain `<input>` currently used for inline editing supports), sort children,
-semantic markup styling (`[Section]`/`(note)`/`!alert`/`` `code` ``),
 checkboxes, and `'child'`-mode drag target (drop-to-nest — the ported
 `moveNodeBlockCore` already supports it; no UI affordance wired yet, same as
 noted in the validation spike).
+
+**Second slice landed: semantic markup styling** (`[Section]`, `(note)`,
+`!alert`, `` `code` ``). Investigated legacy's real rendering path before
+writing anything — the already-ported `utils/parseInlineSegments.ts` turned
+out to be the *wrong* source to reuse here despite the tempting name match:
+it was extracted for canvas image-export measurement
+(`measureTreeImage`/`renderTreeImageBlob`), a genuinely different consumer
+with different needs (delimiters kept visible, for width measurement). The
+real live editor uses a separate, hand-written, never-extracted function
+(`parseStyledText` in `index.html`) that *hides* delimiters and applies real
+theme-aware CSS classes (`.sem-chip`, `.sem-meta`, `.sem-alert-inline`,
+`.sem-code-inline`). Writing `web/src/utils/parseSemanticMarkup.ts` — a
+fresh, faithful match of `parseStyledText`'s core 4-marker subset, with its
+own real CSS-value-matched styling in a new `NodeText.tsx` component — is
+correctly scoped as new hand-written work here, not a missed Phase 1 port:
+`parseStyledText` was never core/state/utils logic in the first place, same
+category as `makeNode` (see the create/delete slice above).
+
+Deliberately scoped down from `parseStyledText`'s full behavior, each
+investigated and explicitly excluded rather than silently dropped:
+`[[wiki links]]` (a real cross-document backlinks feature, not just inline
+styling — and confirmed this parser doesn't garble text containing one, by
+design: a `[[` is left untouched as plain text rather than mis-parsed as two
+single brackets, caught by a dedicated test during development), `Decision
+Log:`/`Context:`/etc. label coloring (decision-log-specific), `Key:` prefix
+bolding (`sem-key`), `SAP Note 12345` auto-linking (narrow, product-specific),
+and `>quote` (investigated and confirmed `parseStyledText` itself doesn't
+handle it either, despite a `.sem-quote` CSS class existing — that class
+belongs to three unrelated call sites: Pad's blockquotes, Preview/Presenter's
+remark text, and the tree's own separate whole-line-quote treatment, not this
+inline-marker parser).
+
+One real bug caught immediately by the test suite during development: the
+first `[[` guard only prevented the *first* bracket from starting a false
+section match, but left the *second* bracket free to start its own — `see
+[[Some Page]] for more` parsed as text + a bogus `Some Page` section + a
+trailing `]` fragment, rather than staying untouched. Fixed by skipping both
+brackets of a `[[` pair together rather than just gating the first one.
+
+Verified: `web` typecheck clean; `test:unit` 768/768 (757 prior + 11 new for
+`parseSemanticMarkup`, including the `[[` regression case above); `lint` 0
+errors, 1 pre-existing warning; `build` clean; dev server manually confirmed.
+`legacy/` completely unaffected throughout.
 
 Verified: `web` typecheck clean; `test:unit` 757/757 (744 prior + 13 new,
 covering editing, both subtree-boundary cases of node creation, delete

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
+import { NodeText } from './NodeText';
 
 /**
  * Phase 0's validation spike, now carrying Phase 2's first slice (docs/framework-migration-plan.md)
@@ -192,7 +193,7 @@ export function OutlineTree() {
                 onDoubleClick={() => startEditing(node.id)}
                 style={{ flex: 1 }}
               >
-                {node.text || <span style={{ color: '#bbb' }}>(empty)</span>}
+                {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>
             )}
           </div>
