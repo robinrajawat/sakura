@@ -24,7 +24,9 @@ describe('outlineStore', () => {
       selectedId: 2,
       editingId: null,
       collapsedIds: new Set(),
-      nextId: 100
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2
     });
   });
 
@@ -194,5 +196,133 @@ describe('outlineStore', () => {
   it('nodeHasChildren correctly reports true/false via the real ported nodeHasChildren', () => {
     expect(useOutlineStore.getState().nodeHasChildren(1)).toBe(true);
     expect(useOutlineStore.getState().nodeHasChildren(2)).toBe(false);
+  });
+
+  it('moveNode always resolves to a plain single selection on the moved node (matches legacy)', () => {
+    useOutlineStore.getState().moveNode(3, 1, 'above');
+    const { selectedId, selectionAnchorId, multiSelectedIds } = useOutlineStore.getState();
+    expect(selectedId).toBe(3);
+    expect(selectionAnchorId).toBe(3);
+    expect(multiSelectedIds).toEqual([]);
+  });
+});
+
+describe('outlineStore multi-select', () => {
+  // A 5-node tree, deep enough to exercise Shift-range and Ctrl-toggle plus multi-select
+  // indent/outdent/delete/move, none of which the 3-node beforeEach tree above has room for.
+  //   1 (depth 0)
+  //     2 (depth 1)
+  //       3 (depth 2)
+  //     4 (depth 1)
+  //     5 (depth 1)
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null },
+        { id: 2, depth: 1, text: 'child-a', parentId: 1 },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2 },
+        { id: 4, depth: 1, text: 'child-b', parentId: 1 },
+        { id: 5, depth: 1, text: 'child-c', parentId: 1 }
+      ],
+      selectedId: null,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: null
+    });
+  });
+
+  it('clickNode with no modifiers behaves as a plain single selection, clearing any prior multi-selection', () => {
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    expect(useOutlineStore.getState().multiSelectedIds).toEqual([2, 4]);
+    useOutlineStore.getState().clickNode(5, {});
+    const { selectedId, multiSelectedIds, selectionAnchorId } = useOutlineStore.getState();
+    expect(selectedId).toBe(5);
+    expect(multiSelectedIds).toEqual([]);
+    expect(selectionAnchorId).toBe(5);
+  });
+
+  it('clickNode with ctrlKey toggles membership, building a multi-selection in document order', () => {
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true });
+    // Clicked in id order 4 then 2, but membership is re-derived in document order (1,2,3,4,5).
+    expect(useOutlineStore.getState().multiSelectedIds).toEqual([2, 4]);
+  });
+
+  it('clickNode with ctrlKey collapses back to a plain single selection once toggling leaves 0-1 ids', () => {
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true });
+    // Toggle 4 back off — only 2 remains, so this should collapse to a plain single selection,
+    // not a one-element multiSelectedIds array (matches legacy's own toggle handler exactly).
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    const { selectedId, multiSelectedIds } = useOutlineStore.getState();
+    expect(selectedId).toBe(2);
+    expect(multiSelectedIds).toEqual([]);
+  });
+
+  it('clickNode with shiftKey selects a range from the anchor via the ported getSelectionRangeIds', () => {
+    useOutlineStore.getState().clickNode(1, {}); // anchor = 1
+    useOutlineStore.getState().clickNode(4, { shiftKey: true });
+    expect(useOutlineStore.getState().multiSelectedIds).toEqual([1, 2, 3, 4]);
+    expect(useOutlineStore.getState().selectedId).toBe(4);
+  });
+
+  it('selectedIds() falls back to a plain single selection when no multi-selection is active', () => {
+    useOutlineStore.getState().clickNode(1, {});
+    expect(useOutlineStore.getState().selectedIds()).toEqual([1]);
+  });
+
+  it('selectedIds() returns the multi-selection when active', () => {
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(5, { ctrlKey: true });
+    expect(useOutlineStore.getState().selectedIds()).toEqual([4, 5]);
+  });
+
+  it('indentSelected indents every root of a multi-selection at once, all-or-nothing on canIndentAt', () => {
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(5, { ctrlKey: true });
+    useOutlineStore.getState().indentSelected();
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.find((n) => n.id === 4)?.depth).toBe(2);
+    expect(nodes.find((n) => n.id === 5)?.depth).toBe(2);
+  });
+
+  it('outdentSelected outdents every root of a multi-selection at once', () => {
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().outdentSelected();
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.find((n) => n.id === 2)?.depth).toBe(0);
+    expect(nodes.find((n) => n.id === 4)?.depth).toBe(0);
+    // node 3 is node 2's child, carried along with its parent's whole subtree.
+    expect(nodes.find((n) => n.id === 3)?.depth).toBe(1);
+  });
+
+  it('deleteSelected removes every root of a multi-selection, including each root\'s whole subtree', () => {
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true }); // has child 3
+    useOutlineStore.getState().clickNode(5, { ctrlKey: true });
+    useOutlineStore.getState().deleteSelected();
+    const { nodes, multiSelectedIds } = useOutlineStore.getState();
+    expect(nodes.map((n) => n.id)).toEqual([1, 4]);
+    expect(multiSelectedIds).toEqual([]);
+  });
+
+  it('moveNode with a draggedIds array moves a whole multi-selection as one combined block', () => {
+    useOutlineStore.getState().clickNode(4, { ctrlKey: true });
+    useOutlineStore.getState().clickNode(5, { ctrlKey: true });
+    const moved = useOutlineStore.getState().moveNode(4, 2, 'child', [4, 5]);
+    expect(moved).toBe(true);
+    const { nodes, selectedId, selectionAnchorId, multiSelectedIds } = useOutlineStore.getState();
+    // 4 and 5 both nested under node 2, ahead of its existing child (3).
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 4, 5, 3]);
+    expect(nodes.find((n) => n.id === 4)?.depth).toBe(2);
+    expect(nodes.find((n) => n.id === 5)?.depth).toBe(2);
+    // Matches legacy's moveMultipleNodeBlocks: selection collapses to the surviving multi-set,
+    // anchored on the first originally-dragged id.
+    expect(selectedId).toBe(4);
+    expect(selectionAnchorId).toBe(4);
+    expect(multiSelectedIds).toEqual([4, 5]);
   });
 });

@@ -4,20 +4,22 @@ import type { DropMode } from '../core/nodeMutations';
 import { NodeText } from './NodeText';
 
 /**
- * Phase 0's validation spike, now carrying Phase 2's first slice (docs/framework-migration-plan.md)
- * — real node create/edit/delete and fold/collapse, still wired to the real ported core logic,
- * still deliberately scoped down from the full README "Core Editing" feature set. Explicitly
- * NOT in this slice (see the plan doc for the full list): multi-select, Shift+Enter split,
- * sort children, semantic markup ([Section]/(note)/!alert/`code`), checkboxes, 'child'-mode
- * drag target (drop-to-nest). Each is a real, separately-scoped follow-up slice, not an
- * oversight here.
+ * Phase 0's validation spike, now carrying Phase 2's first four slices
+ * (docs/framework-migration-plan.md) — real node create/edit/delete, fold/collapse, semantic
+ * markup, drag-to-nest, and this slice: multi-select (Ctrl/Cmd-click toggle, Shift-click range,
+ * multi-select indent/outdent/delete/move). Still deliberately scoped down from the full README
+ * "Core Editing" feature set. Explicitly NOT in this slice (see the plan doc for the full list):
+ * Shift+Enter split, sort children, checkboxes. Each is a real, separately-scoped follow-up
+ * slice, not an oversight here.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
   const selectedId = useOutlineStore((s) => s.selectedId);
   const editingId = useOutlineStore((s) => s.editingId);
   const collapsedIds = useOutlineStore((s) => s.collapsedIds);
-  const selectNode = useOutlineStore((s) => s.selectNode);
+  const multiSelectedIds = useOutlineStore((s) => s.multiSelectedIds);
+  const clickNode = useOutlineStore((s) => s.clickNode);
+  const selectionRootIndexes = useOutlineStore((s) => s.selectionRootIndexes);
   const indentSelected = useOutlineStore((s) => s.indentSelected);
   const outdentSelected = useOutlineStore((s) => s.outdentSelected);
   const moveNode = useOutlineStore((s) => s.moveNode);
@@ -29,9 +31,11 @@ export function OutlineTree() {
   const newSiblingBelow = useOutlineStore((s) => s.newSiblingBelow);
   const newChild = useOutlineStore((s) => s.newChild);
   const deleteNode = useOutlineStore((s) => s.deleteNode);
+  const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: number; mode: DropMode } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,6 +65,12 @@ export function OutlineTree() {
         e.preventDefault();
         deleteNode(selectedId);
       }
+    } else if (e.key === 'Delete') {
+      // The multi-select counterpart to Backspace-on-empty-text above: Delete removes every
+      // root of the current selection (single or multi) regardless of its text content,
+      // matching legacy's own Delete-key binding for deleteSelected().
+      e.preventDefault();
+      deleteSelected();
     }
   }
 
@@ -84,6 +94,16 @@ export function OutlineTree() {
 
   function handleDragStart(id: number) {
     setDraggedId(id);
+    // If the dragged row is part of a live multi-selection, drag the whole selection as one
+    // combined block — same isMultiDrag check as legacy's own row dragstart handler. Root
+    // indexes only (not every descendant id), matching moveMultipleNodeBlocksCore's own
+    // expectation that draggedIds identifies whole subtrees to move together.
+    if (multiSelectedIds.length > 1 && multiSelectedIds.includes(id)) {
+      const roots = selectionRootIndexes().map((idx) => nodes[idx].id);
+      setDraggedIds(roots);
+    } else {
+      setDraggedIds(null);
+    }
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>, id: number) {
@@ -105,9 +125,10 @@ export function OutlineTree() {
   function handleDrop(e: DragEvent<HTMLDivElement>, targetId: number) {
     e.preventDefault();
     if (draggedId !== null && dropTarget && dropTarget.id === targetId) {
-      moveNode(draggedId, targetId, dropTarget.mode);
+      moveNode(draggedId, targetId, dropTarget.mode, draggedIds ?? undefined);
     }
     setDraggedId(null);
+    setDraggedIds(null);
     setDropTarget(null);
   }
 
@@ -129,8 +150,9 @@ export function OutlineTree() {
       {visible.map((idx) => {
         const node = nodes[idx];
         const isSelected = node.id === selectedId;
+        const isMultiSelected = multiSelectedIds.length > 1 && multiSelectedIds.includes(node.id);
         const isEditing = node.id === editingId;
-        const isDragging = node.id === draggedId;
+        const isDragging = node.id === draggedId || (draggedIds !== null && draggedIds.includes(node.id));
         const showDropAbove = dropTarget?.id === node.id && dropTarget.mode === 'above';
         const showDropBelow = dropTarget?.id === node.id && dropTarget.mode === 'below';
         const showDropChild = dropTarget?.id === node.id && dropTarget.mode === 'child';
@@ -146,6 +168,7 @@ export function OutlineTree() {
             onDrop={(e) => handleDrop(e, node.id)}
             onDragEnd={() => {
               setDraggedId(null);
+              setDraggedIds(null);
               setDropTarget(null);
             }}
             style={{
@@ -156,7 +179,13 @@ export function OutlineTree() {
               paddingBottom: 4,
               cursor: isEditing ? 'text' : 'grab',
               opacity: isDragging ? 0.4 : 1,
-              backgroundColor: showDropChild ? 'rgba(66, 133, 244, 0.12)' : isSelected ? '#e8f0fe' : 'transparent',
+              backgroundColor: showDropChild
+                ? 'rgba(66, 133, 244, 0.12)'
+                : isSelected
+                  ? '#e8f0fe'
+                  : isMultiSelected
+                    ? '#eef3fd'
+                    : 'transparent',
               boxShadow: showDropChild ? 'inset 0 0 0 1.5px #4285f4' : 'none',
               borderTop: showDropAbove ? '2px solid #4285f4' : '2px solid transparent',
               borderBottom: showDropBelow ? '2px solid #4285f4' : '2px solid transparent',
@@ -196,7 +225,7 @@ export function OutlineTree() {
               />
             ) : (
               <span
-                onClick={() => selectNode(node.id)}
+                onClick={(e) => clickNode(node.id, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey || e.metaKey })}
                 onDoubleClick={() => startEditing(node.id)}
                 style={{ flex: 1 }}
               >
