@@ -17,9 +17,9 @@ describe('outlineStore', () => {
     // equivalent shape directly here instead.
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ],
       selectedId: 2,
       editingId: null,
@@ -173,7 +173,7 @@ describe('outlineStore', () => {
   });
 
   it('deleteNode refuses to delete the last remaining node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null }], selectedId: 1 });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }], selectedId: 1 });
     useOutlineStore.getState().deleteNode(1);
     expect(useOutlineStore.getState().nodes).toHaveLength(1);
   });
@@ -218,11 +218,11 @@ describe('outlineStore multi-select', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ],
       selectedId: null,
       editingId: null,
@@ -332,10 +332,10 @@ describe('outlineStore sortChildren', () => {
     // Charlie(0)=1, Alice(0)=2 -> child(1)=3, Bob(0)=4
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ],
       selectedId: 1,
       editingId: null,
@@ -362,9 +362,9 @@ describe('outlineStore sortChildren', () => {
   it('sorts an existing node\'s children when given a specific parentId, not root blocks', () => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ]
     });
     const sorted = useOutlineStore.getState().sortChildren(1, 'az');
@@ -387,7 +387,7 @@ describe('outlineStore sortChildren', () => {
   });
 
   it('returns false and leaves nodes unchanged when there are fewer than 2 blocks to sort', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }] });
     const before = useOutlineStore.getState().nodes;
     const sorted = useOutlineStore.getState().sortChildren(null, 'az');
     expect(sorted).toBe(false);
@@ -399,9 +399,9 @@ describe('outlineStore splitAtCursor', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ],
       selectedId: 2,
       editingId: 2,
@@ -458,9 +458,9 @@ describe('outlineStore checkboxes', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
       ],
       selectedId: 2,
       editingId: 2,
@@ -526,13 +526,13 @@ describe('outlineStore checkboxes', () => {
 
 describe('outlineStore setNote', () => {
   it('sets a note on a node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
     useOutlineStore.getState().setNote(1, 'remember this');
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.note).toBe('remember this');
   });
 
   it('is a no-op for an unknown node id', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().setNote(9999, 'x');
     expect(useOutlineStore.getState().nodes).toBe(before);
@@ -541,21 +541,180 @@ describe('outlineStore setNote', () => {
 
 describe('outlineStore setCodeBlock', () => {
   it('sets a code block on a node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
     useOutlineStore.getState().setCodeBlock(1, { lang: 'python', code: 'print(1)' });
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.codeBlock).toEqual({ lang: 'python', code: 'print(1)' });
   });
 
   it('clears a code block by setting it to null', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: { lang: 'plain', code: 'x' } }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: { lang: 'plain', code: 'x' }, tags: [] }] });
     useOutlineStore.getState().setCodeBlock(1, null);
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.codeBlock).toBeNull();
   });
 
   it('is a no-op for an unknown node id', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().setCodeBlock(9999, { lang: 'plain', code: 'x' });
     expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+});
+
+describe('outlineStore toggleTag', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 0, text: 'other', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['keep'] }
+      ],
+      activeTagFilter: null,
+      focusedId: null
+    });
+  });
+
+  it('adds a tag that is not yet present', () => {
+    useOutlineStore.getState().toggleTag(1, 'urgent');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.tags).toEqual(['urgent']);
+  });
+
+  it('removes a tag that is already present (toggle off)', () => {
+    useOutlineStore.getState().toggleTag(2, 'keep');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.tags).toEqual([]);
+  });
+
+  it('trims whitespace and ignores an empty/whitespace-only tag', () => {
+    useOutlineStore.getState().toggleTag(1, '  spaced  ');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.tags).toEqual(['spaced']);
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().toggleTag(1, '   ');
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().toggleTag(9999, 'x');
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('does not affect other nodes\' tags', () => {
+    useOutlineStore.getState().toggleTag(1, 'urgent');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.tags).toEqual(['keep']);
+  });
+});
+
+describe('outlineStore setTagFilter + visibleIndexes (tag scoping)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['work'] },
+        { id: 2, depth: 1, text: 'child-tagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['home'] },
+        { id: 3, depth: 1, text: 'child-untagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ],
+      collapsedIds: new Set(),
+      activeTagFilter: null,
+      focusedId: null
+    });
+  });
+
+  it('with no filter, every visible index is returned (unchanged base behavior)', () => {
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([0, 1, 2]);
+  });
+
+  it('restricts to only nodes carrying the active tag, flat (no ancestor context restored)', () => {
+    useOutlineStore.getState().setTagFilter('home');
+    // Only index 1 (child-tagged) carries 'home' -- its parent (index 0) does NOT carry it and
+    // is deliberately not restored, matching the documented flat-filter scoping.
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([1]);
+  });
+
+  it('returns an empty list when no node carries the filtered tag', () => {
+    useOutlineStore.getState().setTagFilter('nonexistent');
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([]);
+  });
+
+  it('clearing the filter (null) restores the full visible list', () => {
+    useOutlineStore.getState().setTagFilter('home');
+    useOutlineStore.getState().setTagFilter(null);
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([0, 1, 2]);
+  });
+
+  it('respects fold state underneath the tag filter', () => {
+    useOutlineStore.setState({ collapsedIds: new Set([1]) }); // fold node id 1 (root)
+    useOutlineStore.getState().setTagFilter('home');
+    // Node 2 ('home') is now hidden by the fold, so no visible index should carry it through.
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([]);
+  });
+});
+
+describe('outlineStore zoomIntoNode / exitFocus / focusPath + visibleIndexes (focus scoping)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 5, depth: 0, text: 'unrelated-root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ],
+      collapsedIds: new Set(),
+      activeTagFilter: null,
+      focusedId: null
+    });
+  });
+
+  it('restricts visibleIndexes to only the focused node\'s subtree, excluding the focused node\'s own row', () => {
+    useOutlineStore.getState().zoomIntoNode(2);
+    // Index 1 is node id 2 (branch) itself -- excluded. Indexes 2,3 are its children (leaf-a/b).
+    // Index 4 (unrelated-root) is outside the subtree entirely.
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([2, 3]);
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    useOutlineStore.getState().zoomIntoNode(9999);
+    expect(useOutlineStore.getState().focusedId).toBeNull();
+  });
+
+  it('exitFocus clears focus and restores the full visible list', () => {
+    useOutlineStore.getState().zoomIntoNode(2);
+    useOutlineStore.getState().exitFocus();
+    expect(useOutlineStore.getState().focusedId).toBeNull();
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('focusPath returns the ancestor chain from root down to (not including) the focused node', () => {
+    useOutlineStore.getState().zoomIntoNode(3); // leaf-a, ancestors: root (1) -> branch (2)
+    expect(useOutlineStore.getState().focusPath().map((n) => n.id)).toEqual([1, 2]);
+  });
+
+  it('focusPath is empty when nothing is focused', () => {
+    expect(useOutlineStore.getState().focusPath()).toEqual([]);
+  });
+
+  it('focusPath is empty when focused on a top-level node (no ancestors)', () => {
+    useOutlineStore.getState().zoomIntoNode(1);
+    expect(useOutlineStore.getState().focusPath()).toEqual([]);
+  });
+
+  it('fails open to the full view if the focused node was deleted out from under an active focus', () => {
+    useOutlineStore.getState().zoomIntoNode(2);
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.filter((n) => n.id !== 2 && n.id !== 3 && n.id !== 4)
+    });
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([0, 1]);
+  });
+
+  it('combines focus subtree scoping with an active tag filter, narrowing within the subtree', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'] },
+        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'] },
+        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ]
+    });
+    useOutlineStore.getState().zoomIntoNode(2);
+    useOutlineStore.getState().setTagFilter('x');
+    // Subtree of node 2 is indexes [2,3] (leaf-a, leaf-b); only leaf-a (index 2) carries 'x'.
+    expect(useOutlineStore.getState().visibleIndexes()).toEqual([2]);
   });
 });

@@ -136,7 +136,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     const now = Date.now();
     const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now };
     const nodes: OutlineNode[] = [
-      { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null }
+      { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
     ];
     writeJson(docStorageKey(id), { title: summary.title, nodes });
     const docsIndex = [...get().docsIndex, summary];
