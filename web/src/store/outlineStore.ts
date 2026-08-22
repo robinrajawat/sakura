@@ -77,38 +77,21 @@ export const CODE_LANGS = ['plain', 'abap', 'sql', 'javascript', 'python', 'json
  */
 
 function seedNodes(): OutlineNode[] {
-  const raw: Array<{ id: number; depth: number; text: string }> = [
-    { id: 1, depth: 0, text: 'Welcome to the Sakura web spike' },
-    { id: 2, depth: 1, text: 'This tree is wired to the real ported core logic' },
-    { id: 3, depth: 2, text: 'nodeMutations.ts — indent/outdent/move, byte-identical to legacy' },
-    { id: 4, depth: 2, text: 'nodeQueries.ts — the same tree-query functions legacy uses' },
-    { id: 5, depth: 1, text: 'Try it — click a row, then Tab / Shift+Tab' },
-    { id: 6, depth: 1, text: 'Drag a row onto another to reorder it' },
-    { id: 7, depth: 2, text: 'Drop on the top half to go above, bottom half to go below' },
-    { id: 8, depth: 1, text: 'Enter creates a sibling, Ctrl/Cmd+Enter creates a child' },
-    { id: 9, depth: 1, text: 'Click the fold arrow to collapse/expand a subtree' },
-    { id: 10, depth: 2, text: 'Backspace on empty text deletes the node' },
-    {
-      id: 11,
-      depth: 1,
-      text: '[Semantic markup] now renders `like this` for code and !urgent for alerts (matches legacy exactly)'
-    },
-    { id: 12, depth: 1, text: 'Type [ ] or [x] at the start of a line, then commit, for a checkbox' }
+  // A single blank starter node -- deliberately NOT dev/spike content. This is outlineStore's
+  // in-memory default before documentsStore.init() (documentsStore.ts) runs and either loads a
+  // real persisted document or creates a proper first document of its own; documentsStore's
+  // init() no longer blindly adopts whatever's sitting here (see that function's own comment
+  // for why), but keeping this harmless-if-briefly-visible matters regardless, since a
+  // standalone consumer of outlineStore (tests, or any future entry point that doesn't route
+  // through documentsStore) would otherwise show real users placeholder tutorial text again.
+  const nodes: OutlineNode[] = [
+    { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
   ];
-  const nodes: OutlineNode[] = raw.map((n) => ({
-    ...n,
-    parentId: null,
-    isCheckbox: false,
-    checked: false,
-    note: '',
-      codeBlock: null,
-      tags: []
-  }));
   rebuildParentIdsCore(nodes);
   return nodes;
 }
 
-const SEED_MAX_ID = 12;
+const SEED_MAX_ID = 1;
 
 interface OutlineState {
   nodes: OutlineNode[];
