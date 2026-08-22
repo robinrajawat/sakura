@@ -40,12 +40,29 @@ Extract legacy's actual design values (colors incl. all 5 accent options and Chr
 presets, typography scale for both content fonts, spacing/indent constants, the icon set) into a
 real token system `web/` components read from, replacing every inline hex/px value currently
 scattered across `OutlineTree.tsx` and friends. Build the real app shell around it: header/app
-bar, left sidebar (file explorer), status bar, tab bar — currently entirely absent; `App.tsx` is
-presently a vertically-stacked panel dump with a plain `<h1>`, not an app shell at all. This is
-the prerequisite every other phase in this plan re-skins into.
+bar, left sidebar, status bar, tab bar — currently entirely absent; `App.tsx` is presently a
+vertically-stacked panel dump with a plain `<h1>`, not an app shell at all. This is the
+prerequisite every other phase in this plan re-skins into.
 
-### 6.2 — Core editing parity
-Close the remaining `⚠`/`❌` rows in the checklist's "Core Editing" and "Overview" tables:
+The sidebar and tab bar built here should close their own remaining checklist gaps as part of
+this phase, not leave them for later: a real file explorer (folders/templates — currently `web/`
+has no document-management shell at all beyond the flat tab strip from Phase 5), a searchable
+tab-switcher dropdown for overflow, drag-to-reorder tabs, and per-tab independent scroll
+position/selection (switching tabs currently resets selection). All four are explicitly named as
+deferred in `docs/phase5-parity-checklist.md`'s "Documents & Tabs" section and have no other
+natural home in this plan — building the real shell without them would just recreate the same
+gap one level up.
+
+### 6.2 — Undo/redo (foundational) & core editing parity
+`outlineStore.ts` has no undo/redo at all yet — not a per-tab gap, a store-level absence
+(`docs/phase5-parity-checklist.md`'s Documents & Tabs section and its Keyboard Shortcuts table
+both name this). Build it first in this phase, before the other core-editing items below, since
+several of them (Duplication, checkbox toggling, sort) should push onto the same undo stack
+rather than each growing its own ad hoc history later. Once it exists, per-tab independent
+undo/redo (named in the Documents & Tabs gap list) falls out of it naturally rather than needing
+separate design.
+
+Then the remaining `⚠`/`❌` rows in the checklist's "Core Editing" and "Overview" tables:
 Duplication, rich per-node formatting (bold/italic/underline/strike/highlight/color, Heading
 1–6), fold "+N hidden" badge, node hover toolbar, checkbox toolbar button + progress badge,
 right-click context-menu system (sort-children currently only reachable via toolbar), Quick
