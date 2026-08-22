@@ -35,6 +35,14 @@ function getFirebaseAuth(): Auth {
   return auth;
 }
 
+/** Shared with docSyncStore.ts (and any future module that needs the same Firebase app
+ * instance) so `initializeApp` is only ever called once -- calling it twice with an app of the
+ * same default name throws. */
+export function getFirebaseApp(): FirebaseApp {
+  if (!app) app = initializeApp(FIREBASE_CONFIG);
+  return app;
+}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
