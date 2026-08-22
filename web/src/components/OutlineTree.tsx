@@ -2,26 +2,36 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type K
 import { useOutlineStore } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { CODE_LANGS } from '../store/outlineStore';
+import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
 
-const sortButtonStyle: CSSProperties = {
-  fontFamily: 'inherit',
-  fontSize: 12,
-  padding: '2px 8px',
-  border: '1px solid #ddd',
-  borderRadius: 4,
-  background: '#fff',
-  cursor: 'pointer'
-};
+function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
+  return {
+    fontFamily: 'inherit',
+    fontSize: 12,
+    padding: '2px 8px',
+    border: `1px solid ${t.border}`,
+    borderRadius: 4,
+    background: t.toolbarButtonBg,
+    color: t.text,
+    cursor: 'pointer'
+  };
+}
 
 /**
- * Phase 2 complete (docs/framework-migration-plan.md); Phase 3 in progress: Note (plain text,
- * no rich HTML/sanitization) and Code block (lang + code, no syntax highlighting) per node —
- * each a click-to-edit inline textarea toggle via setNote/setCodeBlock. Both deliberately
- * scoped down from legacy's full feature set (noteTitle, rich HTML, highlighting) — each a
- * real, separately-scoped follow-up.
+ * Phase 2 complete (docs/framework-migration-plan.md); Phase 3 in progress: Note, Code block,
+ * PWA install, and this slice: theming. Reads color tokens from themeStore.ts (light/dark only
+ * -- no system-preference auto-detection or persistence, both deferred) and applies them via
+ * plain inline styles, matching the rest of this component's existing styling approach rather
+ * than introducing CSS custom properties for just this one feature. Not every color in this
+ * file is tokenized yet (e.g. the '#4285f4' drag/drop-indicator blue, error/warning colors from
+ * semantic markup) -- those read fine on both themes for now and are a real, separately-scoped
+ * follow-up if that stops being true.
  */
 export function OutlineTree() {
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const t = THEME_TOKENS[theme];
   const nodes = useOutlineStore((s) => s.nodes);
   const selectedId = useOutlineStore((s) => s.selectedId);
   const editingId = useOutlineStore((s) => s.editingId);
@@ -167,15 +177,18 @@ export function OutlineTree() {
           root blocks (parentId null). The per-node "sort this node's children" context-menu
           entry point is deferred until web/ has a context menu at all. */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
-        <span style={{ color: '#888', alignSelf: 'center' }}>Sort top-level:</span>
-        <button type="button" onClick={() => sortChildren(null, 'az')} style={sortButtonStyle}>
+        <span style={{ color: t.mutedText, alignSelf: 'center' }}>Sort top-level:</span>
+        <button type="button" onClick={() => sortChildren(null, 'az')} style={sortButtonStyle(t)}>
           A → Z
         </button>
-        <button type="button" onClick={() => sortChildren(null, 'za')} style={sortButtonStyle}>
+        <button type="button" onClick={() => sortChildren(null, 'za')} style={sortButtonStyle(t)}>
           Z → A
         </button>
-        <button type="button" onClick={() => sortChildren(null, 'depth')} style={sortButtonStyle}>
+        <button type="button" onClick={() => sortChildren(null, 'depth')} style={sortButtonStyle(t)}>
           By depth
+        </button>
+        <button type="button" onClick={toggleTheme} style={{ ...sortButtonStyle(t), marginLeft: 'auto' }}>
+          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
         </button>
       </div>
       <div
@@ -184,10 +197,12 @@ export function OutlineTree() {
         onKeyDown={handleTreeKeyDown}
         style={{
           fontFamily: 'sans-serif',
-          border: '1px solid #ddd',
+          border: `1px solid ${t.border}`,
           borderRadius: 8,
           padding: '0.5rem',
-          outline: 'none'
+          outline: 'none',
+          background: t.background,
+          color: t.text
         }}
       >
       {visible.map((idx) => {
@@ -225,9 +240,9 @@ export function OutlineTree() {
               backgroundColor: showDropChild
                 ? 'rgba(66, 133, 244, 0.12)'
                 : isSelected
-                  ? '#e8f0fe'
+                  ? t.selectedBg
                   : isMultiSelected
-                    ? '#eef3fd'
+                    ? t.multiSelectedBg
                     : 'transparent',
               boxShadow: showDropChild ? 'inset 0 0 0 1.5px #4285f4' : 'none',
               borderTop: showDropAbove ? '2px solid #4285f4' : '2px solid transparent',
@@ -245,7 +260,7 @@ export function OutlineTree() {
                 display: 'inline-block',
                 textAlign: 'center',
                 cursor: hasChildren ? 'pointer' : 'default',
-                color: '#888',
+                color: t.mutedText,
                 userSelect: 'none'
               }}
             >
@@ -290,7 +305,7 @@ export function OutlineTree() {
                 setEditingNoteId(editingNoteId === node.id ? null : node.id);
               }}
               title={node.note ? 'Edit note' : 'Add note'}
-              style={{ fontSize: 11, color: '#aaa', cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
             >
               {node.note ? '📝' : '+note'}
             </span>
@@ -300,7 +315,7 @@ export function OutlineTree() {
                 setEditingCodeId(editingCodeId === node.id ? null : node.id);
               }}
               title={node.codeBlock ? 'Edit code block' : 'Add code block'}
-              style={{ fontSize: 11, color: '#aaa', cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
             >
               {node.codeBlock ? '💻' : '+code'}
             </span>
@@ -312,7 +327,7 @@ export function OutlineTree() {
                 autoFocus
                 rows={2}
                 onBlur={(e) => setNote(node.id, e.currentTarget.value)}
-                style={{ width: '90%', font: 'inherit', fontSize: 13, border: '1px solid #ddd', borderRadius: 4 }}
+                style={{ width: '90%', font: 'inherit', fontSize: 13, border: `1px solid ${t.border}`, borderRadius: 4 }}
               />
             </div>
           )}
@@ -323,7 +338,7 @@ export function OutlineTree() {
                 paddingLeft: `${node.depth * 24 + 32}px`,
                 paddingBottom: 4,
                 fontSize: 13,
-                color: '#666',
+                color: t.mutedText,
                 cursor: 'text',
                 whiteSpace: 'pre-wrap'
               }}
@@ -357,7 +372,7 @@ export function OutlineTree() {
                   width: '90%',
                   fontFamily: 'monospace',
                   fontSize: 13,
-                  border: '1px solid #ddd',
+                  border: `1px solid ${t.border}`,
                   borderRadius: 4
                 }}
               />
@@ -371,7 +386,7 @@ export function OutlineTree() {
                 marginTop: 0,
                 marginBottom: 4,
                 padding: 6,
-                background: '#f6f6f6',
+                background: t.codeBg,
                 borderRadius: 4,
                 fontSize: 13,
                 cursor: 'text',
