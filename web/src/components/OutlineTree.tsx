@@ -1,16 +1,27 @@
-import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { NodeText } from './NodeText';
 
+const sortButtonStyle: CSSProperties = {
+  fontFamily: 'inherit',
+  fontSize: 12,
+  padding: '2px 8px',
+  border: '1px solid #ddd',
+  borderRadius: 4,
+  background: '#fff',
+  cursor: 'pointer'
+};
+
 /**
- * Phase 0's validation spike, now carrying Phase 2's first four slices
+ * Phase 0's validation spike, now carrying Phase 2's first five slices
  * (docs/framework-migration-plan.md) — real node create/edit/delete, fold/collapse, semantic
- * markup, drag-to-nest, and this slice: multi-select (Ctrl/Cmd-click toggle, Shift-click range,
- * multi-select indent/outdent/delete/move). Still deliberately scoped down from the full README
- * "Core Editing" feature set. Explicitly NOT in this slice (see the plan doc for the full list):
- * Shift+Enter split, sort children, checkboxes. Each is a real, separately-scoped follow-up
- * slice, not an oversight here.
+ * markup, drag-to-nest, multi-select (Ctrl/Cmd-click toggle, Shift-click range, multi-select
+ * indent/outdent/delete/move), and this slice: sort children (toolbar-level "sort top-level
+ * nodes" only — see sortChildren's own comment in outlineStore.ts for why the per-node
+ * context-menu entry point is deferred). Still deliberately scoped down from the full README
+ * "Core Editing" feature set. Explicitly NOT in this slice: Shift+Enter split, checkboxes. Each
+ * is a real, separately-scoped follow-up slice, not an oversight here.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
@@ -33,6 +44,7 @@ export function OutlineTree() {
   const deleteNode = useOutlineStore((s) => s.deleteNode);
   const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
+  const sortChildren = useOutlineStore((s) => s.sortChildren);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -135,18 +147,35 @@ export function OutlineTree() {
   const visible = visibleIndexes();
 
   return (
-    <div
-      role="tree"
-      tabIndex={0}
-      onKeyDown={handleTreeKeyDown}
-      style={{
-        fontFamily: 'sans-serif',
-        border: '1px solid #ddd',
-        borderRadius: 8,
-        padding: '0.5rem',
-        outline: 'none'
-      }}
-    >
+    <div>
+      {/* Sort top-level nodes — the toolbar-level entry point legacy exposes via its "Extras"
+          menu (sort-root-az-btn/sort-root-za-btn/sort-root-depth-btn), always operating on
+          root blocks (parentId null). The per-node "sort this node's children" context-menu
+          entry point is deferred until web/ has a context menu at all. */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
+        <span style={{ color: '#888', alignSelf: 'center' }}>Sort top-level:</span>
+        <button type="button" onClick={() => sortChildren(null, 'az')} style={sortButtonStyle}>
+          A → Z
+        </button>
+        <button type="button" onClick={() => sortChildren(null, 'za')} style={sortButtonStyle}>
+          Z → A
+        </button>
+        <button type="button" onClick={() => sortChildren(null, 'depth')} style={sortButtonStyle}>
+          By depth
+        </button>
+      </div>
+      <div
+        role="tree"
+        tabIndex={0}
+        onKeyDown={handleTreeKeyDown}
+        style={{
+          fontFamily: 'sans-serif',
+          border: '1px solid #ddd',
+          borderRadius: 8,
+          padding: '0.5rem',
+          outline: 'none'
+        }}
+      >
       {visible.map((idx) => {
         const node = nodes[idx];
         const isSelected = node.id === selectedId;
@@ -235,6 +264,7 @@ export function OutlineTree() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

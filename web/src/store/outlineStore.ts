@@ -7,7 +7,9 @@ import {
   moveMultipleNodeBlocksCore,
   insertParsedNodesCore,
   deleteRootIndexes,
-  type DropMode
+  sortChildBlocksCore,
+  type DropMode,
+  type SortMode
 } from '../core/nodeMutations';
 import { getIndex, nodeHasChildren, getVisibleNodeIndexes, getSelectionRangeIds } from '../core/nodeQueries';
 import {
@@ -98,6 +100,7 @@ interface OutlineState {
   newChild: (id: number) => void;
   deleteNode: (id: number) => void;
   deleteSelected: () => void;
+  sortChildren: (parentId: number | null, mode: SortMode) => boolean;
 
   toggleCollapse: (id: number) => void;
 }
@@ -319,6 +322,25 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       multiSelectedIds: [],
       selectionAnchorId: fallbackSelection
     });
+  },
+
+  // Reorders the immediate child blocks under `parentId` (or every top-level root block, if
+  // `parentId` is `null`) via the freshly-written `sortChildBlocksCore` (see that function's
+  // own header — sortChildBlocks was never one of legacy's extracted `src/core/` generated
+  // blocks, so this isn't a Phase 1 port). Only the toolbar-level "sort top-level nodes" entry
+  // point is wired up in this slice (parentId always null from the UI below) — legacy also
+  // exposes a per-node "sort this node's children" action from its context menu, deferred here
+  // since web/ has no context-menu affordance yet at all, not specific to sorting.
+  sortChildren: (parentId, mode) => {
+    const { nodes } = get();
+    const parentIdx = parentId === null ? null : getIndex(nodes, parentId);
+    if (parentIdx !== null && parentIdx < 0) return false;
+    const next = nodes.map((n) => ({ ...n }));
+    const sorted = sortChildBlocksCore(next, parentIdx, mode);
+    if (!sorted) return false;
+    rebuildParentIdsCore(next);
+    set({ nodes: next });
+    return true;
   },
 
   toggleCollapse: (id) => {

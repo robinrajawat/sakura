@@ -13,6 +13,8 @@ import {
   nodeIsSection,
   isIdSelected,
   getSelectionRangeIds,
+  getChildBlocks,
+  subtreeHeight,
   type QueryableNode
 } from './nodeQueries';
 
@@ -110,6 +112,35 @@ function oGetSelectionRangeIds(nodes: QueryableNode[], collapsedIds: Set<number>
   }
   const [vs, ve] = visFrom <= visTo ? [visFrom, visTo] : [visTo, visFrom];
   return visible.slice(vs, ve + 1).map((idx) => nodes[idx].id);
+}
+function oGetChildBlocks(nodes: QueryableNode[], parentIdx: number | null) {
+  const blocks: Array<{ start: number; end: number }> = [];
+  if (parentIdx === null) {
+    let i = 0;
+    while (i < nodes.length) {
+      if (nodes[i].depth === 0) {
+        const end = oGetSubtreeEnd(nodes, i);
+        blocks.push({ start: i, end });
+        i = end;
+      } else i++;
+    }
+  } else {
+    const parentDepth = nodes[parentIdx].depth;
+    let i = parentIdx + 1;
+    while (i < nodes.length && nodes[i].depth > parentDepth) {
+      if (nodes[i].depth === parentDepth + 1) {
+        const end = oGetSubtreeEnd(nodes, i);
+        blocks.push({ start: i, end });
+        i = end;
+      } else i++;
+    }
+  }
+  return blocks;
+}
+function oSubtreeHeight(nodes: QueryableNode[], start: number, end: number) {
+  let max = nodes[start].depth;
+  for (let i = start; i < end; i++) if (nodes[i].depth > max) max = nodes[i].depth;
+  return max - nodes[start].depth;
 }
 
 // Test fixtures — id order matches array position, matching how index.html actually builds
@@ -292,5 +323,59 @@ describe('getSelectionRangeIds', () => {
     // A (10) folded hides B/C; asking for a range ending inside the fold still returns ids,
     // just via the raw-array-order fallback path rather than the visible-order path.
     expect(getSelectionRangeIds(nestedTree, new Set([10]), 10, 12)).toEqual([10, 11, 12]);
+  });
+});
+
+describe('getChildBlocks / subtreeHeight', () => {
+  // A -> B -> C, D -> E, F -- same shape as nestedTree above but distinct ids, kept local to
+  // this describe block since sort-related tests below build on it directly.
+  const tree: QueryableNode[] = [
+    n(1, 0, 'A'),
+    n(2, 1, 'B'),
+    n(3, 2, 'C'),
+    n(4, 0, 'D'),
+    n(5, 1, 'E'),
+    n(6, 1, 'F')
+  ];
+
+  it('matches the oracle for root blocks (parentIdx null) and a specific parent, across every fixture', () => {
+    for (const t of [nestedTree, flatTree, sectionsTree, tree]) {
+      for (let parentIdx = -1; parentIdx < t.length; parentIdx++) {
+        const p = parentIdx < 0 ? null : parentIdx;
+        expect(getChildBlocks(t, p)).toEqual(oGetChildBlocks(t, p));
+      }
+    }
+  });
+
+  it('root blocks (parentIdx null) span every top-level subtree in the whole tree', () => {
+    expect(getChildBlocks(tree, null)).toEqual([
+      { start: 0, end: 3 }, // A's whole subtree (A, B, C)
+      { start: 3, end: 6 } // D's whole subtree (D, E, F)
+    ]);
+  });
+
+  it("a specific parentIdx's blocks span only its own immediate children's subtrees", () => {
+    expect(getChildBlocks(tree, 3)).toEqual([
+      { start: 4, end: 5 }, // E, no children of its own
+      { start: 5, end: 6 } // F, no children of its own
+    ]);
+  });
+
+  it('a childless node has zero child blocks', () => {
+    expect(getChildBlocks(tree, 4)).toEqual([]); // E has no children
+  });
+
+  it('subtreeHeight matches the oracle across every block in every fixture', () => {
+    for (const t of [nestedTree, flatTree, sectionsTree, tree]) {
+      for (const block of oGetChildBlocks(t, null)) {
+        expect(subtreeHeight(t, block.start, block.end)).toBe(oSubtreeHeight(t, block.start, block.end));
+      }
+    }
+  });
+
+  it('subtreeHeight is 0 for a childless node, and > 0 once it has descendants at a deeper level', () => {
+    expect(subtreeHeight(tree, 3, 6)).toBe(1); // D -> E/F: one level deeper than D itself
+    expect(subtreeHeight(tree, 4, 5)).toBe(0); // E alone: no descendants
+    expect(subtreeHeight(tree, 0, 3)).toBe(2); // A -> B -> C: two levels deeper than A itself
   });
 });

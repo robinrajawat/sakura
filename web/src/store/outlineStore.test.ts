@@ -326,3 +326,71 @@ describe('outlineStore multi-select', () => {
     expect(multiSelectedIds).toEqual([4, 5]);
   });
 });
+
+describe('outlineStore sortChildren', () => {
+  beforeEach(() => {
+    // Charlie(0)=1, Alice(0)=2 -> child(1)=3, Bob(0)=4
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'Charlie', parentId: null },
+        { id: 2, depth: 0, text: 'Alice', parentId: null },
+        { id: 3, depth: 1, text: 'Alice-child', parentId: 2 },
+        { id: 4, depth: 0, text: 'Bob', parentId: null }
+      ],
+      selectedId: 1,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 1
+    });
+  });
+
+  it('sorts root blocks (parentId null) A -> Z via the real ported sortChildBlocksCore', () => {
+    const sorted = useOutlineStore.getState().sortChildren(null, 'az');
+    expect(sorted).toBe(true);
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.map((n) => n.id)).toEqual([2, 3, 4, 1]); // Alice(+child), Bob, Charlie
+  });
+
+  it('sorts root blocks Z -> A', () => {
+    useOutlineStore.getState().sortChildren(null, 'za');
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.map((n) => n.id)).toEqual([1, 4, 2, 3]); // Charlie, Bob, Alice(+child)
+  });
+
+  it('sorts an existing node\'s children when given a specific parentId, not root blocks', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'Root', parentId: null },
+        { id: 2, depth: 1, text: 'Zed', parentId: 1 },
+        { id: 3, depth: 1, text: 'Amy', parentId: 1 }
+      ]
+    });
+    const sorted = useOutlineStore.getState().sortChildren(1, 'az');
+    expect(sorted).toBe(true);
+    expect(useOutlineStore.getState().nodes.map((n) => n.id)).toEqual([1, 3, 2]); // Root, Amy, Zed
+  });
+
+  it('rebuilds parentId after reordering, since sortChildBlocksCore does not do this itself', () => {
+    useOutlineStore.getState().sortChildren(null, 'az');
+    const nodes = useOutlineStore.getState().nodes;
+    // node 3 (Alice's child) should still point at Alice (id 2) as its parent post-sort.
+    expect(nodes.find((n) => n.id === 3)?.parentId).toBe(2);
+  });
+
+  it('returns false and leaves nodes unchanged for an unknown parentId', () => {
+    const before = useOutlineStore.getState().nodes;
+    const sorted = useOutlineStore.getState().sortChildren(9999, 'az');
+    expect(sorted).toBe(false);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('returns false and leaves nodes unchanged when there are fewer than 2 blocks to sort', () => {
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null }] });
+    const before = useOutlineStore.getState().nodes;
+    const sorted = useOutlineStore.getState().sortChildren(null, 'az');
+    expect(sorted).toBe(false);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+});
