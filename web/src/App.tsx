@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AppShell, SidebarDocumentList } from './components/AppShell';
 import { OutlineTree } from './components/OutlineTree';
 import { DocumentTabs } from './components/DocumentTabs';
 import { PreviewPane } from './components/PreviewPane';
@@ -12,19 +13,35 @@ import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
+import { useThemeStore } from './store/themeStore';
 
 /**
- * Phase 3 in progress (docs/framework-migration-plan.md). Edit/Preview/Present toggle -- the
- * simplest possible entry point for each mode (see each component's own header for what's
- * deliberately not in scope yet). Still not the real Sakura UI shell.
+ * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
+ * header/sidebar/tab-bar/status-bar chrome instead of Phase 3's plain `<h1>` + vertical panel
+ * dump. The panel content itself (Edit/Preview/Present toggle, Pad, Hub sections, Account/Sync)
+ * is unchanged in this slice -- only the surrounding chrome is new. Still not full parity: the
+ * main content area below is still every panel stacked vertically inside AppShell's content
+ * slot, not legacy's real panel-docking/layout system -- that's its own separate 6.1+ follow-up,
+ * not this slice's job.
  */
 export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: 640 }}>
-      <h1>Sakura (web) — Phase 5, in progress</h1>
-      <DocumentTabs />
+    <AppShell
+      title="Sakura"
+      headerActions={
+        <button type="button" onClick={toggleTheme} title="Toggle theme">
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+      }
+      tabBar={<DocumentTabs />}
+      sidebar={<SidebarDocumentList />}
+      statusLeft={<span>Phase 6.1, in progress</span>}
+      statusRight={<span>{mode}</span>}
+    >
       <div style={{ marginBottom: 12 }}>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
@@ -92,8 +109,6 @@ export function App() {
         <h2 style={{ fontSize: 16 }}>Sync</h2>
         <DocSyncPanel />
       </div>
-    </div>
+    </AppShell>
   );
 }
-
-
