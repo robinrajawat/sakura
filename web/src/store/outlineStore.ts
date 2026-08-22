@@ -98,6 +98,7 @@ interface OutlineState {
 
   newSiblingBelow: (id: number) => void;
   newChild: (id: number) => void;
+  splitAtCursor: (id: number, fullText: string, caretPos: number) => void;
   deleteNode: (id: number) => void;
   deleteSelected: () => void;
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
@@ -272,6 +273,36 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       selectedId: newNode.id,
       editingId: newNode.id,
       collapsedIds: withoutCollapse(get().collapsedIds, id),
+      multiSelectedIds: [],
+      selectionAnchorId: newNode.id
+    });
+  },
+
+  // Splits a node's text at the cursor: the text before the caret stays on this node, the text
+  // after it becomes a new sibling inserted right after this node's whole subtree (matching
+  // legacy's own splitNodeAtCursor exactly) -- keyed off the plain <input>'s native
+  // `selectionStart`, not a rich-text cursor tracker; a plain HTML input already exposes this,
+  // so no new core logic is needed here beyond composing insertParsedNodesCore the same way
+  // newSiblingBelow already does. `fullText` is the input's live (uncommitted) value at the
+  // moment Shift+Enter fires, since our inline-edit <input> is uncontrolled and only commits to
+  // `nodes` on blur/Enter/Escape -- passing it explicitly avoids reading stale node.text.
+  splitAtCursor: (id, fullText, caretPos) => {
+    const { nodes, nextId } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const pos = Math.max(0, Math.min(caretPos, fullText.length));
+    const before = fullText.slice(0, pos);
+    const after = fullText.slice(pos);
+    const next = nodes.map((n) => ({ ...n }));
+    next[idx] = { ...next[idx], text: before };
+    const newNode: ParentLinkedNode = { id: nextId, depth: next[idx].depth, text: after, parentId: null };
+    insertParsedNodesCore(next, idx, [newNode]);
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: nextId + 1,
+      selectedId: newNode.id,
+      editingId: newNode.id,
       multiSelectedIds: [],
       selectionAnchorId: newNode.id
     });

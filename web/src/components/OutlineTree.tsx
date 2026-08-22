@@ -14,14 +14,14 @@ const sortButtonStyle: CSSProperties = {
 };
 
 /**
- * Phase 0's validation spike, now carrying Phase 2's first five slices
+ * Phase 0's validation spike, now carrying Phase 2's first six slices
  * (docs/framework-migration-plan.md) — real node create/edit/delete, fold/collapse, semantic
  * markup, drag-to-nest, multi-select (Ctrl/Cmd-click toggle, Shift-click range, multi-select
- * indent/outdent/delete/move), and this slice: sort children (toolbar-level "sort top-level
- * nodes" only — see sortChildren's own comment in outlineStore.ts for why the per-node
- * context-menu entry point is deferred). Still deliberately scoped down from the full README
- * "Core Editing" feature set. Explicitly NOT in this slice: Shift+Enter split, checkboxes. Each
- * is a real, separately-scoped follow-up slice, not an oversight here.
+ * indent/outdent/delete/move), sort children (toolbar-level "sort top-level nodes" only — see
+ * sortChildren's own comment in outlineStore.ts for why the per-node context-menu entry point
+ * is deferred), and this slice: Shift+Enter split-at-cursor. Still deliberately scoped down
+ * from the full README "Core Editing" feature set. Explicitly NOT in this slice: checkboxes —
+ * a real, separately-scoped follow-up slice, not an oversight here.
  */
 export function OutlineTree() {
   const nodes = useOutlineStore((s) => s.nodes);
@@ -41,6 +41,7 @@ export function OutlineTree() {
   const cancelEdit = useOutlineStore((s) => s.cancelEdit);
   const newSiblingBelow = useOutlineStore((s) => s.newSiblingBelow);
   const newChild = useOutlineStore((s) => s.newChild);
+  const splitAtCursor = useOutlineStore((s) => s.splitAtCursor);
   const deleteNode = useOutlineStore((s) => s.deleteNode);
   const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
@@ -87,6 +88,16 @@ export function OutlineTree() {
   }
 
   function handleInputKeyDown(e: KeyboardEvent<HTMLInputElement>, id: number) {
+    if (e.key === 'Enter' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      // Shift+Enter splits at the cursor -- checked before the plain-Enter branch below, since
+      // Shift+Enter would otherwise fall into the "commit then create a sibling" path with the
+      // caret position discarded. Ctrl/Cmd+Shift+Enter isn't a real gesture legacy binds either
+      // (ctrl/meta+Enter alone means newChild), so it's excluded here rather than guessing at
+      // an unbound combination's intent.
+      e.preventDefault();
+      splitAtCursor(id, e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length);
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       commitEdit(id, e.currentTarget.value);
