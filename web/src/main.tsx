@@ -16,3 +16,14 @@ ReactDOM.createRoot(rootEl).render(
     <App />
   </React.StrictMode>
 );
+
+// PWA install support (Phase 3, docs/framework-migration-plan.md) -- registers the runtime-
+// caching service worker at public/sw.js. Guarded by the standard feature check; a failed
+// registration (e.g. running over plain http in some dev setups) doesn't block the app.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Non-fatal -- the app works fine without offline support, just without it.
+    });
+  });
+}
