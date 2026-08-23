@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useOutlineStore, type OutlineNode } from './outlineStore';
+import { useOutlineStore, type OutlineNode, type UndoSnapshot } from './outlineStore';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
 
@@ -82,17 +82,23 @@ function generateFolderId(): string {
 
 /**
  * Per-tab view state (docs/phase6-full-parity-plan.md §6.1's "per-tab independent scroll
- * position/selection" gap, named in this store's own header above since Phase 5). Deliberately
- * session-only, in-memory (module-level `Map`, not `localStorage`) -- NOT the same thing as
- * legacy's own per-node `node.collapsed` field, which is part of the document's persisted
- * content and round-trips with it. Matching that exactly would mean moving collapse out of
- * outlineStore's separate `collapsedIds` Set and onto `OutlineNode` itself, touching
- * `StoredDoc`/`docSyncStore.ts`'s round-trip too -- a real, separately-scoped storage-format
- * change, not this slice's job. What this DOES fix: switching tabs previously reset selection to
- * the new tab's first node every time and let one document's `collapsedIds` (plain node-id
- * numbers, not namespaced per-doc) silently leak into whatever document was opened next, since
- * ids restart at 1 in every document. Restoring per-tab across a reload is out of scope for the
- * same reason -- it would need the same persisted-storage-format change as collapse.
+ * position/selection" gap, named in this store's own header above since Phase 5; extended in
+ * §6.2 to also cover per-tab independent undo/redo -- the plan doc's own text: "per-tab
+ * independent undo/redo... falls out of it naturally" once outlineStore.ts's undo/redo mechanism
+ * exists, referring to exactly this integration point). Deliberately session-only, in-memory
+ * (module-level `Map`, not `localStorage`) -- NOT the same thing as legacy's own per-node
+ * `node.collapsed` field, which is part of the document's persisted content and round-trips with
+ * it. Matching that exactly would mean moving collapse out of outlineStore's separate
+ * `collapsedIds` Set and onto `OutlineNode` itself, touching `StoredDoc`/`docSyncStore.ts`'s
+ * round-trip too -- a real, separately-scoped storage-format change, not this slice's job. What
+ * this DOES fix: switching tabs previously reset selection to the new tab's first node every
+ * time, let one document's `collapsedIds` (plain node-id numbers, not namespaced per-doc)
+ * silently leak into whatever document was opened next (ids restart at 1 in every document), and
+ * shared ONE undo/redo history across every open tab -- undoing on tab A could silently revert
+ * an edit made on tab B, matching neither legacy's own real per-tab stacks (legacy/index.html:
+ * 10437,10460's own tab.undoStack/tab.redoStack save/restore) nor sane user expectations.
+ * Restoring any of this across a reload is out of scope for the same reason as collapse -- it
+ * would need the same persisted-storage-format change.
  */
 interface TabViewState {
   selectedId: number | null;
@@ -101,6 +107,8 @@ interface TabViewState {
   selectionAnchorId: number | null;
   collapsedIds: Set<number>;
   scrollTop: number;
+  undoStack: UndoSnapshot[];
+  redoStack: UndoSnapshot[];
 }
 const tabViewCache = new Map<string, TabViewState>();
 let scrollContainerEl: HTMLElement | null = null;
@@ -180,9 +188,9 @@ interface DocumentsState {
  * separately-scoped follow-up building on this foundation.
  */
 export const useDocumentsStore = create<DocumentsState>((set, get) => {
-  /** Snapshots the CURRENTLY active tab's selection/editing/multi-select/collapse/scroll state
-   * into `tabViewCache`, keyed by its doc id. Call this before switching away from a tab, not
-   * after -- it reads whatever `outlineStore` and `scrollContainerEl` hold right now, which
+  /** Snapshots the CURRENTLY active tab's selection/editing/multi-select/collapse/scroll/undo
+   * state into `tabViewCache`, keyed by its doc id. Call this before switching away from a tab,
+   * not after -- it reads whatever `outlineStore` and `scrollContainerEl` hold right now, which
    * only means the outgoing tab as long as it runs first. */
   function captureCurrentTabView(): void {
     const activeDocId = get().activeDocId;
@@ -194,15 +202,23 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       multiSelectedIds: o.multiSelectedIds,
       selectionAnchorId: o.selectionAnchorId,
       collapsedIds: new Set(o.collapsedIds),
-      scrollTop: scrollContainerEl?.scrollTop ?? 0
+      scrollTop: scrollContainerEl?.scrollTop ?? 0,
+      // Stored by REFERENCE, same as outlineStore.ts's own snapshots -- safe for the same
+      // reason documented there (every mutation rebuilds `nodes` fresh, never mutating a
+      // previous array in place), so a plain array copy (not a deep clone) is enough here too.
+      undoStack: o.undoStack,
+      redoStack: o.redoStack
     });
   }
 
   /** Applies the INCOMING tab's nodes plus its cached view state (if any) to `outlineStore`,
-   * falling back to the original "select the first node" default the first time a document is
-   * ever opened this session. Cached ids are filtered against the incoming `nodes` defensively
-   * (a node could in principle no longer exist if it was deleted while the tab was in the
-   * background) rather than trusted blindly. Scroll restore is deferred one frame -- setting
+   * falling back to the original "select the first node, empty history" default the first time
+   * a document is ever opened this session. Cached selection/collapse ids are filtered against
+   * the incoming `nodes` defensively (a node could in principle no longer exist if it was
+   * deleted while the tab was in the background) rather than trusted blindly -- `undoStack`/
+   * `redoStack` are NOT filtered this way, since each snapshot within them is already a fully
+   * self-contained past state (its own `nodes` array), not a set of ids that needs validating
+   * against whatever's currently displayed. Scroll restore is deferred one frame -- setting
    * `scrollTop` synchronously here would run before React has committed the new tab's DOM, so
    * the container's `scrollHeight` wouldn't reflect the new content yet and the assignment
    * could be silently clamped to the outgoing tab's (possibly shorter) height. */
@@ -223,7 +239,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
         editingId: null,
         multiSelectedIds,
         selectionAnchorId,
-        collapsedIds
+        collapsedIds,
+        undoStack: cached.undoStack,
+        redoStack: cached.redoStack
       });
       const { scrollTop } = cached;
       requestAnimationFrame(() => {
@@ -236,7 +254,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
         editingId: null,
         multiSelectedIds: [],
         selectionAnchorId: nodes[0]?.id ?? null,
-        collapsedIds: new Set()
+        collapsedIds: new Set(),
+        undoStack: [],
+        redoStack: []
       });
       requestAnimationFrame(() => {
         if (scrollContainerEl) scrollContainerEl.scrollTop = 0;

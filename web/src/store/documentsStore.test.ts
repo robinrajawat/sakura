@@ -394,4 +394,70 @@ describe('documentsStore', () => {
       expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
     });
   });
+
+  describe('per-tab independent undo/redo (Phase 6.2)', () => {
+    it('each tab keeps its own undo history -- undoing on tab A does not touch tab B', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      const nodeAId = useOutlineStore.getState().nodes[0].id;
+      useOutlineStore.getState().commitEdit(nodeAId, 'edited on tab A');
+      expect(useOutlineStore.getState().canUndo()).toBe(true);
+
+      useDocumentsStore.getState().newDocument();
+      const b = useDocumentsStore.getState().activeDocId!;
+      expect(b).not.toBe(a);
+      // Brand-new tab -- its own undo history starts empty, unaffected by tab A's edit.
+      expect(useOutlineStore.getState().canUndo()).toBe(false);
+
+      const nodeBId = useOutlineStore.getState().nodes[0].id;
+      useOutlineStore.getState().commitEdit(nodeBId, 'edited on tab B');
+      useOutlineStore.getState().undo();
+      // Undo on tab B reverts tab B's own edit, not tab A's.
+      expect(useOutlineStore.getState().nodes.find((n) => n.id === nodeBId)?.text).not.toBe('edited on tab B');
+
+      useDocumentsStore.getState().switchTab(a);
+      // Tab A's own edit is still there (never touched by tab B's undo), and tab A's own undo
+      // history is exactly as tab A left it.
+      expect(useOutlineStore.getState().nodes.find((n) => n.id === nodeAId)?.text).toBe('edited on tab A');
+      expect(useOutlineStore.getState().canUndo()).toBe(true);
+    });
+
+    it('undoing an edit on tab A, switching to tab B and back, then redoing on tab A still works', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      const nodeAId = useOutlineStore.getState().nodes[0].id;
+      useOutlineStore.getState().commitEdit(nodeAId, 'first edit');
+      useOutlineStore.getState().undo();
+      expect(useOutlineStore.getState().canRedo()).toBe(true);
+
+      useDocumentsStore.getState().newDocument(); // switches away to a brand-new tab B
+      useDocumentsStore.getState().switchTab(a); // and back to tab A
+
+      expect(useOutlineStore.getState().canRedo()).toBe(true);
+      useOutlineStore.getState().redo();
+      expect(useOutlineStore.getState().nodes.find((n) => n.id === nodeAId)?.text).toBe('first edit');
+    });
+
+    it('a brand-new tab always starts with empty undo/redo stacks, matching outlineStore\'s own defaults', () => {
+      useDocumentsStore.getState().newDocument();
+      expect(useOutlineStore.getState().undoStack).toEqual([]);
+      expect(useOutlineStore.getState().redoStack).toEqual([]);
+    });
+
+    it('closing and reopening a tab preserves its undo history (same in-memory-session cache as selection/scroll)', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      const nodeId = useOutlineStore.getState().nodes[0].id;
+      useOutlineStore.getState().commitEdit(nodeId, 'edited before close');
+      expect(useOutlineStore.getState().canUndo()).toBe(true);
+
+      useDocumentsStore.getState().newDocument(); // need a second open tab so closing the first doesn't zero out openTabs
+      useDocumentsStore.getState().closeTab(id);
+      useDocumentsStore.getState().openDocument(id);
+
+      expect(useOutlineStore.getState().canUndo()).toBe(true);
+      useOutlineStore.getState().undo();
+      expect(useOutlineStore.getState().nodes.find((n) => n.id === nodeId)?.text).not.toBe('edited before close');
+    });
+  });
 });
