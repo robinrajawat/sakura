@@ -83,6 +83,9 @@ export function OutlineTree() {
   const newChild = useOutlineStore((s) => s.newChild);
   const splitAtCursor = useOutlineStore((s) => s.splitAtCursor);
   const deleteNode = useOutlineStore((s) => s.deleteNode);
+  const selectNode = useOutlineStore((s) => s.selectNode);
+  const duplicateSelected = useOutlineStore((s) => s.duplicateSelected);
+  const moveSelected = useOutlineStore((s) => s.moveSelected);
   const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
   const sortChildren = useOutlineStore((s) => s.sortChildren);
@@ -108,6 +111,15 @@ export function OutlineTree() {
   // shared with the right-click context menu and out of scope for this specific slice; see this
   // component's own header for the fuller list of what's deferred and why.
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
+  // Phase 6.2 right-click context menu. Matches legacy's own real showContextMenu/
+  // hideContextMenu (legacy/index.html:19495-19502) in spirit -- a menu anchored near the
+  // click point, one node selected at a time -- but as a single flat action list rather than
+  // legacy's own top-row-plus-collapsible-"More"-panel split (a space-saving refinement for a
+  // ~20-action registry legacy's own CTX_ACTION_ORDER has; this component's action list is
+  // deliberately much shorter, see the menu's own render comment below for exactly what's
+  // included and what's deferred).
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: number } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -117,6 +129,26 @@ export function OutlineTree() {
   useEffect(() => {
     if (editingId !== null) inputRef.current?.focus();
   }, [editingId]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function onClickOutside(e: MouseEvent): void {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    function onEscape(e: globalThis.KeyboardEvent): void {
+      if (e.key === 'Escape') setContextMenu(null);
+    }
+    // Same pattern as DocumentTabs.tsx's own tab-switcher dropdown click-outside handling --
+    // a document-level listener only while the menu is actually open, torn down on close.
+    document.addEventListener('mousedown', onClickOutside);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [contextMenu]);
 
   function handleTreeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (editingId !== null) return;
@@ -364,6 +396,12 @@ export function OutlineTree() {
             }}
             onMouseEnter={() => setHoveredNodeId(node.id)}
             onMouseLeave={() => setHoveredNodeId((current) => (current === node.id ? null : current))}
+            onContextMenu={(e) => {
+              if (isEditing) return;
+              e.preventDefault();
+              selectNode(node.id);
+              setContextMenu({ x: e.clientX, y: e.clientY, nodeId: node.id });
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -701,6 +739,90 @@ export function OutlineTree() {
         );
       })}
       </div>
+      {/* Right-click context menu (Phase 6.2). A single flat action list rather than legacy's
+          own top-row-plus-collapsible-"More"-panel split (legacy/index.html's own
+          CTX_ACTION_ORDER has ~20 entries across insert/structure/ai/notes/delete groups,
+          justifying that space-saving refinement; this list is deliberately much shorter).
+          Included: the same 3 hover-toolbar actions (above/child/below) plus duplicate, focus,
+          up/down, fold, tags, delete -- every action this project has a real, working store
+          action for today. Deliberately NOT included, not silently dropped: AI rewrite/icon
+          suggestions (ai-rewrite, ai-rewrite-all, ai-icon, ai-icon-all -- web/ has no AI
+          integration at all), slide-divider (a Presenter-mode-specific field web/'s
+          PresenterMode.tsx doesn't use), note/qa/remark/where-used/version-history (each needs
+          its own real subsystem -- a rich note editor, per-node Q&A linking, a remarks system,
+          backlinks, or version snapshots -- none of which exist in web/ yet), date-time (a
+          simple text-insert, genuinely small, but there's no natural place to insert it without
+          an active edit-cursor position, which this menu doesn't track). */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          style={{
+            position: 'fixed',
+            // Simple viewport clamp (a page-edge margin, not legacy's own pixel-exact
+            // _clampContextMenuPosition) -- keeps the menu from rendering off-screen without
+            // replicating that function's exact math.
+            left: Math.min(contextMenu.x, window.innerWidth - 200),
+            top: Math.min(contextMenu.y, window.innerHeight - 320),
+            minWidth: 180,
+            background: t.background,
+            border: `1px solid ${t.border}`,
+            borderRadius: 8,
+            boxShadow: '0 14px 28px rgba(0,0,0,.16)',
+            zIndex: 80,
+            padding: 4,
+            font: "400 13px 'Inter', sans-serif"
+          }}
+        >
+          {(
+            [
+              { label: 'Insert above', action: () => newSiblingAbove(contextMenu.nodeId) },
+              { label: 'Add child', action: () => newChild(contextMenu.nodeId) },
+              { label: 'Insert below', action: () => newSiblingBelow(contextMenu.nodeId) },
+              { label: 'Duplicate', action: () => duplicateSelected() },
+              { label: 'Zoom in on branch', action: () => zoomIntoNode(contextMenu.nodeId) },
+              { label: 'Move up', action: () => moveSelected(-1) },
+              { label: 'Move down', action: () => moveSelected(1) },
+              {
+                label: collapsedIds.has(contextMenu.nodeId) ? 'Expand branch' : 'Collapse branch',
+                action: () => toggleCollapse(contextMenu.nodeId)
+              },
+              { label: 'Tags…', action: () => setEditingTagsId(contextMenu.nodeId) },
+              {
+                label: 'Delete',
+                danger: true,
+                action: () => {
+                  if (window.confirm('Delete this node and its subtree?')) deleteNode(contextMenu.nodeId);
+                }
+              }
+            ] as { label: string; action: () => void; danger?: boolean }[]
+          ).map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                item.action();
+                setContextMenu(null);
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '7px 10px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: 5,
+                cursor: 'pointer',
+                color: item.danger ? '#b3261e' : t.text,
+                font: "400 13px 'Inter', sans-serif"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = t.hoverBg)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
