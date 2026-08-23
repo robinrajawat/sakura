@@ -18,11 +18,11 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
  * docs/phase6-full-parity-plan.md's 6.1 section for the full list this phase still owes):
  * sidebar is a placeholder pane (no real file explorer / folders / templates yet -- that's
  * DocumentTabs.tsx's own closed-docs list for now), no searchable tab-switcher dropdown for
- * overflow, no drag-to-reorder tabs, no sidebar resize handle or collapse toggle, no CSS custom
- * properties yet (still consuming `THEME_TOKENS` via inline styles, same approach as every other
- * component today -- the doc for that follow-up is themeStore.ts's own header comment).
- * Per-tab independent scroll/selection now works -- see `contentRef` below and
- * documentsStore.ts's own `TabViewState` header for how it's captured/restored.
+ * overflow, no sidebar resize handle or collapse toggle, no CSS custom properties yet (still
+ * consuming `THEME_TOKENS` via inline styles, same approach as every other component today --
+ * the doc for that follow-up is themeStore.ts's own header comment).
+ * Per-tab independent scroll/selection and drag-to-reorder tabs now work -- see `contentRef`
+ * below and documentsStore.ts's own `TabViewState`/`reorderTab` for how each is implemented.
  */
 interface AppShellProps {
   title: string;

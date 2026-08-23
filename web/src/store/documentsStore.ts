@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useOutlineStore, type OutlineNode } from './outlineStore';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
+import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
 
 export interface DocSummary {
   id: string;
@@ -93,6 +94,14 @@ interface DocumentsState {
   renameDocument: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
   saveActiveDocNodes: () => void;
+  /** Drag-to-reorder tabs (Phase 6.1, docs/phase6-full-parity-plan.md's 6.1 section). Thin
+   * wrapper around `tabOrder.ts`'s already-ported, already-tested `reorderTabsCore` -- that
+   * module was carried over from legacy's own pure-logic extraction (docs/history/architecture-plan.md)
+   * specifically for this purpose and had no caller in `web/` until now. Moves `draggedId` to
+   * just before (`side: 'left'`) or just after (`side: 'right'`) `targetId` within `openTabs`;
+   * a no-op (including no persistence write) when the move wouldn't actually change anything,
+   * matching `reorderTabsCore`'s own no-op contract. */
+  reorderTab: (draggedId: string, targetId: string, side: 'left' | 'right') => void;
   /** Registers the scrollable content container so tab-switch view-state capture/restore
    * (see `TabViewState` above) has an element to read/write `scrollTop` on. Called from
    * App.tsx via a ref callback on AppShell's content pane; not part of reactive `set()` state
@@ -317,6 +326,15 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     const stored = readJson<StoredDoc | null>(docStorageKey(id), null);
     if (stored) writeJson(docStorageKey(id), { ...stored, title });
     set({ docsIndex });
+  },
+
+  reorderTab: (draggedId, targetId, side) => {
+    const orderable: OrderableTab[] = get().openTabs.map((id) => ({ docId: id }));
+    const moved = reorderTabsCore(orderable, draggedId, targetId, side);
+    if (!moved) return;
+    const openTabs = orderable.map((t) => t.docId as string);
+    writeJson(_OPEN_TABS_KEY, openTabs);
+    set({ openTabs });
   },
 
   deleteDocument: (id) => {
