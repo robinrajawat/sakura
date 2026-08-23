@@ -1279,3 +1279,69 @@ describe('outlineStore toggleCheckboxType (Phase 6.2: checkbox toolbar button)',
     expect(useOutlineStore.getState().canUndo()).toBe(false);
   });
 });
+
+describe('outlineStore newSiblingAbove (Phase 6.2: node hover toolbar)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ],
+      selectedId: 2,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('inserts a blank node immediately BEFORE the target, at the same depth', () => {
+    useOutlineStore.getState().newSiblingAbove(2);
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.map((n) => n.text)).toEqual(['root', '', 'child', 'sibling']);
+    expect(nodes[1].depth).toBe(1);
+  });
+
+  it('does NOT insert past the target\'s own subtree (lands directly before it, not after any children)', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'parent', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useOutlineStore.getState().newSiblingAbove(2);
+    // The new blank node lands right before "parent", NOT after "grandchild" -- confirms this
+    // is a plain positional insert, not a subtree-end insert like newSiblingBelow's.
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['root', '', 'parent', 'grandchild']);
+  });
+
+  it('selects and begins editing the new node', () => {
+    useOutlineStore.getState().newSiblingAbove(2);
+    const newNode = useOutlineStore.getState().nodes[1];
+    expect(useOutlineStore.getState().selectedId).toBe(newNode.id);
+    expect(useOutlineStore.getState().editingId).toBe(newNode.id);
+  });
+
+  it('is undoable', () => {
+    useOutlineStore.getState().newSiblingAbove(2);
+    expect(useOutlineStore.getState().nodes).toHaveLength(4);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toHaveLength(3);
+  });
+
+  it('is a no-op for an unknown node id', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().newSiblingAbove(9999);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('rebuilds parentId correctly for the new node', () => {
+    useOutlineStore.getState().newSiblingAbove(2);
+    expect(useOutlineStore.getState().nodes[1].parentId).toBe(1);
+  });
+});

@@ -79,6 +79,7 @@ export function OutlineTree() {
   const commitEdit = useOutlineStore((s) => s.commitEdit);
   const cancelEdit = useOutlineStore((s) => s.cancelEdit);
   const newSiblingBelow = useOutlineStore((s) => s.newSiblingBelow);
+  const newSiblingAbove = useOutlineStore((s) => s.newSiblingAbove);
   const newChild = useOutlineStore((s) => s.newChild);
   const splitAtCursor = useOutlineStore((s) => s.splitAtCursor);
   const deleteNode = useOutlineStore((s) => s.deleteNode);
@@ -101,6 +102,12 @@ export function OutlineTree() {
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
+  // Phase 6.2 node hover toolbar. Tracks only the CURRENTLY-hovered row's id, matching legacy's
+  // own default hoverToolbarActions=['child','above','below'] -- the fuller, user-configurable
+  // action set (duplicate/focus/up/down/fold/tags/delete/etc, legacy's own CTX_ACTION_ORDER) is
+  // shared with the right-click context menu and out of scope for this specific slice; see this
+  // component's own header for the fuller list of what's deferred and why.
+  const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -355,6 +362,8 @@ export function OutlineTree() {
               setDraggedIds(null);
               setDropTarget(null);
             }}
+            onMouseEnter={() => setHoveredNodeId(node.id)}
+            onMouseLeave={() => setHoveredNodeId((current) => (current === node.id ? null : current))}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -568,6 +577,48 @@ export function OutlineTree() {
             >
               {node.codeBlock ? '💻' : '+code'}
             </span>
+            {/* Node hover toolbar (Phase 6.2) -- ⤴ insert above / ＋ add child / ⤵ insert below,
+                matching legacy's own default hoverToolbarActions exactly. Only rendered while
+                hovering this specific row and not mid-edit (matching legacy's own real hover-rail
+                visibility rule) -- appearing/disappearing on hover, not a fixed-width reserved
+                slot, so it doesn't shift adjacent content when absent. */}
+            {hoveredNodeId === node.id && !isEditing && (
+              <span style={{ display: 'inline-flex', marginLeft: 4 }}>
+                <span
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    newSiblingAbove(node.id);
+                  }}
+                  title="Insert above"
+                  style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 4px', userSelect: 'none' }}
+                >
+                  ⤴
+                </span>
+                <span
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    newChild(node.id);
+                  }}
+                  title="Add child"
+                  style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 4px', userSelect: 'none' }}
+                >
+                  ＋
+                </span>
+                <span
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    newSiblingBelow(node.id);
+                  }}
+                  title="Insert below"
+                  style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 4px', userSelect: 'none' }}
+                >
+                  ⤵
+                </span>
+              </span>
+            )}
           </div>
           {editingNoteId === node.id && (
             <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
