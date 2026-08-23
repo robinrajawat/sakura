@@ -18,16 +18,16 @@ import { useSidebarStore } from '../store/sidebarStore';
  * Deliberately scoped down from legacy's real shell, each a separate follow-up within 6.1 (see
  * docs/phase6-full-parity-plan.md's 6.1 section for the full list this phase still owes):
  * sidebar is a placeholder pane (no real file explorer / folders / templates yet -- that's
- * DocumentTabs.tsx's own closed-docs list for now), no searchable tab-switcher dropdown for
- * overflow, no CSS custom properties yet (still consuming `THEME_TOKENS` via inline styles, same
- * approach as every other component today -- the doc for that follow-up is themeStore.ts's own
- * header comment).
- * Per-tab independent scroll/selection, drag-to-reorder tabs, and sidebar resize/collapse now
- * work -- see `contentRef` below, documentsStore.ts's own `TabViewState`/`reorderTab`, and
- * sidebarStore.ts for how each is implemented. Sidebar collapse's toggle button lives in
- * App.tsx's `headerActions` (passed into this component's header, not rendered here) rather than
- * a separate floating "reopen" button the way legacy needs -- see sidebarStore.ts's own header
- * for why that split doesn't apply here.
+ * DocumentTabs.tsx's own closed-docs list for now), no CSS custom properties yet (still
+ * consuming `THEME_TOKENS` via inline styles, same approach as every other component today --
+ * the doc for that follow-up is themeStore.ts's own header comment).
+ * Per-tab independent scroll/selection, drag-to-reorder tabs, sidebar resize/collapse, and the
+ * searchable tab-switcher dropdown now work -- see `contentRef` below, documentsStore.ts's own
+ * `TabViewState`/`reorderTab`, sidebarStore.ts, and DocumentTabs.tsx's own header for how each
+ * is implemented. Sidebar collapse's toggle button lives in App.tsx's `headerActions` (passed
+ * into this component's header, not rendered here) rather than a separate floating "reopen"
+ * button the way legacy needs -- see sidebarStore.ts's own header for why that split doesn't
+ * apply here.
  */
 interface AppShellProps {
   title: string;
