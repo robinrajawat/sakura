@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useDocumentsStore } from '../store/documentsStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { useSidebarStore } from '../store/sidebarStore';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md, "Design tokens & app shell"). The real
@@ -9,7 +10,7 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
  * chrome at all). Structural dimensions below are copied from legacy/index.html's own CSS, not
  * approximated:
  *   - `#appbar`: fixed height, legacy/index.html:361 (`height:env(titlebar-area-height,40px)`)
- *   - `#sidebar`: fixed width, legacy/index.html:1378 (`--sb-width:234px`)
+ *   - `#sidebar`: default/min/max width, legacy/index.html:29828-29830 (see sidebarStore.ts)
  *   - `#statusbar`: padding/font-size, legacy/index.html:619
  *   - `#doc-tab-strip-row`/`.doc-tab`: tab-bar row + individual tab chrome,
  *     legacy/index.html:1056-1073
@@ -18,11 +19,15 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
  * docs/phase6-full-parity-plan.md's 6.1 section for the full list this phase still owes):
  * sidebar is a placeholder pane (no real file explorer / folders / templates yet -- that's
  * DocumentTabs.tsx's own closed-docs list for now), no searchable tab-switcher dropdown for
- * overflow, no sidebar resize handle or collapse toggle, no CSS custom properties yet (still
- * consuming `THEME_TOKENS` via inline styles, same approach as every other component today --
- * the doc for that follow-up is themeStore.ts's own header comment).
- * Per-tab independent scroll/selection and drag-to-reorder tabs now work -- see `contentRef`
- * below and documentsStore.ts's own `TabViewState`/`reorderTab` for how each is implemented.
+ * overflow, no CSS custom properties yet (still consuming `THEME_TOKENS` via inline styles, same
+ * approach as every other component today -- the doc for that follow-up is themeStore.ts's own
+ * header comment).
+ * Per-tab independent scroll/selection, drag-to-reorder tabs, and sidebar resize/collapse now
+ * work -- see `contentRef` below, documentsStore.ts's own `TabViewState`/`reorderTab`, and
+ * sidebarStore.ts for how each is implemented. Sidebar collapse's toggle button lives in
+ * App.tsx's `headerActions` (passed into this component's header, not rendered here) rather than
+ * a separate floating "reopen" button the way legacy needs -- see sidebarStore.ts's own header
+ * for why that split doesn't apply here.
  */
 interface AppShellProps {
   title: string;
@@ -51,6 +56,41 @@ export function AppShell({
   const theme = useThemeStore((s) => s.theme);
   const accentColor = useThemeStore((s) => s.accentColor());
   const t = THEME_TOKENS[theme];
+  const sidebarWidth = useSidebarStore((s) => s.width);
+  const sidebarOpen = useSidebarStore((s) => s.open);
+  const initSidebar = useSidebarStore((s) => s.init);
+  const setSidebarWidth = useSidebarStore((s) => s.setWidth);
+  const commitSidebarWidth = useSidebarStore((s) => s.commitWidth);
+
+  useEffect(() => {
+    initSidebar();
+    // Same deliberate empty-dependency-array convention as DocumentTabs.tsx's own init()
+    // effect -- restores persisted width/open state once per app lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startResize(startEvent: React.MouseEvent): void {
+    startEvent.preventDefault();
+    const startX = startEvent.clientX;
+    const startWidth = useSidebarStore.getState().width;
+    document.body.style.userSelect = 'none';
+
+    function onMouseMove(e: MouseEvent): void {
+      setSidebarWidth(startWidth + (e.clientX - startX));
+    }
+    function onMouseUp(): void {
+      document.body.style.userSelect = '';
+      commitSidebarWidth();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
+    // Plain window-level listeners added/removed imperatively around the drag gesture --
+    // matches legacy's own initSidebarResize closure shape exactly (legacy/index.html:33046-33056)
+    // rather than routing this through React state/effects, since the gesture's lifetime is
+    // itself the right scope for these listeners and doesn't need to survive a re-render.
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
 
   return (
     <div
@@ -100,20 +140,34 @@ export function AppShell({
       </div>
 
       <div style={{ flex: '1 1 auto', display: 'flex', minHeight: 0 }}>
-        {/* #sidebar -- legacy/index.html:1378 */}
+        {/* #sidebar -- legacy/index.html:1378,1380 (width/collapsed-state numbers live in
+            sidebarStore.ts, matching legacy/index.html:29828-29830 exactly) */}
         <div
+          data-testid="appshell-sidebar"
           style={{
-            flex: '0 0 234px',
-            width: 234,
+            flex: sidebarOpen ? `0 0 ${sidebarWidth}px` : '0 0 0px',
+            width: sidebarOpen ? sidebarWidth : 0,
             display: 'flex',
             flexDirection: 'column',
             background: t.toolbarBackground,
-            borderRight: `1px solid ${t.border}`,
-            overflow: 'hidden'
+            borderRight: sidebarOpen ? `1px solid ${t.border}` : 'none',
+            overflow: 'hidden',
+            opacity: sidebarOpen ? 1 : 0,
+            pointerEvents: sidebarOpen ? 'auto' : 'none'
           }}
         >
           {sidebar}
         </div>
+
+        {/* #sidebar-resize-handle -- legacy/index.html:1382, 5px wide, hidden while collapsed
+            (legacy/index.html:1385's `#sidebar.collapsed ~ #sidebar-resize-handle{display:none}`) */}
+        {sidebarOpen && (
+          <div
+            onMouseDown={startResize}
+            title="Drag to resize file explorer"
+            style={{ flex: '0 0 5px', width: 5, cursor: 'ew-resize', background: 'transparent' }}
+          />
+        )}
 
         <div
           ref={contentRef}
