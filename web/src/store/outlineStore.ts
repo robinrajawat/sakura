@@ -9,6 +9,10 @@ import {
   deleteRootIndexes,
   sortChildBlocksCore,
   toggleCheckboxCore,
+  canMoveUpAt,
+  canMoveDownAt,
+  moveNodeUp,
+  moveNodeDown,
   type DropMode,
   type SortMode
 } from '../core/nodeMutations';
@@ -222,6 +226,16 @@ interface OutlineState {
   setCodeBlock: (id: number, codeBlock: CodeBlock | null) => void;
 
   toggleCollapse: (id: number) => void;
+
+  /** Moves the CURRENTLY-selected single node's own subtree up or down past its immediate
+   * sibling, matching legacy's own real moveSelected exactly (legacy/index.html:19324): a
+   * no-op when more than one node is selected (`roots.length!==1` -- legacy's own real guard;
+   * this project has no `selectAllMode` equivalent to check, so that part of legacy's own
+   * guard doesn't apply here) or when there's no sibling in that direction to swap with
+   * (canMoveUpAt/canMoveDownAt, both already-ported, already-tested pure logic in
+   * nodeMutations.ts). `direction`: negative moves up, positive moves down -- matches legacy's
+   * own real `direction<0`/`else` branching exactly. */
+  moveSelected: (direction: number) => void;
 
   /** Toggles a boolean style (bold/italic/underline/strike) across every currently-selected
    * node, matching legacy's own real `toggleNodeStyle` exactly (legacy/index.html:20460) --
@@ -851,6 +865,27 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       next.add(id);
     }
     set({ collapsedIds: next });
+  },
+
+  moveSelected: (direction) => {
+    const { nodes } = get();
+    const roots = get().selectionRootIndexes();
+    if (roots.length !== 1) return;
+    const idx = roots[0];
+    const end = getSubtreeEnd(nodes, idx);
+    const next = nodes.map((n) => ({ ...n }));
+    let movedId: number;
+    if (direction < 0) {
+      if (idx === 0 || !canMoveUpAt(next, idx)) return;
+      pushUndo();
+      movedId = moveNodeUp(next, idx);
+    } else {
+      if (end >= next.length || !canMoveDownAt(next, idx, end)) return;
+      pushUndo();
+      movedId = moveNodeDown(next, idx);
+    }
+    rebuildParentIdsCore(next);
+    set({ nodes: next, selectedId: movedId, selectionAnchorId: movedId, multiSelectedIds: [] });
   },
 
   toggleNodeStyle: (styleName) => {

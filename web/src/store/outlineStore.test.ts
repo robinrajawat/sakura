@@ -1345,3 +1345,83 @@ describe('outlineStore newSiblingAbove (Phase 6.2: node hover toolbar)', () => {
     expect(useOutlineStore.getState().nodes[1].parentId).toBe(1);
   });
 });
+
+describe('outlineStore moveSelected (Phase 6.2: context-menu up/down)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'first', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'second', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 4, depth: 1, text: 'third', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ],
+      selectedId: 3,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 3,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('moves the selected node up past its preceding sibling', () => {
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['root', 'second', 'first', 'third']);
+  });
+
+  it('moves the selected node down past its following sibling', () => {
+    useOutlineStore.getState().moveSelected(1);
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['root', 'first', 'third', 'second']);
+  });
+
+  it('keeps the moved node selected', () => {
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().selectedId).toBe(3);
+    expect(useOutlineStore.getState().selectionAnchorId).toBe(3);
+  });
+
+  it('is a no-op when the first sibling tries to move up', () => {
+    useOutlineStore.getState().selectNode(2);
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('is a no-op when the last sibling tries to move down', () => {
+    useOutlineStore.getState().selectNode(4);
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().moveSelected(1);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('is a no-op when more than one node is selected (matches legacy: roots.length!==1 guard)', () => {
+    useOutlineStore.setState({ multiSelectedIds: [3, 4], selectionAnchorId: 3, selectedId: 4 });
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('is undoable', () => {
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['root', 'second', 'first', 'third']);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['root', 'first', 'second', 'third']);
+  });
+
+  it('moves a whole subtree together, not just the root node', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 0, text: 'b', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'b-child', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ],
+      selectedId: 2,
+      selectionAnchorId: 2,
+      multiSelectedIds: []
+    });
+    useOutlineStore.getState().moveSelected(-1);
+    expect(useOutlineStore.getState().nodes.map((n) => n.text)).toEqual(['b', 'b-child', 'a']);
+  });
+});
