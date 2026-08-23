@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
+import { NotePanel } from './components/NotePanel';
 import { useOutlineStore } from './store/outlineStore';
 import { DocumentTabs } from './components/DocumentTabs';
 import { useDocumentsStore } from './store/documentsStore';
@@ -235,6 +236,7 @@ export function App() {
         </li>
       </ul>
       {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
+      <NotePanel />
       <div style={{ marginTop: 16 }}>
         <ExportButtons />
       </div>
