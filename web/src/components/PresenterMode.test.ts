@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { groupIntoSlides } from './PresenterMode';
 import type { OutlineNode } from '../store/outlineStore';
+import { defaultNodeStyles } from '../store/outlineStore';
 
 function n(id: number, depth: number): OutlineNode {
-  return { id, depth, text: 't' + id, parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] };
+  return { id, depth, text: 't' + id, parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() };
 }
 
 describe('groupIntoSlides', () => {

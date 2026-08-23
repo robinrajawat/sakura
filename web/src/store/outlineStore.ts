@@ -37,6 +37,31 @@ export interface CodeBlock {
   code: string;
 }
 
+/**
+ * Rich per-node formatting (Phase 6.2, docs/phase6-full-parity-plan.md's Core Editing list).
+ * Matches legacy's own real `emptyStyles()`/`normalizeStyles()` shape exactly
+ * (legacy/index.html:9717-9718) -- `heading` is `0` for "no heading" (not `false`, matching
+ * legacy's own `Number.isInteger` + 1-6 range check). `highlight`/`color` are included in the
+ * TYPE for full parity with legacy's real shape (so nothing needs migrating later), but this
+ * slice doesn't build the palette UI or toggle actions for either yet -- deliberately deferred,
+ * same "extend the type now, wire the UI later" split this project uses elsewhere (see e.g.
+ * documentsStore.ts's own DocFolder history). Both always sit at their default (`false`) for
+ * every node created or duplicated by web/ today.
+ */
+export interface NodeStyles {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strike: boolean;
+  heading: number;
+  highlight: string | false;
+  color: string | false;
+}
+
+export function defaultNodeStyles(): NodeStyles {
+  return { bold: false, italic: false, underline: false, strike: false, heading: 0, highlight: false, color: false };
+}
+
 export interface OutlineNode extends ParentLinkedNode, CheckboxNode {
   note: string;
   codeBlock: CodeBlock | null;
@@ -45,6 +70,7 @@ export interface OutlineNode extends ParentLinkedNode, CheckboxNode {
    * yet (README describes richer tag chrome this doesn't attempt). Read/write, not just
    * preserved-as-unknown, in docSyncStore.ts's cloud round-trip (see that file's own header). */
   tags: string[];
+  styles: NodeStyles;
 }
 
 export const CODE_LANGS = ['plain', 'abap', 'sql', 'javascript', 'python', 'json', 'markup', 'markdown'];
@@ -85,7 +111,7 @@ function seedNodes(): OutlineNode[] {
   // standalone consumer of outlineStore (tests, or any future entry point that doesn't route
   // through documentsStore) would otherwise show real users placeholder tutorial text again.
   const nodes: OutlineNode[] = [
-    { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+    { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
   ];
   rebuildParentIdsCore(nodes);
   return nodes;
@@ -182,6 +208,22 @@ interface OutlineState {
   setCodeBlock: (id: number, codeBlock: CodeBlock | null) => void;
 
   toggleCollapse: (id: number) => void;
+
+  /** Toggles a boolean style (bold/italic/underline/strike) across every currently-selected
+   * node, matching legacy's own real `toggleNodeStyle` exactly (legacy/index.html:20460) --
+   * ONLY the bold/italic/underline/strike branch; `highlight`/`color` have their own,
+   * separately-scoped "last used color" logic legacy's own function also handles but this one
+   * deliberately doesn't yet (see `NodeStyles`'s own header). Operates directly on
+   * `selectedIds()` (every selected node individually), NOT `selectionRootIndexes()` -- matches
+   * legacy's own real behavior: formatting is per-node, not subtree-cascading, unlike
+   * duplicate/delete which operate on whole selected subtrees. */
+  toggleNodeStyle: (styleName: 'bold' | 'italic' | 'underline' | 'strike') => void;
+  /** Sets (or clears) the heading level across every currently-selected node, matching legacy's
+   * own real `applyHeadingOption` exactly (legacy/index.html:20463): if every selected node
+   * already has exactly this level, it clears back to 0 (a second click toggles off); otherwise
+   * every selected node is set to this level, overriding whatever mix of levels they had.
+   * `level` 0 always clears regardless (matches legacy's own `level===0?0:...` short-circuit). */
+  applyHeadingOption: (level: number) => void;
 
   undo: () => void;
   redo: () => void;
@@ -459,6 +501,16 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     // legacy's own autoConvertCheckboxSyntax exactly, including running unconditionally on
     // every commit (not just changed text) and stripping the marker from the stored text.
     const checkboxMatch = text.match(/^\[( |x)\]\s?(.*)$/i);
+    // Auto-convert `# text` through `###### text` at commit time into a real heading level --
+    // matches legacy's own autoConvertHeadingSyntax exactly (legacy/index.html:20065-20071),
+    // including the cap at level 6 (matching the toolbar's own H1-H6 options, not reaching
+    // level 7 -- that's the separate [Section] bracket convention, and folding # into it would
+    // make one visual result reachable two unrelated ways) and stripping the markdown prefix
+    // from the stored text. Runs independently of the checkbox check above, same as legacy's
+    // own two separate sequential calls (`autoConvertCheckboxSyntax`/`autoConvertHeadingSyntax`)
+    // -- the two syntaxes are mutually exclusive in practice (a line can't start with both `[ ]`
+    // and `#`), so there's no real conflict to resolve here.
+    const headingMatch = checkboxMatch ? null : text.match(/^(#{1,6})\s+(.*)$/);
     // Matches legacy's own real optimization (legacy/index.html:19304-19307's own comment: "A
     // pure click-in/click-out or Escape-without-typing session no longer consumes an undo
     // slot"): only push a checkpoint when something is ABOUT to actually change, not on every
@@ -469,11 +521,14 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     // needed a separately-tracked `editSessionOriginalText` specifically because its own
     // node.text WAS live-synced on every keystroke, which would have made a naive comparison
     // here always look "changed".
-    if (idx >= 0 && (nodes[idx].text !== text || checkboxMatch)) pushUndo();
+    if (idx >= 0 && (nodes[idx].text !== text || checkboxMatch || headingMatch)) pushUndo();
     const next = nodes.map((n) => {
       if (n.id !== id) return n;
       if (checkboxMatch) {
         return { ...n, text: checkboxMatch[2], isCheckbox: true, checked: checkboxMatch[1].toLowerCase() === 'x' };
+      }
+      if (headingMatch) {
+        return { ...n, text: headingMatch[2], styles: { ...n.styles, heading: headingMatch[1].length } };
       }
       return { ...n, text };
     });
@@ -497,7 +552,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: []
+      tags: [],
+    styles: defaultNodeStyles()
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -526,7 +582,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: []
+      tags: [],
+    styles: defaultNodeStyles()
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -568,7 +625,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: []
+      tags: [],
+    styles: defaultNodeStyles()
     };
     insertParsedNodesCore(next, idx, [newNode]);
     rebuildParentIdsCore(next);
@@ -734,6 +792,41 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     set({ collapsedIds: next });
   },
 
+  toggleNodeStyle: (styleName) => {
+    const { nodes } = get();
+    const ids = get().selectedIds();
+    if (!ids.length) return;
+    pushUndo();
+    // makeActive: OFF only if every selected node already has this style ON -- matches
+    // legacy's own `!selectedNodes.every(n=>!!n.styles[styleName])` exactly.
+    const makeActive = !ids.every((id) => {
+      const node = nodes.find((n) => n.id === id);
+      return !!node?.styles[styleName];
+    });
+    const idSet = new Set(ids);
+    const next = nodes.map((n) => (idSet.has(n.id) ? { ...n, styles: { ...n.styles, [styleName]: makeActive } } : n));
+    set({ nodes: next });
+  },
+
+  applyHeadingOption: (level) => {
+    const { nodes } = get();
+    const ids = get().selectedIds();
+    if (!ids.length) return;
+    pushUndo();
+    // allSame: every selected node already sits at exactly this level -- matches legacy's own
+    // `selectedNodes.every(n=>(n.styles.heading||0)===level)` exactly. A second click on the
+    // level everything already has clears it (newLevel 0); level 0 itself always clears
+    // regardless (legacy's own `level===0?0:...` short-circuit).
+    const allSame = ids.every((id) => {
+      const node = nodes.find((n) => n.id === id);
+      return (node?.styles.heading || 0) === level;
+    });
+    const newLevel = level === 0 ? 0 : allSame ? 0 : level;
+    const idSet = new Set(ids);
+    const next = nodes.map((n) => (idSet.has(n.id) ? { ...n, styles: { ...n.styles, heading: newLevel } } : n));
+    set({ nodes: next });
+  },
+
   undo: () => {
     const { undoStack } = get();
     if (!undoStack.length) return;
@@ -796,16 +889,18 @@ function withoutCollapse(collapsedIds: Set<number>, id: number): Set<number> {
  * root still waiting to be processed.
  *
  * Matches legacy's own real (and, on inspection, likely accidental) behavior exactly: a
- * duplicate's `text`/`depth`/`note` carry over from the original, but `isCheckbox`/`checked`/
+ * duplicate's `text`/`depth`/`note`/`styles` carry over from the original (styles addition:
+ * Phase 6.2's rich-formatting slice, see `NodeStyles`'s own header), but `isCheckbox`/`checked`/
  * `codeBlock`/`tags` do NOT -- legacy's own `makeNode(n.text,n.depth,null,n.styles,n.note||'')`
- * call never passes `isCheckbox` (or anything for codeBlock/tags), so `makeNode`'s own defaults
- * (`isCheckbox:false, codeBlock:null, tags:[]`) always win regardless of what the original node
- * actually was. Reproduced here deliberately rather than "fixed" -- the goal is parity with
- * legacy's real behavior as it exists today, not a judgment call about what it should do; if
- * that's ever worth diverging from on purpose, that's a separate, explicit decision to make
- * later, not a silent choice bundled into a parity slice. `parentId` is left `null` on every
- * clone -- `rebuildParentIdsCore`, called by the caller after this returns, fixes it, same
- * convention `insertParsedNodesCore`'s own callers already use for freshly-built nodes.
+ * call passes `n.styles` through explicitly (the 4th arg) but never passes `isCheckbox` (or
+ * anything for codeBlock/tags), so `makeNode`'s own defaults (`isCheckbox:false, codeBlock:null,
+ * tags:[]`) always win for those specific fields regardless of what the original node actually
+ * was. Reproduced here deliberately rather than "fixed" -- the goal is parity with legacy's real
+ * behavior as it exists today, not a judgment call about what it should do; if that's ever worth
+ * diverging from on purpose, that's a separate, explicit decision to make later, not a silent
+ * choice bundled into a parity slice. `parentId` is left `null` on every clone --
+ * `rebuildParentIdsCore`, called by the caller after this returns, fixes it, same convention
+ * `insertParsedNodesCore`'s own callers already use for freshly-built nodes.
  *
  * Returns the id of the duplicate of `rootIndexes[0]` (the FIRST originally-selected root, in
  * selection order) -- matches legacy's own `firstNewId` result exactly: since the loop runs
@@ -834,7 +929,14 @@ export function duplicateRootIndexesCore(
       checked: false,
       note: n.note || '',
       codeBlock: null,
-      tags: []
+      tags: [],
+      // Styles/formatting (bold/italic/underline/strike/heading/highlight/color) DOES carry
+      // over to a duplicate -- legacy's own real call is
+      // makeNode(n.text,n.depth,null,n.styles,n.note||'') (legacy/index.html:20879), explicitly
+      // passing the original's styles object through as the 4th arg. Shallow-copied (not the
+      // same object reference) so a later style change on the duplicate can never mutate the
+      // original's own styles object.
+      styles: { ...n.styles }
     }));
     nodes.splice(end, 0, ...clones);
     firstNewId = clones[0]?.id ?? firstNewId;

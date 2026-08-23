@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { useOutlineStore, duplicateRootIndexesCore } from './outlineStore';
+import { useOutlineStore, duplicateRootIndexesCore, defaultNodeStyles } from './outlineStore';
 
 /**
  * Tests for outlineStore, carrying both Phase 0's validation spike coverage and Phase 2's
@@ -17,9 +17,9 @@ describe('outlineStore', () => {
     // equivalent shape directly here instead.
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 2,
       editingId: null,
@@ -175,7 +175,7 @@ describe('outlineStore', () => {
   });
 
   it('deleteNode refuses to delete the last remaining node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }], selectedId: 1 });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }], selectedId: 1 });
     useOutlineStore.getState().deleteNode(1);
     expect(useOutlineStore.getState().nodes).toHaveLength(1);
   });
@@ -220,11 +220,11 @@ describe('outlineStore multi-select', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child-a', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 2, text: 'grandchild', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 4, depth: 1, text: 'child-b', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 5, depth: 1, text: 'child-c', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: null,
       editingId: null,
@@ -334,10 +334,10 @@ describe('outlineStore sortChildren', () => {
     // Charlie(0)=1, Alice(0)=2 -> child(1)=3, Bob(0)=4
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'Charlie', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 0, text: 'Alice', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'Alice-child', parentId: 2, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 4, depth: 0, text: 'Bob', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 1,
       editingId: null,
@@ -364,9 +364,9 @@ describe('outlineStore sortChildren', () => {
   it('sorts an existing node\'s children when given a specific parentId, not root blocks', () => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'Zed', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'Amy', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ]
     });
     const sorted = useOutlineStore.getState().sortChildren(1, 'az');
@@ -389,7 +389,7 @@ describe('outlineStore sortChildren', () => {
   });
 
   it('returns false and leaves nodes unchanged when there are fewer than 2 blocks to sort', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'only', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     const before = useOutlineStore.getState().nodes;
     const sorted = useOutlineStore.getState().sortChildren(null, 'az');
     expect(sorted).toBe(false);
@@ -401,9 +401,9 @@ describe('outlineStore splitAtCursor', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'hello world', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 2,
       editingId: 2,
@@ -460,9 +460,9 @@ describe('outlineStore checkboxes', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: "", codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 2,
       editingId: 2,
@@ -528,13 +528,13 @@ describe('outlineStore checkboxes', () => {
 
 describe('outlineStore setNote', () => {
   it('sets a note on a node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     useOutlineStore.getState().setNote(1, 'remember this');
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.note).toBe('remember this');
   });
 
   it('is a no-op for an unknown node id', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().setNote(9999, 'x');
     expect(useOutlineStore.getState().nodes).toBe(before);
@@ -543,19 +543,19 @@ describe('outlineStore setNote', () => {
 
 describe('outlineStore setCodeBlock', () => {
   it('sets a code block on a node', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     useOutlineStore.getState().setCodeBlock(1, { lang: 'python', code: 'print(1)' });
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.codeBlock).toEqual({ lang: 'python', code: 'print(1)' });
   });
 
   it('clears a code block by setting it to null', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: { lang: 'plain', code: 'x' }, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: { lang: 'plain', code: 'x' }, tags: [], styles: defaultNodeStyles() }] });
     useOutlineStore.getState().setCodeBlock(1, null);
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.codeBlock).toBeNull();
   });
 
   it('is a no-op for an unknown node id', () => {
-    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }] });
+    useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     const before = useOutlineStore.getState().nodes;
     useOutlineStore.getState().setCodeBlock(9999, { lang: 'plain', code: 'x' });
     expect(useOutlineStore.getState().nodes).toBe(before);
@@ -566,8 +566,8 @@ describe('outlineStore toggleTag', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 0, text: 'other', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['keep'] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 0, text: 'other', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['keep'], styles: defaultNodeStyles() }
       ],
       activeTagFilter: null,
       focusedId: null
@@ -608,9 +608,9 @@ describe('outlineStore setTagFilter + visibleIndexes (tag scoping)', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['work'] },
-        { id: 2, depth: 1, text: 'child-tagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['home'] },
-        { id: 3, depth: 1, text: 'child-untagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['work'], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child-tagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['home'], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'child-untagged', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       collapsedIds: new Set(),
       activeTagFilter: null,
@@ -652,11 +652,11 @@ describe('outlineStore zoomIntoNode / exitFocus / focusPath + visibleIndexes (fo
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 5, depth: 0, text: 'unrelated-root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 5, depth: 0, text: 'unrelated-root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       collapsedIds: new Set(),
       activeTagFilter: null,
@@ -708,10 +708,10 @@ describe('outlineStore zoomIntoNode / exitFocus / focusPath + visibleIndexes (fo
   it('combines focus subtree scoping with an active tag filter, narrowing within the subtree', () => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'] },
-        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'] },
-        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'branch', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'], styles: defaultNodeStyles() },
+        { id: 3, depth: 2, text: 'leaf-a', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: ['x'], styles: defaultNodeStyles() },
+        { id: 4, depth: 2, text: 'leaf-b', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ]
     });
     useOutlineStore.getState().zoomIntoNode(2);
@@ -725,9 +725,9 @@ describe('outlineStore undo/redo (Phase 6.2: foundational undo/redo)', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 2,
       editingId: null,
@@ -904,6 +904,7 @@ describe('outlineStore undo/redo (Phase 6.2: foundational undo/redo)', () => {
 function n(overrides: Partial<{
   id: number; depth: number; text: string; parentId: number | null;
   isCheckbox: boolean; checked: boolean; note: string; codeBlock: { lang: string; code: string } | null; tags: string[];
+  styles: ReturnType<typeof defaultNodeStyles>;
 }>) {
   return {
     id: overrides.id ?? 1,
@@ -914,7 +915,8 @@ function n(overrides: Partial<{
     checked: overrides.checked ?? false,
     note: overrides.note ?? '',
     codeBlock: overrides.codeBlock ?? null,
-    tags: overrides.tags ?? []
+    tags: overrides.tags ?? [],
+    styles: overrides.styles ?? defaultNodeStyles()
   };
 }
 
@@ -950,6 +952,19 @@ describe('duplicateRootIndexesCore', () => {
     ];
     duplicateRootIndexesCore(nodes, [0], 100);
     expect(nodes[1]).toMatchObject({ isCheckbox: false, checked: false, codeBlock: null, tags: [] });
+  });
+
+  it('DOES preserve styles/formatting on the clone -- matches legacy\'s own explicit n.styles pass-through', () => {
+    const nodes = [n({ id: 1, text: 'heading', styles: { ...defaultNodeStyles(), bold: true, heading: 2 } })];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes[1].styles).toEqual({ ...defaultNodeStyles(), bold: true, heading: 2 });
+  });
+
+  it('the duplicate\'s styles object is a real copy, not a shared reference to the original\'s', () => {
+    const nodes = [n({ id: 1, styles: { ...defaultNodeStyles(), bold: true } })];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    nodes[1].styles.bold = false;
+    expect(nodes[0].styles.bold).toBe(true);
   });
 
   it('assigns fresh sequential ids to every cloned node in a subtree', () => {
@@ -991,8 +1006,8 @@ describe('outlineStore duplicateSelected', () => {
   beforeEach(() => {
     useOutlineStore.setState({
       nodes: [
-        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ],
       selectedId: 2,
       editingId: null,
@@ -1038,5 +1053,162 @@ describe('outlineStore duplicateSelected', () => {
     const nodes = useOutlineStore.getState().nodes;
     const newChild = nodes[2];
     expect(newChild.parentId).toBe(1);
+  });
+});
+
+describe('outlineStore toggleNodeStyle / applyHeadingOption (Phase 6.2: rich per-node formatting)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ],
+      selectedId: 2,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('toggleNodeStyle turns bold ON for a single selected node with no style yet', () => {
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.bold).toBe(true);
+  });
+
+  it('toggleNodeStyle turns bold back OFF on a second toggle', () => {
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.bold).toBe(false);
+  });
+
+  it('is undoable', () => {
+    useOutlineStore.getState().toggleNodeStyle('italic');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.italic).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.italic).toBe(false);
+  });
+
+  it('is a no-op when nothing is selected', () => {
+    useOutlineStore.setState({ selectedId: null, multiSelectedIds: [] });
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+
+  it('across a multi-selection where NOT all nodes already have the style, turns it ON for all', () => {
+    useOutlineStore.setState({ multiSelectedIds: [2, 3], selectionAnchorId: 2, selectedId: 3 });
+    // Node 2 already bold, node 3 is not -- mixed state.
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, styles: { ...n.styles, bold: true } } : n))
+    });
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.bold).toBe(true);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.styles.bold).toBe(true);
+  });
+
+  it('across a multi-selection where ALL nodes already have the style, turns it OFF for all', () => {
+    useOutlineStore.setState({ multiSelectedIds: [2, 3], selectionAnchorId: 2, selectedId: 3 });
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 || n.id === 3 ? { ...n, styles: { ...n.styles, bold: true } } : n))
+    });
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.bold).toBe(false);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.styles.bold).toBe(false);
+  });
+
+  it('toggling one style does not affect the others on the same node', () => {
+    useOutlineStore.getState().toggleNodeStyle('bold');
+    useOutlineStore.getState().toggleNodeStyle('underline');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.styles).toMatchObject({ bold: true, underline: true, italic: false, strike: false });
+  });
+
+  it('applyHeadingOption sets the heading level on the selected node', () => {
+    useOutlineStore.getState().applyHeadingOption(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(2);
+  });
+
+  it('applyHeadingOption clears the level on a second click of the SAME level', () => {
+    useOutlineStore.getState().applyHeadingOption(2);
+    useOutlineStore.getState().applyHeadingOption(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(0);
+  });
+
+  it('applyHeadingOption with a DIFFERENT level overrides, does not clear', () => {
+    useOutlineStore.getState().applyHeadingOption(2);
+    useOutlineStore.getState().applyHeadingOption(4);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(4);
+  });
+
+  it('applyHeadingOption(0) always clears regardless of current level', () => {
+    useOutlineStore.getState().applyHeadingOption(3);
+    useOutlineStore.getState().applyHeadingOption(0);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(0);
+  });
+
+  it('applyHeadingOption across a mixed-level multi-selection sets all to the new level, not clear', () => {
+    useOutlineStore.setState({ multiSelectedIds: [2, 3], selectionAnchorId: 2, selectedId: 3 });
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, styles: { ...n.styles, heading: 1 } } : n))
+    });
+    // node 2 is heading 1, node 3 is heading 0 -- NOT allSame, so applying level 1 should SET
+    // both to 1 (not clear), matching legacy's own allSame-only-clears semantics.
+    useOutlineStore.getState().applyHeadingOption(1);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(1);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.styles.heading).toBe(1);
+  });
+
+  it('applyHeadingOption is undoable', () => {
+    useOutlineStore.getState().applyHeadingOption(3);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(0);
+  });
+
+  it('commitEdit auto-converts a leading # into heading level 1 and strips the marker', () => {
+    useOutlineStore.getState().commitEdit(2, '# My Heading');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.text).toBe('My Heading');
+    expect(node?.styles.heading).toBe(1);
+  });
+
+  it('commitEdit auto-converts ###### (6 hashes) into heading level 6', () => {
+    useOutlineStore.getState().commitEdit(2, '###### Deep Heading');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.styles.heading).toBe(6);
+  });
+
+  it('commitEdit does NOT auto-convert 7+ hashes -- caps at level 6, matching legacy exactly', () => {
+    useOutlineStore.getState().commitEdit(2, '####### Too Many');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    // The regex only matches 1-6 hashes; 7 hashes means the whole line no longer matches the
+    // heading pattern at all, so it's left as plain text -- matches legacy's own regex cap.
+    expect(node?.text).toBe('####### Too Many');
+    expect(node?.styles.heading).toBe(0);
+  });
+
+  it('commitEdit heading auto-convert pushes an undo checkpoint even if the base text is otherwise unchanged', () => {
+    useOutlineStore.setState({
+      nodes: [{ id: 2, depth: 1, text: '# child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }]
+    });
+    useOutlineStore.getState().commitEdit(2, '# child');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+  });
+
+  it('commitEdit heading auto-convert is undoable', () => {
+    useOutlineStore.getState().commitEdit(2, '## Heading');
+    useOutlineStore.getState().undo();
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.text).toBe('child');
+    expect(node?.styles.heading).toBe(0);
+  });
+
+  it('commitEdit checkbox and heading auto-convert do not both apply to the same text (mutually exclusive)', () => {
+    useOutlineStore.getState().commitEdit(2, '[ ] not a heading');
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.isCheckbox).toBe(true);
+    expect(node?.styles.heading).toBe(0);
   });
 });

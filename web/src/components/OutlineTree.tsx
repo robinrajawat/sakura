@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
-import { useOutlineStore } from '../store/outlineStore';
+import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
@@ -15,6 +15,33 @@ function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
     background: t.toolbarButtonBg,
     color: t.text,
     cursor: 'pointer'
+  };
+}
+
+// Approximate size scale for heading levels 1 (largest) through 6 (smallest) -- a reasonable,
+// honest approximation, not a pixel-exact match of legacy's own `.style-heading-N` CSS rules
+// (which this project hasn't extracted/ported); getting the FUNCTIONAL behavior right (toggle,
+// persistence, undo, auto-convert, multi-select semantics) matters more for this slice than
+// exact sizing, same "honest first pass" scoping this project uses elsewhere.
+const HEADING_FONT_SIZES: Record<number, string> = { 1: '1.5em', 2: '1.35em', 3: '1.2em', 4: '1.1em', 5: '1.05em', 6: '1em' };
+
+/** Composes a node's label style from its `styles` object plus the pre-existing checkbox-done
+ * strikethrough -- matches legacy's own real composition (legacy/index.html:20294's own
+ * `stCls`/heading-class list applied to the whole `.node-label`, not per text-segment), just as
+ * inline CSSProperties instead of class names since this component already styles everything
+ * that way. Underline and strike are independent and can combine (`text-decoration` accepts
+ * multiple space-separated values) -- a checkbox-done strike and an explicit `styles.strike`
+ * both resolve to the same single `line-through` value, not doubled. */
+function composeNodeLabelStyle(node: Pick<OutlineNode, 'styles' | 'isCheckbox' | 'checked'>): CSSProperties {
+  const s: NodeStyles = node.styles;
+  const decorations = [s.underline ? 'underline' : '', s.strike || (node.isCheckbox && node.checked) ? 'line-through' : '']
+    .filter(Boolean)
+    .join(' ');
+  return {
+    fontWeight: s.bold || s.heading > 0 ? 700 : 400,
+    fontStyle: s.italic ? 'italic' : 'normal',
+    textDecoration: decorations || 'none',
+    fontSize: s.heading > 0 ? HEADING_FONT_SIZES[s.heading] : undefined
   };
 }
 
@@ -69,6 +96,7 @@ export function OutlineTree() {
   const focusPath = useOutlineStore((s) => s.focusPath);
   const undo = useOutlineStore((s) => s.undo);
   const redo = useOutlineStore((s) => s.redo);
+  const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
@@ -99,6 +127,35 @@ export function OutlineTree() {
     if (((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey) && e.shiftKey) || ((e.key === 'y' || e.key === 'Y') && (e.metaKey || e.ctrlKey))) {
       e.preventDefault();
       redo();
+      return;
+    }
+    // Ctrl/Cmd+B/I/U (Cmd+Shift+S for strike, avoiding the browser's own Ctrl/Cmd+S save
+    // binding) -- matches legacy's own real shortcuts (legacy/index.html:6386-6389's own
+    // tooltip text) and, same as undo/redo above, deliberately NOT wired into
+    // handleInputKeyDown below (formatting while actively typing inline text). Legacy's own
+    // version also reopens inline-edit mode immediately after applying
+    // (`toggleNodeStyle('bold'); beginEdit(id,true)`) when triggered from within an active
+    // edit session -- that reentry behavior isn't replicated here since this binding only ever
+    // fires outside of editing in the first place (the `editingId !== null` guard above already
+    // returns before reaching this point), a smaller, honest scope than legacy's real one.
+    if ((e.key === 'b' || e.key === 'B') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      e.preventDefault();
+      toggleNodeStyle('bold');
+      return;
+    }
+    if ((e.key === 'i' || e.key === 'I') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      e.preventDefault();
+      toggleNodeStyle('italic');
+      return;
+    }
+    if ((e.key === 'u' || e.key === 'U') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      e.preventDefault();
+      toggleNodeStyle('underline');
+      return;
+    }
+    if ((e.key === 's' || e.key === 'S') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      e.preventDefault();
+      toggleNodeStyle('strike');
       return;
     }
     if (selectedId === null) return;
@@ -362,7 +419,7 @@ export function OutlineTree() {
               <span
                 onClick={(e) => clickNode(node.id, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey || e.metaKey })}
                 onDoubleClick={() => startEditing(node.id)}
-                style={{ flex: 1, textDecoration: node.isCheckbox && node.checked ? 'line-through' : 'none' }}
+                style={{ flex: 1, ...composeNodeLabelStyle(node) }}
               >
                 {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>

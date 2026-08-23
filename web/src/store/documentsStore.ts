@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useOutlineStore, type OutlineNode, type UndoSnapshot } from './outlineStore';
+import { useOutlineStore, type OutlineNode, type UndoSnapshot, defaultNodeStyles } from './outlineStore';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
 
@@ -309,9 +309,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       const id = generateDocId();
       const now = Date.now();
       const nodes: OutlineNode[] = [
-        { id: 1, depth: 0, text: 'Welcome to Sakura', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 2, depth: 1, text: 'This is your first document — start typing to replace this', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-        { id: 3, depth: 1, text: 'Enter creates a new line, Tab indents it', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        { id: 1, depth: 0, text: 'Welcome to Sakura', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'This is your first document — start typing to replace this', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'Enter creates a new line, Tab indents it', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ];
       rebuildParentIdsCore(nodes);
       const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now };
@@ -337,7 +337,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     const now = Date.now();
     const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now };
     const nodes: OutlineNode[] = [
-      { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
     ];
     writeJson(docStorageKey(id), { title: summary.title, nodes });
     const docsIndex = [...get().docsIndex, summary];
