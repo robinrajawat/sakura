@@ -39,6 +39,8 @@ export function App() {
   const redo = useOutlineStore((s) => s.redo);
   const canUndo = useOutlineStore((s) => s.canUndo());
   const canRedo = useOutlineStore((s) => s.canRedo());
+  const duplicateSelected = useOutlineStore((s) => s.duplicateSelected);
+  const hasSelection = useOutlineStore((s) => s.selectedId !== null);
 
   return (
     <AppShell
@@ -88,6 +90,21 @@ export function App() {
           style={{ marginRight: 12 }}
         >
           ↷
+        </button>
+        {/* ⧉ -- same icon and tooltip text as legacy's own #qb-duplicate
+            (legacy/index.html:6371). Duplicates the current selection's root(s); see
+            duplicateRootIndexesCore's own header (outlineStore.ts) for exact behavior,
+            including the deliberately-reproduced legacy quirk that checkbox/code-block/tag
+            state does NOT carry over to the duplicate. */}
+        <button
+          type="button"
+          onClick={duplicateSelected}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Duplicate"
+          aria-label="Duplicate"
+          style={{ marginRight: 12 }}
+        >
+          ⧉
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit

@@ -175,6 +175,7 @@ interface OutlineState {
   splitAtCursor: (id: number, fullText: string, caretPos: number) => void;
   deleteNode: (id: number) => void;
   deleteSelected: () => void;
+  duplicateSelected: () => void;
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
   toggleCheckbox: (id: number) => void;
   setNote: (id: number, note: string) => void;
@@ -630,6 +631,28 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     });
   },
 
+  // Duplicates every root of the current selection (single or multi), matching legacy's own
+  // real duplicateSelected exactly -- see duplicateRootIndexesCore's own header (module level,
+  // below) for the full behavior, including the deliberately-reproduced-not-fixed quirk that a
+  // duplicate never carries over checkbox/code-block/tag state, only text/depth/note.
+  duplicateSelected: () => {
+    const { nodes, nextId } = get();
+    const roots = get().selectionRootIndexes();
+    if (!roots.length) return;
+    pushUndo();
+    const next = nodes.map((n) => ({ ...n }));
+    const { firstNewId, nextId: newNextId } = duplicateRootIndexesCore(next, roots, nextId);
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: newNextId,
+      selectedId: firstNewId,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: firstNewId
+    });
+  },
+
   // Reorders the immediate child blocks under `parentId` (or every top-level root block, if
   // `parentId` is `null`) via the freshly-written `sortChildBlocksCore` (see that function's
   // own header — sortChildBlocks was never one of legacy's extracted `src/core/` generated
@@ -755,5 +778,67 @@ function withoutCollapse(collapsedIds: Set<number>, id: number): Set<number> {
   const next = new Set(collapsedIds);
   next.delete(id);
   return next;
+}
+
+/**
+ * Mutates `nodes` in place: duplicates each root index's own subtree, inserting the clone
+ * directly after the original -- a freshly-written match of legacy's own real `duplicateSelected`
+ * (legacy/index.html:20879), which was never one of the earlier ported `src/core/` generated
+ * blocks, same status as `sortChildBlocksCore`'s own header note on why that one is fresh too.
+ * Houses the full `OutlineNode` shape (not the generic `QueryableNode`/`CheckboxNode` base types
+ * `nodeMutations.ts`'s other functions operate on) because building a correct clone needs to
+ * know about every OutlineNode-specific field -- same reasoning `newChild`/`newSiblingBelow`/
+ * `splitAtCursor` above already follow for constructing their own new node objects inline in
+ * this file rather than in the generic core module.
+ *
+ * Processes `rootIndexes` in REVERSE order, same principle `deleteRootIndexes` uses and for the
+ * same reason: inserting a later clone first never shifts the array positions of an earlier
+ * root still waiting to be processed.
+ *
+ * Matches legacy's own real (and, on inspection, likely accidental) behavior exactly: a
+ * duplicate's `text`/`depth`/`note` carry over from the original, but `isCheckbox`/`checked`/
+ * `codeBlock`/`tags` do NOT -- legacy's own `makeNode(n.text,n.depth,null,n.styles,n.note||'')`
+ * call never passes `isCheckbox` (or anything for codeBlock/tags), so `makeNode`'s own defaults
+ * (`isCheckbox:false, codeBlock:null, tags:[]`) always win regardless of what the original node
+ * actually was. Reproduced here deliberately rather than "fixed" -- the goal is parity with
+ * legacy's real behavior as it exists today, not a judgment call about what it should do; if
+ * that's ever worth diverging from on purpose, that's a separate, explicit decision to make
+ * later, not a silent choice bundled into a parity slice. `parentId` is left `null` on every
+ * clone -- `rebuildParentIdsCore`, called by the caller after this returns, fixes it, same
+ * convention `insertParsedNodesCore`'s own callers already use for freshly-built nodes.
+ *
+ * Returns the id of the duplicate of `rootIndexes[0]` (the FIRST originally-selected root, in
+ * selection order) -- matches legacy's own `firstNewId` result exactly: since the loop runs
+ * backward, `rootIndexes[0]` is the LAST one processed, so it's whatever `firstNewId` holds when
+ * the loop ends. `null` only if `rootIndexes` itself is empty (the caller is expected to guard
+ * against that before calling, same convention `sortChildBlocksCore`'s own empty-input guard
+ * uses, but this function doesn't re-check it either way -- an empty array here is just a
+ * no-op loop, safe regardless).
+ */
+export function duplicateRootIndexesCore(
+  nodes: OutlineNode[],
+  rootIndexes: number[],
+  nextId: number
+): { firstNewId: number | null; nextId: number } {
+  let firstNewId: number | null = null;
+  let id = nextId;
+  for (let r = rootIndexes.length - 1; r >= 0; r--) {
+    const idx = rootIndexes[r];
+    const end = getSubtreeEnd(nodes, idx);
+    const clones: OutlineNode[] = nodes.slice(idx, end).map((n) => ({
+      id: id++,
+      depth: n.depth,
+      text: n.text,
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: n.note || '',
+      codeBlock: null,
+      tags: []
+    }));
+    nodes.splice(end, 0, ...clones);
+    firstNewId = clones[0]?.id ?? firstNewId;
+  }
+  return { firstNewId, nextId: id };
 }
 

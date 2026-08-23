@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { useOutlineStore } from './outlineStore';
+import { useOutlineStore, duplicateRootIndexesCore } from './outlineStore';
 
 /**
  * Tests for outlineStore, carrying both Phase 0's validation spike coverage and Phase 2's
@@ -898,5 +898,145 @@ describe('outlineStore undo/redo (Phase 6.2: foundational undo/redo)', () => {
   it('toggleCollapse does NOT push an undo checkpoint (matches legacy: fold state is not part of the undo snapshot)', () => {
     useOutlineStore.getState().toggleCollapse(1);
     expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+});
+
+function n(overrides: Partial<{
+  id: number; depth: number; text: string; parentId: number | null;
+  isCheckbox: boolean; checked: boolean; note: string; codeBlock: { lang: string; code: string } | null; tags: string[];
+}>) {
+  return {
+    id: overrides.id ?? 1,
+    depth: overrides.depth ?? 0,
+    text: overrides.text ?? '',
+    parentId: overrides.parentId ?? null,
+    isCheckbox: overrides.isCheckbox ?? false,
+    checked: overrides.checked ?? false,
+    note: overrides.note ?? '',
+    codeBlock: overrides.codeBlock ?? null,
+    tags: overrides.tags ?? []
+  };
+}
+
+describe('duplicateRootIndexesCore', () => {
+  it('clones a single leaf node, inserting the clone directly after the original', () => {
+    const nodes = [n({ id: 1, text: 'a' }), n({ id: 2, text: 'b' })];
+    const { firstNewId, nextId } = duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes.map((x) => x.text)).toEqual(['a', 'a', 'b']);
+    expect(firstNewId).toBe(100);
+    expect(nextId).toBe(101);
+    expect(nodes[1].id).toBe(100);
+  });
+
+  it('clones a whole subtree together, not just the root node', () => {
+    const nodes = [n({ id: 1, depth: 0, text: 'parent' }), n({ id: 2, depth: 1, text: 'child', parentId: 1 })];
+    const { firstNewId, nextId } = duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes.map((x) => x.text)).toEqual(['parent', 'child', 'parent', 'child']);
+    expect(nodes[2].depth).toBe(0);
+    expect(nodes[3].depth).toBe(1);
+    expect(firstNewId).toBe(100);
+    expect(nextId).toBe(102);
+  });
+
+  it('preserves text, depth, and note on the clone', () => {
+    const nodes = [n({ id: 1, depth: 2, text: 'hello', note: 'a note' })];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes[1]).toMatchObject({ text: 'hello', depth: 2, note: 'a note' });
+  });
+
+  it('does NOT preserve isCheckbox/checked/codeBlock/tags on the clone -- matches legacy exactly, not a bug', () => {
+    const nodes = [
+      n({ id: 1, text: 'task', isCheckbox: true, checked: true, codeBlock: { lang: 'js', code: 'x' }, tags: ['urgent'] })
+    ];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes[1]).toMatchObject({ isCheckbox: false, checked: false, codeBlock: null, tags: [] });
+  });
+
+  it('assigns fresh sequential ids to every cloned node in a subtree', () => {
+    const nodes = [n({ id: 1, depth: 0 }), n({ id: 2, depth: 1, parentId: 1 }), n({ id: 3, depth: 1, parentId: 1 })];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes.slice(3).map((x) => x.id)).toEqual([100, 101, 102]);
+  });
+
+  it('leaves parentId null on every clone -- the caller is expected to rebuildParentIdsCore afterward', () => {
+    const nodes = [n({ id: 1, depth: 0 }), n({ id: 2, depth: 1, parentId: 1 })];
+    duplicateRootIndexesCore(nodes, [0], 100);
+    expect(nodes[2].parentId).toBeNull();
+    expect(nodes[3].parentId).toBeNull();
+  });
+
+  it('duplicating multiple roots processes them in reverse order without corrupting indices', () => {
+    // Three top-level siblings; duplicate all three.
+    const nodes = [n({ id: 1, text: 'a' }), n({ id: 2, text: 'b' }), n({ id: 3, text: 'c' })];
+    const { firstNewId } = duplicateRootIndexesCore(nodes, [0, 1, 2], 100);
+    expect(nodes.map((x) => x.text)).toEqual(['a', 'a', 'b', 'b', 'c', 'c']);
+    // firstNewId is the duplicate of rootIndexes[0] (the FIRST originally-selected root) --
+    // matching legacy's own real result. Because the loop runs BACKWARD (r=2,1,0), that root
+    // is processed LAST, so its clone gets the LAST (highest) id from the counter (102, not
+    // 100 -- roots[2]='c' is processed first and gets 100, roots[1]='b' gets 101, roots[0]='a'
+    // gets 102), not the numerically-first id despite the "firstNewId" name.
+    expect(firstNewId).toBe(102);
+  });
+
+  it('an empty rootIndexes array is a safe no-op', () => {
+    const nodes = [n({ id: 1 })];
+    const { firstNewId, nextId } = duplicateRootIndexesCore(nodes, [], 100);
+    expect(nodes).toHaveLength(1);
+    expect(firstNewId).toBeNull();
+    expect(nextId).toBe(100);
+  });
+});
+
+describe('outlineStore duplicateSelected', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ],
+      selectedId: 2,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('duplicates the selected node and its subtree', () => {
+    useOutlineStore.getState().duplicateSelected();
+    expect(useOutlineStore.getState().nodes).toHaveLength(3);
+    expect(useOutlineStore.getState().nodes[2].text).toBe('child');
+  });
+
+  it('selects the newly duplicated node', () => {
+    useOutlineStore.getState().duplicateSelected();
+    const newNode = useOutlineStore.getState().nodes[2];
+    expect(useOutlineStore.getState().selectedId).toBe(newNode.id);
+    expect(useOutlineStore.getState().selectionAnchorId).toBe(newNode.id);
+    expect(useOutlineStore.getState().multiSelectedIds).toEqual([]);
+  });
+
+  it('is undoable', () => {
+    useOutlineStore.getState().duplicateSelected();
+    expect(useOutlineStore.getState().nodes).toHaveLength(3);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toHaveLength(2);
+  });
+
+  it('is a no-op when nothing is selected', () => {
+    useOutlineStore.setState({ selectedId: null, multiSelectedIds: [] });
+    useOutlineStore.getState().duplicateSelected();
+    expect(useOutlineStore.getState().nodes).toHaveLength(2);
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+
+  it('rebuilds parentId correctly on the duplicated subtree', () => {
+    useOutlineStore.getState().duplicateSelected();
+    const nodes = useOutlineStore.getState().nodes;
+    const newChild = nodes[2];
+    expect(newChild.parentId).toBe(1);
   });
 });
