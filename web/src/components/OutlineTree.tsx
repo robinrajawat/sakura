@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
+import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
 import { CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
@@ -424,6 +425,37 @@ export function OutlineTree() {
                 {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
               </span>
             )}
+            {/* Fold badge -- "+N hidden" for a collapsed node with children, matching legacy's
+                own real fold-badge exactly (legacy/index.html's own `folded&&hasChildren` block:
+                countDescendants for the count, click to expand). Uses the already-ported, already-
+                tested countDescendants (nodeQueries.ts) -- no new pure logic needed for this
+                slice, purely wiring an existing function into the UI. mousedown (not click, and
+                stopPropagation+preventDefault) matches legacy's own binding exactly -- expanding
+                on mousedown avoids the row's own click handler treating this as a row click. */}
+            {collapsedIds.has(node.id) && hasChildren && (
+              <span
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  toggleCollapse(node.id);
+                }}
+                title={`Click to expand · ${countDescendants(nodes, idx)} hidden node${countDescendants(nodes, idx) === 1 ? '' : 's'}`}
+                style={{
+                  display: 'inline-block',
+                  marginLeft: 10,
+                  padding: '0 6px',
+                  borderRadius: 999,
+                  background: 'color-mix(in srgb, var(--accent) 14%, transparent)',
+                  color: 'var(--accent)',
+                  font: "500 10px 'Inter', sans-serif",
+                  letterSpacing: '.02em',
+                  verticalAlign: 'middle',
+                  cursor: 'pointer'
+                }}
+              >
+                +{countDescendants(nodes, idx)}
+              </span>
+            )}
             {node.tags.map((tag) => (
               <span
                 key={tag}
@@ -478,6 +510,34 @@ export function OutlineTree() {
                 +tag
               </span>
             )}
+            {/* Checkbox progress badge -- "X/Y done" for a checkbox node with checkbox
+                children, matching legacy's own real cb-progress badge exactly
+                (isCheckboxNode(node)&&hasChildren, getCheckboxChildStats for the counts). Also
+                already-ported, already-tested (nodeQueries.ts's getCheckboxChildStats) -- purely
+                wiring, no new logic. Passive/informational, not clickable -- matches legacy's
+                own real badge (no click handler on `.cb-progress` anywhere in its source). */}
+            {node.isCheckbox &&
+              hasChildren &&
+              (() => {
+                const { total, checked } = getCheckboxChildStats(nodes, idx);
+                if (total === 0) return null;
+                return (
+                  <span
+                    title={`${checked} of ${total} done`}
+                    style={{
+                      fontSize: 11,
+                      color: t.mutedText,
+                      marginLeft: 6,
+                      padding: '0 6px',
+                      border: `1px solid ${t.border}`,
+                      borderRadius: 10,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {checked}/{total}
+                  </span>
+                );
+              })()}
             <span
               onClick={(e) => {
                 e.stopPropagation();
