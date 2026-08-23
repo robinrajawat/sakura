@@ -53,14 +53,29 @@ deferred in `docs/history/phase5-parity-checklist.md`'s "Documents & Tabs" secti
 natural home in this plan — building the real shell without them would just recreate the same
 gap one level up.
 
-**Status: in progress.** Part 1 (#129) — real design tokens (24-field `ThemeTokens`, 7 accent
-presets) extracted from `legacy/index.html`'s actual CSS into `themeStore.ts`, replacing the
-placeholder Google-blue-ish values. Part 2 (#130) — the real app shell itself (`AppShell.tsx`):
-header/app bar, left sidebar, tab-bar dock, status bar, dimensions copied directly from
-`legacy/index.html`'s own CSS. Still open from this section's own scope: real file explorer
-(folders/templates), searchable tab-switcher dropdown for overflow, drag-to-reorder tabs,
-per-tab independent scroll/selection, sidebar resize/collapse, CSS custom properties (still
-plain `THEME_TOKENS` via inline styles).
+**Status: complete.** All eight items landed:
+- Part 1 (#129) — real design tokens (24-field `ThemeTokens`, 7 accent presets) extracted from
+  `legacy/index.html`'s actual CSS into `themeStore.ts`, replacing the placeholder Google-blue-ish
+  values.
+- Part 2 (#130) — the real app shell itself (`AppShell.tsx`): header/app bar, left sidebar,
+  tab-bar dock, status bar, dimensions copied directly from `legacy/index.html`'s own CSS.
+- Per-tab independent scroll/selection (#132) — session-scoped view-state cache in
+  `documentsStore.ts`, restoring selection/collapse/scroll on return to a previously-visited tab
+  instead of always resetting.
+- Drag-to-reorder tabs (#133) — native HTML5 DnD wired to `tabOrder.ts`'s pre-existing
+  `reorderTabsCore`.
+- Sidebar resize/collapse (#134) — `sidebarStore.ts`, matching legacy's real default/min/max
+  width and open-state numbers.
+- Searchable tab-switcher dropdown (#135) — live-filtered "▾" dropdown over open tabs, matching
+  legacy's own "search open tabs" overview.
+- CSS custom properties (#136) — real `var(--bg)`/`var(--accent)`/etc on `<body>`, matching
+  legacy's own mechanism; `AppShell.tsx`/`DocumentTabs.tsx` consume them directly and no longer
+  re-render on theme/accent changes for styling purposes.
+- Real file explorer (#137 store, #138 UI) — nested document folders (`DocFolder`, unbounded
+  depth, matching legacy's real shape), full CRUD, a real sidebar tree in
+  `SidebarFileExplorer.tsx`. Deliberately smaller than legacy in ways documented in that file's
+  own header (no drag-to-file, a "move to folder" select instead; no templates -- a separate
+  system entirely, out of scope for this phase).
 
 ### 6.2 — Undo/redo (foundational) & core editing parity
 `outlineStore.ts` has no undo/redo at all yet — not a per-tab gap, a store-level absence
@@ -152,10 +167,10 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-In progress. §6.1 is underway — see that section's own `Status:` line for what's landed (#129,
-#130) and what's still open. §6.2 onward not started. Update each phase's own section above with
-a `Status:` line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s
-own "Update" notes track progress.
+**§6.1 complete** (#129–#130, #132–#138) — see that section's own `Status:` line for the full
+breakdown. §6.2 onward not started. Update each phase's own section above with a `Status:` line
+and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
+"Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
 
