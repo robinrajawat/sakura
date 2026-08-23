@@ -128,6 +128,76 @@ const DARK: ThemeTokens = {
 
 export const THEME_TOKENS: Record<Theme, ThemeTokens> = { light: LIGHT, dark: DARK };
 
+/**
+ * Phase 6.1's promised follow-up (this file's own header above): real CSS custom properties on
+ * `<body>`, matching legacy's own mechanism (legacy/index.html:355-356's `body.theme-light`/
+ * `body.theme-dark` blocks, `--accent` mutated independently via `applyAccentColor()` at
+ * legacy/index.html:18809) rather than a plain color-token map every component re-reads via
+ * React state on every render.
+ *
+ * Only fields with a REAL legacy CSS variable get an entry here -- `toolbarButtonBg`,
+ * `multiSelectedBg`, `dropIndicator`, and `codeBg` were values invented in the original
+ * design-tokens PR (#129) for specific web/-only UI needs with no 1:1 legacy custom property to
+ * match, so inventing CSS var names for them here would violate the "match legacy's own
+ * mechanism exactly" goal this slice is actually after. Components using those four fields
+ * still read them from `THEME_TOKENS[theme]` directly, same as before this slice.
+ */
+export const CSS_VAR_MAP: Partial<Record<keyof ThemeTokens, string>> = {
+  background: '--bg',
+  toolbarBackground: '--tb-bg',
+  border: '--border',
+  text: '--fg',
+  nodeText: '--node-fg',
+  mutedText: '--muted',
+  hintText: '--hint',
+  hoverBg: '--hover',
+  selectedBg: '--sel',
+  selectedFg: '--sel-fg',
+  editBg: '--edit-bg',
+  canvasBg: '--canvas-bg',
+  scrollTrack: '--scroll',
+  vertLine: '--vert',
+  connLine: '--conn',
+  chip: '--chip',
+  semSection: '--sem-section',
+  semAlert: '--sem-alert',
+  semCode: '--sem-code',
+  semQuote: '--sem-quote',
+  previewHeading1: '--pv-heading',
+  previewHeading2: '--pv-heading-2',
+  fcRed: '--fc-red',
+  fcOrange: '--fc-orange',
+  fcGreen: '--fc-green',
+  fcBlue: '--fc-blue',
+  fcPurple: '--fc-purple',
+  fcGray: '--fc-gray'
+};
+
+/** Sets every mapped token from `THEME_TOKENS[theme]` as a real CSS custom property on
+ * `document.body`, plus `--accent` from the resolved accent color -- one call handles a full
+ * theme swap (`setTheme`/`toggleTheme`) and the initial mount (`useThemeStore.getState().init()`
+ * below). A no-op outside a browser (SSR/test environments without `document`), same guard
+ * style as documentsStore.ts's own `ls()` helper. */
+function applyCssVariables(theme: Theme, accent: string): void {
+  if (typeof document === 'undefined') return;
+  const tokens = THEME_TOKENS[theme];
+  for (const [field, varName] of Object.entries(CSS_VAR_MAP) as [keyof ThemeTokens, string][]) {
+    document.body.style.setProperty(varName, tokens[field]);
+  }
+  document.body.style.setProperty('--accent', accent);
+}
+
+/** Mutates ONLY `--accent`, leaving every other custom property untouched -- matches legacy's
+ * own separation between a full theme swap (`setTheme`, which reapplies everything) and an
+ * accent-preset change (`applyAccentColor`, legacy/index.html:18809, which touches `--accent`
+ * alone). This is what makes accent-preset switching "live" without a full React re-render of
+ * every themed component: a component reading `var(--accent)` in its own inline style updates
+ * purely through CSS cascade the instant this runs, with no React state change involved at all. */
+function applyAccentCssVariable(accent: string): void {
+  if (typeof document === 'undefined') return;
+  document.body.style.setProperty('--accent', accent);
+}
+
 /** Legacy's real 7 accent presets (ACCENT_PRESETS in legacy/index.html), each with a distinct
  * light-mode and dark-mode hex so the accent stays legible against either background. */
 export type AccentPreset = 'terracotta' | 'teal' | 'indigo' | 'violet' | 'plum' | 'moss' | 'amber';
@@ -149,6 +219,13 @@ export const DEFAULT_ACCENT: AccentPreset = 'terracotta';
 interface ThemeState {
   theme: Theme;
   accentPreset: AccentPreset;
+  /** Applies the CURRENT theme/accent as real CSS custom properties on `<body>` -- call once on
+   * mount (AppShell.tsx's own init effect) so the properties exist before any explicit
+   * `setTheme`/`setAccentPreset` call ever happens. Idempotent to call more than once (it just
+   * reapplies the same values), unlike documentsStore.ts's `init`, which guards against
+   * re-running with a `loaded` flag -- there's no persisted-state restore here to protect
+   * against re-running, just a plain reapplication. */
+  init: () => void;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setAccentPreset: (preset: AccentPreset) => void;
@@ -158,22 +235,49 @@ interface ThemeState {
 }
 
 /**
- * Phase 3's original theming slice, extended in Phase 6.1 with real extracted color values and
- * accent-preset selection. Still deliberately scoped down from legacy's fuller system: no
+ * Phase 3's original theming slice, extended in Phase 6.1 with real extracted color values,
+ * accent-preset selection, and real CSS custom properties on `<body>` (see `CSS_VAR_MAP`/
+ * `applyCssVariables` above). Still deliberately scoped down from legacy's fuller system: no
  * system-preference auto-detection ('system' mode), no persistence across sessions (savePrefs),
- * no Chrome background presets, no node-text-color presets, no accent intensity slider, no CSS
- * custom properties yet (still a plain color-token map consumed via component inline styles,
- * matching the rest of web/'s current styling approach) -- each a real, separately-scoped
- * follow-up within Phase 6.1/6.7, not silently dropped.
+ * no Chrome background presets, no node-text-color presets, no accent intensity slider -- each a
+ * real, separately-scoped follow-up within Phase 6.1/6.7, not silently dropped. The CSS custom
+ * properties mechanism itself is only consumed by AppShell.tsx/DocumentTabs.tsx so far (the
+ * components built in this same phase) -- every other existing component (OutlineTree.tsx, the
+ * Hub panels, etc.) still reads `THEME_TOKENS[theme]` via plain React state, same as before this
+ * slice; migrating those is its own separate, much larger follow-up, not attempted here.
  */
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: 'light',
   accentPreset: DEFAULT_ACCENT,
-  setTheme: (theme) => set({ theme }),
-  toggleTheme: () => set({ theme: get().theme === 'light' ? 'dark' : 'light' }),
-  setAccentPreset: (preset) => set({ accentPreset: preset }),
+  init: () => {
+    const { theme, accentColor } = get();
+    applyCssVariables(theme, accentColor());
+  },
+  setTheme: (theme) => {
+    set({ theme });
+    applyCssVariables(theme, get().accentColor());
+  },
+  toggleTheme: () => {
+    const theme = get().theme === 'light' ? 'dark' : 'light';
+    set({ theme });
+    applyCssVariables(theme, get().accentColor());
+  },
+  setAccentPreset: (preset) => {
+    set({ accentPreset: preset });
+    applyAccentCssVariable(get().accentColor());
+  },
   accentColor: () => {
     const { theme, accentPreset } = get();
     return ACCENT_PRESETS[accentPreset][theme];
   }
 }));
+
+// Applied immediately at module load, not only from AppShell.tsx's own mount effect --
+// `useEffect` only runs AFTER React's first commit/paint, which would leave `document.body`
+// with no CSS custom properties set (and every `var(--bg)`/`var(--fg)`/etc reference in
+// AppShell.tsx/DocumentTabs.tsx falling back to nothing, per the CSS spec for an invalid custom
+// property reference) for however long the very first render takes -- a real flash-of-
+// unstyled-content risk, not just a cosmetic nicety. Calling `init()` here, synchronously as
+// this module is imported, closes that gap before React ever renders anything. AppShell.tsx's
+// own effect call is harmless and kept regardless (idempotent -- reapplying the same values).
+useThemeStore.getState().init();

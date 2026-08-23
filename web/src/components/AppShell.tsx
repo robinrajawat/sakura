@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useDocumentsStore } from '../store/documentsStore';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { useThemeStore } from '../store/themeStore';
 import { useSidebarStore } from '../store/sidebarStore';
 
 /**
@@ -15,12 +15,21 @@ import { useSidebarStore } from '../store/sidebarStore';
  *   - `#doc-tab-strip-row`/`.doc-tab`: tab-bar row + individual tab chrome,
  *     legacy/index.html:1056-1073
  *
+ * Colors are real CSS custom properties (`var(--bg)`, `var(--accent)`, etc.) rather than
+ * `THEME_TOKENS[theme]` lookups -- themeStore.ts's own `CSS_VAR_MAP`/`applyCssVariables` sets
+ * these on `<body>` (matching legacy's own `body.theme-light`/`body.theme-dark` + independently-
+ * mutated `--accent` mechanism), and this component + DocumentTabs.tsx are the first to actually
+ * consume them that way, per themeStore.ts's own header on why. The payoff: neither component
+ * needs to subscribe to `theme`/`accentPreset` at all anymore for styling purposes -- an accent
+ * or theme change updates every `var(--...)` reference here purely through CSS cascade, with no
+ * React re-render of this component involved. Every OTHER existing component (OutlineTree.tsx,
+ * the Hub panels, etc.) still reads `THEME_TOKENS[theme]` via plain React state, unchanged --
+ * migrating those is a separate, much larger follow-up, not attempted here.
+ *
  * Deliberately scoped down from legacy's real shell, each a separate follow-up within 6.1 (see
  * docs/phase6-full-parity-plan.md's 6.1 section for the full list this phase still owes):
  * sidebar is a placeholder pane (no real file explorer / folders / templates yet -- that's
- * DocumentTabs.tsx's own closed-docs list for now), no CSS custom properties yet (still
- * consuming `THEME_TOKENS` via inline styles, same approach as every other component today --
- * the doc for that follow-up is themeStore.ts's own header comment).
+ * DocumentTabs.tsx's own closed-docs list for now).
  * Per-tab independent scroll/selection, drag-to-reorder tabs, sidebar resize/collapse, and the
  * searchable tab-switcher dropdown now work -- see `contentRef` below, documentsStore.ts's own
  * `TabViewState`/`reorderTab`, sidebarStore.ts, and DocumentTabs.tsx's own header for how each
@@ -53,9 +62,7 @@ export function AppShell({
   children,
   contentRef
 }: AppShellProps) {
-  const theme = useThemeStore((s) => s.theme);
-  const accentColor = useThemeStore((s) => s.accentColor());
-  const t = THEME_TOKENS[theme];
+  const initTheme = useThemeStore((s) => s.init);
   const sidebarWidth = useSidebarStore((s) => s.width);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const initSidebar = useSidebarStore((s) => s.init);
@@ -63,9 +70,11 @@ export function AppShell({
   const commitSidebarWidth = useSidebarStore((s) => s.commitWidth);
 
   useEffect(() => {
+    initTheme();
     initSidebar();
     // Same deliberate empty-dependency-array convention as DocumentTabs.tsx's own init()
-    // effect -- restores persisted width/open state once per app lifetime.
+    // effect -- applies the CSS custom properties (themeStore) and restores persisted
+    // width/open state (sidebarStore) once per app lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -99,8 +108,8 @@ export function AppShell({
         flexDirection: 'column',
         height: '100vh',
         fontFamily: "'Inter', sans-serif",
-        background: t.background,
-        color: t.text
+        background: 'var(--bg)',
+        color: 'var(--fg)'
       }}
     >
       {/* #appbar -- legacy/index.html:361,364 */}
@@ -113,11 +122,11 @@ export function AppShell({
           justifyContent: 'space-between',
           gap: 10,
           padding: '8px 12px',
-          background: t.toolbarBackground,
-          borderBottom: `1px solid ${t.border}`
+          background: 'var(--tb-bg)',
+          borderBottom: '1px solid var(--border)'
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.015em', color: accentColor }}>
+        <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.015em', color: 'var(--accent)' }}>
           {title}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{headerActions}</div>
@@ -129,8 +138,8 @@ export function AppShell({
           flex: '0 0 auto',
           display: 'flex',
           alignItems: 'stretch',
-          background: t.toolbarBackground,
-          borderBottom: `1px solid ${t.border}`,
+          background: 'var(--tb-bg)',
+          borderBottom: '1px solid var(--border)',
           padding: '6px 4px 0 8px',
           overflowX: 'auto',
           overflowY: 'hidden'
@@ -149,8 +158,8 @@ export function AppShell({
             width: sidebarOpen ? sidebarWidth : 0,
             display: 'flex',
             flexDirection: 'column',
-            background: t.toolbarBackground,
-            borderRight: sidebarOpen ? `1px solid ${t.border}` : 'none',
+            background: 'var(--tb-bg)',
+            borderRight: sidebarOpen ? '1px solid var(--border)' : 'none',
             overflow: 'hidden',
             opacity: sidebarOpen ? 1 : 0,
             pointerEvents: sidebarOpen ? 'auto' : 'none'
@@ -186,8 +195,8 @@ export function AppShell({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '6px 12px',
-          borderTop: `1px solid ${t.border}`,
-          color: t.mutedText,
+          borderTop: '1px solid var(--border)',
+          color: 'var(--muted)',
           fontSize: 12
         }}
       >
@@ -210,18 +219,16 @@ export function SidebarDocumentList() {
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
   const openTabs = useDocumentsStore((s) => s.openTabs);
   const openDocument = useDocumentsStore((s) => s.openDocument);
-  const theme = useThemeStore((s) => s.theme);
-  const t = THEME_TOKENS[theme];
 
   const closedDocs = docsIndex.filter((d) => !openTabs.includes(d.id));
 
   return (
     <div style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
-      <div style={{ color: t.hintText, fontWeight: 600, textTransform: 'uppercase', fontSize: 10, padding: '4px 4px 6px' }}>
+      <div style={{ color: 'var(--hint)', fontWeight: 600, textTransform: 'uppercase', fontSize: 10, padding: '4px 4px 6px' }}>
         Documents
       </div>
       {closedDocs.length === 0 ? (
-        <div style={{ color: t.hintText, padding: '4px 4px' }}>All documents are open</div>
+        <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>All documents are open</div>
       ) : (
         closedDocs.map((d) => (
           <div
@@ -231,12 +238,12 @@ export function SidebarDocumentList() {
               padding: '5px 6px',
               borderRadius: 6,
               cursor: 'pointer',
-              color: t.text,
+              color: 'var(--fg)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = t.hoverBg)}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             {d.title}
