@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type K
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
+import { formatNow } from '../utils/formatNow';
 import { CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
@@ -111,6 +112,12 @@ export function OutlineTree() {
   // shared with the right-click context menu and out of scope for this specific slice; see this
   // component's own header for the fuller list of what's deferred and why.
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
+  // Phase 6.2 Quick Insert (Ctrl/Cmd+Space while editing a node's text) -- the last remaining
+  // 6.2 item. Non-null while the menu is open, holding which node's <input> it's targeting
+  // (always the currently-editing one, since Quick Insert only opens mid-edit) so a click on a
+  // menu item knows where to insert without needing editingId to still be readable by then.
+  const [quickInsertNodeId, setQuickInsertNodeId] = useState<number | null>(null);
+  const quickInsertRef = useRef<HTMLDivElement>(null);
   // Phase 6.2 right-click context menu. Matches legacy's own real showContextMenu/
   // hideContextMenu (legacy/index.html:19495-19502) in spirit -- a menu anchored near the
   // click point, one node selected at a time -- but as a single flat action list rather than
@@ -149,6 +156,40 @@ export function OutlineTree() {
       document.removeEventListener('keydown', onEscape);
     };
   }, [contextMenu]);
+
+  useEffect(() => {
+    if (quickInsertNodeId === null) return;
+    function onClickOutside(e: MouseEvent): void {
+      if (quickInsertRef.current && !quickInsertRef.current.contains(e.target as Node)) {
+        setQuickInsertNodeId(null);
+      }
+    }
+    // Escape is handled inside the menu's own onKeyDown (it needs to stay focus-trapped within
+    // the menu's search-free item list, unlike the context menu's document-level Escape, since
+    // this menu can be reopened by the SAME keystroke combo, Ctrl/Cmd+Space, that the input's
+    // own onKeyDown also watches for -- keeping Escape local to the menu avoids fighting over
+    // which handler owns focus).
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [quickInsertNodeId]);
+
+  /** Inserts `text` at the current cursor position in the node's own <input>, matching legacy's
+   * own real insert-at-cursor behavior (legacy/index.html:26711's own
+   * `value.slice(0,start)+piece+value.slice(end)` for the editing-node case) -- direct DOM
+   * manipulation rather than going through outlineStore.ts, since this component's inline-edit
+   * <input> is deliberately uncontrolled (see splitAtCursor's own header comment) and only
+   * commits to the store on blur/Enter/Escape, not per keystroke. Restores focus and places the
+   * cursor immediately after the inserted text, matching legacy's own `setInputCaret` call. */
+  function insertAtCursor(text: string): void {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    el.value = el.value.slice(0, start) + text + el.value.slice(end);
+    const newPos = start + text.length;
+    el.focus();
+    el.setSelectionRange(newPos, newPos);
+  }
 
   function handleTreeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (editingId !== null) return;
@@ -229,6 +270,11 @@ export function OutlineTree() {
   }
 
   function handleInputKeyDown(e: KeyboardEvent<HTMLInputElement>, id: number) {
+    if (e.key === ' ' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      setQuickInsertNodeId(id);
+      return;
+    }
     if (e.key === 'Enter' && e.shiftKey && !e.metaKey && !e.ctrlKey) {
       // Shift+Enter splits at the cursor -- checked before the plain-Enter branch below, since
       // Shift+Enter would otherwise fall into the "commit then create a sibling" path with the
@@ -449,20 +495,103 @@ export function OutlineTree() {
               />
             )}
             {isEditing ? (
-              <input
-                ref={inputRef}
-                defaultValue={node.text ?? ''}
-                onKeyDown={(e) => handleInputKeyDown(e, node.id)}
-                onBlur={(e) => commitEdit(node.id, e.currentTarget.value)}
-                style={{
-                  flex: 1,
-                  font: 'inherit',
-                  border: 'none',
-                  outline: `1px solid ${t.dropIndicator}`,
-                  borderRadius: 3,
-                  padding: '0 4px'
-                }}
-              />
+              <span style={{ position: 'relative', flex: 1 }}>
+                <input
+                  ref={inputRef}
+                  defaultValue={node.text ?? ''}
+                  onKeyDown={(e) => handleInputKeyDown(e, node.id)}
+                  onBlur={(e) => commitEdit(node.id, e.currentTarget.value)}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    font: 'inherit',
+                    border: 'none',
+                    outline: `1px solid ${t.dropIndicator}`,
+                    borderRadius: 3,
+                    padding: '0 4px'
+                  }}
+                />
+                {/* Quick Insert (Phase 6.2) -- Ctrl/Cmd+Space while editing opens this small
+                    character-insert menu, matching legacy's own real menu exactly: same 7
+                    actions in the same order (NODE_QA_ACTION_ORDER), same glyphs
+                    (NODE_QA_ACTION_META). Node-specific actions from legacy's own version
+                    (note/tags/etc) are deliberately excluded -- legacy's own help text says
+                    exactly why: "For actions on a specific node... use the right-click menu
+                    instead" (this project's context menu, #147). Arrow-key navigation +
+                    Enter/click to select, Escape/click-outside to close -- same interaction
+                    pattern as DocumentTabs.tsx's own tab-switcher dropdown. */}
+                {quickInsertNodeId === node.id && (
+                  <div
+                    ref={quickInsertRef}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setQuickInsertNodeId(null);
+                        inputRef.current?.focus();
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: 2,
+                      minWidth: 170,
+                      background: t.background,
+                      border: `1px solid ${t.border}`,
+                      borderRadius: 8,
+                      boxShadow: '0 14px 28px rgba(0,0,0,.16)',
+                      zIndex: 90,
+                      padding: 4,
+                      font: "400 13px 'Inter', sans-serif"
+                    }}
+                  >
+                    {(
+                      [
+                        { label: 'Insert em dash', glyph: '—', text: '—' },
+                        { label: 'Insert en dash', glyph: '–', text: '–' },
+                        { label: 'Insert arrow', glyph: '➜', text: '➜' },
+                        { label: 'Insert check mark', glyph: '✓', text: '✓' },
+                        { label: 'Insert cross mark', glyph: '✗', text: '✗' },
+                        { label: 'Insert middle dot', glyph: '·', text: '·' },
+                        { label: 'Insert date/time', glyph: '📅', text: formatNow() }
+                      ] as { label: string; glyph: string; text: string }[]
+                    ).map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onMouseDown={(e) => {
+                          // mousedown (not click) so this fires BEFORE the input's own onBlur
+                          // -- committing the edit is not what should happen when picking a
+                          // Quick Insert item; the item should land in the still-open input.
+                          e.preventDefault();
+                          insertAtCursor(item.text);
+                          setQuickInsertNodeId(null);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '6px 8px',
+                          border: 'none',
+                          background: 'transparent',
+                          borderRadius: 5,
+                          cursor: 'pointer',
+                          color: t.text,
+                          font: "400 13px 'Inter', sans-serif"
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = t.hoverBg)}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <span style={{ width: 18, textAlign: 'center', color: t.mutedText }}>{item.glyph}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </span>
             ) : (
               <span
                 onClick={(e) => clickNode(node.id, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey || e.metaKey })}
