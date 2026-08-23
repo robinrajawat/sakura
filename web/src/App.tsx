@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
+import { useOutlineStore } from './store/outlineStore';
 import { DocumentTabs } from './components/DocumentTabs';
 import { useDocumentsStore } from './store/documentsStore';
 import { useSidebarStore } from './store/sidebarStore';
@@ -34,6 +35,10 @@ export function App() {
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
+  const undo = useOutlineStore((s) => s.undo);
+  const redo = useOutlineStore((s) => s.redo);
+  const canUndo = useOutlineStore((s) => s.canUndo());
+  const canRedo = useOutlineStore((s) => s.canRedo());
 
   return (
     <AppShell
@@ -55,11 +60,35 @@ export function App() {
       }
       tabBar={<DocumentTabs />}
       sidebar={<SidebarFileExplorer />}
-      statusLeft={<span>Phase 6.1, in progress</span>}
+      statusLeft={<span>Phase 6.2, in progress</span>}
       statusRight={<span>{mode}</span>}
       contentRef={registerScrollContainer}
     >
       <div style={{ marginBottom: 12 }}>
+        {/* ↶/↷ -- same icons and tooltip text as legacy's own #undo-btn/#redo-btn
+            (legacy/index.html:6359-6360). Undo/redo is core-outline scoped this slice
+            (outlineStore.ts's own header) -- disabled outside of edit mode, since Preview/
+            Present don't touch outline content at all. */}
+        <button
+          type="button"
+          onClick={undo}
+          disabled={mode !== 'edit' || !canUndo}
+          title="Undo (Ctrl/Cmd+Z)"
+          aria-label="Undo"
+          style={{ marginRight: 4 }}
+        >
+          ↶
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          disabled={mode !== 'edit' || !canRedo}
+          title="Redo (Ctrl/Cmd+Shift+Z)"
+          aria-label="Redo"
+          style={{ marginRight: 12 }}
+        >
+          ↷
+        </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
         </button>

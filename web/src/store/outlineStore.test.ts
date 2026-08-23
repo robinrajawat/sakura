@@ -26,7 +26,9 @@ describe('outlineStore', () => {
       collapsedIds: new Set(),
       nextId: 100,
       multiSelectedIds: [],
-      selectionAnchorId: 2
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
     });
   });
 
@@ -716,5 +718,185 @@ describe('outlineStore zoomIntoNode / exitFocus / focusPath + visibleIndexes (fo
     useOutlineStore.getState().setTagFilter('x');
     // Subtree of node 2 is indexes [2,3] (leaf-a, leaf-b); only leaf-a (index 2) carries 'x'.
     expect(useOutlineStore.getState().visibleIndexes()).toEqual([2]);
+  });
+});
+
+describe('outlineStore undo/redo (Phase 6.2: foundational undo/redo)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+      ],
+      selectedId: 2,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('canUndo/canRedo are false with empty stacks', () => {
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+    expect(useOutlineStore.getState().canRedo()).toBe(false);
+  });
+
+  it('undo() on an empty stack is a safe no-op', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('redo() on an empty stack is a safe no-op', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().redo();
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('deleteNode is undoable -- the deleted node comes back', () => {
+    useOutlineStore.getState().deleteNode(3);
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(false);
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(true);
+  });
+
+  it('undo followed by redo restores the mutation again', () => {
+    useOutlineStore.getState().deleteNode(3);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(true);
+    expect(useOutlineStore.getState().canRedo()).toBe(true);
+
+    useOutlineStore.getState().redo();
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(false);
+  });
+
+  it('a new mutation after undo clears the redo stack (matches legacy: a fresh edit discards the future it replaced)', () => {
+    useOutlineStore.getState().deleteNode(3);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().canRedo()).toBe(true);
+
+    useOutlineStore.getState().newSiblingBelow(2);
+    expect(useOutlineStore.getState().canRedo()).toBe(false);
+  });
+
+  it('multiple undos walk back through several mutations in reverse order', () => {
+    useOutlineStore.getState().newSiblingBelow(2); // creates a new node (id 100)
+    useOutlineStore.getState().deleteNode(3);
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 100)).toBe(true);
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(false);
+
+    useOutlineStore.getState().undo(); // undoes the delete
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 3)).toBe(true);
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 100)).toBe(true);
+
+    useOutlineStore.getState().undo(); // undoes the creation
+    expect(useOutlineStore.getState().nodes.some((n) => n.id === 100)).toBe(false);
+  });
+
+  it('commitEdit does NOT push an undo checkpoint when the text is unchanged (matches legacy: no undo slot wasted on a no-op edit)', () => {
+    const node2 = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node2).toBeDefined();
+    const originalText: string = node2?.text ?? '';
+    useOutlineStore.getState().commitEdit(2, originalText);
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+
+  it('commitEdit DOES push an undo checkpoint when the text actually changes', () => {
+    useOutlineStore.getState().commitEdit(2, 'changed text');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('child');
+  });
+
+  it('commitEdit still pushes a checkpoint for an unchanged-text checkbox auto-convert (matches legacy)', () => {
+    useOutlineStore.getState().commitEdit(2, '[ ] child'); // same base text, but triggers checkbox auto-convert
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+  });
+
+  it('setNote does not push an undo checkpoint for an unchanged value', () => {
+    useOutlineStore.getState().setNote(2, '');
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+
+  it('setNote pushes a checkpoint and is undoable when the note actually changes', () => {
+    useOutlineStore.getState().setNote(2, 'a real note');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.note).toBe('');
+  });
+
+  it('a failed moveNode (e.g. dropping a node onto itself) does not leave a stray undo entry', () => {
+    const before = useOutlineStore.getState().canUndo();
+    const moved = useOutlineStore.getState().moveNode(2, 2, 'below');
+    expect(moved).toBe(false);
+    expect(useOutlineStore.getState().canUndo()).toBe(before);
+  });
+
+  it('undo restores selection state, not just node content', () => {
+    useOutlineStore.getState().selectNode(3);
+    useOutlineStore.getState().deleteNode(3);
+    // deleteNode falls back the selection to node 2 (the preceding node)
+    expect(useOutlineStore.getState().selectedId).toBe(2);
+
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().selectedId).toBe(3);
+  });
+
+  it('undo never resumes mid-inline-edit (editingId is always cleared)', () => {
+    useOutlineStore.getState().startEditing(2);
+    expect(useOutlineStore.getState().editingId).toBe(2);
+    useOutlineStore.getState().deleteNode(3);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().editingId).toBeNull();
+  });
+
+  it('nextId only ever moves forward across undo, even when restoring an earlier snapshot (prevents id collisions with anything still redoable)', () => {
+    useOutlineStore.getState().newSiblingBelow(2); // consumes nextId 100, now nextId is 101
+    expect(useOutlineStore.getState().nextId).toBe(101);
+    useOutlineStore.getState().undo(); // back to nextId 100 semantically, but...
+    expect(useOutlineStore.getState().nextId).toBe(101); // ...stays at 101, not rolled back to 100
+  });
+
+  it('the undo stack is capped at 200 entries, dropping the oldest', () => {
+    for (let i = 0; i < 205; i++) {
+      useOutlineStore.getState().setNote(2, `note ${i}`);
+    }
+    expect(useOutlineStore.getState().undoStack.length).toBe(200);
+  });
+
+  it('multi-select deleteSelected is undoable', () => {
+    useOutlineStore.setState({ multiSelectedIds: [2, 3], selectionAnchorId: 2, selectedId: 3 });
+    useOutlineStore.getState().deleteSelected();
+    expect(useOutlineStore.getState().nodes).toHaveLength(1);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toHaveLength(3);
+  });
+
+  it('toggleCheckbox is undoable', () => {
+    useOutlineStore.getState().toggleCheckbox(2);
+    const afterToggle = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    useOutlineStore.getState().undo();
+    const afterUndo = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(afterUndo?.checked).not.toBe(afterToggle?.checked);
+  });
+
+  it('indentSelected/outdentSelected are each undoable', () => {
+    useOutlineStore.getState().selectNode(3);
+    const depthBefore = useOutlineStore.getState().nodes.find((n) => n.id === 3)?.depth;
+    useOutlineStore.getState().indentSelected();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.depth).not.toBe(depthBefore);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.depth).toBe(depthBefore);
+  });
+
+  it('toggleCollapse does NOT push an undo checkpoint (matches legacy: fold state is not part of the undo snapshot)', () => {
+    useOutlineStore.getState().toggleCollapse(1);
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
   });
 });

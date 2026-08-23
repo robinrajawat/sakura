@@ -67,6 +67,8 @@ export function OutlineTree() {
   const zoomIntoNode = useOutlineStore((s) => s.zoomIntoNode);
   const exitFocus = useOutlineStore((s) => s.exitFocus);
   const focusPath = useOutlineStore((s) => s.focusPath);
+  const undo = useOutlineStore((s) => s.undo);
+  const redo = useOutlineStore((s) => s.redo);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
@@ -81,7 +83,25 @@ export function OutlineTree() {
   }, [editingId]);
 
   function handleTreeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (editingId !== null || selectedId === null) return;
+    if (editingId !== null) return;
+    // Checked before the `selectedId === null` guard below -- undo/redo doesn't need a
+    // selection to make sense (e.g. right after deleting the very last node, selectedId is
+    // null, but undoing that delete should still work). Deliberately NOT wired into
+    // handleInputKeyDown below (undo while actively typing inline text) -- inside a real
+    // <input>, Ctrl+Z triggers the browser's own native text-field undo first, and overriding
+    // that correctly needs its own explicit handling there, not just this handler; a real,
+    // separately-scoped follow-up, not silently dropped.
+    if ((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+      return;
+    }
+    if (((e.key === 'z' || e.key === 'Z') && (e.metaKey || e.ctrlKey) && e.shiftKey) || ((e.key === 'y' || e.key === 'Y') && (e.metaKey || e.ctrlKey))) {
+      e.preventDefault();
+      redo();
+      return;
+    }
+    if (selectedId === null) return;
     if (e.key === 'Tab') {
       e.preventDefault();
       if (e.shiftKey) {

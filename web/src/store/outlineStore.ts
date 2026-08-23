@@ -93,6 +93,36 @@ function seedNodes(): OutlineNode[] {
 
 const SEED_MAX_ID = 1;
 
+/** Phase 6.2 (docs/phase6-full-parity-plan.md's 6.2 section: "Undo/redo (foundational)"), a
+ * store-level absence named explicitly in that plan and docs/history/phase5-parity-checklist.md's own
+ * Documents & Tabs / Keyboard Shortcuts gaps. Matches legacy's own real snapshot shape and
+ * mechanics closely (legacy/index.html:9806-9819's `snapshot`/`restoreFromSnapshot`/`pushUndo`/
+ * `undo`/`redo`), with one deliberate difference: legacy's `snapshot()` also bundles
+ * `currentTheme`/`currentFont`/`remarks`/`qaItems` into the SAME undo stack as the outline.
+ * Reverting your theme/font choice as a side effect of undoing an outline edit is surprising, not
+ * a feature worth replicating, and `remarks`/`qaItems` live in a completely different store here
+ * (padStore.ts) -- bundling a cross-store snapshot into one undo action is a real, separately-
+ * scoped feature (matching this plan's own framing: "`outlineStore.ts` has no undo/redo... not a
+ * per-tab gap, a store-level absence" -- outlineStore's own content, not every store in the app).
+ *
+ * Snapshots are stored by REFERENCE, not a deep clone/JSON round-trip like legacy's own
+ * `JSON.stringify`-based `snapshot()` -- safe here because every mutating action in this file
+ * already rebuilds `nodes` (and every node object within it) fresh via `.map()` before mutating,
+ * never mutating a previous array/object in place (verified across every action below). A
+ * snapshot capturing "whatever `nodes` currently points to" can never be silently corrupted by a
+ * later mutation, since that later mutation always produces a NEW array rather than touching the
+ * one a snapshot is holding onto.
+ */
+export interface UndoSnapshot {
+  nodes: OutlineNode[];
+  nextId: number;
+  selectedId: number | null;
+  multiSelectedIds: number[];
+  selectionAnchorId: number | null;
+  focusedId: number | null;
+}
+const UNDO_LIMIT = 200; // matches legacy/index.html:9817's own cap exactly
+
 interface OutlineState {
   nodes: OutlineNode[];
   selectedId: number | null;
@@ -101,6 +131,8 @@ interface OutlineState {
   nextId: number;
   multiSelectedIds: number[];
   selectionAnchorId: number | null;
+  undoStack: UndoSnapshot[];
+  redoStack: UndoSnapshot[];
 
   /** Tags & Focus mode slice (docs/phase5-parity-checklist.md, "Tags, Focus & Backlinks").
    * `activeTagFilter`: when set, `visibleIndexes()` restricts to nodes carrying that tag, as a
@@ -149,9 +181,67 @@ interface OutlineState {
   setCodeBlock: (id: number, codeBlock: CodeBlock | null) => void;
 
   toggleCollapse: (id: number) => void;
+
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
-export const useOutlineStore = create<OutlineState>((set, get) => ({
+export const useOutlineStore = create<OutlineState>((set, get) => {
+  /** Snapshots the CURRENT state onto `undoStack` and clears `redoStack` -- call this BEFORE
+   * applying a mutation, not after, matching legacy's own call-before-mutate convention
+   * (legacy/index.html's own `pushUndo()` call sites: `pushUndo(); nodes[idx].text=...`, always
+   * snapshot-then-mutate, never the reverse). Any new mutation invalidates the redo history the
+   * same way legacy's own `pushUndo` does -- undoing, then making a fresh edit instead of
+   * redoing, discards the "future" that edit replaced. */
+  function pushUndo(): void {
+    const s = get();
+    const snap: UndoSnapshot = {
+      nodes: s.nodes,
+      nextId: s.nextId,
+      selectedId: s.selectedId,
+      multiSelectedIds: s.multiSelectedIds,
+      selectionAnchorId: s.selectionAnchorId,
+      focusedId: s.focusedId
+    };
+    const undoStack = [...s.undoStack, snap];
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    set({ undoStack, redoStack: [] });
+  }
+
+  /** Applies a popped snapshot to live state -- shared by `undo`/`redo` below, matching legacy's
+   * own single shared `restoreFromSnapshot` (legacy/index.html:9816) used by both directions.
+   * `nextId` only ever moves UP (`Math.max`), never down, even when restoring to an earlier
+   * point in history -- matches legacy exactly and for the same reason: if it were rolled back
+   * naively, a fresh `newSiblingBelow` after this undo (but before any redo) could mint an id
+   * number that a still-redoable "future" snapshot also uses, corrupting that snapshot's node
+   * identities the moment redo tried to bring it back. `selectedId`/`multiSelectedIds`/
+   * `selectionAnchorId`/`focusedId` are all defensively re-validated against the snapshot's own
+   * `nodes` (not the live pre-restore nodes) -- also matching legacy's own defensive filtering
+   * in `restoreFromSnapshot`, though in practice every id in a snapshot was valid AT THE TIME it
+   * was captured and stays that way, since the snapshot's `nodes` array is exactly what it was
+   * when captured. */
+  function applySnapshot(snap: UndoSnapshot): void {
+    const idsInSnapshot = new Set(snap.nodes.map((n) => n.id));
+    set({
+      nodes: snap.nodes,
+      nextId: Math.max(get().nextId, snap.nextId),
+      selectedId: snap.selectedId !== null && idsInSnapshot.has(snap.selectedId) ? snap.selectedId : (snap.nodes[0]?.id ?? null),
+      multiSelectedIds: snap.multiSelectedIds.filter((id) => idsInSnapshot.has(id)),
+      selectionAnchorId:
+        snap.selectionAnchorId !== null && idsInSnapshot.has(snap.selectionAnchorId) ? snap.selectionAnchorId : null,
+      focusedId: snap.focusedId !== null && idsInSnapshot.has(snap.focusedId) ? snap.focusedId : null,
+      // Never resume mid-inline-edit across an undo/redo -- same rationale as
+      // documentsStore.ts's own TabViewState restore not resuming editingId across a tab switch,
+      // and matches legacy's own restoreFromSnapshot setting editingId=null unconditionally.
+      editingId: null
+    });
+  }
+
+  return {
+  undoStack: [],
+  redoStack: [],
   nodes: seedNodes(),
   selectedId: 1,
   editingId: null,
@@ -168,6 +258,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     const next = nodes.map((n) => {
       if (n.id !== id) return n;
       const has = n.tags.includes(trimmed);
@@ -244,6 +335,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const roots = get().selectionRootIndexes();
     if (!roots.length || roots.some((idx) => !canIndentAt(nodes, idx))) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     indentRootIndexes(next, roots);
     rebuildParentIdsCore(next);
@@ -254,6 +346,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const roots = get().selectionRootIndexes();
     if (!roots.length || roots.every((idx) => nodes[idx].depth === 0)) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     outdentRootIndexes(next, roots);
     rebuildParentIdsCore(next);
@@ -275,8 +368,16 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const nextCollapsed = mode === 'child' ? withoutCollapse(collapsedIds, targetId) : collapsedIds;
 
     if (draggedIds && draggedIds.length > 1) {
+      pushUndo();
       const survivingIds = moveMultipleNodeBlocksCore(next, draggedIds, targetId, mode);
-      if (!survivingIds) return false;
+      if (!survivingIds) {
+        // The move didn't happen after all -- the pre-emptive pushUndo above would leave a
+        // no-op snapshot on the stack (undoing it would restore the exact state already
+        // current). Matches legacy's own handleDrop, which does the same
+        // pushUndo()-then-undoStack.pop()-on-failure dance for the same reason.
+        set({ undoStack: get().undoStack.slice(0, -1) });
+        return false;
+      }
       rebuildParentIdsCore(next);
       // Matches legacy's own moveMultipleNodeBlocks wrapper: the selection collapses to the
       // surviving multi-selection, anchored/selected on the first originally-dragged id.
@@ -290,8 +391,12 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       return true;
     }
 
+    pushUndo();
     const moved = moveNodeBlockCore(next, draggedId, targetId, mode);
-    if (!moved) return false;
+    if (!moved) {
+      set({ undoStack: get().undoStack.slice(0, -1) });
+      return false;
+    }
     rebuildParentIdsCore(next);
     // Matches legacy's own moveNodeBlock wrapper: a single-node drag always resolves to a
     // plain single selection on the node that moved, clearing any stale multi-selection.
@@ -348,10 +453,22 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
 
   commitEdit: (id, text) => {
     const { nodes } = get();
+    const idx = getIndex(nodes, id);
     // Auto-convert `[ ] text` / `[x] text` at commit time into a real checkbox node — matches
     // legacy's own autoConvertCheckboxSyntax exactly, including running unconditionally on
     // every commit (not just changed text) and stripping the marker from the stored text.
     const checkboxMatch = text.match(/^\[( |x)\]\s?(.*)$/i);
+    // Matches legacy's own real optimization (legacy/index.html:19304-19307's own comment: "A
+    // pure click-in/click-out or Escape-without-typing session no longer consumes an undo
+    // slot"): only push a checkpoint when something is ABOUT to actually change, not on every
+    // commit unconditionally. Our own architecture makes this simpler to check correctly than
+    // legacy's -- our <input> is uncontrolled and never live-syncs into `nodes` during typing
+    // (see splitAtCursor's own header comment), so comparing the newly-committed `text` against
+    // the currently-STORED node.text is a valid, simple "did it change" check on its own; legacy
+    // needed a separately-tracked `editSessionOriginalText` specifically because its own
+    // node.text WAS live-synced on every keystroke, which would have made a naive comparison
+    // here always look "changed".
+    if (idx >= 0 && (nodes[idx].text !== text || checkboxMatch)) pushUndo();
     const next = nodes.map((n) => {
       if (n.id !== id) return n;
       if (checkboxMatch) {
@@ -368,6 +485,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes, nextId } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     const newNode: OutlineNode = {
       id: nextId,
@@ -396,6 +514,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes, nextId } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     const newNode: OutlineNode = {
       id: nextId,
@@ -433,6 +552,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes, nextId } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     const pos = Math.max(0, Math.min(caretPos, fullText.length));
     const before = fullText.slice(0, pos);
     const after = fullText.slice(pos);
@@ -466,6 +586,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     if (nodes.length <= 1) return;
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     // Select whatever comes right before the deleted node in document order, or the next
     // remaining node if it was first — a reasonable, simple choice for this slice; the real
     // app's own delete-selection logic (nearest visible neighbor, respecting fold state) is
@@ -494,6 +615,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const roots = get().selectionRootIndexes();
     if (!roots.length) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     deleteRootIndexes(next, roots);
     rebuildParentIdsCore(next);
@@ -519,9 +641,15 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const parentIdx = parentId === null ? null : getIndex(nodes, parentId);
     if (parentIdx !== null && parentIdx < 0) return false;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     const sorted = sortChildBlocksCore(next, parentIdx, mode);
-    if (!sorted) return false;
+    if (!sorted) {
+      // Matches moveNode's own pushUndo()-then-pop-on-failure handling above, for the same
+      // reason: the pre-emptive checkpoint above turns out not to correspond to a real change.
+      set({ undoStack: get().undoStack.slice(0, -1) });
+      return false;
+    }
     rebuildParentIdsCore(next);
     set({ nodes: next });
     return true;
@@ -538,6 +666,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     toggleCheckboxCore(next, idx);
     set({ nodes: next });
@@ -549,6 +678,10 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    // Same no-op-avoidance as commitEdit's own guard above -- called once on blur (not per
+    // keystroke, see OutlineTree.tsx's own onBlur wiring), so a real check against the
+    // currently-stored value is meaningful here, not just always-true noise.
+    if (nodes[idx].note !== note) pushUndo();
     const next = nodes.map((n) => (n.id === id ? { ...n, note } : n));
     set({ nodes: next });
   },
@@ -559,6 +692,10 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
     const { nodes } = get();
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
+    const changed =
+      (nodes[idx].codeBlock?.lang ?? null) !== (codeBlock?.lang ?? null) ||
+      (nodes[idx].codeBlock?.code ?? null) !== (codeBlock?.code ?? null);
+    if (changed) pushUndo();
     const next = nodes.map((n) => (n.id === id ? { ...n, codeBlock } : n));
     set({ nodes: next });
   },
@@ -572,8 +709,46 @@ export const useOutlineStore = create<OutlineState>((set, get) => ({
       next.add(id);
     }
     set({ collapsedIds: next });
-  }
-}));
+  },
+
+  undo: () => {
+    const { undoStack } = get();
+    if (!undoStack.length) return;
+    const s = get();
+    const currentSnap: UndoSnapshot = {
+      nodes: s.nodes,
+      nextId: s.nextId,
+      selectedId: s.selectedId,
+      multiSelectedIds: s.multiSelectedIds,
+      selectionAnchorId: s.selectionAnchorId,
+      focusedId: s.focusedId
+    };
+    const popped = undoStack[undoStack.length - 1];
+    set({ undoStack: undoStack.slice(0, -1), redoStack: [...get().redoStack, currentSnap] });
+    applySnapshot(popped);
+  },
+
+  redo: () => {
+    const { redoStack } = get();
+    if (!redoStack.length) return;
+    const s = get();
+    const currentSnap: UndoSnapshot = {
+      nodes: s.nodes,
+      nextId: s.nextId,
+      selectedId: s.selectedId,
+      multiSelectedIds: s.multiSelectedIds,
+      selectionAnchorId: s.selectionAnchorId,
+      focusedId: s.focusedId
+    };
+    const popped = redoStack[redoStack.length - 1];
+    set({ redoStack: redoStack.slice(0, -1), undoStack: [...get().undoStack, currentSnap] });
+    applySnapshot(popped);
+  },
+
+  canUndo: () => get().undoStack.length > 0,
+  canRedo: () => get().redoStack.length > 0
+  };
+});
 
 function withoutCollapse(collapsedIds: Set<number>, id: number): Set<number> {
   if (!collapsedIds.has(id)) return collapsedIds;
