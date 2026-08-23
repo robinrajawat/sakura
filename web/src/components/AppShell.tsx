@@ -1,5 +1,4 @@
 import { useEffect, type ReactNode } from 'react';
-import { useDocumentsStore } from '../store/documentsStore';
 import { useThemeStore } from '../store/themeStore';
 import { useSidebarStore } from '../store/sidebarStore';
 
@@ -210,46 +209,7 @@ export function AppShell({
 }
 
 /**
- * Sidebar placeholder content -- lists every closed (not-open-as-a-tab) document, reusing
- * documentsStore.ts's own docsIndex/openTabs the same way DocumentTabs.tsx's dropdown already
- * does. A real file explorer (folders, templates, drag-to-open) is 6.1's own remaining, separately-
- * scoped item -- see docs/phase6-full-parity-plan.md's 6.1 section.
+ * Sidebar content -- see SidebarFileExplorer.tsx (its own dedicated file, matching the same
+ * split as DocumentTabs.tsx: sizable enough content-specific logic that it doesn't belong
+ * cluttering this file's own job of shell chrome/layout).
  */
-export function SidebarDocumentList() {
-  const docsIndex = useDocumentsStore((s) => s.docsIndex);
-  const openTabs = useDocumentsStore((s) => s.openTabs);
-  const openDocument = useDocumentsStore((s) => s.openDocument);
-
-  const closedDocs = docsIndex.filter((d) => !openTabs.includes(d.id));
-
-  return (
-    <div style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
-      <div style={{ color: 'var(--hint)', fontWeight: 600, textTransform: 'uppercase', fontSize: 10, padding: '4px 4px 6px' }}>
-        Documents
-      </div>
-      {closedDocs.length === 0 ? (
-        <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>All documents are open</div>
-      ) : (
-        closedDocs.map((d) => (
-          <div
-            key={d.id}
-            onClick={() => openDocument(d.id)}
-            style={{
-              padding: '5px 6px',
-              borderRadius: 6,
-              cursor: 'pointer',
-              color: 'var(--fg)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            {d.title}
-          </div>
-        ))
-      )}
-    </div>
-  );
-}

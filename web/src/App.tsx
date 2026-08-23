@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { AppShell, SidebarDocumentList } from './components/AppShell';
+import { AppShell } from './components/AppShell';
+import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
 import { DocumentTabs } from './components/DocumentTabs';
 import { useDocumentsStore } from './store/documentsStore';
@@ -53,7 +54,7 @@ export function App() {
         </>
       }
       tabBar={<DocumentTabs />}
-      sidebar={<SidebarDocumentList />}
+      sidebar={<SidebarFileExplorer />}
       statusLeft={<span>Phase 6.1, in progress</span>}
       statusRight={<span>{mode}</span>}
       contentRef={registerScrollContainer}
