@@ -200,4 +200,54 @@ describe('documentsStore', () => {
       expect(useDocumentsStore.getState().docsIndex.find((d) => d.id === id)).toBeUndefined();
     });
   });
+
+  describe('reorderTab (Phase 6.1: drag-to-reorder tabs)', () => {
+    it('moves a tab to just before the target on side "left"', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const b = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const c = useDocumentsStore.getState().activeDocId!;
+      expect(useDocumentsStore.getState().openTabs).toEqual([a, b, c]);
+
+      useDocumentsStore.getState().reorderTab(c, a, 'left');
+      expect(useDocumentsStore.getState().openTabs).toEqual([c, a, b]);
+    });
+
+    it('moves a tab to just after the target on side "right"', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const b = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const c = useDocumentsStore.getState().activeDocId!;
+
+      useDocumentsStore.getState().reorderTab(a, b, 'right');
+      expect(useDocumentsStore.getState().openTabs).toEqual([b, a, c]);
+    });
+
+    it('is a no-op when draggedId equals targetId', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const b = useDocumentsStore.getState().activeDocId!;
+      const before = useDocumentsStore.getState().openTabs;
+
+      useDocumentsStore.getState().reorderTab(a, a, 'left');
+      expect(useDocumentsStore.getState().openTabs).toEqual(before);
+      expect(useDocumentsStore.getState().openTabs).toEqual([a, b]);
+    });
+
+    it('persists the new order to localStorage', () => {
+      useDocumentsStore.getState().newDocument();
+      const a = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const b = useDocumentsStore.getState().activeDocId!;
+
+      useDocumentsStore.getState().reorderTab(b, a, 'left');
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_open_tabs_v1')!);
+      expect(persisted).toEqual([b, a]);
+    });
+  });
 });
