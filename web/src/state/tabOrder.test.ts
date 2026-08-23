@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeNextTabDocId, reorderTabsCore, type OrderableTab } from './tabOrder';
+import { computeNextTabDocId, reorderTabsCore, filterTabsByTitle, moveOverviewSelection, type OrderableTab } from './tabOrder';
 
 function tabs(ids: (number | string)[]): OrderableTab[] {
   return ids.map((docId) => ({ docId }));
@@ -113,5 +113,63 @@ describe('reorderTabsCore', () => {
     const result = reorderTabsCore(t, 2, 1, 'left');
     expect(result).toBe(true);
     expect(t.map((x) => x.docId)).toEqual([2, 1, 3]);
+  });
+});
+
+describe('filterTabsByTitle', () => {
+  const items = [
+    { id: 'a', title: 'Welcome' },
+    { id: 'b', title: 'Untitled' },
+    { id: 'c', title: 'Sprint Planning Notes' }
+  ];
+
+  it('an empty query matches everything', () => {
+    expect(filterTabsByTitle(items, '')).toEqual(items);
+  });
+
+  it('a whitespace-only query matches everything, same as empty', () => {
+    expect(filterTabsByTitle(items, '   ')).toEqual(items);
+  });
+
+  it('matches a case-insensitive substring anywhere in the title', () => {
+    expect(filterTabsByTitle(items, 'SPRINT')).toEqual([items[2]]);
+    expect(filterTabsByTitle(items, 'plan')).toEqual([items[2]]);
+  });
+
+  it('matches multiple items when more than one title contains the query', () => {
+    expect(filterTabsByTitle(items, 'n')).toEqual([items[1], items[2]]);
+  });
+
+  it('returns an empty array when nothing matches', () => {
+    expect(filterTabsByTitle(items, 'xyz')).toEqual([]);
+  });
+
+  it('does not mutate the input array', () => {
+    const copy = [...items];
+    filterTabsByTitle(items, 'welcome');
+    expect(items).toEqual(copy);
+  });
+});
+
+describe('moveOverviewSelection', () => {
+  it('moves forward by dir=1, wrapping to 0 after the last index', () => {
+    expect(moveOverviewSelection(0, 3, 1)).toBe(1);
+    expect(moveOverviewSelection(1, 3, 1)).toBe(2);
+    expect(moveOverviewSelection(2, 3, 1)).toBe(0);
+  });
+
+  it('moves backward by dir=-1, wrapping to the last index from 0', () => {
+    expect(moveOverviewSelection(0, 3, -1)).toBe(2);
+    expect(moveOverviewSelection(1, 3, -1)).toBe(0);
+  });
+
+  it('returns current unchanged when length is 0', () => {
+    expect(moveOverviewSelection(0, 0, 1)).toBe(0);
+    expect(moveOverviewSelection(0, 0, -1)).toBe(0);
+  });
+
+  it('works with a single item (always stays at 0)', () => {
+    expect(moveOverviewSelection(0, 1, 1)).toBe(0);
+    expect(moveOverviewSelection(0, 1, -1)).toBe(0);
   });
 });
