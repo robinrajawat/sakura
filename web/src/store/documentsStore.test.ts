@@ -109,4 +109,95 @@ describe('documentsStore', () => {
     useDocumentsStore.getState().init();
     expect(useDocumentsStore.getState().docsIndex).toHaveLength(1);
   });
+
+  describe('per-tab view state (Phase 6.1: per-tab independent scroll/selection)', () => {
+    it('restores the selected node when switching back to a previously-visited tab, instead of resetting to the first node', () => {
+      useDocumentsStore.getState().newDocument();
+      const firstId = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.setState({
+        nodes: [
+          { id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
+          { id: 2, depth: 0, text: 'b', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+        ]
+      });
+      useOutlineStore.getState().selectNode(2);
+      expect(useOutlineStore.getState().selectedId).toBe(2);
+
+      useDocumentsStore.getState().newDocument();
+      const secondId = useDocumentsStore.getState().activeDocId!;
+      expect(secondId).not.toBe(firstId);
+      // Switching to the new doc resets selection to ITS first node -- no cache for it yet.
+      expect(useOutlineStore.getState().selectedId).toBe(useOutlineStore.getState().nodes[0].id);
+
+      useDocumentsStore.getState().switchTab(firstId);
+      // Back on the first doc: selection is restored to node 2, not reset to node 1.
+      expect(useDocumentsStore.getState().activeDocId).toBe(firstId);
+      expect(useOutlineStore.getState().selectedId).toBe(2);
+    });
+
+    it('does not carry one document\'s collapsedIds into another (ids restart at 1 per document)', () => {
+      useDocumentsStore.getState().newDocument();
+      const firstId = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.setState({
+        nodes: [{ id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
+      });
+      useOutlineStore.getState().toggleCollapse(1);
+      expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(true);
+
+      useDocumentsStore.getState().newDocument();
+      // The new document also has a node with id 1 -- its collapsedIds must start empty, not
+      // inherit the first document's collapsed node 1.
+      expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(false);
+
+      useDocumentsStore.getState().switchTab(firstId);
+      // Switching back restores the first document's own collapse state.
+      expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(true);
+    });
+
+    it('never resumes mid-inline-edit across a tab switch', () => {
+      useDocumentsStore.getState().newDocument();
+      const firstId = useDocumentsStore.getState().activeDocId!;
+      const nodeId = useOutlineStore.getState().nodes[0].id;
+      useOutlineStore.getState().startEditing(nodeId);
+      expect(useOutlineStore.getState().editingId).toBe(nodeId);
+
+      useDocumentsStore.getState().newDocument();
+      useDocumentsStore.getState().switchTab(firstId);
+      expect(useOutlineStore.getState().editingId).toBeNull();
+    });
+
+    it('captures and restores scroll position per tab via the registered scroll container', async () => {
+      const fakeContainer = { scrollTop: 0 } as HTMLElement;
+      useDocumentsStore.getState().registerScrollContainer(fakeContainer);
+
+      useDocumentsStore.getState().newDocument();
+      const firstId = useDocumentsStore.getState().activeDocId!;
+      fakeContainer.scrollTop = 240;
+
+      useDocumentsStore.getState().newDocument();
+      // requestAnimationFrame'd reset to 0 for the brand-new tab.
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      expect(fakeContainer.scrollTop).toBe(0);
+
+      useDocumentsStore.getState().switchTab(firstId);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      expect(fakeContainer.scrollTop).toBe(240);
+
+      // Clean up the module-level registration so it doesn't leak into other tests.
+      useDocumentsStore.getState().registerScrollContainer(null);
+    });
+
+    it('deleteDocument evicts the tab-view cache so a later document reusing storage never inherits stale view state', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().selectNode(useOutlineStore.getState().nodes[0].id);
+      useDocumentsStore.getState().newDocument();
+      useDocumentsStore.getState().deleteDocument(id);
+      // No assertion needed beyond "this doesn't throw" -- deleteDocument's own cache eviction
+      // is exercised here; the real regression this guards is a future doc id collision picking
+      // up a stale cache entry, which isn't practically reproducible with this store's id
+      // generation but the eviction call itself is what matters.
+      expect(useDocumentsStore.getState().docsIndex.find((d) => d.id === id)).toBeUndefined();
+    });
+  });
 });

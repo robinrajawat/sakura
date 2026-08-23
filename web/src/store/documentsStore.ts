@@ -54,6 +54,31 @@ function generateDocId(): string {
   return `doc_${Date.now()}_${nextDocNum++}`;
 }
 
+/**
+ * Per-tab view state (docs/phase6-full-parity-plan.md §6.1's "per-tab independent scroll
+ * position/selection" gap, named in this store's own header above since Phase 5). Deliberately
+ * session-only, in-memory (module-level `Map`, not `localStorage`) -- NOT the same thing as
+ * legacy's own per-node `node.collapsed` field, which is part of the document's persisted
+ * content and round-trips with it. Matching that exactly would mean moving collapse out of
+ * outlineStore's separate `collapsedIds` Set and onto `OutlineNode` itself, touching
+ * `StoredDoc`/`docSyncStore.ts`'s round-trip too -- a real, separately-scoped storage-format
+ * change, not this slice's job. What this DOES fix: switching tabs previously reset selection to
+ * the new tab's first node every time and let one document's `collapsedIds` (plain node-id
+ * numbers, not namespaced per-doc) silently leak into whatever document was opened next, since
+ * ids restart at 1 in every document. Restoring per-tab across a reload is out of scope for the
+ * same reason -- it would need the same persisted-storage-format change as collapse.
+ */
+interface TabViewState {
+  selectedId: number | null;
+  editingId: number | null;
+  multiSelectedIds: number[];
+  selectionAnchorId: number | null;
+  collapsedIds: Set<number>;
+  scrollTop: number;
+}
+const tabViewCache = new Map<string, TabViewState>();
+let scrollContainerEl: HTMLElement | null = null;
+
 interface DocumentsState {
   docsIndex: DocSummary[];
   openTabs: string[];
@@ -68,6 +93,12 @@ interface DocumentsState {
   renameDocument: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
   saveActiveDocNodes: () => void;
+  /** Registers the scrollable content container so tab-switch view-state capture/restore
+   * (see `TabViewState` above) has an element to read/write `scrollTop` on. Called from
+   * App.tsx via a ref callback on AppShell's content pane; not part of reactive `set()` state
+   * on purpose (a DOM node changing on every mount would trigger pointless re-renders of every
+   * subscriber). */
+  registerScrollContainer: (el: HTMLElement | null) => void;
 }
 
 /**
@@ -87,7 +118,72 @@ interface DocumentsState {
  * a searchable tab-switcher dropdown for more tabs than fit on screen. Each a real,
  * separately-scoped follow-up building on this foundation.
  */
-export const useDocumentsStore = create<DocumentsState>((set, get) => ({
+export const useDocumentsStore = create<DocumentsState>((set, get) => {
+  /** Snapshots the CURRENTLY active tab's selection/editing/multi-select/collapse/scroll state
+   * into `tabViewCache`, keyed by its doc id. Call this before switching away from a tab, not
+   * after -- it reads whatever `outlineStore` and `scrollContainerEl` hold right now, which
+   * only means the outgoing tab as long as it runs first. */
+  function captureCurrentTabView(): void {
+    const activeDocId = get().activeDocId;
+    if (!activeDocId) return;
+    const o = useOutlineStore.getState();
+    tabViewCache.set(activeDocId, {
+      selectedId: o.selectedId,
+      editingId: o.editingId,
+      multiSelectedIds: o.multiSelectedIds,
+      selectionAnchorId: o.selectionAnchorId,
+      collapsedIds: new Set(o.collapsedIds),
+      scrollTop: scrollContainerEl?.scrollTop ?? 0
+    });
+  }
+
+  /** Applies the INCOMING tab's nodes plus its cached view state (if any) to `outlineStore`,
+   * falling back to the original "select the first node" default the first time a document is
+   * ever opened this session. Cached ids are filtered against the incoming `nodes` defensively
+   * (a node could in principle no longer exist if it was deleted while the tab was in the
+   * background) rather than trusted blindly. Scroll restore is deferred one frame -- setting
+   * `scrollTop` synchronously here would run before React has committed the new tab's DOM, so
+   * the container's `scrollHeight` wouldn't reflect the new content yet and the assignment
+   * could be silently clamped to the outgoing tab's (possibly shorter) height. */
+  function applyTabView(id: string, nodes: OutlineNode[]): void {
+    const cached = tabViewCache.get(id);
+    if (cached) {
+      const idsInDoc = new Set(nodes.map((n) => n.id));
+      const selectedId = cached.selectedId !== null && idsInDoc.has(cached.selectedId) ? cached.selectedId : (nodes[0]?.id ?? null);
+      const multiSelectedIds = cached.multiSelectedIds.filter((i) => idsInDoc.has(i));
+      const selectionAnchorId =
+        cached.selectionAnchorId !== null && idsInDoc.has(cached.selectionAnchorId) ? cached.selectionAnchorId : selectedId;
+      const collapsedIds = new Set([...cached.collapsedIds].filter((i) => idsInDoc.has(i)));
+      useOutlineStore.setState({
+        nodes,
+        selectedId,
+        // Never resume mid-inline-edit across a tab switch -- matches legacy's own behavior of
+        // not re-entering edit mode on a row just because it was mid-edit when you tabbed away.
+        editingId: null,
+        multiSelectedIds,
+        selectionAnchorId,
+        collapsedIds
+      });
+      const { scrollTop } = cached;
+      requestAnimationFrame(() => {
+        if (scrollContainerEl) scrollContainerEl.scrollTop = scrollTop;
+      });
+    } else {
+      useOutlineStore.setState({
+        nodes,
+        selectedId: nodes[0]?.id ?? null,
+        editingId: null,
+        multiSelectedIds: [],
+        selectionAnchorId: nodes[0]?.id ?? null,
+        collapsedIds: new Set()
+      });
+      requestAnimationFrame(() => {
+        if (scrollContainerEl) scrollContainerEl.scrollTop = 0;
+      });
+    }
+  }
+
+  return {
   docsIndex: [],
   openTabs: [],
   activeDocId: null,
@@ -151,6 +247,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
 
   newDocument: () => {
     get().saveActiveDocNodes();
+    captureCurrentTabView();
     const id = generateDocId();
     const now = Date.now();
     const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now };
@@ -164,30 +261,19 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     writeJson(_OPEN_TABS_KEY, openTabs);
     writeJson(_ACTIVE_DOC_KEY, id);
     set({ docsIndex, openTabs, activeDocId: id });
-    useOutlineStore.setState({
-      nodes,
-      selectedId: nodes[0]?.id ?? null,
-      editingId: null,
-      multiSelectedIds: [],
-      selectionAnchorId: nodes[0]?.id ?? null
-    });
+    applyTabView(id, nodes);
   },
 
   openDocument: (id) => {
     get().saveActiveDocNodes();
+    captureCurrentTabView();
     const openTabs = get().openTabs.includes(id) ? get().openTabs : [...get().openTabs, id];
     writeJson(_OPEN_TABS_KEY, openTabs);
     writeJson(_ACTIVE_DOC_KEY, id);
     set({ openTabs, activeDocId: id });
     const stored = readJson<StoredDoc | null>(docStorageKey(id), null);
     const nodes = stored?.nodes ?? [];
-    useOutlineStore.setState({
-      nodes,
-      selectedId: nodes[0]?.id ?? null,
-      editingId: null,
-      multiSelectedIds: [],
-      selectionAnchorId: nodes[0]?.id ?? null
-    });
+    applyTabView(id, nodes);
   },
 
   switchTab: (id) => {
@@ -200,6 +286,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     // remain reachable via openDocument again (matches README's "X icon on a tab closes the
     // tab only" exactly).
     get().saveActiveDocNodes();
+    captureCurrentTabView();
     const openTabs = get().openTabs.filter((t) => t !== id);
     writeJson(_OPEN_TABS_KEY, openTabs);
     let activeDocId = get().activeDocId;
@@ -209,15 +296,16 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       if (activeDocId) {
         const stored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
         const nodes = stored?.nodes ?? [];
+        applyTabView(activeDocId, nodes);
+      } else {
         useOutlineStore.setState({
-          nodes,
-          selectedId: nodes[0]?.id ?? null,
+          nodes: [],
+          selectedId: null,
           editingId: null,
           multiSelectedIds: [],
-          selectionAnchorId: nodes[0]?.id ?? null
+          selectionAnchorId: null,
+          collapsedIds: new Set()
         });
-      } else {
-        useOutlineStore.setState({ nodes: [], selectedId: null, editingId: null, multiSelectedIds: [], selectionAnchorId: null });
       }
     }
     set({ openTabs, activeDocId });
@@ -239,15 +327,23 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
     writeJson(_DOCS_INDEX_KEY, docsIndex);
     writeJson(_OPEN_TABS_KEY, openTabs);
     ls()?.removeItem(docStorageKey(id));
+    tabViewCache.delete(id);
     let activeDocId = get().activeDocId;
     if (activeDocId === id) {
       activeDocId = openTabs[openTabs.length - 1] ?? null;
       writeJson(_ACTIVE_DOC_KEY, activeDocId);
       if (activeDocId) {
         const stored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
-        useOutlineStore.setState({ nodes: stored?.nodes ?? [] });
+        applyTabView(activeDocId, stored?.nodes ?? []);
       } else {
-        useOutlineStore.setState({ nodes: [] });
+        useOutlineStore.setState({
+          nodes: [],
+          selectedId: null,
+          editingId: null,
+          multiSelectedIds: [],
+          selectionAnchorId: null,
+          collapsedIds: new Set()
+        });
       }
     }
     set({ docsIndex, openTabs, activeDocId });
@@ -265,5 +361,10 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => ({
       writeJson(_DOCS_INDEX_KEY, nextIndex);
       set({ docsIndex: nextIndex });
     }
+  },
+
+  registerScrollContainer: (el) => {
+    scrollContainerEl = el;
   }
-}));
+  };
+});
