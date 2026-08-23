@@ -5,7 +5,7 @@ import { useOutlineStore } from './outlineStore';
 describe('documentsStore', () => {
   beforeEach(() => {
     localStorage.clear();
-    useDocumentsStore.setState({ docsIndex: [], openTabs: [], activeDocId: null, loaded: false });
+    useDocumentsStore.setState({ docsIndex: [], openTabs: [], activeDocId: null, loaded: false, folders: [], docFolderMap: {} });
     useOutlineStore.setState({ nodes: [] });
   });
 
@@ -248,6 +248,150 @@ describe('documentsStore', () => {
       useDocumentsStore.getState().reorderTab(b, a, 'left');
       const persisted = JSON.parse(localStorage.getItem('sakura_web_open_tabs_v1')!);
       expect(persisted).toEqual([b, a]);
+    });
+  });
+
+  describe('folders (Phase 6.1: real file explorer)', () => {
+    it('createFolder adds a top-level folder named "New Folder", open by default', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      const folder = useDocumentsStore.getState().folders.find((f) => f.id === id);
+      expect(folder).toEqual({ id, name: 'New Folder', open: true, parentId: null });
+    });
+
+    it('createFolder accepts a parentId for nesting', () => {
+      const parentId = useDocumentsStore.getState().createFolder();
+      const childId = useDocumentsStore.getState().createFolder(parentId);
+      const child = useDocumentsStore.getState().folders.find((f) => f.id === childId);
+      expect(child?.parentId).toBe(parentId);
+    });
+
+    it('createFolder persists to localStorage', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_folders_v1')!);
+      expect(persisted).toEqual([{ id, name: 'New Folder', open: true, parentId: null }]);
+    });
+
+    it('renameFolder updates the name and persists it', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().renameFolder(id, 'Project Plans');
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === id)?.name).toBe('Project Plans');
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_folders_v1')!);
+      expect(persisted[0].name).toBe('Project Plans');
+    });
+
+    it('renameFolder falls back to the existing name when given an empty/whitespace-only name', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().renameFolder(id, '   ');
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === id)?.name).toBe('New Folder');
+    });
+
+    it('toggleFolderOpen flips the open flag and persists it', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === id)?.open).toBe(true);
+      useDocumentsStore.getState().toggleFolderOpen(id);
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === id)?.open).toBe(false);
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_folders_v1')!);
+      expect(persisted[0].open).toBe(false);
+    });
+
+    it('setFolderForDoc files a document into a folder and persists it', () => {
+      useDocumentsStore.getState().newDocument();
+      const docId = useDocumentsStore.getState().activeDocId!;
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().setFolderForDoc(docId, folderId);
+      expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_doc_folder_map_v1')!);
+      expect(persisted[docId]).toBe(folderId);
+    });
+
+    it('setFolderForDoc with null unfiles a document (removes the map entry entirely)', () => {
+      useDocumentsStore.getState().newDocument();
+      const docId = useDocumentsStore.getState().activeDocId!;
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().setFolderForDoc(docId, folderId);
+      useDocumentsStore.getState().setFolderForDoc(docId, null);
+      expect(docId in useDocumentsStore.getState().docFolderMap).toBe(false);
+    });
+
+    it('newDocument accepts a folderId and files the new document into it directly', () => {
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().newDocument(folderId);
+      const docId = useDocumentsStore.getState().activeDocId!;
+      expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
+    });
+
+    it('deleteFolder promotes direct children up to the deleted folder\'s own parent', () => {
+      const grandparent = useDocumentsStore.getState().createFolder();
+      const parent = useDocumentsStore.getState().createFolder(grandparent);
+      const child = useDocumentsStore.getState().createFolder(parent);
+
+      useDocumentsStore.getState().deleteFolder(parent);
+
+      const remaining = useDocumentsStore.getState().folders;
+      expect(remaining.find((f) => f.id === parent)).toBeUndefined();
+      expect(remaining.find((f) => f.id === child)?.parentId).toBe(grandparent);
+    });
+
+    it('deleteFolder promotes children to top-level (null) when the deleted folder itself was top-level', () => {
+      const parent = useDocumentsStore.getState().createFolder();
+      const child = useDocumentsStore.getState().createFolder(parent);
+
+      useDocumentsStore.getState().deleteFolder(parent);
+
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === child)?.parentId).toBeNull();
+    });
+
+    it('deleteFolder unfiles documents that were directly inside it', () => {
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().newDocument(folderId);
+      const docId = useDocumentsStore.getState().activeDocId!;
+      expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
+
+      useDocumentsStore.getState().deleteFolder(folderId);
+
+      expect(docId in useDocumentsStore.getState().docFolderMap).toBe(false);
+    });
+
+    it('deleteFolder does not touch documents in OTHER folders', () => {
+      const folderA = useDocumentsStore.getState().createFolder();
+      const folderB = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().newDocument(folderB);
+      const docInB = useDocumentsStore.getState().activeDocId!;
+
+      useDocumentsStore.getState().deleteFolder(folderA);
+
+      expect(useDocumentsStore.getState().docFolderMap[docInB]).toBe(folderB);
+    });
+
+    it('deleteFolder on a non-existent id is a safe no-op', () => {
+      const before = useDocumentsStore.getState().folders;
+      useDocumentsStore.getState().deleteFolder('nonexistent');
+      expect(useDocumentsStore.getState().folders).toEqual(before);
+    });
+
+    it('deleteDocument removes any docFolderMap entry for the deleted document', () => {
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().newDocument(folderId);
+      const docId = useDocumentsStore.getState().activeDocId!;
+      expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
+
+      useDocumentsStore.getState().deleteDocument(docId);
+
+      expect(docId in useDocumentsStore.getState().docFolderMap).toBe(false);
+    });
+
+    it('init() restores previously persisted folders and docFolderMap', () => {
+      const folderId = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().renameFolder(folderId, 'Archive');
+      useDocumentsStore.getState().newDocument(folderId);
+      const docId = useDocumentsStore.getState().activeDocId!;
+
+      // Simulate a fresh page load: reset in-memory state but keep localStorage.
+      useDocumentsStore.setState({ docsIndex: [], openTabs: [], activeDocId: null, loaded: false, folders: [], docFolderMap: {} });
+      useDocumentsStore.getState().init();
+
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === folderId)?.name).toBe('Archive');
+      expect(useDocumentsStore.getState().docFolderMap[docId]).toBe(folderId);
     });
   });
 });
