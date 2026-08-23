@@ -197,6 +197,12 @@ interface OutlineState {
   cancelEdit: () => void;
 
   newSiblingBelow: (id: number) => void;
+  /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
+   * unlike newSiblingBelow) -- matches legacy's own real insertSiblingBefore exactly
+   * (legacy/index.html:20470). A plain array insert at `id`'s own index, no subtree-end
+   * traversal needed (unlike newSiblingBelow, which has to insert past the whole subtree to
+   * land as a true sibling below, not as the first child). */
+  newSiblingAbove: (id: number) => void;
   newChild: (id: number) => void;
   splitAtCursor: (id: number, fullText: string, caretPos: number) => void;
   deleteNode: (id: number) => void;
@@ -544,6 +550,40 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
   },
 
   cancelEdit: () => set({ editingId: null }),
+
+  newSiblingAbove: (id) => {
+    const { nodes, nextId } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    pushUndo();
+    const next = nodes.map((n) => ({ ...n }));
+    const newNode: OutlineNode = {
+      id: nextId,
+      depth: nodes[idx].depth,
+      text: '',
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    };
+    // A plain array insert at idx itself -- no subtree-end traversal, matching legacy's own
+    // simple nodes.splice(idx,0,nn) exactly. insertParsedNodesCore isn't used here (unlike
+    // newSiblingBelow just below) since that function's whole job is inserting PAST a subtree,
+    // which is the wrong operation for landing immediately before the target instead.
+    next.splice(idx, 0, newNode);
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: nextId + 1,
+      selectedId: newNode.id,
+      editingId: newNode.id,
+      multiSelectedIds: [],
+      selectionAnchorId: newNode.id
+    });
+  },
 
   newSiblingBelow: (id) => {
     const { nodes, nextId } = get();
