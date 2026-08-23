@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDocumentsStore } from '../store/documentsStore';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { filterTabsByTitle, moveOverviewSelection } from '../state/tabOrder';
 
 /**
@@ -24,6 +23,10 @@ import { filterTabsByTitle, moveOverviewSelection } from '../state/tabOrder';
  * (documentsStore.ts's own debounced subscription) is the only save path, so there is no
  * "unsaved changes" state to indicate. No folders -- a real, separately-scoped follow-up
  * (documentsStore.ts's own header has the fuller list).
+ *
+ * Colors are real CSS custom properties (`var(--sel)`, `var(--accent)`, etc.), matching
+ * AppShell.tsx and themeStore.ts's own `CSS_VAR_MAP` -- this component no longer subscribes to
+ * `theme`/`accentPreset` at all for styling purposes; see AppShell.tsx's own header for why.
  */
 export function DocumentTabs() {
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
@@ -36,9 +39,6 @@ export function DocumentTabs() {
   const switchTab = useDocumentsStore((s) => s.switchTab);
   const renameDocument = useDocumentsStore((s) => s.renameDocument);
   const reorderTab = useDocumentsStore((s) => s.reorderTab);
-  const theme = useThemeStore((s) => s.theme);
-  const accentColor = useThemeStore((s) => s.accentColor());
-  const t = THEME_TOKENS[theme];
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; side: 'left' | 'right' } | null>(null);
@@ -152,11 +152,11 @@ export function DocumentTabs() {
                 padding: '4px 8px',
                 borderRadius: 4,
                 cursor: 'pointer',
-                background: id === activeDocId ? t.selectedBg : 'transparent',
-                border: `1px solid ${t.border}`,
+                background: id === activeDocId ? 'var(--sel)' : 'transparent',
+                border: '1px solid var(--border)',
                 opacity: draggedId === id ? 0.4 : 1,
-                borderLeft: isDropTarget && dropTarget.side === 'left' ? `2px solid ${accentColor}` : `1px solid ${t.border}`,
-                borderRight: isDropTarget && dropTarget.side === 'right' ? `2px solid ${accentColor}` : `1px solid ${t.border}`
+                borderLeft: isDropTarget && dropTarget.side === 'left' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                borderRight: isDropTarget && dropTarget.side === 'right' ? '2px solid var(--accent)' : '1px solid var(--border)'
               }}
             >
               {renamingId === id ? (
@@ -188,7 +188,7 @@ export function DocumentTabs() {
                   e.stopPropagation();
                   closeTab(id);
                 }}
-                style={{ color: t.mutedText, cursor: 'pointer', fontSize: 11 }}
+                style={{ color: 'var(--muted)', cursor: 'pointer', fontSize: 11 }}
               >
                 ✕
               </span>
@@ -217,8 +217,8 @@ export function DocumentTabs() {
                 maxWidth: 320,
                 maxHeight: 360,
                 overflow: 'auto',
-                background: t.background,
-                border: `1px solid ${t.border}`,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
                 borderRadius: 10,
                 boxShadow: '0 14px 28px rgba(0,0,0,.12)',
                 zIndex: 65,
@@ -257,17 +257,17 @@ export function DocumentTabs() {
                   width: '100%',
                   boxSizing: 'border-box',
                   padding: '7px 9px',
-                  border: `1px solid ${t.border}`,
+                  border: '1px solid var(--border)',
                   borderRadius: 7,
-                  background: t.editBg,
-                  color: t.text,
+                  background: 'var(--edit-bg)',
+                  color: 'var(--fg)',
                   font: "400 12px 'Inter', sans-serif",
                   outline: 'none',
                   marginBottom: 6
                 }}
               />
               {overviewMatches.length === 0 ? (
-                <div style={{ padding: '10px 8px', font: "400 12px 'Inter', sans-serif", color: t.hintText, textAlign: 'center' }}>
+                <div style={{ padding: '10px 8px', font: "400 12px 'Inter', sans-serif", color: 'var(--hint)', textAlign: 'center' }}>
                   No open tabs match &quot;{overviewQuery.trim()}&quot;
                 </div>
               ) : (
@@ -290,10 +290,10 @@ export function DocumentTabs() {
                         textAlign: 'left',
                         padding: '7px 8px',
                         border: 'none',
-                        background: isKeyboardActive ? t.hoverBg : 'transparent',
+                        background: isKeyboardActive ? 'var(--hover)' : 'transparent',
                         borderRadius: 7,
                         cursor: 'pointer',
-                        color: isActiveDoc ? accentColor : t.text,
+                        color: isActiveDoc ? 'var(--accent)' : 'var(--fg)',
                         fontWeight: isActiveDoc ? 600 : 400,
                         font: "400 12px 'Inter', sans-serif",
                         overflow: 'hidden',

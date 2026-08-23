@@ -1,9 +1,10 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS } from './themeStore';
+import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS, CSS_VAR_MAP } from './themeStore';
 
 describe('themeStore', () => {
   beforeEach(() => {
     useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT });
+    document.body.removeAttribute('style');
   });
 
   it('defaults to light', () => {
@@ -52,5 +53,49 @@ describe('themeStore', () => {
         expect(value, `${key} should be a hex color`).toMatch(/^#[0-9a-f]{6}$/i);
       }
     }
+  });
+
+  describe('CSS custom properties on <body> (Phase 6.1)', () => {
+    it('init() applies the current theme + accent as real CSS custom properties', () => {
+      useThemeStore.getState().init();
+      expect(document.body.style.getPropertyValue('--bg')).toBe(THEME_TOKENS.light.background);
+      expect(document.body.style.getPropertyValue('--fg')).toBe(THEME_TOKENS.light.text);
+      expect(document.body.style.getPropertyValue('--border')).toBe(THEME_TOKENS.light.border);
+      expect(document.body.style.getPropertyValue('--accent')).toBe(ACCENT_PRESETS.terracotta.light);
+    });
+
+    it('setTheme reapplies every mapped custom property for the new theme', () => {
+      useThemeStore.getState().setTheme('dark');
+      expect(document.body.style.getPropertyValue('--bg')).toBe(THEME_TOKENS.dark.background);
+      expect(document.body.style.getPropertyValue('--fg')).toBe(THEME_TOKENS.dark.text);
+      expect(document.body.style.getPropertyValue('--hover')).toBe(THEME_TOKENS.dark.hoverBg);
+    });
+
+    it('toggleTheme reapplies every mapped custom property too', () => {
+      useThemeStore.getState().toggleTheme();
+      expect(document.body.style.getPropertyValue('--bg')).toBe(THEME_TOKENS.dark.background);
+      useThemeStore.getState().toggleTheme();
+      expect(document.body.style.getPropertyValue('--bg')).toBe(THEME_TOKENS.light.background);
+    });
+
+    it('setAccentPreset mutates ONLY --accent, leaving other custom properties untouched', () => {
+      useThemeStore.getState().init();
+      const bgBefore = document.body.style.getPropertyValue('--bg');
+      const borderBefore = document.body.style.getPropertyValue('--border');
+
+      useThemeStore.getState().setAccentPreset('violet');
+
+      expect(document.body.style.getPropertyValue('--accent')).toBe(ACCENT_PRESETS.violet.light);
+      // Nothing else moved.
+      expect(document.body.style.getPropertyValue('--bg')).toBe(bgBefore);
+      expect(document.body.style.getPropertyValue('--border')).toBe(borderBefore);
+    });
+
+    it('every real-legacy-equivalent field in CSS_VAR_MAP resolves to a genuine custom property after init()', () => {
+      useThemeStore.getState().init();
+      for (const [field, varName] of Object.entries(CSS_VAR_MAP) as [keyof typeof THEME_TOKENS.light, string][]) {
+        expect(document.body.style.getPropertyValue(varName), `${varName} (from ${field})`).toBe(THEME_TOKENS.light[field]);
+      }
+    });
   });
 });
