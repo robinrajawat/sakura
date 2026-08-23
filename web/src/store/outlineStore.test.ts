@@ -1212,3 +1212,70 @@ describe('outlineStore toggleNodeStyle / applyHeadingOption (Phase 6.2: rich per
     expect(node?.styles.heading).toBe(0);
   });
 });
+
+describe('outlineStore toggleCheckboxType (Phase 6.2: checkbox toolbar button)', () => {
+  beforeEach(() => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: true, checked: true, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ],
+      selectedId: 2,
+      editingId: null,
+      collapsedIds: new Set(),
+      nextId: 100,
+      multiSelectedIds: [],
+      selectionAnchorId: 2,
+      undoStack: [],
+      redoStack: []
+    });
+  });
+
+  it('converts a plain selected node into a checkbox, unchecked', () => {
+    useOutlineStore.getState().toggleCheckboxType();
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 2);
+    expect(node?.isCheckbox).toBe(true);
+    expect(node?.checked).toBe(false);
+  });
+
+  it('removes checkbox status (and unchecks) from an already-checkbox selected node', () => {
+    useOutlineStore.getState().selectNode(3);
+    useOutlineStore.getState().toggleCheckboxType();
+    const node = useOutlineStore.getState().nodes.find((n) => n.id === 3);
+    expect(node?.isCheckbox).toBe(false);
+    expect(node?.checked).toBe(false);
+  });
+
+  it('across a mixed multi-selection (some checkbox, some not), ANY checkbox present means REMOVE from all', () => {
+    useOutlineStore.setState({ multiSelectedIds: [2, 3], selectionAnchorId: 2, selectedId: 3 });
+    useOutlineStore.getState().toggleCheckboxType();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.isCheckbox).toBe(false);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.isCheckbox).toBe(false);
+  });
+
+  it('across a multi-selection with NO checkboxes at all, converts all to checkboxes', () => {
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 3 ? { ...n, isCheckbox: false, checked: false } : n)),
+      multiSelectedIds: [2, 3],
+      selectionAnchorId: 2,
+      selectedId: 3
+    });
+    useOutlineStore.getState().toggleCheckboxType();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.isCheckbox).toBe(true);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.isCheckbox).toBe(true);
+  });
+
+  it('is undoable', () => {
+    useOutlineStore.getState().toggleCheckboxType();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.isCheckbox).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.isCheckbox).toBe(false);
+  });
+
+  it('is a no-op when nothing is selected', () => {
+    useOutlineStore.setState({ selectedId: null, multiSelectedIds: [] });
+    useOutlineStore.getState().toggleCheckboxType();
+    expect(useOutlineStore.getState().canUndo()).toBe(false);
+  });
+});

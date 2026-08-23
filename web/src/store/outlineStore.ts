@@ -204,6 +204,14 @@ interface OutlineState {
   duplicateSelected: () => void;
   sortChildren: (parentId: number | null, mode: SortMode) => boolean;
   toggleCheckbox: (id: number) => void;
+  /** Converts every currently-selected node TO or FROM a checkbox node -- matches legacy's own
+   * real #qb-checkbox toolbar button exactly (legacy/index.html:34136-34147): if ANY selected
+   * node is already a checkbox, checkbox status is REMOVED from all of them; otherwise it's
+   * ADDED to all of them, always unchecked (`checked: false`) on conversion regardless of any
+   * prior state. Distinct from `toggleCheckbox` above, which flips a single node's `.checked`
+   * value -- this flips `.isCheckbox` (whether the node IS a checkbox at all) across the whole
+   * selection at once. */
+  toggleCheckboxType: () => void;
   setNote: (id: number, note: string) => void;
   setCodeBlock: (id: number, codeBlock: CodeBlock | null) => void;
 
@@ -750,6 +758,19 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     pushUndo();
     const next = nodes.map((n) => ({ ...n }));
     toggleCheckboxCore(next, idx);
+    set({ nodes: next });
+  },
+
+  toggleCheckboxType: () => {
+    const { nodes } = get();
+    const ids = get().selectedIds();
+    if (!ids.length) return;
+    pushUndo();
+    const idSet = new Set(ids);
+    const anyIsCheckbox = ids.some((id) => nodes.find((n) => n.id === id)?.isCheckbox);
+    const next = nodes.map((n) =>
+      idSet.has(n.id) ? { ...n, isCheckbox: !anyIsCheckbox, checked: false } : n
+    );
     set({ nodes: next });
   },
 

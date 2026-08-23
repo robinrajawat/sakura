@@ -43,6 +43,7 @@ export function App() {
   const hasSelection = useOutlineStore((s) => s.selectedId !== null);
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
+  const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
 
   return (
     <AppShell
@@ -185,6 +186,23 @@ export function App() {
           <option value="5">Heading 5</option>
           <option value="6">Heading 6</option>
         </select>
+        {/* Same icon (a checkmark-in-box SVG) and tooltip text as legacy's own real
+            #qb-checkbox toolbar button (legacy/index.html:6462) -- see
+            outlineStore.ts's own toggleCheckboxType header for the exact toggle semantics
+            (any-checkbox-selected removes from all; none-selected adds to all). */}
+        <button
+          type="button"
+          onClick={toggleCheckboxType}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Toggle checkbox on selected node"
+          aria-label="Toggle checkbox"
+          style={{ marginRight: 12 }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="M9 12l2.5 2.5L15 9" />
+          </svg>
+        </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
         </button>
