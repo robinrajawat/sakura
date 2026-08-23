@@ -10,6 +10,18 @@ export interface DocSummary {
   modifiedAt: number;
 }
 
+/** A single document folder -- matches legacy's own real shape exactly (legacy/index.html:29822's
+ * `FOLDERS_KEY` comment: `[{id,name,open,parentId}]  (parentId enables nesting)`). `parentId:
+ * null` means a top-level folder; nesting depth is unbounded, same as legacy (legacy only limits
+ * TEMPLATE folders to a single level, not document folders -- see docs/phase6-full-parity-plan.md's
+ * 6.1 section on why templates are out of scope for this slice specifically). */
+export interface DocFolder {
+  id: string;
+  name: string;
+  open: boolean;
+  parentId: string | null;
+}
+
 interface StoredDoc {
   title: string;
   nodes: OutlineNode[];
@@ -24,6 +36,10 @@ interface StoredDoc {
 const _DOCS_INDEX_KEY = 'sakura_web_docs_index_v1';
 const _OPEN_TABS_KEY = 'sakura_web_open_tabs_v1';
 const _ACTIVE_DOC_KEY = 'sakura_web_active_doc_v1';
+// Same namespacing rationale as above, distinct from legacy's own FOLDERS_KEY/DOC_FOLDER_KEY
+// (legacy/index.html:29822-29823) despite holding the same shape of data.
+const _FOLDERS_KEY = 'sakura_web_folders_v1';
+const _DOC_FOLDER_MAP_KEY = 'sakura_web_doc_folder_map_v1';
 function docStorageKey(id: string): string {
   return `sakura_web_doc_${id}_v1`;
 }
@@ -53,6 +69,15 @@ function writeJson(key: string, value: unknown): void {
 let nextDocNum = 1;
 function generateDocId(): string {
   return `doc_${Date.now()}_${nextDocNum++}`;
+}
+
+let nextFolderNum = 1;
+/** Same shape convention as `generateDocId` above (not legacy's own `genFolderId`, which uses
+ * `'f'+Date.now().toString(36)+Math.random()...` -- web/'s ids don't need to match legacy's
+ * exact format, only be unique within web/'s own namespace, same as every other id generator
+ * in this store). */
+function generateFolderId(): string {
+  return `folder_${Date.now()}_${nextFolderNum++}`;
 }
 
 /**
@@ -85,15 +110,42 @@ interface DocumentsState {
   openTabs: string[];
   activeDocId: string | null;
   loaded: boolean;
+  /** Real document folders (Phase 6.1, docs/phase6-full-parity-plan.md's 6.1 section, "real file
+   * explorer" -- the last named gap). See `DocFolder`'s own header for the shape rationale. */
+  folders: DocFolder[];
+  /** Maps a doc id to the folder it's filed in. A doc with NO entry here is unfiled (shown at
+   * the sidebar's root level) -- matches legacy's own `DOC_FOLDER_KEY` semantics exactly
+   * (legacy/index.html:29823's comment: `{docId: folderId|null}`, where absence/null both mean
+   * unfiled). */
+  docFolderMap: Record<string, string>;
 
   init: () => void;
-  newDocument: () => void;
+  newDocument: (folderId?: string | null) => void;
   openDocument: (id: string) => void;
   closeTab: (id: string) => void;
   switchTab: (id: string) => void;
   renameDocument: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
   saveActiveDocNodes: () => void;
+  /** Creates a new folder named "New Folder" under `parentId` (`null` = top-level), matching
+   * legacy's own `createFolder` default name and open-by-default state
+   * (legacy/index.html:31016-31021) -- minus legacy's own immediate inline-rename prompt, which
+   * is a UI-layer concern for whichever component calls this, not this store's job (same split
+   * as `newDocument` above, which also doesn't force an immediate rename UI). */
+  createFolder: (parentId?: string | null) => string;
+  renameFolder: (id: string, name: string) => void;
+  /** Deletes a folder, matching legacy's own real semantics exactly
+   * (legacy/index.html:31050-31068's `deleteFolderById`): subfolders are promoted up a level
+   * (their `parentId` becomes the deleted folder's own `parentId`, not orphaned), and documents
+   * directly in the deleted folder become unfiled (their `docFolderMap` entry is removed, not
+   * left pointing at a folder that no longer exists). Deliberately without legacy's confirmation
+   * dialog or undo toast -- both are UI-layer concerns for whichever component calls this to
+   * decide (e.g. confirming before calling), not this store's job. */
+  deleteFolder: (id: string) => void;
+  toggleFolderOpen: (id: string) => void;
+  /** Files `docId` into `folderId`, or unfiles it (removes the map entry) when `folderId` is
+   * `null` -- matches legacy's own `setFolderForDoc` (legacy/index.html:29875) exactly. */
+  setFolderForDoc: (docId: string, folderId: string | null) => void;
   /** Drag-to-reorder tabs (Phase 6.1, docs/phase6-full-parity-plan.md's 6.1 section). Thin
    * wrapper around `tabOrder.ts`'s already-ported, already-tested `reorderTabsCore` -- that
    * module was carried over from legacy's own pure-logic extraction (docs/history/architecture-plan.md)
@@ -197,6 +249,8 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
   openTabs: [],
   activeDocId: null,
   loaded: false,
+  folders: [],
+  docFolderMap: {},
 
   init: () => {
     if (get().loaded) return;
@@ -204,7 +258,9 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     const openTabs = readJson<string[]>(_OPEN_TABS_KEY, []);
     const storedActive = readJson<string | null>(_ACTIVE_DOC_KEY, null);
     const activeDocId = storedActive && openTabs.includes(storedActive) ? storedActive : (openTabs[0] ?? null);
-    set({ docsIndex, openTabs, activeDocId, loaded: true });
+    const folders = readJson<DocFolder[]>(_FOLDERS_KEY, []);
+    const docFolderMap = readJson<Record<string, string>>(_DOC_FOLDER_MAP_KEY, {});
+    set({ docsIndex, openTabs, activeDocId, loaded: true, folders, docFolderMap });
     if (activeDocId) {
       const stored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
       if (stored) useOutlineStore.setState({ nodes: stored.nodes });
@@ -254,7 +310,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     }
   },
 
-  newDocument: () => {
+  newDocument: (folderId) => {
     get().saveActiveDocNodes();
     captureCurrentTabView();
     const id = generateDocId();
@@ -270,6 +326,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     writeJson(_OPEN_TABS_KEY, openTabs);
     writeJson(_ACTIVE_DOC_KEY, id);
     set({ docsIndex, openTabs, activeDocId: id });
+    if (folderId) get().setFolderForDoc(id, folderId);
     applyTabView(id, nodes);
   },
 
@@ -328,6 +385,59 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     set({ docsIndex });
   },
 
+  createFolder: (parentId = null) => {
+    const id = generateFolderId();
+    const folders = [...get().folders, { id, name: 'New Folder', open: true, parentId: parentId ?? null }];
+    writeJson(_FOLDERS_KEY, folders);
+    set({ folders });
+    return id;
+  },
+
+  renameFolder: (id, name) => {
+    const folders = get().folders.map((f) => (f.id === id ? { ...f, name: name.trim() || f.name || 'New Folder' } : f));
+    writeJson(_FOLDERS_KEY, folders);
+    set({ folders });
+  },
+
+  deleteFolder: (id) => {
+    const current = get().folders;
+    const removed = current.find((f) => f.id === id);
+    if (!removed) return;
+    // Promote direct children up to the deleted folder's own parent, matching legacy's own
+    // deleteFolderById exactly (legacy/index.html:31055-31059) -- a subfolder never becomes
+    // orphaned (parentId pointing at a folder that no longer exists).
+    const folders = current
+      .filter((f) => f.id !== id)
+      .map((f) => (f.parentId === id ? { ...f, parentId: removed.parentId } : f));
+    writeJson(_FOLDERS_KEY, folders);
+    // Documents directly in the deleted folder become unfiled -- matches legacy's own
+    // "Documents inside will move to Unfiled" (legacy/index.html:31053).
+    const docFolderMap = { ...get().docFolderMap };
+    let changed = false;
+    for (const docId of Object.keys(docFolderMap)) {
+      if (docFolderMap[docId] === id) {
+        delete docFolderMap[docId];
+        changed = true;
+      }
+    }
+    if (changed) writeJson(_DOC_FOLDER_MAP_KEY, docFolderMap);
+    set({ folders, docFolderMap });
+  },
+
+  toggleFolderOpen: (id) => {
+    const folders = get().folders.map((f) => (f.id === id ? { ...f, open: !f.open } : f));
+    writeJson(_FOLDERS_KEY, folders);
+    set({ folders });
+  },
+
+  setFolderForDoc: (docId, folderId) => {
+    const docFolderMap = { ...get().docFolderMap };
+    if (folderId === null) delete docFolderMap[docId];
+    else docFolderMap[docId] = folderId;
+    writeJson(_DOC_FOLDER_MAP_KEY, docFolderMap);
+    set({ docFolderMap });
+  },
+
   reorderTab: (draggedId, targetId, side) => {
     const orderable: OrderableTab[] = get().openTabs.map((id) => ({ docId: id }));
     const moved = reorderTabsCore(orderable, draggedId, targetId, side);
@@ -346,6 +456,12 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     writeJson(_OPEN_TABS_KEY, openTabs);
     ls()?.removeItem(docStorageKey(id));
     tabViewCache.delete(id);
+    let docFolderMap = get().docFolderMap;
+    if (id in docFolderMap) {
+      docFolderMap = { ...docFolderMap };
+      delete docFolderMap[id];
+      writeJson(_DOC_FOLDER_MAP_KEY, docFolderMap);
+    }
     let activeDocId = get().activeDocId;
     if (activeDocId === id) {
       activeDocId = openTabs[openTabs.length - 1] ?? null;
@@ -364,7 +480,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
         });
       }
     }
-    set({ docsIndex, openTabs, activeDocId });
+    set({ docsIndex, openTabs, activeDocId, docFolderMap });
   },
 
   saveActiveDocNodes: () => {
