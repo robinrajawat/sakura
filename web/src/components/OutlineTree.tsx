@@ -3,8 +3,8 @@ import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/out
 import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
-import { CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { useNotePanelStore } from '../store/notePanelStore';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -91,8 +91,6 @@ export function OutlineTree() {
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
   const sortChildren = useOutlineStore((s) => s.sortChildren);
   const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
-  const setNote = useOutlineStore((s) => s.setNote);
-  const setCodeBlock = useOutlineStore((s) => s.setCodeBlock);
   const toggleTag = useOutlineStore((s) => s.toggleTag);
   const activeTagFilter = useOutlineStore((s) => s.activeTagFilter);
   const setTagFilter = useOutlineStore((s) => s.setTagFilter);
@@ -103,8 +101,7 @@ export function OutlineTree() {
   const undo = useOutlineStore((s) => s.undo);
   const redo = useOutlineStore((s) => s.redo);
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
-  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
-  const [editingCodeId, setEditingCodeId] = useState<number | null>(null);
+  const openNotePanel = useNotePanelStore((s) => s.openPanel);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
   // Phase 6.2 node hover toolbar. Tracks only the CURRENTLY-hovered row's id, matching legacy's
   // own default hoverToolbarActions=['child','above','below'] -- the fuller, user-configurable
@@ -727,7 +724,7 @@ export function OutlineTree() {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                setEditingNoteId(editingNoteId === node.id ? null : node.id);
+                openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'note');
               }}
               title={node.note ? 'Edit note' : 'Add note'}
               style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
@@ -737,7 +734,7 @@ export function OutlineTree() {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                setEditingCodeId(editingCodeId === node.id ? null : node.id);
+                openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code');
               }}
               title={node.codeBlock ? 'Edit code block' : 'Add code block'}
               style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
@@ -787,20 +784,9 @@ export function OutlineTree() {
               </span>
             )}
           </div>
-          {editingNoteId === node.id && (
-            <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
-              <textarea
-                defaultValue={node.note}
-                autoFocus
-                rows={2}
-                onBlur={(e) => setNote(node.id, e.currentTarget.value)}
-                style={{ width: '90%', font: 'inherit', fontSize: 13, border: `1px solid ${t.border}`, borderRadius: 4 }}
-              />
-            </div>
-          )}
-          {editingNoteId !== node.id && node.note && (
+          {node.note && (
             <div
-              onClick={() => setEditingNoteId(node.id)}
+              onClick={() => openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'note')}
               style={{
                 paddingLeft: `${node.depth * 24 + 32}px`,
                 paddingBottom: 4,
@@ -813,41 +799,9 @@ export function OutlineTree() {
               {node.note}
             </div>
           )}
-          {editingCodeId === node.id && (
-            <div style={{ paddingLeft: `${node.depth * 24 + 32}px`, paddingBottom: 4 }}>
-              <select
-                defaultValue={node.codeBlock?.lang ?? 'plain'}
-                onChange={(e) =>
-                  setCodeBlock(node.id, { lang: e.currentTarget.value, code: node.codeBlock?.code ?? '' })
-                }
-                style={{ fontSize: 12, marginBottom: 4 }}
-              >
-                {CODE_LANGS.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                defaultValue={node.codeBlock?.code ?? ''}
-                rows={4}
-                onBlur={(e) =>
-                  setCodeBlock(node.id, { lang: node.codeBlock?.lang ?? 'plain', code: e.currentTarget.value })
-                }
-                style={{
-                  display: 'block',
-                  width: '90%',
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                  border: `1px solid ${t.border}`,
-                  borderRadius: 4
-                }}
-              />
-            </div>
-          )}
-          {editingCodeId !== node.id && node.codeBlock && (
+          {node.codeBlock && (
             <pre
-              onClick={() => setEditingCodeId(node.id)}
+              onClick={() => openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code')}
               style={{
                 marginLeft: `${node.depth * 24 + 32}px`,
                 marginTop: 0,
