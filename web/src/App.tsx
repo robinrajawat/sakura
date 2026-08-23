@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppShell, SidebarDocumentList } from './components/AppShell';
 import { OutlineTree } from './components/OutlineTree';
 import { DocumentTabs } from './components/DocumentTabs';
+import { useDocumentsStore } from './store/documentsStore';
 import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
@@ -28,6 +29,7 @@ export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
 
   return (
     <AppShell
@@ -41,6 +43,7 @@ export function App() {
       sidebar={<SidebarDocumentList />}
       statusLeft={<span>Phase 6.1, in progress</span>}
       statusRight={<span>{mode}</span>}
+      contentRef={registerScrollContainer}
     >
       <div style={{ marginBottom: 12 }}>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
