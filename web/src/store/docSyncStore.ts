@@ -30,13 +30,23 @@ function getDb() {
  * data directly, so this intentionally sets it to `null` as a placeholder the caller
  * immediately overwrites.
  *
- * `tags` is a KNOWN, read/write field here (Tags & Focus slice) -- not blindly preserved as an
- * unknown legacy field the way `styles`/`marker`/`noteTitle`/etc. still are below. Legacy's own
- * per-node `tags` array is exactly web/'s OutlineNode `tags` shape already (a flat string
- * array), so this is a direct, honest round-trip: a document tagged in legacy shows those tags
- * in web/, and tags added/removed in web/ get written back, same as `note`/`codeBlock`.
+ * `tags` and `styles` are KNOWN, read/write fields here (Tags & Focus slice; Phase 6.2's
+ * rich-formatting slice) -- not blindly preserved as an unknown legacy field the way `marker`/
+ * `noteTitle`/etc. still are below. Legacy's own per-node `tags` array is exactly web/'s
+ * OutlineNode `tags` shape already (a flat string array), so that's a direct, honest round-trip.
+ * `styles` needs real validation matching legacy's own `normalizeStyles`
+ * (legacy/index.html:9718) rather than a direct pass-through, since a raw cloud value could in
+ * principle hold a `heading` outside 1-6 or a `highlight`/`color` legacy itself wouldn't
+ * recognize -- same defensive posture as `codeBlock` below, just with real per-field validation
+ * instead of an object/non-object check. `highlight`/`color` are read through for full
+ * round-trip fidelity even though web/'s own UI doesn't yet write non-`false` values for either
+ * (see `NodeStyles`'s own header in outlineStore.ts) -- a document already carrying a highlight
+ * or font color from legacy keeps showing it correctly in web/, it just can't be changed there
+ * yet.
  */
 export function cloudNodeToOutlineNode(raw: RawNode): OutlineNode {
+  const rawStyles = raw.styles && typeof raw.styles === 'object' ? (raw.styles as Record<string, unknown>) : {};
+  const heading = Number.isInteger(rawStyles.heading) && (rawStyles.heading as number) >= 1 && (rawStyles.heading as number) <= 6 ? (rawStyles.heading as number) : 0;
   return {
     id: Number(raw.id) || 0,
     depth: Number(raw.depth) || 0,
@@ -49,18 +59,27 @@ export function cloudNodeToOutlineNode(raw: RawNode): OutlineNode {
       raw.codeBlock && typeof raw.codeBlock === 'object'
         ? (raw.codeBlock as OutlineNode['codeBlock'])
         : null,
-    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : []
+    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [],
+    styles: {
+      bold: !!rawStyles.bold,
+      italic: !!rawStyles.italic,
+      underline: !!rawStyles.underline,
+      strike: !!rawStyles.strike,
+      heading,
+      highlight: typeof rawStyles.highlight === 'string' ? rawStyles.highlight : false,
+      color: typeof rawStyles.color === 'string' ? rawStyles.color : false
+    }
   };
 }
 
 /**
  * Editable OutlineNode -> the raw object actually written back to Firestore. Spreads the
- * node's ORIGINAL raw cloud fields first (styles, noteTitle, decisionLog, marker, slideDivider,
+ * node's ORIGINAL raw cloud fields first (noteTitle, decisionLog, marker, slideDivider,
  * createdAt, modifiedAt, completedAt -- everything legacy's real node schema has that web/'s
- * OutlineNode doesn't yet surface; `tags` USED to be in this preserved-but-unsurfaced list but
- * is now a known field web/ edits, same as `note`/`codeBlock` below), then overwrites only the
- * fields web/ actually edits on top. This is the whole reason `rawNodesById` exists: a plain
- * `JSON.stringify(node)`
+ * OutlineNode doesn't yet surface; `tags`/`styles` USED to be in this preserved-but-unsurfaced
+ * list but are now known fields web/ edits, same as `note`/`codeBlock` below), then overwrites
+ * only the fields web/ actually edits on top. This is the whole reason `rawNodesById` exists: a
+ * plain `JSON.stringify(node)`
  * here would silently strip every legacy-only field from every node on the very first push,
  * corrupting real production data for any legacy user who opens their document in the web app.
  * A node with no raw counterpart (created fresh in the web app, never existed in the cloud
@@ -78,7 +97,8 @@ export function outlineNodeToRawNode(node: OutlineNode, raw: RawNode | undefined
     checked: node.checked,
     note: node.note,
     codeBlock: node.codeBlock,
-    tags: node.tags
+    tags: node.tags,
+    styles: node.styles
   };
 }
 

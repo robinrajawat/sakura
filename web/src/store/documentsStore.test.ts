@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { useDocumentsStore } from './documentsStore';
-import { useOutlineStore } from './outlineStore';
+import { useOutlineStore, defaultNodeStyles } from './outlineStore';
 
 describe('documentsStore', () => {
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe('documentsStore', () => {
     useDocumentsStore.getState().newDocument();
     const firstId = useDocumentsStore.getState().activeDocId!;
     useOutlineStore.setState({
-      nodes: [{ id: 1, depth: 0, text: 'edited', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
+      nodes: [{ id: 1, depth: 0, text: 'edited', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }]
     });
     useDocumentsStore.getState().newDocument();
     // Switch back to the first document -- its edit should have been persisted.
@@ -91,7 +91,7 @@ describe('documentsStore', () => {
     // fresh visitor's permanent first document was outlineStore.ts's own module-level default
     // content, whatever that happened to be.
     useOutlineStore.setState({
-      nodes: [{ id: 1, depth: 0, text: 'should not leak into the new document', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
+      nodes: [{ id: 1, depth: 0, text: 'should not leak into the new document', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }]
     });
     useDocumentsStore.getState().init();
     const { docsIndex, openTabs, activeDocId } = useDocumentsStore.getState();
@@ -116,8 +116,8 @@ describe('documentsStore', () => {
       const firstId = useDocumentsStore.getState().activeDocId!;
       useOutlineStore.setState({
         nodes: [
-          { id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] },
-          { id: 2, depth: 0, text: 'b', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }
+          { id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+          { id: 2, depth: 0, text: 'b', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
         ]
       });
       useOutlineStore.getState().selectNode(2);
@@ -139,7 +139,7 @@ describe('documentsStore', () => {
       useDocumentsStore.getState().newDocument();
       const firstId = useDocumentsStore.getState().activeDocId!;
       useOutlineStore.setState({
-        nodes: [{ id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [] }]
+        nodes: [{ id: 1, depth: 0, text: 'a', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }]
       });
       useOutlineStore.getState().toggleCollapse(1);
       expect(useOutlineStore.getState().collapsedIds.has(1)).toBe(true);

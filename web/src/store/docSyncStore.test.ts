@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cloudNodeToOutlineNode, outlineNodeToRawNode, type RawNode } from './docSyncStore';
+import { defaultNodeStyles } from './outlineStore';
 
 describe('cloudNodeToOutlineNode', () => {
   it('maps the fields web/ understands from a full legacy-shaped node', () => {
@@ -13,12 +14,12 @@ describe('cloudNodeToOutlineNode', () => {
       note: 'a note',
       codeBlock: { lang: 'python', code: 'print(1)' },
       tags: ['important'],
-      // Legacy-only fields, deliberately present here to confirm they're just ignored on read
-      // (not copied into OutlineNode -- that's fine, OutlineNode doesn't have room for them;
-      // the preservation guarantee is about outlineNodeToRawNode not losing them, not about
-      // this function surfacing them). `tags` is NOT in this list -- it's a known, surfaced
-      // field, tested separately below.
-      styles: { color: 'red' },
+      // `styles` is a KNOWN, surfaced field (Phase 6.2) -- real values here should round-trip
+      // through, not get dropped/defaulted. `marker` stays a genuinely unknown legacy-only
+      // field, deliberately present to confirm it's ignored on read (OutlineNode has no room
+      // for it; the preservation guarantee is about outlineNodeToRawNode not losing it, not
+      // about this function surfacing it).
+      styles: { bold: true, italic: false, underline: true, strike: false, heading: 2, highlight: 'yellow', color: 'red' },
       marker: 'confirmed'
     };
     expect(cloudNodeToOutlineNode(raw)).toEqual({
@@ -30,7 +31,8 @@ describe('cloudNodeToOutlineNode', () => {
       checked: true,
       note: 'a note',
       codeBlock: { lang: 'python', code: 'print(1)' },
-      tags: ['important']
+      tags: ['important'],
+      styles: { bold: true, italic: false, underline: true, strike: false, heading: 2, highlight: 'yellow', color: 'red' }
     });
   });
 
@@ -45,13 +47,26 @@ describe('cloudNodeToOutlineNode', () => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: []
+      tags: [], styles: defaultNodeStyles()
     });
   });
 
   it('drops non-string entries from a malformed cloud tags array', () => {
-    const raw: RawNode = { id: 1, depth: 0, tags: ['ok', 42, null, 'also-ok'] };
+    const raw: RawNode = { id: 1, depth: 0, tags: ['ok', 42, null, 'also-ok'], styles: defaultNodeStyles() };
     expect(cloudNodeToOutlineNode(raw).tags).toEqual(['ok', 'also-ok']);
+  });
+
+  it('rejects an out-of-range or non-integer heading, matching legacy\'s own normalizeStyles validation', () => {
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: 7 } }).styles.heading).toBe(0);
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: 0 } }).styles.heading).toBe(0);
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: -1 } }).styles.heading).toBe(0);
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: 2.5 } }).styles.heading).toBe(0);
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: 'h1' } }).styles.heading).toBe(0);
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0, styles: { heading: 3 } }).styles.heading).toBe(3);
+  });
+
+  it('defaults styles entirely when the raw node has no styles object at all', () => {
+    expect(cloudNodeToOutlineNode({ id: 1, depth: 0 }).styles).toEqual(defaultNodeStyles());
   });
 });
 
@@ -85,11 +100,11 @@ describe('outlineNodeToRawNode', () => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: ['important']
+      tags: ['important'],
+      styles: defaultNodeStyles()
     };
     const result = outlineNodeToRawNode(edited, raw);
-    // Every legacy-only field survives untouched.
-    expect(result.styles).toEqual({ color: 'red' });
+    // Genuinely unknown legacy-only fields survive untouched.
     expect(result.marker).toBe('confirmed');
     expect(result.noteTitle).toBe('My note');
     expect(result.decisionLog).toEqual([{ id: 'd1' }]);
@@ -98,8 +113,11 @@ describe('outlineNodeToRawNode', () => {
     expect(result.modifiedAt).toBe(222);
     // The one field that actually changed reflects the edit.
     expect(result.text).toBe('edited text');
-    // tags is a known field, unchanged in this edit, still comes from `edited` not `raw`.
+    // tags/styles are both known, WRITE fields -- like text, they always come from `edited`,
+    // never preserved from `raw` even when raw held a different (here, invalid/legacy-shaped)
+    // value. styles is no longer opaque-preserved the way marker/noteTitle/etc still are.
     expect(result.tags).toEqual(['important']);
+    expect(result.styles).toEqual(defaultNodeStyles());
   });
 
   it('writes an edited tags array, overwriting the raw counterpart (known field, not preserved)', () => {
@@ -112,13 +130,32 @@ describe('outlineNodeToRawNode', () => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: ['old-tag']
+      tags: ['old-tag'], styles: defaultNodeStyles()
     };
-    const edited = { ...raw, tags: ['new-tag', 'second-tag'] } as unknown as Parameters<
+    const edited = { ...raw, tags: ['new-tag', 'second-tag'], styles: defaultNodeStyles() } as unknown as Parameters<
       typeof outlineNodeToRawNode
     >[0];
     const result = outlineNodeToRawNode(edited, raw);
     expect(result.tags).toEqual(['new-tag', 'second-tag']);
+  });
+
+  it('writes an edited styles object, overwriting the raw counterpart (known field, not preserved)', () => {
+    const raw: RawNode = {
+      id: 5,
+      depth: 1,
+      text: 'text',
+      parentId: 1,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    };
+    const newStyles = { ...defaultNodeStyles(), bold: true, heading: 3 };
+    const edited = { ...raw, styles: newStyles } as unknown as Parameters<typeof outlineNodeToRawNode>[0];
+    const result = outlineNodeToRawNode(edited, raw);
+    expect(result.styles).toEqual(newStyles);
   });
 
   it('writes only the known fields for a node with no raw counterpart (freshly created in the web app)', () => {
@@ -131,7 +168,7 @@ describe('outlineNodeToRawNode', () => {
       checked: false,
       note: '',
       codeBlock: null,
-      tags: []
+      tags: [], styles: defaultNodeStyles()
     };
     const result = outlineNodeToRawNode(edited, undefined);
     expect(result).toEqual(edited);

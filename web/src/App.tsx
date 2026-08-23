@@ -41,6 +41,8 @@ export function App() {
   const canRedo = useOutlineStore((s) => s.canRedo());
   const duplicateSelected = useOutlineStore((s) => s.duplicateSelected);
   const hasSelection = useOutlineStore((s) => s.selectedId !== null);
+  const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
+  const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
 
   return (
     <AppShell
@@ -106,6 +108,83 @@ export function App() {
         >
           ⧉
         </button>
+        {/* B/I/U/S -- same visual treatment (<strong>B</strong>, <em>I</em>, <u>U</u>, <s>S</s>)
+            and tooltip text (including the Ctrl/Cmd shortcut hint) as legacy's own real
+            `.fmt-btn` quick-bar buttons (legacy/index.html:6386-6389). Applies to every
+            currently-selected node directly (not root-subtree-cascading) via
+            outlineStore.ts's own toggleNodeStyle -- see that action's own header for the exact
+            multi-select semantics. */}
+        <button
+          type="button"
+          onClick={() => toggleNodeStyle('bold')}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Bold (Ctrl/Cmd+B)"
+          aria-label="Bold"
+          style={{ marginRight: 2 }}
+        >
+          <strong>B</strong>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleNodeStyle('italic')}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Italic (Ctrl/Cmd+I)"
+          aria-label="Italic"
+          style={{ marginRight: 2 }}
+        >
+          <em>I</em>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleNodeStyle('underline')}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Underline (Ctrl/Cmd+U)"
+          aria-label="Underline"
+          style={{ marginRight: 2 }}
+        >
+          <u>U</u>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleNodeStyle('strike')}
+          disabled={mode !== 'edit' || !hasSelection}
+          title="Strike (Ctrl/Cmd+Shift+S)"
+          aria-label="Strike"
+          style={{ marginRight: 6 }}
+        >
+          <s>S</s>
+        </button>
+        {/* Heading level -- a plain <select> standing in for legacy's own custom popover palette
+            (legacy/index.html:6426-6444's real #heading-toggle-btn/#heading-palette widget) --
+            same simplification this project uses elsewhere for palette-style pickers (e.g.
+            SidebarFileExplorer.tsx's own "move to folder" select in place of drag-and-drop).
+            Legacy's palette also offers a 7th "Section" option, but that routes to an entirely
+            different existing feature (the [Text] bracket semantic-markup convention
+            NodeText.tsx already renders), not a real numbered heading level -- out of scope
+            here, not silently dropped. */}
+        <select
+          value=""
+          disabled={mode !== 'edit' || !hasSelection}
+          onChange={(e) => {
+            const level = Number(e.currentTarget.value);
+            if (!Number.isNaN(level)) applyHeadingOption(level);
+            e.currentTarget.value = '';
+          }}
+          title="Heading style"
+          aria-label="Heading style"
+          style={{ marginRight: 12, fontSize: 12 }}
+        >
+          <option value="" disabled>
+            Heading…
+          </option>
+          <option value="0">Body text</option>
+          <option value="1">Heading 1</option>
+          <option value="2">Heading 2</option>
+          <option value="3">Heading 3</option>
+          <option value="4">Heading 4</option>
+          <option value="5">Heading 5</option>
+          <option value="6">Heading 6</option>
+        </select>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
         </button>
