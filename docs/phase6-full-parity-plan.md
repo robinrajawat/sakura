@@ -92,6 +92,38 @@ Duplication, rich per-node formatting (bold/italic/underline/strike/highlight/co
 right-click context-menu system (sort-children currently only reachable via toolbar), Quick
 Insert.
 
+**Status: complete.** All nine items landed:
+- Foundational undo/redo (#140) — real store-level `undoStack`/`redoStack` in `outlineStore.ts`,
+  matching legacy's own snapshot mechanics and two real optimizations (no checkpoint on a no-op
+  edit; `nextId` never moves backward on restore). Wired to keyboard (Ctrl/Cmd+Z,
+  Ctrl/Cmd+Shift+Z, Ctrl+Y) and real toolbar buttons.
+- Per-tab independent undo/redo (#141) — extended `documentsStore.ts`'s existing `TabViewState`
+  cache (the same mechanism already handling selection/scroll/collapse) to also capture/restore
+  each tab's own undo/redo stacks.
+- Duplication (#142) — `duplicateRootIndexesCore`, matching legacy's real (and, on inspection,
+  likely accidental) behavior: text/depth/note/styles carry over, checkbox/code/tags don't.
+- Rich per-node formatting (#143) — bold/italic/underline/strike + heading levels 1–6 via a new
+  `NodeStyles` field on every node, `toggleNodeStyle`/`applyHeadingOption` actions, `#`-prefix
+  auto-convert to heading, real toolbar buttons + keyboard shortcuts. `highlight`/`color` are in
+  the type for full parity but not wired to any UI yet (need a color-palette UI — a real,
+  separately-scoped follow-up).
+- Fold badge & checkbox progress badge (#144) — purely wiring already-ported, already-tested
+  pure logic (`countDescendants`/`getCheckboxChildStats` in `nodeQueries.ts`) into the UI.
+- Checkbox toolbar button (#145) — `toggleCheckboxType`, matching legacy's real any-selected-
+  is-a-checkbox-removes-from-all / none-selected-adds-to-all semantics.
+- Node hover toolbar (#146) — matches legacy's own default `hoverToolbarActions` exactly
+  (insert above/child/below only); the fuller, user-configurable action set is a real,
+  separately-scoped follow-up.
+- Right-click context menu (#147) — a single flat action list (10 actions this project has real
+  store actions for) rather than legacy's own top-row-plus-"More"-panel split, which exists to
+  manage legacy's own much larger ~20-action registry. AI-dependent and subsystem-dependent
+  actions (rewrite, note/QA/remark/where-used/version-history, slide-divider) are named as
+  explicitly deferred, not silently dropped, in the menu's own render comment.
+- Quick Insert (#148) — Ctrl/Cmd+Space while editing opens legacy's real 7-action character-
+  insert menu (em dash, en dash, arrow, check/cross mark, middle dot, date/time), inserting at
+  the actual cursor position via direct `<input>` DOM manipulation (the inline-edit input is
+  deliberately uncontrolled).
+
 ### 6.3 — Panels: Note, Code, Pad
 Note panel: rich text, images, tables, backlinks section. Code panel: resizable/floating window.
 Pad's remaining tabs to real depth: Q&A (AI-assisted answering, bulk actions, search, PDF
@@ -167,10 +199,10 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-**§6.1 complete** (#129–#130, #132–#138) — see that section's own `Status:` line for the full
-breakdown. §6.2 onward not started. Update each phase's own section above with a `Status:` line
-and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
-"Update" notes track progress.
+**§6.1 complete** (#129–#130, #132–#138) and **§6.2 complete** (#140–#148) — see each section's
+own `Status:` line for the full breakdown. §6.3 onward not started. Update each phase's own
+section above with a `Status:` line and PR numbers as work lands, the same way
+`docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
 
