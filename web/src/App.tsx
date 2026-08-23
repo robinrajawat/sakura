@@ -3,6 +3,7 @@ import { AppShell, SidebarDocumentList } from './components/AppShell';
 import { OutlineTree } from './components/OutlineTree';
 import { DocumentTabs } from './components/DocumentTabs';
 import { useDocumentsStore } from './store/documentsStore';
+import { useSidebarStore } from './store/sidebarStore';
 import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
@@ -30,14 +31,26 @@ export function App() {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
+  const sidebarOpen = useSidebarStore((s) => s.open);
+  const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
 
   return (
     <AppShell
       title="Sakura"
       headerActions={
-        <button type="button" onClick={toggleTheme} title="Toggle theme">
-          {theme === 'light' ? '🌙' : '☀️'}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={toggleSidebarOpen}
+            title="Toggle file explorer"
+            aria-pressed={sidebarOpen}
+          >
+            ▤
+          </button>
+          <button type="button" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </>
       }
       tabBar={<DocumentTabs />}
       sidebar={<SidebarDocumentList />}
