@@ -183,14 +183,13 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `786acaa` ("feat(presenter):
-timer, blackout, laser pointer, overview grid, closing slide (§6.6)
-(#197)"), with this PR's Word export heading-styles/TOC slice about to
-land on top. §6.5 is fully complete -- all six Hub items landed. §6.6
-(Preview, Presenter & Export) is now in progress: Preview TOC/scroll-
-spy/progress bar (#194), plain text/clipboard export (#196), Presenter
-Mode depth (#197), and Word export heading styles + TOC field (this PR)
-are all landed.
+As of this writing: `main` is at commit `780210d` ("feat(export): Word
+heading styles + TOC field (§6.6) (#198)"), with this PR's PDF cover
+page slice about to land on top. §6.5 is fully complete -- all six Hub
+items landed. §6.6 (Preview, Presenter & Export) is now in progress:
+Preview TOC/scroll-spy/progress bar (#194), plain text/clipboard export
+(#196), Presenter Mode depth (#197), Word export heading styles + TOC
+field (#198), and PDF cover page (this PR) are all landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -440,7 +439,7 @@ all six items landed:
   the closing slide, `Home` returns, `B` toggles blackout, the laser
   toggle + mousemove renders the tracking dot -- zero console/page
   errors.
-- Word export: heading styles + TOC field landed in this PR: a node
+- Word export: heading styles + TOC field landed in #198: a node
   with `styles.heading` set now renders as a genuine Word heading
   paragraph (`HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat
   indented line, and the export opens with a real Word TOC field
@@ -456,14 +455,28 @@ all six items landed:
   and confirmed `word/document.xml` contains a real `Heading1` style
   reference, a TOC field code, and the heading's own text -- a
   well-formed OOXML package, zero console/page errors.
+- PDF export: cover page landed in this PR: direct port of legacy's
+  real `printHtmlAsPdf` cover-page block -- a wordmark, the document's
+  own title, an accent rule, and a meta line (word count, estimated
+  read time, last-modified date), on its own page via `page-break-
+  after: always` before the outline content. No author line (`web/`'s
+  `DocSummary` has no author field yet) and no decision-count in the
+  meta line (Decision Log has no store/panel in `web/` yet, same
+  blocker as Excel export). Wordmark text ("S A K U R A") is legacy's
+  own real default, hardcoded since no Settings panel exists yet.
+  Verified end-to-end in real headless Chrome: exported PDF, inspected
+  the print popup's own DOM directly (word count/read time/last-
+  modified all computed and rendered correctly, document `<title>` set
+  to the doc's real title), zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
-  cards/Notepad-Q&A sections/branding; PDF fidelity (cover page, margins
-  config, footer, fold-state/notes/decision-card rendering); PowerPoint
-  fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides,
-  images); Sakura Document (`.sakura.json`) format; Word/OPML import.
-  §6.7 onward not started.
+  cards/Notepad-Q&A sections/branding; PDF's remaining fidelity gaps
+  (margins config, footer, fold-state/notes/decision-card rendering --
+  currently a flat node list, not rendered from a Preview-equivalent);
+  PowerPoint fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)"
+  slides, images); Sakura Document (`.sakura.json`) format; Word/OPML
+  import. §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
