@@ -134,6 +134,11 @@ interface HubTodosState {
   checkDueReminders: () => void;
   focusTodoId: string | null;
   clearFocusTodoId: () => void;
+  /** Same setter Recap's click-to-jump (§6.5, HubRecapPanel.tsx) uses to focus a todo from
+   * outside a due-reminder notification -- `checkDueReminders` above sets this field directly
+   * via `set(...)` since it already has a `set` closure; this is the public equivalent for
+   * callers that only have the store's actions. */
+  setFocusTodoId: (id: string) => void;
 }
 
 /**
@@ -362,5 +367,6 @@ export const useHubTodosStore = create<HubTodosState>((set, get) => ({
   },
 
   focusTodoId: null,
-  clearFocusTodoId: () => set({ focusTodoId: null })
+  clearFocusTodoId: () => set({ focusTodoId: null }),
+  setFocusTodoId: (id) => set({ focusTodoId: id })
 }));

@@ -163,8 +163,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `9cf8a85` ("feat(hub): Library
-depth -- persistence, tags, favorites, search, rich text (§6.5) (#187)").
+As of this writing: `main` is at commit `1c5bc12` ("docs: refresh handoff
+prompt Current state after Library landing, #187 (#188)"), with a Recap
+depth slice (pending PR -- see below) about to land on top of it.
 Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -260,10 +261,34 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   entry → search narrows correctly → tag-filter chip and favorites-only
   combine as an AND filter, matching legacy exactly → reload confirms
   persistence, zero console/page errors throughout.
+- Recap landed (pending PR -- previous PR was #188): replaces the Phase 4
+  placeholder (static counts + a "most recent N" list per Hub store) with
+  legacy's real Today/This Week/Last Week period model (`hubRecap.ts`) --
+  `getRecapRange` ports `getReportRange` exactly (Monday-start weeks), and
+  per-item created/completed/updated classification covers the three Hub
+  domains this project already tracks real timestamps on (To-Dos, Meeting
+  Notes, Journal). Click-to-jump expands the matching row in its own panel
+  below (`setFocusTodoId`/a new `setFocusMeetingId` added to
+  `hubMeetingsStore.ts` mirroring `hubTodosStore.ts`'s own pre-existing
+  `focusTodoId` pattern; Journal reused its already-existing
+  `openEntry(date)`). Real, deliberate scope reduction: no outline-node or
+  document-level activity grouping -- `web/`'s own `OutlineNode` has no
+  per-node `createdAt`/`modifiedAt`/`completedAt` fields at all yet, a
+  genuine cross-cutting data-model change, not something this slice can do
+  as a side effect; no Decision Log/Diagrams/Q&A/Mind Map activity (same
+  blocker); no AI bullet-summary (§6.9 not started). Scoping correction:
+  Library was never part of legacy's own Recap scan (checked directly
+  against legacy/index.html's `buildActivityReport`) -- the Phase 4
+  placeholder's "Library items" stat was never a real parity target,
+  dropped rather than carried forward. Verified end-to-end in real
+  headless Chrome: Today/This Week/Last Week tabs filter correctly, and
+  clicking a Recap row for both a to-do and a meeting note expands that
+  exact item in its own panel below, zero console/page errors.
 - Still open in §6.5: To-Dos'/Meeting Notes' PDF export/Version
   History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not
   Hub-specific); Meeting Notes' cross-document node links (separately
-  scoped); Recap; Mobile Hub. §6.6 onward not started.
+  scoped); Mobile Hub -- the only remaining §6.5 item. §6.6 onward not
+  started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

@@ -134,4 +134,14 @@ describe('hubMeetingsStore', () => {
       expect(useHubMeetingsStore.getState().meetings[0].actionItems[0].promotedTodoId).toBeNull();
     });
   });
+
+  describe('focusMeetingId (Recap click-to-jump)', () => {
+    it('setFocusMeetingId sets it, clearFocusMeetingId resets it to null', () => {
+      expect(useHubMeetingsStore.getState().focusMeetingId).toBeNull();
+      useHubMeetingsStore.getState().setFocusMeetingId('m1');
+      expect(useHubMeetingsStore.getState().focusMeetingId).toBe('m1');
+      useHubMeetingsStore.getState().clearFocusMeetingId();
+      expect(useHubMeetingsStore.getState().focusMeetingId).toBeNull();
+    });
+  });
 });
