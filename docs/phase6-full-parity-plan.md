@@ -447,6 +447,36 @@ format, Word/OPML import.
   investigation, but pulling it into a Preview-scoped PR would be real scope creep. Not
   reproduced via normal-paced human typing in this session's own testing; flagged here as a
   known open item for whoever picks it up next.
+- ✅ **Plain text (Tree .txt) + Copy as Text (clipboard)** -- direct port of legacy's real
+  `exportTreeFormat`/`exportToClipboard(forceFull=true)` (legacy/index.html:21964-21966).
+  `ExportButtons.tsx` wires up two Phase-1-ported-but-previously-unwired pure functions:
+  `serializeTreeTextCore` (the ASCII tree, `├──`/`└──`/`│` connectors from `buildPrefix`) for
+  both the `.txt` download and the clipboard's `text/plain` payload, and
+  `serializeClipboardHtmlCore` (colored, styled HTML matching the editor's own semantic-marker
+  rendering) for the clipboard's `text/html` payload -- written together via a single
+  `ClipboardItem`, with an `execCommand('copy')` plain-text fallback when the Clipboard API/
+  `ClipboardItem` isn't available, matching legacy exactly. `treeIndentWidth=3`/
+  `hideTreeLines=true`/`outlineNumbering=false` are hardcoded to legacy's own real first-run
+  defaults, same "no silent default for a live user-preference toggle that doesn't exist here
+  yet" deferral already used for `exportMarkdown`'s `outlineNumbering`. Deliberately scoped down
+  from legacy's own `exportToClipboard`: no subset/selection support (always the whole tree --
+  web/ has no multi-node export-selection concept yet) and no Sakura-specific decision-log/
+  diagram clip-payload comment embedded in the HTML (Decision Log has no panel/store in web/
+  yet -- see the Excel item below). Verified end-to-end in real headless Chrome: `.txt` downloads
+  the correct ASCII tree, "Copy as Text" clipboard-writes both a matching `text/plain` and a
+  correctly-styled `text/html` payload, zero console/page errors.
+- **Excel (Decision Log .xlsx) -- blocked, not started.** Legacy's real Excel export
+  (legacy/index.html:33107 `exportDecisionLogXlsx`) is scoped specifically to Decision Log data
+  (timestamp, author, linked node's text, decision-log fields) via `XLSX.writeFile` -- it is
+  *not* a general outline-to-spreadsheet export, a real scoping correction from an earlier draft
+  of this doc. `web/` has only Decision Log's pure normalization/query logic ported
+  (`state/decisionLog.ts`, `state/decisionLogQueries.ts`, `state/decisionFilter.ts`) plus
+  preserve-on-sync handling in `docSyncStore.ts` -- there is no Decision Log store or panel
+  component anywhere in `web/` yet, so there is nothing for an Excel export to read. Needs a real
+  Decision Log feature (its own Pad tab, matching legacy's) built first; tracked here as blocked
+  on that, not as a small export-fidelity gap.
+- Presenter mode depth, Word/PDF/PowerPoint export fidelity, Sakura Document (`.sakura.json`)
+  format, Word/OPML import -- not started.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -500,10 +530,11 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
-complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5
+complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed — see each section's own `Status:` line for the
-full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
+six Hub items now landed, and **§6.6 in progress** (#194, plain text/clipboard export landing in
+this PR) — see each section's own `Status:` line for the
+full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
 

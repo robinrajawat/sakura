@@ -1,10 +1,26 @@
 import { useOutlineStore } from '../store/outlineStore';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
+import { serializeTreeTextCore } from '../utils/serializeTreeText';
+import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides } from './PresenterMode';
+
+/**
+ * Plain-text/clipboard export options shared by `exportPlainText`/`exportClipboard` below.
+ * Matches legacy's own real defaults for a brand-new user with no saved prefs yet
+ * (index.html's top-level `let treeIndentWidth=3` / `let hideTreeLines=true`) -- web/ has no
+ * settings panel for either yet, same "no silent default for a live user-preference toggle
+ * that doesn't exist here yet" deferral `exportMarkdown`/`exportOpml` already use for
+ * `outlineNumbering` above. `rebaseDepth` is always false: legacy only rebases when exporting a
+ * subset (Focus mode / a partial selection), and web/ has no such subset concept for these two
+ * exports yet -- always the whole tree, depths as stored.
+ */
+const TREE_INDENT_WIDTH = 3;
+const HIDE_TREE_LINES = true;
+const OUTLINE_NUMBERING = false;
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown, OPML, and this slice's
@@ -49,6 +65,52 @@ export function ExportButtons() {
     // nodeContentExportEnabled=true -- include notes in the export by default; web/ has no
     // settings panel yet to toggle this, same deferred-preference reasoning as above.
     download('outline.opml', 'text/x-opml;charset=utf-8', serializeOpmlCore(nodes, 'Untitled', true));
+  }
+
+  // Plain text export -- direct port of legacy's real `exportTreeFormat` (the "Tree .txt" menu
+  // item), reusing `serializeTreeTextCore` exactly as ported in Phase 1 (previously unwired to
+  // any UI). No scope deferrals here: unlike Word/PDF/PowerPoint, the ASCII-tree format has no
+  // richer fidelity to defer -- this is a full-parity export.
+  function exportPlainText() {
+    download(
+      'outline.txt',
+      'text/plain;charset=utf-8',
+      serializeTreeTextCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES)
+    );
+  }
+
+  // "Copy as Text" -- direct port of legacy's real `exportToClipboard(forceFull=true)`: writes
+  // both a plain-text (`serializeTreeTextCore`) and a rich-text (`serializeClipboardHtmlCore`)
+  // payload to the system clipboard via `ClipboardItem`, so pasting into a plain-text field gets
+  // the ASCII tree while pasting into a rich editor (email, Slack, Word, Notion) gets colored,
+  // styled HTML. Falls back to `execCommand('copy')` on a plain-text-only textarea when the
+  // Clipboard API/`ClipboardItem` isn't available, same as legacy. Scoped down from legacy's own
+  // version: no subset/selection support yet (web/ has no multi-node selection concept for
+  // export), so always copies the whole tree, and no Sakura-specific decision-log/diagram
+  // clip-payload comment embedded in the HTML (Decision Log/Diagrams aren't ported to web/ yet).
+  async function exportClipboard() {
+    const plain = serializeTreeTextCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES);
+    const html = serializeClipboardHtmlCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES);
+    try {
+      if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+        const item = new ClipboardItem({
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' })
+        });
+        await navigator.clipboard.write([item]);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(plain);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = plain;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
   }
 
   function exportPdf() {
@@ -136,8 +198,14 @@ export function ExportButtons() {
 
   return (
     <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
+      <button type="button" onClick={exportClipboard}>
+        Copy as Text
+      </button>
       <button type="button" onClick={exportMarkdown}>
         Export .md
+      </button>
+      <button type="button" onClick={exportPlainText}>
+        Export .txt
       </button>
       <button type="button" onClick={exportOpml}>
         Export .opml
