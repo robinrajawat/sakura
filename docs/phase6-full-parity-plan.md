@@ -291,9 +291,38 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   edit fields → attendees → action item → promote (real todo created with correct due
   date/meetingRef, button disables, second click is a no-op) → reload confirms persistence, no
   console/page errors.
+- ✅ **Journal** (pending -- PR number not yet known; previous PR was #184) -- replaces the Phase 4 placeholder (freeform create/delete,
+  plain textarea) with legacy's real one-entry-per-date model (`hubJournalStore.ts`): a list of
+  existing entries, each opening a single-entry card (direct port of legacy's own
+  `openJournalEntry`/`showJournalCardView`, index.html:49188 area) to edit mood (click-again-to-
+  clear) and body, plus a calendar popover (`JournalCalendarPopover` in `HubJournalPanel.tsx`) --
+  a custom month-grid with Today/Yesterday/Tomorrow presets and has-entry dots, direct port of
+  legacy's `#journal-date-popover` (index.html:49850-49898) -- to jump to or create any date's
+  entry. Rich text matches legacy's own actual (narrower-than-Note-panel) toolset exactly:
+  bullet/numbered-list toolbar buttons plus Ctrl/Cmd+B/I keyboard-shortcut-only bold/italic, no
+  underline/strike/link/image/table (legacy's own Journal editor doesn't have those either,
+  unlike NotePanel.tsx's fuller set). Also fixed a real data-compat bug found during
+  investigation: web/'s `VALID_MOODS` had `'okay'` where legacy has `'neutral'` -- any entry
+  synced from legacy with `mood:'neutral'` was silently normalizing to `''`.
+  **Scoping corrections**: legacy itself has no tags UI for Journal anywhere (despite
+  README.md:99 referencing "free-form tags" and the data model supporting them) -- a pre-existing
+  doc/code mismatch, not built here as invented capability. Search is also out of scope: legacy's
+  own Journal search lives only in the shared Quick Assist / hub-wide search bar, neither of
+  which exists in web/ yet -- a real, separately-scoped follow-up, not a gap unique to this
+  panel. Verified end-to-end in real headless Chrome: create/edit today's entry (rich text +
+  mood), calendar popover navigation to another date, delete-with-confirm, and reload-persistence
+  all confirmed with zero console/page errors. One real layout bug caught and fixed before merge:
+  the calendar popover's first draft anchored `right: 0` off its trigger button, which sits close
+  to the left sidebar -- on a real page load this rendered the popover partly underneath the
+  sidebar's stacking region, made Playwright's own hit-testing fail a real click. Fixed by
+  anchoring `left: 0` instead, growing into the open content area. Also confirmed (not fixed,
+  correctly): a caret-jumps-to-start quirk when clicking the bullet-list button after typing
+  existing text is an inherited, pre-existing `execCommand('insertUnorderedList')` browser
+  quirk already present identically in NotePanel.tsx's own bullet-list button -- reproduced there
+  independently to confirm it's shared behavior, not a regression introduced by this slice.
 - ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
   scoping correction above); Meeting Notes' PDF export/Version History/Share/node-links (same
-  deferral); Journal; Library; Recap; Mobile Hub.
+  deferral); Library; Recap; Mobile Hub.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
