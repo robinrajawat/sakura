@@ -30,7 +30,7 @@ already made and already documented at the time.
 | Note panel | ⚠️ | Rich text (bold/italic/underline/strike/lists), links, images, tables, and the Backlinks section all built (Phase 6.3-6.4) — no AI (Rewrite/summarise) yet |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
 | Decision Log | ⚠️ | Pad's Decision Log tab exists (Phase 3) as a flat list — not node-linked, no accent dot, no card rendering in exports, no Excel export |
-| Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | 6 of 7 tabs functional (Diagrams gained a real draw.io editor + Generate-from-outline, §6.3 item 11, #172); Mind Map remains an honest placeholder |
+| Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ❌ | None built — no provider config, no Rewrite/outline-gen/restructure/etc. |
@@ -84,7 +84,7 @@ separately-scoped follow-up building on this foundation.
 | Pad — Q&A | ⚠️ | Flat list with question/answer (Phase 3); no AI-assisted answering, bulk actions, search, PDF export, node-linking |
 | Pad — Decision Log | ⚠️ | Flat list (Phase 3); no node-linking, structured fields (Context/Rationale/etc.), card rendering, Excel export |
 | Pad — Diagrams | ⚠️ | Real draw.io embed + Generate-from-outline built (§6.3 item 11, #172); no node-linking/status/thumbnails/Whiteboard/multi-page badge |
-| Pad — Mind Map | ❌ | Honest placeholder tab (Phase 3) |
+| Pad — Mind Map | ⚠️ | A real freeform canvas built (§6.3 item 11, #174): pan/zoom/drag/connect/edit; no node-linking, Scratchpad, or Presenter-mode integration |
 | Pad — Files | ⚠️ | Real upload/storage + download built (§6.3 item 11, #168); no node-linking |
 | Pad — Remarks | ⚠️ | Flat list with person/text (Phase 3); no date field, no node-linking, no export inclusion |
 

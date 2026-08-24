@@ -131,8 +131,8 @@ export, node-linking), Decision Log (node-linking, structured fields, card rende
 export), Diagrams (draw.io integration), Mind Map, Files (real upload/storage, node-linking,
 download), Remarks (date field, node-linking, export inclusion).
 
-**Status: in progress.** 10 of 11 top-level items landed; item 11 is itself three sub-features,
-scoped and sequenced together (see that item's own breakdown below) — 2 of those 3 landed:
+**Status: complete.** All 11 top-level items landed; item 11 was itself three sub-features,
+scoped and sequenced together (see that item's own breakdown below) — all 3 landed:
 1. ✅ Note/Code floating panel shell (#150)
 2. ✅ Note rich-text editor (#151)
 3. ✅ Note editor link insert/edit (#152)
@@ -178,8 +178,25 @@ scoped and sequenced together (see that item's own breakdown below) — 2 of tho
       postMessage handshake itself, which that session's sandbox couldn't reach over the network
       to verify directly; implemented faithfully from the documented protocol and legacy's own
       working code, but wants a real check with network access before being fully trusted.
-    - ❌ **Mind Map** — not started. Scoped as a full canvas editor (pan/zoom/drag/connect/edit
-      nodes), not a minimal list-based stand-in.
+    - ✅ **Mind Map** (#174) — a genuinely freeform canvas (`components/MindMapCanvas.tsx`:
+      pan/zoom/drag/connect/edit nodes, all hand-rolled mouse events, no canvas library in this
+      project's deps), backed by its own dedicated `store/mindMapStore.ts` rather than folded
+      into `padStore.ts` -- same reasoning the Hub panels each get their own store. Deliberately
+      a simpler data model than legacy's real one: no parentId tree, no branch colors, no
+      auto-layout modes -- links are the sole connection mechanism, an honest self-consistent
+      simplification rather than a partial port. Deliberately not built: undo/redo, multi-select,
+      node collapse, per-node color, snapping guides, and the Scratchpad/Presenter-mode/
+      Audience-View integration legacy's own Mind Map has (this project's Presenter mode has none
+      of that infrastructure yet either). Thorough real headless-Chrome verification across two
+      sessions caught and fixed two real bugs before merge (not just confirmed the build): an
+      Enter-to-commit-text keystroke was also re-triggering the window-level "Enter starts
+      editing" shortcut on the same keypress (React 18 event-bubbling/passive-effect timing),
+      and the connect-via-handle-drag interaction read a stale closure and (on the first fix
+      attempt) called a store mutation as a side effect inside a `setState` updater -- both fixed
+      properly, full interaction pass confirmed clean afterward with zero console
+      errors/warnings.
+
+This closes out §6.3.
 
 ### 6.4 — Backlinks & `#tags` mentions
 `[[@mention]]` backlinks: not built at all yet (Tags themselves shipped in the previous PRs
@@ -273,8 +290,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-**§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 in progress**
-(#150–#158, #164, #172 — Diagrams landed, only Mind Map remains) and **§6.4
+**§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
+(#150–#158, #164, #172, #174) and **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on) — see each
 section's own `Status:` line for the full breakdown. §6.5 onward not started. Update each
 phase's own section above with a `Status:` line and PR numbers as work lands, the same way
