@@ -13,9 +13,17 @@ describe('padStore', () => {
 
   it('addDecision/removeDecision', () => {
     usePadStore.getState().addDecision('Use React', 'Chosen for the rewrite');
-    expect(usePadStore.getState().decisions).toEqual([{ id: 1, title: 'Use React', description: 'Chosen for the rewrite' }]);
+    expect(usePadStore.getState().decisions).toEqual([
+      { id: 1, title: 'Use React', description: 'Chosen for the rewrite', status: 'proposed' }
+    ]);
     usePadStore.getState().removeDecision(1);
     expect(usePadStore.getState().decisions).toEqual([]);
+  });
+
+  it('setDecisionStatus updates a decision\'s status', () => {
+    usePadStore.getState().addDecision('Use React', 'Chosen for the rewrite');
+    usePadStore.getState().setDecisionStatus(1, 'approved');
+    expect(usePadStore.getState().decisions[0].status).toBe('approved');
   });
 
   it('addQaItem/removeQaItem', () => {
