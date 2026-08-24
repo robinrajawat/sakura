@@ -163,10 +163,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `bc3a057` ("docs: refresh handoff
-prompt Current state after Journal landing, #185 (#186)"), with a Library
-depth slice (pending PR -- see below) about to land on top of it. Phase 6
-(full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
+As of this writing: `main` is at commit `9cf8a85` ("feat(hub): Library
+depth -- persistence, tags, favorites, search, rich text (§6.5) (#187)").
+Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
 sub-features Files/Diagrams/Mind Map), and §6.4 (backlinks/mention
@@ -232,9 +231,9 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   typing existing text is an inherited `execCommand('insertUnorderedList')`
   browser quirk already present identically in NotePanel.tsx's own
   bullet-list button, not a regression from this slice.
-- Library landed in this session (pending PR -- previous PR was #186):
-  replaces the Phase 4 placeholder (freeform title/url/description CRUD,
-  in-memory only) with legacy's real model (`hubLibrary.ts`) -- real
+- Library landed in #187: replaces the Phase 4 placeholder (freeform
+  title/url/description CRUD, in-memory only) with legacy's real model
+  (`hubLibrary.ts`) -- real
   persistence, a `urlLabel` field, tags (add/remove, click-to-filter,
   toggle-active-filter-clears-it matching legacy's own
   `setLibraryTagFilter`), favorites (per-item toggle + a favorites-only
@@ -284,13 +283,12 @@ unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open for review (the merged
-`hub/journal-editing-richtext-calendar` branch's local copy was deleted;
-its remote copy could not be -- confirmed this repo has branch protection
-applied to every branch, not just `main`, since every prior feature
-branch back through PR #1 is still sitting on the remote too, never
-auto-deleted on merge; this is this repo's actual standing state, not a
-new problem, and matches the "verify both actually happened" caveat this
-file's own workflow rules already call out). No PR is mid-review.
+`hub/library-depth` branch's local copy was deleted; its remote copy
+could not be -- same repo-wide branch-protection outcome as every prior
+feature branch back through PR #1, none of which auto-deletes on merge;
+this is this repo's actual standing state, not a new problem, and matches
+the "verify both actually happened" caveat this file's own workflow rules
+already call out). No PR is mid-review.
 Production (`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
 cutover attempt was made and reverted the same day after a real production
 issue (`web/`'s outline store booted every visitor into Phase 0 dev/spike
