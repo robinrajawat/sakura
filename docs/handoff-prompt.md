@@ -183,9 +183,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `64b7519` ("feat(export):
-PowerPoint Notepad/Q&A section pagination (§6.6) (#210)"), with this
-PR's PDF note/code-block rendering slice about to land on top.
+As of this writing: `main` is at commit `c664f2e` ("feat(export): PDF
+note and code-block rendering (§6.6) (#211)"), with this PR's
+PowerPoint image embedding slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now in progress: Preview TOC/scroll-spy/progress
 bar (#194), plain text/clipboard export (#196), Presenter Mode depth
@@ -197,7 +197,8 @@ bar (#194), plain text/clipboard export (#196), Presenter Mode depth
 note-image embedding (#206), Word Notepad/Q&A sections (#207),
 PowerPoint overflow "(cont'd)" slides (#208), Presenter Mode's
 floating Notes/Q&A panel (#209), PowerPoint Notepad/Q&A section
-pagination (#210), and PDF note/code-block rendering (this PR) are all
+pagination (#210), PDF note/code-block rendering (#211), and
+PowerPoint image embedding (this PR) are all
 landed. One note on this
 session's CI: PR
 #204 hit a real,
@@ -621,13 +622,14 @@ all six items landed:
   skipped) to real bytes, `loadImageDimensions` reads true pixel size
   by actually loading the image in the browser, scaled to a 400px max
   width. First-image-only (matches legacy's own real one-picture-per-
-  note model). **PowerPoint image embedding deliberately NOT
-  included**: PPTX slides are fixed-size canvases already mostly
-  filled by bullet text, so naively placing images risks real visual
-  overlap -- legacy's own PPTX image placement relies on real text
-  measurement to avoid this, a genuinely separate, bigger follow-up
-  (Word's paragraph-flow layout has no such collision risk, which is
-  why it was safe to build now). Verified end-to-end in real headless
+  note model). PowerPoint image embedding was deliberately NOT included
+  in this slice (PPTX slides are fixed-size canvases already mostly
+  filled by bullet text, so naively placing images risked real visual
+  overlap without real text measurement to avoid it, unlike Word's
+  paragraph-flow layout) -- that measurement infrastructure landed in a
+  later PR (the overflow-pagination slice below), which unblocked
+  PowerPoint image embedding too; see further below for that slice.
+  Verified end-to-end in real headless
   Chrome: inserted a real PNG into a node's note via the actual UI,
   exported `.docx`, unzipped the result and confirmed a real image
   media part (`word/media/<hash>.png`, exact byte size matching the
@@ -719,12 +721,44 @@ all six items landed:
   sanitize-on-write) and confirmed the exported print window's HTML has
   no `<script>` tag and no `onerror` attribute, and neither payload
   actually executed -- zero console/page errors across both checks.
+- PowerPoint image embedding landed in this PR: direct port of legacy's
+  real per-slide image row (legacy's own `pptxLayoutImageRow`, ported
+  to `utils/pptxLayoutImageRow.ts`) -- one image per node
+  (`extractFirstImageDataUrl`, the same helper Word export already
+  uses), gathered across every node in a slide's group, laid out as an
+  aspect-ratio-scaled row filling whatever space is left below the
+  bullets (`loadImageDimensions`, already built for Word, reads each
+  image's real pixel size). This was deliberately scoped out earlier
+  (see above) specifically because of a visual-overlap risk without
+  real text measurement -- that blocker no longer applies now that
+  `measureWrappedLines` exists (from the overflow-pagination slice
+  above). A slide group with images renders as a single slide, no
+  per-node overflow pagination, matching legacy's own real, deliberate
+  scope-down for the same combination (legacy/index.html:26256-26271's
+  own comment on why pagination-plus-images is a more tangled problem
+  left alone). `pptxLayoutImageRow`'s own math (scaling/centering/the
+  0.33in floor) is pure and unit-tested (6 cases). Verified end-to-end
+  in real headless Chrome: added a 200x100 (2:1) note image to a node
+  with 2 real bullet lines above it, exported `.pptx`, unzipped the
+  result and confirmed a real embedded media part byte-for-byte
+  identical to the source PNG, with its OOXML position matching the
+  exact expected math (bullets' real measured height reserving the
+  correct offset, then the image aspect-ratio-scaled and centered in
+  the remaining space) to 4 decimal places, and the title/bullets/
+  image/branding all present together on one slide -- zero
+  console/page errors.
 - Still open in §6.6: Whiteboard mirroring and Audience View/
-  dual-screen (see above for why each is blocked/deferred); PowerPoint
-  image embedding (see above); Word tables/Decision Log cards; PDF's
-  remaining fidelity gap (decision-card rendering, and the bigger
-  "render from a real Preview-equivalent" architecture legacy's own PDF
-  export uses); PowerPoint's remaining fidelity gap (decision cards).
+  dual-screen (see above for why each is blocked/deferred); Word
+  tables/Decision Log cards; PDF's remaining fidelity gap (decision-card
+  rendering, and the bigger "render from a real Preview-equivalent"
+  architecture legacy's own PDF export uses); PowerPoint's remaining
+  fidelity gap (decision cards). Word tables/decision-log cards and
+  PDF/PowerPoint decision cards are blocked on the same missing
+  feature: `web/` has no table concept and no Decision Log store/panel
+  at all yet (`state/decisionLog.ts` is a pure validate/normalize
+  function with one real call site in node-import normalization, not a
+  real feature) -- not buildable as export-side slices until that
+  feature exists earlier in the roadmap.
   §6.7 onward
   not started.
 
