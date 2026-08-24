@@ -233,6 +233,10 @@ Journal (editing, tags, rich text, calendar popover, PDF export, search), Librar
 tag filtering, rich text, images), Recap (Today/This Week/Last Week grouping, click-to-jump,
 document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
 
+*(This paragraph is the original scoping list, kept as-is for history — see each item's own
+`Status:` bullet below for corrections found once actually checked against legacy: To-Dos'
+"bulk-actions"/"tags" and Meeting Notes' "templates" turned out not to be real gaps.)*
+
 **Status: in progress.**
 - ✅ **To-Dos, first piece** (#176) — priority/status/due-dates/repeat/subtasks, all wired to
   fields that were already real on the ported `Todo` type (`state/hubTodos.ts`) but had no UI
@@ -264,8 +268,32 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   built as invented capability, the checklist row corrected accordingly. Verified end-to-end in
   real headless Chrome: sections group correctly by due date, search narrows to open matches
   only, completed section sorts/collapses, no console/page errors.
+- ✅ **Meeting Notes** (#181) — replaces the Phase 4 in-memory-only placeholder with real
+  IndexedDB-backed persistence (`state/hubMeetings.ts`, direct port of legacy's own
+  `normalizeMeetingNote`/`loadMeetingNotes`/`saveMeetingNotes`, including the same one-time
+  localStorage-to-IndexedDB migration path Journal's own loader uses), time/attendees/agenda/
+  body fields, action-item CRUD, and Promote-to-To-Do (`store/hubMeetingsStore.ts`'s
+  `promoteActionItem`, calling a new `addTodoFromMeeting` on `hubTodosStore.ts` directly --
+  matches legacy's real `addTodoExternal` exactly: the meeting's date becomes the new todo's
+  due date, the meeting id+title become a `meetingRef`, and a second promote click on an
+  already-promoted item is a no-op). `links` (cross-document node references),
+  `outlookEventId`/`icsUid` (calendar-sync identity with no real sync mechanism built anywhere
+  yet), and rich-text agenda/body (no rich-text infra exists for Hub panels) stay deliberately
+  out of scope, same category as Files/Diagrams/Mind Map's own deferred node-linking in §6.3.
+  **Scoping corrections**: legacy's own Meeting Notes lives entirely in index.html (desktop),
+  not hub.html -- hub.html's own header (legacy/hub.html:38) explicitly scopes the mobile
+  companion to To-Dos and Journal only, naming Meeting Notes as one of the desktop-only
+  features it excludes. And "templates" in this row's checklist gap turned out to mean the
+  create-new-meeting entry point, not real template content: legacy ships zero prebuilt
+  meeting-note templates (`MEETING_TEMPLATES=[]`, a deliberate documented removal from a prior
+  cleanup pass, not an oversight) -- `createMeeting()` provides the actual entry point, the
+  checklist row corrected accordingly. Verified end-to-end in real headless Chrome: create →
+  edit fields → attendees → action item → promote (real todo created with correct due
+  date/meetingRef, button disables, second click is a no-op) → reload confirms persistence, no
+  console/page errors.
 - ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
-  scoping correction above); Meeting Notes; Journal; Library; Recap; Mobile Hub.
+  scoping correction above); Meeting Notes' PDF export/Version History/Share/node-links (same
+  deferral); Journal; Library; Recap; Mobile Hub.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
@@ -327,7 +355,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176, #179 — To-Dos depth) — see each section's own `Status:` line for the
+progress** (#176, #179, #181 — To-Dos and Meeting Notes depth) — see each section's own
+`Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

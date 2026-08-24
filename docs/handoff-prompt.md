@@ -134,13 +134,13 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `75b1160` ("feat(hub): To-Dos search
-filtering, urgency sections, reminders (§6.5) (#179)"). Phase 6 (full parity
-build-out — see docs/phase6-full-parity-plan.md) is underway: §6.1 (design
-tokens & app shell), §6.2 (undo/redo & core editing parity), §6.3 (Note/
-Code/Pad panels — all 11 items, including item 11's three sub-features
-Files/Diagrams/Mind Map), and §6.4 (backlinks/mention infrastructure) are
-all complete. §6.5 (Hub full depth) is now in progress:
+As of this writing: `main` is at commit `974fdd6` ("feat(hub): Meeting
+Notes depth -- persistence, action items, promote (§6.5) (#181)"). Phase 6
+(full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
+§6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
+§6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
+sub-features Files/Diagrams/Mind Map), and §6.4 (backlinks/mention
+infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
 
 - To-Dos, first piece landed in #176: priority/status/due-dates/repeat/
   subtasks, wiring fields and logic (`nextRepeatDate`, subtask CRUD) that
@@ -162,9 +162,21 @@ all complete. §6.5 (Hub full depth) is now in progress:
   real To-Dos implementation (checked directly against legacy/hub.html and
   legacy/index.html) — dropped from scope as invented-capability risk, not
   built, checklist row corrected.
-- Still open in §6.5: To-Dos' PDF export/Version History/Share (deferred to
-  §6.6/§6.8 — cross-cutting infra, not Hub-specific); Meeting Notes;
-  Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
+- Meeting Notes landed in #181: real IndexedDB-backed persistence
+  (replacing the old in-memory-only placeholder), time/attendees/agenda/
+  body fields, action-item CRUD, and Promote-to-To-Do (a new
+  `addTodoFromMeeting` on `hubTodosStore.ts`, matching legacy's real
+  `addTodoExternal` exactly). `links`/`outlookEventId`/`icsUid` and
+  rich-text agenda/body stay deliberately out of scope. Two scoping
+  corrections: legacy's Meeting Notes lives entirely in index.html
+  (desktop), not hub.html, which explicitly excludes it from the mobile
+  companion; and legacy ships zero prebuilt meeting templates
+  (`MEETING_TEMPLATES=[]`, a deliberate documented removal) — the real gap
+  was the create-new-meeting entry point, which `createMeeting()` provides.
+- Still open in §6.5: To-Dos'/Meeting Notes' PDF export/Version
+  History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not
+  Hub-specific); Meeting Notes' cross-document node links (separately
+  scoped); Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
