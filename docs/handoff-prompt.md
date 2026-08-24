@@ -183,20 +183,18 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `fee4e79` ("feat(export):
-Sakura Document (.sakura.json) export/import (§6.6) (#202)"), with
-this PR's Word (.docx) import slice about to land on top. §6.5 is
-fully complete -- all six Hub items landed. §6.6 (Preview, Presenter &
-Export) is now in progress: Preview TOC/scroll-spy/progress bar
-(#194), plain text/clipboard export (#196), Presenter Mode depth
-(#197), Word export heading styles + TOC field (#198), PDF cover page
-(#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
-(#201), Sakura Document export/import (#202), and Word (.docx) import
-(this PR) are all landed. `mammoth` (npm, pinned to 1.11.0, the same
-version legacy's CDN loads) is a new runtime dependency for this PR --
-already listed in `THIRD-PARTY-NOTICES.md` at that exact version, no
-doc change needed there. Per the user's explicit "We have to complete
-everything so just keep going" (this session, after the 6-PR status
+As of this writing: `main` is at commit `8245753` ("feat(import): Word
+(.docx) import (§6.6) (#203)"), with this PR's branding wordmark slice
+about to land on top. §6.5 is fully complete -- all six Hub items
+landed. §6.6 (Preview, Presenter & Export) is now in progress: Preview
+TOC/scroll-spy/progress bar (#194), plain text/clipboard export
+(#196), Presenter Mode depth (#197), Word export heading styles + TOC
+field (#198), PDF cover page (#199), PowerPoint Notepad/Q&A/closing
+slides (#200), OPML import (#201), Sakura Document export/import
+(#202), Word (.docx) import (#203), and the branding wordmark across
+Word/PDF/PowerPoint/Presenter (this PR) are all landed. Per the user's
+explicit "We have to complete everything so just keep going" (this
+session, after the 6-PR status
 check-in), work continues autonomously through the rest of §6.6's
 remaining items -- no further check-in needed before picking up the
 next slice, EXCEPT before touching Whiteboard mirroring/Audience View
@@ -541,7 +539,7 @@ all six items landed:
   `localStorage` doc record -- `styles.heading` preserved, node ids
   preserved exactly, `parentId` correctly rebuilt, zero console/page
   errors.
-- Word (.docx) import landed in this PR: direct port of legacy's real
+- Word (.docx) import landed in #203: direct port of legacy's real
   `importDocxFile`/`parseDocxHtmlToTreeNodes`. `mammoth` (npm, pinned
   to 1.11.0, matching legacy's own CDN version, already in
   `THIRD-PARTY-NOTICES.md`) converts real `.docx` bytes to HTML the
@@ -562,14 +560,36 @@ all six items landed:
   confirmed via the persisted `localStorage` doc record that depths
   (`[0,1,1,2]`) and `parentId` linking are exactly correct -- zero
   console/page errors.
+- Branding wordmark landed in this PR, across every surface legacy
+  shows it on: Word gets a real page footer (`docx`'s `Footer`/
+  `AlignmentType.RIGHT`), PowerPoint gets a small corner text box on
+  every slide (per-node, Notepad, Q&A, closing alike), PDF gets a real
+  CSS Paged Media `@page{@bottom-right{...}}` rule on every printed
+  page (plus the cover-page wordmark already built), and the live
+  Presenter Mode bar gets the same mark. `BRANDING_TEXT`
+  (`PresenterMode.tsx`) is now the one shared constant for the
+  wordmark text ("S A K U R A") across all four, instead of four
+  hardcoded copies. Always on -- matches legacy's real CODE default
+  (`previewPresenterBranding=true` in both the top-level global and
+  `loadPrefs`'s own fallback); the Settings panel's own description
+  text claims "off by default," a real pre-existing doc/code mismatch
+  in legacy itself that this port doesn't inherit. No Settings panel
+  exists in `web/` yet to make it toggleable. Verified end-to-end in
+  real headless Chrome: unzipped the exported `.docx` and confirmed
+  the footer XML carries the branding text; unzipped the exported
+  `.pptx` and confirmed every slide's XML carries it; inspected the
+  PDF print popup's own stylesheet for the `@bottom-right` rule plus
+  the cover-page wordmark; confirmed the mark renders live in the
+  Presenter Mode bar -- zero console/page errors across all four.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
-  cards/Notepad-Q&A sections/branding; PDF's remaining fidelity gaps
-  (margins config, footer, fold-state/notes/decision-card rendering --
-  currently a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
-  images, decision cards, branding). §6.7 onward not started.
+  cards/Notepad-Q&A sections; PDF's remaining fidelity gaps (margins
+  config, footer text/date beyond branding, fold-state/notes/
+  decision-card rendering -- currently a flat node list, not rendered
+  from a Preview-equivalent); PowerPoint's remaining fidelity gaps
+  (overflow "(cont'd)" slides, images, decision cards). §6.7 onward
+  not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

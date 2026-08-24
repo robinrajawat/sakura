@@ -12,9 +12,9 @@ import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
-import { Document, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
+import { AlignmentType, Document, Footer, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
-import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE } from './PresenterMode';
+import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
 
 /**
  * Plain-text/clipboard export options shared by `exportPlainText`/`exportClipboard` below.
@@ -268,10 +268,14 @@ export function ExportButtons() {
   // `.has-cover-page` CSS. Scoped down: no author line (web/'s `DocSummary` has no author field
   // yet, a document-model gap, not a small omission) and no decision-count in the meta line
   // (Decision Log has no store/panel in web/ yet, same blocker documented for Excel export
-  // above). The wordmark text ("S A K U R A") is legacy's own real default
+  // above). The wordmark (`BRANDING_TEXT`, shared with `PresenterMode.tsx`'s own presenter-bar
+  // mark and the Word/PowerPoint exports below) is legacy's own real default
   // (`getBrandingDisplayText`'s fallback) -- hardcoded since no Settings panel exists yet to
   // hold `previewBrandingText`/`previewPresenterBranding`, same "no silent default for a live
   // user-preference toggle that doesn't exist here yet" deferral used elsewhere in this file.
+  // Also shows the same mark in the bottom-right corner of every printed page via a real
+  // `@page{@bottom-right{...}}` CSS Paged Media rule (see the `printWindow.document.write` call
+  // below), not just the cover page.
   function exportPdf() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
@@ -289,7 +293,7 @@ export function ExportButtons() {
       );
     }
     const coverPage = `<div style="page-break-after:always;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:sans-serif;">
-      <div style="letter-spacing:0.3em;font-size:12px;color:#999;margin-bottom:40px;">S A K U R A</div>
+      <div style="letter-spacing:0.3em;font-size:12px;color:#999;margin-bottom:40px;">${BRANDING_TEXT}</div>
       <div style="font-size:32px;font-weight:700;margin-bottom:16px;">${escapeHtmlForPrint(title)}</div>
       <div style="width:52px;height:3px;background:#c2553d;margin-bottom:16px;"></div>
       <div style="font-size:13px;color:#666;">${escapeHtmlForPrint(metaParts.join(' · '))}</div>
@@ -302,8 +306,12 @@ export function ExportButtons() {
           }${escapeHtmlForPrint(getNodePlainText(node)) || '<span style="color:#999">(empty)</span>'}</div>`
       )
       .join('');
+    // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every printed
+    // page, direct port of legacy's real `@page{@bottom-right{...}}` print rule
+    // (legacy/index.html:39517-39532) -- the CSS Paged Media spec's own margin-box mechanism,
+    // which Chromium's print pipeline (what `window.print()` below drives) honors natively.
     printWindow.document.write(
-      `<!doctype html><html><head><title>${escapeHtmlForPrint(title)}</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body>${coverPage}${rows}</body></html>`
+      `<!doctype html><html><head><title>${escapeHtmlForPrint(title)}</title><style>body{font-family:sans-serif;padding:2rem;}@page{@bottom-right{content:"${BRANDING_TEXT}";font-family:sans-serif;font-size:8pt;letter-spacing:.15em;color:#a3a099;}}</style></head><body>${coverPage}${rows}</body></html>`
     );
     printWindow.document.close();
     printWindow.focus();
@@ -314,10 +322,10 @@ export function ExportButtons() {
   // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
   // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
   // bindings. Scoped way down from legacy's real Word export (no images, tables, decision
-  // cards, Notepad/Q&A sections, or branding) -- one paragraph per node, indented via docx's own
-  // `indent` property (720 twips = 0.5in per depth level, the standard Word indent unit), with a
-  // literal "[ ] "/"[x] " checkbox prefix since a real interactive checkbox isn't something a
-  // static Word paragraph can represent.
+  // cards, or Notepad/Q&A sections) -- one paragraph per node, indented via docx's own `indent`
+  // property (720 twips = 0.5in per depth level, the standard Word indent unit), with a literal
+  // "[ ] "/"[x] " checkbox prefix since a real interactive checkbox isn't something a static
+  // Word paragraph can represent.
   //
   // §6.6 fidelity upgrade: a node with `styles.heading` set (1-6, already a real field since
   // §6.2's rich-formatting slice) now renders as a genuine Word heading paragraph
@@ -330,6 +338,7 @@ export function ExportButtons() {
   // documented Word behavior, not a bug in this export. A heading node's checkbox
   // prefix/indent-by-depth are dropped for that paragraph (a Word heading style already carries
   // its own visual weight/spacing; combining it with a manual indent would fight the style).
+  // Also adds the branding wordmark as a real page footer (see the `footers` option below).
   async function exportWord() {
     const HEADING_LEVELS = [
       HeadingLevel.HEADING_1,
@@ -342,6 +351,20 @@ export function ExportButtons() {
     const doc = new Document({
       sections: [
         {
+          // §6.6 fidelity upgrade: a page footer showing the branding wordmark, direct port of
+          // legacy's real `buildDocxPackage` footer (legacy/index.html:25247-25248) -- small,
+          // muted, right-aligned, on every page. Always on (see `BRANDING_TEXT`'s own header for
+          // why), unlike legacy where it's gated by `previewPresenterBranding`.
+          footers: {
+            default: new Footer({
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.RIGHT,
+                  children: [new TextRun({ text: BRANDING_TEXT, size: 14, color: 'A3A099' })]
+                })
+              ]
+            })
+          },
           children: [
             new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }),
             ...nodes.map((node) => {
@@ -392,9 +415,30 @@ export function ExportButtons() {
   // `<textarea>`, not a rich editor with an embeddable table yet), no Q&A section headers
   // (`web/`'s own `QaItem` has no section/title concept, a simpler model than legacy's). Still
   // scoped way down otherwise: no title slide, no images/diagrams, no decision cards, no
-  // branding, no marker glyphs.
+  // marker glyphs. Also adds the branding wordmark to every slide's bottom-right corner (see
+  // `addBranding` below).
   async function exportPowerpoint() {
     const pptx = new PptxGenJS();
+    // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every slide,
+    // direct port of legacy's real `pptxApplyBranding` (legacy/index.html:25554-25566).
+    // Positioned against pptxgenjs's own default `LAYOUT_16x9` slide size (10in x 5.625in) --
+    // this export has never matched legacy's own custom `LAYOUT_WIDE` (13.333in x 7.5in) sizing,
+    // a separate, pre-existing gap outside this slice's scope, so the corner offset is measured
+    // against the real slide size this export actually produces rather than legacy's.
+    function addBranding(slide: PptxGenJS.Slide): void {
+      slide.addText(BRANDING_TEXT, {
+        x: 10 - 2.0,
+        y: 5.625 - 0.3,
+        w: 2.0,
+        h: 0.24,
+        fontFace: 'Inter',
+        fontSize: 7,
+        color: '999999',
+        align: 'right',
+        valign: 'middle',
+        charSpacing: 2
+      });
+    }
     const slides = groupIntoSlides(nodes);
     for (const slideNodes of slides) {
       const slide = pptx.addSlide();
@@ -412,12 +456,14 @@ export function ExportButtons() {
       if (bulletLines.length) {
         slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
       }
+      addBranding(slide);
     }
     if (notesText.trim()) {
       const notepadSlide = pptx.addSlide();
       notepadSlide.addText('Notepad', { x: 0.5, y: 0.4, fontSize: 28, bold: true });
       const paragraphs = notesText.split('\n').map((line) => ({ text: line, options: { fontSize: 16, breakLine: true } }));
       notepadSlide.addText(paragraphs, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+      addBranding(notepadSlide);
     }
     const answeredQa = qaItems.filter((item) => item.question.trim());
     if (answeredQa.length) {
@@ -433,12 +479,14 @@ export function ExportButtons() {
         });
       }
       qaSlide.addText(qaLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+      addBranding(qaSlide);
     }
     const closingSlide = pptx.addSlide();
     closingSlide.addText(CLOSING_SLIDE_TEXT, { x: 0.5, y: 2.6, w: '90%', h: 1, fontSize: 32, bold: true, align: 'center' });
     if (CLOSING_SLIDE_SUBTITLE) {
       closingSlide.addText(CLOSING_SLIDE_SUBTITLE, { x: 0.5, y: 3.6, w: '90%', h: 0.6, fontSize: 16, align: 'center', color: '666666' });
     }
+    addBranding(closingSlide);
     await pptx.writeFile({ fileName: 'outline.pptx' });
   }
 

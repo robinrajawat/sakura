@@ -618,10 +618,36 @@ format, Word/OPML import.
   document, confirmed the new document renders all four nodes with the correct text, and
   confirmed via the actual persisted `localStorage` doc record that depths (`[0,1,1,2]`) and
   `parentId` linking are both exactly correct -- zero console/page errors.
-- Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word
-  export; PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
-  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
-  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding).
+- ✅ **Branding wordmark (Word footer, PowerPoint corner, PDF per-page + cover, Presenter bar).**
+  Direct port of legacy's real branding mechanism across every surface it appears on:
+  `buildDocxPackage`'s footer (legacy/index.html:25247-25248), `pptxApplyBranding`
+  (legacy/index.html:25554-25566), the PDF print stylesheet's `@page{@bottom-right{...}}` rule
+  (legacy/index.html:39517-39532), and the always-visible `#presenter-branding` presenter-bar
+  element. `BRANDING_TEXT` (`PresenterMode.tsx`, alongside the closing-slide constants) is now
+  the one shared source of truth for the wordmark text ("S A K U R A", legacy's own real
+  `getBrandingDisplayText()` fallback) across all four surfaces, rather than four separate
+  hardcoded copies. Word gets a real page footer (`docx`'s own `Footer`/`AlignmentType.RIGHT`
+  API) shown on every page; PowerPoint gets a small corner text box on every slide (per-node,
+  Notepad, Q&A, and closing alike) positioned against this export's own real default slide size
+  (10in x 5.625in -- this export has never matched legacy's custom 13.333in x 7.5in sizing, a
+  separate pre-existing gap outside this slice); PDF gets both the cover-page wordmark (already
+  built) and a genuine CSS Paged Media `@bottom-right` margin-box rule so it shows on every
+  printed page, not just the cover; the live Presenter Mode bar gets the same small
+  letter-spaced mark legacy's own bar shows. Always on (matches legacy's real code default --
+  `previewPresenterBranding` is `true` in both the top-level global and `loadPrefs`'s own
+  fallback; the Settings panel's own description text claims "off by default," a real,
+  pre-existing doc/code mismatch in legacy itself that this port doesn't inherit, trusting the
+  actual behavior over the stale description). No Settings panel exists in `web/` yet to make
+  this toggleable or hold a custom wordmark override. Verified end-to-end in real headless
+  Chrome: unzipped the exported `.docx` and confirmed the footer XML contains the branding text;
+  unzipped the exported `.pptx` and confirmed every slide's XML carries it; inspected the PDF
+  print popup's own stylesheet and confirmed the `@bottom-right` rule plus the cover-page
+  wordmark; confirmed the mark renders live in the Presenter Mode bar -- zero console/page
+  errors across all four.
+- Still not started: images/tables/decision-log cards/Notepad-Q&A sections in Word export; PDF's
+  remaining fidelity gaps (margins config, footer text/date beyond branding, fold-state/notes/
+  decision-card rendering -- currently a flat node list, not rendered from a Preview-equivalent);
+  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -678,7 +704,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, Word (.docx) import landing in this PR) — see each section's own `Status:` line for the
+#202, #203, branding wordmark landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

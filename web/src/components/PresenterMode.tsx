@@ -39,6 +39,10 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
  * real Pad DOM nodes into a floating panel -- porting this well wants its own design pass on how
  * `PadPanel.tsx`'s store-backed content should share itself between the normal Pad dock and a
  * floating-during-Presenter view, not a quick add-on to this slice).
+ *
+ * A later §6.6 slice adds the branding wordmark (`BRANDING_TEXT` below) to the presenter bar
+ * itself, matching legacy's real always-on `#presenter-branding` element -- the same mark this
+ * export domain's Word/PDF/PowerPoint exports show (`ExportButtons.tsx`).
  */
 export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
   const slides: OutlineNode[][] = [];
@@ -56,6 +60,18 @@ export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
 // these two strings in a second place.
 export const CLOSING_SLIDE_TEXT = 'Thank you';
 export const CLOSING_SLIDE_SUBTITLE = 'Questions?';
+
+// Legacy's own real branding wordmark default (`getBrandingDisplayText`'s fallback when no
+// custom `previewBrandingText` is set) -- exported so `ExportButtons.tsx`'s Word/PDF/PowerPoint
+// exports show the exact same mark as this file's own presenter-bar branding below, one source
+// of truth instead of four hardcoded copies. Legacy's real `previewPresenterBranding` toggle
+// defaults to `true` in the code (`let previewPresenterBranding=true`, and `loadPrefs`'s own
+// `d.previewPresenterBranding===undefined?true:...` fallback agrees) -- the Settings panel's own
+// description text claims "Off by default," a real, pre-existing doc/code mismatch in legacy
+// itself; the actual code default (on) is what this hardcodes, same "trust the real behavior,
+// not the description" precedent already used elsewhere in this port. No Settings panel exists
+// in `web/` yet to make this toggleable or to hold a custom `previewBrandingText` override.
+export const BRANDING_TEXT = 'S A K U R A';
 
 /** Pure: matches legacy's own real per-slide label logic exactly (legacy/index.html:37507) --
  * the slide's first node's text, semantic markers stripped, brackets stripped (a `[Section]`
@@ -235,6 +251,9 @@ export function PresenterMode() {
         <button type="button" onClick={() => setOverviewOpen((v) => !v)} aria-pressed={overviewOpen}>
           Overview (G)
         </button>
+        <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 600, letterSpacing: '.22em', color: t.hintText }}>
+          {BRANDING_TEXT}
+        </span>
       </div>
       {overviewOpen && (
         <div
