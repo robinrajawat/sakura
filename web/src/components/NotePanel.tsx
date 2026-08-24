@@ -39,6 +39,13 @@ const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
  * isn't worth building just for this -- and `sanitizeHrefUrl` (ported from legacy) run on the
  * URL before it ever reaches the inserted `<a>`, on top of `sanitizeRichHtml`'s own href check
  * at commit time.
+ *
+ * Image insertion (the toolbar's Image button) is a third small slice: an off-DOM file input,
+ * `FileReader.readAsDataURL` to get a base64 data: URI, then `execCommand('insertImage', ...)`
+ * -- direct port of legacy's `ntb-image` handler (legacy/index.html:33946-33967). No dedicated
+ * click-to-select/resize handling yet (legacy's `.editor-img-selected` outline/drag-resize is a
+ * separate, later slice) -- inserted images just get legacy's own `max-width:100%` CSS so they
+ * never overflow the panel.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -143,6 +150,34 @@ export function NotePanel() {
     setLinkPrompt(null);
     savedRangeRef.current = null;
     commitNote();
+  };
+
+  // Insert-image-from-file, matching legacy's ntb-image handler (legacy/index.html:33946-33967):
+  // an off-DOM file input, read the chosen file as a data: URI via FileReader, insert via
+  // execCommand once loaded. sanitizeRichHtml doesn't block data: URIs (only javascript: on
+  // href/src/action/formaction), so these survive the commit-time sanitize pass untouched.
+  const insertImageFromFile = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        fileInput.remove();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        noteEditorRef.current?.focus();
+        document.execCommand('insertImage', false, evt.target?.result as string);
+        commitNote();
+        fileInput.remove();
+      };
+      reader.readAsDataURL(file);
+    });
+    fileInput.click();
   };
 
   // Esc closes, matching legacy's own note-panel-close tooltip ("Close (Esc)").
@@ -340,10 +375,32 @@ export function NotePanel() {
               >
                 🔗
               </button>
+              <button
+                type="button"
+                title="Insert image from file"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertImageFromFile();
+                }}
+                style={{
+                  border: `1px solid ${t.border}`,
+                  background: t.toolbarButtonBg,
+                  color: t.text,
+                  borderRadius: 4,
+                  minWidth: 24,
+                  height: 24,
+                  fontSize: 12,
+                  cursor: 'pointer'
+                }}
+              >
+                🖼
+              </button>
             </div>
+            <style>{`.sakura-note-editor img { max-width: 100%; border-radius: 6px; margin: 4px 0; display: block; }`}</style>
             <div
               key={node.id}
               ref={noteEditorRef}
+              className="sakura-note-editor"
               contentEditable
               suppressContentEditableWarning
               onBlur={commitNote}
