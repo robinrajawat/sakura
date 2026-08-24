@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNotePanelStore, NOTE_PANEL_WIDTH } from '../store/notePanelStore';
 import { useOutlineStore, CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
+import { sanitizeHrefUrl } from '../utils/sanitizeHrefUrl';
+import { escapeHtml } from '../utils/escapeHtml';
 
 const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
   { cmd: 'bold', label: 'B', title: 'Bold' },
@@ -29,6 +31,14 @@ const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
  * keystroke) whenever the open node changes, same pattern as legacy's `openNodePanel` setting
  * `editor.innerHTML` once on open. Still deferred: images, tables, links, timestamps, AI
  * rewrite/summarise, backlinks section -- each its own later slice.
+ *
+ * Link insertion (the toolbar's Link button) is its own small slice on top of that: a saved
+ * `Range` from the moment the button is clicked (contenteditable loses its selection the instant
+ * focus moves to an input), a lightweight inline prompt (Text/URL fields) in place of legacy's
+ * full `_openModal`/`sakuraLinkPrompt` system -- which this app has no equivalent of yet and
+ * isn't worth building just for this -- and `sanitizeHrefUrl` (ported from legacy) run on the
+ * URL before it ever reaches the inserted `<a>`, on top of `sanitizeRichHtml`'s own href check
+ * at commit time.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -53,6 +63,10 @@ export function NotePanel() {
     null
   );
   const noteEditorRef = useRef<HTMLDivElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+  const [linkPrompt, setLinkPrompt] = useState<{ text: string; url: string; hadExisting: boolean } | null>(
+    null
+  );
 
   const node = nodeId !== null ? nodes.find((n) => n.id === nodeId) ?? null : null;
 
@@ -68,6 +82,67 @@ export function NotePanel() {
   const commitNote = () => {
     if (!node || !noteEditorRef.current) return;
     setNote(node.id, sanitizeRichHtml(noteEditorRef.current.innerHTML));
+  };
+
+  // Opens the link prompt: saves the current selection Range (lost the instant an <input>
+  // takes focus) and pre-fills from an existing link if the caret/selection is inside one,
+  // matching legacy's own ntb-link handler (legacy/index.html:33783-33795).
+  const openLinkPrompt = () => {
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    savedRangeRef.current = range;
+    const anchorEl = sel?.anchorNode
+      ? (sel.anchorNode.nodeType === Node.ELEMENT_NODE
+          ? (sel.anchorNode as Element)
+          : sel.anchorNode.parentElement
+        )?.closest('a')
+      : null;
+    const selectedText = sel ? sel.toString() : '';
+    setLinkPrompt({
+      text: anchorEl ? anchorEl.textContent || '' : selectedText,
+      url: anchorEl ? anchorEl.getAttribute('href') || '' : 'https://',
+      hadExisting: !!anchorEl
+    });
+  };
+
+  const confirmLinkPrompt = () => {
+    if (!linkPrompt) return;
+    const range = savedRangeRef.current;
+    const sel = window.getSelection();
+    noteEditorRef.current?.focus();
+    if (range && sel) {
+      sel.removeAllRanges();
+      sel.addRange(range);
+      if (linkPrompt.hadExisting) {
+        // Re-select the whole existing <a> so insertHTML/unlink replaces it cleanly, matching
+        // legacy's own "select the existing anchor node first" step.
+        const anchorEl = (
+          range.startContainer.nodeType === Node.ELEMENT_NODE
+            ? (range.startContainer as Element)
+            : range.startContainer.parentElement
+        )?.closest('a');
+        if (anchorEl) {
+          const r = document.createRange();
+          r.selectNode(anchorEl);
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+      }
+    }
+    const url = sanitizeHrefUrl(linkPrompt.url);
+    if (!url) {
+      document.execCommand('unlink');
+    } else {
+      const text = linkPrompt.text.trim() || url;
+      document.execCommand(
+        'insertHTML',
+        false,
+        `<a href="${escapeHtml(url).replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`
+      );
+    }
+    setLinkPrompt(null);
+    savedRangeRef.current = null;
+    commitNote();
   };
 
   // Esc closes, matching legacy's own note-panel-close tooltip ("Close (Esc)").
@@ -245,6 +320,26 @@ export function NotePanel() {
                   {label}
                 </button>
               ))}
+              <button
+                type="button"
+                title="Insert / edit link"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  openLinkPrompt();
+                }}
+                style={{
+                  border: `1px solid ${t.border}`,
+                  background: t.toolbarButtonBg,
+                  color: t.text,
+                  borderRadius: 4,
+                  minWidth: 24,
+                  height: 24,
+                  fontSize: 12,
+                  cursor: 'pointer'
+                }}
+              >
+                🔗
+              </button>
             </div>
             <div
               key={node.id}
@@ -307,6 +402,110 @@ export function NotePanel() {
           </div>
         )}
       </div>
+      {linkPrompt && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setLinkPrompt(null);
+          }}
+        >
+          <div
+            style={{
+              background: t.background,
+              border: `1px solid ${t.border}`,
+              borderRadius: 8,
+              padding: 14,
+              width: 280,
+              boxShadow: '0 8px 24px rgba(0,0,0,.2)'
+            }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+              {linkPrompt.hadExisting ? 'Edit Link' : 'Insert Link'}
+            </div>
+            <label style={{ display: 'block', fontSize: 11, color: t.hintText, marginBottom: 2 }}>
+              Text to display
+            </label>
+            <input
+              value={linkPrompt.text}
+              placeholder="Link text (optional)"
+              onChange={(e) => setLinkPrompt({ ...linkPrompt, text: e.currentTarget.value })}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                marginBottom: 8,
+                padding: 5,
+                border: `1px solid ${t.border}`,
+                borderRadius: 4,
+                background: t.editBg,
+                color: t.text,
+                fontSize: 12
+              }}
+            />
+            <label style={{ display: 'block', fontSize: 11, color: t.hintText, marginBottom: 2 }}>Link</label>
+            <input
+              value={linkPrompt.url}
+              placeholder="https://"
+              autoFocus
+              onChange={(e) => setLinkPrompt({ ...linkPrompt, url: e.currentTarget.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmLinkPrompt();
+                if (e.key === 'Escape') setLinkPrompt(null);
+              }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                marginBottom: 12,
+                padding: 5,
+                border: `1px solid ${t.border}`,
+                borderRadius: 4,
+                background: t.editBg,
+                color: t.text,
+                fontSize: 12
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setLinkPrompt(null)}
+                style={{
+                  border: `1px solid ${t.border}`,
+                  background: 'transparent',
+                  color: t.text,
+                  borderRadius: 4,
+                  padding: '5px 10px',
+                  fontSize: 12,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmLinkPrompt}
+                style={{
+                  border: 'none',
+                  background: t.text,
+                  color: t.background,
+                  borderRadius: 4,
+                  padding: '5px 10px',
+                  fontSize: 12,
+                  cursor: 'pointer'
+                }}
+              >
+                Insert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
