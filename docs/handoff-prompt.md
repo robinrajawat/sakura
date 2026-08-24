@@ -183,12 +183,13 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `0b653b6` ("docs: refresh
-handoff prompt after Preview TOC landing, #194 (#195)"), with this PR's
-plain text/clipboard export slice about to land on top. §6.5 is fully
+As of this writing: `main` is at commit `0e9c44f` ("feat(export): plain
+text (.txt) and clipboard export (§6.6) (#196)"), with this PR's
+Presenter Mode depth slice about to land on top. §6.5 is fully
 complete -- all six Hub items landed. §6.6 (Preview, Presenter & Export)
-is now in progress: Preview TOC/scroll-spy/progress bar (#194) and plain
-text/clipboard export (this PR) are both landed.
+is now in progress: Preview TOC/scroll-spy/progress bar (#194), plain
+text/clipboard export (#196), and Presenter Mode depth (this PR) are all
+landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -384,7 +385,7 @@ all six items landed:
   normal-paced human typing -- flagged as a known open item for whoever
   picks it up next, not chased down here since it would be real scope
   creep into a Preview-scoped PR.
-- Plain text (Tree .txt) + Copy as Text (clipboard) landed in this PR:
+- Plain text (Tree .txt) + Copy as Text (clipboard) landed in #196:
   direct port of legacy's real `exportTreeFormat`/
   `exportToClipboard(forceFull=true)`, wiring up two Phase-1-ported-but-
   previously-unwired pure functions (`serializeTreeTextCore`,
@@ -408,12 +409,42 @@ all six items landed:
   there is no Decision Log store or panel component in `web/` at all, so
   there's nothing yet for an Excel export to read. Needs a real Decision
   Log feature built first.
-- Still open in §6.6: Presenter Mode (laser pointer, blackout, grid,
-  timer, floating notes, Whiteboard, Audience View, closing slide);
-  Word/PDF/PowerPoint export fidelity upgrades (heading styles, TOC,
-  Decision Log cards, rich formatting, image embedding, branding);
-  Sakura Document (`.sakura.json`) format; Word/OPML import. §6.7 onward
-  not started.
+- Presenter Mode depth (timer, blackout, laser pointer, overview grid,
+  closing slide) landed in this PR: direct port of legacy's real
+  `startPresenterTimer`/`setPresenterBlank`/`previewSetLaser`/
+  `openPresenterOverview`/closing-slide logic. Timer is a plain running
+  clock from mount matching legacy's h:mm:ss/m:ss format; blackout (`B`)
+  is a pure screen-level overlay, the slide underneath untouched; laser
+  pointer is a `position:fixed` dot tracking the mouse while active
+  (native cursor hidden), same size/color/glow as legacy's own dot;
+  overview grid (`G`) is label-based (not live thumbnails, matching
+  legacy's own stated reasoning), `slideLabel` a pure function matching
+  legacy's exact per-slide label logic; closing slide is a real extra
+  slide appended after the last content slide, included in slide count/
+  navigation/overview exactly like legacy, text/subtitle hardcoded to
+  legacy's own real defaults ("Thank you"/"Questions?", no Settings
+  panel exists yet). Deliberately still not ported, each a real
+  architectural gap rather than a small omission: Audience View/
+  dual-screen (legacy's real implementation does a genuine second
+  navigation of the same page with a query param -- `web/` has no
+  client-side routing at all, a Phase 0 decision, so there's no page for
+  a second window to load); Whiteboard mirroring (its poll loop only
+  starts once Audience View is live, inheriting that same blocker);
+  floating Notes/Q&A during presenting (legacy relocates the real Pad
+  DOM nodes into a floating panel -- porting this well wants its own
+  design pass on how `PadPanel.tsx`'s store-backed content should share
+  itself between the normal Pad dock and a floating-during-Presenter
+  view). Verified end-to-end in real headless Chrome: timer ticks, `G`
+  opens the overview grid (closing-slide card included), `End` jumps to
+  the closing slide, `Home` returns, `B` toggles blackout, the laser
+  toggle + mousemove renders the tracking dot -- zero console/page
+  errors.
+- Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
+  mirroring, and Audience View/dual-screen (see above for why each is
+  blocked/deferred); Word/PDF/PowerPoint export fidelity upgrades
+  (heading styles, TOC, Decision Log cards, rich formatting, image
+  embedding, branding); Sakura Document (`.sakura.json`) format;
+  Word/OPML import. §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

@@ -475,8 +475,34 @@ format, Word/OPML import.
   component anywhere in `web/` yet, so there is nothing for an Excel export to read. Needs a real
   Decision Log feature (its own Pad tab, matching legacy's) built first; tracked here as blocked
   on that, not as a small export-fidelity gap.
-- Presenter mode depth, Word/PDF/PowerPoint export fidelity, Sakura Document (`.sakura.json`)
-  format, Word/OPML import -- not started.
+- ✅ **Presenter Mode depth (timer, blackout, laser pointer, overview grid, closing slide)** --
+  direct port of legacy's real `startPresenterTimer`/`setPresenterBlank`/`previewSetLaser`/
+  `openPresenterOverview`/closing-slide logic (legacy/index.html:38514-38689,37921-37936). Timer
+  is a plain running clock from mount (`useEffect`, matching legacy's h:mm:ss/m:ss format
+  exactly). Blackout (`B` key or button) is a pure screen-level overlay -- the slide underneath
+  is untouched, matching legacy's own comment on the feature. Laser pointer is a
+  `position:fixed` dot tracking the mouse while active (native cursor hidden), same size/color/
+  glow as legacy's `#preview-laser-dot`. Overview grid (`G` key or button) is label-based, not
+  live thumbnails, matching `openPresenterOverview`'s own stated reasoning (a screenshot per
+  slide is a lot of machinery for what's really just a faster way to jump around during Q&A) --
+  `slideLabel` is a pure function matching legacy's exact per-slide label logic. Closing slide is
+  a real extra slide appended after the last content slide, included in slide count/navigation/
+  overview exactly like legacy's own `previewSlideList.push({nodeId:null,...})`; text/subtitle
+  hardcoded to legacy's own real defaults ("Thank you"/"Questions?") since no Settings panel
+  exists yet. Deliberately still not ported, each a real architectural gap: Audience View /
+  dual-screen (legacy's real implementation does a genuine second navigation of the same page
+  with a query param -- `web/` has no client-side routing at all, a Phase 0 decision, so there is
+  no page for a second window to load); Whiteboard mirroring (its poll loop only starts once
+  Audience View is live, inheriting that same blocker); floating Notes/Q&A during presenting
+  (legacy relocates the real Pad DOM nodes into a floating panel -- porting this well wants its
+  own design pass on how `PadPanel.tsx`'s store-backed content should share itself between the
+  normal Pad dock and a floating-during-Presenter view). Verified end-to-end in real headless
+  Chrome: timer ticks, `G` opens the overview grid (closing-slide card included), `End` jumps to
+  the closing slide showing "Thank you"/"Questions?", `Home` returns, `B` toggles the blackout
+  overlay, the laser toggle button + mousemove renders the tracking dot -- zero console/page
+  errors throughout.
+- Word/PDF/PowerPoint export fidelity, Sakura Document (`.sakura.json`) format, Word/OPML
+  import -- not started.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -532,7 +558,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, plain text/clipboard export landing in
+six Hub items now landed, and **§6.6 in progress** (#194, #196, Presenter Mode depth landing in
 this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
