@@ -35,7 +35,10 @@ describe('padStore', () => {
 
   it('addRemark/removeRemark', () => {
     usePadStore.getState().addRemark('Ajay', 'Looks good');
-    expect(usePadStore.getState().remarks).toEqual([{ id: 1, person: 'Ajay', text: 'Looks good' }]);
+    const remarks = usePadStore.getState().remarks;
+    expect(remarks).toHaveLength(1);
+    expect(remarks[0]).toMatchObject({ id: 1, person: 'Ajay', text: 'Looks good' });
+    expect(remarks[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     usePadStore.getState().removeRemark(1);
     expect(usePadStore.getState().remarks).toEqual([]);
   });

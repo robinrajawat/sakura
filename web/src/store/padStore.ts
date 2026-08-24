@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { todayDateStr } from '../utils/remarkDate';
 
 export type DecisionStatus = 'proposed' | 'approved' | 'rejected';
 
@@ -19,6 +20,7 @@ export interface Remark {
   id: number;
   person: string;
   text: string;
+  date: string;
 }
 
 export interface FileRef {
@@ -81,7 +83,7 @@ export const usePadStore = create<PadState>((set, get) => ({
 
   addRemark: (person, text) => {
     const { remarks, nextId } = get();
-    set({ remarks: [...remarks, { id: nextId, person, text }], nextId: nextId + 1 });
+    set({ remarks: [...remarks, { id: nextId, person, text, date: todayDateStr() }], nextId: nextId + 1 });
   },
   removeRemark: (id) => set({ remarks: get().remarks.filter((r) => r.id !== id) }),
 
