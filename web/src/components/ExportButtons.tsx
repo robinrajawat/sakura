@@ -1,5 +1,6 @@
 import { useOutlineStore } from '../store/outlineStore';
 import { useDocumentsStore } from '../store/documentsStore';
+import { usePadStore } from '../store/padStore';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
@@ -7,7 +8,7 @@ import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
 import { Document, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
-import { groupIntoSlides } from './PresenterMode';
+import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE } from './PresenterMode';
 
 /**
  * Plain-text/clipboard export options shared by `exportPlainText`/`exportClipboard` below.
@@ -56,6 +57,8 @@ export function ExportButtons() {
   const nodes = useOutlineStore((s) => s.nodes);
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
+  const notesText = usePadStore((s) => s.notesText);
+  const qaItems = usePadStore((s) => s.qaItems);
 
   function exportMarkdown() {
     // rebaseDepth=false, outlineNumbering=false -- matches legacy's exportMarkdown call's own
@@ -230,10 +233,24 @@ export function ExportButtons() {
   // pptxgenjs (npm, MIT-licensed) is the same library legacy itself uses, pinned to the same
   // 4.0.1 version, so this genuinely produces the same kind of native, fully-editable OOXML
   // slide deck legacy's own export does -- text boxes and bullets are real shapes, not a
-  // flattened image. Scoped way down from legacy's real PowerPoint export otherwise: no title
-  // slide, no images/diagrams, no decision cards, no Notepad/Q&A sections, no branding, no
-  // marker glyphs, no auto-overflow onto a "(cont'd)" slide, no closing slide. Each a real,
-  // separately-scoped follow-up.
+  // flattened image.
+  //
+  // §6.6 fidelity upgrade: a Notepad slide (Pad's plain-text `notesText`, if non-empty) and
+  // Q&A slide(s) (Pad's `qaItems` -- question bold, answer below, "No answer provided" for an
+  // unanswered one, matching legacy's own real wording) now follow the per-node slides, and a
+  // real closing slide (reusing `PresenterMode.tsx`'s own `CLOSING_SLIDE_TEXT`/
+  // `CLOSING_SLIDE_SUBTITLE` constants -- the same defaults Presenter Mode's own closing slide
+  // uses) is always the genuine last slide in the deck, matching legacy's own real ordering
+  // (per-node slides, then Notepad, then Q&A, then closing). Scoped down from legacy's real
+  // Notepad/Q&A slides: no pagination/overflow onto a "(cont'd)" slide when content doesn't fit
+  // the box (legacy measures real wrapped-line heights against the actual font to decide where
+  // to split -- a lot of machinery for a real, separately-scoped follow-up; unusually long
+  // content here just overflows its text box visually in the viewer, still fully present and
+  // editable in the underlying shape), no table/chart promotion (`web/`'s Notepad is a plain
+  // `<textarea>`, not a rich editor with an embeddable table yet), no Q&A section headers
+  // (`web/`'s own `QaItem` has no section/title concept, a simpler model than legacy's). Still
+  // scoped way down otherwise: no title slide, no images/diagrams, no decision cards, no
+  // branding, no marker glyphs.
   async function exportPowerpoint() {
     const pptx = new PptxGenJS();
     const slides = groupIntoSlides(nodes);
@@ -253,6 +270,32 @@ export function ExportButtons() {
       if (bulletLines.length) {
         slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
       }
+    }
+    if (notesText.trim()) {
+      const notepadSlide = pptx.addSlide();
+      notepadSlide.addText('Notepad', { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+      const paragraphs = notesText.split('\n').map((line) => ({ text: line, options: { fontSize: 16, breakLine: true } }));
+      notepadSlide.addText(paragraphs, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+    }
+    const answeredQa = qaItems.filter((item) => item.question.trim());
+    if (answeredQa.length) {
+      const qaSlide = pptx.addSlide();
+      qaSlide.addText('Q&A', { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+      const qaLines: { text: string; options: Record<string, unknown> }[] = [];
+      for (const item of answeredQa) {
+        const answer = item.answer.trim();
+        qaLines.push({ text: item.question.trim(), options: { fontSize: 16, bold: true, breakLine: true } });
+        qaLines.push({
+          text: answer || 'No answer provided',
+          options: { fontSize: 14, italic: !answer, color: answer ? undefined : '999999', breakLine: true }
+        });
+      }
+      qaSlide.addText(qaLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+    }
+    const closingSlide = pptx.addSlide();
+    closingSlide.addText(CLOSING_SLIDE_TEXT, { x: 0.5, y: 2.6, w: '90%', h: 1, fontSize: 32, bold: true, align: 'center' });
+    if (CLOSING_SLIDE_SUBTITLE) {
+      closingSlide.addText(CLOSING_SLIDE_SUBTITLE, { x: 0.5, y: 3.6, w: '90%', h: 0.6, fontSize: 16, align: 'center', color: '666666' });
     }
     await pptx.writeFile({ fileName: 'outline.pptx' });
   }
