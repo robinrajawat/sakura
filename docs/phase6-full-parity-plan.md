@@ -757,11 +757,39 @@ format, Word/OPML import.
   malicious `.sakura.json` above and confirmed the exported print window's HTML has no
   `<script>` tag and no `onerror` attribute, and that neither payload actually executed -- zero
   console/page errors across both checks.
-- Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
-  Word tables/decision-log cards; PDF's remaining fidelity gap (decision-card rendering, and the
-  bigger "render from a real Preview-equivalent" architecture legacy's own PDF export uses --
-  see the slice above for why fold-state itself isn't actually part of this gap); PowerPoint's
-  remaining fidelity gap (decision cards).
+- ✅ **PowerPoint image embedding.** Direct port of legacy's real per-slide image row (legacy's
+  own `pptxLayoutImageRow`, ported to `utils/pptxLayoutImageRow.ts`) -- one image per node
+  (`extractFirstImageDataUrl`, the same "first image in the note" helper Word export already
+  uses), gathered across every node in a slide's group, laid out as an aspect-ratio-scaled row
+  filling whatever vertical space is left below the bullets. `loadImageDimensions` (already
+  built for Word export) reads each image's real pixel size. This used to be scoped out as a
+  "separate, bigger follow-up" specifically because PPTX's fixed-canvas layout risked visual
+  overlap without real text measurement -- that blocker no longer applies now that
+  `measureWrappedLines` (from the overflow-pagination slice above) exists to size the bullets
+  the image row has to share space with. A slide group with images renders as a single slide --
+  no per-node overflow pagination -- matching legacy's own real, deliberate scope-down
+  (legacy/index.html:26256-26271's own comment: "images onto multiple slides is a more tangled
+  layout problem left alone here"), not a limitation invented for this port. `pptxLayoutImageRow`
+  itself (the aspect-ratio-scaling/centering/floor math) is pure and unit-tested (6 cases:
+  single image, side-by-side row, proportional shrink when a row overflows its area, a
+  non-square aspect ratio, the 0.33in width floor, and the zero-height divide-by-zero guard).
+  Verified end-to-end in real headless Chrome: added a 200x100 (2:1) note image to a leaf-ish
+  node (one with 2 real bullet lines above it), exported `.pptx`, unzipped the result and
+  confirmed a real embedded media part byte-for-byte identical to the source PNG, positioned by
+  hand-checking the OOXML's `<a:off>`/`<a:ext>` against the exact expected math (bullets' real
+  measured height reserving the correct vertical offset, then the image aspect-ratio-scaled and
+  horizontally centered in the remaining space) -- every dimension matched to 4 decimal places --
+  with the title, both bullets, the image, and the branding wordmark all present together on one
+  slide -- zero console/page errors.
+- Still not started: Word tables/decision-log cards; PDF's remaining fidelity gap (decision-card
+  rendering, and the bigger "render from a real Preview-equivalent" architecture legacy's own PDF
+  export uses -- see the note/code-rendering slice above for why fold-state itself isn't actually
+  part of this gap); PowerPoint's remaining fidelity gap (decision cards). Word
+  tables/decision-log cards and PDF/PowerPoint decision cards are blocked on the same missing
+  feature: `web/` has no table concept and no Decision Log store/panel at all yet (confirmed by
+  investigation -- `state/decisionLog.ts` is a pure validate/normalize function with one real
+  call site in node-import normalization, not a real feature), so these aren't buildable as
+  export-side slices until that feature exists earlier in the roadmap.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -818,7 +846,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, #210, PDF note/code-block rendering landing in
+#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, PowerPoint image embedding landing in
 this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own

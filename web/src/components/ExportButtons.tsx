@@ -11,6 +11,7 @@ import { parseDocxHtmlToTreeNodesCore } from '../utils/parseDocxHtml';
 import { extractFirstImageDataUrl } from '../utils/extractNoteImage';
 import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { wrapLineCount, pptxLineHeightIn } from '../utils/wrapLineCount';
+import { pptxLayoutImageRow } from '../utils/pptxLayoutImageRow';
 import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
@@ -546,10 +547,12 @@ export function ExportButtons() {
   // `measureWrappedLines`'s own comment below). Still scoped down from legacy's real
   // Notepad/Q&A slides: no table/chart promotion (`web/`'s Notepad is a plain `<textarea>`, not
   // a rich editor with an embeddable table yet), no Q&A section headers (`web/`'s own `QaItem`
-  // has no section/title concept, a simpler model than legacy's). Still scoped way down
-  // otherwise: no title slide, no images/diagrams (see `Word note-image embedding` above for why
-  // PPTX images are a separate, bigger follow-up), no decision cards, no marker glyphs. Also
-  // adds the branding wordmark to every slide's bottom-right corner (see `addBranding` below).
+  // has no section/title concept, a simpler model than legacy's). A node's note image now
+  // embeds too (see the image-row block below) -- the "separate, bigger follow-up" this used to
+  // be is done, now that real text measurement exists to size bullets/images against each
+  // other. Still scoped way down otherwise: no title slide, no diagrams, no decision cards, no
+  // marker glyphs. Also adds the branding wordmark to every slide's bottom-right corner (see
+  // `addBranding` below).
   async function exportPowerpoint() {
     const pptx = new PptxGenJS();
     // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every slide,
@@ -600,6 +603,51 @@ export function ExportButtons() {
         text: (node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '') + (getNodePlainText(node) || '(empty)'),
         indentLevel: node.depth - minDepth - 1
       }));
+      // §6.6 fidelity upgrade: PowerPoint image embedding. Direct port of legacy's real
+      // per-slide image row (legacy's own `pptxLayoutImageRow`, ported to
+      // `utils/pptxLayoutImageRow.ts`) -- one image per node (`extractFirstImageDataUrl`, the
+      // same "first image in the note" helper Word export already uses), gathered across every
+      // node in this slide's group, laid out as an aspect-ratio-scaled row filling whatever
+      // vertical space is left below the bullets. `loadImageDimensions` (already built for Word
+      // export) reads each image's real pixel size so the row math has real aspect ratios to
+      // work with, not guesses. `pptxgenjs`'s `addImage` accepts a full `data:` URI directly for
+      // its own `data` option, so unlike Word's `ImageRun` (which needs decoded bytes), no
+      // separate decode step is needed here.
+      //
+      // A slide group with images renders as a single slide -- no per-node overflow pagination
+      // -- matching legacy's own real, deliberate scope-down (legacy/index.html:26256-26271's
+      // own comment: "images onto multiple slides is a more tangled layout problem left alone
+      // here"), not a limitation invented for this port. An unusually long bullet list combined
+      // with images can still overflow its slide visually in that case; legacy accepts the same
+      // trade-off rather than solving pagination-plus-images together.
+      const slideImages: { dataUrl: string; width: number; height: number }[] = [];
+      for (const node of slideNodes) {
+        const dataUrl = extractFirstImageDataUrl(node.note);
+        if (!dataUrl) continue;
+        const dims = await loadImageDimensions(dataUrl);
+        if (dims) slideImages.push({ dataUrl, width: dims.width, height: dims.height });
+      }
+      if (slideImages.length) {
+        const slide = pptx.addSlide();
+        slide.addText(title, { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+        const bodyTop = 1.3;
+        let cursorY = bodyTop;
+        if (bullets.length) {
+          const bulletsH = bullets.reduce((sum, b) => sum + measureWrappedLines(b.text, BOX_WIDTH_IN, 16, false) * pptxLineHeightIn(16, 1.3), 0);
+          const bulletLines = bullets.map((b) => ({ text: b.text, options: { bullet: true, indentLevel: b.indentLevel, fontSize: 16 } }));
+          slide.addText(bulletLines, { x: 0.5, y: bodyTop, w: '90%', h: bulletsH });
+          cursorY = bodyTop + bulletsH + 0.15;
+        }
+        const areaY = cursorY;
+        const areaH = Math.max(1, 5.625 - areaY - 0.4);
+        const positions = pptxLayoutImageRow(slideImages, 0.5, areaY, BOX_WIDTH_IN, areaH);
+        slideImages.forEach((img, k) => {
+          const pos = positions[k];
+          slide.addImage({ data: img.dataUrl, x: pos.x, y: pos.y, w: pos.w, h: pos.h });
+        });
+        addBranding(slide);
+        continue;
+      }
       const pages: (typeof bullets)[] = [];
       let page: typeof bullets = [];
       let usedH = 0;
