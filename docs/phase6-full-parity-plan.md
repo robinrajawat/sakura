@@ -679,11 +679,24 @@ format, Word/OPML import.
   the result and confirmed a real image media part (`word/media/<hash>.png`, exact byte size
   matching the source image), a genuine `<w:drawing>` element in `document.xml`, and a real image
   relationship in `document.xml.rels` -- zero console/page errors.
+- ✅ **Word: Notepad + Q&A sections.** Direct port of legacy's real `docxBuildNotepadSection`/
+  `docxBuildQaSection` (legacy/index.html:24765-24824), mirroring the same content/wording
+  already built for the PowerPoint export (§6.6, #200): a "Notepad" heading followed by Pad's
+  plain-text `notesText` as its own paragraphs (if non-empty), and a "Q&A" heading followed by
+  one question(bold)/answer(muted, indented) pair per `qaItem` -- "No answer provided" in italic
+  muted for an unanswered one. Both use `docx`'s own `heading` paragraph option, so they show up
+  in the TOC field and Word's Navigation Pane automatically (the TOC already built has
+  `headingStyleRange:'1-6'`) without any extra bookmark plumbing, unlike legacy's own hand-rolled
+  bookmark-and-TOC-entry wiring. Scoped down: no left-border accent rule on Q&A answers (`docx`'s
+  current paragraph-border API doesn't expose a plain single-side border the way legacy's own
+  hand-rolled OOXML does -- color and indent alone still distinguish an answer from its
+  question). Verified end-to-end in real headless Chrome: filled Notepad text and added a Q&A
+  item via the Pad panel, exported `.docx`, unzipped the result and confirmed both section
+  headings and their real content are present in `document.xml` -- zero console/page errors.
 - Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
-  Word tables/decision-log cards/Notepad-Q&A sections; PDF's remaining fidelity gap (fold-state/
-  notes/decision-card rendering -- currently a flat node list, not rendered from a
-  Preview-equivalent); PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides, decision
-  cards).
+  Word tables/decision-log cards; PDF's remaining fidelity gap (fold-state/notes/decision-card
+  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
+  remaining fidelity gaps (overflow "(cont'd)" slides, decision cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -740,7 +753,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, Word note-image embedding landing in this PR) — see each section's own `Status:` line for the
+#202, #203, #204, #205, #206, Word Notepad/Q&A sections landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

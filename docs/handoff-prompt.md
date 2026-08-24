@@ -183,18 +183,19 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `2dad3c3` ("feat(export): PDF
-page margins + footer (§6.6) (#205)"), with this PR's Word note-image
-embedding slice about to land on top. §6.5 is fully complete -- all
-six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
+As of this writing: `main` is at commit `fcfe22f` ("feat(export): Word
+note-image embedding (§6.6) (#206)"), with this PR's Word Notepad/Q&A
+sections slice about to land on top. §6.5 is fully complete -- all six
+Hub items landed. §6.6 (Preview, Presenter & Export) is now in
 progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
 clipboard export (#196), Presenter Mode depth (#197), Word export
 heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
 Notepad/Q&A/closing slides (#200), OPML import (#201), Sakura Document
 export/import (#202), Word (.docx) import (#203), the branding
 wordmark across Word/PDF/PowerPoint/Presenter (#204), PDF page margins
-+ date/page-count footer (#205), and Word note-image embedding (this
-PR) are all landed. One note on this session's CI: PR #204 hit a real,
++ date/page-count footer (#205), Word note-image embedding (#206), and
+Word Notepad/Q&A sections (this PR) are all landed. One note on this
+session's CI: PR #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
 collision check, unrelated to any file this session touched) -- a
 duplicate CI run of the identical commit passed, confirming it was a
@@ -603,7 +604,7 @@ all six items landed:
   stylesheet and confirmed the full `@page` block -- `margin:20mm`, a
   real formatted date, the literal counter CSS, and the branding rule
   all present and correctly escaped -- zero console/page errors.
-- Word note-image embedding landed in this PR: investigated before
+- Word note-image embedding landed in #206: investigated before
   scoping -- checked `NotePanel.tsx`'s real "Insert image from file"
   action in full and confirmed a genuine image-in-note pathway already
   exists (a node's `note` can hold a real `data:` URI `<img>`, inserted
@@ -629,14 +630,30 @@ all six items landed:
   media part (`word/media/<hash>.png`, exact byte size matching the
   source), a genuine `<w:drawing>` element, and a real image
   relationship -- zero console/page errors.
+- Word Notepad + Q&A sections landed in this PR: direct port of
+  legacy's real `docxBuildNotepadSection`/`docxBuildQaSection`,
+  mirroring the same content/wording already built for the PowerPoint
+  export (#200): a "Notepad" heading + Pad's plain-text `notesText` as
+  its own paragraphs, and a "Q&A" heading + one question(bold)/
+  answer(muted, indented) pair per `qaItem` ("No answer provided" in
+  italic muted for an unanswered one). Both use `docx`'s own `heading`
+  paragraph option, so they show up in the TOC field and Word's
+  Navigation Pane automatically, without any extra bookmark plumbing.
+  No left-border accent rule on Q&A answers (`docx`'s current
+  paragraph-border API doesn't expose a plain single-side border the
+  way legacy's own hand-rolled OOXML does). Verified end-to-end in
+  real headless Chrome: filled Notepad text and added a Q&A item via
+  the Pad panel, exported `.docx`, unzipped the result and confirmed
+  both section headings and their real content are present -- zero
+  console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); PowerPoint image embedding (see above); Word
-  tables/Decision Log cards/Notepad-Q&A sections; PDF's remaining
-  fidelity gap (fold-state/notes/decision-card rendering -- currently
-  a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
-  decision cards). §6.7 onward not started.
+  tables/Decision Log cards; PDF's remaining fidelity gap (fold-state/
+  notes/decision-card rendering -- currently a flat node list, not
+  rendered from a Preview-equivalent); PowerPoint's remaining fidelity
+  gaps (overflow "(cont'd)" slides, decision cards). §6.7 onward not
+  started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
