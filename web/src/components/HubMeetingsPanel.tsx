@@ -28,6 +28,8 @@ export function HubMeetingsPanel() {
   const updateActionItemText = useHubMeetingsStore((s) => s.updateActionItemText);
   const removeActionItem = useHubMeetingsStore((s) => s.removeActionItem);
   const promoteActionItem = useHubMeetingsStore((s) => s.promoteActionItem);
+  const focusMeetingId = useHubMeetingsStore((s) => s.focusMeetingId);
+  const clearFocusMeetingId = useHubMeetingsStore((s) => s.clearFocusMeetingId);
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -37,6 +39,15 @@ export function HubMeetingsPanel() {
   useEffect(() => {
     loadMeetings();
   }, [loadMeetings]);
+
+  // Recap's click-to-jump sets focusMeetingId in the store; expand that meeting here, same
+  // pattern HubTodosPanel.tsx uses for its own focusTodoId.
+  useEffect(() => {
+    if (focusMeetingId) {
+      setExpandedId(focusMeetingId);
+      clearFocusMeetingId();
+    }
+  }, [focusMeetingId, clearFocusMeetingId]);
 
   if (!loaded) {
     return <div style={{ fontFamily: 'sans-serif', fontSize: 13, color: t.mutedText }}>Loading…</div>;

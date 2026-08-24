@@ -346,9 +346,33 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   first) → create a second unfavorited entry → search narrows to a text match → tag-filter chip
   and favorites-only combine as an AND filter, matching legacy exactly → reload confirms
   persistence, zero console/page errors in both light and dark theme.
+- ✅ **Recap** (pending -- PR number not yet known; previous PR was #188) -- replaces the Phase 4
+  placeholder (static counts + a "most recent N" list per Hub store) with legacy's real
+  Today/This Week/Last Week period model (`hubRecap.ts`): `getRecapRange` ports `getReportRange`
+  exactly (Monday-start weeks), and per-item created/completed/updated classification
+  (`collectRecapTodoItems`/`collectRecapMeetingItems`/`collectRecapJournalItems`) covers the
+  three Hub domains this project already tracks real `createdAt`/`modifiedAt`/`completedAt` on.
+  Click-to-jump expands the matching row in its own panel below (`setFocusTodoId`/
+  `setFocusMeetingId`, the latter a new field added to `hubMeetingsStore.ts` mirroring
+  `hubTodosStore.ts`'s own pre-existing `focusTodoId` pattern from the due-reminder slice;
+  Journal reused its already-existing `openEntry(date)`).
+  **Real, deliberate scope reduction, each documented in `hubRecap.ts`'s own header:** no
+  outline-node activity (items created/edited/completed inside documents) and no document-level
+  grouping (legacy's `reportGetAllDocNodeSets`/`reportGroupByDoc`) -- `web/`'s own `OutlineNode`
+  has no `createdAt`/`modifiedAt`/`completedAt` fields on individual nodes at all yet, a genuine
+  cross-cutting change to the node shape and the doc round-trip/sync format, not something this
+  slice can honestly do as a side effect; no Decision Log/Diagrams/Q&A/Mind Map activity (same
+  blocker); no AI bullet-summary (§6.9 not started). **Scoping correction**: Library was never
+  part of legacy's own Recap scan (`buildActivityReport` never reads `libraryItems`, checked
+  directly against legacy/index.html:51964-52036) -- the Phase 4 placeholder's "Library items"
+  stat was never a real parity target, dropped rather than carried forward. Verified end-to-end
+  in real headless Chrome: Today/This Week/Last Week tabs filter correctly (a todo/meeting/
+  journal entry created today shows under Today and This Week, not Last Week, which correctly
+  reads all-zero/"Nothing here yet"), and clicking a Recap row for both a to-do and a meeting
+  note expands that exact item in its own panel below, zero console/page errors.
 - ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
   scoping correction above); Meeting Notes' PDF export/Version History/Share/node-links (same
-  deferral); Recap; Mobile Hub.
+  deferral); Mobile Hub.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
@@ -410,7 +434,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176, #179, #181, #185, #187) — see each section's own `Status:` line for the
+progress** (#176, #179, #181, #185, #187, and Recap pending its own PR number) — only Mobile Hub
+remains — see each section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

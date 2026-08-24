@@ -42,6 +42,13 @@ interface HubMeetingsState {
    * mount effect, same pattern `useHubJournalStore` uses for its own async load. */
   loadMeetings: () => Promise<void>;
 
+  /** Set by Recap's click-to-jump (§6.5, HubRecapPanel.tsx) to expand a specific meeting --
+   * same shape as `hubTodosStore.ts`'s own `focusTodoId`/`clearFocusTodoId` pair, consumed by a
+   * mount effect in `HubMeetingsPanel.tsx` the same way `HubTodosPanel.tsx` consumes its own. */
+  focusMeetingId: string | null;
+  clearFocusMeetingId: () => void;
+  setFocusMeetingId: (id: string) => void;
+
   /** Matches legacy's real `createMeetingNote` (legacy/index.html:47451-47470): a fresh note
    * defaulting to today's date, everything else blank. `templateKey` is accepted for parity
    * with the original's signature and its "New from template" menu, but is currently always a
@@ -79,6 +86,9 @@ interface HubMeetingsState {
 export const useHubMeetingsStore = create<HubMeetingsState>((set, get) => ({
   meetings: [],
   loaded: false,
+  focusMeetingId: null,
+  clearFocusMeetingId: () => set({ focusMeetingId: null }),
+  setFocusMeetingId: (id) => set({ focusMeetingId: id }),
 
   loadMeetings: async () => {
     if (get().loaded) return;
