@@ -163,8 +163,8 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `974fdd6` ("feat(hub): Meeting
-Notes depth -- persistence, action items, promote (§6.5) (#181)"). Phase 6
+As of this writing: `main` is at commit `cc170d6` ("feat(hub): Journal
+depth -- editing, rich text, calendar popover (§6.5) (#185)"). Phase 6
 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -202,10 +202,39 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   companion; and legacy ships zero prebuilt meeting templates
   (`MEETING_TEMPLATES=[]`, a deliberate documented removal) — the real gap
   was the create-new-meeting entry point, which `createMeeting()` provides.
+- Journal landed in #185: replaces the Phase 4 placeholder (freeform
+  create/delete, plain textarea) with legacy's real one-entry-per-date
+  model — editing an existing entry's mood/body in place
+  (`findOrCreateEntry` by `date` in `hubJournalStore.ts`, matching legacy's
+  own `findOrCreateJournalEntry`), rich text matching legacy's own actual
+  (narrower-than-Note-panel) toolset exactly (bullet/numbered-list toolbar
+  buttons + Ctrl/Cmd+B/I keyboard-shortcut-only bold/italic, no
+  underline/strike/link/image/table), and a calendar popover
+  (`JournalCalendarPopover`, a custom month-grid with Today/Yesterday/
+  Tomorrow presets and has-entry dots, direct port of legacy's
+  `#journal-date-popover`) to jump to or create any date's entry. Also
+  fixed a real data-compat bug found during investigation: web/'s
+  `VALID_MOODS` had `'okay'` where legacy has `'neutral'` — any entry
+  synced from legacy with `mood:'neutral'` was silently normalizing to
+  `''`. Scoping corrections: legacy itself has no tags UI for Journal
+  anywhere despite README.md referencing "free-form tags" (a pre-existing
+  doc/code mismatch, not built here); search stays out of scope too —
+  legacy's own Journal search lives only in the shared Quick Assist /
+  hub-wide search bar, neither of which exists in web/ yet. Real
+  headless-Chrome testing caught and fixed a genuine layout bug before
+  merge (the calendar popover's first draft anchored `right: 0` off its
+  trigger button, which sits close to the left sidebar — on a real page
+  this rendered the popover partly underneath the sidebar's stacking
+  region and made a real click fail; fixed by anchoring `left: 0`
+  instead), and separately confirmed (not fixed, correctly) that a
+  caret-jumps-to-start quirk when clicking the bullet-list button after
+  typing existing text is an inherited `execCommand('insertUnorderedList')`
+  browser quirk already present identically in NotePanel.tsx's own
+  bullet-list button, not a regression from this slice.
 - Still open in §6.5: To-Dos'/Meeting Notes' PDF export/Version
   History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not
   Hub-specific); Meeting Notes' cross-document node links (separately
-  scoped); Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
+  scoped); Library; Recap; Mobile Hub. §6.6 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
@@ -224,8 +253,15 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-No feature branches are currently open. No PR is mid-review. Production
-(`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
+No feature branches are currently open for review (the merged
+`hub/journal-editing-richtext-calendar` branch's local copy was deleted;
+its remote copy could not be -- confirmed this repo has branch protection
+applied to every branch, not just `main`, since every prior feature
+branch back through PR #1 is still sitting on the remote too, never
+auto-deleted on merge; this is this repo's actual standing state, not a
+new problem, and matches the "verify both actually happened" caveat this
+file's own workflow rules already call out). No PR is mid-review.
+Production (`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
 cutover attempt was made and reverted the same day after a real production
 issue (`web/`'s outline store booted every visitor into Phase 0 dev/spike
 placeholder text instead of a real document; fixed in #122, but `deploy.yml`
