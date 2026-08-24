@@ -737,9 +737,30 @@ format, Word/OPML import.
   spans 4 slides (titled "Q&A"/"Q&A (cont'd)" x3), with every notepad line and every Q&A
   question/answer pair present exactly once and no question ever separated from its answer --
   zero console/page errors.
+- ✅ **PDF: note and code-block rendering.** A node's note (sanitized rich HTML, muted italic)
+  and code block (a `<pre>`) now render beneath its own row, direct ports of
+  `PreviewPane.tsx`'s own note-row/code-row styling -- the same content `PreviewPane.tsx`
+  already shows on screen, previously silently dropped from the PDF entirely.
+  `sanitizeRichHtml` runs again at render time (the same belt-and-suspenders pattern
+  `PreviewPane.tsx` itself already uses) since this is a second real place `node.note` gets
+  embedded as raw HTML, this time via `printWindow.document.write` -- verified this actually
+  matters, not just defensive boilerplate: importing a `.sakura.json` document with a note field
+  carrying a raw, unsanitized `<script>`/`onerror=` payload (`parseSakuraDocument.ts`'s own
+  import path coerces `note` to a string but does NOT sanitize it, unlike the UI's
+  sanitize-on-write in `NotePanel.tsx`) still produces a clean printed page with the script
+  tag/handler stripped and never executed. Every node still renders regardless of fold state,
+  matching `PreviewPane.tsx`'s own deliberate choice (a folded subtree still belongs in the
+  printed document, per that file's own header comment) -- not a gap to close, unlike the
+  note/code omission this fixes. Verified end-to-end in real headless Chrome: added a note and a
+  code block to a node via the Note panel UI, exported PDF, confirmed both render in the print
+  window's DOM (note as an italic muted div, code in a `<pre>`); separately imported the
+  malicious `.sakura.json` above and confirmed the exported print window's HTML has no
+  `<script>` tag and no `onerror` attribute, and that neither payload actually executed -- zero
+  console/page errors across both checks.
 - Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
-  Word tables/decision-log cards; PDF's remaining fidelity gap (fold-state/notes/decision-card
-  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
+  Word tables/decision-log cards; PDF's remaining fidelity gap (decision-card rendering, and the
+  bigger "render from a real Preview-equivalent" architecture legacy's own PDF export uses --
+  see the slice above for why fold-state itself isn't actually part of this gap); PowerPoint's
   remaining fidelity gap (decision cards).
 
 ### 6.7 — Theming & Appearance
@@ -797,8 +818,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, PowerPoint Notepad/Q&A pagination landing in this
-PR) — see each section's own `Status:` line for the
+#202, #203, #204, #205, #206, #207, #208, #209, #210, PDF note/code-block rendering landing in
+this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

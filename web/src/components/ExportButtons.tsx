@@ -9,6 +9,7 @@ import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
 import { parseSakuraDocumentCore } from '../utils/parseSakuraDocument';
 import { parseDocxHtmlToTreeNodesCore } from '../utils/parseDocxHtml';
 import { extractFirstImageDataUrl } from '../utils/extractNoteImage';
+import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { wrapLineCount, pptxLineHeightIn } from '../utils/wrapLineCount';
 import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
@@ -345,6 +346,18 @@ export function ExportButtons() {
   // always on, matching legacy's own real `previewPdfFooterEnabled` default. Chrome 131+
   // supports these margin-box at-rules natively -- Firefox (as of this writing) just renders no
   // footer, a safe fallback, not a broken one.
+  //
+  // §6.6 fidelity upgrade: a node's note (sanitized rich HTML, muted italic, matching
+  // `PreviewPane.tsx`'s own note-row styling) and code block (a `<pre>`, matching
+  // `PreviewPane.tsx`'s own code-row styling) now render beneath its own row, same content
+  // `PreviewPane.tsx` already shows on screen -- `sanitizeRichHtml` runs again here (a fresh
+  // parse, belt-and-suspenders on top of the sanitize-on-write in `NotePanel.tsx`) since this is
+  // a second real place `node.note` gets embedded as raw HTML, this time via
+  // `printWindow.document.write`. Every node still renders regardless of fold state, same as
+  // `PreviewPane.tsx`'s own deliberate choice (a folded subtree still belongs in the printed
+  // document) -- not a gap to close, unlike the note/code omission this fixes. Decision-card
+  // rendering remains a real, separately-scoped follow-up: Decision Log has no store/panel in
+  // `web/` yet, same blocker documented for Excel export and the cover page's meta line above.
   function exportPdf() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
@@ -368,12 +381,18 @@ export function ExportButtons() {
       <div style="font-size:13px;color:#666;">${escapeHtmlForPrint(metaParts.join(' · '))}</div>
     </div>`;
     const rows = nodes
-      .map(
-        (node) =>
-          `<div style="padding-left:${node.depth * 24}px;margin-bottom:4px;">${
-            node.isCheckbox ? `<input type="checkbox" disabled ${node.checked ? 'checked' : ''}/> ` : ''
-          }${escapeHtmlForPrint(getNodePlainText(node)) || '<span style="color:#999">(empty)</span>'}</div>`
-      )
+      .map((node) => {
+        const textRow = `<div style="text-decoration:${node.isCheckbox && node.checked ? 'line-through' : 'none'};">${
+          node.isCheckbox ? `<input type="checkbox" disabled ${node.checked ? 'checked' : ''}/> ` : ''
+        }${escapeHtmlForPrint(getNodePlainText(node)) || '<span style="color:#999">(empty)</span>'}</div>`;
+        const noteRow = node.note
+          ? `<div style="font-size:13px;color:#666;font-style:italic;">${sanitizeRichHtml(node.note)}</div>`
+          : '';
+        const codeRow = node.codeBlock
+          ? `<pre style="background:#f0eee5;padding:6px;border-radius:4px;font-size:13px;overflow-x:auto;white-space:pre-wrap;">${escapeHtmlForPrint(node.codeBlock.code)}</pre>`
+          : '';
+        return `<div style="padding-left:${node.depth * 24}px;margin-bottom:4px;">${textRow}${noteRow}${codeRow}</div>`;
+      })
       .join('');
     // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every printed
     // page, direct port of legacy's real `@page{@bottom-right{...}}` print rule
