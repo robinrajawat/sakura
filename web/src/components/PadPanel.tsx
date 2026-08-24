@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { usePadStore } from '../store/padStore';
+import type { DecisionStatus } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
+import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -33,6 +35,15 @@ const TABS: { id: PadTab; label: string }[] = [
  * flat `QaItem` (no section-header items, no `sourceNodeId`, no follow-up flag). AI-assisted
  * answering, bulk actions, PDF export, and node-linking are each their own separately-scoped
  * later slice.
+ *
+ * Second piece: Decision Log status. `Decision` gains a real `status` field
+ * (proposed/approved/rejected, defaulting to proposed on creation) via `padStore.ts`'s
+ * `setDecisionStatus`, plus an "N open" quick-filter chip (status === proposed), both via
+ * `state/decisionFilter.ts` -- the Decision Log counterpart to `qaFilter.ts`. Legacy's real
+ * Decision Log tab also filters by author (a dropdown of distinct authors present) and does
+ * search-text matching over title/description -- author filtering needs an `author` field this
+ * app's `Decision` doesn't have yet, so it's deferred alongside node-linking, structured fields
+ * (context/rationale/alternatives/impact), card rendering, and Excel export.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -89,13 +100,52 @@ function DecisionTab({ t }: { t: Tokens }) {
   const decisions = usePadStore((s) => s.decisions);
   const addDecision = usePadStore((s) => s.addDecision);
   const removeDecision = usePadStore((s) => s.removeDecision);
+  const setDecisionStatus = usePadStore((s) => s.setDecisionStatus);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [openOnly, setOpenOnly] = useState(false);
+
+  const openCount = decisions.filter(decisionIsOpen).length;
+  const visibleDecisions = decisionVisibleItems(decisions, openOnly);
+
   return (
     <div>
-      {decisions.map((d) => (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button
+          type="button"
+          disabled={!openOnly && (decisions.length === 0 || openCount === 0)}
+          onClick={() => setOpenOnly(!openOnly)}
+          title="Show open (proposed) decisions only"
+          style={{
+            fontSize: 11,
+            padding: '2px 6px',
+            border: `1px solid ${t.border}`,
+            borderRadius: 4,
+            background: openOnly ? t.text : 'transparent',
+            color: openOnly ? t.background : t.text,
+            cursor: 'pointer'
+          }}
+        >
+          {openCount} open
+        </button>
+      </div>
+      {visibleDecisions.length === 0 && decisions.length > 0 && (
+        <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>
+          No open decisions.
+        </div>
+      )}
+      {visibleDecisions.map((d) => (
         <div key={d.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
           <strong>{d.title}</strong> — {d.description}{' '}
+          <select
+            value={d.status}
+            onChange={(e) => setDecisionStatus(d.id, e.currentTarget.value as DecisionStatus)}
+            style={{ fontSize: 11 }}
+          >
+            <option value="proposed">Proposed</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>{' '}
           <button type="button" onClick={() => removeDecision(d.id)} style={{ fontSize: 11 }}>
             remove
           </button>

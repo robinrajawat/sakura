@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 
+export type DecisionStatus = 'proposed' | 'approved' | 'rejected';
+
 export interface Decision {
   id: number;
   title: string;
   description: string;
+  status: DecisionStatus;
 }
 
 export interface QaItem {
@@ -34,6 +37,7 @@ interface PadState {
   setNotesText: (text: string) => void;
   addDecision: (title: string, description: string) => void;
   removeDecision: (id: number) => void;
+  setDecisionStatus: (id: number, status: DecisionStatus) => void;
   addQaItem: (question: string, answer: string) => void;
   removeQaItem: (id: number) => void;
   addRemark: (person: string, text: string) => void;
@@ -63,9 +67,11 @@ export const usePadStore = create<PadState>((set, get) => ({
 
   addDecision: (title, description) => {
     const { decisions, nextId } = get();
-    set({ decisions: [...decisions, { id: nextId, title, description }], nextId: nextId + 1 });
+    set({ decisions: [...decisions, { id: nextId, title, description, status: 'proposed' }], nextId: nextId + 1 });
   },
   removeDecision: (id) => set({ decisions: get().decisions.filter((d) => d.id !== id) }),
+  setDecisionStatus: (id, status) =>
+    set({ decisions: get().decisions.map((d) => (d.id === id ? { ...d, status } : d)) }),
 
   addQaItem: (question, answer) => {
     const { qaItems, nextId } = get();
