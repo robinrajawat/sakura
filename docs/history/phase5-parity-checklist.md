@@ -25,7 +25,7 @@ already made and already documented at the time.
 | Semantic styling `[Section]`/`(note)`/`!alert`/`` `code` `` | ✅ | Phase 2, matches legacy exactly |
 | Fold/unfold, "+N hidden" badge | ⚠️ | Fold/unfold works; no "+N" badge UI |
 | `#tags` | ✅ | Phase 5 (PRs #118–#119) — toggle, filter, chips |
-| `[[@mention]]` backlinks | ❌ | Not built — tracked in docs/phase6-full-parity-plan.md §6.4 |
+| `[[@mention]]` backlinks | ⚠️ | Wikilink rendering/click-navigate + `@`-mention insert done (§6.4, #160-#161); cleanup/rename-on-edit wiring and the Note panel's Backlinks section display still remaining |
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
 | Note panel | ⚠️ | Plain text only (Phase 3) — no rich text, images, tables, AI, backlinks section |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
@@ -106,8 +106,8 @@ separately-scoped follow-up building on this foundation.
 real implementation. Deliberately flat tag-filter scoping (no ancestor-context restoration),
 same "honest first pass" convention as every other slice in this project.
 
-❌ `[[@mention]]` backlinks still entirely not built — tracked in
-`docs/phase6-full-parity-plan.md` §6.4.
+⚠️ `[[@mention]]` backlinks partially built — see the Overview table above and
+`docs/phase6-full-parity-plan.md` §6.4 for exactly what's landed (#160-#161) vs. still remaining.
 
 ## AI Features
 
