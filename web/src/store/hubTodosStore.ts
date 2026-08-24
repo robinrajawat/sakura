@@ -78,6 +78,10 @@ function cycleNext(arr: string[], current: string | null | undefined): string {
 interface HubTodosState {
   todos: Todo[];
   addTodo: (text: string) => void;
+  /** Matches legacy's real `addTodoExternal` (legacy/index.html:43807-43817), currently used
+   * only by Meeting Notes' "Promote to To-Do". Returns the new todo's id (or `null` if `text`
+   * is empty/whitespace-only) so the caller can remember which todo an action item became. */
+  addTodoFromMeeting: (text: string, meetingCtx: { meetingId: string; title: string; date: string | null }) => string | null;
   /** Checking a repeating task advances its due date instead of marking it done -- matches
    * legacy's own real completeTaskAnimated exactly (legacy/hub.html:2071-2082): a repeating
    * task never actually reaches `done:true` through this path, it just rolls its due date
@@ -178,6 +182,25 @@ export const useHubTodosStore = create<HubTodosState>((set, get) => ({
     const todos = [...get().todos, createTodo(trimmed)];
     saveTodosCore(todos);
     set({ todos });
+  },
+
+  addTodoFromMeeting: (text, meetingCtx) => {
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+    const todo = createTodo(trimmed);
+    // Matches legacy's real addTodoExternal exactly (legacy/index.html:43807-43817): the
+    // meeting's own date becomes the new task's due date (only when it's a real YYYY-MM-DD
+    // string), and the meeting id+title (truncated to 160 chars, matching the original) become
+    // a `meetingRef` for a future "from meeting" chip -- no such chip UI exists yet in this
+    // project's To-Dos panel (a real, separately-scoped follow-up), but the data itself is
+    // preserved so it isn't lost once that UI does land.
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(meetingCtx.date || '') ? meetingCtx.date : null;
+    const meetingRef = meetingCtx.meetingId ? { meetingId: meetingCtx.meetingId, title: (meetingCtx.title || '').slice(0, 160) } : null;
+    const withMeeting: Todo = { ...todo, dueDate, meetingRef };
+    const todos = [...get().todos, withMeeting];
+    saveTodosCore(todos);
+    set({ todos });
+    return withMeeting.id;
   },
 
   toggleTodo: (id) => {
