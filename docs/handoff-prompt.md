@@ -77,16 +77,35 @@ already had one real incident from skipping this check: PR #162 wrongly
 to exist once the actual PR history (#159-160, which were groundwork for
 §6.3's own deferred item 7) was checked — fixed in #166.
 
-**PR discipline:** Every change, however small (including docs-only), goes
-through: feature branch → commit (`git commit -F <tempfile>`, never `-m` with
-backticks) → push → open PR via GitHub API → poll check-runs until CI
-(`verify-legacy` + `verify-web`) is green → merge via API (squash) →
-`git checkout main && git pull` → confirm fast-forward → delete the local
-and remote branch (verify both actually happened, per the note above). One
-logical change per PR.
+**PR discipline:** Every change, however small, goes through: feature branch
+→ commit (`git commit -F <tempfile>`, never `-m` with backticks) → push →
+open PR via GitHub API → confirm CI is green → merge via API (squash) →
+`git checkout main && git fetch origin main && git merge --ff-only
+origin/main` → delete the local and remote branch (verify both actually
+happened, per the note above). One logical change per PR.
+
+**Docs updates ride in the same PR as the code, not a separate follow-up.**
+Earlier sessions (#176→#177, #179→#180, #181→#182) used a docs-only PR
+after each feature PR, to cite the feature PR's own number in the docs.
+That pattern was dropped starting after #182: it doubled the PR/CI-poll
+cycles for no real benefit — the citation is a nice-to-have, not something
+worth a whole extra branch→PR→CI→merge round trip. Current approach: write
+the docs update (checklist row, plan doc's `Status:` line, this file's
+Current state) in the same branch and commit as the feature work. If the
+PR's own number needs to be cited inside the docs change and truly isn't
+known yet, cite the *previous* real PR number and leave a `(pending)` note
+next to the current one rather than opening a second PR just to add a
+number — accuracy of the number is not worth doubling the round trip.
+
+**CI: confirm green once, don't over-poll.** The local gauntlet (below) is
+the real correctness check — CI re-running the same commands is a
+backstop, not new information. Push, open the PR, wait for check-runs to
+report `completed` (a single reasonable wait, not repeated short polls),
+confirm `success`, merge. Don't poll in a tight loop.
 
 **Full gauntlet before every merge** — for whichever workspace(s) a change
-touches:
+touches, run locally BEFORE pushing (this is what actually catches
+problems; CI is the backstop, not the first line):
 ```
 npm run typecheck -w sakura-web
 npm run lint -w sakura-web
