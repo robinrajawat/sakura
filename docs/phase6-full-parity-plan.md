@@ -320,9 +320,35 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   existing text is an inherited, pre-existing `execCommand('insertUnorderedList')` browser
   quirk already present identically in NotePanel.tsx's own bullet-list button -- reproduced there
   independently to confirm it's shared behavior, not a regression introduced by this slice.
+- ✅ **Library** (pending -- PR number not yet known; previous PR was #186) -- replaces the
+  Phase 4 placeholder (freeform title/url/description CRUD, in-memory only) with legacy's real
+  model (`hubLibrary.ts`): real persistence, a `urlLabel` field, tags (add/remove, click-to-
+  filter, toggle-active-filter-clears-it exactly matching legacy's own `setLibraryTagFilter`),
+  favorites (per-item toggle plus a favorites-only view filter), search across title/url/
+  urlLabel/tags/body text, and rich text matching Journal's own narrower toolset exactly
+  (bullet/numbered list toolbar buttons + Ctrl/Cmd+B/I only -- legacy's own
+  `#library-body-field` genuinely has the identical narrower toolset, not Note panel's fuller
+  one). Sort order matches legacy's own real render sort: favorites first, then most-recently-
+  modified within each group (`sortLibraryItemsCore`). One real, deliberate divergence pinned
+  rather than unified: `normalizeLibraryItemCore`'s `createdAt`/`modifiedAt` validation uses the
+  strict `Number.isFinite`, matching index.html's own real `normalizeLibraryItem` exactly --
+  unlike Journal's hub.html counterpart, which genuinely uses the coercive global `isFinite`;
+  the two originals really do differ, so this project preserves both instead of quietly
+  standardizing on one.
+  **Deliberately out of scope, each named in `hubLibrary.ts`'s own header:** AI rewrite (§6.9 not
+  started), Version History browsable overlay/PDF export/the Settings-panel feature toggle
+  (deferred to §6.6/§6.8/§6.10, same cross-cutting-infra category as To-Dos'/Meeting Notes' own
+  deferred PDF export/Version History), Quick Assist/Global Search visibility (§6.10 not
+  started), and pasted-image-only clipboard handling in the body editor (kept consistent with
+  Journal's own already-narrower editor rather than giving Library a richer one). Verified
+  end-to-end in real headless Chrome: create → fill title/url/urlLabel → rich-text body
+  (bullet list + Ctrl+B) → add two tags → favorite → back to list (sorted correctly, favorite
+  first) → create a second unfavorited entry → search narrows to a text match → tag-filter chip
+  and favorites-only combine as an AND filter, matching legacy exactly → reload confirms
+  persistence, zero console/page errors in both light and dark theme.
 - ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
   scoping correction above); Meeting Notes' PDF export/Version History/Share/node-links (same
-  deferral); Library; Recap; Mobile Hub.
+  deferral); Recap; Mobile Hub.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
@@ -384,8 +410,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176, #179, #181 — To-Dos and Meeting Notes depth) — see each section's own
-`Status:` line for the
+progress** (#176, #179, #181, and Journal/Library each pending their own PR number) — see each
+section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

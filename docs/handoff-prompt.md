@@ -163,8 +163,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `cc170d6` ("feat(hub): Journal
-depth -- editing, rich text, calendar popover (§6.5) (#185)"). Phase 6
+As of this writing: `main` is at commit `bc3a057` ("docs: refresh handoff
+prompt Current state after Journal landing, #185 (#186)"), with a Library
+depth slice (pending PR -- see below) about to land on top of it. Phase 6
 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -231,10 +232,39 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   typing existing text is an inherited `execCommand('insertUnorderedList')`
   browser quirk already present identically in NotePanel.tsx's own
   bullet-list button, not a regression from this slice.
+- Library landed in this session (pending PR -- previous PR was #186):
+  replaces the Phase 4 placeholder (freeform title/url/description CRUD,
+  in-memory only) with legacy's real model (`hubLibrary.ts`) -- real
+  persistence, a `urlLabel` field, tags (add/remove, click-to-filter,
+  toggle-active-filter-clears-it matching legacy's own
+  `setLibraryTagFilter`), favorites (per-item toggle + a favorites-only
+  view filter), search across title/url/urlLabel/tags/body text, and rich
+  text matching Journal's own narrower toolset exactly (bullet/numbered
+  list + Ctrl/Cmd+B/I only -- legacy's own `#library-body-field` genuinely
+  has that same narrower toolset, not Note panel's fuller one). Sort order
+  matches legacy's own real render sort: favorites first, then
+  most-recently-modified within each group. One real, deliberate
+  divergence pinned rather than unified: `normalizeLibraryItemCore` uses
+  the strict `Number.isFinite` for `createdAt`/`modifiedAt`, matching
+  index.html's own real `normalizeLibraryItem` exactly -- unlike Journal's
+  hub.html counterpart, which genuinely uses the coercive global
+  `isFinite`; the two originals really do differ, so both are preserved
+  rather than quietly unified. Deliberately out of scope: AI rewrite (§6.9
+  not started), Version History/PDF export/the Settings feature toggle
+  (§6.6/§6.8/§6.10, cross-cutting infra), Quick Assist/Global Search
+  visibility (§6.10 not started, Quick Assist doesn't exist in web/ yet),
+  and pasted-image-only clipboard handling (kept consistent with Journal's
+  own already-narrower editor). Verified end-to-end in real headless
+  Chrome, both light and dark theme: create → fill title/url/urlLabel →
+  rich-text body (bullet list + Ctrl+B) → add two tags → favorite → back
+  to list (sorted correctly, favorite first) → create a second unfavorited
+  entry → search narrows correctly → tag-filter chip and favorites-only
+  combine as an AND filter, matching legacy exactly → reload confirms
+  persistence, zero console/page errors throughout.
 - Still open in §6.5: To-Dos'/Meeting Notes' PDF export/Version
   History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not
   Hub-specific); Meeting Notes' cross-document node links (separately
-  scoped); Library; Recap; Mobile Hub. §6.6 onward not started.
+  scoped); Recap; Mobile Hub. §6.6 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
