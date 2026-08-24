@@ -134,14 +134,19 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `31b47cc` ("docs: retract the
-incorrect '6.3 mislabel' claim, add real §6.3 status", #166). Phase 6 (full
-parity build-out — see docs/phase6-full-parity-plan.md) is underway:
+As of this writing: `main` is at commit `71dfd6e` ("feat(web): real file
+upload/storage for Pad Files tab (Phase 6.3, item 11 part 1)", #168). Phase 6
+(full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell) complete, §6.2 (undo/redo & core editing
 parity) complete, §6.4 (backlinks/mention infrastructure) complete, and
-§6.3 (Note/Code/Pad panels) is 10 of 11 items landed — only Diagrams, Mind
-Map, and Files remain, with Files needing real scoping first (what "real
-upload/storage" realistically means in a browser-only app with no backend).
+§6.3 (Note/Code/Pad panels) is 10 of 11 items landed — item 11 (Diagrams,
+Mind Map, Files) is itself three sub-features, scoped and sequenced as
+Files → Diagrams → Mind Map. Files landed in #168 (real upload/storage via
+FileReader.readAsDataURL, base64 data: URI inline in the doc's own state,
+5MB cap — no backend needed, matching legacy's own approach exactly).
+Diagrams is next: full draw.io embed + Generate-from-outline (reusing the
+already-ported `diagramGen*.ts` core logic from Phase 1, never yet wired to
+any UI). Mind Map after that: a full canvas editor (pan/zoom/drag/connect).
 §6.5 onward not started. An AI key vault (Cloudflare Worker) proposal is
 recorded as an unscheduled appendix at the end of that same plan doc,
 connected to §6.9 but not committed to a slot yet.
