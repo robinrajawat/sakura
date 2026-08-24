@@ -131,7 +131,8 @@ export, node-linking), Decision Log (node-linking, structured fields, card rende
 export), Diagrams (draw.io integration), Mind Map, Files (real upload/storage, node-linking,
 download), Remarks (date field, node-linking, export inclusion).
 
-**Status: in progress.** 10 of 11 items landed:
+**Status: in progress.** 10 of 11 top-level items landed; item 11 is itself three sub-features,
+scoped and sequenced together (see that item's own breakdown below) — 1 of those 3 landed:
 1. ✅ Note/Code floating panel shell (#150)
 2. ✅ Note rich-text editor (#151)
 3. ✅ Note editor link insert/edit (#152)
@@ -151,8 +152,23 @@ download), Remarks (date field, node-linking, export inclusion).
 8. ✅ Pad Q&A search/filter (#156)
 9. ✅ Pad Decision Log status + Open filter (#157)
 10. ✅ Pad Remarks date field + newest-first order (#158)
-11. ❌ Diagrams, Mind Map, Files — not started. Files in particular needs scoping first: what
-    "real upload/storage" realistically means in a browser-only app with no backend.
+11. ⚠️ Diagrams, Mind Map, Files — scoped as three separate sub-slices, sequenced Files →
+    Diagrams → Mind Map (that order chosen for size: Files was small and well-defined, Diagrams
+    and Mind Map are each substantial features of their own). Sub-status:
+    - ✅ **Files real upload/storage** (#168) — turned out not to need a backend at all: legacy's
+      own implementation has never had one either, reading the selected `File` via
+      `FileReader.readAsDataURL` and storing the base64 data: URI inline in the document's own
+      persisted state, same tier as every other Pad list. 5MB-per-file cap matching legacy
+      exactly. Deliberately not ported, same "flat, document-level list first pass" convention
+      this store already uses for Decision Log/Remarks/Q&A: node-linking (`anchorNodeId` + an
+      anchor-picker UI), `addedBy`, `note`, per-mime-type icons.
+    - ❌ **Diagrams** — not started. Scoped as: full draw.io embed (real editor in an iframe via
+      its official `postMessage` embed protocol, matching legacy's own integration) plus
+      Generate-from-outline (a deterministic box-and-arrow diagram built from a node subtree,
+      reusing the already-ported `web/src/state/diagramGen*.ts` core logic from Phase 1 -- fully
+      tested, never yet wired to any UI).
+    - ❌ **Mind Map** — not started. Scoped as a full canvas editor (pan/zoom/drag/connect/edit
+      nodes), not a minimal list-based stand-in.
 
 ### 6.4 — Backlinks & `#tags` mentions
 `[[@mention]]` backlinks: not built at all yet (Tags themselves shipped in the previous PRs

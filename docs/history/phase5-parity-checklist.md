@@ -85,7 +85,7 @@ separately-scoped follow-up building on this foundation.
 | Pad — Decision Log | ⚠️ | Flat list (Phase 3); no node-linking, structured fields (Context/Rationale/etc.), card rendering, Excel export |
 | Pad — Diagrams | ❌ | Honest placeholder tab (Phase 3) — no draw.io integration, no Generate |
 | Pad — Mind Map | ❌ | Honest placeholder tab (Phase 3) |
-| Pad — Files | ⚠️ | Name-only record (Phase 3); no real upload/storage, no node-linking, no download |
+| Pad — Files | ⚠️ | Real upload/storage + download built (§6.3 item 11, #168); no node-linking |
 | Pad — Remarks | ⚠️ | Flat list with person/text (Phase 3); no date field, no node-linking, no export inclusion |
 
 ## Hub
