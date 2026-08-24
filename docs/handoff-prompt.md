@@ -183,9 +183,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `7b4d44e` ("feat(presenter):
-floating Notes/Q&A panel (§6.6) (#209)"), with this PR's PowerPoint
-Notepad/Q&A section pagination slice about to land on top.
+As of this writing: `main` is at commit `64b7519` ("feat(export):
+PowerPoint Notepad/Q&A section pagination (§6.6) (#210)"), with this
+PR's PDF note/code-block rendering slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now in progress: Preview TOC/scroll-spy/progress
 bar (#194), plain text/clipboard export (#196), Presenter Mode depth
@@ -196,8 +196,9 @@ bar (#194), plain text/clipboard export (#196), Presenter Mode depth
 (#204), PDF page margins + date/page-count footer (#205), Word
 note-image embedding (#206), Word Notepad/Q&A sections (#207),
 PowerPoint overflow "(cont'd)" slides (#208), Presenter Mode's
-floating Notes/Q&A panel (#209), and PowerPoint Notepad/Q&A section
-pagination (this PR) are all landed. One note on this
+floating Notes/Q&A panel (#209), PowerPoint Notepad/Q&A section
+pagination (#210), and PDF note/code-block rendering (this PR) are all
+landed. One note on this
 session's CI: PR
 #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
@@ -697,12 +698,34 @@ all six items landed:
   (correct "(cont'd)" titling throughout), every line/pair present
   exactly once, no question ever separated from its answer -- zero
   console/page errors.
+- PDF: note and code-block rendering landed in this PR: a node's note
+  (sanitized rich HTML, muted italic) and code block (a `<pre>`) now
+  render beneath its own row, direct ports of `PreviewPane.tsx`'s own
+  note-row/code-row styling -- the same content already shown on
+  screen, previously silently dropped from the PDF entirely.
+  `sanitizeRichHtml` runs again at render time (same belt-and-suspenders
+  pattern `PreviewPane.tsx` itself uses) since this is a second real
+  place `node.note` gets embedded as raw HTML, this time via
+  `printWindow.document.write`. Every node still renders regardless of
+  fold state, matching `PreviewPane.tsx`'s own deliberate choice (a
+  folded subtree still belongs in the printed document) -- turned out
+  NOT to be a real gap once checked, unlike the note/code omission this
+  fixes. Verified end-to-end in real headless Chrome: added a note and
+  code block to a node via the Note panel UI, exported PDF, confirmed
+  both render correctly in the print window's DOM; separately imported
+  a `.sakura.json` document with a note field carrying a raw,
+  unsanitized `<script>`/`onerror=` payload (the import path coerces
+  `note` to a string but does NOT sanitize it, unlike the UI's
+  sanitize-on-write) and confirmed the exported print window's HTML has
+  no `<script>` tag and no `onerror` attribute, and neither payload
+  actually executed -- zero console/page errors across both checks.
 - Still open in §6.6: Whiteboard mirroring and Audience View/
   dual-screen (see above for why each is blocked/deferred); PowerPoint
   image embedding (see above); Word tables/Decision Log cards; PDF's
-  remaining fidelity gap (fold-state/notes/decision-card rendering --
-  currently a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint's remaining fidelity gap (decision cards). §6.7 onward
+  remaining fidelity gap (decision-card rendering, and the bigger
+  "render from a real Preview-equivalent" architecture legacy's own PDF
+  export uses); PowerPoint's remaining fidelity gap (decision cards).
+  §6.7 onward
   not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
