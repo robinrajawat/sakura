@@ -546,11 +546,33 @@ format, Word/OPML import.
   item via the Pad panel, exported .pptx, unzipped the result and confirmed all four expected
   slides (per-node, Notepad with its real text, Q&A with the real question+answer, closing with
   "Thank you"/"Questions?") -- a well-formed OOXML package, zero console/page errors.
+- ✅ **OPML import.** Direct port of legacy's real `parseOpmlToTreeNodes`/`importOpmlText`
+  (legacy/index.html:24560-24601) -- the read side of the already-ported `serializeOpmlCore`. A
+  new pure function, `parseOpmlToTreeNodesCore` (`utils/parseOpml.ts`), walks an
+  `<opml><body>`'s `<outline>` elements depth-first via `DOMParser`, reads each one's `text`
+  attribute (falling back to `title`, matching legacy's own OPML-spec leniency) and its
+  Sakura-specific `_note` attribute, and parses a leading `[ ]`/`[x]` in the text back out as a
+  checkbox state (OPML has no native checkbox concept, so `serializeOpmlCore` already encodes it
+  as a plain text prefix -- this is that encoding's exact inverse). Wired into a new "Import
+  .opml" button + hidden file input in `ExportButtons.tsx` (no Import menu exists yet in `web/`
+  to house it properly, same "simpler chrome" convention every export button here already uses).
+  Always lands in a brand-new document (`newDocument()`), matching legacy's own real guarantee
+  that an import can never silently merge into whatever document happens to be open already;
+  node ids are assigned from the outline store's own `nextId` counter (the same convention every
+  other node-creation path in this store uses, e.g. `duplicateRootIndexesCore`), and
+  `rebuildParentIdsCore` derives each node's real `parentId` from the parsed depth values
+  afterward. Verified end-to-end in real headless Chrome: imported a hand-written OPML file with
+  nested outlines, a `_note` attribute, and both an unchecked and a checked checkbox node --
+  confirmed the new document renders the full correct tree (all 5 nodes, correct nesting,
+  correct checkbox states), and confirmed via the actual persisted `localStorage` doc record
+  (after the 800ms debounced autosave) that `parentId` linking, `note`, and every field landed
+  correctly -- zero console/page errors.
 - Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
   PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
   remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding); Sakura
-  Document (`.sakura.json`) format; Word/OPML import.
+  Document (`.sakura.json`) format; Word import (needs a new document-parsing dependency, unlike
+  OPML's plain XML).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -606,8 +628,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, PowerPoint
-Notepad/Q&A/closing slides landing in this PR) — see each section's own `Status:` line for the
+six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, OPML
+import landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
