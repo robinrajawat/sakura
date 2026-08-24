@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { usePadStore, PAD_ATTACH_MAX_BYTES } from '../store/padStore';
 import type { DecisionStatus } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { useOutlineStore } from '../store/outlineStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
+import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
+import { DiagramEditor } from './DiagramEditor';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -68,6 +71,19 @@ const TABS: { id: PadTab; label: string }[] = [
  * list first pass" convention as Decision Log/Remarks/Q&A above: node-linking (`anchorNodeId` +
  * the anchor-picker UI), `addedBy`, `note`, and per-mime-type icons (a generic file link stands
  * in for now) -- each a real, separately-scoped follow-up if still wanted.
+ *
+ * Fifth piece, item 11's Diagrams sub-slice: a real draw.io editor. `Diagram` (padStore.ts) is a
+ * flat document-level list, same convention as the tabs above -- `title`/`xml` only, no
+ * node-linking/status/thumbnail yet. Two entry points: "+" creates a blank diagram and opens it
+ * immediately (`DiagramEditor.tsx`, a real draw.io embed via its official `postMessage` protocol
+ * -- see that file's own header for the full scoping); "Generate" builds one from the outline
+ * instead, via `state/diagramGenScope.ts` -- a selected node's subtree, or the whole document if
+ * nothing's selected, using the already-ported (Phase 1) `diagramGen*.ts` layout/color/XML
+ * engine. Deliberately no AI classification pass or review screen (this project has no AI
+ * features yet -- §6.9 not started), so Generate always renders in "plain tree mode" directly,
+ * matching legacy's own documented AI-unavailable fallback rather than a lesser imitation of it.
+ * Mind Map remains an honest placeholder -- a genuinely separate canvas-editor feature, its own
+ * future slice.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -94,10 +110,11 @@ export function PadPanel() {
       {tab === 'qa' && <QaTab t={t} />}
       {tab === 'remarks' && <RemarksTab t={t} />}
       {tab === 'files' && <FilesTab t={t} />}
-      {(tab === 'diagrams' || tab === 'mindmap') && (
+      {tab === 'diagrams' && <DiagramsTab t={t} />}
+      {tab === 'mindmap' && (
         <div style={{ color: t.mutedText, fontStyle: 'italic', fontSize: 13 }}>
-          {tab === 'diagrams' ? 'Diagrams' : 'Mind Map'} isn't built yet — it needs a real
-          canvas/graph-visualization editor, a separately-scoped follow-up.
+          Mind Map isn't built yet — it needs a real canvas/graph-visualization editor, a
+          separately-scoped follow-up.
         </div>
       )}
     </div>
@@ -393,3 +410,92 @@ function FilesTab({ t }: { t: Tokens }) {
     </div>
   );
 }
+
+function DiagramsTab({ t }: { t: Tokens }) {
+  const diagrams = usePadStore((s) => s.diagrams);
+  const addDiagram = usePadStore((s) => s.addDiagram);
+  const addDiagramFromXml = usePadStore((s) => s.addDiagramFromXml);
+  const removeDiagram = usePadStore((s) => s.removeDiagram);
+  const renameDiagram = usePadStore((s) => s.renameDiagram);
+  const duplicateDiagram = usePadStore((s) => s.duplicateDiagram);
+  const updateDiagramXml = usePadStore((s) => s.updateDiagramXml);
+  const theme = useThemeStore((s) => s.theme);
+  const nodes = useOutlineStore((s) => s.nodes);
+  const selectedIds = useOutlineStore((s) => s.selectedIds);
+
+  const [openId, setOpenId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const openDiagram = diagrams.find((d) => d.id === openId) || null;
+
+  function handleCreate(): void {
+    const id = addDiagram();
+    setOpenId(id);
+  }
+
+  // Direct port of the scope-picking half of legacy's own generateDiagramFromOutline
+  // (legacy/index.html:23885-23911) via state/diagramGenScope.ts -- see that file's own header
+  // for what's deliberately not ported yet (AI classification/review screen, regenerate-in-place).
+  function handleGenerate(): void {
+    setError(null);
+    const result = generateDiagramXmlFromOutline(nodes, selectedIds());
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const id = addDiagramFromXml(result.xml);
+    setOpenId(id);
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <button type="button" onClick={handleCreate} style={{ fontSize: 12 }}>
+          + New diagram
+        </button>
+        <button type="button" onClick={handleGenerate} style={{ fontSize: 12 }}>
+          Generate from outline
+        </button>
+      </div>
+      {error && <div style={{ color: '#b02020', fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      {diagrams.length === 0 && (
+        <div style={{ color: t.mutedText, fontStyle: 'italic', fontSize: 13 }}>
+          No diagrams yet. Click + to create one in draw.io, or Generate to build one from the
+          outline (a selected node's subtree, or the whole document if nothing's selected).
+        </div>
+      )}
+      {diagrams.map((d) => (
+        <div
+          key={d.id}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}
+        >
+          <button
+            type="button"
+            onClick={() => setOpenId(d.id)}
+            style={{ flex: 1, textAlign: 'left', fontSize: 13, color: t.text, background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            {d.title || 'Untitled diagram'}
+          </button>
+          <span style={{ color: t.mutedText, fontSize: 11 }}>{new Date(d.modifiedAt).toLocaleDateString()}</span>
+          <button type="button" onClick={() => duplicateDiagram(d.id)} style={{ fontSize: 11 }}>
+            duplicate
+          </button>
+          <button type="button" onClick={() => removeDiagram(d.id)} style={{ fontSize: 11 }}>
+            remove
+          </button>
+        </div>
+      ))}
+      {openDiagram && (
+        <DiagramEditor
+          diagram={openDiagram}
+          dark={theme === 'dark'}
+          onSave={(xml) => updateDiagramXml(openDiagram.id, xml)}
+          onRename={(title) => renameDiagram(openDiagram.id, title)}
+          onClose={() => setOpenId(null)}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
+
