@@ -113,6 +113,32 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().editingId).toBe(null);
   });
 
+  it('commitEdit rewrites every [[mention]] of a node when that node itself is renamed (Phase 6.4 backlinks)', () => {
+    // node 3 "sibling" is @-mentioned from node 1's text; renaming node 2 (the mentioner)
+    // shouldn't touch it -- only renaming the MENTIONED node (3) should rewrite the reference.
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'see [[sibling]] for context', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useOutlineStore.getState().commitEdit(3, 'renamed target');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see [[renamed target]] for context');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.text).toBe('renamed target');
+  });
+
+  it('commitEdit does NOT rewrite mentions on a case-only rename (matches legacy: renameBacklinksFor is a no-op then)', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'see [[sibling]] for context', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 0, text: 'sibling', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useOutlineStore.getState().commitEdit(3, 'Sibling');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see [[sibling]] for context');
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();
@@ -172,6 +198,18 @@ describe('outlineStore', () => {
     const { nodes } = useOutlineStore.getState();
     expect(nodes.map((n) => n.id)).toEqual([1, 3]);
     expect(nodes.find((n) => n.id === 100)).toBeUndefined();
+  });
+
+  it('deleteNode strips [[mentions]] of the deleted node from every other node (Phase 6.4 backlinks)', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'see [[sibling]] for context', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 1, text: 'sibling', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useOutlineStore.getState().deleteNode(3);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see for context');
   });
 
   it('deleteNode refuses to delete the last remaining node', () => {
@@ -309,6 +347,18 @@ describe('outlineStore multi-select', () => {
     const { nodes, multiSelectedIds } = useOutlineStore.getState();
     expect(nodes.map((n) => n.id)).toEqual([1, 4]);
     expect(multiSelectedIds).toEqual([]);
+  });
+
+  it('deleteSelected strips [[mentions]] of every deleted node (including whole-subtree deletes) from the survivors (Phase 6.4 backlinks)', () => {
+    // node 1 mentions both "grandchild" (inside node 2's own deleted subtree) and "child-c"
+    // (a root of the selection itself) -- both references should be stripped.
+    useOutlineStore.setState((s) => ({
+      nodes: s.nodes.map((n) => (n.id === 1 ? { ...n, text: 'see [[grandchild]] and [[child-c]]' } : n))
+    }));
+    useOutlineStore.getState().clickNode(2, { ctrlKey: true }); // subtree includes node 3 "grandchild"
+    useOutlineStore.getState().clickNode(5, { ctrlKey: true }); // "child-c"
+    useOutlineStore.getState().deleteSelected();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see and');
   });
 
   it('moveNode with a draggedIds array moves a whole multi-selection as one combined block', () => {
