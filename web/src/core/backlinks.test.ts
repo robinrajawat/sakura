@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBacklinkRefs, getBacklinksTo, cleanupBacklinksFor, renameBacklinksFor, findNodeByText } from './backlinks';
+import { getBacklinkRefs, getBacklinksTo, cleanupBacklinksFor, renameBacklinksFor, findNodeByText, formatBacklinkPreview } from './backlinks';
 
 describe('getBacklinkRefs', () => {
   it('returns empty for text with no references', () => {
@@ -116,6 +116,47 @@ describe('renameBacklinksFor', () => {
     const nodes = [{ id: 1, text: 'no references here' }];
     const result = renameBacklinksFor(nodes, 'Old Name', 'New Name');
     expect(result).toBe(nodes);
+  });
+});
+
+describe('formatBacklinkPreview', () => {
+  it('splits plain text into a single non-mention segment', () => {
+    expect(formatBacklinkPreview('plain text')).toEqual([{ text: 'plain text', mention: false }]);
+  });
+
+  it('splits a single mention into plain/mention/plain segments', () => {
+    expect(formatBacklinkPreview('see [[Target]] here')).toEqual([
+      { text: 'see ', mention: false },
+      { text: '[[Target]]', mention: true },
+      { text: ' here', mention: false }
+    ]);
+  });
+
+  it('handles multiple mentions in one string', () => {
+    expect(formatBacklinkPreview('[[A]] and [[B]]')).toEqual([
+      { text: '[[A]]', mention: true },
+      { text: ' and ', mention: false },
+      { text: '[[B]]', mention: true }
+    ]);
+  });
+
+  it('truncates to 80 chars by default, matching legacy exactly', () => {
+    const long = 'x'.repeat(100);
+    const result = formatBacklinkPreview(long);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toHaveLength(80);
+  });
+
+  it('truncates BEFORE splitting, so a mention straddling the cutoff is left as unclosed plain text', () => {
+    // 75 chars of "x" then "[[Target]]" starting at index 75 -- the closing "]]" lands past
+    // the 80-char cutoff, so the truncated string never contains a complete [[...]] pair.
+    const text = 'x'.repeat(75) + '[[Target]]';
+    const result = formatBacklinkPreview(text);
+    expect(result.every((seg) => !seg.mention)).toBe(true);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(formatBacklinkPreview('')).toEqual([]);
   });
 });
 

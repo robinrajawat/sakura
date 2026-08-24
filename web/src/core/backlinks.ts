@@ -114,3 +114,18 @@ export function findNodeByText<T extends BacklinkableNode>(nodes: T[], text: str
     }) || null
   );
 }
+
+/** Splits a referrer's own text into alternating plain/mention segments for the Note panel's
+ * Backlinks section (Phase 6.4) -- a pure, testable extraction of legacy's own preview-string
+ * build (legacy/index.html:20176's `esc(raw.slice(0,80)).replace(/\[\[...\]\]/g,'<em>[[$1]]</em>')`),
+ * just producing React-renderable segments instead of an HTML string (same reasoning NodeText.tsx
+ * already uses elsewhere in this project: this app renders JSX, not innerHTML). Matches legacy's
+ * own 80-char truncation applied BEFORE splitting -- a mention straddling the cutoff is left as
+ * plain (unclosed) text rather than specially handled, same as legacy's simple slice-then-replace
+ * ordering. */
+export function formatBacklinkPreview(text: string, maxLength = 80): { text: string; mention: boolean }[] {
+  const truncated = String(text || '').slice(0, maxLength);
+  const parts = truncated.split(/(\[\[[\s\S]*?\]\](?!\]))/g).filter((p) => p !== '');
+  return parts.map((p) => ({ text: p, mention: p.startsWith('[[') && p.endsWith(']]') }));
+}
+
