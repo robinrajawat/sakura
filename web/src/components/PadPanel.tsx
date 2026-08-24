@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePadStore } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -23,6 +24,15 @@ const TABS: { id: PadTab; label: string }[] = [
  * editor features (a canvas-based diagram tool, a node-graph mind map) that need substantial,
  * separately-scoped work of their own; showing a clearly-labeled "not yet built" tab here is
  * more honest than a fake or token implementation that doesn't actually do anything useful.
+ *
+ * Phase 6.3 slice (docs/phase6-full-parity-plan.md §6.3, "Pad tabs to real depth"), first piece:
+ * Q&A search/filter. `QaTab` now has a filter input (substring match over question+answer) and
+ * an "N unanswered" quick-filter chip, both via `state/qaFilter.ts` -- ported from legacy's
+ * `qaMatchesSearch`/`qaIsUnanswered`, but only those two: legacy's real Q&A tab also groups by
+ * section headers and filters on Unlinked/Follow-up, neither possible yet against this app's
+ * flat `QaItem` (no section-header items, no `sourceNodeId`, no follow-up flag). AI-assisted
+ * answering, bulk actions, PDF export, and node-linking are each their own separately-scoped
+ * later slice.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -126,9 +136,49 @@ function QaTab({ t }: { t: Tokens }) {
   const removeQaItem = usePadStore((s) => s.removeQaItem);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [search, setSearch] = useState('');
+  const [unansweredOnly, setUnansweredOnly] = useState(false);
+
+  const unansweredCount = qaItems.filter(qaIsUnanswered).length;
+  const visibleItems = qaVisibleItems(qaItems, search, unansweredOnly);
+
   return (
     <div>
-      {qaItems.map((q) => (
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+        <input
+          placeholder="Filter Q&A rows…"
+          value={search}
+          onChange={(e) => setSearch(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setSearch('');
+          }}
+          style={{ fontSize: 12, flex: 1 }}
+        />
+        <button
+          type="button"
+          disabled={!unansweredOnly && (qaItems.length === 0 || unansweredCount === 0)}
+          onClick={() => setUnansweredOnly(!unansweredOnly)}
+          title="Show unanswered only"
+          style={{
+            fontSize: 11,
+            padding: '2px 6px',
+            border: `1px solid ${t.border}`,
+            borderRadius: 4,
+            background: unansweredOnly ? t.text : 'transparent',
+            color: unansweredOnly ? t.background : t.text,
+            cursor: 'pointer'
+          }}
+        >
+          {unansweredCount} unanswered
+        </button>
+      </div>
+      {visibleItems.length === 0 && qaItems.length > 0 && (
+        <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>
+          No Q&A rows match{search.trim() ? ` "${search.trim()}"` : ''}
+          {unansweredOnly ? ' (unanswered only)' : ''}.
+        </div>
+      )}
+      {visibleItems.map((q) => (
         <div key={q.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
           <strong>{q.question}</strong>
           <div style={{ color: t.mutedText }}>{q.answer || 'No answer provided'}</div>
