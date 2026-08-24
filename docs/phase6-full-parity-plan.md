@@ -132,7 +132,7 @@ export), Diagrams (draw.io integration), Mind Map, Files (real upload/storage, n
 download), Remarks (date field, node-linking, export inclusion).
 
 **Status: in progress.** 10 of 11 top-level items landed; item 11 is itself three sub-features,
-scoped and sequenced together (see that item's own breakdown below) — 1 of those 3 landed:
+scoped and sequenced together (see that item's own breakdown below) — 2 of those 3 landed:
 1. ✅ Note/Code floating panel shell (#150)
 2. ✅ Note rich-text editor (#151)
 3. ✅ Note editor link insert/edit (#152)
@@ -162,11 +162,22 @@ scoped and sequenced together (see that item's own breakdown below) — 1 of tho
       exactly. Deliberately not ported, same "flat, document-level list first pass" convention
       this store already uses for Decision Log/Remarks/Q&A: node-linking (`anchorNodeId` + an
       anchor-picker UI), `addedBy`, `note`, per-mime-type icons.
-    - ❌ **Diagrams** — not started. Scoped as: full draw.io embed (real editor in an iframe via
-      its official `postMessage` embed protocol, matching legacy's own integration) plus
-      Generate-from-outline (a deterministic box-and-arrow diagram built from a node subtree,
-      reusing the already-ported `web/src/state/diagramGen*.ts` core logic from Phase 1 -- fully
-      tested, never yet wired to any UI).
+    - ✅ **Diagrams** (#172) — a real draw.io editor embedded via its official `postMessage`
+      protocol (`components/DiagramEditor.tsx`, direct port of legacy's `openDiagramEditor`
+      init/load/save/exit handshake), plus Generate-from-outline
+      (`state/diagramGenScope.ts` + tests, wiring the already-ported Phase 1 `diagramGen*.ts`
+      layout/color/XML engine into a real UI for the first time). `Diagram` (`padStore.ts`) is a
+      flat document-level list, same first-pass convention as every other Pad tab -- no
+      node-linking, status, or thumbnail yet. Generate always runs in "plain tree mode" (no AI
+      classification pass or review screen -- this project has no AI features yet, §6.9 not
+      started), matching legacy's own documented AI-unavailable fallback exactly rather than a
+      lesser imitation of it; `genKey`-based regenerate-in-place also deliberately not ported.
+      Verified end-to-end in a real headless Chrome browser (Generate picks scope/builds
+      XML/opens the editor, the iframe requests the real `embed.diagrams.net` embed URL, Close's
+      confirm dialog works both ways, rename persists) -- except the actual draw.io load/save
+      postMessage handshake itself, which that session's sandbox couldn't reach over the network
+      to verify directly; implemented faithfully from the documented protocol and legacy's own
+      working code, but wants a real check with network access before being fully trusted.
     - ❌ **Mind Map** — not started. Scoped as a full canvas editor (pan/zoom/drag/connect/edit
       nodes), not a minimal list-based stand-in.
 
@@ -263,7 +274,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 ## Status
 
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 in progress**
-(#150–#158, #164 — 10 of 11 items landed; only Diagrams/Mind Map/Files remain), and **§6.4
+(#150–#158, #164, #172 — Diagrams landed, only Mind Map remains) and **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on) — see each
 section's own `Status:` line for the full breakdown. §6.5 onward not started. Update each
 phase's own section above with a `Status:` line and PR numbers as work lands, the same way
