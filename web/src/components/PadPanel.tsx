@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePadStore, PAD_ATTACH_MAX_BYTES } from '../store/padStore';
 import type { DecisionStatus } from '../store/padStore';
+import { useMindMapStore } from '../store/mindMapStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
@@ -9,6 +10,7 @@ import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
 import { DiagramEditor } from './DiagramEditor';
+import { MindMapCanvas } from './MindMapCanvas';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -82,8 +84,14 @@ const TABS: { id: PadTab; label: string }[] = [
  * engine. Deliberately no AI classification pass or review screen (this project has no AI
  * features yet -- §6.9 not started), so Generate always renders in "plain tree mode" directly,
  * matching legacy's own documented AI-unavailable fallback rather than a lesser imitation of it.
- * Mind Map remains an honest placeholder -- a genuinely separate canvas-editor feature, its own
- * future slice.
+ *
+ * Sixth piece, item 11's Mind Map sub-slice -- closes out §6.3. A real freeform canvas
+ * (`MindMapCanvas.tsx`: pan/zoom/drag/connect/edit nodes, all hand-rolled mouse events), backed
+ * by its own dedicated `store/mindMapStore.ts` rather than folded into `padStore.ts` -- a
+ * genuinely separate subsystem (nodes/links/pan/zoom), same reasoning the Hub panels each get
+ * their own store file. Deliberately a simpler data model than legacy's real one: no parentId
+ * tree, no branch colors, no auto-layout modes -- see that store's own header for the full
+ * reasoning. `MindMapsTab` here is the same list-of-named-canvases shape as `DiagramsTab` above.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -111,12 +119,7 @@ export function PadPanel() {
       {tab === 'remarks' && <RemarksTab t={t} />}
       {tab === 'files' && <FilesTab t={t} />}
       {tab === 'diagrams' && <DiagramsTab t={t} />}
-      {tab === 'mindmap' && (
-        <div style={{ color: t.mutedText, fontStyle: 'italic', fontSize: 13 }}>
-          Mind Map isn't built yet — it needs a real canvas/graph-visualization editor, a
-          separately-scoped follow-up.
-        </div>
-      )}
+      {tab === 'mindmap' && <MindMapsTab t={t} />}
     </div>
   );
 }
@@ -499,3 +502,59 @@ function DiagramsTab({ t }: { t: Tokens }) {
   );
 }
 
+function MindMapsTab({ t }: { t: Tokens }) {
+  const maps = useMindMapStore((s) => s.maps);
+  const addMap = useMindMapStore((s) => s.addMap);
+  const removeMap = useMindMapStore((s) => s.removeMap);
+  const renameMap = useMindMapStore((s) => s.renameMap);
+  const duplicateMap = useMindMapStore((s) => s.duplicateMap);
+
+  const [openId, setOpenId] = useState<number | null>(null);
+  const openMap = maps.find((m) => m.id === openId) || null;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <button type="button" onClick={() => setOpenId(addMap())} style={{ fontSize: 12 }}>
+          + New map
+        </button>
+      </div>
+      {maps.length === 0 && (
+        <div style={{ color: t.mutedText, fontStyle: 'italic', fontSize: 13 }}>
+          No mind maps yet. Click + to start a freeform brainstorming canvas for this document.
+        </div>
+      )}
+      {maps.map((m) => (
+        <div
+          key={m.id}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}
+        >
+          <button
+            type="button"
+            onClick={() => setOpenId(m.id)}
+            style={{ flex: 1, textAlign: 'left', fontSize: 13, color: t.text, background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            {m.title || 'Untitled map'}
+          </button>
+          <span style={{ color: t.mutedText, fontSize: 11 }}>
+            {m.nodes.length ? `${m.nodes.length} node${m.nodes.length === 1 ? '' : 's'}` : 'Empty'}
+          </span>
+          <button type="button" onClick={() => duplicateMap(m.id)} style={{ fontSize: 11 }}>
+            duplicate
+          </button>
+          <button type="button" onClick={() => removeMap(m.id)} style={{ fontSize: 11 }}>
+            remove
+          </button>
+        </div>
+      ))}
+      {openMap && (
+        <MindMapCanvas
+          map={openMap}
+          onClose={() => setOpenId(null)}
+          onRename={(title) => renameMap(openMap.id, title)}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
