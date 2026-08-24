@@ -134,21 +134,42 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `4e57574` ("docs: close out item
-11's Files sub-slice, fix stale/inconsistent status", #170). Phase 6
-(full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
-§6.1 (design tokens & app shell) complete, §6.2 (undo/redo & core editing
-parity) complete, §6.4 (backlinks/mention infrastructure) complete, and
-§6.3 (Note/Code/Pad panels) is 10 of 11 items landed — item 11 (Diagrams,
-Mind Map, Files) is itself three sub-features, scoped and sequenced as
-Files → Diagrams → Mind Map. Files landed in #168 (real upload/storage via
-FileReader.readAsDataURL, base64 data: URI inline in the doc's own state,
-5MB cap — no backend needed, matching legacy's own approach exactly).
-Diagrams is next: full draw.io embed + Generate-from-outline (reusing the
-already-ported `diagramGen*.ts` core logic from Phase 1, never yet wired to
-any UI). Mind Map after that: a full canvas editor (pan/zoom/drag/connect).
-§6.5 onward not started. An AI key vault (Cloudflare Worker) proposal is
-recorded as an unscheduled appendix at the end of that same plan doc,
+As of this writing: `main` is at commit `1e2e471` ("docs: mark Hub To-Dos
+depth (§6.5, first piece) landed, #176 (#177)"). Phase 6 (full parity
+build-out — see docs/phase6-full-parity-plan.md) is underway: §6.1 (design
+tokens & app shell), §6.2 (undo/redo & core editing parity), §6.3 (Note/
+Code/Pad panels — all 11 items, including item 11's three sub-features
+Files/Diagrams/Mind Map), and §6.4 (backlinks/mention infrastructure) are
+all complete. §6.5 (Hub full depth) is now in progress:
+
+- To-Dos, first piece landed in #176: priority/status/due-dates/repeat/
+  subtasks, wiring fields and logic (`nextRepeatDate`, subtask CRUD) that
+  were already real/ported but had no UI until now. Inline per-row
+  "Details" toggle rather than legacy's own modal task-detail sheet, same
+  first-pass "simpler chrome" convention every other Pad/Hub slice uses.
+  Real headless-Chrome testing caught and fixed a genuine crash before
+  merge (reading `e.currentTarget.value` inside a `setState` functional
+  updater — unsafe under React 18 StrictMode's double-invocation-for-
+  purity, since the synthetic event is already gone by the second call).
+- Still open in §6.5: To-Dos' filtering/sorting/bulk-actions/tags/PDF
+  export/Version History/Share/due-date reminder notifications; Meeting
+  Notes; Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
+
+Item 11's three §6.3 sub-features, for reference on how each was scoped:
+Files (#168, real upload/storage via FileReader.readAsDataURL, base64
+data: URI inline in the doc's own state, 5MB cap); Diagrams (#172, full
+draw.io embed via its official postMessage protocol + Generate-from-
+outline reusing the already-ported `diagramGen*.ts` core logic — verified
+end-to-end in headless Chrome except the actual draw.io load/save
+handshake itself, which that session's sandbox couldn't reach over the
+network); Mind Map (#174, a genuinely freeform canvas — pan/zoom/drag/
+connect/edit nodes, no parentId tree or auto-layout like legacy's real
+model, links as the sole connection mechanism — headless-Chrome testing
+across two rounds caught and fixed three real bugs before merge, see that
+PR's own description for specifics).
+
+An AI key vault (Cloudflare Worker) proposal is recorded as an
+unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open. No PR is mid-review. Production
