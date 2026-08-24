@@ -163,14 +163,16 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `0aaf4bf` ("feat(hub): Recap
-depth -- Today/This Week/Last Week, click-to-jump (§6.5) (#189)"). §6.5
-is now down to a single remaining item -- see below.
+As of this writing: `main` is at commit `615943b` ("docs: refresh
+handoff prompt Current state after Recap landing, #189 (#190)"), with a
+Mobile Hub slice (pending PR -- see below) about to land on top of it and
+close out §6.5 entirely.
 Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
 sub-features Files/Diagrams/Mind Map), and §6.4 (backlinks/mention
-infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
+infrastructure) are all complete. §6.5 (Hub full depth) is now complete --
+all six items landed:
 
 - To-Dos, first piece landed in #176: priority/status/due-dates/repeat/
   subtasks, wiring fields and logic (`nextRepeatDate`, subtask CRUD) that
@@ -284,11 +286,39 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   headless Chrome: Today/This Week/Last Week tabs filter correctly, and
   clicking a Recap row for both a to-do and a meeting note expands that
   exact item in its own panel below, zero console/page errors.
-- Still open in §6.5: To-Dos'/Meeting Notes' PDF export/Version
-  History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not
-  Hub-specific); Meeting Notes' cross-document node links (separately
-  scoped); Mobile Hub -- the only remaining §6.5 item. §6.6 onward not
-  started.
+- Mobile Hub landed (pending PR -- the last §6.5 item, closing it out
+  entirely): legacy's real `hub.html` is a wholly separate mobile-native
+  page, required-account-sign-in-gated, built to bridge a phone's
+  otherwise-empty local storage with a desktop's data via Firestore sync.
+  `web/` has neither piece of infra that premise depends on (no
+  client-side routing at all; no Hub-domain Firestore sync, §6.8 not
+  started) -- a real scope reduction was agreed with the user before
+  building anything: **responsive layout only**. A live viewport-width
+  breakpoint (`useIsMobileViewport.ts`, 640px) swaps in `MobileHub.tsx`
+  in place of the entire desktop layout, reading the exact same local
+  store data desktop does -- nothing to bridge, so no sign-in gate (a
+  real, honest simplification, not a deferral). `SwipeRow.tsx` directly
+  ports legacy's own `initSwipeList` gesture engine (same pointer-event
+  state machine, tuning constants, tap-vs-swipe-vs-scroll
+  disambiguation); `BottomSheet.tsx` ports legacy's own reusable
+  bottom-sheet shell; `MobileHubTodos.tsx`/`MobileHubJournal.tsx` reuse
+  every existing store action with zero new business logic, plus one new
+  real capability (`updateTodoText` on `hubTodosStore.ts`, matching
+  legacy's own editable task-detail-text field, which the desktop
+  "Details" section never had). Deliberately not ported: the swipe-nudge
+  animation, haptic feedback, account menu/search bar/theme toggle (this
+  view bypasses `AppShell` entirely). A real bug caught and fixed before
+  merge: an initial `data-no-swipe` guard unconditionally blocked
+  tap-to-open on every row, caught by real mobile-emulated
+  headless-Chrome testing (iPhone 13 + touch) before it reached a device.
+  Verified end-to-end: tap-to-open, a real pointer-drag swipe-left
+  reveals and triggers delete, chip cycling and subtasks persist and
+  re-render, dark theme propagates correctly across the breakpoint --
+  zero console/page errors throughout.
+- §6.5 is now fully complete -- all six Hub items landed. Still deferred,
+  each a real cross-cutting follow-up: To-Dos'/Meeting Notes' PDF
+  export/Version History/Share (§6.6/§6.8); Meeting Notes' cross-document
+  node links (separately scoped). §6.6 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
@@ -308,7 +338,7 @@ unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open for review (the merged
-`hub/recap-depth` branch's local copy was deleted; its remote copy
+`hub/mobile-hub-depth` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past
 sessions this repo's branch protection has always blocked it anyway --

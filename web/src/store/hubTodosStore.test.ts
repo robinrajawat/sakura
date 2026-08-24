@@ -154,6 +154,13 @@ describe('hubTodosStore', () => {
     expect(todos.find((t) => t.id === idB)!.subtasks).toEqual([]);
   });
 
+  it('updateTodoText replaces the matching todo\'s text', () => {
+    useHubTodosStore.getState().addTodo('Original');
+    const id = useHubTodosStore.getState().todos[0].id;
+    useHubTodosStore.getState().updateTodoText(id, 'Revised');
+    expect(useHubTodosStore.getState().todos[0].text).toBe('Revised');
+  });
+
   it('setFocusTodoId sets it, clearFocusTodoId resets it to null', () => {
     expect(useHubTodosStore.getState().focusTodoId).toBeNull();
     useHubTodosStore.getState().setFocusTodoId('t1');
