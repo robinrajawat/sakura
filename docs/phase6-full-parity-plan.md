@@ -135,7 +135,7 @@ download), Remarks (date field, node-linking, export inclusion).
 `[[@mention]]` backlinks: not built at all yet (Tags themselves shipped in the previous PRs
 (#118/#119) — this phase is the remaining "Backlinks" half of that checklist section).
 
-**Status: in progress.** Two of four slices landed:
+**Status: complete.** All four slices landed:
 - `[[wikilink]]` rendering as a clickable link, with click-to-navigate (#160) — the PR that
   landed this labeled itself "Phase 6.3" in its commit message, which was a mislabel; per this
   plan's own section numbering it's §6.4 work. Noted here so the discrepancy doesn't propagate.
@@ -147,12 +147,20 @@ download), Remarks (date field, node-linking, export inclusion).
   `@query` span. Verified end-to-end in a real headless-Chrome browser (dropdown renders,
   candidate highlights, commit produces the right text, rendered pill is clickable and navigates)
   before merging, not just typecheck/lint/test/build.
-
-Still remaining, each its own separately-scoped slice: wiring `cleanupBacklinksFor`/
-`renameBacklinksFor` (already ported in `core/backlinks.ts`, #160) into `outlineStore.ts`'s
-delete/commit actions so deleting or renaming a referenced node actually updates every
-`[[mention]]` elsewhere; and the Note panel's actual Backlinks section display, listing every
-node that references the currently-open one (`getBacklinksTo`, already ported and tested).
+- Cleanup/rename wiring (#163) — `commitEdit` now rewrites every `[[mention]]` of a renamed node
+  via `renameBacklinksFor`; `deleteNode`/`deleteSelected` now strip `[[mentions]]` of every
+  deleted node (including whole-subtree deletes) via `cleanupBacklinksFor`. Direct port of
+  legacy's own commit-time/delete-time call sites (legacy/index.html:19315, 20856-20859,
+  20871-20876). Verified end-to-end in a real browser: renaming a mentioned node live-updates
+  the pill elsewhere; deleting it cleanly strips the mention while the referencing node's own
+  text stays intact.
+- Note panel Backlinks section (#164) — direct port of legacy's own `renderBacklinkPanel`
+  (legacy/index.html:20160-20181): renders at the bottom of the Note tab only, hidden entirely
+  when there are no referrers, each entry an 80-char truncated preview with any `[[mention]]`
+  italicized (via a new pure `formatBacklinkPreview` helper in `core/backlinks.ts`), click
+  navigates to the referrer and closes the panel. Deliberately not ported: legacy's collapsed-
+  by-default badge/toggle system, since this project's Note panel has no other collapsed-by-
+  default section to be consistent with — the section just always shows when non-empty.
 
 ### 6.5 — Hub full depth
 To-Dos (priority/status/due-dates/subtasks/repeat/filtering/sorting/bulk-actions/tags/PDF
@@ -218,10 +226,9 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-**§6.1 complete** (#129–#130, #132–#138) and **§6.2 complete** (#140–#148) — see each section's
-own `Status:` line for the full breakdown. **§6.4 in progress** (#160–#161, wikilink rendering +
-`@`-mention insert; backlink cleanup/rename wiring and the Note panel's Backlinks section display
-still remaining). §6.3, §6.5 onward not started. Update each phase's own
+**§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), and **§6.4 complete**
+(#160–#164, all four backlinks-groundwork slices) — see each section's own `Status:` line for
+the full breakdown. §6.3, §6.5 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
