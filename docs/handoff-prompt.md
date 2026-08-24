@@ -134,8 +134,8 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `71dfd6e` ("feat(web): real file
-upload/storage for Pad Files tab (Phase 6.3, item 11 part 1)", #168). Phase 6
+As of this writing: `main` is at commit `4e57574` ("docs: close out item
+11's Files sub-slice, fix stale/inconsistent status", #170). Phase 6
 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell) complete, §6.2 (undo/redo & core editing
 parity) complete, §6.4 (backlinks/mention infrastructure) complete, and
