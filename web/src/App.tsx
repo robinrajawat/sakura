@@ -19,6 +19,8 @@ import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { useThemeStore } from './store/themeStore';
+import { MobileHub } from './components/MobileHub';
+import { useIsMobileViewport } from './utils/useIsMobileViewport';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -31,6 +33,7 @@ import { useThemeStore } from './store/themeStore';
  */
 export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
+  const isMobile = useIsMobileViewport();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
@@ -45,6 +48,11 @@ export function App() {
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
   const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
+
+  // §6.5 slice (docs/phase6-full-parity-plan.md), Mobile Hub: below the breakpoint, this SPA
+  // swaps in the dedicated mobile Hub experience entirely rather than squeezing the desktop
+  // layout down -- see MobileHub.tsx's own header for the full reasoning.
+  if (isMobile) return <MobileHub />;
 
   return (
     <AppShell

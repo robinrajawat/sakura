@@ -237,7 +237,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
 `Status:` bullet below for corrections found once actually checked against legacy: To-Dos'
 "bulk-actions"/"tags" and Meeting Notes' "templates" turned out not to be real gaps.)*
 
-**Status: in progress.**
+**Status: complete.**
 - ✅ **To-Dos, first piece** (#176) — priority/status/due-dates/repeat/subtasks, all wired to
   fields that were already real on the ported `Todo` type (`state/hubTodos.ts`) but had no UI
   until now, plus the already-ported `nextRepeatDate` (`hubTodos.ts`) and subtask CRUD
@@ -370,9 +370,43 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   journal entry created today shows under Today and This Week, not Last Week, which correctly
   reads all-zero/"Nothing here yet"), and clicking a Recap row for both a to-do and a meeting
   note expands that exact item in its own panel below, zero console/page errors.
-- ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
-  scoping correction above); Meeting Notes' PDF export/Version History/Share/node-links (same
-  deferral); Mobile Hub.
+- ✅ **Mobile Hub** (pending -- PR number not yet known; previous PR was #190) -- the last
+  §6.5 item. Legacy's real `hub.html` (legacy/hub.html) is a wholly separate mobile-native page,
+  required-account-sign-in-gated, built specifically to bridge a phone's otherwise-empty local
+  storage with a desktop's data via Firestore sync. `web/` has neither piece of infra that
+  premise depends on: no client-side routing at all (decision #3,
+  docs/framework-migration-plan.md) and no Hub-domain Firestore sync (§6.8, not started). A real
+  scope reduction was agreed with the user before building anything (a genuine architectural
+  blocker, same category as Recap's `OutlineNode`-timestamps gap): **responsive layout only** --
+  a live viewport-width breakpoint (`useIsMobileViewport.ts`, 640px) swaps in a dedicated
+  `MobileHub.tsx` in place of the entire desktop layout, reading the exact same local
+  `hubTodosStore.ts`/`hubJournalStore.ts` data desktop does (nothing to bridge, so no sign-in
+  gate -- a real, honest simplification, not a deferral). Everything legacy's real mobile page
+  actually does once past its sign-in wall is built faithfully: `SwipeRow.tsx` is a direct port
+  of legacy's own `initSwipeList`/`swipeRowShell` gesture engine (legacy/hub.html:903-1016) --
+  same pointer-event state machine, same tuning constants, same tap-vs-swipe-vs-scroll
+  disambiguation; `BottomSheet.tsx` ports legacy's own reusable bottom-sheet shell
+  (legacy/hub.html:256-291); `MobileHubTodos.tsx`/`MobileHubJournal.tsx` reuse every existing
+  store action (priority/status/repeat chips, due date, subtasks, mood, rich text) with zero new
+  business logic, only a new UI shell -- plus one new real capability, `updateTodoText` on
+  `hubTodosStore.ts`, matching legacy's own editable `#task-detail-text` field
+  (legacy/hub.html:297-298), which `HubTodosPanel.tsx`'s desktop "Details" section never had a
+  field for. Deliberately not ported: the one-time swipe-gesture nudge animation, haptic
+  feedback on long-press, the account menu/search bar/offline banner/personalized greeting
+  header (this view bypasses `AppShell` entirely, so there is currently no way to toggle theme
+  from within it either -- a real, honest gap, not silently dropped). A real bug caught and
+  fixed before merge, not just confirmed the build: an initial `data-no-swipe` guard on
+  `SwipeRow.tsx`'s pointer-down handler unconditionally blocked tap-to-open on every row's own
+  content (the exact area meant to be tappable), caught by real mobile-emulated headless-Chrome
+  testing (a synthetic click produced no bottom sheet) before it ever reached a device. Verified
+  end-to-end in real headless Chrome with iPhone 13 emulation + touch: tap-to-open a task/journal
+  entry, a real pointer-drag swipe-left reveals and triggers delete, priority-chip cycling and
+  subtask add both persist and re-render correctly, dark theme propagates correctly when set at
+  desktop width before resizing into the mobile breakpoint (same session, no reload) -- zero
+  console/page errors throughout.
+
+This closes out §6.5 -- all six items (To-Dos, Meeting Notes, Journal, Library, Recap, Mobile
+Hub) now landed.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
@@ -433,9 +467,9 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
-complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176, #179, #181, #185, #187, and Recap pending its own PR number) — only Mobile Hub
-remains — see each section's own `Status:` line for the
+complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5
+complete** (#176, #179, #181, #185, #187, #189, and Mobile Hub pending its own PR number) — all
+six Hub items now landed — see each section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

@@ -78,6 +78,12 @@ function cycleNext(arr: string[], current: string | null | undefined): string {
 interface HubTodosState {
   todos: Todo[];
   addTodo: (text: string) => void;
+  /** Edits an existing task's text in place -- matches legacy's real editable
+   * `#task-detail-text` field (legacy/hub.html:297-298), used by `MobileHubTodos.tsx`'s task
+   * detail sheet (§6.5, Mobile Hub). `HubTodosPanel.tsx`'s own desktop "Details" section has no
+   * text field to edit from, only create; this is a new, real capability this project didn't
+   * have before, not a duplicate of anything existing. */
+  updateTodoText: (id: string, text: string) => void;
   /** Matches legacy's real `addTodoExternal` (legacy/index.html:43807-43817), currently used
    * only by Meeting Notes' "Promote to To-Do". Returns the new todo's id (or `null` if `text`
    * is empty/whitespace-only) so the caller can remember which todo an action item became. */
@@ -229,6 +235,12 @@ export const useHubTodosStore = create<HubTodosState>((set, get) => ({
 
   removeTodo: (id) => {
     const todos = get().todos.filter((t) => t.id !== id);
+    saveTodosCore(todos);
+    set({ todos });
+  },
+
+  updateTodoText: (id, text) => {
+    const todos = get().todos.map((t) => (t.id === id ? { ...t, text } : t));
     saveTodosCore(todos);
     set({ todos });
   },
