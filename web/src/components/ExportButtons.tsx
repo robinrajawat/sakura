@@ -4,7 +4,7 @@ import { serializeOpmlCore } from '../utils/serializeOpml';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides } from './PresenterMode';
 
@@ -136,21 +136,49 @@ export function ExportButtons() {
   // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
   // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
   // bindings. Scoped way down from legacy's real Word export (no images, tables, decision
-  // cards, Notepad/Q&A sections, branding, or heading-level styling by depth) -- one paragraph
-  // per node, indented via docx's own `indent` property (720 twips = 0.5in per depth level,
-  // the standard Word indent unit), with a literal "[ ] "/"[x] " checkbox prefix since a real
-  // interactive checkbox isn't something a static Word paragraph can represent.
+  // cards, Notepad/Q&A sections, or branding) -- one paragraph per node, indented via docx's own
+  // `indent` property (720 twips = 0.5in per depth level, the standard Word indent unit), with a
+  // literal "[ ] "/"[x] " checkbox prefix since a real interactive checkbox isn't something a
+  // static Word paragraph can represent.
+  //
+  // §6.6 fidelity upgrade: a node with `styles.heading` set (1-6, already a real field since
+  // §6.2's rich-formatting slice) now renders as a genuine Word heading paragraph
+  // (`HeadingLevel.HEADING_1`..`HEADING_6`, docx's own built-in heading styles) instead of a
+  // flat indented line, plus a real Word TOC field (`TableOfContents`, `headingStyleRange:
+  // '1-6'`) referencing those same heading styles -- the same field-based TOC mechanism Word's
+  // own "Insert > Table of Contents" produces. Like any Word TOC field, it shows placeholder
+  // text ("Right-click and select Update Field") until the reader updates it in Word (F9, or
+  // Word's own "Update Table" prompt on open with automatic-update settings) -- a real,
+  // documented Word behavior, not a bug in this export. A heading node's checkbox
+  // prefix/indent-by-depth are dropped for that paragraph (a Word heading style already carries
+  // its own visual weight/spacing; combining it with a manual indent would fight the style).
   async function exportWord() {
+    const HEADING_LEVELS = [
+      HeadingLevel.HEADING_1,
+      HeadingLevel.HEADING_2,
+      HeadingLevel.HEADING_3,
+      HeadingLevel.HEADING_4,
+      HeadingLevel.HEADING_5,
+      HeadingLevel.HEADING_6
+    ] as const;
     const doc = new Document({
       sections: [
         {
-          children: nodes.map((node) => {
-            const prefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
-            return new Paragraph({
-              indent: { left: node.depth * 720 },
-              children: [new TextRun(prefix + (getNodePlainText(node) || '(empty)'))]
-            });
-          })
+          children: [
+            new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }),
+            ...nodes.map((node) => {
+              const text = getNodePlainText(node) || '(empty)';
+              if (node.styles.heading > 0) {
+                const level = HEADING_LEVELS[Math.min(node.styles.heading, 6) - 1];
+                return new Paragraph({ heading: level, children: [new TextRun(text)] });
+              }
+              const prefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
+              return new Paragraph({
+                indent: { left: node.depth * 720 },
+                children: [new TextRun(prefix + text)]
+              });
+            })
+          ]
         }
       ]
     });

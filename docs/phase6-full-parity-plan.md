@@ -501,8 +501,24 @@ format, Word/OPML import.
   the closing slide showing "Thank you"/"Questions?", `Home` returns, `B` toggles the blackout
   overlay, the laser toggle button + mousemove renders the tracking dot -- zero console/page
   errors throughout.
-- Word/PDF/PowerPoint export fidelity, Sakura Document (`.sakura.json`) format, Word/OPML
-  import -- not started.
+- ✅ **Word export: heading styles + TOC field.** A node with `styles.heading` set (1-6,
+  already a real field since §6.2) now renders as a genuine Word heading paragraph
+  (`docx`'s `HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat indented line, and the
+  export opens with a real Word TOC field (`TableOfContents`, `headingStyleRange: '1-6'`) --
+  the same field-based mechanism Word's own "Insert > Table of Contents" produces. Like any
+  Word TOC field, it shows placeholder text until the reader updates it in Word (F9, or
+  Word's own "Update Table" prompt) -- a real, documented Word behavior, not a bug in this
+  export. A heading node's checkbox prefix/depth-indent are dropped for that paragraph (a
+  Word heading style already carries its own visual weight; combining it with a manual
+  indent would fight the style). Verified end-to-end in real headless Chrome: typed a
+  markdown-style `# heading` prefix (outlineStore.ts's existing auto-convert-to-heading
+  logic), exported .docx, unzipped the result and confirmed `word/document.xml` contains a
+  real `Heading1` style reference, a TOC field code, and the heading's own text -- a
+  well-formed OOXML package, zero console/page errors.
+- Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
+  PDF fidelity (cover page, margins config, footer, fold-state/notes/decision-card rendering);
+  PowerPoint fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides, images);
+  Sakura Document (`.sakura.json`) format; Word/OPML import.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -558,8 +574,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, #196, Presenter Mode depth landing in
-this PR) — see each section's own `Status:` line for the
+six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, Word export heading
+styles/TOC landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
