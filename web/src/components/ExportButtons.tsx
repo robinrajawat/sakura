@@ -6,6 +6,7 @@ import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
+import { parseSakuraDocumentCore } from '../utils/parseSakuraDocument';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
@@ -64,6 +65,7 @@ export function ExportButtons() {
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
   const opmlFileInputRef = useRef<HTMLInputElement>(null);
+  const sakuraDocFileInputRef = useRef<HTMLInputElement>(null);
 
   // OPML import -- direct port of legacy's real `importOpmlText` (legacy/index.html:24581-
   // 24601), the read side of the already-ported `serializeOpmlCore`/`exportOpml`. Always lands
@@ -102,6 +104,50 @@ export function ExportButtons() {
       multiSelectedIds: [],
       selectionAnchorId: mapped[0]?.id ?? null,
       nextId: id
+    });
+  }
+
+  // Sakura Document (.sakura.json) export -- direct port of legacy's real
+  // `exportSakuraDocumentFile` (legacy/index.html:22038-22075), scoped to what's genuinely real
+  // and document-scoped in `web/` today: the outline itself, full-fidelity (unlike OPML, which
+  // loses `styles`/`tags`/`codeBlock` -- this payload IS the store's own `OutlineNode[]` shape,
+  // not a lossy text encoding of it). Legacy's real payload also bundles Pad content (`pad`/
+  // `qa`/`diagrams`/`mindMaps`/`decisionLogs`/`attachments`/`remarks`) -- deliberately NOT
+  // included here, since none of that is document-scoped (or even persisted at all) in `web/`
+  // yet; see `parseSakuraDocument.ts`'s own header for the full explanation of that real
+  // architectural gap.
+  function exportSakuraDocument() {
+    const activeDoc = docsIndex.find((d) => d.id === activeDocId);
+    const title = activeDoc?.title || 'Untitled';
+    const payload = { v: 1, kind: 'sakura-document', exportedAt: Date.now(), title, nodes };
+    const safeTitle = title.replace(/[\\/:*?"<>|]+/g, '_') || 'document';
+    download(`${safeTitle}.sakura.json`, 'application/json;charset=utf-8', JSON.stringify(payload));
+  }
+
+  // Sakura Document (.sakura.json) import -- the read side of `exportSakuraDocument` above, via
+  // `parseSakuraDocumentCore`. Always lands in a brand-new document (`newDocument()`), matching
+  // legacy's own real guarantee that an import can never silently merge into whatever document
+  // happens to be open already, same convention this file's own OPML import uses. Node ids are
+  // NOT remapped -- unlike OPML import (which builds fresh ids since OPML carries no ids of its
+  // own), a Sakura Document payload's node ids are real ids already, so they're kept exactly as
+  // exported (matching legacy's own real behavior: "no collision risk to remap away" since this
+  // is always a brand-new document); the outline store's own `nextId` counter is bumped past
+  // the highest imported id afterward, matching the "`nextId` only ever moves up" convention
+  // this store already documents for undo/redo snapshot restores.
+  async function importSakuraDocument(file: File) {
+    const text = await file.text();
+    const parsed = parseSakuraDocumentCore(text);
+    if (!parsed) return;
+    newDocument();
+    rebuildParentIdsCore(parsed.nodes);
+    const maxId = parsed.nodes.reduce((max, n) => Math.max(max, n.id), 0);
+    useOutlineStore.setState({
+      nodes: parsed.nodes,
+      selectedId: parsed.nodes[0]?.id ?? null,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: parsed.nodes[0]?.id ?? null,
+      nextId: Math.max(useOutlineStore.getState().nextId, maxId + 1)
     });
   }
 
@@ -368,6 +414,9 @@ export function ExportButtons() {
       <button type="button" onClick={exportPowerpoint}>
         Export .pptx
       </button>
+      <button type="button" onClick={exportSakuraDocument}>
+        Export .sakura.json
+      </button>
       <input
         ref={opmlFileInputRef}
         type="file"
@@ -381,6 +430,20 @@ export function ExportButtons() {
       />
       <button type="button" onClick={() => opmlFileInputRef.current?.click()}>
         Import .opml
+      </button>
+      <input
+        ref={sakuraDocFileInputRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = '';
+          if (file) importSakuraDocument(file);
+        }}
+      />
+      <button type="button" onClick={() => sakuraDocFileInputRef.current?.click()}>
+        Import .sakura.json
       </button>
     </div>
   );
