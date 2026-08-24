@@ -134,8 +134,8 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `1e2e471` ("docs: mark Hub To-Dos
-depth (§6.5, first piece) landed, #176 (#177)"). Phase 6 (full parity
+As of this writing: `main` is at commit `75b1160` ("feat(hub): To-Dos search
+filtering, urgency sections, reminders (§6.5) (#179)"). Phase 6 (full parity
 build-out — see docs/phase6-full-parity-plan.md) is underway: §6.1 (design
 tokens & app shell), §6.2 (undo/redo & core editing parity), §6.3 (Note/
 Code/Pad panels — all 11 items, including item 11's three sub-features
@@ -151,9 +151,20 @@ all complete. §6.5 (Hub full depth) is now in progress:
   merge (reading `e.currentTarget.value` inside a `setState` functional
   updater — unsafe under React 18 StrictMode's double-invocation-for-
   purity, since the synthetic event is already gone by the second call).
-- Still open in §6.5: To-Dos' filtering/sorting/bulk-actions/tags/PDF
-  export/Version History/Share/due-date reminder notifications; Meeting
-  Notes; Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
+- To-Dos, second piece landed in #179: search filtering, urgency-based
+  sectioning (Overdue/Today/Upcoming/No Date), a collapsible sorted
+  Completed section, and due-date reminder notifications (real
+  `Notification` API + 5-minute standing check + click-to-focus around the
+  already-ported `computeDueRemindersCore`). Direct port of legacy's own
+  `renderTodos()`/`checkDueReminders()`. Scoping correction made in the same
+  slice: "bulk-actions" and "tags", previously listed as gaps for To-Dos in
+  docs/history/phase5-parity-checklist.md, don't exist anywhere in legacy's
+  real To-Dos implementation (checked directly against legacy/hub.html and
+  legacy/index.html) — dropped from scope as invented-capability risk, not
+  built, checklist row corrected.
+- Still open in §6.5: To-Dos' PDF export/Version History/Share (deferred to
+  §6.6/§6.8 — cross-cutting infra, not Hub-specific); Meeting Notes;
+  Journal; Library; Recap; Mobile Hub. §6.6 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
