@@ -51,14 +51,26 @@ describe('parseSemanticMarkup', () => {
     expect(parseSemanticMarkup('wow!urgent')).toEqual([{ type: 'text', text: 'wow!urgent' }]);
   });
 
-  it('leaves [[wiki links]] untouched as plain text rather than mis-parsing them as a section', () => {
-    // Deliberately deferred (see this file's own header) — the important behavior to prove
-    // here isn't "links work", it's "links don't render GARBLED just because they're
-    // unsupported" — a single '[' immediately followed by another '[' must not be treated
-    // as a section-start.
+  it('parses [[wiki link]] as a link segment, delimiters excluded and display text stripped of markers', () => {
     expect(parseSemanticMarkup('see [[Some Page]] for more')).toEqual([
-      { type: 'text', text: 'see [[Some Page]] for more' }
+      { type: 'text', text: 'see ' },
+      { type: 'link', text: 'Some Page', target: 'Some Page' },
+      { type: 'text', text: ' for more' }
     ]);
+  });
+
+  it('does not misread [[[triple]]] brackets as a valid link (matches getBacklinkRefs)', () => {
+    expect(parseSemanticMarkup('[[[triple]]]')).toEqual([{ type: 'link', text: 'triple', target: '[triple]' }]);
+  });
+
+  it('strips a semantic marker from a wikilink target for display, keeping the raw text as target', () => {
+    expect(parseSemanticMarkup('[[[Section] Name]]')).toEqual([
+      { type: 'link', text: 'Section Name', target: '[Section] Name' }
+    ]);
+  });
+
+  it('leaves an empty [[]] as plain text (matches legacy: end > i+2 excludes an empty target)', () => {
+    expect(parseSemanticMarkup('[[]]')).toEqual([{ type: 'text', text: '[[]]' }]);
   });
 
   it('handles multiple markers of different types in one string, in document order', () => {

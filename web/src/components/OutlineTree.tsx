@@ -6,6 +6,7 @@ import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useNotePanelStore } from '../store/notePanelStore';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
+import { findNodeByText } from '../core/backlinks';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -596,7 +597,17 @@ export function OutlineTree() {
                 onDoubleClick={() => startEditing(node.id)}
                 style={{ flex: 1, ...composeNodeLabelStyle(node) }}
               >
-                {node.text ? <NodeText text={node.text} /> : <span style={{ color: '#bbb' }}>(empty)</span>}
+                {node.text ? (
+                  <NodeText
+                    text={node.text}
+                    onLinkClick={(target) => {
+                      const found = findNodeByText(nodes, target);
+                      if (found) selectNode(found.id);
+                    }}
+                  />
+                ) : (
+                  <span style={{ color: '#bbb' }}>(empty)</span>
+                )}
               </span>
             )}
             {/* Fold badge -- "+N hidden" for a collapsed node with children, matching legacy's
