@@ -43,9 +43,19 @@ describe('padStore', () => {
     expect(usePadStore.getState().remarks).toEqual([]);
   });
 
-  it('addFile/removeFile', () => {
-    usePadStore.getState().addFile('spec.pdf');
-    expect(usePadStore.getState().files).toEqual([{ id: 1, name: 'spec.pdf' }]);
+  it('addFile stores real upload fields (size, dataUrl, mimeType, addedAt) and removeFile removes by id', () => {
+    const before = Date.now();
+    usePadStore.getState().addFile('spec.pdf', 12345, 'data:application/pdf;base64,AAAA', 'application/pdf');
+    const files = usePadStore.getState().files;
+    expect(files).toHaveLength(1);
+    expect(files[0]).toMatchObject({
+      id: 1,
+      name: 'spec.pdf',
+      size: 12345,
+      dataUrl: 'data:application/pdf;base64,AAAA',
+      mimeType: 'application/pdf'
+    });
+    expect(files[0].addedAt).toBeGreaterThanOrEqual(before);
     usePadStore.getState().removeFile(1);
     expect(usePadStore.getState().files).toEqual([]);
   });

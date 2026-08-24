@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { usePadStore } from '../store/padStore';
+import { usePadStore, PAD_ATTACH_MAX_BYTES } from '../store/padStore';
 import type { DecisionStatus } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
+import { formatFileSize } from '../utils/formatFileSize';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -53,6 +54,20 @@ const TABS: { id: PadTab; label: string }[] = [
  * `renderRemarksList` ordering. Node-linking (an `anchorNodeId` + anchor picker) and export
  * inclusion (wiring into a docx/pptx/PDF export pipeline) are deferred -- this app has no
  * node-linking infrastructure for Pad items generally, and no export pipeline at all yet.
+ *
+ * Fourth piece, item 11 of §6.3's own tracked list: Files real upload/storage. `FileRef` gains
+ * `size`/`dataUrl`/`mimeType`/`addedAt` fields via `padStore.ts`'s `addFile`, which now reads the
+ * selected `File` through `FileReader.readAsDataURL` rather than just recording its name -- a
+ * direct port of legacy's own `addFileAttachment` (legacy/index.html:41986-42004), including the
+ * 5MB-per-file cap (`PAD_ATTACH_MAX_BYTES`, matching legacy's own limit exactly) and its rejection
+ * message. Each row is now a real download link (`<a href={dataUrl} download={name}>`) with a
+ * real formatted size (`utils/formatFileSize.ts`, a direct port of legacy's `formatAttachSize`).
+ * "Real upload/storage" turns out not to need a backend at all -- legacy's own implementation
+ * has never had one either; the base64 data URI lives inline in the document's own persisted
+ * JSON, same tier as every other Pad list. Deliberately NOT ported, same "flat, document-level
+ * list first pass" convention as Decision Log/Remarks/Q&A above: node-linking (`anchorNodeId` +
+ * the anchor-picker UI), `addedBy`, `note`, and per-mime-type icons (a generic file link stands
+ * in for now) -- each a real, separately-scoped follow-up if still wanted.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -329,22 +344,48 @@ function FilesTab({ t }: { t: Tokens }) {
   const files = usePadStore((s) => s.files);
   const addFile = usePadStore((s) => s.addFile);
   const removeFile = usePadStore((s) => s.removeFile);
+  const [error, setError] = useState<string | null>(null);
+
+  // Direct port of legacy's own addFileAttachment (legacy/index.html:41986-42004): reject over
+  // the 5MB cap with a message naming the file, otherwise read via FileReader.readAsDataURL and
+  // store the resulting base64 data: URI. Errors on the reader itself (rare -- a genuinely
+  // unreadable file) are swallowed same as legacy's own `reader.onerror=()=>resolve()`, since
+  // there's nothing actionable to tell the user beyond "that didn't work."
+  function handleFileSelect(file: File): void {
+    if (file.size > PAD_ATTACH_MAX_BYTES) {
+      setError(`"${file.name}" is over the 5 MB attachment limit`);
+      return;
+    }
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const dataUrl = typeof evt.target?.result === 'string' ? evt.target.result : '';
+      if (dataUrl) addFile(file.name, file.size, dataUrl, file.type || '');
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <div>
       {files.map((f) => (
         <div key={f.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
-          {f.name}{' '}
+          <a href={f.dataUrl} download={f.name} style={{ color: t.text }}>
+            {f.name}
+          </a>{' '}
+          <span style={{ color: t.mutedText, fontSize: 11 }}>{formatFileSize(f.size)}</span>{' '}
           <button type="button" onClick={() => removeFile(f.id)} style={{ fontSize: 11 }}>
             remove
           </button>
         </div>
       ))}
-      {/* Name-only -- no real upload/storage layer exists yet, see this file's own header. */}
+      {error && (
+        <div style={{ color: '#b02020', fontSize: 12, marginTop: 6 }}>{error}</div>
+      )}
       <input
         type="file"
         onChange={(e) => {
           const file = e.currentTarget.files?.[0];
-          if (file) addFile(file.name);
+          if (file) handleFileSelect(file);
           e.currentTarget.value = '';
         }}
         style={{ fontSize: 12, marginTop: 6 }}
