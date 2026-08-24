@@ -183,9 +183,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `2b88971` ("feat(export):
-PowerPoint overflow \"(cont'd)\" slides (§6.6) (#208)"), with this PR's
-Presenter Mode floating Notes/Q&A panel slice about to land on top.
+As of this writing: `main` is at commit `7b4d44e` ("feat(presenter):
+floating Notes/Q&A panel (§6.6) (#209)"), with this PR's PowerPoint
+Notepad/Q&A section pagination slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now in progress: Preview TOC/scroll-spy/progress
 bar (#194), plain text/clipboard export (#196), Presenter Mode depth
@@ -195,8 +195,9 @@ bar (#194), plain text/clipboard export (#196), Presenter Mode depth
 (#203), the branding wordmark across Word/PDF/PowerPoint/Presenter
 (#204), PDF page margins + date/page-count footer (#205), Word
 note-image embedding (#206), Word Notepad/Q&A sections (#207),
-PowerPoint overflow "(cont'd)" slides (#208), and Presenter Mode's
-floating Notes/Q&A panel (this PR) are all landed. One note on this
+PowerPoint overflow "(cont'd)" slides (#208), Presenter Mode's
+floating Notes/Q&A panel (#209), and PowerPoint Notepad/Q&A section
+pagination (this PR) are all landed. One note on this
 session's CI: PR
 #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
@@ -661,8 +662,8 @@ all six items landed:
   deliberately-oversized ~24% width buffer legacy's own comment
   documents. Box width/available height measured against this
   export's own real default slide size (10in x 5.625in, not legacy's
-  13.333x7.5). Notepad/Q&A slides do NOT get the same pagination in
-  this slice -- a real, separately-scoped follow-up. Verified
+  13.333x7.5). (Notepad/Q&A slides got the same pagination in a later
+  PR -- see below.) Verified
   end-to-end in real headless Chrome: imported a 30-bullet test
   document via Sakura Document import, exported `.pptx`, unzipped the
   result and confirmed 5 real content slides (1 original + 4 genuine
@@ -682,13 +683,26 @@ all six items landed:
   question/answer both present), closes on Escape, and toggles open/
   closed correctly via repeated `n` key presses -- zero console/page
   errors.
+- PowerPoint: Notepad/Q&A section pagination landed in this PR: extends
+  the per-node overflow pagination above to the Notepad and Q&A slides
+  too, reusing the same `measureWrappedLines`/`AVAIL_H`/`BOX_WIDTH_IN`
+  machinery -- a Notepad line or a Q&A question+answer pair that would
+  overflow the current slide starts a new `<Title> (cont'd)` slide
+  instead of silently clipping. A question and its own answer are
+  always measured and packed as one combined unit so a page break never
+  separates them, unless that pair alone is taller than a full page.
+  Verified end-to-end in real headless Chrome: filled Notepad with 12
+  long lines and added 8 long Q&A pairs, exported `.pptx`, unzipped the
+  result and confirmed Notepad spans 3 slides and Q&A spans 4 slides
+  (correct "(cont'd)" titling throughout), every line/pair present
+  exactly once, no question ever separated from its answer -- zero
+  console/page errors.
 - Still open in §6.6: Whiteboard mirroring and Audience View/
   dual-screen (see above for why each is blocked/deferred); PowerPoint
   image embedding (see above); Word tables/Decision Log cards; PDF's
   remaining fidelity gap (fold-state/notes/decision-card rendering --
   currently a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint's remaining fidelity gaps (Notepad/Q&A section pagination,
-  decision cards). §6.7 onward
+  PowerPoint's remaining fidelity gap (decision cards). §6.7 onward
   not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:

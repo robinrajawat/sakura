@@ -725,10 +725,22 @@ format, Word/OPML import.
   hidden by default, becomes visible on button click (notes text and the Q&A question/answer
   both present), closes on Escape, and toggles open/closed correctly via repeated `n` key
   presses -- zero console/page errors.
+- ✅ **PowerPoint: Notepad/Q&A section pagination.** Extends the per-node overflow pagination
+  from the slice above to the Notepad and Q&A slides too, reusing the same `measureWrappedLines`/
+  `AVAIL_H`/`BOX_WIDTH_IN` machinery: a Notepad line or a Q&A question+answer pair that would
+  overflow the current slide starts a new `<Title> (cont'd)` slide instead of silently clipping
+  in the viewer. A Q&A question and its own answer are always measured and packed as one
+  combined unit so a page break never separates them, unless that pair alone is taller than a
+  full page. Verified end-to-end in real headless Chrome: filled Notepad with 12 long lines and
+  added 8 long Q&A pairs (enough to force overflow on both), exported `.pptx`, unzipped the
+  result and confirmed Notepad spans 3 slides (titled "Notepad"/"Notepad (cont'd)" x2) and Q&A
+  spans 4 slides (titled "Q&A"/"Q&A (cont'd)" x3), with every notepad line and every Q&A
+  question/answer pair present exactly once and no question ever separated from its answer --
+  zero console/page errors.
 - Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
   Word tables/decision-log cards; PDF's remaining fidelity gap (fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
-  remaining fidelity gaps (Notepad/Q&A section pagination, decision cards).
+  remaining fidelity gap (decision cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -785,7 +797,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, Presenter Mode floating Notes/Q&A panel landing in this
+#202, #203, #204, #205, #206, #207, #208, #209, PowerPoint Notepad/Q&A pagination landing in this
 PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
