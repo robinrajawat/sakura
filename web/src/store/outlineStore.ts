@@ -828,8 +828,10 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     set({ nodes: next });
   },
 
-  // Plain text field, no rich-HTML/sanitization (deferred) -- matches legacy's `node.note`
-  // field but scoped down for this first Phase 3 slice.
+  // Real sanitized HTML as of the Phase 6.3 rich-text slice (NotePanel.tsx runs every commit
+  // through sanitizeRichHtml before calling this) -- was a plain-text field in the original
+  // Phase 3 slice. This setter itself stays a dumb string setter either way, matching legacy's
+  // own note-editor commit path (the sanitize call happens at the call site, not in here).
   setNote: (id, note) => {
     const { nodes } = get();
     const idx = getIndex(nodes, id);

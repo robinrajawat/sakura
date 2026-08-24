@@ -5,6 +5,7 @@ import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useNotePanelStore } from '../store/notePanelStore';
+import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -796,7 +797,7 @@ export function OutlineTree() {
                 whiteSpace: 'pre-wrap'
               }}
             >
-              {node.note}
+              {stripHtmlToText(node.note)}
             </div>
           )}
           {node.codeBlock && (
