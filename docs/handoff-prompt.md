@@ -66,6 +66,17 @@ with `&&`, remember the local delete can fail (squash-merged branches aren't
 fast-forward-mergeable, so `-d` refuses) and silently skip the remote delete
 too — check separately, don't assume the chain ran.
 
+**Before declaring anything mislabeled or wrong** — a commit message, a
+doc's phase attribution, a section number, a PR's own description — check
+`git log`/the actual PR sequence first. Don't infer an error from a doc's
+internal structure (e.g. section numbering) alone. A session's own tracked
+item list and a plan doc's phase headers can legitimately describe the same
+work two different ways — that's not automatically a mislabel. This project
+already had one real incident from skipping this check: PR #162 wrongly
+"corrected" #160's commit message, asserting a mislabel that turned out not
+to exist once the actual PR history (#159-160, which were groundwork for
+§6.3's own deferred item 7) was checked — fixed in #166.
+
 **PR discipline:** Every change, however small (including docs-only), goes
 through: feature branch → commit (`git commit -F <tempfile>`, never `-m` with
 backticks) → push → open PR via GitHub API → poll check-runs until CI
@@ -123,14 +134,17 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `087822d` ("docs: close Phase 5
-honestly, remove cutover-ownership contradiction", #125). Phase 5 (parity
-audit + Documents & Tabs #115–#116 + Tags & Focus #118–#119) is closed.
-Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) has
-not started; §6.1 (design tokens & app shell) is the next real work,
-whenever picked up. An AI key vault (Cloudflare Worker) proposal is recorded
-as an unscheduled appendix at the end of that same plan doc, connected to
-§6.9 but not committed to a slot yet.
+As of this writing: `main` is at commit `31b47cc` ("docs: retract the
+incorrect '6.3 mislabel' claim, add real §6.3 status", #166). Phase 6 (full
+parity build-out — see docs/phase6-full-parity-plan.md) is underway:
+§6.1 (design tokens & app shell) complete, §6.2 (undo/redo & core editing
+parity) complete, §6.4 (backlinks/mention infrastructure) complete, and
+§6.3 (Note/Code/Pad panels) is 10 of 11 items landed — only Diagrams, Mind
+Map, and Files remain, with Files needing real scoping first (what "real
+upload/storage" realistically means in a browser-only app with no backend).
+§6.5 onward not started. An AI key vault (Cloudflare Worker) proposal is
+recorded as an unscheduled appendix at the end of that same plan doc,
+connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open. No PR is mid-review. Production
 (`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
