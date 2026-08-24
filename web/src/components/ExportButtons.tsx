@@ -522,18 +522,15 @@ export function ExportButtons() {
   // real closing slide (reusing `PresenterMode.tsx`'s own `CLOSING_SLIDE_TEXT`/
   // `CLOSING_SLIDE_SUBTITLE` constants -- the same defaults Presenter Mode's own closing slide
   // uses) is always the genuine last slide in the deck, matching legacy's own real ordering
-  // (per-node slides, then Notepad, then Q&A, then closing). Scoped down from legacy's real
-  // Notepad/Q&A slides: no pagination/overflow onto a "(cont'd)" slide when THEIR OWN content
-  // doesn't fit the box -- per-node slides DO now get real overflow pagination (see below), but
-  // porting the same real-measurement approach to Notepad/Q&A too is a real, separately-scoped
-  // follow-up (unusually long Notepad/Q&A content here just overflows its text box visually in
-  // the viewer, still fully present and editable in the underlying shape); no table/chart
-  // promotion (`web/`'s Notepad is a plain `<textarea>`, not a rich editor with an embeddable
-  // table yet), no Q&A section headers (`web/`'s own `QaItem` has no section/title concept, a
-  // simpler model than legacy's). Still scoped way down otherwise: no title slide, no
-  // images/diagrams (see `Word note-image embedding` above for why PPTX images are a separate,
-  // bigger follow-up), no decision cards, no marker glyphs. Also adds the branding wordmark to
-  // every slide's bottom-right corner (see `addBranding` below).
+  // (per-node slides, then Notepad, then Q&A, then closing). Notepad/Q&A slides now paginate
+  // onto "(cont'd)" slides too, same real-measurement approach as the per-node slides (see
+  // `measureWrappedLines`'s own comment below). Still scoped down from legacy's real
+  // Notepad/Q&A slides: no table/chart promotion (`web/`'s Notepad is a plain `<textarea>`, not
+  // a rich editor with an embeddable table yet), no Q&A section headers (`web/`'s own `QaItem`
+  // has no section/title concept, a simpler model than legacy's). Still scoped way down
+  // otherwise: no title slide, no images/diagrams (see `Word note-image embedding` above for why
+  // PPTX images are a separate, bigger follow-up), no decision cards, no marker glyphs. Also
+  // adds the branding wordmark to every slide's bottom-right corner (see `addBranding` below).
   async function exportPowerpoint() {
     const pptx = new PptxGenJS();
     // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every slide,
@@ -611,28 +608,79 @@ export function ExportButtons() {
         addBranding(slide);
       });
     }
+    // §6.6 fidelity upgrade: Notepad/Q&A slides now paginate onto "(cont'd)" slides too, direct
+    // port of legacy's real `pptxPaginateBullets`-style measure-then-pack loop (legacy's own
+    // Notepad/Q&A section builders, legacy/index.html:26567-26586 and :26622-26633) reusing the
+    // same `measureWrappedLines`/`AVAIL_H`/`BOX_WIDTH_IN` the per-node slides above already use.
+    // A Q&A question and its own answer are measured and packed as one combined unit (legacy's
+    // own choice too) so a page break never separates a question from its answer, unless that
+    // pair alone is taller than a full page.
     if (notesText.trim()) {
-      const notepadSlide = pptx.addSlide();
-      notepadSlide.addText('Notepad', { x: 0.5, y: 0.4, fontSize: 28, bold: true });
-      const paragraphs = notesText.split('\n').map((line) => ({ text: line, options: { fontSize: 16, breakLine: true } }));
-      notepadSlide.addText(paragraphs, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
-      addBranding(notepadSlide);
+      const notepadLines = notesText.split('\n').map((line) => ({
+        text: line,
+        h: measureWrappedLines(line, BOX_WIDTH_IN, 16, false) * pptxLineHeightIn(16, 1.3)
+      }));
+      const notepadPages: (typeof notepadLines)[] = [];
+      let npage: typeof notepadLines = [];
+      let nUsedH = 0;
+      for (const line of notepadLines) {
+        if (npage.length && nUsedH + line.h > AVAIL_H) {
+          notepadPages.push(npage);
+          npage = [];
+          nUsedH = 0;
+        }
+        npage.push(line);
+        nUsedH += line.h;
+      }
+      notepadPages.push(npage);
+      notepadPages.forEach((pageLines, pi) => {
+        const notepadSlide = pptx.addSlide();
+        notepadSlide.addText(pi === 0 ? 'Notepad' : "Notepad (cont'd)", { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+        const paragraphs = pageLines.map((line) => ({ text: line.text, options: { fontSize: 16, breakLine: true } }));
+        if (paragraphs.length) {
+          notepadSlide.addText(paragraphs, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+        }
+        addBranding(notepadSlide);
+      });
     }
     const answeredQa = qaItems.filter((item) => item.question.trim());
     if (answeredQa.length) {
-      const qaSlide = pptx.addSlide();
-      qaSlide.addText('Q&A', { x: 0.5, y: 0.4, fontSize: 28, bold: true });
-      const qaLines: { text: string; options: Record<string, unknown> }[] = [];
-      for (const item of answeredQa) {
+      const qaBlocks = answeredQa.map((item) => {
+        const question = item.question.trim();
         const answer = item.answer.trim();
-        qaLines.push({ text: item.question.trim(), options: { fontSize: 16, bold: true, breakLine: true } });
-        qaLines.push({
-          text: answer || 'No answer provided',
-          options: { fontSize: 14, italic: !answer, color: answer ? undefined : '999999', breakLine: true }
-        });
+        const h =
+          measureWrappedLines(question, BOX_WIDTH_IN, 16, true) * pptxLineHeightIn(16, 1.25) +
+          measureWrappedLines(answer || 'No answer provided', BOX_WIDTH_IN, 14, false) * pptxLineHeightIn(14, 1.25) +
+          0.18;
+        return { question, answer, h };
+      });
+      const qaPages: (typeof qaBlocks)[] = [];
+      let qpage: typeof qaBlocks = [];
+      let qUsedH = 0;
+      for (const b of qaBlocks) {
+        if (qpage.length && qUsedH + b.h > AVAIL_H) {
+          qaPages.push(qpage);
+          qpage = [];
+          qUsedH = 0;
+        }
+        qpage.push(b);
+        qUsedH += b.h;
       }
-      qaSlide.addText(qaLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
-      addBranding(qaSlide);
+      qaPages.push(qpage);
+      qaPages.forEach((pageItems, pi) => {
+        const qaSlide = pptx.addSlide();
+        qaSlide.addText(pi === 0 ? 'Q&A' : "Q&A (cont'd)", { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+        const qaLines: { text: string; options: Record<string, unknown> }[] = [];
+        for (const item of pageItems) {
+          qaLines.push({ text: item.question, options: { fontSize: 16, bold: true, breakLine: true } });
+          qaLines.push({
+            text: item.answer || 'No answer provided',
+            options: { fontSize: 14, italic: !item.answer, color: item.answer ? undefined : '999999', breakLine: true }
+          });
+        }
+        qaSlide.addText(qaLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+        addBranding(qaSlide);
+      });
     }
     const closingSlide = pptx.addSlide();
     closingSlide.addText(CLOSING_SLIDE_TEXT, { x: 0.5, y: 2.6, w: '90%', h: 1, fontSize: 32, bold: true, align: 'center' });
