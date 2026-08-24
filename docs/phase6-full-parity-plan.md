@@ -135,6 +135,25 @@ download), Remarks (date field, node-linking, export inclusion).
 `[[@mention]]` backlinks: not built at all yet (Tags themselves shipped in the previous PRs
 (#118/#119) — this phase is the remaining "Backlinks" half of that checklist section).
 
+**Status: in progress.** Two of four slices landed:
+- `[[wikilink]]` rendering as a clickable link, with click-to-navigate (#160) — the PR that
+  landed this labeled itself "Phase 6.3" in its commit message, which was a mislabel; per this
+  plan's own section numbering it's §6.4 work. Noted here so the discrepancy doesn't propagate.
+- `@`-mention autocomplete for inserting a reference while editing (#161) — direct port of
+  legacy's own `_atState`/`openAtSuggest`/`handleAtInput`/`commitAtSuggest`
+  (legacy/index.html:20185-20289, 26956-26959), adapted for this project's uncontrolled inline-
+  edit `<input>`: typing `@` opens a substring-filtered dropdown, ArrowUp/Down/Enter/Tab/Escape
+  navigate and commit, commits by splicing `[[Target Text]]` into the input's DOM value at the
+  `@query` span. Verified end-to-end in a real headless-Chrome browser (dropdown renders,
+  candidate highlights, commit produces the right text, rendered pill is clickable and navigates)
+  before merging, not just typecheck/lint/test/build.
+
+Still remaining, each its own separately-scoped slice: wiring `cleanupBacklinksFor`/
+`renameBacklinksFor` (already ported in `core/backlinks.ts`, #160) into `outlineStore.ts`'s
+delete/commit actions so deleting or renaming a referenced node actually updates every
+`[[mention]]` elsewhere; and the Note panel's actual Backlinks section display, listing every
+node that references the currently-open one (`getBacklinksTo`, already ported and tested).
+
 ### 6.5 — Hub full depth
 To-Dos (priority/status/due-dates/subtasks/repeat/filtering/sorting/bulk-actions/tags/PDF
 export), Meeting Notes (templates, action items, Promote-to-To-Do, PDF export, Share/Import),
@@ -200,7 +219,9 @@ Every item below, checked in that order, before any cutover PR is even opened:
 ## Status
 
 **§6.1 complete** (#129–#130, #132–#138) and **§6.2 complete** (#140–#148) — see each section's
-own `Status:` line for the full breakdown. §6.3 onward not started. Update each phase's own
+own `Status:` line for the full breakdown. **§6.4 in progress** (#160–#161, wikilink rendering +
+`@`-mention insert; backlink cleanup/rename wiring and the Note panel's Backlinks section display
+still remaining). §6.3, §6.5 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
