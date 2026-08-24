@@ -9,6 +9,7 @@ import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
 import { parseSakuraDocumentCore } from '../utils/parseSakuraDocument';
 import { parseDocxHtmlToTreeNodesCore } from '../utils/parseDocxHtml';
 import { extractFirstImageDataUrl } from '../utils/extractNoteImage';
+import { wrapLineCount, pptxLineHeightIn } from '../utils/wrapLineCount';
 import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
@@ -522,16 +523,17 @@ export function ExportButtons() {
   // `CLOSING_SLIDE_SUBTITLE` constants -- the same defaults Presenter Mode's own closing slide
   // uses) is always the genuine last slide in the deck, matching legacy's own real ordering
   // (per-node slides, then Notepad, then Q&A, then closing). Scoped down from legacy's real
-  // Notepad/Q&A slides: no pagination/overflow onto a "(cont'd)" slide when content doesn't fit
-  // the box (legacy measures real wrapped-line heights against the actual font to decide where
-  // to split -- a lot of machinery for a real, separately-scoped follow-up; unusually long
-  // content here just overflows its text box visually in the viewer, still fully present and
-  // editable in the underlying shape), no table/chart promotion (`web/`'s Notepad is a plain
-  // `<textarea>`, not a rich editor with an embeddable table yet), no Q&A section headers
-  // (`web/`'s own `QaItem` has no section/title concept, a simpler model than legacy's). Still
-  // scoped way down otherwise: no title slide, no images/diagrams, no decision cards, no
-  // marker glyphs. Also adds the branding wordmark to every slide's bottom-right corner (see
-  // `addBranding` below).
+  // Notepad/Q&A slides: no pagination/overflow onto a "(cont'd)" slide when THEIR OWN content
+  // doesn't fit the box -- per-node slides DO now get real overflow pagination (see below), but
+  // porting the same real-measurement approach to Notepad/Q&A too is a real, separately-scoped
+  // follow-up (unusually long Notepad/Q&A content here just overflows its text box visually in
+  // the viewer, still fully present and editable in the underlying shape); no table/chart
+  // promotion (`web/`'s Notepad is a plain `<textarea>`, not a rich editor with an embeddable
+  // table yet), no Q&A section headers (`web/`'s own `QaItem` has no section/title concept, a
+  // simpler model than legacy's). Still scoped way down otherwise: no title slide, no
+  // images/diagrams (see `Word note-image embedding` above for why PPTX images are a separate,
+  // bigger follow-up), no decision cards, no marker glyphs. Also adds the branding wordmark to
+  // every slide's bottom-right corner (see `addBranding` below).
   async function exportPowerpoint() {
     const pptx = new PptxGenJS();
     // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every slide,
@@ -554,24 +556,60 @@ export function ExportButtons() {
         charSpacing: 2
       });
     }
+    // §6.6 fidelity upgrade: overflow onto a "<Title> (cont'd)" slide when a node's bullets
+    // don't fit the box, direct port of legacy's real per-slide pagination (legacy's own
+    // `pptxPaginateBullets`, using `pptxMeasureWrappedLines`/`pptxLineHeightIn` -- both ported
+    // to `utils/wrapLineCount.ts`). Measured against a real canvas 2D context (Calibri, Office's
+    // own default body font, not this app's UI font -- same reasoning legacy's own comment
+    // gives: Inter is a web font that won't actually be installed wherever the file is opened)
+    // with the same deliberately-oversized ~24% width buffer legacy's own comment documents,
+    // so the measurement stays an under-estimate of available width across whatever font a
+    // reader's copy of PowerPoint/Keynote/Google Slides actually substitutes. `BOX_WIDTH_IN`/
+    // `AVAIL_H` are measured against THIS export's own real default slide size (10in x
+    // 5.625in) -- see `addBranding`'s own comment above for why that's not legacy's 13.333x7.5.
+    const measureCtx = document.createElement('canvas').getContext('2d');
+    function measureWrappedLines(text: string, boxWidthIn: number, fontSizePt: number, bold: boolean): number {
+      if (!text || !measureCtx) return 1;
+      measureCtx.font = `${bold ? '700' : '400'} ${fontSizePt}pt Calibri, Carlito, Arial, sans-serif`;
+      const boxWidthPx = Math.max(1, boxWidthIn * 96 * 0.76);
+      return wrapLineCount(text, boxWidthPx, (s) => measureCtx.measureText(s).width);
+    }
+    const BOX_WIDTH_IN = 9; // matches the bullet text box's own w:'90%' of a 10in-wide slide
+    const AVAIL_H = 5.625 - 0.4 - 1.3; // slide height, minus a bottom margin, minus the title's own bodyTop
     const slides = groupIntoSlides(nodes);
     for (const slideNodes of slides) {
-      const slide = pptx.addSlide();
       const minDepth = slideNodes[0].depth;
-      slide.addText(getNodePlainText(slideNodes[0]) || '(empty)', {
-        x: 0.5,
-        y: 0.4,
-        fontSize: 28,
-        bold: true
-      });
-      const bulletLines = slideNodes.slice(1).map((node) => ({
+      const title = getNodePlainText(slideNodes[0]) || '(empty)';
+      const bullets = slideNodes.slice(1).map((node) => ({
         text: (node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '') + (getNodePlainText(node) || '(empty)'),
-        options: { bullet: true, indentLevel: node.depth - minDepth - 1, fontSize: 16 }
+        indentLevel: node.depth - minDepth - 1
       }));
-      if (bulletLines.length) {
-        slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+      const pages: (typeof bullets)[] = [];
+      let page: typeof bullets = [];
+      let usedH = 0;
+      for (const b of bullets) {
+        const h = measureWrappedLines(b.text, BOX_WIDTH_IN, 16, false) * pptxLineHeightIn(16, 1.3);
+        if (page.length && usedH + h > AVAIL_H) {
+          pages.push(page);
+          page = [];
+          usedH = 0;
+        }
+        page.push(b);
+        usedH += h;
       }
-      addBranding(slide);
+      pages.push(page); // always at least one page, even with zero bullets (a leaf/title-only node)
+      pages.forEach((pageBullets, pi) => {
+        const slide = pptx.addSlide();
+        slide.addText(pi === 0 ? title : `${title} (cont'd)`, { x: 0.5, y: 0.4, fontSize: 28, bold: true });
+        const bulletLines = pageBullets.map((b) => ({
+          text: b.text,
+          options: { bullet: true, indentLevel: b.indentLevel, fontSize: 16 }
+        }));
+        if (bulletLines.length) {
+          slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+        }
+        addBranding(slide);
+      });
     }
     if (notesText.trim()) {
       const notepadSlide = pptx.addSlide();

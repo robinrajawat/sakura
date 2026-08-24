@@ -183,19 +183,20 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `fcfe22f` ("feat(export): Word
-note-image embedding (§6.6) (#206)"), with this PR's Word Notepad/Q&A
-sections slice about to land on top. §6.5 is fully complete -- all six
-Hub items landed. §6.6 (Preview, Presenter & Export) is now in
+As of this writing: `main` is at commit `9832aff` ("feat(export): Word
+Notepad + Q&A sections (§6.6) (#207)"), with this PR's PowerPoint
+overflow-slide slice about to land on top. §6.5 is fully complete --
+all six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
 progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
 clipboard export (#196), Presenter Mode depth (#197), Word export
 heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
 Notepad/Q&A/closing slides (#200), OPML import (#201), Sakura Document
 export/import (#202), Word (.docx) import (#203), the branding
 wordmark across Word/PDF/PowerPoint/Presenter (#204), PDF page margins
-+ date/page-count footer (#205), Word note-image embedding (#206), and
-Word Notepad/Q&A sections (this PR) are all landed. One note on this
-session's CI: PR #204 hit a real,
++ date/page-count footer (#205), Word note-image embedding (#206),
+Word Notepad/Q&A sections (#207), and PowerPoint overflow "(cont'd)"
+slides (this PR) are all landed. One note on this session's CI: PR
+#204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
 collision check, unrelated to any file this session touched) -- a
 duplicate CI run of the identical commit passed, confirming it was a
@@ -630,7 +631,7 @@ all six items landed:
   media part (`word/media/<hash>.png`, exact byte size matching the
   source), a genuine `<w:drawing>` element, and a real image
   relationship -- zero console/page errors.
-- Word Notepad + Q&A sections landed in this PR: direct port of
+- Word Notepad + Q&A sections landed in #207: direct port of
   legacy's real `docxBuildNotepadSection`/`docxBuildQaSection`,
   mirroring the same content/wording already built for the PowerPoint
   export (#200): a "Notepad" heading + Pad's plain-text `notesText` as
@@ -646,14 +647,35 @@ all six items landed:
   the Pad panel, exported `.docx`, unzipped the result and confirmed
   both section headings and their real content are present -- zero
   console/page errors.
+- PowerPoint overflow "(cont'd)" slides landed in this PR: direct port
+  of legacy's real per-slide pagination (`pptxMeasureWrappedLines`/
+  `pptxLineHeightIn`, both ported to `utils/wrapLineCount.ts`) -- when
+  a node's bullets don't fit the box, the rest spill onto a new slide
+  titled `<Title> (cont'd)` instead of getting visually clipped.
+  `wrapLineCount` is the pure greedy-wrap algorithm, DI'd against an
+  injected `measureTextWidth` so it's testable with a deterministic
+  fake width function; `ExportButtons.tsx` supplies the real one, a
+  canvas 2D context measuring against Calibri (Office's own default
+  body font, not this app's UI font -- a web font won't actually be
+  installed wherever the file is opened), with the same
+  deliberately-oversized ~24% width buffer legacy's own comment
+  documents. Box width/available height measured against this
+  export's own real default slide size (10in x 5.625in, not legacy's
+  13.333x7.5). Notepad/Q&A slides do NOT get the same pagination in
+  this slice -- a real, separately-scoped follow-up. Verified
+  end-to-end in real headless Chrome: imported a 30-bullet test
+  document via Sakura Document import, exported `.pptx`, unzipped the
+  result and confirmed 5 real content slides (1 original + 4 genuine
+  `(cont'd)` slides) plus the closing slide, all 30 bullets present
+  exactly once across the deck -- zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); PowerPoint image embedding (see above); Word
   tables/Decision Log cards; PDF's remaining fidelity gap (fold-state/
   notes/decision-card rendering -- currently a flat node list, not
   rendered from a Preview-equivalent); PowerPoint's remaining fidelity
-  gaps (overflow "(cont'd)" slides, decision cards). §6.7 onward not
-  started.
+  gaps (Notepad/Q&A section pagination, decision cards). §6.7 onward
+  not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
