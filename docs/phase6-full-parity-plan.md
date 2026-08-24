@@ -693,10 +693,30 @@ format, Word/OPML import.
   question). Verified end-to-end in real headless Chrome: filled Notepad text and added a Q&A
   item via the Pad panel, exported `.docx`, unzipped the result and confirmed both section
   headings and their real content are present in `document.xml` -- zero console/page errors.
+- ✅ **PowerPoint: overflow "(cont'd)" slides.** Direct port of legacy's real per-slide
+  pagination (legacy's own `pptxMeasureWrappedLines`/`pptxLineHeightIn`, both ported to
+  `utils/wrapLineCount.ts`): when a node's bullets don't fit the box, the rest spill onto a new
+  slide titled `<Title> (cont'd)` rather than getting visually clipped. `wrapLineCount`
+  (`utils/wrapLineCount.ts`) is the pure greedy-wrap algorithm, DI'd against an injected
+  `measureTextWidth` function so it's testable with a deterministic fake width function --
+  `ExportButtons.tsx` supplies the real one, a canvas 2D context measuring against Calibri
+  (Office's own default body font, not this app's UI font `Inter` -- same reasoning legacy's own
+  comment gives: a web font won't actually be installed wherever the file is opened), with the
+  same deliberately-oversized ~24% width buffer legacy's own comment documents so the
+  measurement stays an under-estimate of available width across whatever font a reader's copy of
+  PowerPoint/Keynote/Google Slides actually substitutes. Box width/available height are measured
+  against THIS export's own real default slide size (10in x 5.625in, not legacy's 13.333x7.5 --
+  same pre-existing sizing gap the branding-wordmark slice already documented). Notepad/Q&A
+  slides do NOT get the same pagination in this slice -- porting the real-measurement approach to
+  those too is a real, separately-scoped follow-up. Verified end-to-end in real headless Chrome:
+  imported a 30-bullet test document via Sakura Document import, exported `.pptx`, unzipped the
+  result and confirmed 5 real content slides (1 original + 4 genuine `(cont'd)` slides, apostrophe
+  correctly OOXML-entity-escaped as `&apos;`) plus the closing slide, with all 30 bullets present
+  exactly once across the deck -- zero console/page errors.
 - Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
   Word tables/decision-log cards; PDF's remaining fidelity gap (fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
-  remaining fidelity gaps (overflow "(cont'd)" slides, decision cards).
+  remaining fidelity gaps (Notepad/Q&A section pagination, decision cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -753,7 +773,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, Word Notepad/Q&A sections landing in this PR) — see each section's own `Status:` line for the
+#202, #203, #204, #205, #206, #207, PowerPoint overflow slides landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
