@@ -183,18 +183,18 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `93776f6` ("feat(export):
-branding wordmark across Word/PDF/PowerPoint/Presenter (§6.6) (#204)"),
-with this PR's PDF margins/footer slice about to land on top. §6.5 is
-fully complete -- all six Hub items landed. §6.6 (Preview, Presenter &
-Export) is now in progress: Preview TOC/scroll-spy/progress bar
-(#194), plain text/clipboard export (#196), Presenter Mode depth
-(#197), Word export heading styles + TOC field (#198), PDF cover page
-(#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
-(#201), Sakura Document export/import (#202), Word (.docx) import
-(#203), the branding wordmark across Word/PDF/PowerPoint/Presenter
-(#204), and PDF page margins + date/page-count footer (this PR) are
-all landed. One note on this session's CI: PR #204 hit a real,
+As of this writing: `main` is at commit `2dad3c3` ("feat(export): PDF
+page margins + footer (§6.6) (#205)"), with this PR's Word note-image
+embedding slice about to land on top. §6.5 is fully complete -- all
+six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
+progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
+clipboard export (#196), Presenter Mode depth (#197), Word export
+heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
+Notepad/Q&A/closing slides (#200), OPML import (#201), Sakura Document
+export/import (#202), Word (.docx) import (#203), the branding
+wordmark across Word/PDF/PowerPoint/Presenter (#204), PDF page margins
++ date/page-count footer (#205), and Word note-image embedding (this
+PR) are all landed. One note on this session's CI: PR #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
 collision check, unrelated to any file this session touched) -- a
 duplicate CI run of the identical commit passed, confirming it was a
@@ -590,7 +590,7 @@ all six items landed:
   PDF print popup's own stylesheet for the `@bottom-right` rule plus
   the cover-page wordmark; confirmed the mark renders live in the
   Presenter Mode bar -- zero console/page errors across all four.
-- PDF page margins + footer landed in this PR: direct port of legacy's
+- PDF page margins + footer landed in #205: direct port of legacy's
   real `printHtmlAsPdf` `@page` block. Margin hardcoded to 20mm
   (`PDF_MARGIN_MM.normal`, legacy's own real default). Footer is a
   real CSS Paged Media margin-box pair: today's date bottom-left,
@@ -603,14 +603,40 @@ all six items landed:
   stylesheet and confirmed the full `@page` block -- `margin:20mm`, a
   real formatted date, the literal counter CSS, and the branding rule
   all present and correctly escaped -- zero console/page errors.
+- Word note-image embedding landed in this PR: investigated before
+  scoping -- checked `NotePanel.tsx`'s real "Insert image from file"
+  action in full and confirmed a genuine image-in-note pathway already
+  exists (a node's `note` can hold a real `data:` URI `<img>`, inserted
+  via `execCommand('insertImage', ...)`, matching legacy's own
+  `ntb-image` handler). `extractFirstImageDataUrl`
+  (`utils/extractNoteImage.ts`) pulls the image back out; `docx`'s own
+  `ImageRun` API handles the real OOXML media-part/relationship
+  plumbing internally (no hand-rolled XML needed, unlike legacy's own
+  from-scratch implementation) -- `decodeImageDataUrl` maps the four
+  MIME types `ImageRun` accepts (png/jpg/gif/bmp; svg/webp silently
+  skipped) to real bytes, `loadImageDimensions` reads true pixel size
+  by actually loading the image in the browser, scaled to a 400px max
+  width. First-image-only (matches legacy's own real one-picture-per-
+  note model). **PowerPoint image embedding deliberately NOT
+  included**: PPTX slides are fixed-size canvases already mostly
+  filled by bullet text, so naively placing images risks real visual
+  overlap -- legacy's own PPTX image placement relies on real text
+  measurement to avoid this, a genuinely separate, bigger follow-up
+  (Word's paragraph-flow layout has no such collision risk, which is
+  why it was safe to build now). Verified end-to-end in real headless
+  Chrome: inserted a real PNG into a node's note via the actual UI,
+  exported `.docx`, unzipped the result and confirmed a real image
+  media part (`word/media/<hash>.png`, exact byte size matching the
+  source), a genuine `<w:drawing>` element, and a real image
+  relationship -- zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
-  blocked/deferred); Word export's images/tables/Decision Log
-  cards/Notepad-Q&A sections; PDF's remaining fidelity gap (fold-state/
-  notes/decision-card rendering -- currently a flat node list, not
-  rendered from a Preview-equivalent); PowerPoint's remaining fidelity
-  gaps (overflow "(cont'd)" slides, images, decision cards). §6.7
-  onward not started.
+  blocked/deferred); PowerPoint image embedding (see above); Word
+  tables/Decision Log cards/Notepad-Q&A sections; PDF's remaining
+  fidelity gap (fold-state/notes/decision-card rendering -- currently
+  a flat node list, not rendered from a Preview-equivalent);
+  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
+  decision cards). §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

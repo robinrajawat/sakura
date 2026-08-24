@@ -656,10 +656,34 @@ format, Word/OPML import.
   stylesheet and confirmed the full `@page` block -- `margin:20mm`, a real formatted date string,
   the literal `counter(page)`/`counter(pages)` CSS, and the branding rule all present and
   correctly escaped -- zero console/page errors.
-- Still not started: images/tables/decision-log cards/Notepad-Q&A sections in Word export; PDF's
-  remaining fidelity gap (fold-state/notes/decision-card rendering -- currently a flat node list,
-  not rendered from a Preview-equivalent); PowerPoint's remaining fidelity gaps (overflow
-  "(cont'd)" slides, images, decision cards).
+- ✅ **Word: note image embedding.** Investigated before scoping (per this project's own
+  "investigate before assuming" convention): checked `NotePanel.tsx`'s real "Insert image from
+  file" action in full and confirmed a genuine image-in-note pathway already exists in `web/` --
+  a node's `note` field can hold a real `data:` URI `<img>` tag, inserted via
+  `execCommand('insertImage', ...)`, the same mechanism legacy's own `ntb-image` handler uses.
+  `extractFirstImageDataUrl` (`utils/extractNoteImage.ts`) pulls that image back out; the
+  `docx` library's own `ImageRun` API handles the real OOXML media-part/relationship plumbing
+  internally (no hand-rolled XML needed, unlike legacy's own from-scratch implementation) --
+  `decodeImageDataUrl` maps the four MIME types `ImageRun` accepts (png/jpg/gif/bmp; svg/webp are
+  silently skipped, a real but narrow gap) to real bytes, and `loadImageDimensions` reads the
+  image's true pixel size by actually loading it in the browser (simpler and more reliable than
+  legacy's own hand-rolled PNG/JPEG/GIF header parser), scaled to a 400px max width. The image
+  rides along as its own paragraph immediately after its node's own paragraph. First-image-only
+  (matches legacy's own real one-picture-per-note model, not a new scope reduction). PowerPoint
+  image embedding deliberately NOT included in this slice: PPTX slides are fixed-size canvases
+  already mostly filled by bullet text, so naively placing images risks real visual overlap --
+  legacy's own PPTX image placement relies on real text measurement to avoid this, a genuinely
+  separate, bigger follow-up (Word's own paragraph-flow layout has no such collision risk, which
+  is why it was safe to build now). Verified end-to-end in real headless Chrome: inserted a real
+  PNG into a node's note via the actual "Insert image from file" UI, exported `.docx`, unzipped
+  the result and confirmed a real image media part (`word/media/<hash>.png`, exact byte size
+  matching the source image), a genuine `<w:drawing>` element in `document.xml`, and a real image
+  relationship in `document.xml.rels` -- zero console/page errors.
+- Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
+  Word tables/decision-log cards/Notepad-Q&A sections; PDF's remaining fidelity gap (fold-state/
+  notes/decision-card rendering -- currently a flat node list, not rendered from a
+  Preview-equivalent); PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides, decision
+  cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -716,7 +740,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, PDF margins/footer landing in this PR) — see each section's own `Status:` line for the
+#202, #203, #204, #205, Word note-image embedding landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

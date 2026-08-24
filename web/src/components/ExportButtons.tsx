@@ -8,11 +8,12 @@ import { serializeOpmlCore } from '../utils/serializeOpml';
 import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
 import { parseSakuraDocumentCore } from '../utils/parseSakuraDocument';
 import { parseDocxHtmlToTreeNodesCore } from '../utils/parseDocxHtml';
+import { extractFirstImageDataUrl } from '../utils/extractNoteImage';
 import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
-import { AlignmentType, Document, Footer, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
+import { AlignmentType, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
 
@@ -65,6 +66,56 @@ function escapeHtmlForPrint(text: string): string {
 // `cssStr` helper (legacy/index.html:39514) exactly.
 function cssStr(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, ' ');
+}
+
+// §6.6 fidelity upgrade: Word image embedding (see `exportWord` below and
+// `utils/extractNoteImage.ts`'s own header for the full picture). `docx`'s `ImageRun` needs real
+// decoded bytes (not a data: URI string) and an explicit `type` from a fixed enum -- these two
+// helpers do that decoding/type-mapping/dimension-reading, matching the same kind of real
+// (not-guessed) image handling legacy's own hand-rolled `pptxImageDims` does for its own export.
+const DATA_URL_TO_DOCX_IMAGE_TYPE: Record<string, 'png' | 'jpg' | 'gif' | 'bmp'> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/bmp': 'bmp'
+};
+
+function decodeImageDataUrl(dataUrl: string): { bytes: Uint8Array; type: 'png' | 'jpg' | 'gif' | 'bmp' } | null {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/s);
+  if (!match) return null;
+  const type = DATA_URL_TO_DOCX_IMAGE_TYPE[match[1].toLowerCase()];
+  if (!type) return null; // an unsupported format (svg, webp, ...) -- docx's ImageRun only accepts these four
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return { bytes, type };
+}
+
+// Reads an image's real pixel dimensions by actually loading it -- simpler and more reliable
+// than legacy's own hand-rolled PNG/JPEG/GIF header parsing (`pptxImageDims`), since `web/` can
+// just ask the browser's own decoder, which every format it accepts already supports natively.
+function loadImageDimensions(dataUrl: string): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+const MAX_DOCX_IMAGE_WIDTH_PX = 400;
+
+async function buildDocxImageParagraph(dataUrl: string): Promise<Paragraph | null> {
+  const decoded = decodeImageDataUrl(dataUrl);
+  if (!decoded) return null;
+  const dims = await loadImageDimensions(dataUrl);
+  if (!dims) return null;
+  const scale = Math.min(1, MAX_DOCX_IMAGE_WIDTH_PX / dims.width);
+  const width = Math.round(dims.width * scale);
+  const height = Math.round(dims.height * scale);
+  return new Paragraph({
+    children: [new ImageRun({ type: decoded.type, data: decoded.bytes, transformation: { width, height } })]
+  });
 }
 
 export function ExportButtons() {
@@ -339,11 +390,11 @@ export function ExportButtons() {
   // Word export -- unlike PDF, there's no browser-native equivalent, so this genuinely needs a
   // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
   // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
-  // bindings. Scoped way down from legacy's real Word export (no images, tables, decision
-  // cards, or Notepad/Q&A sections) -- one paragraph per node, indented via docx's own `indent`
-  // property (720 twips = 0.5in per depth level, the standard Word indent unit), with a literal
-  // "[ ] "/"[x] " checkbox prefix since a real interactive checkbox isn't something a static
-  // Word paragraph can represent.
+  // bindings. Scoped way down from legacy's real Word export (no tables, decision cards, or
+  // Notepad/Q&A sections) -- one paragraph per node, indented via docx's own `indent` property
+  // (720 twips = 0.5in per depth level, the standard Word indent unit), with a literal "[ ] "/
+  // "[x] " checkbox prefix since a real interactive checkbox isn't something a static Word
+  // paragraph can represent.
   //
   // §6.6 fidelity upgrade: a node with `styles.heading` set (1-6, already a real field since
   // §6.2's rich-formatting slice) now renders as a genuine Word heading paragraph
@@ -366,6 +417,28 @@ export function ExportButtons() {
       HeadingLevel.HEADING_5,
       HeadingLevel.HEADING_6
     ] as const;
+    // §6.6 fidelity upgrade: a node's note image now rides along right after its own paragraph,
+    // direct port of legacy's real "a node's Note image becomes a picture" behavior
+    // (buildDocxPackage). `extractFirstImageDataUrl` confirms a real image-in-note pathway
+    // already exists (`NotePanel.tsx`'s own "Insert image from file" action) -- see that file's
+    // header for the full scoping story. A plain `for` loop (not `.map()`) since embedding needs
+    // a real `await` per node (decoding + measuring the image), not just synchronous mapping.
+    const nodeParagraphs: Paragraph[] = [];
+    for (const node of nodes) {
+      const text = getNodePlainText(node) || '(empty)';
+      if (node.styles.heading > 0) {
+        const level = HEADING_LEVELS[Math.min(node.styles.heading, 6) - 1];
+        nodeParagraphs.push(new Paragraph({ heading: level, children: [new TextRun(text)] }));
+      } else {
+        const prefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
+        nodeParagraphs.push(new Paragraph({ indent: { left: node.depth * 720 }, children: [new TextRun(prefix + text)] }));
+      }
+      const imageDataUrl = extractFirstImageDataUrl(node.note);
+      if (imageDataUrl) {
+        const imageParagraph = await buildDocxImageParagraph(imageDataUrl);
+        if (imageParagraph) nodeParagraphs.push(imageParagraph);
+      }
+    }
     const doc = new Document({
       sections: [
         {
@@ -383,21 +456,7 @@ export function ExportButtons() {
               ]
             })
           },
-          children: [
-            new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }),
-            ...nodes.map((node) => {
-              const text = getNodePlainText(node) || '(empty)';
-              if (node.styles.heading > 0) {
-                const level = HEADING_LEVELS[Math.min(node.styles.heading, 6) - 1];
-                return new Paragraph({ heading: level, children: [new TextRun(text)] });
-              }
-              const prefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
-              return new Paragraph({
-                indent: { left: node.depth * 720 },
-                children: [new TextRun(prefix + text)]
-              });
-            })
-          ]
+          children: [new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }), ...nodeParagraphs]
         }
       ]
     });
