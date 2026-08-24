@@ -1,7 +1,48 @@
 import { create } from 'zustand';
 import { createTodo, loadTodosLocalCore, saveTodosCore, nextRepeatDate, initHubTodosState, type Todo } from '../state/hubTodos';
 import { addSubtaskCore, removeSubtaskCore, toggleSubtaskCore, type Subtask } from '../state/hubSubtasks';
+import { computeDueRemindersCore } from '../state/hubReminders';
 import { generateId } from '../utils/generateId';
+
+// Matches legacy's own real todayStr() exactly (legacy/hub.html:1611) -- local calendar date
+// parts, deliberately NOT `toISOString().slice(0,10)`, which reads UTC and would report the
+// wrong day for part of the day in any timezone ahead of UTC.
+export function todayStr(): string {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Matches legacy's own real storage keys exactly (legacy/hub.html:698-699).
+const REMINDERS_ENABLED_KEY = 'sakura_reminders_enabled';
+const REMINDERS_NOTIFIED_KEY = 'sakura_reminders_notified';
+
+function readRemindersEnabled(): boolean {
+  try {
+    return (
+      localStorage.getItem(REMINDERS_ENABLED_KEY) === '1' &&
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    );
+  } catch {
+    return false;
+  }
+}
+
+function loadNotifiedMap(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(REMINDERS_NOTIFIED_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveNotifiedMap(m: Record<string, string>): void {
+  try {
+    localStorage.setItem(REMINDERS_NOTIFIED_KEY, JSON.stringify(m));
+  } catch {
+    // matches legacy's own silent-swallow on write failure
+  }
+}
 
 // Real browser dependencies for the ported hubTodos.ts core -- cloud sync hooks are no-ops
 // since no Firebase/backend exists in web/ yet (Phase 4's "account/sync features" is where
@@ -56,6 +97,39 @@ interface HubTodosState {
   addSubtask: (id: string, text: string) => void;
   toggleSubtask: (id: string, subtaskId: string) => void;
   removeSubtask: (id: string, subtaskId: string) => void;
+
+  /** Live search-box text -- matches legacy's own `hubSearchQuery` (empty string/falsy means
+   * "search mode isn't active", same as the original). */
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+
+  /** Matches legacy's own `todoCompletedOpen` -- whether the collapsed "Completed (N)" section
+   * is expanded. */
+  completedOpen: boolean;
+  toggleCompletedOpen: () => void;
+
+  /** Matches legacy's own real on/off state, re-derived from localStorage + live
+   * `Notification.permission` on every read rather than cached, same as `remindersEnabled()`
+   * (legacy/hub.html:700-702) -- so a permission revoked from browser settings between renders
+   * is reflected immediately rather than needing an explicit toggle to notice. */
+  remindersEnabled: () => boolean;
+  /** Matches legacy's real toggle handler (legacy/hub.html:796-827): turning on requests
+   * Notification permission first (a no-op resolved promise if already granted/denied is
+   * handled below); turning off just flips the stored flag. Returns a short status message for
+   * the caller to show as a toast, mirroring every real `showToast(...)` call the original
+   * makes from this same handler -- this project has no toast system yet (same gap
+   * `hubTodosStore.ts`'s own header already names for the repeat-advance undo toast), so the
+   * message is handed back rather than displayed directly. */
+  toggleReminders: () => Promise<string>;
+  /** Matches legacy's real `checkDueReminders()` (legacy/hub.html:775-789): fires a real
+   * browser Notification for every task newly due/overdue since the last check, then persists
+   * the updated notified-map. No-ops entirely if reminders aren't enabled, same as the
+   * original's own early return. Clicking a fired notification sets `focusTodoId` instead of
+   * calling `openTaskDetail()` directly (no such global function here) -- the component reads
+   * that field to expand the matching row's Details section. */
+  checkDueReminders: () => void;
+  focusTodoId: string | null;
+  clearFocusTodoId: () => void;
 }
 
 /**
@@ -75,12 +149,25 @@ interface HubTodosState {
  * their `task` argument by design (see hubSubtasks.ts's own header on why), so the clone is
  * this wrapper's responsibility, not theirs.
  *
- * Deliberately NOT wired yet, each a real, separately-scoped follow-up: filtering/sorting,
- * bulk actions, tags, PDF export, Version History, Share, due-date reminder notifications (the
- * real `Notification` API + click handler around the already-ported `computeDueRemindersCore`
- * in hubReminders.ts), and legacy's own richer task-detail sheet UI/undo toasts -- this project
- * surfaces the same fields inline per-row instead of a modal sheet, same "honest first pass,
- * simpler chrome" convention every other Pad/Hub slice in this project uses.
+ * §6.5 second slice (docs/phase6-full-parity-plan.md): search filtering, urgency-based
+ * sectioning (Overdue/Today/Upcoming/No Date, `hubTodoSections.ts`), the collapsible sorted
+ * Completed section, and due-date reminder notifications (the real `Notification` API + click
+ * handler around the already-ported `computeDueRemindersCore` in hubReminders.ts) are all wired
+ * below. "Bulk actions" and "tags", also named in this row of
+ * docs/history/phase5-parity-checklist.md, are deliberately NOT built: verified directly against
+ * legacy/hub.html and legacy/index.html, neither exists anywhere in legacy's real To-Dos
+ * implementation (no todo ever has a `tags` field; the only real bulk-select UI in legacy is on
+ * Diagrams/Q&A/sidebar/trash, not To-Dos) -- building them would be new capability, not parity,
+ * the same category error this plan's own AI-key-vault appendix warns against elsewhere. PDF
+ * export/Version History/Share stay deferred to §6.6/§6.8 respectively, where the actual
+ * cross-cutting infrastructure for each is being built once for every surface rather than
+ * separately per Hub tab.
+ *
+ * Legacy's own richer modal task-detail sheet stays out of scope too, same "honest first pass,
+ * simpler chrome" convention every other Pad/Hub slice in this project uses -- fields surface
+ * inline per-row instead. The reminders on/off toggle likewise has no Account/Settings panel to
+ * live in yet (none exists in web/'s Hub at all), so it's placed directly in this panel's own
+ * header as a documented placement decision, not a deferral.
  */
 export const useHubTodosStore = create<HubTodosState>((set, get) => ({
   todos: loadTodosLocalCore(),
@@ -184,5 +271,73 @@ export const useHubTodosStore = create<HubTodosState>((set, get) => ({
     updated[idx] = clone;
     saveTodosCore(updated);
     set({ todos: updated });
-  }
+  },
+
+  searchQuery: '',
+  setSearchQuery: (query) => set({ searchQuery: query }),
+
+  completedOpen: false,
+  toggleCompletedOpen: () => set((s) => ({ completedOpen: !s.completedOpen })),
+
+  remindersEnabled: () => readRemindersEnabled(),
+
+  toggleReminders: async () => {
+    if (typeof Notification === 'undefined') {
+      return "Notifications aren't supported on this browser.";
+    }
+    const currentlyOn = readRemindersEnabled();
+    if (currentlyOn) {
+      try {
+        localStorage.setItem(REMINDERS_ENABLED_KEY, '0');
+      } catch {
+        // matches legacy's own silent-swallow on write failure
+      }
+      return 'Reminders turned off.';
+    }
+    if (Notification.permission === 'denied') {
+      return 'Notifications are blocked for Sakura in your browser settings.';
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      try {
+        localStorage.setItem(REMINDERS_ENABLED_KEY, '1');
+      } catch {
+        // matches legacy's own silent-swallow on write failure
+      }
+      get().checkDueReminders();
+      return 'Reminders turned on — works while Sakura is open.';
+    }
+    return 'Notification permission was not granted.';
+  },
+
+  checkDueReminders: () => {
+    if (!readRemindersEnabled()) return;
+    const today = todayStr();
+    const notified = loadNotifiedMap();
+    const result = computeDueRemindersCore(get().todos, today, notified);
+    result.reminders.forEach((r) => {
+      try {
+        const n = new Notification(r.title, {
+          body: 'Sakura To-Dos',
+          tag: 'sakura-todo-' + r.taskId,
+          icon: '/icon-192-pwa.png'
+        });
+        n.onclick = () => {
+          try {
+            window.focus();
+          } catch {
+            // matches legacy's own silent-swallow
+          }
+          set({ focusTodoId: r.taskId });
+          n.close();
+        };
+      } catch {
+        // matches legacy's own silent-swallow if the real Notification constructor throws
+      }
+    });
+    saveNotifiedMap(result.notifiedMap);
+  },
+
+  focusTodoId: null,
+  clearFocusTodoId: () => set({ focusTodoId: null })
 }));
