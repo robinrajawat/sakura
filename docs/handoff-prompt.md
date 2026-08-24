@@ -183,16 +183,25 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `8245753` ("feat(import): Word
-(.docx) import (§6.6) (#203)"), with this PR's branding wordmark slice
-about to land on top. §6.5 is fully complete -- all six Hub items
-landed. §6.6 (Preview, Presenter & Export) is now in progress: Preview
-TOC/scroll-spy/progress bar (#194), plain text/clipboard export
-(#196), Presenter Mode depth (#197), Word export heading styles + TOC
-field (#198), PDF cover page (#199), PowerPoint Notepad/Q&A/closing
-slides (#200), OPML import (#201), Sakura Document export/import
-(#202), Word (.docx) import (#203), and the branding wordmark across
-Word/PDF/PowerPoint/Presenter (this PR) are all landed. Per the user's
+As of this writing: `main` is at commit `93776f6` ("feat(export):
+branding wordmark across Word/PDF/PowerPoint/Presenter (§6.6) (#204)"),
+with this PR's PDF margins/footer slice about to land on top. §6.5 is
+fully complete -- all six Hub items landed. §6.6 (Preview, Presenter &
+Export) is now in progress: Preview TOC/scroll-spy/progress bar
+(#194), plain text/clipboard export (#196), Presenter Mode depth
+(#197), Word export heading styles + TOC field (#198), PDF cover page
+(#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
+(#201), Sakura Document export/import (#202), Word (.docx) import
+(#203), the branding wordmark across Word/PDF/PowerPoint/Presenter
+(#204), and PDF page margins + date/page-count footer (this PR) are
+all landed. One note on this session's CI: PR #204 hit a real,
+pre-existing flaky test (`generateId.test.ts`'s probabilistic
+collision check, unrelated to any file this session touched) -- a
+duplicate CI run of the identical commit passed, confirming it was a
+flake, and the specific failed job was re-run once to green rather
+than pushing an unnecessary change; no action needed if this recurs
+again elsewhere, same "flake is not a root cause" reasoning. Per the
+user's
 explicit "We have to complete everything so just keep going" (this
 session, after the 6-PR status
 check-in), work continues autonomously through the rest of §6.6's
@@ -560,7 +569,7 @@ all six items landed:
   confirmed via the persisted `localStorage` doc record that depths
   (`[0,1,1,2]`) and `parentId` linking are exactly correct -- zero
   console/page errors.
-- Branding wordmark landed in this PR, across every surface legacy
+- Branding wordmark landed in #204, across every surface legacy
   shows it on: Word gets a real page footer (`docx`'s `Footer`/
   `AlignmentType.RIGHT`), PowerPoint gets a small corner text box on
   every slide (per-node, Notepad, Q&A, closing alike), PDF gets a real
@@ -581,15 +590,27 @@ all six items landed:
   PDF print popup's own stylesheet for the `@bottom-right` rule plus
   the cover-page wordmark; confirmed the mark renders live in the
   Presenter Mode bar -- zero console/page errors across all four.
+- PDF page margins + footer landed in this PR: direct port of legacy's
+  real `printHtmlAsPdf` `@page` block. Margin hardcoded to 20mm
+  (`PDF_MARGIN_MM.normal`, legacy's own real default). Footer is a
+  real CSS Paged Media margin-box pair: today's date bottom-left,
+  "Page X of Y" bottom-center via genuine `counter(page)`/
+  `counter(pages)` (the browser's own print pagination engine
+  computes these, not a guess), always on matching legacy's own real
+  `previewPdfFooterEnabled` default. A new `cssStr` helper matches
+  legacy's own CSS-string-literal escaping exactly. Verified
+  end-to-end in real headless Chrome: inspected the print popup's own
+  stylesheet and confirmed the full `@page` block -- `margin:20mm`, a
+  real formatted date, the literal counter CSS, and the branding rule
+  all present and correctly escaped -- zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
-  cards/Notepad-Q&A sections; PDF's remaining fidelity gaps (margins
-  config, footer text/date beyond branding, fold-state/notes/
-  decision-card rendering -- currently a flat node list, not rendered
-  from a Preview-equivalent); PowerPoint's remaining fidelity gaps
-  (overflow "(cont'd)" slides, images, decision cards). §6.7 onward
-  not started.
+  cards/Notepad-Q&A sections; PDF's remaining fidelity gap (fold-state/
+  notes/decision-card rendering -- currently a flat node list, not
+  rendered from a Preview-equivalent); PowerPoint's remaining fidelity
+  gaps (overflow "(cont'd)" slides, images, decision cards). §6.7
+  onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
