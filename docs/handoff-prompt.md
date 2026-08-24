@@ -183,18 +183,22 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `a257db0` ("feat(export):
-PowerPoint Notepad, Q&A, and closing slides (§6.6) (#200)"), with this
-PR's OPML import slice about to land on top. §6.5 is fully complete --
-all six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
-progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
-clipboard export (#196), Presenter Mode depth (#197), Word export
-heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
-Notepad/Q&A/closing slides (#200), and OPML import (this PR) are all
-landed. Per the user's explicit "We have to complete everything so
-just keep going" (this session, after the 6-PR status check-in), work
-continues autonomously through the rest of §6.6's remaining items --
-no further check-in needed before picking up the next slice.
+As of this writing: `main` is at commit `1227f4f` ("feat(import): OPML
+import (§6.6) (#201)"), with this PR's Sakura Document export/import
+slice about to land on top. §6.5 is fully complete -- all six Hub items
+landed. §6.6 (Preview, Presenter & Export) is now in progress: Preview
+TOC/scroll-spy/progress bar (#194), plain text/clipboard export
+(#196), Presenter Mode depth (#197), Word export heading styles + TOC
+field (#198), PDF cover page (#199), PowerPoint Notepad/Q&A/closing
+slides (#200), OPML import (#201), and Sakura Document export/import
+(this PR) are all landed. Per the user's explicit "We have to complete
+everything so just keep going" (this session, after the 6-PR status
+check-in), work continues autonomously through the rest of §6.6's
+remaining items -- no further check-in needed before picking up the
+next slice, EXCEPT before touching Whiteboard mirroring/Audience View
+(that one needs client-side routing web/ deliberately doesn't have, a
+Phase 0 decision reversal -- flag it to the user rather than building
+a workaround unasked).
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -487,7 +491,7 @@ all six items landed:
   added a Q&A item via the Pad panel, exported .pptx, unzipped the
   result and confirmed all four expected slides with real content --
   zero console/page errors.
-- OPML import landed in this PR: direct port of legacy's real
+- OPML import landed in #201: direct port of legacy's real
   `parseOpmlToTreeNodes`/`importOpmlText` -- a new pure function,
   `parseOpmlToTreeNodesCore` (`utils/parseOpml.ts`), walks an
   `<opml><body>`'s `<outline>` elements depth-first via `DOMParser`,
@@ -506,6 +510,33 @@ all six items landed:
   tree, and confirmed via the actual persisted `localStorage` doc
   record (after the 800ms debounced autosave) that every field landed
   correctly, zero console/page errors.
+- Sakura Document (`.sakura.json`) export/import landed in this PR:
+  direct port of legacy's real `exportSakuraDocumentFile`/
+  `importSakuraDocumentFile`, scoped to what's genuinely real and
+  document-scoped in `web/` today -- the outline itself, full-fidelity
+  (unlike OPML, this payload IS the store's own real `OutlineNode[]`
+  shape, so `styles`/`tags`/`codeBlock` all round-trip, not just
+  text/depth/checkbox/note). **Real scope reduction worth flagging:**
+  legacy's real payload also bundles Pad content (`pad`/`qa`/
+  `diagrams`/`mindMaps`/`decisionLogs`/`attachments`/`remarks`) --
+  checked `padStore.ts` directly before scoping: it's a single flat,
+  in-memory-only, APP-WIDE store in `web/`, not scoped to any document
+  and not persisted anywhere at all. There is no per-document Pad state
+  to export/import yet -- a real, separately-scoped architectural gap
+  (Pad's own real persistence and doc-scoping was never built), not a
+  small omission. Import always lands in a brand-new document; unlike
+  OPML import, node ids are kept exactly as exported (matching
+  legacy's own real behavior) rather than remapped, with `nextId`
+  bumped past the highest imported id afterward.
+  `parseSakuraDocumentCore` (`utils/parseSakuraDocument.ts`)
+  normalizes each imported node defensively (safe defaults for a
+  missing/malformed field) rather than trusting raw JSON directly.
+  Verified end-to-end in real headless Chrome: set a node to a real
+  heading level, exported `.sakura.json`, re-imported the same file,
+  and confirmed full round-trip fidelity via the actual persisted
+  `localStorage` doc record -- `styles.heading` preserved, node ids
+  preserved exactly, `parentId` correctly rebuilt, zero console/page
+  errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
@@ -513,9 +544,9 @@ all six items landed:
   (margins config, footer, fold-state/notes/decision-card rendering --
   currently a flat node list, not rendered from a Preview-equivalent);
   PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
-  images, decision cards, branding); Sakura Document (`.sakura.json`)
-  format; Word import (needs a new document-parsing dependency, unlike
-  OPML's plain XML). §6.7 onward not started.
+  images, decision cards, branding); Word import (needs a new
+  document-parsing dependency, unlike OPML/Sakura Document's plain
+  XML/JSON). §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

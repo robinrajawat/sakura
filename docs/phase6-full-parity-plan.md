@@ -567,12 +567,39 @@ format, Word/OPML import.
   correct checkbox states), and confirmed via the actual persisted `localStorage` doc record
   (after the 800ms debounced autosave) that `parentId` linking, `note`, and every field landed
   correctly -- zero console/page errors.
+- ✅ **Sakura Document (`.sakura.json`) export/import.** Direct port of legacy's real
+  `exportSakuraDocumentFile`/`importSakuraDocumentFile` (legacy/index.html:22038-22136), scoped
+  to what's genuinely real and document-scoped in `web/` today: the outline itself,
+  full-fidelity -- unlike OPML (which loses `styles`/`tags`/`codeBlock` through OPML's own
+  text-only format), this payload IS the store's own real `OutlineNode[]` shape, not a lossy
+  encoding of it. **Real, deliberate scope reduction, worth flagging clearly:** legacy's own
+  real payload also bundles Pad content (`pad`/`qa`/`diagrams`/`mindMaps`/`decisionLogs`/
+  `attachments`/`remarks`), because in legacy every one of those is genuinely per-document data.
+  Investigated directly before scoping (checked `documentsStore.ts`'s own `StoredDoc` shape and
+  `padStore.ts` in full): in `web/` today, `usePadStore` is a single flat, in-memory-only,
+  APP-WIDE store -- not scoped to any document, and not persisted anywhere at all (zero
+  `localStorage`/`writeJson` calls in the entire file). There is no per-document Pad state in
+  `web/` yet to export or import -- a real, separately-scoped architectural gap (Pad's own real
+  persistence and doc-scoping was never built, a materially bigger item than "add export
+  support" alone), not a small omission quietly bundled into this slice. Import always lands in
+  a brand-new document (`newDocument()`), matching legacy's own real guarantee; unlike OPML
+  import, node ids are kept exactly as exported rather than remapped (matching legacy's own real
+  behavior: "no collision risk to remap away" since it's always a brand-new document), with the
+  outline store's own `nextId` counter bumped past the highest imported id afterward.
+  `parseSakuraDocumentCore` (`utils/parseSakuraDocument.ts`) normalizes each imported node
+  defensively (safe defaults for a missing/malformed field, matching this project's other
+  normalizers like `normalizeDecisionLogCore`) rather than trusting raw JSON directly, since --
+  unlike OPML, which legacy itself only lightly validates -- a hand-edited or corrupted
+  `.sakura.json` file is a more plausible real-world case worth guarding against. Verified
+  end-to-end in real headless Chrome: set a node to a real heading level, exported
+  `.sakura.json`, re-imported the same file, and confirmed full round-trip fidelity via the
+  actual persisted `localStorage` doc record -- `styles.heading` preserved, node ids preserved
+  exactly (not remapped), `parentId` correctly rebuilt -- zero console/page errors.
 - Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
   PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
-  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding); Sakura
-  Document (`.sakura.json`) format; Word import (needs a new document-parsing dependency, unlike
-  OPML's plain XML).
+  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding); Word
+  import (needs a new document-parsing dependency, unlike OPML/Sakura Document's plain JSON/XML).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -628,8 +655,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, OPML
-import landing in this PR) — see each section's own `Status:` line for the
+six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
+Sakura Document export/import landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

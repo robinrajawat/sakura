@@ -37,7 +37,7 @@ already made and already documented at the time.
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, and closing slide (§6.6) — no floating notes, Whiteboard mirroring, or Audience View/dual-screen (blocked on web/ having no client-side routing) |
-| Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt) and clipboard ("Copy as Text") are now full-parity (§6.6) — see Export section below. No Excel export (blocked on Decision Log not existing as a real feature yet); no Sakura Document (.sakura.json) format |
+| Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. No Excel export (blocked on Decision Log not existing as a real feature yet) |
 | Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
 | Deep theming | ⚠️ | Light/Dark toggle only (Phase 3) — no System/Schedule auto-theme, accent colors, Chrome backgrounds, node-text color presets |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
@@ -135,7 +135,7 @@ selection/provider fallback/usage tracking.
 | Plain text (.txt) / clipboard export | ✅ | §6.6, wraps already-ported (Phase 1) serializeTreeTextCore/serializeClipboardHtmlCore exactly; clipboard writes both text/plain and text/html via ClipboardItem, execCommand fallback |
 | Excel (Decision Log .xlsx) export | ❌ | Blocked on Decision Log not existing as a real feature (store/panel) in web/ yet — legacy's real Excel export is Decision-Log-specific, not a general outline export |
 | Import (Word/OPML/pasted text) | ⚠️ | OPML import now built (§6.6, always lands in a new document); Word import and pasted-text import not built |
-| Sakura Document (.sakura.json) | ❌ | Not built |
+| Sakura Document (.sakura.json) | ⚠️ | Outline export/import built full-fidelity (§6.6, styles/tags/codeBlock all round-trip, unlike OPML's lossy text encoding); Pad content (Notepad/Q&A/Diagrams/Mind Maps/Decision Log/Remarks/Attachments) NOT included — none of it is document-scoped or even persisted in web/ yet (padStore.ts is a single flat app-wide in-memory store), a real architectural gap, not a small omission |
 
 ## Theming & Appearance
 
