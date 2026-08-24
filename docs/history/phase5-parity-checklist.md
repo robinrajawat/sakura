@@ -25,7 +25,7 @@ already made and already documented at the time.
 | Semantic styling `[Section]`/`(note)`/`!alert`/`` `code` `` | ✅ | Phase 2, matches legacy exactly |
 | Fold/unfold, "+N hidden" badge | ⚠️ | Fold/unfold works; no "+N" badge UI |
 | `#tags` | ✅ | Phase 5 (PRs #118–#119) — toggle, filter, chips |
-| `[[@mention]]` backlinks | ✅ | §6.4 complete (#160-#164): wikilink rendering/click-navigate, `@`-mention insert, cleanup/rename-on-edit wiring, and the Note panel's Backlinks section display |
+| `[[@mention]]` backlinks | ✅ | §6.4 complete (#159-#161, #163: pure query layer, wikilink render/click-navigate, `@`-mention insert, cleanup/rename-on-edit wiring) plus §6.3 item 7 (#164: the Note panel's own Backlinks section display) |
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
 | Note panel | ⚠️ | Rich text (bold/italic/underline/strike/lists), links, images, tables, and the Backlinks section all built (Phase 6.3-6.4) — no AI (Rewrite/summarise) yet |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
@@ -107,7 +107,8 @@ real implementation. Deliberately flat tag-filter scoping (no ancestor-context r
 same "honest first pass" convention as every other slice in this project.
 
 ✅ `[[@mention]]` backlinks complete — see the Overview table above and
-`docs/phase6-full-parity-plan.md` §6.4 for the full breakdown (#160-#164).
+`docs/phase6-full-parity-plan.md` §6.3 (item 7, #164) and §6.4 (#159-#161, #163) for the full
+breakdown.
 
 ## AI Features
 
