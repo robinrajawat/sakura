@@ -1,8 +1,11 @@
-import { useOutlineStore } from '../store/outlineStore';
+import { useRef } from 'react';
+import { useOutlineStore, defaultNodeStyles, type OutlineNode } from '../store/outlineStore';
 import { useDocumentsStore } from '../store/documentsStore';
 import { usePadStore } from '../store/padStore';
+import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
+import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
@@ -57,8 +60,50 @@ export function ExportButtons() {
   const nodes = useOutlineStore((s) => s.nodes);
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
+  const newDocument = useDocumentsStore((s) => s.newDocument);
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
+  const opmlFileInputRef = useRef<HTMLInputElement>(null);
+
+  // OPML import -- direct port of legacy's real `importOpmlText` (legacy/index.html:24581-
+  // 24601), the read side of the already-ported `serializeOpmlCore`/`exportOpml`. Always lands
+  // in a brand-new document (`newDocument()`), matching legacy's own real guarantee: an import
+  // can never silently merge into whatever document happens to already be open. Node ids are
+  // assigned from the outline store's own `nextId` counter (matching every other node-creation
+  // path in this store, e.g. `duplicateRootIndexesCore`) rather than restarting from 1, and
+  // `rebuildParentIdsCore` derives `parentId` from the parsed `depth` values afterward -- the
+  // same "build flat with parentId:null, then rebuild" convention `insertParsedNodesCore`'s own
+  // callers already use. No toast on "nothing to import" (malformed/empty OPML) -- this project
+  // has no toast infrastructure yet, so it silently no-ops, same convention this file's own
+  // popup-blocked PDF export already uses.
+  async function importOpml(file: File) {
+    const text = await file.text();
+    const parsed = parseOpmlToTreeNodesCore(text);
+    if (!parsed.length) return;
+    newDocument();
+    let id = useOutlineStore.getState().nextId;
+    const mapped: OutlineNode[] = parsed.map((n) => ({
+      id: id++,
+      depth: n.depth,
+      text: n.text,
+      parentId: null,
+      isCheckbox: n.isCheckbox,
+      checked: n.isCheckbox && n.checked,
+      note: n.note,
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    }));
+    rebuildParentIdsCore(mapped);
+    useOutlineStore.setState({
+      nodes: mapped,
+      selectedId: mapped[0]?.id ?? null,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: mapped[0]?.id ?? null,
+      nextId: id
+    });
+  }
 
   function exportMarkdown() {
     // rebaseDepth=false, outlineNumbering=false -- matches legacy's exportMarkdown call's own
@@ -322,6 +367,20 @@ export function ExportButtons() {
       </button>
       <button type="button" onClick={exportPowerpoint}>
         Export .pptx
+      </button>
+      <input
+        ref={opmlFileInputRef}
+        type="file"
+        accept=".opml,text/x-opml"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = ''; // allow re-selecting the same file next time
+          if (file) importOpml(file);
+        }}
+      />
+      <button type="button" onClick={() => opmlFileInputRef.current?.click()}>
+        Import .opml
       </button>
     </div>
   );

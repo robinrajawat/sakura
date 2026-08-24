@@ -183,14 +183,18 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `bf63908` ("feat(export): PDF
-cover page (§6.6) (#199)"), with this PR's PowerPoint Notepad/Q&A/
-closing slides slice about to land on top. §6.5 is fully complete --
+As of this writing: `main` is at commit `a257db0` ("feat(export):
+PowerPoint Notepad, Q&A, and closing slides (§6.6) (#200)"), with this
+PR's OPML import slice about to land on top. §6.5 is fully complete --
 all six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
 progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
 clipboard export (#196), Presenter Mode depth (#197), Word export
-heading styles + TOC field (#198), PDF cover page (#199), and
-PowerPoint Notepad/Q&A/closing slides (this PR) are all landed.
+heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
+Notepad/Q&A/closing slides (#200), and OPML import (this PR) are all
+landed. Per the user's explicit "We have to complete everything so
+just keep going" (this session, after the 6-PR status check-in), work
+continues autonomously through the rest of §6.6's remaining items --
+no further check-in needed before picking up the next slice.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -470,7 +474,7 @@ all six items landed:
   modified all computed and rendered correctly, document `<title>` set
   to the doc's real title), zero console/page errors.
 - PowerPoint export: Notepad slide, Q&A slide, closing slide landed in
-  this PR: a Notepad slide (Pad's plain-text `notesText`, if non-empty)
+  #200: a Notepad slide (Pad's plain-text `notesText`, if non-empty)
   and Q&A slide (Pad's `qaItems` -- question bold, answer below, "No
   answer provided" for an unanswered one) now follow the per-node
   slides, and a real closing slide (reusing `PresenterMode.tsx`'s own
@@ -483,6 +487,25 @@ all six items landed:
   added a Q&A item via the Pad panel, exported .pptx, unzipped the
   result and confirmed all four expected slides with real content --
   zero console/page errors.
+- OPML import landed in this PR: direct port of legacy's real
+  `parseOpmlToTreeNodes`/`importOpmlText` -- a new pure function,
+  `parseOpmlToTreeNodesCore` (`utils/parseOpml.ts`), walks an
+  `<opml><body>`'s `<outline>` elements depth-first via `DOMParser`,
+  reads `text` (falling back to `title`) and the Sakura-specific
+  `_note` attribute, and parses a leading `[ ]`/`[x]` back out as a
+  checkbox state (the exact inverse of `serializeOpmlCore`'s own
+  encoding). Wired into a new "Import .opml" button + hidden file
+  input in `ExportButtons.tsx` (no Import menu exists yet in `web/`).
+  Always lands in a brand-new document (`newDocument()`), matching
+  legacy's own guarantee that import never silently merges into
+  whatever's open; node ids come from the outline store's own `nextId`
+  counter, `rebuildParentIdsCore` derives `parentId` from the parsed
+  depths. Verified end-to-end in real headless Chrome: imported a
+  hand-written OPML file with nested outlines, a `_note`, and both
+  checkbox states -- confirmed the new doc renders the full correct
+  tree, and confirmed via the actual persisted `localStorage` doc
+  record (after the 800ms debounced autosave) that every field landed
+  correctly, zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
@@ -491,7 +514,8 @@ all six items landed:
   currently a flat node list, not rendered from a Preview-equivalent);
   PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
   images, decision cards, branding); Sakura Document (`.sakura.json`)
-  format; Word/OPML import. §6.7 onward not started.
+  format; Word import (needs a new document-parsing dependency, unlike
+  OPML's plain XML). §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
