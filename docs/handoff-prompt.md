@@ -183,10 +183,12 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `41d8720` ("feat(preview): TOC,
-scroll-spy, progress bar (§6.6) (#194)"). §6.5 is fully complete -- all
-six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
-progress, its first slice (Preview TOC/scroll-spy/progress bar) landed.
+As of this writing: `main` is at commit `0b653b6` ("docs: refresh
+handoff prompt after Preview TOC landing, #194 (#195)"), with this PR's
+plain text/clipboard export slice about to land on top. §6.5 is fully
+complete -- all six Hub items landed. §6.6 (Preview, Presenter & Export)
+is now in progress: Preview TOC/scroll-spy/progress bar (#194) and plain
+text/clipboard export (this PR) are both landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -382,12 +384,36 @@ all six items landed:
   normal-paced human typing -- flagged as a known open item for whoever
   picks it up next, not chased down here since it would be real scope
   creep into a Preview-scoped PR.
+- Plain text (Tree .txt) + Copy as Text (clipboard) landed in this PR:
+  direct port of legacy's real `exportTreeFormat`/
+  `exportToClipboard(forceFull=true)`, wiring up two Phase-1-ported-but-
+  previously-unwired pure functions (`serializeTreeTextCore`,
+  `serializeClipboardHtmlCore`) into `ExportButtons.tsx` -- no new logic
+  to write, just UI wiring. Clipboard writes both `text/plain` and
+  `text/html` via a single `ClipboardItem` (execCommand fallback),
+  matching legacy exactly. `treeIndentWidth`/`hideTreeLines`/
+  `outlineNumbering` hardcoded to legacy's own real first-run defaults
+  (no Settings panel exists yet). Scoped down: no subset/selection
+  export (web/ has no multi-node export-selection concept), no
+  Sakura-specific decision-log/diagram clip-payload comment in the HTML.
+  Verified end-to-end in real headless Chrome: `.txt` download and both
+  clipboard payloads read back correctly, zero console/page errors.
+- **Excel (Decision Log .xlsx) is blocked, not a small gap:** legacy's
+  real Excel export is Decision-Log-specific
+  (`exportDecisionLogXlsx`, legacy/index.html:33107), not a general
+  outline export -- a scoping correction from an earlier draft of this
+  doc. `web/` only has Decision Log's pure normalize/query/filter logic
+  ported (`state/decisionLog.ts`, `decisionLogQueries.ts`,
+  `decisionFilter.ts`) plus preserve-on-sync in `docSyncStore.ts` --
+  there is no Decision Log store or panel component in `web/` at all, so
+  there's nothing yet for an Excel export to read. Needs a real Decision
+  Log feature built first.
 - Still open in §6.6: Presenter Mode (laser pointer, blackout, grid,
   timer, floating notes, Whiteboard, Audience View, closing slide);
   Word/PDF/PowerPoint export fidelity upgrades (heading styles, TOC,
-  Decision Log cards, rich formatting, image embedding, branding); plain
-  text/Excel/clipboard export; Sakura Document (`.sakura.json`) format;
-  Word/OPML import. §6.7 onward not started.
+  Decision Log cards, rich formatting, image embedding, branding);
+  Sakura Document (`.sakura.json`) format; Word/OPML import. §6.7 onward
+  not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
