@@ -31,6 +31,7 @@ import {
   computeSelectionRootIndexes,
   type ParentLinkedNode
 } from '../core/nodeSelection';
+import { cleanupBacklinksFor, renameBacklinksFor } from '../core/backlinks';
 
 /** The real outline node shape this store works with: parent-linked (nodeSelection.ts) plus
  * checkbox-aware (nodeQueries.ts's `CheckboxNode`) — every node carries both sets of fields
@@ -550,7 +551,8 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     // node.text WAS live-synced on every keystroke, which would have made a naive comparison
     // here always look "changed".
     if (idx >= 0 && (nodes[idx].text !== text || checkboxMatch || headingMatch)) pushUndo();
-    const next = nodes.map((n) => {
+    const oldText = idx >= 0 ? nodes[idx].text ?? '' : null;
+    let next = nodes.map((n) => {
       if (n.id !== id) return n;
       if (checkboxMatch) {
         return { ...n, text: checkboxMatch[2], isCheckbox: true, checked: checkboxMatch[1].toLowerCase() === 'x' };
@@ -560,6 +562,17 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       }
       return { ...n, text };
     });
+    // Backlinks rename (Phase 6.4, docs/phase6-full-parity-plan.md) -- direct port of legacy's
+    // own commit-time call (legacy/index.html:19315's `if(changed)...renameBacklinksFor(...)`).
+    // Uses the EDITED node's own final stored text (after any checkbox/heading auto-convert
+    // above stripped its prefix), not the raw `text` param, since that's what every other node's
+    // `[[mention]]` should end up pointing at. `renameBacklinksFor` itself is a no-op (returns
+    // `next` unchanged) when nothing actually referenced the old text or the change was
+    // case-only, so this is safe to call unconditionally whenever the text changed at all.
+    if (idx >= 0 && oldText !== null) {
+      const newText = next.find((n) => n.id === id)?.text ?? '';
+      if (oldText !== newText) next = renameBacklinksFor(next, oldText, newText);
+    }
     set({ nodes: next, editingId: null });
   },
 
@@ -714,8 +727,14 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     // more nuanced and deferred, same as multi-select delete (deleteRootIndexes already
     // supports multiple root indexes at once — this wrapper only ever passes a single one
     // for now).
-    const next = nodes.map((n) => ({ ...n }));
+    let next = nodes.map((n) => ({ ...n }));
+    // Backlinks cleanup (Phase 6.4) -- collect the whole deleted subtree's texts BEFORE
+    // mutating, same ordering legacy's own deleteEmptyNodeAndFocusPrev/deleteSelected use
+    // (legacy/index.html:20856, 20871): cleanupBacklinksFor needs the pre-deletion text, and
+    // deleteRootIndexes doesn't return what it removed.
+    const deletedTexts = next.slice(idx, getSubtreeEnd(next, idx)).map((n) => n.text || '').filter(Boolean);
     deleteRootIndexes(next, [idx]);
+    if (deletedTexts.length) next = cleanupBacklinksFor(next, deletedTexts);
     rebuildParentIdsCore(next);
     const fallbackSelection = idx > 0 ? nodes[idx - 1].id : next[0]?.id ?? null;
     set({
@@ -737,8 +756,18 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     const roots = get().selectionRootIndexes();
     if (!roots.length) return;
     pushUndo();
-    const next = nodes.map((n) => ({ ...n }));
+    let next = nodes.map((n) => ({ ...n }));
+    // Backlinks cleanup (Phase 6.4) -- same pre-deletion text collection as deleteNode above,
+    // just across every selected root's whole subtree (matches legacy's own deleteSelected loop,
+    // legacy/index.html:20871: `roots.forEach(i=>{...nodes.slice(i,end).forEach(n=>{...})})`).
+    const deletedTexts: string[] = [];
+    for (const rootIdx of roots) {
+      next.slice(rootIdx, getSubtreeEnd(next, rootIdx)).forEach((n) => {
+        if (n.text) deletedTexts.push(n.text);
+      });
+    }
     deleteRootIndexes(next, roots);
+    if (deletedTexts.length) next = cleanupBacklinksFor(next, deletedTexts);
     rebuildParentIdsCore(next);
     const fallbackIdx = Math.min(roots[0], Math.max(0, next.length - 1));
     const fallbackSelection = next[fallbackIdx]?.id ?? next[next.length - 1]?.id ?? null;
