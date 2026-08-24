@@ -28,6 +28,16 @@ current after every merge and may have drifted since this prompt was written,
 so re-verify state against them yourself rather than trusting this prompt's
 own "Current state" section below if the two disagree:
 
+**Session-start check (matters most when switching Claude accounts mid-task,
+e.g. after hitting a usage limit):** before starting new work, check for
+anything the previous session left mid-flight -- an open PR
+(`gh pr list` or the GitHub API), an unmerged feature branch (local or
+remote), or uncommitted changes in a stale local clone. git identity is
+already forced to the same `robinrajawat` identity regardless of which
+account runs it, so there's nothing account-specific to reconcile -- just
+don't start a new slice on top of an unfinished one. If something is open,
+finish or explicitly abandon it first rather than layering new work on top.
+
 - docs/history/architecture-plan.md — legacy/'s own modularization history (frozen,
   historical reference only, not where current work happens)
 - docs/framework-migration-plan.md — the legacy/+web/ split, and the full
