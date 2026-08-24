@@ -53,6 +53,24 @@ const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
  * right-click add/remove row/column context menu (legacy's `_attachTableResizeHandles`/
  * `_noteCtxTableMutated`) are deliberately deferred -- cells are directly editable and typable
  * without them, just not resizable/extendable yet.
+ *
+ * Code tab drag-resize handle is a fifth small slice, and closes out §6.3's Note/Code panel
+ * work (the plan doc's backlinks section is deferred separately -- see below): a custom handle
+ * below the code textarea, min 44px/max 500px, matching legacy's `initCodeResize`
+ * (legacy/index.html:19768-19786) numerically. Legacy needed a custom handle because its
+ * textarea sits under a layered syntax-highlight overlay that swallows the native resize grip's
+ * mousedown; this editor has no such overlay yet, so native CSS `resize` would actually work
+ * here -- the custom handle is built anyway, for behavioral parity (explicit height state that
+ * survives switching tabs and resets per node-open, not just a browser resize handle) rather
+ * than because it's technically required in this codebase yet.
+ *
+ * Not done in this pass: the backlinks section (`[[wikilink]]`/`@mention` parsing, a
+ * `getBacklinksTo` query, and the header's link-count badge) needs wikilink/mention
+ * infrastructure that doesn't exist anywhere in web/ yet -- confirmed via
+ * `parseSemanticMarkup.ts`, which explicitly excludes `[[wiki links]]` as "a real cross-document
+ * feature, not just markup styling." Building the backlinks section without that would just be
+ * an always-empty list. Left as a genuinely separate, larger feature rather than folded into
+ * this slice.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -81,6 +99,12 @@ export function NotePanel() {
   const [linkPrompt, setLinkPrompt] = useState<{ text: string; url: string; hadExisting: boolean } | null>(
     null
   );
+  // Code tab's own drag-resize height -- null until the user drags the handle at least once,
+  // matching legacy's own #code-editor-wrap (flex-sized by default, switched to an explicit
+  // pixel height only once dragged). Cleared back to null (flex-auto) when the node changes.
+  const [codeHeight, setCodeHeight] = useState<number | null>(null);
+  const codeDragState = useRef<{ startY: number; startH: number } | null>(null);
+  const codeTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const node = nodeId !== null ? nodes.find((n) => n.id === nodeId) ?? null : null;
 
@@ -92,6 +116,32 @@ export function NotePanel() {
     noteEditorRef.current.innerHTML = sanitizeRichHtml(node.note || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, node?.id]);
+
+  // Reset the code editor's drag-resized height whenever a different node's panel opens,
+  // matching legacy's own per-open reset (the wrap goes back to flex-auto for a fresh node).
+  useEffect(() => {
+    setCodeHeight(null);
+  }, [nodeId]);
+
+  // Code tab's drag-resize handle, matching legacy's initCodeResize (legacy/index.html:
+  // 19768-19786): min 44px, max 500px, drag delta added to the height captured at drag start.
+  const onCodeResizeMouseDown = (e: React.MouseEvent) => {
+    const startH = codeTextareaRef.current?.getBoundingClientRect().height ?? 140;
+    codeDragState.current = { startY: e.clientY, startH };
+    const onMove = (ev: MouseEvent) => {
+      if (!codeDragState.current) return;
+      const { startY, startH: h0 } = codeDragState.current;
+      setCodeHeight(Math.max(44, Math.min(500, h0 + (ev.clientY - startY))));
+    };
+    const onUp = () => {
+      codeDragState.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    e.preventDefault();
+  };
 
   const commitNote = () => {
     if (!node || !noteEditorRef.current) return;
@@ -530,15 +580,17 @@ export function NotePanel() {
             </select>
             <textarea
               key={node.id}
+              ref={codeTextareaRef}
               defaultValue={node.codeBlock?.code ?? ''}
               onBlur={(e) =>
                 setCodeBlock(node.id, { lang: node.codeBlock?.lang ?? 'plain', code: e.currentTarget.value })
               }
               style={{
-                flex: 1,
+                flex: codeHeight === null ? 1 : '0 0 auto',
                 width: '100%',
-                minHeight: maximized ? undefined : 140,
-                resize: maximized ? 'none' : 'vertical',
+                height: codeHeight === null ? undefined : codeHeight,
+                minHeight: maximized || codeHeight !== null ? undefined : 140,
+                resize: 'none',
                 fontFamily: 'monospace',
                 fontSize: 13,
                 border: `1px solid ${t.border}`,
@@ -549,6 +601,26 @@ export function NotePanel() {
                 boxSizing: 'border-box'
               }}
             />
+            {!maximized && (
+              <div
+                onMouseDown={onCodeResizeMouseDown}
+                title="Drag to resize"
+                style={{
+                  alignSelf: 'flex-end',
+                  width: 16,
+                  height: 12,
+                  marginTop: 2,
+                  cursor: 'ns-resize',
+                  color: t.hintText,
+                  fontSize: 10,
+                  lineHeight: '12px',
+                  textAlign: 'center',
+                  userSelect: 'none'
+                }}
+              >
+                ⋰
+              </div>
+            )}
           </div>
         )}
       </div>
