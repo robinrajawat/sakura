@@ -416,7 +416,7 @@ embedding, branding). Plain text/Excel/clipboard export, Sakura Document (`.saku
 format, Word/OPML import.
 
 **Status: in progress.**
-- ✅ **Preview: TOC, scroll-spy, progress bar** (pending PR -- previous PR was #193) -- direct
+- ✅ **Preview: TOC, scroll-spy, progress bar** (#194) -- direct
   port of legacy's real `renderPreviewToc`/`setupPreviewScrollSpy`/`updatePreviewProgress`
   (legacy/index.html:37957+, 38426-38449). `state/previewToc.ts`'s `buildTocEntries` is a pure
   function matching legacy's exact TOC-entry logic: a `[Section]`-marked node always contributes

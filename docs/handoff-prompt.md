@@ -183,11 +183,10 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `0bb9e5c` ("docs: add standing
-rule against Co-authored-by/model-identifier trailers (#193)"), with a
-Preview TOC/scroll-spy/progress-bar slice (pending PR -- see below)
-about to land on top of it. §6.5 is fully complete -- all six Hub items
-landed. §6.6 (Preview, Presenter & Export) is now in progress.
+As of this writing: `main` is at commit `41d8720` ("feat(preview): TOC,
+scroll-spy, progress bar (§6.6) (#194)"). §6.5 is fully complete -- all
+six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
+progress, its first slice (Preview TOC/scroll-spy/progress bar) landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -358,7 +357,7 @@ all six items landed:
   node links (separately scoped).
 
 §6.6 (Preview, Presenter & Export) is now in progress:
-- Preview TOC/scroll-spy/progress bar landed (pending PR -- the first
+- Preview TOC/scroll-spy/progress bar landed in #194 (the first
   §6.6 slice): direct port of legacy's real `renderPreviewToc`/
   `setupPreviewScrollSpy`/`updatePreviewProgress` -- `buildTocEntries`
   (`state/previewToc.ts`) is a pure function (section markup -> level-1
@@ -408,7 +407,7 @@ unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open for review (the merged
-`hub/mobile-hub-depth` branch's local copy was deleted; its remote copy
+`preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past
 sessions this repo's branch protection has always blocked it anyway --
