@@ -25,9 +25,9 @@ already made and already documented at the time.
 | Semantic styling `[Section]`/`(note)`/`!alert`/`` `code` `` | ✅ | Phase 2, matches legacy exactly |
 | Fold/unfold, "+N hidden" badge | ⚠️ | Fold/unfold works; no "+N" badge UI |
 | `#tags` | ✅ | Phase 5 (PRs #118–#119) — toggle, filter, chips |
-| `[[@mention]]` backlinks | ⚠️ | Wikilink rendering/click-navigate + `@`-mention insert done (§6.4, #160-#161); cleanup/rename-on-edit wiring and the Note panel's Backlinks section display still remaining |
+| `[[@mention]]` backlinks | ✅ | §6.4 complete (#160-#164): wikilink rendering/click-navigate, `@`-mention insert, cleanup/rename-on-edit wiring, and the Note panel's Backlinks section display |
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
-| Note panel | ⚠️ | Plain text only (Phase 3) — no rich text, images, tables, AI, backlinks section |
+| Note panel | ⚠️ | Rich text (bold/italic/underline/strike/lists), links, images, tables, and the Backlinks section all built (Phase 6.3-6.4) — no AI (Rewrite/summarise) yet |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
 | Decision Log | ⚠️ | Pad's Decision Log tab exists (Phase 3) as a flat list — not node-linked, no accent dot, no card rendering in exports, no Excel export |
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | 5 of 7 tabs functional at a basic level (Phase 3); Diagrams and Mind Map are honest placeholders |
@@ -78,7 +78,7 @@ separately-scoped follow-up building on this foundation.
 
 | Feature | Status | Note |
 |---|---|---|
-| Note (rich text, images, tables, AI, backlinks) | ⚠️ | Plain text only |
+| Note (rich text, images, tables, AI, backlinks) | ⚠️ | Rich text, images, tables, links, and backlinks all built — no AI yet |
 | Code Block (lang picker, resizable window) | ⚠️ | Lang picker + textarea exist; not resizable/floating |
 | Pad — Notepad | ⚠️ | Plain textarea (Phase 3); no rich text toolbar, no Quote button |
 | Pad — Q&A | ⚠️ | Flat list with question/answer (Phase 3); no AI-assisted answering, bulk actions, search, PDF export, node-linking |
@@ -106,8 +106,8 @@ separately-scoped follow-up building on this foundation.
 real implementation. Deliberately flat tag-filter scoping (no ancestor-context restoration),
 same "honest first pass" convention as every other slice in this project.
 
-⚠️ `[[@mention]]` backlinks partially built — see the Overview table above and
-`docs/phase6-full-parity-plan.md` §6.4 for exactly what's landed (#160-#161) vs. still remaining.
+✅ `[[@mention]]` backlinks complete — see the Overview table above and
+`docs/phase6-full-parity-plan.md` §6.4 for the full breakdown (#160-#164).
 
 ## AI Features
 
