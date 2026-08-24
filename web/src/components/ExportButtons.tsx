@@ -390,11 +390,10 @@ export function ExportButtons() {
   // Word export -- unlike PDF, there's no browser-native equivalent, so this genuinely needs a
   // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
   // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
-  // bindings. Scoped way down from legacy's real Word export (no tables, decision cards, or
-  // Notepad/Q&A sections) -- one paragraph per node, indented via docx's own `indent` property
-  // (720 twips = 0.5in per depth level, the standard Word indent unit), with a literal "[ ] "/
-  // "[x] " checkbox prefix since a real interactive checkbox isn't something a static Word
-  // paragraph can represent.
+  // bindings. Scoped way down from legacy's real Word export (no tables or decision cards) --
+  // one paragraph per node, indented via docx's own `indent` property (720 twips = 0.5in per
+  // depth level, the standard Word indent unit), with a literal "[ ] "/"[x] " checkbox prefix
+  // since a real interactive checkbox isn't something a static Word paragraph can represent.
   //
   // §6.6 fidelity upgrade: a node with `styles.heading` set (1-6, already a real field since
   // §6.2's rich-formatting slice) now renders as a genuine Word heading paragraph
@@ -439,6 +438,41 @@ export function ExportButtons() {
         if (imageParagraph) nodeParagraphs.push(imageParagraph);
       }
     }
+    // §6.6 fidelity upgrade: a Notepad section (Pad's plain-text `notesText`, if non-empty) and
+    // a Q&A section (Pad's `qaItems` -- question bold, answer below in a muted color, "No answer
+    // provided" in italic muted for an unanswered one) now follow the main outline content,
+    // direct ports of legacy's real `docxBuildNotepadSection`/`docxBuildQaSection`
+    // (legacy/index.html:24765-24824) -- same section headings, same content/wording, same
+    // "Heading1 + bookmarked so Word's own TOC/Navigation Pane picks it up" structure (the TOC
+    // field this export already builds has `headingStyleRange:'1-6'`, so these sections appear
+    // in it automatically without any extra bookmark plumbing -- `docx`'s own `heading` paragraph
+    // option already does that). Scoped down from legacy's real sections: no left-border accent
+    // rule on Q&A answers (a cosmetic flourish; `docx`'s current paragraph-border API doesn't
+    // expose a plain single-side border the way legacy's own hand-rolled OOXML does) -- color and
+    // indent alone still distinguish an answer from its question.
+    const sectionParagraphs: Paragraph[] = [];
+    if (notesText.trim()) {
+      sectionParagraphs.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: 'Notepad', bold: true })] }));
+      notesText.split('\n').forEach((line) => sectionParagraphs.push(new Paragraph({ children: [new TextRun(line)] })));
+    }
+    const answeredQaForWord = qaItems.filter((item) => item.question.trim());
+    if (answeredQaForWord.length) {
+      sectionParagraphs.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: 'Q&A', bold: true })] }));
+      for (const item of answeredQaForWord) {
+        const answer = item.answer.trim();
+        sectionParagraphs.push(new Paragraph({ spacing: { before: 120 }, children: [new TextRun({ text: item.question.trim(), bold: true })] }));
+        sectionParagraphs.push(
+          new Paragraph({
+            indent: { left: 120 },
+            children: [
+              answer
+                ? new TextRun({ text: answer, color: '5C584F' })
+                : new TextRun({ text: 'No answer provided', italics: true, color: 'A3A099' })
+            ]
+          })
+        );
+      }
+    }
     const doc = new Document({
       sections: [
         {
@@ -456,7 +490,11 @@ export function ExportButtons() {
               ]
             })
           },
-          children: [new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }), ...nodeParagraphs]
+          children: [
+            new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-6' }),
+            ...nodeParagraphs,
+            ...sectionParagraphs
+          ]
         }
       ]
     });
