@@ -46,6 +46,13 @@ const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
  * click-to-select/resize handling yet (legacy's `.editor-img-selected` outline/drag-resize is a
  * separate, later slice) -- inserted images just get legacy's own `max-width:100%` CSS so they
  * never overflow the panel.
+ *
+ * Table insertion (the toolbar's Table button) is a fourth small slice: inserts a 2x2 table
+ * (1 header row + 2 data rows, `contenteditable` cells) via direct DOM construction + Range
+ * insertion, matching legacy's `ntb-table` handler structurally. Column resize handles and the
+ * right-click add/remove row/column context menu (legacy's `_attachTableResizeHandles`/
+ * `_noteCtxTableMutated`) are deliberately deferred -- cells are directly editable and typable
+ * without them, just not resizable/extendable yet.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -178,6 +185,61 @@ export function NotePanel() {
       reader.readAsDataURL(file);
     });
     fileInput.click();
+  };
+
+  // Insert a 2x2 table (1 header row, 2 data rows) at the cursor, matching legacy's ntb-table
+  // handler (legacy/index.html:33815-33858) structurally -- same colgroup-for-fixed-widths/
+  // thead+th/tbody+td shape, same default 2 columns/120px starting width. Column resize handles
+  // and the right-click add/remove row/column context menu (legacy's _attachTableResizeHandles/
+  // _noteCtxTableMutated) are deliberately deferred to a later slice -- cells are still directly
+  // editable and typable without them, just not resizable/extendable yet.
+  const insertTable = () => {
+    noteEditorRef.current?.focus();
+    const cols = 2;
+    const defaultColW = 120;
+    const table = document.createElement('table');
+
+    const colgroup = document.createElement('colgroup');
+    for (let i = 0; i < cols; i++) {
+      const col = document.createElement('col');
+      col.style.width = `${defaultColW}px`;
+      colgroup.appendChild(col);
+    }
+    table.appendChild(colgroup);
+
+    const thead = table.createTHead();
+    const headRow = thead.insertRow();
+    ['Column 1', 'Column 2'].forEach((text) => {
+      const th = document.createElement('th');
+      th.contentEditable = 'true';
+      th.textContent = text;
+      headRow.appendChild(th);
+    });
+
+    const tbody = table.createTBody();
+    for (let r = 0; r < 2; r++) {
+      const row = tbody.insertRow();
+      for (let c = 0; c < cols; c++) {
+        const td = row.insertCell();
+        td.contentEditable = 'true';
+      }
+    }
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.collapse(false);
+      range.insertNode(table);
+      const firstCell = tbody.rows[0].cells[0];
+      const newRange = document.createRange();
+      newRange.setStart(firstCell, 0);
+      newRange.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    } else {
+      noteEditorRef.current?.appendChild(table);
+    }
+    commitNote();
   };
 
   // Esc closes, matching legacy's own note-panel-close tooltip ("Close (Esc)").
@@ -395,8 +457,39 @@ export function NotePanel() {
               >
                 🖼
               </button>
+              <button
+                type="button"
+                title="Insert table (2×2 to start)"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertTable();
+                }}
+                style={{
+                  border: `1px solid ${t.border}`,
+                  background: t.toolbarButtonBg,
+                  color: t.text,
+                  borderRadius: 4,
+                  minWidth: 24,
+                  height: 24,
+                  fontSize: 12,
+                  cursor: 'pointer'
+                }}
+              >
+                ⊞
+              </button>
             </div>
-            <style>{`.sakura-note-editor img { max-width: 100%; border-radius: 6px; margin: 4px 0; display: block; }`}</style>
+            <style>{`
+              .sakura-note-editor img { max-width: 100%; border-radius: 6px; margin: 4px 0; display: block; }
+              .sakura-note-editor table { border-collapse: collapse; margin: 6px 0; font-size: 12px; table-layout: fixed; }
+              .sakura-note-editor table td, .sakura-note-editor table th {
+                border: 1px solid ${t.border}; padding: 5px 8px; min-width: 32px;
+                vertical-align: top; outline: none; overflow: hidden; word-break: break-word;
+              }
+              .sakura-note-editor table th { background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
+              .sakura-note-editor table td:focus, .sakura-note-editor table th:focus {
+                box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+              }
+            `}</style>
             <div
               key={node.id}
               ref={noteEditorRef}
