@@ -4,6 +4,7 @@ import type { DecisionStatus } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
+import { formatRemarkDateDisplay } from '../utils/remarkDate';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -44,6 +45,14 @@ const TABS: { id: PadTab; label: string }[] = [
  * search-text matching over title/description -- author filtering needs an `author` field this
  * app's `Decision` doesn't have yet, so it's deferred alongside node-linking, structured fields
  * (context/rationale/alternatives/impact), card rendering, and Excel export.
+ *
+ * Third piece: Remarks date field. `Remark` gains a `date` field (YYYY-MM-DD, defaulting to
+ * today on creation via `utils/remarkDate.ts`'s `todayDateStr`), displayed per-row through that
+ * same file's `formatRemarkDateDisplay` (Today/Yesterday/short date -- direct port of legacy's
+ * function of the same name). The list also now renders newest-first, matching legacy's own
+ * `renderRemarksList` ordering. Node-linking (an `anchorNodeId` + anchor picker) and export
+ * inclusion (wiring into a docx/pptx/PDF export pipeline) are deferred -- this app has no
+ * node-linking infrastructure for Pad items generally, and no export pipeline at all yet.
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -272,11 +281,16 @@ function RemarksTab({ t }: { t: Tokens }) {
   const removeRemark = usePadStore((s) => s.removeRemark);
   const [person, setPerson] = useState('');
   const [text, setText] = useState('');
+  // Newest first, matching legacy's own renderRemarksList ordering ("a remarks log reads
+  // naturally most-recent-on-top"). Slice a copy -- reversing in place would mutate the store's
+  // array reference on every render.
+  const orderedRemarks = [...remarks].reverse();
   return (
     <div>
-      {remarks.map((r) => (
+      {orderedRemarks.map((r) => (
         <div key={r.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
           <strong>{r.person}:</strong> {r.text}{' '}
+          <span style={{ color: t.mutedText, fontSize: 11 }}>{formatRemarkDateDisplay(r.date)}</span>{' '}
           <button type="button" onClick={() => removeRemark(r.id)} style={{ fontSize: 11 }}>
             remove
           </button>
