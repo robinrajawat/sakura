@@ -163,9 +163,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `1c5bc12` ("docs: refresh handoff
-prompt Current state after Library landing, #187 (#188)"), with a Recap
-depth slice (pending PR -- see below) about to land on top of it.
+As of this writing: `main` is at commit `0aaf4bf` ("feat(hub): Recap
+depth -- Today/This Week/Last Week, click-to-jump (§6.5) (#189)"). §6.5
+is now down to a single remaining item -- see below.
 Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -261,7 +261,7 @@ infrastructure) are all complete. §6.5 (Hub full depth) is now in progress:
   entry → search narrows correctly → tag-filter chip and favorites-only
   combine as an AND filter, matching legacy exactly → reload confirms
   persistence, zero console/page errors throughout.
-- Recap landed (pending PR -- previous PR was #188): replaces the Phase 4
+- Recap landed in #189: replaces the Phase 4
   placeholder (static counts + a "most recent N" list per Hub store) with
   legacy's real Today/This Week/Last Week period model (`hubRecap.ts`) --
   `getRecapRange` ports `getReportRange` exactly (Monday-start weeks), and
@@ -308,12 +308,15 @@ unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
 No feature branches are currently open for review (the merged
-`hub/library-depth` branch's local copy was deleted; its remote copy
-could not be -- same repo-wide branch-protection outcome as every prior
-feature branch back through PR #1, none of which auto-deletes on merge;
-this is this repo's actual standing state, not a new problem, and matches
-the "verify both actually happened" caveat this file's own workflow rules
-already call out). No PR is mid-review.
+`hub/recap-depth` branch's local copy was deleted; its remote copy
+could not be -- no GitHub API tool in this environment exposes a raw
+branch-delete call, and even when one has been available in past
+sessions this repo's branch protection has always blocked it anyway --
+same repo-wide outcome as every prior feature branch back through PR #1,
+none of which auto-deletes on merge; this is this repo's actual standing
+state, not a new problem, and matches the "verify both actually happened"
+caveat this file's own workflow rules already call out). No PR is
+mid-review.
 Production (`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
 cutover attempt was made and reverted the same day after a real production
 issue (`web/`'s outline store booted every visitor into Phase 0 dev/spike
