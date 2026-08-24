@@ -515,10 +515,23 @@ format, Word/OPML import.
   logic), exported .docx, unzipped the result and confirmed `word/document.xml` contains a
   real `Heading1` style reference, a TOC field code, and the heading's own text -- a
   well-formed OOXML package, zero console/page errors.
+- ✅ **PDF export: cover page.** Direct port of legacy's real `printHtmlAsPdf` cover-page block
+  (legacy/index.html:39681-39702) -- a wordmark, the document's own title, an accent rule, and a
+  meta line (word count, estimated read time, last-modified date), all on their own page via
+  `page-break-after: always` before the outline content, matching legacy's own `.has-cover-page`
+  CSS approach. Scoped down: no author line (`web/`'s `DocSummary` has no author field yet, a
+  document-model gap, not a small omission) and no decision-count in the meta line (Decision Log
+  has no store/panel in `web/` yet, the same blocker already documented for Excel export). The
+  wordmark text ("S A K U R A") is legacy's own real default (`getBrandingDisplayText`'s
+  fallback), hardcoded since no Settings panel exists yet to hold the branding-toggle/custom-text
+  preferences. Verified end-to-end in real headless Chrome: exported PDF, inspected the print
+  popup's own DOM directly (word count/read time/last-modified all computed and rendered
+  correctly, document `<title>` set to the doc's real title), zero console/page errors.
 - Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
-  PDF fidelity (cover page, margins config, footer, fold-state/notes/decision-card rendering);
-  PowerPoint fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides, images);
-  Sakura Document (`.sakura.json`) format; Word/OPML import.
+  PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
+  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint
+  fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides, images); Sakura Document
+  (`.sakura.json`) format; Word/OPML import.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -574,8 +587,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, Word export heading
-styles/TOC landing in this PR) — see each section's own `Status:` line for the
+six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, PDF cover page
+landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

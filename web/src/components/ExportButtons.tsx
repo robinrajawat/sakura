@@ -1,4 +1,5 @@
 import { useOutlineStore } from '../store/outlineStore';
+import { useDocumentsStore } from '../store/documentsStore';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
@@ -53,6 +54,8 @@ function escapeHtmlForPrint(text: string): string {
 
 export function ExportButtons() {
   const nodes = useOutlineStore((s) => s.nodes);
+  const docsIndex = useDocumentsStore((s) => s.docsIndex);
+  const activeDocId = useDocumentsStore((s) => s.activeDocId);
 
   function exportMarkdown() {
     // rebaseDepth=false, outlineNumbering=false -- matches legacy's exportMarkdown call's own
@@ -113,9 +116,39 @@ export function ExportButtons() {
     }
   }
 
+  // §6.6 fidelity upgrade: a cover page, direct port of legacy's real `printHtmlAsPdf`
+  // cover-page block (legacy/index.html:39681-39702) -- wordmark, document title, an accent
+  // rule, and a meta line (word count, estimated read time, last-modified date). `page-break-
+  // after: always` puts the outline itself on its own page after it, same as legacy's own
+  // `.has-cover-page` CSS. Scoped down: no author line (web/'s `DocSummary` has no author field
+  // yet, a document-model gap, not a small omission) and no decision-count in the meta line
+  // (Decision Log has no store/panel in web/ yet, same blocker documented for Excel export
+  // above). The wordmark text ("S A K U R A") is legacy's own real default
+  // (`getBrandingDisplayText`'s fallback) -- hardcoded since no Settings panel exists yet to
+  // hold `previewBrandingText`/`previewPresenterBranding`, same "no silent default for a live
+  // user-preference toggle that doesn't exist here yet" deferral used elsewhere in this file.
   function exportPdf() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
+    const activeDoc = docsIndex.find((d) => d.id === activeDocId);
+    const title = activeDoc?.title || 'Untitled';
+    const wordCount = nodes.reduce((sum, node) => {
+      const text = getNodePlainText(node).trim();
+      return sum + (text ? text.split(/\s+/).length : 0);
+    }, 0);
+    const readMins = Math.max(1, Math.round(wordCount / 200));
+    const metaParts = [`${wordCount.toLocaleString()} word${wordCount === 1 ? '' : 's'}`, `${readMins} min read`];
+    if (activeDoc?.modifiedAt) {
+      metaParts.push(
+        `Updated ${new Date(activeDoc.modifiedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
+      );
+    }
+    const coverPage = `<div style="page-break-after:always;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:sans-serif;">
+      <div style="letter-spacing:0.3em;font-size:12px;color:#999;margin-bottom:40px;">S A K U R A</div>
+      <div style="font-size:32px;font-weight:700;margin-bottom:16px;">${escapeHtmlForPrint(title)}</div>
+      <div style="width:52px;height:3px;background:#c2553d;margin-bottom:16px;"></div>
+      <div style="font-size:13px;color:#666;">${escapeHtmlForPrint(metaParts.join(' · '))}</div>
+    </div>`;
     const rows = nodes
       .map(
         (node) =>
@@ -125,7 +158,7 @@ export function ExportButtons() {
       )
       .join('');
     printWindow.document.write(
-      `<!doctype html><html><head><title>Outline</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body>${rows}</body></html>`
+      `<!doctype html><html><head><title>${escapeHtmlForPrint(title)}</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body>${coverPage}${rows}</body></html>`
     );
     printWindow.document.close();
     printWindow.focus();
