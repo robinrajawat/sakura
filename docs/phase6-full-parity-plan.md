@@ -248,8 +248,24 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   `setState` functional updater, which React 18 StrictMode's double-invocation-for-purity turns
   into a null-reference throw that unmounts the whole panel -- fixed by capturing the value
   synchronously outside the updater closure.
-- ❌ Remaining: To-Dos' filtering/sorting/bulk-actions/tags/PDF export/Version History/Share/
-  due-date reminder notifications; Meeting Notes; Journal; Library; Recap; Mobile Hub.
+- ✅ **To-Dos, second piece** (#179) — search filtering, urgency-based sectioning (Overdue/
+  Today/Upcoming/No Date, each sorted by due date), a collapsible sorted Completed section, and
+  due-date reminder notifications (real `Notification` API, 5-minute standing check + on-mount
+  check, click-to-focus around the already-ported `computeDueRemindersCore` in
+  `state/hubReminders.ts`), all direct ports of legacy's own `renderTodos()`/`checkDueReminders()`
+  (`state/hubTodoSections.ts` holds the pure sectioning/date-label logic). The reminders toggle
+  lives directly in this panel's own header, since no Account/Settings panel exists anywhere in
+  web/'s Hub yet for it to live in instead -- a documented placement decision, not a deferral.
+  **Scoping correction**: this row's remaining named gaps in
+  `docs/history/phase5-parity-checklist.md` -- "bulk-actions" and "tags" -- were checked directly
+  against legacy/hub.html and legacy/index.html and don't exist anywhere in legacy's real To-Dos
+  implementation (no todo has ever had a `tags` field; the only real bulk-select UI in legacy is
+  on Diagrams/Q&A/sidebar/trash, not To-Dos). They're dropped from this plan's scope rather than
+  built as invented capability, the checklist row corrected accordingly. Verified end-to-end in
+  real headless Chrome: sections group correctly by due date, search narrows to open matches
+  only, completed section sorts/collapses, no console/page errors.
+- ❌ Remaining: To-Dos' PDF export/Version History/Share (deferred to §6.6/§6.8 -- see the
+  scoping correction above); Meeting Notes; Journal; Library; Recap; Mobile Hub.
 
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
@@ -311,7 +327,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176 — To-Dos depth, first piece) — see each section's own `Status:` line for the
+progress** (#176, #179 — To-Dos depth) — see each section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
