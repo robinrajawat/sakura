@@ -6,6 +6,7 @@ import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { sanitizeHrefUrl } from '../utils/sanitizeHrefUrl';
 import { escapeHtml } from '../utils/escapeHtml';
+import { getBacklinksTo, formatBacklinkPreview } from '../core/backlinks';
 
 const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
   { cmd: 'bold', label: 'B', title: 'Bold' },
@@ -71,6 +72,22 @@ const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
  * feature, not just markup styling." Building the backlinks section without that would just be
  * an always-empty list. Left as a genuinely separate, larger feature rather than folded into
  * this slice.
+ *
+ * Phase 6.4 follow-up, now that infrastructure exists (`core/backlinks.ts`; wikilink render/
+ * click-navigate #160; `@`-mention insert #161; cleanup/rename wiring #163): the Backlinks
+ * section itself, direct port of legacy's own `renderBacklinkPanel` (legacy/index.html:20160-
+ * 20181) -- rendered at the bottom of the Note tab (never Code, matching legacy's own
+ * `#note-panel.mode-code #bl-panel{display:none}`), entirely hidden when `getBacklinksTo`
+ * returns nothing, each entry's first 80 chars with any `[[mention]]` italicized like legacy's
+ * own `<em>[[$1]]</em>` replace, click navigates via the same `selectNode` + `findNodeByText`-
+ * free direct-id lookup this project's wikilink click-navigate already uses (`getBacklinksTo`
+ * returns ids directly, no text lookup needed) and closes the panel, same as legacy's own
+ * `closeNodePanel(true)`. Deliberately NOT ported: legacy's collapsed-by-default badge/toggle
+ * system (`#note-panel-bl-badge`, `.show-backlinks` class) that hides the section behind a click
+ * outside Maximize view -- this project's Note panel has no other collapsed-by-default section
+ * to be consistent with, so the section just always shows when non-empty, same "show what's
+ * there, skip the extra chrome" scoping Quick Insert and the hover toolbar already use elsewhere
+ * in this project.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -86,6 +103,7 @@ export function NotePanel() {
   const nodes = useOutlineStore((s) => s.nodes);
   const setNote = useOutlineStore((s) => s.setNote);
   const setCodeBlock = useOutlineStore((s) => s.setCodeBlock);
+  const selectNode = useOutlineStore((s) => s.selectNode);
 
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
@@ -107,6 +125,14 @@ export function NotePanel() {
   const codeTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const node = nodeId !== null ? nodes.find((n) => n.id === nodeId) ?? null : null;
+
+  // Backlinks section (Phase 6.4) -- every other node whose text contains a `[[mention]]`
+  // resolving to this one, direct port of legacy's own `getBacklinksTo` call inside
+  // `renderBacklinkPanel`. Recomputed on every render (cheap: a single filter+some over `nodes`,
+  // same cost profile as the wikilink click-navigate lookup in OutlineTree.tsx) rather than
+  // memoized -- this project doesn't memoize any of its other per-node derived lists either
+  // (fold badge counts, checkbox progress) and this list is never more than a handful of items.
+  const backlinkerIds = node ? getBacklinksTo(nodes, node.id) : [];
 
   // Imperatively (re)sync the contenteditable's content whenever the open node or tab changes --
   // NOT React-controlled, since re-rendering innerHTML on every keystroke would fight the
@@ -562,6 +588,60 @@ export function NotePanel() {
                 boxSizing: 'border-box'
               }}
             />
+            {backlinkerIds.length > 0 && (
+              <div
+                style={{
+                  flexShrink: 0,
+                  borderTop: `1px solid ${t.border}`,
+                  marginTop: 8,
+                  paddingTop: 8
+                }}
+              >
+                <div
+                  style={{
+                    font: '600 9.5px "Inter", sans-serif',
+                    letterSpacing: '.08em',
+                    textTransform: 'uppercase',
+                    color: t.hintText,
+                    marginBottom: 6,
+                    userSelect: 'none'
+                  }}
+                >
+                  Backlinks
+                </div>
+                {backlinkerIds.map((bid) => {
+                  const referrer = nodes.find((n) => n.id === bid);
+                  if (!referrer) return null;
+                  const segments = formatBacklinkPreview(referrer.text || '');
+                  return (
+                    <div
+                      key={bid}
+                      onClick={() => {
+                        selectNode(bid);
+                        closePanel();
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        gap: 6,
+                        padding: '5px 4px',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        color: t.text
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = t.hoverBg)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{ color: t.hintText, flexShrink: 0 }}>↗</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {segments.map((seg, i) => (seg.mention ? <em key={i}>{seg.text}</em> : <span key={i}>{seg.text}</span>))}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
