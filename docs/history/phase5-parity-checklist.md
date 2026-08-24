@@ -128,7 +128,7 @@ selection/provider fallback/usage tracking.
 | Presenter Mode | ⚠️ | See Overview table above |
 | Word export | ⚠️ | Real .docx via the `docx` library (Phase 3); heading styles + a real TOC field now built (§6.6); no Decision Log cards, rich formatting, image embedding, tables, branding |
 | PDF export | ⚠️ | Browser print-to-PDF (Phase 3); cover page now built (§6.6, wordmark/title/meta line); not rendered from a Preview-equivalent with fold state/notes/decision cards; no margins config, footer |
-| PowerPoint export | ⚠️ | Real .pptx via `pptxgenjs` (Phase 3), same slide breakdown as Presenter Mode; no dedicated Q&A/Notepad slides, no overflow "(cont'd)" slides, no images |
+| PowerPoint export | ⚠️ | Real .pptx via `pptxgenjs` (Phase 3), same slide breakdown as Presenter Mode; Notepad slide, Q&A slide, and closing slide now built (§6.6); no overflow "(cont'd)" slides, no images, no decision cards, no branding |
 | Branding | ❌ | Not built |
 | Accent-color-in-exports toggle | ❌ | Not applicable yet — no accent color system exists |
 | Markdown / OPML export | ✅ | Phase 3, wraps already-ported (Phase 1) serializeMarkdown/serializeOpmlCore exactly |

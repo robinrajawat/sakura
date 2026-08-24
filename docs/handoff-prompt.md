@@ -183,13 +183,14 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `780210d` ("feat(export): Word
-heading styles + TOC field (§6.6) (#198)"), with this PR's PDF cover
-page slice about to land on top. §6.5 is fully complete -- all six Hub
-items landed. §6.6 (Preview, Presenter & Export) is now in progress:
-Preview TOC/scroll-spy/progress bar (#194), plain text/clipboard export
-(#196), Presenter Mode depth (#197), Word export heading styles + TOC
-field (#198), and PDF cover page (this PR) are all landed.
+As of this writing: `main` is at commit `bf63908` ("feat(export): PDF
+cover page (§6.6) (#199)"), with this PR's PowerPoint Notepad/Q&A/
+closing slides slice about to land on top. §6.5 is fully complete --
+all six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
+progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
+clipboard export (#196), Presenter Mode depth (#197), Word export
+heading styles + TOC field (#198), PDF cover page (#199), and
+PowerPoint Notepad/Q&A/closing slides (this PR) are all landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -455,7 +456,7 @@ all six items landed:
   and confirmed `word/document.xml` contains a real `Heading1` style
   reference, a TOC field code, and the heading's own text -- a
   well-formed OOXML package, zero console/page errors.
-- PDF export: cover page landed in this PR: direct port of legacy's
+- PDF export: cover page landed in #199: direct port of legacy's
   real `printHtmlAsPdf` cover-page block -- a wordmark, the document's
   own title, an accent rule, and a meta line (word count, estimated
   read time, last-modified date), on its own page via `page-break-
@@ -468,15 +469,29 @@ all six items landed:
   the print popup's own DOM directly (word count/read time/last-
   modified all computed and rendered correctly, document `<title>` set
   to the doc's real title), zero console/page errors.
+- PowerPoint export: Notepad slide, Q&A slide, closing slide landed in
+  this PR: a Notepad slide (Pad's plain-text `notesText`, if non-empty)
+  and Q&A slide (Pad's `qaItems` -- question bold, answer below, "No
+  answer provided" for an unanswered one) now follow the per-node
+  slides, and a real closing slide (reusing `PresenterMode.tsx`'s own
+  exported `CLOSING_SLIDE_TEXT`/`CLOSING_SLIDE_SUBTITLE` constants, so
+  Presenter Mode and this export share one source of truth) is always
+  the genuine last slide, matching legacy's real ordering. No
+  pagination/overflow "(cont'd)" slide, no table/chart promotion, no
+  Q&A section headers (`web/`'s `QaItem` has no section/title concept).
+  Verified end-to-end in real headless Chrome: filled Notepad text and
+  added a Q&A item via the Pad panel, exported .pptx, unzipped the
+  result and confirmed all four expected slides with real content --
+  zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
   cards/Notepad-Q&A sections/branding; PDF's remaining fidelity gaps
   (margins config, footer, fold-state/notes/decision-card rendering --
   currently a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)"
-  slides, images); Sakura Document (`.sakura.json`) format; Word/OPML
-  import. §6.7 onward not started.
+  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
+  images, decision cards, branding); Sakura Document (`.sakura.json`)
+  format; Word/OPML import. §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

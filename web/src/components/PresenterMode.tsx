@@ -50,9 +50,12 @@ export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
 }
 
 // Legacy's own real closing-slide defaults (`previewClosingSlideText`/`previewClosingSlideSubtitle`
-// top-level globals) -- hardcoded here, see this file's header for why.
-const CLOSING_SLIDE_TEXT = 'Thank you';
-const CLOSING_SLIDE_SUBTITLE = 'Questions?';
+// top-level globals) -- hardcoded here, see this file's header for why. Exported so
+// `ExportButtons.tsx`'s PowerPoint export can append the same real closing slide legacy's own
+// `buildPptxPresentation` does (as the genuine last slide in the deck), without duplicating
+// these two strings in a second place.
+export const CLOSING_SLIDE_TEXT = 'Thank you';
+export const CLOSING_SLIDE_SUBTITLE = 'Questions?';
 
 /** Pure: matches legacy's own real per-slide label logic exactly (legacy/index.html:37507) --
  * the slide's first node's text, semantic markers stripped, brackets stripped (a `[Section]`

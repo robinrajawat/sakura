@@ -527,11 +527,30 @@ format, Word/OPML import.
   preferences. Verified end-to-end in real headless Chrome: exported PDF, inspected the print
   popup's own DOM directly (word count/read time/last-modified all computed and rendered
   correctly, document `<title>` set to the doc's real title), zero console/page errors.
+- ✅ **PowerPoint export: Notepad slide, Q&A slide(s), closing slide.** A Notepad slide (Pad's
+  plain-text `notesText`, if non-empty) and Q&A slide (Pad's `qaItems` -- question bold, answer
+  below, "No answer provided" for an unanswered one, matching legacy's own real wording) now
+  follow the per-node slides, and a real closing slide (reusing `PresenterMode.tsx`'s own
+  exported `CLOSING_SLIDE_TEXT`/`CLOSING_SLIDE_SUBTITLE` constants -- the same defaults Presenter
+  Mode's own closing slide uses, so the two features share one source of truth instead of a
+  second hardcoded "Thank you"/"Questions?") is always the genuine last slide in the deck,
+  matching legacy's own real ordering (per-node slides, then Notepad, then Q&A, then closing).
+  Scoped down from legacy's real Notepad/Q&A slides: no pagination/overflow onto a "(cont'd)"
+  slide when content doesn't fit the box (legacy measures real wrapped-line heights against the
+  actual font to decide where to split -- a lot of machinery for a real, separately-scoped
+  follow-up; unusually long content here just overflows its text box visually in the viewer,
+  still fully present and editable in the underlying shape), no table/chart promotion (`web/`'s
+  Notepad is a plain `<textarea>`, not a rich editor with an embeddable table yet), no Q&A
+  section headers (`web/`'s own `QaItem` has no section/title concept, a simpler model than
+  legacy's). Verified end-to-end in real headless Chrome: filled Notepad text and added a Q&A
+  item via the Pad panel, exported .pptx, unzipped the result and confirmed all four expected
+  slides (per-node, Notepad with its real text, Q&A with the real question+answer, closing with
+  "Thank you"/"Questions?") -- a well-formed OOXML package, zero console/page errors.
 - Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
   PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
-  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint
-  fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides, images); Sakura Document
-  (`.sakura.json`) format; Word/OPML import.
+  rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
+  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding); Sakura
+  Document (`.sakura.json`) format; Word/OPML import.
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -587,8 +606,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
-six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, PDF cover page
-landing in this PR) — see each section's own `Status:` line for the
+six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, PowerPoint
+Notepad/Q&A/closing slides landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
