@@ -183,37 +183,27 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `b010b81` ("feat(hub): Mobile
-Hub -- responsive layout, swipe rows, bottom sheets (§6.5) (#191)").
-§6.5 is fully complete -- all six Hub items landed.
+As of this writing: `main` is at commit `0bb9e5c` ("docs: add standing
+rule against Co-authored-by/model-identifier trailers (#193)"), with a
+Preview TOC/scroll-spy/progress-bar slice (pending PR -- see below)
+about to land on top of it. §6.5 is fully complete -- all six Hub items
+landed. §6.6 (Preview, Presenter & Export) is now in progress.
 
-**Note on this session's own commits (#187-#191):** every commit this
-session originally made carried a `Co-authored-by: Claude Sonnet 5
+**Note on this session's own commits (#187-#191):** every commit
+originally carried a `Co-authored-by: Claude Sonnet 5
 <noreply@anthropic.com>` trailer -- a model identifier in a commit
-message, against this project's own standing instruction that no
-artifact pushed to the repo should name one. That trailer is what put
-Claude in GitHub's Contributors list; author/committer identity
-(`robinrajawat <robinsinghrajawat@gmail.com>`) was correct throughout,
-that part never broke. Caught mid-session when the user noticed Claude
-in the contributor list and asked about it. Fixed with explicit user
-authorization: `main`'s four already-merged commits from #187 through
-#190 were rewritten (cherry-picked onto their unchanged parent with the
-trailer stripped from each message, verified the resulting tree was
-byte-identical to what was there before -- only messages changed) and
-force-pushed over `main`; PR #191 (still open at the time) was rebuilt
-the same way before it ever merged. Confirmed via a full-range scan
-(`git log <range> --format="%B" | grep -i "co-authored\|claude sonnet"`)
-that nothing from #187 through the final #191 squash-merge carries the
-trailer, and confirmed separately that commits from before this session
-(#181, #176, etc.) never had it either -- this was isolated to this
-session's own commits, not a repo-wide pattern, so nothing earlier
-needed touching. Both the `main` rewrite and the PR #191 branch rewrite
-required a force-push that bypassed this repo's real "cannot force-push
-to this branch" rule (in addition to the routine "verified signatures"
-warning every push here triggers) -- flagged to the user as more
-consequential than the routine warning. **Going forward: commits in this
-repo should not include a `Co-authored-by`/model-identifier trailer at
-all** -- this is now the standing convention, not a one-off fix.
+message, caught when the user noticed Claude in GitHub's Contributors
+list. Author/committer identity was correct throughout; only the
+trailer was wrong. Fixed with explicit user authorization: `main`'s four
+already-merged commits (#187-#190) were rewritten and force-pushed
+(verified tree-identical, only messages changed), and PR #191 was
+rebuilt the same way before it ever merged. Confirmed clean via a
+full-range scan, and confirmed this was isolated to this session's own
+commits (nothing before #187 ever had it). **The durable fix lives in
+this file's own Workflow rules section now** (see "No Co-authored-by/
+model-identifier trailer, ever" above) -- that's the rule to follow, not
+this narrative; this paragraph is kept only as the historical record of
+the incident.
 Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -365,7 +355,40 @@ all six items landed:
 - §6.5 is now fully complete -- all six Hub items landed. Still deferred,
   each a real cross-cutting follow-up: To-Dos'/Meeting Notes' PDF
   export/Version History/Share (§6.6/§6.8); Meeting Notes' cross-document
-  node links (separately scoped). §6.6 onward not started.
+  node links (separately scoped).
+
+§6.6 (Preview, Presenter & Export) is now in progress:
+- Preview TOC/scroll-spy/progress bar landed (pending PR -- the first
+  §6.6 slice): direct port of legacy's real `renderPreviewToc`/
+  `setupPreviewScrollSpy`/`updatePreviewProgress` -- `buildTocEntries`
+  (`state/previewToc.ts`) is a pure function (section markup -> level-1
+  entry, `styles.heading` 1-6 -> its own level, matching legacy's exact
+  logic), scroll-spy in `PreviewPane.tsx` matches legacy's real
+  `IntersectionObserver` setup including a deliberately-preserved quirk
+  (active entry comes from the current callback batch only, not a
+  persistent intersecting-set), click-to-scroll respects
+  `prefers-reduced-motion` plus a brief flash highlight, matching
+  legacy's real `previewScrollToNode`. Deliberately not ported: the
+  `sectionMarkersDepthZero` preference (no Settings panel exists yet),
+  TOC collapse/resize, Decision Log TOC entries, slide-divider entries
+  (a Presenter Mode navigation aid, not needed for Preview's own
+  read-through TOC). **Real finding, deliberately NOT fixed in this
+  slice (out of scope, unrelated):** real headless-Chrome testing under
+  rapid programmatic `Enter`-chained node creation reproducibly produced
+  two nodes sharing the same `id` (a React duplicate-key warning,
+  confirmed via `node.id`-keyed `.map()` calls, not a React-key mistake
+  -- the underlying `nodes` array itself has the duplicate). Lives
+  entirely in `outlineStore.ts`'s pre-existing `newSiblingBelow`/
+  `nextId` path (§6.2, untouched by this slice), not reproduced via
+  normal-paced human typing -- flagged as a known open item for whoever
+  picks it up next, not chased down here since it would be real scope
+  creep into a Preview-scoped PR.
+- Still open in §6.6: Presenter Mode (laser pointer, blackout, grid,
+  timer, floating notes, Whiteboard, Audience View, closing slide);
+  Word/PDF/PowerPoint export fidelity upgrades (heading styles, TOC,
+  Decision Log cards, rich formatting, image embedding, branding); plain
+  text/Excel/clipboard export; Sakura Document (`.sakura.json`) format;
+  Word/OPML import. §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

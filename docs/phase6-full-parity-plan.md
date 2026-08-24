@@ -415,6 +415,39 @@ their full documented fidelity (heading styles, TOC, Decision Log cards, rich fo
 embedding, branding). Plain text/Excel/clipboard export, Sakura Document (`.sakura.json`)
 format, Word/OPML import.
 
+**Status: in progress.**
+- ✅ **Preview: TOC, scroll-spy, progress bar** (pending PR -- previous PR was #193) -- direct
+  port of legacy's real `renderPreviewToc`/`setupPreviewScrollSpy`/`updatePreviewProgress`
+  (legacy/index.html:37957+, 38426-38449). `state/previewToc.ts`'s `buildTocEntries` is a pure
+  function matching legacy's exact TOC-entry logic: a `[Section]`-marked node always contributes
+  a level-1 entry, a node with `styles.heading` (1-6, already real since §6.2's rich-formatting
+  slice) contributes an entry at its own level, every other node contributes nothing. Scroll-spy
+  in `PreviewPane.tsx` matches legacy's real `IntersectionObserver` setup exactly -- same
+  `root`/`rootMargin:'0px 0px -70% 0px'`/`threshold:0` -- including a real, deliberately
+  preserved quirk: the active entry comes from the current observer callback batch's own
+  `entries` list, not a persistent "currently intersecting" set accumulated across calls,
+  matching legacy's own actual logic (not "fixed" during this port, same practice as this
+  project's other pinned legacy quirks, e.g. `diagramAnchor.ts`'s forward/backward drag
+  asymmetry). Click-to-scroll (`PreviewToc.tsx`) matches legacy's real `previewScrollToNode`:
+  `scrollIntoView({block:'start'})` respecting `prefers-reduced-motion`, plus a brief background
+  flash on the target row. Deliberately not ported: `sectionMarkersDepthZero` (no Settings panel
+  exists anywhere in `web/` yet to hold that preference, §6.10 not started -- uses the narrower,
+  always-correct `isSectionNodeText` check instead of guessing a default), TOC collapse/resize,
+  Decision Log TOC entries (Decision Log detection isn't ported to Preview at all yet), slide-
+  divider TOC entries (a Presenter Mode navigation aid, not something Preview's read-through TOC
+  needs -- Presenter Mode itself is still this section's own unscoped remaining item).
+  **Real finding, deliberately not fixed here (out of scope, unrelated to this slice):**
+  real headless-Chrome testing under rapid programmatic node creation (many `Enter`-chained
+  `newSiblingBelow` calls in quick succession) reproducibly produced two nodes sharing the same
+  `id` (a React "duplicate key" warning in both `OutlineTree.tsx` and this slice's own
+  `PreviewPane.tsx`/`PreviewToc.tsx`, confirmed via `node.id`-keyed `.map()` calls in both, not a
+  React-key-usage mistake -- the underlying `nodes` array itself has the duplicate). This lives
+  entirely in `outlineStore.ts`'s pre-existing `newSiblingBelow`/`nextId` node-creation path
+  (§6.2, untouched by this slice, which only reads `nodes`) -- a real bug worth a dedicated
+  investigation, but pulling it into a Preview-scoped PR would be real scope creep. Not
+  reproduced via normal-paced human typing in this session's own testing; flagged here as a
+  known open item for whoever picks it up next.
+
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
 color presets, Editor's Choice / Documentation Mode presets, full layout controls (tree lines,
