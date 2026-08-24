@@ -153,4 +153,12 @@ describe('hubTodosStore', () => {
     expect(todos.find((t) => t.id === idA)!.subtasks).toHaveLength(1);
     expect(todos.find((t) => t.id === idB)!.subtasks).toEqual([]);
   });
+
+  it('setFocusTodoId sets it, clearFocusTodoId resets it to null', () => {
+    expect(useHubTodosStore.getState().focusTodoId).toBeNull();
+    useHubTodosStore.getState().setFocusTodoId('t1');
+    expect(useHubTodosStore.getState().focusTodoId).toBe('t1');
+    useHubTodosStore.getState().clearFocusTodoId();
+    expect(useHubTodosStore.getState().focusTodoId).toBeNull();
+  });
 });
