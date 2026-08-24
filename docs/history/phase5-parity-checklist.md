@@ -134,7 +134,7 @@ selection/provider fallback/usage tracking.
 | Markdown / OPML export | ✅ | Phase 3, wraps already-ported (Phase 1) serializeMarkdown/serializeOpmlCore exactly |
 | Plain text (.txt) / clipboard export | ✅ | §6.6, wraps already-ported (Phase 1) serializeTreeTextCore/serializeClipboardHtmlCore exactly; clipboard writes both text/plain and text/html via ClipboardItem, execCommand fallback |
 | Excel (Decision Log .xlsx) export | ❌ | Blocked on Decision Log not existing as a real feature (store/panel) in web/ yet — legacy's real Excel export is Decision-Log-specific, not a general outline export |
-| Import (Word/OPML/pasted text) | ⚠️ | OPML import now built (§6.6, always lands in a new document); Word import and pasted-text import not built |
+| Import (Word/OPML/pasted text) | ⚠️ | OPML and Word (.docx, via mammoth) import now built (§6.6, both always land in a new document); no AI-restructure fallback for a flat Word doc (no AI in web/ yet) or tree-connector-notation detection (smart-paste not ported); pasted-text import not built |
 | Sakura Document (.sakura.json) | ⚠️ | Outline export/import built full-fidelity (§6.6, styles/tags/codeBlock all round-trip, unlike OPML's lossy text encoding); Pad content (Notepad/Q&A/Diagrams/Mind Maps/Decision Log/Remarks/Attachments) NOT included — none of it is document-scoped or even persisted in web/ yet (padStore.ts is a single flat app-wide in-memory store), a real architectural gap, not a small omission |
 
 ## Theming & Appearance
