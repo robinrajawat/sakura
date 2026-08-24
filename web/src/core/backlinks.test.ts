@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBacklinkRefs, getBacklinksTo, cleanupBacklinksFor, renameBacklinksFor } from './backlinks';
+import { getBacklinkRefs, getBacklinksTo, cleanupBacklinksFor, renameBacklinksFor, findNodeByText } from './backlinks';
 
 describe('getBacklinkRefs', () => {
   it('returns empty for text with no references', () => {
@@ -116,5 +116,31 @@ describe('renameBacklinksFor', () => {
     const nodes = [{ id: 1, text: 'no references here' }];
     const result = renameBacklinksFor(nodes, 'Old Name', 'New Name');
     expect(result).toBe(nodes);
+  });
+});
+
+describe('findNodeByText', () => {
+  const nodes = [
+    { id: 1, text: 'Project Kickoff' },
+    { id: 2, text: '[Section] Onboarding' },
+    { id: 3, text: 'Unrelated node' }
+  ];
+
+  it('finds an exact case-insensitive match', () => {
+    expect(findNodeByText(nodes, 'project kickoff')?.id).toBe(1);
+  });
+
+  it('matches through stripSemanticMarkers when the node text carries a marker (marker unwrapped, content kept)', () => {
+    // stripSemanticMarkers UNWRAPS a [marker], it doesn't delete it -- "[Section] Onboarding"
+    // strips to "Section Onboarding", not just "Onboarding".
+    expect(findNodeByText(nodes, 'Section Onboarding')?.id).toBe(2);
+  });
+
+  it('returns null when nothing matches', () => {
+    expect(findNodeByText(nodes, 'Nonexistent')).toBeNull();
+  });
+
+  it('returns null for empty text', () => {
+    expect(findNodeByText(nodes, '')).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
 
 export interface BacklinkableNode {
   id: number;
-  text: string;
+  text?: string | null;
 }
 
 /** Extracts every `[[...]]` reference's inner text from a string, in order. Matches legacy's
@@ -67,12 +67,13 @@ export function getBacklinksTo(nodes: BacklinkableNode[], targetId: number): num
 export function cleanupBacklinksFor<T extends BacklinkableNode>(nodes: T[], deletedTexts: string[]): T[] {
   const lower = deletedTexts.map((t) => t.trim().toLowerCase());
   return nodes.map((n) => {
-    if (!n.text.includes('[[')) return n;
-    const newText = n.text
+    const text = n.text || '';
+    if (!text.includes('[[')) return n;
+    const newText = text
       .replace(/\[\[([\s\S]*?)\]\](?!\])/g, (match, ref) => (lower.includes(ref.trim().toLowerCase()) ? '' : match))
       .replace(/\s{2,}/g, ' ')
       .trim();
-    return newText !== n.text ? { ...n, text: newText } : n;
+    return newText !== text ? { ...n, text: newText } : n;
   });
 }
 
@@ -87,13 +88,29 @@ export function renameBacklinksFor<T extends BacklinkableNode>(nodes: T[], oldTe
   const oldLower = oldTrim.toLowerCase();
   let any = false;
   const next = nodes.map((n) => {
-    if (!n.text.includes('[[')) return n;
-    const updated = n.text.replace(/\[\[([\s\S]*?)\]\](?!\])/g, (match, ref) => {
+    const text = n.text || '';
+    if (!text.includes('[[')) return n;
+    const updated = text.replace(/\[\[([\s\S]*?)\]\](?!\])/g, (match, ref) => {
       if (ref.trim().toLowerCase() !== oldLower) return match;
       any = true;
       return `[[${newTrim}]]`;
     });
-    return updated !== n.text ? { ...n, text: updated } : n;
+    return updated !== text ? { ...n, text: updated } : n;
   });
   return any ? next : nodes;
+}
+
+/** Resolves a `[[...]]` target string to the node it refers to, matching legacy's own
+ * `findNodeByText` (legacy/index.html:20096-20100). Same case-insensitive, stripSemanticMarkers-
+ * normalized matching as getBacklinksTo, just in the opposite direction (target text -> node,
+ * rather than node -> referrers). Returns null if nothing matches. */
+export function findNodeByText<T extends BacklinkableNode>(nodes: T[], text: string): T | null {
+  const t = String(text || '').trim().toLowerCase();
+  const tp = stripSemanticMarkers(t).trim().toLowerCase();
+  return (
+    nodes.find((n) => {
+      const nt = String(n.text || '').trim().toLowerCase();
+      return nt === t || stripSemanticMarkers(nt).trim().toLowerCase() === tp;
+    }) || null
+  );
 }
