@@ -291,7 +291,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   edit fields → attendees → action item → promote (real todo created with correct due
   date/meetingRef, button disables, second click is a no-op) → reload confirms persistence, no
   console/page errors.
-- ✅ **Journal** (pending -- PR number not yet known; previous PR was #184) -- replaces the Phase 4 placeholder (freeform create/delete,
+- ✅ **Journal** (#185) -- replaces the Phase 4 placeholder (freeform create/delete,
   plain textarea) with legacy's real one-entry-per-date model (`hubJournalStore.ts`): a list of
   existing entries, each opening a single-entry card (direct port of legacy's own
   `openJournalEntry`/`showJournalCardView`, index.html:49188 area) to edit mood (click-again-to-
@@ -320,7 +320,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   existing text is an inherited, pre-existing `execCommand('insertUnorderedList')` browser
   quirk already present identically in NotePanel.tsx's own bullet-list button -- reproduced there
   independently to confirm it's shared behavior, not a regression introduced by this slice.
-- ✅ **Library** (pending -- PR number not yet known; previous PR was #186) -- replaces the
+- ✅ **Library** (#187) -- replaces the
   Phase 4 placeholder (freeform title/url/description CRUD, in-memory only) with legacy's real
   model (`hubLibrary.ts`): real persistence, a `urlLabel` field, tags (add/remove, click-to-
   filter, toggle-active-filter-clears-it exactly matching legacy's own `setLibraryTagFilter`),
@@ -410,8 +410,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
-progress** (#176, #179, #181, and Journal/Library each pending their own PR number) — see each
-section's own `Status:` line for the
+progress** (#176, #179, #181, #185, #187) — see each section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
