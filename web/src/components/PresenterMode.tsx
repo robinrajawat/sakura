@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutlineStore, type OutlineNode } from '../store/outlineStore';
+import { usePadStore } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
 import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
@@ -35,14 +36,24 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
  * client-side routing at all, a Phase 0 decision, so there is no page for a second window to
  * load); Whiteboard mirroring (its own poll loop only starts once Audience View is live, so it
  * inherits that same blocker, on top of Whiteboard/diagram-editing itself being its own
- * separately-scoped §6.3 concern); floating Notes/Q&A during presenting (legacy relocates the
- * real Pad DOM nodes into a floating panel -- porting this well wants its own design pass on how
- * `PadPanel.tsx`'s store-backed content should share itself between the normal Pad dock and a
- * floating-during-Presenter view, not a quick add-on to this slice).
+ * separately-scoped §6.3 concern).
  *
  * A later §6.6 slice adds the branding wordmark (`BRANDING_TEXT` below) to the presenter bar
  * itself, matching legacy's real always-on `#presenter-branding` element -- the same mark this
  * export domain's Word/PDF/PowerPoint exports show (`ExportButtons.tsx`).
+ *
+ * A still-later §6.6 slice adds the floating Notes/Q&A panel (`N` key or button), a direct port
+ * of legacy's real `openPresenterNotes`/`togglePresenterNotes` (legacy/index.html:39015-39096)
+ * -- deliberately scoped down: legacy relocates the actual Pad DOM nodes (`#pad-editor`, its
+ * toolbar, `#qa-body`) into the floating panel, so its version is fully editable while
+ * presenting and mode-switches between Notes/Q&A/Remarks via separate N/Q/R keys. `web/`'s React
+ * architecture has no DOM-node-relocation equivalent, and there is no per-node "speaker notes"
+ * concept to switch between here regardless -- so this port instead reads `usePadStore`'s
+ * `notesText`/`qaItems` directly into one combined, read-only panel (no live edit-while-
+ * presenting, no separate N/Q mode-switch, no drag-to-reposition -- each a real, separately-
+ * scoped follow-up if ever wanted), toggled by the same `N` key legacy's own Notes shortcut
+ * uses, closed by `N` again or `Escape` (joining the same close-priority chain `B`/`G` already
+ * use).
  */
 export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
   const slides: OutlineNode[][] = [];
@@ -104,8 +115,11 @@ export function PresenterMode() {
   const [laserOn, setLaserOn] = useState(false);
   const [laserPos, setLaserPos] = useState<{ x: number; y: number } | null>(null);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const startedAtRef = useRef(Date.now());
+  const notesText = usePadStore((s) => s.notesText);
+  const qaItems = usePadStore((s) => s.qaItems);
 
   // Elapsed timer -- a plain running clock from the moment this component mounts (App.tsx only
   // mounts it while `mode === 'present'`, the same "entering presenter mode" moment legacy's own
@@ -126,6 +140,9 @@ export function PresenterMode() {
         if (overviewOpen) {
           e.preventDefault();
           setOverviewOpen(false);
+        } else if (notesOpen) {
+          e.preventDefault();
+          setNotesOpen(false);
         } else if (blanked) {
           e.preventDefault();
           setBlanked(false);
@@ -140,6 +157,11 @@ export function PresenterMode() {
       if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         setBlanked((b) => !b);
+        return;
+      }
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setNotesOpen((o) => !o);
         return;
       }
       if (overviewOpen) return;
@@ -159,7 +181,7 @@ export function PresenterMode() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [totalSlides, clampedIndex, overviewOpen, blanked]);
+  }, [totalSlides, clampedIndex, overviewOpen, blanked, notesOpen]);
 
   if (!slides.length) {
     return <div style={{ color: t.mutedText, fontStyle: 'italic' }}>This document is empty.</div>;
@@ -251,10 +273,61 @@ export function PresenterMode() {
         <button type="button" onClick={() => setOverviewOpen((v) => !v)} aria-pressed={overviewOpen}>
           Overview (G)
         </button>
+        <button type="button" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen}>
+          Notes (N)
+        </button>
         <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 600, letterSpacing: '.22em', color: t.hintText }}>
           {BRANDING_TEXT}
         </span>
       </div>
+      {notesOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 16,
+            width: 320,
+            maxHeight: '60vh',
+            overflowY: 'auto',
+            border: `1px solid ${t.border}`,
+            borderRadius: 8,
+            padding: 12,
+            background: t.background,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+            fontFamily: 'sans-serif',
+            zIndex: 5002
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: t.mutedText }}>
+              Notes
+            </span>
+            <button type="button" onClick={() => setNotesOpen(false)} style={{ fontSize: 11 }}>
+              Close
+            </button>
+          </div>
+          {notesText.trim() ? (
+            <div style={{ fontSize: 13, whiteSpace: 'pre-wrap', color: t.text, marginBottom: 12 }}>{notesText}</div>
+          ) : (
+            <div style={{ fontSize: 13, fontStyle: 'italic', color: t.mutedText, marginBottom: 12 }}>No notes.</div>
+          )}
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: t.mutedText, marginBottom: 6 }}>
+            Q&amp;A
+          </div>
+          {qaItems.length === 0 ? (
+            <div style={{ fontSize: 13, fontStyle: 'italic', color: t.mutedText }}>No Q&amp;A items.</div>
+          ) : (
+            qaItems.map((item) => (
+              <div key={item.id} style={{ marginBottom: 8, fontSize: 13 }}>
+                <div style={{ fontWeight: 700, color: t.text }}>{item.question}</div>
+                <div style={{ color: item.answer.trim() ? t.mutedText : t.hintText, fontStyle: item.answer.trim() ? undefined : 'italic' }}>
+                  {item.answer.trim() || 'No answer provided'}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
       {overviewOpen && (
         <div
           style={{

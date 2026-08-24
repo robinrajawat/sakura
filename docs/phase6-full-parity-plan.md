@@ -713,6 +713,18 @@ format, Word/OPML import.
   result and confirmed 5 real content slides (1 original + 4 genuine `(cont'd)` slides, apostrophe
   correctly OOXML-entity-escaped as `&apos;`) plus the closing slide, with all 30 bullets present
   exactly once across the deck -- zero console/page errors.
+- ✅ **Presenter Mode: floating Notes/Q&A panel.** A read-only floating panel (bottom-right,
+  toggled by a new "Notes (N)" button or the `n`/`N` key, closable via the same button, the key
+  again, or Escape -- inserted into the existing Escape priority chain between `overviewOpen` and
+  `blanked`) showing the document's real Pad-panel Notepad text and Q&A items live from
+  `usePadStore`, so presenters can glance at their notes without leaving Presenter Mode. Scoped
+  down from legacy's version: legacy has distinct shortcuts for Notes vs Q&A vs Remarks and no
+  drag-to-reposition is ported -- this single combined panel and fixed position are a deliberate
+  simplification, not an oversight. Verified end-to-end in real headless Chrome: filled Notepad
+  text and added a Q&A item via the Pad panel, entered Presenter Mode, confirmed the panel is
+  hidden by default, becomes visible on button click (notes text and the Q&A question/answer
+  both present), closes on Escape, and toggles open/closed correctly via repeated `n` key
+  presses -- zero console/page errors.
 - Still not started: PowerPoint image embedding (see above for why it's deferred, not skipped);
   Word tables/decision-log cards; PDF's remaining fidelity gap (fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
@@ -773,7 +785,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, PowerPoint overflow slides landing in this PR) — see each section's own `Status:` line for the
+#202, #203, #204, #205, #206, #207, #208, Presenter Mode floating Notes/Q&A panel landing in this
+PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
