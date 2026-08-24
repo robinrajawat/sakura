@@ -36,7 +36,7 @@ already made and already documented at the time.
 | AI features | ❌ | None built — no provider config, no Rewrite/outline-gen/restructure/etc. |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
-| Presenter Mode | ⚠️ | Basic slide grouping + Prev/Next/arrow-keys (Phase 3) — no laser pointer, blackout, grid, timer, floating notes, Whiteboard, closing slide |
+| Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, and closing slide (§6.6) — no floating notes, Whiteboard mirroring, or Audience View/dual-screen (blocked on web/ having no client-side routing) |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt) and clipboard ("Copy as Text") are now full-parity (§6.6) — see Export section below. No Excel export (blocked on Decision Log not existing as a real feature yet); no Sakura Document (.sakura.json) format |
 | Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
 | Deep theming | ⚠️ | Light/Dark toggle only (Phase 3) — no System/Schedule auto-theme, accent colors, Chrome backgrounds, node-text color presets |
