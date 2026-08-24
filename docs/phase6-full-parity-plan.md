@@ -644,10 +644,22 @@ format, Word/OPML import.
   print popup's own stylesheet and confirmed the `@bottom-right` rule plus the cover-page
   wordmark; confirmed the mark renders live in the Presenter Mode bar -- zero console/page
   errors across all four.
+- ✅ **PDF: page margins + footer (date, page count).** Direct port of legacy's real
+  `printHtmlAsPdf` `@page` block (legacy/index.html:39518-39533). Margin hardcoded to
+  `PDF_MARGIN_MM.normal` (20mm) -- legacy's own real default, no Settings panel exists yet to
+  hold the narrow/wide alternatives. Footer is a real CSS Paged Media margin-box pair: today's
+  date bottom-left, "Page X of Y" bottom-center via genuine `counter(page)`/`counter(pages)` (not
+  a guess -- the browser's own print pagination engine computes these), always on matching
+  legacy's own real `previewPdfFooterEnabled` default. A new `cssStr` helper matches legacy's own
+  CSS-string-literal escaping exactly (backslash, the quote that would end the string early, no
+  raw newlines). Verified end-to-end in real headless Chrome: inspected the print popup's own
+  stylesheet and confirmed the full `@page` block -- `margin:20mm`, a real formatted date string,
+  the literal `counter(page)`/`counter(pages)` CSS, and the branding rule all present and
+  correctly escaped -- zero console/page errors.
 - Still not started: images/tables/decision-log cards/Notepad-Q&A sections in Word export; PDF's
-  remaining fidelity gaps (margins config, footer text/date beyond branding, fold-state/notes/
-  decision-card rendering -- currently a flat node list, not rendered from a Preview-equivalent);
-  PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards).
+  remaining fidelity gap (fold-state/notes/decision-card rendering -- currently a flat node list,
+  not rendered from a Preview-equivalent); PowerPoint's remaining fidelity gaps (overflow
+  "(cont'd)" slides, images, decision cards).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -704,7 +716,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, branding wordmark landing in this PR) — see each section's own `Status:` line for the
+#202, #203, #204, PDF margins/footer landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.

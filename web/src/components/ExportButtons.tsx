@@ -59,6 +59,14 @@ function escapeHtmlForPrint(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
+// A CSS margin-box `content: "..."` value is a plain generated-content string, not HTML/JS --
+// needs its own escaping (backslash, the quote that would otherwise end the string early, and
+// no raw newlines since a margin box renders on one line anyway), matching legacy's own real
+// `cssStr` helper (legacy/index.html:39514) exactly.
+function cssStr(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, ' ');
+}
+
 export function ExportButtons() {
   const nodes = useOutlineStore((s) => s.nodes);
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
@@ -276,6 +284,15 @@ export function ExportButtons() {
   // Also shows the same mark in the bottom-right corner of every printed page via a real
   // `@page{@bottom-right{...}}` CSS Paged Media rule (see the `printWindow.document.write` call
   // below), not just the cover page.
+  //
+  // §6.6 fidelity upgrade: real page margins and a footer, direct port of legacy's real
+  // `printHtmlAsPdf` `@page` block (legacy/index.html:39518-39533). Margin is hardcoded to
+  // `PDF_MARGIN_MM.normal` (20mm) -- legacy's own real default (`previewPdfMargin='normal'`),
+  // no Settings panel exists yet to hold the narrow/wide alternatives. The footer (today's date,
+  // bottom-left; "Page X of Y" via real CSS `counter(page)`/`counter(pages)`, bottom-center) is
+  // always on, matching legacy's own real `previewPdfFooterEnabled` default. Chrome 131+
+  // supports these margin-box at-rules natively -- Firefox (as of this writing) just renders no
+  // footer, a safe fallback, not a broken one.
   function exportPdf() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
@@ -310,8 +327,9 @@ export function ExportButtons() {
     // page, direct port of legacy's real `@page{@bottom-right{...}}` print rule
     // (legacy/index.html:39517-39532) -- the CSS Paged Media spec's own margin-box mechanism,
     // which Chromium's print pipeline (what `window.print()` below drives) honors natively.
+    const footerDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     printWindow.document.write(
-      `<!doctype html><html><head><title>${escapeHtmlForPrint(title)}</title><style>body{font-family:sans-serif;padding:2rem;}@page{@bottom-right{content:"${BRANDING_TEXT}";font-family:sans-serif;font-size:8pt;letter-spacing:.15em;color:#a3a099;}}</style></head><body>${coverPage}${rows}</body></html>`
+      `<!doctype html><html><head><title>${escapeHtmlForPrint(title)}</title><style>body{font-family:sans-serif;padding:2rem;}@page{margin:20mm;@bottom-left{content:"${cssStr(footerDate)}";font-family:sans-serif;font-size:8pt;color:#a3a099;}@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:sans-serif;font-size:8pt;color:#a3a099;}@bottom-right{content:"${cssStr(BRANDING_TEXT)}";font-family:sans-serif;font-size:8pt;letter-spacing:.15em;color:#a3a099;}}</style></head><body>${coverPage}${rows}</body></html>`
     );
     printWindow.document.close();
     printWindow.focus();

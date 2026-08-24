@@ -127,7 +127,7 @@ selection/provider fallback/usage tracking.
 | Preview (TOC, scroll-spy, progress bar) | ⚠️ | Real TOC (section/heading entries), scroll-spy, and a scroll progress bar all built (§6.6, #194); no Decision Log detection/TOC entries, no TOC collapse/resize, no word-count/author/updated-at meta header |
 | Presenter Mode | ⚠️ | See Overview table above |
 | Word export | ⚠️ | Real .docx via the `docx` library (Phase 3); heading styles, a real TOC field, and a branding footer now built (§6.6); no Decision Log cards, rich formatting, image embedding, tables |
-| PDF export | ⚠️ | Browser print-to-PDF (Phase 3); cover page and per-page branding now built (§6.6, wordmark/title/meta line, CSS `@page{@bottom-right{...}}`); not rendered from a Preview-equivalent with fold state/notes/decision cards; no margins config, no footer text/date beyond branding |
+| PDF export | ⚠️ | Browser print-to-PDF (Phase 3); cover page, per-page branding, page margins (20mm), and a date/page-count footer now built (§6.6, real CSS `@page` margin-box rules); not rendered from a Preview-equivalent with fold state/notes/decision cards |
 | PowerPoint export | ⚠️ | Real .pptx via `pptxgenjs` (Phase 3), same slide breakdown as Presenter Mode; Notepad slide, Q&A slide, closing slide, and per-slide branding now built (§6.6); no overflow "(cont'd)" slides, no images, no decision cards |
 | Branding | ✅ | Built (§6.6): wordmark in the Word page footer, PowerPoint slide corners, PDF cover page + every printed page (CSS `@page{@bottom-right{...}}`), and the live Presenter Mode bar — always on, no Settings toggle/custom text yet |
 | Accent-color-in-exports toggle | ❌ | Not applicable yet — no accent color system exists |
