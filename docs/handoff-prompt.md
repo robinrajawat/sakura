@@ -183,19 +183,21 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `9832aff` ("feat(export): Word
-Notepad + Q&A sections (§6.6) (#207)"), with this PR's PowerPoint
-overflow-slide slice about to land on top. §6.5 is fully complete --
-all six Hub items landed. §6.6 (Preview, Presenter & Export) is now in
-progress: Preview TOC/scroll-spy/progress bar (#194), plain text/
-clipboard export (#196), Presenter Mode depth (#197), Word export
-heading styles + TOC field (#198), PDF cover page (#199), PowerPoint
-Notepad/Q&A/closing slides (#200), OPML import (#201), Sakura Document
-export/import (#202), Word (.docx) import (#203), the branding
-wordmark across Word/PDF/PowerPoint/Presenter (#204), PDF page margins
-+ date/page-count footer (#205), Word note-image embedding (#206),
-Word Notepad/Q&A sections (#207), and PowerPoint overflow "(cont'd)"
-slides (this PR) are all landed. One note on this session's CI: PR
+As of this writing: `main` is at commit `2b88971` ("feat(export):
+PowerPoint overflow \"(cont'd)\" slides (§6.6) (#208)"), with this PR's
+Presenter Mode floating Notes/Q&A panel slice about to land on top.
+§6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
+Presenter & Export) is now in progress: Preview TOC/scroll-spy/progress
+bar (#194), plain text/clipboard export (#196), Presenter Mode depth
+(#197), Word export heading styles + TOC field (#198), PDF cover page
+(#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
+(#201), Sakura Document export/import (#202), Word (.docx) import
+(#203), the branding wordmark across Word/PDF/PowerPoint/Presenter
+(#204), PDF page margins + date/page-count footer (#205), Word
+note-image embedding (#206), Word Notepad/Q&A sections (#207),
+PowerPoint overflow "(cont'd)" slides (#208), and Presenter Mode's
+floating Notes/Q&A panel (this PR) are all landed. One note on this
+session's CI: PR
 #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
 collision check, unrelated to any file this session touched) -- a
@@ -451,12 +453,10 @@ all six items landed:
   navigation of the same page with a query param -- `web/` has no
   client-side routing at all, a Phase 0 decision, so there's no page for
   a second window to load); Whiteboard mirroring (its poll loop only
-  starts once Audience View is live, inheriting that same blocker);
-  floating Notes/Q&A during presenting (legacy relocates the real Pad
-  DOM nodes into a floating panel -- porting this well wants its own
-  design pass on how `PadPanel.tsx`'s store-backed content should share
-  itself between the normal Pad dock and a floating-during-Presenter
-  view). Verified end-to-end in real headless Chrome: timer ticks, `G`
+  starts once Audience View is live, inheriting that same blocker).
+  (A floating Notes/Q&A panel, deliberately scoped down from legacy's
+  relocated-DOM approach, landed later in this same section -- see
+  below.) Verified end-to-end in real headless Chrome: timer ticks, `G`
   opens the overview grid (closing-slide card included), `End` jumps to
   the closing slide, `Home` returns, `B` toggles blackout, the laser
   toggle + mousemove renders the tracking dot -- zero console/page
@@ -647,7 +647,7 @@ all six items landed:
   the Pad panel, exported `.docx`, unzipped the result and confirmed
   both section headings and their real content are present -- zero
   console/page errors.
-- PowerPoint overflow "(cont'd)" slides landed in this PR: direct port
+- PowerPoint overflow "(cont'd)" slides landed in #208: direct port
   of legacy's real per-slide pagination (`pptxMeasureWrappedLines`/
   `pptxLineHeightIn`, both ported to `utils/wrapLineCount.ts`) -- when
   a node's bullets don't fit the box, the rest spill onto a new slide
@@ -668,13 +668,27 @@ all six items landed:
   result and confirmed 5 real content slides (1 original + 4 genuine
   `(cont'd)` slides) plus the closing slide, all 30 bullets present
   exactly once across the deck -- zero console/page errors.
-- Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
-  mirroring, and Audience View/dual-screen (see above for why each is
-  blocked/deferred); PowerPoint image embedding (see above); Word
-  tables/Decision Log cards; PDF's remaining fidelity gap (fold-state/
-  notes/decision-card rendering -- currently a flat node list, not
-  rendered from a Preview-equivalent); PowerPoint's remaining fidelity
-  gaps (Notepad/Q&A section pagination, decision cards). §6.7 onward
+- Presenter Mode: floating Notes/Q&A panel landed in this PR: a
+  read-only floating panel (bottom-right, toggled by a new "Notes (N)"
+  button or the `n`/`N` key, closable via the same button, the key
+  again, or Escape) showing the document's real Pad-panel Notepad text
+  and Q&A items live from `usePadStore`. Scoped down from legacy's
+  version: legacy has distinct shortcuts for Notes vs Q&A vs Remarks
+  and no drag-to-reposition is ported -- a single combined panel and
+  fixed position are a deliberate simplification. Verified end-to-end
+  in real headless Chrome: filled Notepad text and added a Q&A item via
+  the Pad panel, entered Presenter Mode, confirmed the panel is hidden
+  by default, becomes visible on button click (notes text and Q&A
+  question/answer both present), closes on Escape, and toggles open/
+  closed correctly via repeated `n` key presses -- zero console/page
+  errors.
+- Still open in §6.6: Whiteboard mirroring and Audience View/
+  dual-screen (see above for why each is blocked/deferred); PowerPoint
+  image embedding (see above); Word tables/Decision Log cards; PDF's
+  remaining fidelity gap (fold-state/notes/decision-card rendering --
+  currently a flat node list, not rendered from a Preview-equivalent);
+  PowerPoint's remaining fidelity gaps (Notepad/Q&A section pagination,
+  decision cards). §6.7 onward
   not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
