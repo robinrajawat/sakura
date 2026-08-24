@@ -163,10 +163,37 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `615943b` ("docs: refresh
-handoff prompt Current state after Recap landing, #189 (#190)"), with a
-Mobile Hub slice (pending PR -- see below) about to land on top of it and
-close out §6.5 entirely.
+As of this writing: `main` is at commit `b010b81` ("feat(hub): Mobile
+Hub -- responsive layout, swipe rows, bottom sheets (§6.5) (#191)").
+§6.5 is fully complete -- all six Hub items landed.
+
+**Note on this session's own commits (#187-#191):** every commit this
+session originally made carried a `Co-authored-by: Claude Sonnet 5
+<noreply@anthropic.com>` trailer -- a model identifier in a commit
+message, against this project's own standing instruction that no
+artifact pushed to the repo should name one. That trailer is what put
+Claude in GitHub's Contributors list; author/committer identity
+(`robinrajawat <robinsinghrajawat@gmail.com>`) was correct throughout,
+that part never broke. Caught mid-session when the user noticed Claude
+in the contributor list and asked about it. Fixed with explicit user
+authorization: `main`'s four already-merged commits from #187 through
+#190 were rewritten (cherry-picked onto their unchanged parent with the
+trailer stripped from each message, verified the resulting tree was
+byte-identical to what was there before -- only messages changed) and
+force-pushed over `main`; PR #191 (still open at the time) was rebuilt
+the same way before it ever merged. Confirmed via a full-range scan
+(`git log <range> --format="%B" | grep -i "co-authored\|claude sonnet"`)
+that nothing from #187 through the final #191 squash-merge carries the
+trailer, and confirmed separately that commits from before this session
+(#181, #176, etc.) never had it either -- this was isolated to this
+session's own commits, not a repo-wide pattern, so nothing earlier
+needed touching. Both the `main` rewrite and the PR #191 branch rewrite
+required a force-push that bypassed this repo's real "cannot force-push
+to this branch" rule (in addition to the routine "verified signatures"
+warning every push here triggers) -- flagged to the user as more
+consequential than the routine warning. **Going forward: commits in this
+repo should not include a `Co-authored-by`/model-identifier trailer at
+all** -- this is now the standing convention, not a one-off fix.
 Phase 6 (full parity build-out — see docs/phase6-full-parity-plan.md) is underway:
 §6.1 (design tokens & app shell), §6.2 (undo/redo & core editing parity),
 §6.3 (Note/Code/Pad panels — all 11 items, including item 11's three
@@ -286,8 +313,8 @@ all six items landed:
   headless Chrome: Today/This Week/Last Week tabs filter correctly, and
   clicking a Recap row for both a to-do and a meeting note expands that
   exact item in its own panel below, zero console/page errors.
-- Mobile Hub landed (pending PR -- the last §6.5 item, closing it out
-  entirely): legacy's real `hub.html` is a wholly separate mobile-native
+- Mobile Hub landed in #191 -- the last §6.5 item, closing it out
+  entirely: legacy's real `hub.html` is a wholly separate mobile-native
   page, required-account-sign-in-gated, built to bridge a phone's
   otherwise-empty local storage with a desktop's data via Firestore sync.
   `web/` has neither piece of infra that premise depends on (no

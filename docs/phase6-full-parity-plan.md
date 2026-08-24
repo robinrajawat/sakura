@@ -346,7 +346,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   first) → create a second unfavorited entry → search narrows to a text match → tag-filter chip
   and favorites-only combine as an AND filter, matching legacy exactly → reload confirms
   persistence, zero console/page errors in both light and dark theme.
-- ✅ **Recap** (pending -- PR number not yet known; previous PR was #188) -- replaces the Phase 4
+- ✅ **Recap** (#189) -- replaces the Phase 4
   placeholder (static counts + a "most recent N" list per Hub store) with legacy's real
   Today/This Week/Last Week period model (`hubRecap.ts`): `getRecapRange` ports `getReportRange`
   exactly (Monday-start weeks), and per-item created/completed/updated classification
@@ -370,7 +370,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   journal entry created today shows under Today and This Week, not Last Week, which correctly
   reads all-zero/"Nothing here yet"), and clicking a Recap row for both a to-do and a meeting
   note expands that exact item in its own panel below, zero console/page errors.
-- ✅ **Mobile Hub** (pending -- PR number not yet known; previous PR was #190) -- the last
+- ✅ **Mobile Hub** (#191) -- the last
   §6.5 item. Legacy's real `hub.html` (legacy/hub.html) is a wholly separate mobile-native page,
   required-account-sign-in-gated, built specifically to bridge a phone's otherwise-empty local
   storage with a desktop's data via Firestore sync. `web/` has neither piece of infra that
@@ -468,7 +468,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
 (#150–#158, #164, #172, #174), **§6.4
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5
-complete** (#176, #179, #181, #185, #187, #189, and Mobile Hub pending its own PR number) — all
+complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed — see each section's own `Status:` line for the
 full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
