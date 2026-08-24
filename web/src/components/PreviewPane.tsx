@@ -1,6 +1,7 @@
 import { useOutlineStore } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
+import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): Preview Mode. A read-only rendered view of
@@ -30,9 +31,13 @@ export function PreviewPane() {
             {node.text ? <NodeText text={node.text} /> : <span style={{ color: t.mutedText }}>(empty)</span>}
           </div>
           {node.note && (
-            <div style={{ fontSize: 13, color: t.mutedText, fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
-              {node.note}
-            </div>
+            <div
+              style={{ fontSize: 13, color: t.mutedText, fontStyle: 'italic' }}
+              // node.note is real HTML now (Phase 6.3 rich-text slice) -- sanitized again here
+              // (belt-and-suspenders on top of the sanitize-on-write in NotePanel.tsx) since
+              // this is the one place it's rendered via dangerouslySetInnerHTML.
+              dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(node.note) }}
+            />
           )}
           {node.codeBlock && (
             <pre

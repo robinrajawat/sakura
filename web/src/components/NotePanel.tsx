@@ -2,12 +2,33 @@ import { useEffect, useRef } from 'react';
 import { useNotePanelStore, NOTE_PANEL_WIDTH } from '../store/notePanelStore';
 import { useOutlineStore, CODE_LANGS } from '../store/outlineStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
+import { stripHtmlToText } from '../utils/stripHtmlToText';
+
+const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
+  { cmd: 'bold', label: 'B', title: 'Bold' },
+  { cmd: 'italic', label: 'I', title: 'Italic' },
+  { cmd: 'underline', label: 'U', title: 'Underline' },
+  { cmd: 'strikeThrough', label: 'S', title: 'Strikethrough' },
+  { cmd: 'insertUnorderedList', label: '•', title: 'Bullet list' },
+  { cmd: 'insertOrderedList', label: '1.', title: 'Numbered list' }
+];
 
 /**
  * Phase 6.3 slice, part 2 (UI half of the store slice in notePanelStore.ts -- see that file's
  * header comment for full scope/what's deferred). Floating, draggable, maximizable panel with
  * Note/Code tabs, replacing OutlineTree.tsx's old inline per-row textareas (Phase 3). Renders
  * nothing when closed.
+ *
+ * Note body is a real contenteditable rich-text editor (legacy/index.html's `#note-editor` --
+ * bold/italic/underline/strike/bullet-list/numbered-list via `document.execCommand`, same six
+ * `data-cmd` buttons as legacy's `#note-toolbar`, legacy/index.html:7256-7262). `node.note` now
+ * stores sanitized HTML rather than Phase 3's plain text -- every commit runs through
+ * `sanitizeRichHtml` first, matching legacy's own commit path. Content is set imperatively via
+ * a ref (not React-controlled -- `contentEditable` + React state fight each other on every
+ * keystroke) whenever the open node changes, same pattern as legacy's `openNodePanel` setting
+ * `editor.innerHTML` once on open. Still deferred: images, tables, links, timestamps, AI
+ * rewrite/summarise, backlinks section -- each its own later slice.
  */
 export function NotePanel() {
   const open = useNotePanelStore((s) => s.open);
@@ -31,8 +52,23 @@ export function NotePanel() {
   const dragState = useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(
     null
   );
+  const noteEditorRef = useRef<HTMLDivElement>(null);
 
   const node = nodeId !== null ? nodes.find((n) => n.id === nodeId) ?? null : null;
+
+  // Imperatively (re)sync the contenteditable's content whenever the open node or tab changes --
+  // NOT React-controlled, since re-rendering innerHTML on every keystroke would fight the
+  // browser's own cursor position. Matches legacy's openNodePanel setting editor.innerHTML once.
+  useEffect(() => {
+    if (!open || mode !== 'note' || !node || !noteEditorRef.current) return;
+    noteEditorRef.current.innerHTML = sanitizeRichHtml(node.note || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mode, node?.id]);
+
+  const commitNote = () => {
+    if (!node || !noteEditorRef.current) return;
+    setNote(node.id, sanitizeRichHtml(noteEditorRef.current.innerHTML));
+  };
 
   // Esc closes, matching legacy's own note-panel-close tooltip ("Close (Esc)").
   useEffect(() => {
@@ -69,7 +105,7 @@ export function NotePanel() {
 
   if (!open || !node) return null;
 
-  const hasNoteText = !!node.note?.trim();
+  const hasNoteText = !!stripHtmlToText(node.note).trim();
   const hasCode = !!node.codeBlock?.code?.trim();
 
   const panelStyle: React.CSSProperties = maximized
@@ -169,27 +205,69 @@ export function NotePanel() {
       <div style={{ padding: '10px 14px 6px', fontSize: 11, color: t.hintText, flexShrink: 0 }}>
         {String(node.text || '').trim().slice(0, 60)}
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 14px 14px' }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '0 14px 14px', display: 'flex', flexDirection: 'column' }}>
         {mode === 'note' ? (
-          <textarea
-            key={node.id}
-            defaultValue={node.note}
-            autoFocus
-            onBlur={(e) => setNote(node.id, e.currentTarget.value)}
-            style={{
-              width: '100%',
-              height: maximized ? '100%' : 180,
-              resize: maximized ? 'none' : 'vertical',
-              font: 'inherit',
-              fontSize: 13,
-              border: `1px solid ${t.border}`,
-              borderRadius: 4,
-              padding: 8,
-              background: t.editBg,
-              color: t.text,
-              boxSizing: 'border-box'
-            }}
-          />
+          <>
+            <div
+              style={{
+                display: 'flex',
+                gap: 2,
+                marginBottom: 6,
+                flexShrink: 0,
+                borderBottom: `1px solid ${t.border}`,
+                paddingBottom: 6
+              }}
+            >
+              {RICH_TEXT_COMMANDS.map(({ cmd, label, title }) => (
+                <button
+                  key={cmd}
+                  type="button"
+                  title={title}
+                  // mousedown+preventDefault, not click -- click would lose the current text
+                  // selection to the button's own focus first, same reasoning as legacy's
+                  // note-toolbar handlers (legacy/index.html:33771 area).
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    noteEditorRef.current?.focus();
+                    document.execCommand(cmd);
+                  }}
+                  style={{
+                    border: `1px solid ${t.border}`,
+                    background: t.toolbarButtonBg,
+                    color: t.text,
+                    borderRadius: 4,
+                    minWidth: 24,
+                    height: 24,
+                    fontSize: 12,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div
+              key={node.id}
+              ref={noteEditorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={commitNote}
+              style={{
+                flex: 1,
+                width: '100%',
+                minHeight: maximized ? undefined : 180,
+                overflow: 'auto',
+                font: 'inherit',
+                fontSize: 13,
+                border: `1px solid ${t.border}`,
+                borderRadius: 4,
+                padding: 8,
+                background: t.editBg,
+                color: t.text,
+                boxSizing: 'border-box'
+              }}
+            />
+          </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <select
