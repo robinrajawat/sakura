@@ -183,13 +183,14 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `0e9c44f` ("feat(export): plain
-text (.txt) and clipboard export (§6.6) (#196)"), with this PR's
-Presenter Mode depth slice about to land on top. §6.5 is fully
-complete -- all six Hub items landed. §6.6 (Preview, Presenter & Export)
-is now in progress: Preview TOC/scroll-spy/progress bar (#194), plain
-text/clipboard export (#196), and Presenter Mode depth (this PR) are all
-landed.
+As of this writing: `main` is at commit `786acaa` ("feat(presenter):
+timer, blackout, laser pointer, overview grid, closing slide (§6.6)
+(#197)"), with this PR's Word export heading-styles/TOC slice about to
+land on top. §6.5 is fully complete -- all six Hub items landed. §6.6
+(Preview, Presenter & Export) is now in progress: Preview TOC/scroll-
+spy/progress bar (#194), plain text/clipboard export (#196), Presenter
+Mode depth (#197), and Word export heading styles + TOC field (this PR)
+are all landed.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -439,12 +440,30 @@ all six items landed:
   the closing slide, `Home` returns, `B` toggles blackout, the laser
   toggle + mousemove renders the tracking dot -- zero console/page
   errors.
+- Word export: heading styles + TOC field landed in this PR: a node
+  with `styles.heading` set now renders as a genuine Word heading
+  paragraph (`HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat
+  indented line, and the export opens with a real Word TOC field
+  (`TableOfContents`, `headingStyleRange: '1-6'`) -- the same
+  field-based mechanism Word's own "Insert > Table of Contents"
+  produces. Shows placeholder text until the reader updates the field in
+  Word (F9 or "Update Table") -- real Word TOC-field behavior, not a
+  bug. A heading node's checkbox prefix/depth-indent are dropped for
+  that paragraph since a heading style already carries its own visual
+  weight. Verified end-to-end in real headless Chrome: typed a
+  markdown-style `# heading` prefix (outlineStore.ts's existing
+  auto-convert-to-heading logic), exported .docx, unzipped the result
+  and confirmed `word/document.xml` contains a real `Heading1` style
+  reference, a TOC field code, and the heading's own text -- a
+  well-formed OOXML package, zero console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
-  blocked/deferred); Word/PDF/PowerPoint export fidelity upgrades
-  (heading styles, TOC, Decision Log cards, rich formatting, image
-  embedding, branding); Sakura Document (`.sakura.json`) format;
-  Word/OPML import. §6.7 onward not started.
+  blocked/deferred); Word export's images/tables/Decision Log
+  cards/Notepad-Q&A sections/branding; PDF fidelity (cover page, margins
+  config, footer, fold-state/notes/decision-card rendering); PowerPoint
+  fidelity (dedicated Q&A/Notepad slides, overflow "(cont'd)" slides,
+  images); Sakura Document (`.sakura.json`) format; Word/OPML import.
+  §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64
