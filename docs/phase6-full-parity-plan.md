@@ -131,14 +131,41 @@ export, node-linking), Decision Log (node-linking, structured fields, card rende
 export), Diagrams (draw.io integration), Mind Map, Files (real upload/storage, node-linking,
 download), Remarks (date field, node-linking, export inclusion).
 
+**Status: in progress.** 10 of 11 items landed:
+1. ✅ Note/Code floating panel shell (#150)
+2. ✅ Note rich-text editor (#151)
+3. ✅ Note editor link insert/edit (#152)
+4. ✅ Note editor image insert from file (#153)
+5. ✅ Note editor table insert (#154)
+6. ✅ Code panel drag-resize handle (#155)
+7. ✅ Note panel backlinks (#164) — deferred mid-session pending the mention infrastructure
+   itself, which turned out to be substantial enough to track as its own phase (§6.4 below,
+   #159-#161/#163); once that infrastructure existed, closing this item out was a single
+   focused slice: direct port of legacy's own `renderBacklinkPanel` (legacy/index.html:20160-
+   20181) — renders at the bottom of the Note tab only, hidden entirely when there are no
+   referrers, each entry an 80-char truncated preview with any `[[mention]]` italicized (via a
+   new pure `formatBacklinkPreview` helper in `core/backlinks.ts`), click navigates to the
+   referrer and closes the panel. Deliberately not ported: legacy's collapsed-by-default
+   badge/toggle system, since this project's Note panel has no other collapsed-by-default
+   section to be consistent with — the section just always shows when non-empty.
+8. ✅ Pad Q&A search/filter (#156)
+9. ✅ Pad Decision Log status + Open filter (#157)
+10. ✅ Pad Remarks date field + newest-first order (#158)
+11. ❌ Diagrams, Mind Map, Files — not started. Files in particular needs scoping first: what
+    "real upload/storage" realistically means in a browser-only app with no backend.
+
 ### 6.4 — Backlinks & `#tags` mentions
 `[[@mention]]` backlinks: not built at all yet (Tags themselves shipped in the previous PRs
 (#118/#119) — this phase is the remaining "Backlinks" half of that checklist section).
 
-**Status: complete.** All four slices landed:
-- `[[wikilink]]` rendering as a clickable link, with click-to-navigate (#160) — the PR that
-  landed this labeled itself "Phase 6.3" in its commit message, which was a mislabel; per this
-  plan's own section numbering it's §6.4 work. Noted here so the discrepancy doesn't propagate.
+**Status: complete.** Four slices landed, the general mention infrastructure used throughout the
+outline (§6.3 item 7's own Note-panel-specific display of it, #164, is tracked under §6.3 above
+since that's its actual scope per this phase's own listing there):
+- Pure query/mutation layer (#159) — `getBacklinkRefs`/`getBacklinksTo`/`cleanupBacklinksFor`/
+  `renameBacklinksFor`/`findNodeByText` in `core/backlinks.ts`, direct ports of legacy's own
+  functions (legacy/index.html:20087-20142). No UI wired to any of it yet at this point — this
+  slice is the tested logic layer the next three build on.
+- `[[wikilink]]` rendering as a clickable link, with click-to-navigate (#160).
 - `@`-mention autocomplete for inserting a reference while editing (#161) — direct port of
   legacy's own `_atState`/`openAtSuggest`/`handleAtInput`/`commitAtSuggest`
   (legacy/index.html:20185-20289, 26956-26959), adapted for this project's uncontrolled inline-
@@ -154,13 +181,6 @@ download), Remarks (date field, node-linking, export inclusion).
   20871-20876). Verified end-to-end in a real browser: renaming a mentioned node live-updates
   the pill elsewhere; deleting it cleanly strips the mention while the referencing node's own
   text stays intact.
-- Note panel Backlinks section (#164) — direct port of legacy's own `renderBacklinkPanel`
-  (legacy/index.html:20160-20181): renders at the bottom of the Note tab only, hidden entirely
-  when there are no referrers, each entry an 80-char truncated preview with any `[[mention]]`
-  italicized (via a new pure `formatBacklinkPreview` helper in `core/backlinks.ts`), click
-  navigates to the referrer and closes the panel. Deliberately not ported: legacy's collapsed-
-  by-default badge/toggle system, since this project's Note panel has no other collapsed-by-
-  default section to be consistent with — the section just always shows when non-empty.
 
 ### 6.5 — Hub full depth
 To-Dos (priority/status/due-dates/subtasks/repeat/filtering/sorting/bulk-actions/tags/PDF
@@ -226,10 +246,11 @@ Every item below, checked in that order, before any cutover PR is even opened:
 
 ## Status
 
-**§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), and **§6.4 complete**
-(#160–#164, all four backlinks-groundwork slices) — see each section's own `Status:` line for
-the full breakdown. §6.3, §6.5 onward not started. Update each phase's own
-section above with a `Status:` line and PR numbers as work lands, the same way
+**§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 in progress**
+(#150–#158, #164 — 10 of 11 items landed; only Diagrams/Mind Map/Files remain), and **§6.4
+complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on) — see each
+section's own `Status:` line for the full breakdown. §6.5 onward not started. Update each
+phase's own section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
