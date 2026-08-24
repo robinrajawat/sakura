@@ -233,6 +233,24 @@ Journal (editing, tags, rich text, calendar popover, PDF export, search), Librar
 tag filtering, rich text, images), Recap (Today/This Week/Last Week grouping, click-to-jump,
 document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
 
+**Status: in progress.**
+- ✅ **To-Dos, first piece** (#176) — priority/status/due-dates/repeat/subtasks, all wired to
+  fields that were already real on the ported `Todo` type (`state/hubTodos.ts`) but had no UI
+  until now, plus the already-ported `nextRepeatDate` (`hubTodos.ts`) and subtask CRUD
+  (`addSubtaskCore`/`toggleSubtaskCore`/`removeSubtaskCore`, `state/hubSubtasks.ts`). Cycle
+  order matches legacy's own real chip cycles exactly; repeat and subtasks stay mutually
+  exclusive; checking a repeating task advances its due date instead of marking it done,
+  matching legacy's real `completeTaskAnimated` exactly (minus the undo toast -- no toast system
+  in this project yet). Each row gets an inline "Details" toggle rather than legacy's own modal
+  task-detail sheet, same first-pass "simpler chrome" convention as every other Pad/Hub slice.
+  Real headless-Chrome testing caught and fixed a genuine crash before merge (not just confirmed
+  the build): the subtask-draft input's `onChange` read `e.currentTarget.value` inside a
+  `setState` functional updater, which React 18 StrictMode's double-invocation-for-purity turns
+  into a null-reference throw that unmounts the whole panel -- fixed by capturing the value
+  synchronously outside the updater closure.
+- ❌ Remaining: To-Dos' filtering/sorting/bulk-actions/tags/PDF export/Version History/Share/
+  due-date reminder notifications; Meeting Notes; Journal; Library; Recap; Mobile Hub.
+
 ### 6.6 — Preview, Presenter & Export
 Preview: TOC, scroll-spy, progress bar. Presenter mode: laser pointer, blackout, grid, timer,
 floating notes, Whiteboard, Audience View, closing slide. Word/PDF/PowerPoint exports up to
@@ -291,11 +309,12 @@ Every item below, checked in that order, before any cutover PR is even opened:
 ## Status
 
 **§6.1 complete** (#129–#130, #132–#138), **§6.2 complete** (#140–#148), **§6.3 complete**
-(#150–#158, #164, #172, #174) and **§6.4
-complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on) — see each
-section's own `Status:` line for the full breakdown. §6.5 onward not started. Update each
-phase's own section above with a `Status:` line and PR numbers as work lands, the same way
-`docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
+(#150–#158, #164, #172, #174), **§6.4
+complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), and **§6.5 in
+progress** (#176 — To-Dos depth, first piece) — see each section's own `Status:` line for the
+full breakdown. §6.6 onward not started. Update each phase's own section above with a `Status:`
+line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
+"Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
 

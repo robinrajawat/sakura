@@ -93,7 +93,7 @@ separately-scoped follow-up building on this foundation.
 | Feature | Status | Note |
 |---|---|---|
 | Meeting Notes | ⚠️ | Title/date/attendees/notes CRUD (Phase 4); no templates, action items, Promote-to-To-Do, PDF export, Version History, Share/Import |
-| To-Dos | ⚠️ | Create/toggle/delete only (Phase 4, wraps real ported hubTodos.ts); no priority/status/due-dates/subtasks/repeat/filtering/sorting/bulk-actions/AI/tags/PDF export/Version History/Share |
+| To-Dos | ⚠️ | Priority/status/due-dates/repeat/subtasks all built (§6.5, #176) via an inline per-row details toggle; no filtering/sorting/bulk-actions/AI/tags/PDF export/Version History/Share |
 | Journal | ⚠️ | Create/delete + mood (Phase 4, wraps real ported hubJournal.ts); no editing, tags, rich text, AI rewrite, calendar popover, PDF export, Version History, search |
 | Library | ⚠️ | Title/URL/description CRUD (Phase 4); no favorites, tag filtering, rich text, images, AI, Version History |
 | Recap | ⚠️ | Basic counts + recent-N lists derived from the other 4 stores (Phase 4); no Today/This Week/Last Week grouping, no click-to-jump, no AI summarize, no document-level activity grouping (Documents & Tabs now exists as of Phase 5, but Recap itself hasn't been updated to read from it yet) |
