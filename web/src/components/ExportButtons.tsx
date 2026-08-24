@@ -7,6 +7,8 @@ import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
 import { parseOpmlToTreeNodesCore } from '../utils/parseOpml';
 import { parseSakuraDocumentCore } from '../utils/parseSakuraDocument';
+import { parseDocxHtmlToTreeNodesCore } from '../utils/parseDocxHtml';
+import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
@@ -66,6 +68,7 @@ export function ExportButtons() {
   const qaItems = usePadStore((s) => s.qaItems);
   const opmlFileInputRef = useRef<HTMLInputElement>(null);
   const sakuraDocFileInputRef = useRef<HTMLInputElement>(null);
+  const docxFileInputRef = useRef<HTMLInputElement>(null);
 
   // OPML import -- direct port of legacy's real `importOpmlText` (legacy/index.html:24581-
   // 24601), the read side of the already-ported `serializeOpmlCore`/`exportOpml`. Always lands
@@ -148,6 +151,54 @@ export function ExportButtons() {
       multiSelectedIds: [],
       selectionAnchorId: parsed.nodes[0]?.id ?? null,
       nextId: Math.max(useOutlineStore.getState().nextId, maxId + 1)
+    });
+  }
+
+  // Word (.docx) import -- direct port of legacy's real `importDocxFile` (legacy/index.html:
+  // 24688-24731), minus the AI-restructure fallback branch (§6.9 not started -- `web/` has no
+  // AI capability to fall back to at all yet) and the tree-connector-character detection (see
+  // `parseDocxHtml.ts`'s own header for why). `mammoth` (npm, MIT-licensed, pinned to the same
+  // 1.11.0 version legacy loads from its CDN) converts the real .docx bytes to HTML exactly the
+  // way legacy's own browser build does; `parseDocxHtmlToTreeNodesCore` then walks that HTML
+  // into `{text,depth}` nodes via real heading/list/table structure. Always lands in a
+  // brand-new document, same convention every other import path in this file already uses --
+  // including the flat-list case (no heading structure found): legacy's own real behavior for a
+  // user with AI Capabilities turned off is to import the flat list anyway with an explanatory
+  // toast, not refuse the import, and that's the one real behavior this port can match without
+  // an AI pipeline to fall back to.
+  async function importDocx(file: File) {
+    let html: string;
+    try {
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer: buf });
+      html = result.value;
+    } catch {
+      return;
+    }
+    const parsed = parseDocxHtmlToTreeNodesCore(html);
+    if (!parsed.length) return;
+    newDocument();
+    let id = useOutlineStore.getState().nextId;
+    const mapped: OutlineNode[] = parsed.map((n) => ({
+      id: id++,
+      depth: n.depth,
+      text: n.text,
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    }));
+    rebuildParentIdsCore(mapped);
+    useOutlineStore.setState({
+      nodes: mapped,
+      selectedId: mapped[0]?.id ?? null,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: mapped[0]?.id ?? null,
+      nextId: id
     });
   }
 
@@ -444,6 +495,20 @@ export function ExportButtons() {
       />
       <button type="button" onClick={() => sakuraDocFileInputRef.current?.click()}>
         Import .sakura.json
+      </button>
+      <input
+        ref={docxFileInputRef}
+        type="file"
+        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = '';
+          if (file) importDocx(file);
+        }}
+      />
+      <button type="button" onClick={() => docxFileInputRef.current?.click()}>
+        Import .docx
       </button>
     </div>
   );

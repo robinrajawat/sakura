@@ -183,15 +183,19 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `1227f4f` ("feat(import): OPML
-import (§6.6) (#201)"), with this PR's Sakura Document export/import
-slice about to land on top. §6.5 is fully complete -- all six Hub items
-landed. §6.6 (Preview, Presenter & Export) is now in progress: Preview
-TOC/scroll-spy/progress bar (#194), plain text/clipboard export
-(#196), Presenter Mode depth (#197), Word export heading styles + TOC
-field (#198), PDF cover page (#199), PowerPoint Notepad/Q&A/closing
-slides (#200), OPML import (#201), and Sakura Document export/import
-(this PR) are all landed. Per the user's explicit "We have to complete
+As of this writing: `main` is at commit `fee4e79` ("feat(export):
+Sakura Document (.sakura.json) export/import (§6.6) (#202)"), with
+this PR's Word (.docx) import slice about to land on top. §6.5 is
+fully complete -- all six Hub items landed. §6.6 (Preview, Presenter &
+Export) is now in progress: Preview TOC/scroll-spy/progress bar
+(#194), plain text/clipboard export (#196), Presenter Mode depth
+(#197), Word export heading styles + TOC field (#198), PDF cover page
+(#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
+(#201), Sakura Document export/import (#202), and Word (.docx) import
+(this PR) are all landed. `mammoth` (npm, pinned to 1.11.0, the same
+version legacy's CDN loads) is a new runtime dependency for this PR --
+already listed in `THIRD-PARTY-NOTICES.md` at that exact version, no
+doc change needed there. Per the user's explicit "We have to complete
 everything so just keep going" (this session, after the 6-PR status
 check-in), work continues autonomously through the rest of §6.6's
 remaining items -- no further check-in needed before picking up the
@@ -510,7 +514,7 @@ all six items landed:
   tree, and confirmed via the actual persisted `localStorage` doc
   record (after the 800ms debounced autosave) that every field landed
   correctly, zero console/page errors.
-- Sakura Document (`.sakura.json`) export/import landed in this PR:
+- Sakura Document (`.sakura.json`) export/import landed in #202:
   direct port of legacy's real `exportSakuraDocumentFile`/
   `importSakuraDocumentFile`, scoped to what's genuinely real and
   document-scoped in `web/` today -- the outline itself, full-fidelity
@@ -537,6 +541,27 @@ all six items landed:
   `localStorage` doc record -- `styles.heading` preserved, node ids
   preserved exactly, `parentId` correctly rebuilt, zero console/page
   errors.
+- Word (.docx) import landed in this PR: direct port of legacy's real
+  `importDocxFile`/`parseDocxHtmlToTreeNodes`. `mammoth` (npm, pinned
+  to 1.11.0, matching legacy's own CDN version, already in
+  `THIRD-PARTY-NOTICES.md`) converts real `.docx` bytes to HTML the
+  same way legacy's browser build does; `parseDocxHtmlToTreeNodesCore`
+  (`utils/parseDocxHtml.ts`) walks that HTML into `{text,depth}` nodes
+  via real heading/list/table structure, matching legacy's stack-based
+  nesting logic exactly. Always lands in a brand-new document. NOT
+  ported: the AI-restructure fallback for a flat wall of text (§6.9
+  not started -- legacy's own real AI-off behavior is to import the
+  flat list anyway with a toast, which is the one behavior this port
+  matches) and the tree-connector-character (`│ ├─ └─`) detection
+  fallback (hands off to `parseTextToTreeNodes`/smart-paste, neither
+  ported to `web/` at all -- checked directly, zero hits). Verified
+  end-to-end in real headless Chrome with an actual `.docx` file (built
+  via the already-installed `docx` export library, so a real OOXML
+  round-trip, not synthetic HTML): imported a two-level heading
+  document, confirmed all four nodes render with correct text, and
+  confirmed via the persisted `localStorage` doc record that depths
+  (`[0,1,1,2]`) and `parentId` linking are exactly correct -- zero
+  console/page errors.
 - Still open in §6.6: Presenter Mode's floating Notes/Q&A, Whiteboard
   mirroring, and Audience View/dual-screen (see above for why each is
   blocked/deferred); Word export's images/tables/Decision Log
@@ -544,9 +569,7 @@ all six items landed:
   (margins config, footer, fold-state/notes/decision-card rendering --
   currently a flat node list, not rendered from a Preview-equivalent);
   PowerPoint's remaining fidelity gaps (overflow "(cont'd)" slides,
-  images, decision cards, branding); Word import (needs a new
-  document-parsing dependency, unlike OPML/Sakura Document's plain
-  XML/JSON). §6.7 onward not started.
+  images, decision cards, branding). §6.7 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

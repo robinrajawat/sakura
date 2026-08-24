@@ -595,11 +595,33 @@ format, Word/OPML import.
   `.sakura.json`, re-imported the same file, and confirmed full round-trip fidelity via the
   actual persisted `localStorage` doc record -- `styles.heading` preserved, node ids preserved
   exactly (not remapped), `parentId` correctly rebuilt -- zero console/page errors.
-- Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word;
-  PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
+- ✅ **Word (.docx) import.** Direct port of legacy's real `importDocxFile`/
+  `parseDocxHtmlToTreeNodes` (legacy/index.html:24604-24731). `mammoth` (npm, MIT/BSD-2-Clause,
+  pinned to the same 1.11.0 version legacy loads from its CDN -- already listed in
+  `THIRD-PARTY-NOTICES.md` at that exact version) converts the real `.docx` bytes to HTML the
+  same way legacy's own browser build does; `parseDocxHtmlToTreeNodesCore`
+  (`utils/parseDocxHtml.ts`) then walks that HTML into `{text,depth}` nodes via real
+  heading/list/table structure, matching legacy's stack-based nesting logic exactly (headings
+  push/pop a depth stack by relative level, list items nest under their own `<ul>`/`<ol>`,
+  tables become one row per first-cell text with extra cells one level deeper, an image-only
+  paragraph becomes a `[image]` placeholder leaf). Wired into a new "Import .docx" button next to
+  the OPML/Sakura Document import buttons; always lands in a brand-new document, matching every
+  other import path built this session. Deliberately NOT ported: the AI-restructure fallback for
+  a flat wall of text with no heading styles (§6.9 not started -- `web/` has no AI capability to
+  fall back to at all; legacy's own real behavior for an AI-off user is to import the flat list
+  anyway with an explanatory toast, which is the one behavior this port matches, rather than
+  inventing a new one) and the tree-connector-character (`│ ├─ └─`) detection fallback (hands off
+  to legacy's own `parseTextToTreeNodes`/smart-paste, neither of which is ported to `web/` at all
+  yet -- checked directly, zero hits anywhere in `web/src`). Verified end-to-end in real headless
+  Chrome with an actual `.docx` file (built via the already-installed `docx` export library, so
+  the test exercises a real OOXML round-trip, not synthetic HTML): imported a two-level heading
+  document, confirmed the new document renders all four nodes with the correct text, and
+  confirmed via the actual persisted `localStorage` doc record that depths (`[0,1,1,2]`) and
+  `parentId` linking are both exactly correct -- zero console/page errors.
+- Still not started: images/tables/decision-log cards/Notepad-Q&A sections/branding in Word
+  export; PDF's remaining fidelity gaps (margins config, footer, fold-state/notes/decision-card
   rendering -- currently a flat node list, not rendered from a Preview-equivalent); PowerPoint's
-  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding); Word
-  import (needs a new document-parsing dependency, unlike OPML/Sakura Document's plain JSON/XML).
+  remaining fidelity gaps (overflow "(cont'd)" slides, images, decision cards, branding).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -656,7 +678,7 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-Sakura Document export/import landing in this PR) — see each section's own `Status:` line for the
+#202, Word (.docx) import landing in this PR) — see each section's own `Status:` line for the
 full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
