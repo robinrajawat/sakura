@@ -9,6 +9,8 @@ import { useNotePanelStore } from '../store/notePanelStore';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { findNodeByText } from '../core/backlinks';
 import { resolveRowHighlightStyle } from '../state/rowHighlight';
+import { usePadStore } from '../store/padStore';
+import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisionLogQueries';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -125,6 +127,7 @@ export function OutlineTree() {
   const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
   const rowDensity = compactRows ? 0.78 : 1;
+  const decisions = usePadStore((s) => s.decisions);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
   // Phase 6.2 node hover toolbar. Tracks only the CURRENTLY-hovered row's id, matching legacy's
   // own default hoverToolbarActions=['child','above','below'] -- the fuller, user-configurable
@@ -877,6 +880,52 @@ export function OutlineTree() {
                 }}
               >
                 +{countDescendants(nodes, idx)}
+              </span>
+            )}
+            {/* Decision Log badges -- matches legacy's own real `node-note-dot`/`node-dlog-dot`
+                pair exactly: a dot on the node's own row whenever a decision log is anchored to
+                it (unconditional on that node's own collapsed state -- its own row is always
+                visible regardless), plus a separate rolled-up dot when the node is folded and
+                `subtreeHasDecisionCore` finds one anywhere among its *descendants* (which the
+                collapse hides). Both can show at once -- a folded node that itself has a decision
+                AND has a descendant with one. Deliberately non-interactive for this slice --
+                legacy's own version opens the Pad panel to the Decision Log tab and expands the
+                specific entry, but `web/`'s Pad panel tab state is still local `useState` inside
+                PadPanel.tsx (see that file), not lifted into a shared store the tree could reach
+                yet. Click-to-open is a real, separately-scoped follow-up once that lift happens --
+                every other Pad-domain dot (files/remarks/diagrams/Q&A/meetings/to-dos/mind map)
+                has the exact same gap and will want the same lift, so it's not worth doing just
+                for this one dot. */}
+            {decisionLogForNodeCore(decisions, node.id) && (
+              <span
+                title="This node has a decision log"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  marginLeft: 6,
+                  color: t.dropIndicator
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </span>
+            )}
+            {isCollapsed && hasChildren && subtreeHasDecisionCore(nodes, decisions, idx) && (
+              <span
+                title="This collapsed branch contains a decision log"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  marginLeft: 6,
+                  color: t.dropIndicator
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
               </span>
             )}
             {node.tags.map((tag) => (
