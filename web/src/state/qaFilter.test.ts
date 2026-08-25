@@ -6,6 +6,7 @@ const item = (overrides: Partial<QaItem> = {}): QaItem => ({
   id: 1,
   question: 'What is the deploy cadence?',
   answer: 'Weekly on Thursdays',
+  anchorNodeId: null,
   ...overrides
 });
 

@@ -11,6 +11,8 @@ import { findNodeByText } from '../core/backlinks';
 import { resolveRowHighlightStyle } from '../state/rowHighlight';
 import { usePadStore } from '../store/padStore';
 import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisionLogQueries';
+import { useInlineExpandStore } from '../store/inlineExpandStore';
+import { isInlineExpanded } from '../state/inlineExpand';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -129,6 +131,22 @@ export function OutlineTree() {
   const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
   const rowDensity = compactRows ? 0.78 : 1;
   const decisions = usePadStore((s) => s.decisions);
+  // §6.7 slice: inline note/remark/Q&A previews -- direct port of legacy's own real
+  // `alwaysExpandInlineEnabled`/`inlineExpand*NodeIds` mechanism (legacy/index.html:8276-8277,
+  // 20326-20446): a document-wide default for whether every node's preview shows automatically,
+  // with a per-node, per-domain override tracked as DEVIATION from that default (see
+  // `state/inlineExpand.ts`'s own header for the XOR). `remarks`/`qaItems` are read here (not
+  // just `decisions` above) because §6.7 also added `anchorNodeId` to both (`padStore.ts`'s own
+  // header), the prerequisite for filtering either list down to "belongs under this node."
+  const remarks = usePadStore((s) => s.remarks);
+  const qaItems = usePadStore((s) => s.qaItems);
+  const alwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.alwaysExpandInlineEnabled);
+  const noteExpandIds = useInlineExpandStore((s) => s.noteExpandIds);
+  const remarkExpandIds = useInlineExpandStore((s) => s.remarkExpandIds);
+  const qaExpandIds = useInlineExpandStore((s) => s.qaExpandIds);
+  const toggleNoteExpand = useInlineExpandStore((s) => s.toggleNoteExpand);
+  const toggleRemarkExpand = useInlineExpandStore((s) => s.toggleRemarkExpand);
+  const toggleQaExpand = useInlineExpandStore((s) => s.toggleQaExpand);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
   // Phase 6.2 node hover toolbar. Tracks only the CURRENTLY-hovered row's id, matching legacy's
   // own default hoverToolbarActions=['child','above','below'] -- the fuller, user-configurable
@@ -583,6 +601,12 @@ export function OutlineTree() {
         const isCollapsed = collapsedIds.has(node.id);
         const highlight = resolveRowHighlightStyle(rowHighlightStyle, isSelected, isMultiSelected, t.dropIndicator, t.selectedBg, t.multiSelectedBg);
         const showHighlightDot = rowHighlightStyle === 'dot' && (isSelected || isMultiSelected);
+        const hasNoteText = !!node.note?.trim();
+        const noteOpen = isInlineExpanded(alwaysExpandInlineEnabled, noteExpandIds, node.id);
+        const nodeRemarks = remarks.filter((r) => r.anchorNodeId === node.id);
+        const remarkOpen = isInlineExpanded(alwaysExpandInlineEnabled, remarkExpandIds, node.id);
+        const nodeQaItems = qaItems.filter((q) => q.anchorNodeId === node.id);
+        const qaOpen = isInlineExpanded(alwaysExpandInlineEnabled, qaExpandIds, node.id);
 
         return (
           <div key={node.id}>
@@ -961,6 +985,56 @@ export function OutlineTree() {
                 </svg>
               </span>
             )}
+            {/* Remark/Q&A dots -- matches legacy's own real `.node-remark-dot`/`.node-qa-dot`
+                (legacy/index.html:20326-20443's own class list). Unlike the decision-log dots
+                above, these ARE interactive right now: toggling an inline preview is fully
+                self-contained (`toggleRemarkExpand`/`toggleQaExpand`), no Pad-panel-tab-state
+                lift required the way "jump to the exact entry in the panel" would need. */}
+            {nodeRemarks.length > 0 && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleRemarkExpand(node.id);
+                }}
+                title={
+                  (nodeRemarks.length > 1 ? `This node has ${nodeRemarks.length} remarks — ` : 'This node has a remark — ') +
+                  (remarkOpen ? 'click to collapse' : 'click to expand inline')
+                }
+                style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6, color: t.dropIndicator, cursor: 'pointer' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </span>
+            )}
+            {nodeQaItems.length > 0 && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleQaExpand(node.id);
+                }}
+                title={
+                  (nodeQaItems.length > 1 ? `This node has ${nodeQaItems.length} Q&A items — ` : 'This node has a Q&A item — ') +
+                  (qaOpen ? 'click to collapse' : 'click to expand inline')
+                }
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: 6,
+                  width: 11,
+                  height: 11,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  borderRadius: '50%',
+                  border: `1.3px solid ${t.dropIndicator}`,
+                  color: t.dropIndicator,
+                  cursor: 'pointer'
+                }}
+              >
+                ?
+              </span>
+            )}
             {node.tags.map((tag) => (
               <span
                 key={tag}
@@ -1053,12 +1127,21 @@ export function OutlineTree() {
             >
               🔍
             </span>
+            {/* Note dot -- matches legacy's own real dual-purpose click exactly (legacy/
+                index.html:20333-20340): with note text present, a plain click toggles the
+                inline preview below (`toggleNoteExpand`) rather than opening the panel; with no
+                note text yet, there's nothing to preview, so it still opens the panel to add one
+                (unchanged from before this slice). */}
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'note');
+                if (hasNoteText) {
+                  toggleNoteExpand(node.id);
+                  return;
+                }
+                openNotePanel(node.id, false, !!node.codeBlock?.code?.trim(), 'note');
               }}
-              title={node.note ? 'Edit note' : 'Add note'}
+              title={hasNoteText ? (noteOpen ? 'Hide note preview' : 'Show note preview') : 'Add note'}
               style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
             >
               {node.note ? '📝' : '+note'}
@@ -1116,9 +1199,15 @@ export function OutlineTree() {
               </span>
             )}
           </div>
-          {node.note && (
+          {/* §6.7 slice -- gated on `noteOpen` (was unconditional whenever `node.note` was
+              truthy): matches legacy's own real toggle-visibility behavior, not just always-on.
+              Clicking the preview text itself still opens the Note panel for editing -- this
+              stays a read-only preview, not an inline contentEditable surface, matching this
+              component's existing pattern (legacy edits directly inline via contentEditable;
+              `web/`'s real rich-text editing surface is the dedicated Note panel). */}
+          {node.note && noteOpen && (
             <div
-              onClick={() => openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'note')}
+              onClick={() => openNotePanel(node.id, true, !!node.codeBlock?.code?.trim(), 'note')}
               style={{
                 paddingLeft: `${node.depth * 24 + 32}px`,
                 paddingBottom: 4,
@@ -1131,6 +1220,55 @@ export function OutlineTree() {
               {stripHtmlToText(node.note)}
             </div>
           )}
+          {/* Inline remark previews -- direct port of legacy's own real `.node-remark-line`
+              (legacy/index.html:20377-20410), scoped down to a read-only display (no inline
+              contentEditable text/person/date editing -- Remarks are edited via the Pad panel's
+              own Remarks tab, matching this project's "preview, not a second editing surface"
+              convention above). One line per remark anchored to this node, gated on `remarkOpen`
+              the same XOR-deviation-from-default toggle as notes. */}
+          {remarkOpen &&
+            nodeRemarks.map((r) => (
+              <div
+                key={r.id}
+                style={{
+                  paddingLeft: `${node.depth * 24 + 32}px`,
+                  paddingBottom: 4,
+                  fontSize: 13,
+                  color: t.mutedText,
+                  display: 'flex',
+                  gap: 6,
+                  alignItems: 'baseline'
+                }}
+              >
+                <span style={{ fontWeight: 600, color: t.text }}>{r.person || 'Anonymous'}</span>
+                <span style={{ fontSize: 11, color: t.hintText }}>{r.date}</span>
+                <span style={{ whiteSpace: 'pre-wrap' }}>{stripHtmlToText(r.text)}</span>
+              </div>
+            ))}
+          {/* Inline Q&A previews -- direct port of legacy's own real `.node-qa-line` (legacy/
+              index.html:20412-20445), same read-only-preview scoping as remarks above; edited
+              via the Pad panel's Q&A tab. */}
+          {qaOpen &&
+            nodeQaItems.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  paddingLeft: `${node.depth * 24 + 32}px`,
+                  paddingBottom: 4,
+                  fontSize: 13,
+                  color: t.mutedText
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 600, color: t.text }}>Q: </span>
+                  <span style={{ whiteSpace: 'pre-wrap' }}>{stripHtmlToText(item.question)}</span>
+                </div>
+                <div>
+                  <span style={{ fontWeight: 600, color: t.text }}>A: </span>
+                  <span style={{ whiteSpace: 'pre-wrap' }}>{item.answer ? stripHtmlToText(item.answer) : '(no answer yet)'}</span>
+                </div>
+              </div>
+            ))}
           {node.codeBlock && (
             <pre
               onClick={() => openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code')}

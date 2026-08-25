@@ -70,6 +70,7 @@ interface OutlinePrefs {
   editorReadingWidthEnabled?: unknown;
   editorReadingWidth?: unknown;
   rowHighlightStyle?: unknown;
+  alwaysExpandInlineEnabled?: unknown;
 }
 
 interface ResolvedOutlinePrefs {
@@ -82,6 +83,12 @@ interface ResolvedOutlinePrefs {
   editorReadingWidthEnabled: boolean;
   editorReadingWidth: number;
   rowHighlightStyle: RowHighlightStyle;
+  /** Document-wide default for whether every node's note/remark/Q&A inline preview shows
+   * automatically -- matches legacy's own real `alwaysExpandInlineEnabled` (legacy/index.html:
+   * 8277) exactly, including the default (`false`). The per-node `inlineExpandStore.ts` Sets
+   * track DEVIATION from this default, not "is expanded" directly -- see that store's own header
+   * for why, and `state/inlineExpand.ts`'s `isInlineExpanded` for the XOR that resolves them. */
+  alwaysExpandInlineEnabled: boolean;
 }
 
 /** Matches legacy's own real `setTreeIndentWidth` clamp (legacy/index.html:18991) exactly:
@@ -123,7 +130,8 @@ function loadOutlinePrefs(): ResolvedOutlinePrefs {
     editorScale: raw.editorScale === undefined ? 1 : clampEditorScale(raw.editorScale),
     editorReadingWidthEnabled: !!raw.editorReadingWidthEnabled,
     editorReadingWidth: raw.editorReadingWidth === undefined ? 900 : clampEditorReadingWidth(raw.editorReadingWidth),
-    rowHighlightStyle: clampRowHighlightStyle(raw.rowHighlightStyle)
+    rowHighlightStyle: clampRowHighlightStyle(raw.rowHighlightStyle),
+    alwaysExpandInlineEnabled: !!raw.alwaysExpandInlineEnabled
   };
 }
 
@@ -141,6 +149,7 @@ interface OutlinePrefsState extends ResolvedOutlinePrefs {
   setEditorReadingWidthEnabled: (on: boolean) => void;
   setEditorReadingWidth: (width: number) => void;
   setRowHighlightStyle: (style: RowHighlightStyle) => void;
+  setAlwaysExpandInlineEnabled: (on: boolean) => void;
 }
 
 export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
@@ -158,7 +167,8 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       editorScale: s.editorScale,
       editorReadingWidthEnabled: s.editorReadingWidthEnabled,
       editorReadingWidth: s.editorReadingWidth,
-      rowHighlightStyle: s.rowHighlightStyle
+      rowHighlightStyle: s.rowHighlightStyle,
+      alwaysExpandInlineEnabled: s.alwaysExpandInlineEnabled
     });
   }
 
@@ -198,6 +208,10 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
     },
     setRowHighlightStyle: (style) => {
       set({ rowHighlightStyle: clampRowHighlightStyle(style) });
+      persist();
+    },
+    setAlwaysExpandInlineEnabled: (on) => {
+      set({ alwaysExpandInlineEnabled: !!on });
       persist();
     }
   };

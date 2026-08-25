@@ -50,6 +50,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
   const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
   const setDepthGuideLines = useOutlinePrefsStore((s) => s.setDepthGuideLines);
+  const alwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.alwaysExpandInlineEnabled);
+  const setAlwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.setAlwaysExpandInlineEnabled);
   const setRowHighlightStyle = useOutlinePrefsStore((s) => s.setRowHighlightStyle);
 
   return (
@@ -216,6 +218,20 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             ))}
           </select>
           <div style={{ fontSize: 11, color: t.mutedText }}>How the selected row is highlighted.</div>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={alwaysExpandInlineEnabled}
+            onChange={(e) => setAlwaysExpandInlineEnabled(e.currentTarget.checked)}
+            aria-label="Always expand inline previews"
+          />
+          <span>
+            Always expand inline previews
+            <div style={{ fontSize: 11, color: t.mutedText }}>
+              Show every node's note/remark/Q&A preview automatically. Off by default -- click a node's own dot to expand just that one.
+            </div>
+          </span>
         </label>
       </div>
     </div>

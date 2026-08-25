@@ -183,9 +183,12 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `46379c0` ("feat(outline):
-Decision Log badges in the live editor (§6.7) (#225)"), with this
-session's next PR (`outline/depth-guide-lines`) about to open. #222
+As of this writing: `main` is at commit `b7e9e4c` ("feat(outline):
+depth guide lines in the live editor (§6.7) (#226)"), with this
+session's next PR (inline note/remark/Q&A previews) about to open.
+The user then explicitly asked to complete two specific remaining
+items: inline previews (this PR) and the `hideTreeLines=false`
+monospace-connector tree mode (still pending, next up). #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -299,6 +302,37 @@ positioned 1px `<span>` per ancestor depth, reusing `buildVertFlags`
 directly) gated on `depthGuideLines`, plus a new Settings checkbox.
 Verified in real headless Chrome across three depth levels, toggling
 on/off, and persistence across reload.
+
+Inline note/remark/Q&A previews and the `hideTreeLines=false`
+monospace-connector tree mode were picked up next -- the user
+explicitly named these two as what to complete. Inline previews
+(this PR): a real, persisted `alwaysExpandInlineEnabled` document-wide
+default (`outlinePrefsStore.ts`) plus a new session-only
+`inlineExpandStore.ts` holding the three per-node deviation Sets
+(`noteExpandIds`/`remarkExpandIds`/`qaExpandIds`) -- matching legacy's
+own real mechanism exactly: a node's Set membership tracks DEVIATION
+from the live default, not "is expanded" directly, resolved via a new
+pure `state/inlineExpand.ts`'s `isInlineExpanded` XOR. `OutlineTree.tsx`'s
+note preview (previously unconditional whenever `node.note` was
+truthy) is now correctly gated on this; real remark/Q&A dots + preview
+blocks were added alongside it. Needed real node-anchoring added to
+Remarks/Q&A first (`padStore.ts`'s `anchorNodeId`, the same shape
+Decision Log already has) -- the prerequisite for "does this belong
+under this node" at all. Two deliberate, documented divergences from a
+pixel-exact port: previews are READ-ONLY (click to open the real
+editing surface -- the Note panel for notes; Remarks/Q&A have none yet,
+matching the already-established Decision Log dot precedent) rather
+than legacy's inline `contentEditable`; and Q&A's own generic "+ New"
+now auto-anchors to the selected node (legacy's own version doesn't --
+only a separate right-click entry point this project hasn't built
+does), documented in `PadPanel.tsx`'s own header. Verified end-to-end
+in real headless Chrome, including the XOR itself (flipping the global
+default correctly flips every node not individually overridden while
+leaving overridden nodes exactly as left). Surfaced, did NOT cause or
+fix, an already-known pre-existing gap: `padStore.ts`'s entire content
+(all 7 Pad tabs) still isn't wired into `documentsStore.ts`'s save/load
+cycle, so newly added remarks/Q&A don't survive a reload; `node.note`
+is unaffected since it lives on the outline node itself.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
@@ -1105,8 +1139,8 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 through #225 all merged and their local branches deleted this
-session; `outline/depth-guide-lines` is the current one, about to
+#217 through #226 all merged and their local branches deleted this
+session; the inline-previews branch is the current one, about to
 open as a PR. No feature branches should remain open for
 review once this PR also merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy

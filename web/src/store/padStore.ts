@@ -40,17 +40,27 @@ export interface Decision {
   modifiedAt: number;
 }
 
+/** §6.7 slice: `anchorNodeId` links a Q&A item back to the outline node it was captured from --
+ * matches legacy's own real `sourceNodeId` (legacy/index.html:17971), just named consistently
+ * with this project's other anchored domains (Decision Log, Diagrams). Unlike Decision Log, many
+ * Q&A items can anchor to the same node -- legacy's own `addRemark`/per-node question creation
+ * never checks for an existing occupant, so neither does `addQaItem` below. */
 export interface QaItem {
   id: number;
   question: string;
   answer: string;
+  anchorNodeId: number | null;
 }
 
+/** §6.7 slice: `anchorNodeId` links a remark back to the outline node it was captured from --
+ * matches legacy's own real `Remark.anchorNodeId` (legacy/index.html:42375) exactly, including
+ * allowing many remarks per node (no one-per-node rule, unlike Decision Log). */
 export interface Remark {
   id: number;
   person: string;
   text: string;
   date: string;
+  anchorNodeId: number | null;
 }
 
 export interface FileRef {
@@ -114,9 +124,16 @@ interface PadState {
    * `diagramAnchor.ts`'s own `reorderDiagramsCore` directly rather than a near-duplicate, since
    * that function is already generic over any `{id}`-shaped list, not diagram-specific. */
   reorderDecision: (draggedId: string, targetId: string) => void;
-  addQaItem: (question: string, answer: string) => void;
+  /** `anchorNodeId` defaults to `null` (unanchored) -- matches the Pad panel's own generic
+   * "+ New" entry point (legacy's `addQaRow`, which never sets `sourceNodeId`). A node-anchored
+   * question goes through the same action with an explicit id, matching legacy's own
+   * `saveNodeQuestion`. */
+  addQaItem: (question: string, answer: string, anchorNodeId?: number | null) => void;
   removeQaItem: (id: number) => void;
-  addRemark: (person: string, text: string) => void;
+  /** `anchorNodeId` defaults to `null` -- unlike Q&A, legacy's own generic Remarks "+ New"
+   * (`addRemark`) DOES auto-anchor to the currently selected node; callers that want that
+   * behavior pass `selectedId` explicitly rather than this action guessing at selection. */
+  addRemark: (person: string, text: string, anchorNodeId?: number | null) => void;
   removeRemark: (id: number) => void;
   addFile: (name: string, size: number, dataUrl: string, mimeType: string) => void;
   removeFile: (id: number) => void;
@@ -142,9 +159,17 @@ interface PadState {
  *
  * §6.6 slice (docs/phase6-full-parity-plan.md): Decision Log is the first of these to get its
  * real legacy schema (`anchorNodeId`, node-linking, the one-decision-per-node rule) -- see the
- * `Decision` interface's own header above for the full story. Remarks/Q&A stay flat,
- * document-level lists for now; each is its own real, separately-scoped follow-up if still
- * wanted.
+ * `Decision` interface's own header above for the full story.
+ *
+ * §6.7 slice: Remarks and Q&A gained node-anchoring too (`anchorNodeId`, matching legacy's own
+ * `Remark.anchorNodeId`/`QaItem.sourceNodeId`), the prerequisite for the live outline tree's
+ * inline remark/Q&A previews (`OutlineTree.tsx`) -- a preview under a specific node needs to
+ * know WHICH node it belongs to. Unlike Decision Log, no one-per-node rule: legacy allows many
+ * remarks/questions anchored to the same node, so `addRemark`/`addQaItem` never check for an
+ * existing occupant. Still flat/deliberately smaller than legacy in every other respect: no
+ * anchor-picker UI for RE-anchoring an existing item (only creation-time anchoring), no
+ * Q&A section headers, no per-item structured `context` field Remarks has in legacy -- each a
+ * real, separately-scoped follow-up if still wanted.
  *
  * Phase 6.3 item 11 (docs/phase6-full-parity-plan.md): Files gained real upload/storage --
  * direct port of legacy's own `addFileAttachment` (legacy/index.html:41986-42004): read the
@@ -209,15 +234,15 @@ export const usePadStore = create<PadState>((set, get) => ({
     set({ decisions });
   },
 
-  addQaItem: (question, answer) => {
+  addQaItem: (question, answer, anchorNodeId = null) => {
     const { qaItems, nextId } = get();
-    set({ qaItems: [...qaItems, { id: nextId, question, answer }], nextId: nextId + 1 });
+    set({ qaItems: [...qaItems, { id: nextId, question, answer, anchorNodeId }], nextId: nextId + 1 });
   },
   removeQaItem: (id) => set({ qaItems: get().qaItems.filter((q) => q.id !== id) }),
 
-  addRemark: (person, text) => {
+  addRemark: (person, text, anchorNodeId = null) => {
     const { remarks, nextId } = get();
-    set({ remarks: [...remarks, { id: nextId, person, text, date: todayDateStr() }], nextId: nextId + 1 });
+    set({ remarks: [...remarks, { id: nextId, person, text, date: todayDateStr(), anchorNodeId }], nextId: nextId + 1 });
   },
   removeRemark: (id) => set({ remarks: get().remarks.filter((r) => r.id !== id) }),
 
