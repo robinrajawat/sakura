@@ -1877,7 +1877,66 @@ switch correctly, each showing only its own real sections while the
 others stay hidden; a value typed into one section's field survives
 switching away and back, confirming sections truly stay mounted;
 reopening Settings resets to the default Appearance tab -- zero
-console/page errors throughout. Remaining §6.10 slices: the Quick
-Assist UI shell plus an audited subset of real toggle commands, and
-Quick Assist's Global Search integration -- neither started yet.
+console/page errors throughout.
+
+Third §6.10 slice landed: the Quick Assist UI shell plus an audited
+command subset. New `state/quickAssist.ts` directly ports legacy's
+real `QA_COMMANDS`/`QA_ACTIONS` and their surrounding parse/match
+functions (`qaPhraseMatch`/`qaBestPhrase`/`qaParse`/
+`qaSuggestForBareVerb`/`qaParseActionsList`/
+`qaSuggestActionsForBareVerb`) -- but only the ids with a real,
+working `web/` equivalent today, found via an explicit per-id audit
+against every store/state module rather than a guess. Of legacy's 39
+`QA_COMMANDS` ids, 11 qualified: sidebar, dark/light mode,
+auto-rewrite, tree lines, compact rows, always-expand-inline, outline
+numbering, Quick Insert's icon-only-row and master toggle, plus Quick
+Assist's own new master toggle (`outlinePrefsStore.ts` gained
+`quickAssistEnabled`, matching legacy's real
+`featureQuickAssistEnabled` default of `true` -- legacy's own
+QA_COMMANDS list includes its own toggle too, so this isn't scope
+creep). Of legacy's 11 `QA_ACTIONS` ids, 9 qualified: new document,
+duplicate node, and all 7 AI capabilities §6.9 already built real
+orchestration for; the 2 settings-preset actions stay N/A, same as
+`outlinePrefsStore.ts`'s own prior note. New
+`components/QuickAssistBar.tsx` is the command box itself: a toolbar
+button and Ctrl/Cmd+K both open it (matches legacy's real `mod+k`
+binding exactly), typing filters to matching commands (capped at 6,
+legacy's own real limit) and actions (capped at 4, disabled-with-
+reason rather than hidden when `requiresSelection` and nothing is
+selected -- matches legacy's own real behavior of still rendering
+those rows, inert, instead of hiding them outright), ArrowUp/Down
+cycle the navigable rows with wraparound while skipping disabled ones
+(legacy's own real `qaEntries` never lists a disabled action row
+either), Enter executes the active row, Escape closes with no change.
+A new small Undo-toast (`Done: <label>` for actions, `Shown/Hidden:
+<label>` for commands, with a working Undo button whenever the effect
+genuinely reverses) stands in for legacy's real `showActionToast` --
+`web/` had no generic toast-with-undo affordance anywhere before this,
+built small and scoped to just this one component rather than a new
+app-wide system, matching this project's established
+`window.alert`/`window.confirm` convention for everything else. One
+deliberate deviation from legacy: an action failure shows the action's
+own real error message (e.g. "No AI provider key configured...")
+instead of legacy's generic "`<label>` cancelled" -- every other AI
+entry point in `web/` already surfaces its real error text via
+`window.alert(result.message)`, and swallowing it here would be a real
+loss for a first-run no-key case. New
+`components/QuickAssistSettings.tsx` adds the master enable toggle
+under Settings → Editing, alongside `QuickInsertSettings`. Verified
+end-to-end in real headless Chrome: Ctrl/Cmd+K opens and focuses the
+box; empty-query hint phrases render; typing a command phrase filters
+correctly; Enter executes, closes the box, and shows the right toast
+with a working Undo button that correctly reverts the change;
+reopening and pressing Escape closes with no change; running an
+action (duplicate-node) with a node selected shows a "Done:" toast; an
+unmatched query shows "No matching command"; the Settings toggle is
+present with the right label, and disabling it both hides the toolbar
+button and makes Ctrl/Cmd+K a no-op, matching legacy's own real
+`toggleQa()` guard -- zero console/page errors throughout, across
+every one of those checks. Remaining §6.10 slice: Quick Assist's
+Global Search integration (search-hit rows across Documents/Notes/
+Tags/Settings/Help, category-prefix scoping, the chip-mode category
+picker, fuzzy matching) -- not started yet, flagged in the plan doc as
+the largest remaining piece that may itself split further once
+scoped in detail.
 ```

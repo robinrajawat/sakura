@@ -41,6 +41,9 @@ import { suggestIconForSelection, suggestIconsForAllDocumentNodes } from './stat
 import { useIconPickerStore } from './store/iconPickerStore';
 import { IconPickerPopover } from './components/IconPickerPopover';
 import { summariseSelectionIntoParent } from './state/aiSummarise';
+import { useQuickAssistStore } from './store/quickAssistStore';
+import { QuickAssistBar } from './components/QuickAssistBar';
+import { useOutlinePrefsStore } from './store/outlinePrefsStore';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -207,11 +210,12 @@ export function App() {
   }
 
   // Global keyboard shortcuts -- matches legacy's real Ctrl/Cmd+Shift+O (generateOutline) /
-  // Ctrl/Cmd+Shift+R (restructureText) exactly (legacy/index.html's own SHORTCUTS map). Unlike
-  // OutlineTree.tsx's own undo/redo shortcut (scoped to that component's own onKeyDown, needing
-  // the tree container to hold DOM focus), these are real app-wide shortcuts in legacy, so this
-  // uses a document-level listener the same way OutlineTree.tsx's own context-menu Escape
-  // handling already does, just mounted here since neither AI action is tree-specific.
+  // Ctrl/Cmd+Shift+R (restructureText) / Ctrl/Cmd+K (toggleQa) exactly (legacy/index.html's own
+  // SHORTCUTS map, `mod+k` at legacy/index.html:27603). Unlike OutlineTree.tsx's own undo/redo
+  // shortcut (scoped to that component's own onKeyDown, needing the tree container to hold DOM
+  // focus), these are real app-wide shortcuts in legacy, so this uses a document-level listener
+  // the same way OutlineTree.tsx's own context-menu Escape handling already does, just mounted
+  // here since none of these three are tree-specific.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
       if ((e.key === 'o' || e.key === 'O') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
@@ -220,6 +224,11 @@ export function App() {
       } else if ((e.key === 'r' || e.key === 'R') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
         e.preventDefault();
         setRestructureDialogOpen(true);
+      } else if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        // Matches legacy's real toggleQa() guard: no-op while Quick Assist itself is off.
+        if (!useOutlinePrefsStore.getState().quickAssistEnabled) return;
+        e.preventDefault();
+        useQuickAssistStore.getState().toggleBox();
       }
     }
     document.addEventListener('keydown', onKeyDown);
@@ -337,6 +346,10 @@ export function App() {
             </button>
             {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
           </div>
+          {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist -- see
+              QuickAssistBar.tsx's own header for what this covers and what it deliberately
+              doesn't yet (search-hit rows, category scoping -- slice 4). */}
+          <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
         </>
       }
       tabBar={<DocumentTabs />}

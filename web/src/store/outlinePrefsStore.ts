@@ -79,6 +79,7 @@ interface OutlinePrefs {
   quickInsertEnabled?: unknown;
   quickInsertIconOnly?: unknown;
   quickInsertActions?: unknown;
+  quickAssistEnabled?: unknown;
 }
 
 interface ResolvedOutlinePrefs {
@@ -110,6 +111,12 @@ interface ResolvedOutlinePrefs {
    * legacy's own real `NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a))` reconciliation exactly).
    * Default: all 7. */
   quickInsertActions: QuickInsertActionId[];
+  /** §6.10 slice 3 (docs/phase6-full-parity-plan.md): matches legacy's real
+   * `featureQuickAssistEnabled` (the master on/off for Quick Assist, legacy/index.html:8277) —
+   * default `true`. Same field family as `quickInsertEnabled` above (Quick Insert's own master
+   * toggle); kept here rather than a new store since both are outline-editing preferences with
+   * the same persistence shape. */
+  quickAssistEnabled: boolean;
 }
 
 /** Matches legacy's own real `setTreeIndentWidth` clamp (legacy/index.html:18991) exactly:
@@ -165,7 +172,8 @@ function loadOutlinePrefs(): ResolvedOutlinePrefs {
     alwaysExpandInlineEnabled: !!raw.alwaysExpandInlineEnabled,
     quickInsertEnabled: raw.quickInsertEnabled === undefined ? true : !!raw.quickInsertEnabled,
     quickInsertIconOnly: raw.quickInsertIconOnly === undefined ? true : !!raw.quickInsertIconOnly,
-    quickInsertActions: clampQuickInsertActions(raw.quickInsertActions)
+    quickInsertActions: clampQuickInsertActions(raw.quickInsertActions),
+    quickAssistEnabled: raw.quickAssistEnabled === undefined ? true : !!raw.quickAssistEnabled
   };
 }
 
@@ -191,6 +199,7 @@ interface OutlinePrefsState extends ResolvedOutlinePrefs {
    * per-checkbox toggle handler exactly (index.html:27555-27560's own `NODE_QA_ACTION_ORDER
    * .filter(x=>set.has(x))` after adding/deleting from a `Set`). */
   setQuickInsertActionEnabled: (id: QuickInsertActionId, enabled: boolean) => void;
+  setQuickAssistEnabled: (on: boolean) => void;
 }
 
 export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
@@ -212,7 +221,8 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       alwaysExpandInlineEnabled: s.alwaysExpandInlineEnabled,
       quickInsertEnabled: s.quickInsertEnabled,
       quickInsertIconOnly: s.quickInsertIconOnly,
-      quickInsertActions: s.quickInsertActions
+      quickInsertActions: s.quickInsertActions,
+      quickAssistEnabled: s.quickAssistEnabled
     });
   }
 
@@ -271,6 +281,10 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       if (enabled) current.add(id);
       else current.delete(id);
       set({ quickInsertActions: QUICK_INSERT_ACTION_ORDER.filter((a) => current.has(a)) });
+      persist();
+    },
+    setQuickAssistEnabled: (on) => {
+      set({ quickAssistEnabled: !!on });
       persist();
     }
   };

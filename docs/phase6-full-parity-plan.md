@@ -1506,10 +1506,17 @@ building the earlier ones):
    legacy's own cross-category settings-text search box — a real, separately-scoped follow-up.
    Needed before Quick Assist's own Settings section (item 3 below) has a sane home, and before
    Quick Assist's search-category system (item 4) can index Settings entries meaningfully.
-3. Quick Assist UI shell + QA_ACTIONS + the QA_COMMANDS subset with real backing state today —
-   the command box itself (open/close, keyboard nav, execute-with-Undo-toast), wired only to
-   toggles/actions that already have real, working `web/` state (a real audit against every
-   toggle already ported by earlier phases, not a guess).
+3. **Quick Assist UI shell + audited command subset** (landed, see Status) — the command box
+   itself (open/close on Ctrl/Cmd+K, phrase matching, keyboard nav, execute-with-Undo-toast),
+   wired only to the subset of legacy's real `QA_COMMANDS`/`QA_ACTIONS` ids with genuine, working
+   `web/` state today — an explicit per-id audit against every store/state module, not a guess.
+   Of legacy's 39 `QA_COMMANDS` ids, 11 qualified (10 pre-existing plus `quickassist-feature`
+   itself, new this slice as Quick Assist's own master toggle — legacy's own real list includes
+   its own toggle too). Of legacy's 11 `QA_ACTIONS` ids, 9 qualified (new document, duplicate
+   node, all 7 AI capabilities); the 2 settings-preset actions stay N/A, same as
+   `outlinePrefsStore.ts`'s own prior note on why. Deliberately NOT part of this slice: category-
+   prefix search scoping, the chip-mode category picker, fuzzy matching, and every search-hit row
+   — all of that is item 4 below, Quick Assist's real Global Search half.
 4. Quick Assist search integration — Global Search across Documents/Notes/Tags/Settings/Help
    (To-Dos/Library search folded in if their own search doesn't already exist as a separate
    surface by then). The largest remaining piece; may itself split further once scoped in detail.
@@ -1686,7 +1693,7 @@ verified end-to-end in real headless Chrome (popup opening with the real icon-on
 arrow-nav + Enter/Tab correctly inserting the highlighted item; Escape and typing-through both
 correctly dismissing; the icon-only↔label-list Settings toggle; per-action and master-enable
 toggles correctly hiding/disabling the popup) — zero console/page errors across every check.
-**This PR**: Settings-panel category rail (slice 2 of 4) — direct port of legacy's real
+Second §6.10 slice: Settings-panel category rail — direct port of legacy's real
 `#settings-rail`/`applySettingsCategory` (a left-hand category button list; clicking one shows
 just that category's sections via CSS `display` toggling, matching legacy's own real mechanism
 exactly, every section staying mounted rather than conditionally rendered). Built the 4
@@ -1697,8 +1704,38 @@ follow-up). Verified end-to-end in real headless Chrome (all 4 categories render
 its own real sections while the others stay hidden; a value typed into one section's field
 survives switching away and back, confirming sections truly stay mounted rather than
 remounting/losing state; reopening Settings resets to the default Appearance tab) — zero
-console/page errors across every check. Slices 3-4 (Quick Assist UI shell + audited command
-subset, Quick Assist search integration) not yet started.
+console/page errors across every check.
+
+**This PR**: Quick Assist UI shell + audited command subset (slice 3 of 4). New
+`state/quickAssist.ts` is a direct port of legacy's real `QA_COMMANDS`/`QA_ACTIONS` and their
+surrounding parse/match functions (`qaPhraseMatch`/`qaBestPhrase`/`qaParse`/
+`qaSuggestForBareVerb`/`qaParseActionsList`/`qaSuggestActionsForBareVerb`) — but scoped to only
+the ids with a real, working `web/` equivalent today, per an explicit per-id audit (see this
+doc's §6.10 slice-sequence item 3 above for the exact counts and reasoning). New
+`components/QuickAssistBar.tsx` is the command box itself: a toolbar button + Ctrl/Cmd+K both
+open it (matches legacy's real `mod+k` binding), a text input filters to matching commands
+(capped at 6) and actions (capped at 4, disabled-with-reason when `requiresSelection` and nothing
+is selected — rendered, not hidden, matching legacy's own real behavior), ArrowUp/Down cycle the
+navigable rows (wrapping, skipping disabled ones — legacy's own real `qaEntries` never lists a
+disabled action row either), Enter executes the active row, Escape closes. A new small Undo-toast
+(`Done: <label>` or `Shown/Hidden: <label>`, with an Undo button when the effect genuinely
+reverses — `web/` had no generic toast-with-undo affordance anywhere before this, see
+`QuickAssistBar.tsx`'s own header for why it's scoped to just this component rather than a new
+app-wide system) replaces legacy's real `showActionToast`. One deliberate deviation: on an action
+failure, the toast shows the action's own real error message (e.g. "No AI provider key
+configured…") instead of legacy's generic "`<label>` cancelled" — every other AI entry point in
+`web/` already surfaces its real error text, and swallowing it here would be a real loss for a
+first-run no-key case. New `components/QuickAssistSettings.tsx` adds the master enable toggle
+under Settings → Editing (`outlinePrefsStore.ts` gained `quickAssistEnabled`, matching legacy's
+real `featureQuickAssistEnabled` default of `true`) — disabling it hides the toolbar button and
+makes Ctrl/Cmd+K a no-op, matching legacy's own real `toggleQa()` guard. Verified end-to-end in
+real headless Chrome: Ctrl/Cmd+K opens and focuses the box; empty-query hint phrases render;
+typing a command phrase filters correctly; Enter executes, closes the box, and shows the right
+toast with a working Undo button; Escape closes with no change; an action
+(`duplicate-node`) with a node selected runs and shows a "Done:" toast; an unmatched query shows
+"No matching command"; the Settings toggle is present, and disabling it both hides the button and
+makes Ctrl/Cmd+K inert — zero console/page errors across every check. Slice 4 (Quick Assist
+search integration) not yet started.
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

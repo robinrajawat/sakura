@@ -6,6 +6,7 @@ import { SecureStorageSettings } from './SecureStorageSettings';
 import { AutoRewriteSettings } from './AutoRewriteSettings';
 import { AiFallbackSettings } from './AiFallbackSettings';
 import { QuickInsertSettings } from './QuickInsertSettings';
+import { QuickAssistSettings } from './QuickAssistSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -66,6 +67,9 @@ import { QuickInsertSettings } from './QuickInsertSettings';
  * cross-category settings-text search box (`#settings-search`, legacy/index.html:4611-4618) --
  * a real, separately-scoped follow-up (its own text-match/highlight engine over every section),
  * not attempted alongside the rail itself.
+ *
+ * §6.10 slice 3: added the "Quick Assist" section (`QuickAssistSettings.tsx`) -- the master
+ * enable toggle for the new Ctrl/Cmd+K command box (`QuickAssistBar.tsx`, `state/quickAssist.ts`).
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -323,6 +327,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ display: activeCategory === 'editing' ? 'block' : 'none' }}>
         <QuickInsertSettings t={t} />
+        <QuickAssistSettings t={t} />
       </div>
       <div style={{ display: activeCategory === 'ai' ? 'block' : 'none' }}>
         <AiProviderSettings t={t} />
