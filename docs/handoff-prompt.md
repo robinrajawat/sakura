@@ -1260,4 +1260,55 @@ unreachable endpoint in this sandboxed environment -- zero page errors
 (the one console entry, a TLS cert error from the sandbox's own proxy
 intercepting the outbound test call, is expected here per this
 environment's own network setup, not an app bug).
+
+Second §6.9 slice landed next in the same session: the Secure Storage
+vault's real setup/unlock/lock/disable UI. New `store/vaultStore.ts`
+implements the orchestration `vault.ts`'s own header always said would
+stay hand-written elsewhere -- real passphrase setup (6-char minimum,
+confirm-match check), deriving the AES key via the vault's existing
+`deriveVaultKey`, writing `{salt, verifier}` to `sakura_vault_meta_v1`,
+and migrating every existing plaintext `key_<providerId>` field to
+ciphertext in one pass (`aiProviders.ts` gained
+`mergeRawFieldsCore`/`mergeRawFieldsStorage` for that bulk multi-field
+write, and `listStoredProviderKeysCore`/`loadAllStoredProviderKeyFields`
+to enumerate every stored key regardless of whether its provider id is
+still in the current catalog). Unlock re-derives the key from the stored
+salt and checks it against the stored verifier ciphertext (the same
+verifier-ciphertext pattern legacy itself uses, not a password hash),
+then bulk-decrypts every stored key into the session cache; lock nulls
+the session key and clears that cache; disable flushes every currently-
+decrypted key back to plaintext storage before deleting the vault meta
+entirely. `vault.ts` needed two small additions to make this possible
+from a real separate module rather than legacy's shared script scope:
+`setVaultCryptoKeyForTest` was renamed `setVaultCryptoKey` since it's now
+the real production setter too (not test-only), and
+`getAllVaultDecryptedKeys`/`clearVaultDecryptedKeys` are the bulk
+counterparts to the single-provider `getVaultDecryptedKey`/
+`setVaultDecryptedKey` accessors slice 1 added. New
+`components/SecureStorageSettings.tsx` is the UI -- inline passphrase
+forms rather than legacy's own modal dialogs, since `web/` has no generic
+modal system yet (matches the project's already-established
+`window.confirm`-as-stand-in convention used everywhere else a dialog
+would otherwise be needed). Legacy's status-bar `sb-vault-chip` and Cloud
+Backup/Gist-token vault protection were both deliberately NOT ported --
+`web/` has no status bar surface yet (a real §6.1 gap) and no Cloud
+Backup feature at all. **A real bug was caught and fixed by headless-
+Chrome verification before merging:** the AI section's key-status line
+could get stuck showing a stale "Key saved." message after the vault was
+locked/unlocked elsewhere, because that Save/Test result message wasn't
+being cleared when the vault's lock state changed out from under it --
+fixed with a `useEffect` clearing the transient message whenever the
+resolved lock state itself flips. Verified end-to-end in real headless
+Chrome: set up the vault with an existing plaintext key already saved
+(confirmed migrated to ciphertext in `localStorage` directly), lock,
+confirmed the AI section correctly shows "locked" and refuses a save with
+the right message, a wrong-passphrase unlock attempt correctly rejected,
+the correct passphrase re-unlocks and restores the exact original key,
+reloading the page correctly re-locks (the session key is never
+persisted, by design), and disabling correctly flushes back to plaintext
+and removes the vault metadata -- zero console/page errors throughout.
+Remaining §6.9 slices (Rewrite/auto-rewrite, Generate Outline/Restructure
+Text, Expand node/Suggest tags, Suggest icon, Summarise selection,
+provider fallback chain UI, usage tracking) not yet started -- see
+phase6-full-parity-plan.md's §6.9 section for the full sequence.
 ```

@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 started: provider configuration UI (7 built-in providers, curated + custom model select, API key entry/save/test, Secure-Storage-vault-aware key read/write) landed — see AI Features section below. Still none of Rewrite/auto-rewrite/Generate outline/Restructure text/Expand node/Suggest tags/Suggest icon/Summarise selection/provider fallback/usage tracking, and the Secure Storage vault itself has no setup/unlock UI yet (its crypto primitives are wired, just not exposed) |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI + Secure Storage vault setup/unlock/lock/disable UI (7 built-in providers, curated + custom model select, API key entry/save/test, real AES-GCM/PBKDF2 passphrase encryption with existing-key migration) landed — see AI Features section below. Still none of Rewrite/auto-rewrite/Generate outline/Restructure text/Expand node/Suggest tags/Suggest icon/Summarise selection/provider fallback/usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -112,21 +112,38 @@ breakdown.
 
 ## AI Features
 
-⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, first slice landed (this PR, following #228):
-provider configuration UI — direct port of legacy's real seven-provider catalog
+⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, two slices landed. **Slice 1** (#230, following
+#228): provider configuration UI — direct port of legacy's real seven-provider catalog
 (`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, now `state/aiProviderCatalog.ts`), the core
 `callAiByShape` network primitive covering all four real request/response shapes (`gemini`/
 `openai`/`anthropic`/`cerebras`, now `state/aiCall.ts`), and provider/model selection + API key
 entry/save/test wired into a new "AI" section of Settings (`AiProviderSettings.tsx` +
-`store/aiSettingsStore.ts`). Key storage is vault-aware from the start (branches on
+`store/aiSettingsStore.ts`). Key storage was vault-aware from the start (branches on
 `vaultActive()`/`vaultUnlocked()` exactly like legacy's real `getAiKeyForProvider`/`saveAiKey`,
-now extended into `state/aiProviders.ts`), reusing the AES-GCM/PBKDF2 crypto primitives already
+extended into `state/aiProviders.ts`), reusing the AES-GCM/PBKDF2 crypto primitives already
 sitting unwired in `state/vault.ts` since an earlier phase — but the vault's own setup/unlock UI
-(passphrase dialogs, a status chip, migrating existing plaintext keys) is a real, separately-scoped
-follow-up, not built yet, so every key today takes the plain-localStorage path. Still not built:
-Rewrite (incl. auto-rewrite on commit), Generate Outline, Restructure Text, Expand node, Suggest
-tags, Suggest icon, Summarise selection, provider fallback chain UI, usage tracking. See
-phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
+wasn't built yet, so every key took the plain-localStorage path.
+
+**Slice 2** (this PR): the Secure Storage vault's real setup/unlock/lock/disable UI —
+`store/vaultStore.ts` (real passphrase-based setup with a 6-char minimum and matching-confirm
+check, unlock via the verifier-ciphertext pattern legacy itself uses, lock, and disable which
+flushes every currently-decrypted key back to plaintext) plus `SecureStorageSettings.tsx` (a new
+Settings section, inline passphrase forms rather than legacy's own modal dialogs — `web/` has no
+generic modal system yet, matching the project's established `window.confirm`-as-stand-in
+convention for anywhere else a dialog would otherwise be needed). Setup migrates every existing
+plaintext key to ciphertext in one pass. `vault.ts` gained the small real (not test-only)
+`setVaultCryptoKey` setter plus `getAllVaultDecryptedKeys`/`clearVaultDecryptedKeys` bulk
+accessors the orchestration layer needs. Not ported: legacy's status-bar `sb-vault-chip` (`web/`
+has no status bar surface yet, §6.1's own unbuilt item) and Cloud Backup/Gist-token vault
+protection (`web/` has no Cloud Backup feature at all). A real bug was caught and fixed by
+headless-Chrome verification before merging: the AI section's key-status line could get stuck
+showing a stale "Key saved." message after the vault was locked/unlocked elsewhere, because a
+Save/Test result message wasn't being cleared when the vault's lock state changed out from under
+it — fixed by clearing that transient message whenever the resolved lock state itself flips.
+
+Still not built: Rewrite (incl. auto-rewrite on commit), Generate Outline, Restructure Text,
+Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback chain UI, usage
+tracking. See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert
 
