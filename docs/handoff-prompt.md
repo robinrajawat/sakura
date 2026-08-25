@@ -1855,8 +1855,29 @@ icon-only off in Settings switching to the full label list, with Tab
 action in Settings removing just that one from the popup while the
 others stayed; disabling Quick Insert entirely making Ctrl+Space do
 nothing at all -- zero console/page errors throughout, across every
-one of those checks. Remaining §6.10 slices per the plan doc's own
-4-slice sequence: the Settings-panel category rail, the Quick Assist
-UI shell plus an audited subset of real toggle commands, and Quick
-Assist's Global Search integration -- none started yet.
+one of those checks.
+
+Second §6.10 slice landed: the Settings-panel category rail. Direct
+port of legacy's real `#settings-rail`/`applySettingsCategory` -- a
+left-hand list of category buttons; clicking one shows only that
+category's sections via CSS `display:''`/`'none'` toggling, exactly
+matching legacy's own real mechanism, with every section staying
+mounted rather than conditionally rendered (critical: a value typed
+into one section's field must survive switching tabs and back).
+`SettingsPanel.tsx` gained 4 of legacy's real 12 categories -- the
+ones with actual content in `web/` today: Appearance (Export
+formatting + Layout), Editing (`QuickInsertSettings`), AI
+(`AiProviderSettings` + `AiFallbackSettings` + `AutoRewriteSettings`),
+and Data & Backup (`SecureStorageSettings`). Adding a 5th category
+later is one union member, one rail button, one `display` check.
+Deliberately not built: legacy's own cross-category settings-text
+search box (`#settings-search`), a real, separately-scoped follow-up.
+Verified end-to-end in real headless Chrome: all 4 tabs render and
+switch correctly, each showing only its own real sections while the
+others stay hidden; a value typed into one section's field survives
+switching away and back, confirming sections truly stay mounted;
+reopening Settings resets to the default Appearance tab -- zero
+console/page errors throughout. Remaining §6.10 slices: the Quick
+Assist UI shell plus an audited subset of real toggle commands, and
+Quick Assist's Global Search integration -- neither started yet.
 ```

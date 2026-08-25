@@ -1496,10 +1496,16 @@ building the earlier ones):
 1. **Quick Insert completion** (landed, see Status) — real keyboard navigation (arrow keys,
    Enter/Tab to commit, matching legacy's real `horizNav` icon-row swap), the icon-only-row
    default, and per-action/master-enable Settings for the pre-existing Phase 6.2 popup.
-2. Settings-panel category rail — legacy's real multi-category sidebar (Appearance/Presets &
-   modes/Bars & menus/Panels/Hub/Editing/Data & backup) vs. `web/`'s current single flat page.
-   Needed before Quick Assist's own Settings section (item 4) has a sane home, and before Quick
-   Assist's search-category system (item 3) can index Settings entries meaningfully.
+2. **Settings-panel category rail** (landed, see Status) — legacy's real multi-category sidebar
+   (`#settings-rail`, `data-cat` values: general/presets/toolbar/panels/hub/editing/data/account/
+   ai/features/shortcuts/about — 12 total) vs. `web/`'s previous single flat page. Built only the
+   4 categories with real content today (general/editing/ai/data, matching `SettingsPanel.tsx`'s
+   own real sections at the time) — CSS `display` toggling per category, matching legacy's own
+   real mechanism exactly (every section stays mounted across a category switch, not
+   conditionally rendered, so no section loses its own local state). Deliberately NOT built:
+   legacy's own cross-category settings-text search box — a real, separately-scoped follow-up.
+   Needed before Quick Assist's own Settings section (item 3 below) has a sane home, and before
+   Quick Assist's search-category system (item 4) can index Settings entries meaningfully.
 3. Quick Assist UI shell + QA_ACTIONS + the QA_COMMANDS subset with real backing state today —
    the command box itself (open/close, keyboard nav, execute-with-Undo-toast), wired only to
    toggles/actions that already have real, working `web/` state (a real audit against every
@@ -1680,8 +1686,19 @@ verified end-to-end in real headless Chrome (popup opening with the real icon-on
 arrow-nav + Enter/Tab correctly inserting the highlighted item; Escape and typing-through both
 correctly dismissing; the icon-only↔label-list Settings toggle; per-action and master-enable
 toggles correctly hiding/disabling the popup) — zero console/page errors across every check.
-Slices 2-4 (Settings rail, Quick Assist UI shell + audited command subset, Quick Assist search
-integration) not yet started.
+**This PR**: Settings-panel category rail (slice 2 of 4) — direct port of legacy's real
+`#settings-rail`/`applySettingsCategory` (a left-hand category button list; clicking one shows
+just that category's sections via CSS `display` toggling, matching legacy's own real mechanism
+exactly, every section staying mounted rather than conditionally rendered). Built the 4
+categories with real content today (Appearance/Editing/AI/Data & Backup, out of legacy's real
+12) — adding a 5th later is one union member, one rail button, one `display` check. Deliberately
+NOT built: legacy's own cross-category settings-text search box (a real, separately-scoped
+follow-up). Verified end-to-end in real headless Chrome (all 4 categories render; each shows only
+its own real sections while the others stay hidden; a value typed into one section's field
+survives switching away and back, confirming sections truly stay mounted rather than
+remounting/losing state; reopening Settings resets to the default Appearance tab) — zero
+console/page errors across every check. Slices 3-4 (Quick Assist UI shell + audited command
+subset, Quick Assist search integration) not yet started.
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
