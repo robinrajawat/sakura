@@ -3,7 +3,19 @@ import { useThemeStore, THEME_TOKENS, type ThemeTokens } from '../store/themeSto
 import { useOutlineStore } from '../store/outlineStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
 import { useQuickAssistStore } from '../store/quickAssistStore';
-import { buildQaActionsWithRestructureDialog, buildQaEntries, navigableQaEntries, qaExecuteCommand, qaVerbLabel, type QaEntry } from '../state/quickAssist';
+import {
+  buildQaActionsWithRestructureDialog,
+  buildQaEntries,
+  buildQaPickerEntries,
+  navigableQaEntries,
+  qaExecuteCommand,
+  qaPickerInsertText,
+  qaVerbLabel,
+  type QaEntry,
+  type QaPickerVerb
+} from '../state/quickAssist';
+
+const QA_PICKER_VERB_LABELS: Record<QaPickerVerb, string> = { show: 'Show', hide: 'Hide', toggle: 'Toggle', run: 'Run' };
 
 /**
  * §6.10 slice 3 (docs/phase6-full-parity-plan.md): the Quick Assist command box itself. Direct
@@ -12,13 +24,22 @@ import { buildQaActionsWithRestructureDialog, buildQaEntries, navigableQaEntries
  * `setQaOpen`, legacy/index.html:17342-17786) for the command-only subset `state/quickAssist.ts`
  * builds -- see that file's own header for exactly which of legacy's real ids this covers and why.
  *
- * Deliberately smaller than legacy's real box: no category-prefix scoping, no chip-mode category
- * picker, no fuzzy matching -- see `state/quickAssistSearch.ts`'s own header for the search-hit
- * rows this slice does add (§6.10 slice 4) and which of legacy's real 18 search categories they
- * cover. No render-debounce either: legacy's own `QA_RENDER_DEBOUNCE_MS` exists because its real
- * `collectSearchGroups` has no per-category or per-document result cap until AFTER the full scan;
- * this port's own collectors early-exit as soon as each category's own small cap (4-6 items) is
- * hit, so even the search-hit path stays cheap enough to run synchronously on every keystroke.
+ * Deliberately smaller than legacy's real box: no fuzzy matching -- see `state/quickAssistSearch.ts`'s
+ * own header for the search-hit rows this slice does add (§6.10 slice 4) and which of legacy's
+ * real 18 search categories they cover. No render-debounce either: legacy's own
+ * `QA_RENDER_DEBOUNCE_MS` exists because its real `collectSearchGroups` has no per-category or
+ * per-document result cap until AFTER the full scan; this port's own collectors early-exit as
+ * soon as each category's own small cap (4-6 items) is hit, so even the search-hit path stays
+ * cheap enough to run synchronously on every keystroke.
+ *
+ * §6.10 slice 4b: added category-prefix scoping ("notes: budget" scopes to just the Notes
+ * category) and the chip-mode category picker (the "⋯" button, or Space on an empty input) --
+ * both direct ports of legacy's real mechanism, see `state/quickAssistSearch.ts`'s own header for
+ * the details and `state/quickAssist.ts`'s `buildQaPickerEntries`/`qaPickerInsertText` for the
+ * picker's own logic. `pickerOpen` swaps this component's rendered list for the picker's two chip
+ * rows (verb chips, category chips) instead of the normal command/action/search-hit list; picking
+ * either chip inserts its prefix into the input and returns to normal rendering, matching
+ * legacy's real "stepping stone" behavior (the box stays open, nothing executes).
  *
  * Also new here: a small Undo-toast, since legacy's real `showActionToast` (an "Undo" chip after
  * every command/action) has no existing equivalent anywhere in `web/` yet (this project's
@@ -41,6 +62,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -51,6 +73,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
     if (open) {
       setQuery('');
       setActiveIndex(0);
+      setPickerOpen(false);
       const timer = setTimeout(() => inputRef.current?.focus(), 10);
       return () => clearTimeout(timer);
     }
@@ -61,7 +84,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   }, []);
 
   const actions = buildQaActionsWithRestructureDialog(openRestructureDialog);
-  const entries: QaEntry[] = buildQaEntries(query, hasSelection, actions, quickAssistSearchEnabled);
+  const entries: QaEntry[] = pickerOpen ? buildQaPickerEntries() : buildQaEntries(query, hasSelection, actions, quickAssistSearchEnabled);
   const navEntries = navigableQaEntries(entries);
 
   function showToast(message: string, undo?: () => void): void {
@@ -71,6 +94,17 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   }
 
   function activate(entry: QaEntry): void {
+    if (entry.kind === 'verb' || entry.kind === 'category') {
+      // Stepping stones, not completed actions -- matches legacy's real qaActivateSelection,
+      // which deliberately skips setQaOpen(false) for these two kinds (legacy/index.html:
+      // 17488-17505): insert the picked verb/category prefix into the input, keep the box open,
+      // refocus so typing continues right where the picker left off.
+      setQuery(qaPickerInsertText(entry));
+      setPickerOpen(false);
+      setActiveIndex(0);
+      inputRef.current?.focus();
+      return;
+    }
     if (entry.kind === 'command') {
       const result = qaExecuteCommand(entry.cmd, entry.verb);
       showToast(result.message, result.undo);
@@ -99,8 +133,21 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   }
 
   function onInputKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    if (e.key === ' ' && !query.trim() && !pickerOpen) {
+      // Space on a genuinely empty box opens the category picker inline, matching legacy's real
+      // `#qa-input` keydown handler exactly (legacy/index.html:17768-17774).
+      e.preventDefault();
+      setPickerOpen(true);
+      setActiveIndex(0);
+      return;
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
+      if (pickerOpen) {
+        setPickerOpen(false);
+        setActiveIndex(0);
+        return;
+      }
       closeBox();
       return;
     }
@@ -148,32 +195,100 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
             color: t.text
           }}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.currentTarget.value);
-              setActiveIndex(0);
-            }}
-            onKeyDown={onInputKeyDown}
-            placeholder="Search…"
-            autoComplete="off"
-            aria-label="Quick assist command and search input"
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              font: 'inherit',
-              fontSize: 12,
-              padding: '6px 8px',
-              borderRadius: 6,
-              border: `1px solid ${t.border}`,
-              background: t.background,
-              color: t.text
-            }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setPickerOpen(true);
+                setActiveIndex(0);
+                inputRef.current?.focus();
+              }}
+              title="Browse by category"
+              aria-label="Browse Quick Assist categories"
+              style={{
+                flexShrink: 0,
+                fontSize: 12,
+                padding: '5px 7px',
+                borderRadius: 6,
+                border: `1px solid ${t.border}`,
+                background: 'transparent',
+                color: t.mutedText,
+                cursor: 'pointer'
+              }}
+            >
+              ⋯
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.currentTarget.value);
+                setActiveIndex(0);
+                setPickerOpen(false);
+              }}
+              onKeyDown={onInputKeyDown}
+              placeholder="Search…"
+              autoComplete="off"
+              aria-label="Quick assist command and search input"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                boxSizing: 'border-box',
+                font: 'inherit',
+                fontSize: 12,
+                padding: '6px 8px',
+                borderRadius: 6,
+                border: `1px solid ${t.border}`,
+                background: t.background,
+                color: t.text
+              }}
+            />
+          </div>
           <div style={{ marginTop: 8, maxHeight: 320, overflowY: 'auto' }}>
-            {!query.trim() && (
+            {pickerOpen && (
+              <>
+                <div style={groupTitleStyle(t)}>Browse by action…</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {entries
+                    .filter((e): e is Extract<QaEntry, { kind: 'verb' }> => e.kind === 'verb')
+                    .map((entry) => {
+                      const navIndex = navEntries.indexOf(entry);
+                      return (
+                        <button
+                          key={`verb-${entry.verb}`}
+                          type="button"
+                          onClick={() => activate(entry)}
+                          onMouseEnter={() => setActiveIndex(navIndex)}
+                          style={qaChipStyle(t, navIndex === activeIndex)}
+                        >
+                          {QA_PICKER_VERB_LABELS[entry.verb]}
+                        </button>
+                      );
+                    })}
+                </div>
+                <div style={groupTitleStyle(t)}>Search within…</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {entries
+                    .filter((e): e is Extract<QaEntry, { kind: 'category' }> => e.kind === 'category')
+                    .map((entry) => {
+                      const navIndex = navEntries.indexOf(entry);
+                      return (
+                        <button
+                          key={`cat-${entry.categoryKey}`}
+                          type="button"
+                          onClick={() => activate(entry)}
+                          onMouseEnter={() => setActiveIndex(navIndex)}
+                          style={qaChipStyle(t, navIndex === activeIndex)}
+                        >
+                          {entry.group}
+                        </button>
+                      );
+                    })}
+                </div>
+              </>
+            )}
+            {!pickerOpen && !query.trim() && (
               <div style={{ fontSize: 11, color: t.mutedText }}>
                 <div style={{ marginBottom: 6 }}>Try things like</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -202,10 +317,11 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
                 </div>
               </div>
             )}
-            {!!query.trim() && entries.length === 0 && (
+            {!pickerOpen && !!query.trim() && entries.length === 0 && (
               <div style={{ fontSize: 12, color: t.mutedText, padding: '8px 4px' }}>No matching command or content for &quot;{query.trim()}&quot;</div>
             )}
-            {entries.map((entry, i) => {
+            {!pickerOpen &&
+              entries.map((entry, i) => {
               if (entry.kind === 'command') {
                 const navIndex = navEntries.indexOf(entry);
                 const verbLabel = qaVerbLabel(entry.verb, entry.cmd);
@@ -244,7 +360,10 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
               }
               // Search-hit row -- shows a group header ("Documents", "Notes", ...) whenever the
               // group changes from the previous entry, matching legacy's own real `gs-group-title`
-              // insertion in qaRender.
+              // insertion in qaRender. `verb`/`category` kinds never reach here: they only exist
+              // in `buildQaPickerEntries()`'s own output, rendered by the `pickerOpen` branch
+              // above, never mixed into this `entries.map` (guarded by `!pickerOpen` itself).
+              if (entry.kind !== 'search') return null;
               const prev = entries[i - 1];
               const showGroupHeader = !prev || prev.kind !== 'search' || prev.group !== entry.group;
               const navIndex = navEntries.indexOf(entry);
@@ -303,6 +422,22 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
       )}
     </div>
   );
+}
+
+function groupTitleStyle(t: ThemeTokens): CSSProperties {
+  return { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: t.mutedText, padding: '4px 4px 6px' };
+}
+
+function qaChipStyle(t: ThemeTokens, active: boolean): CSSProperties {
+  return {
+    fontSize: 11,
+    padding: '4px 10px',
+    borderRadius: 999,
+    border: `1px solid ${active ? 'var(--accent)' : t.border}`,
+    background: active ? t.hoverBg : 'transparent',
+    color: t.text,
+    cursor: 'pointer'
+  };
 }
 
 function qaRowStyle(t: ThemeTokens, active: boolean, disabled?: boolean): CSSProperties {
