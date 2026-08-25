@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), and Expand node/Suggest tags landed — see AI Features section below. Still no Suggest icon, Summarise selection, provider fallback, or usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, and Suggest icon (keyword/historical-index free tiers, batch + single-node picker) landed — see AI Features section below. Still no Summarise selection, provider fallback, or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -241,7 +241,37 @@ buttons on that transition and they stayed visually enabled during an actual mul
 by also subscribing to `multiSelectedIds` (always a fresh array reference on every selection
 change) purely to force the re-render.
 
-Still not built: Suggest icon, Summarise selection, provider fallback chain UI, usage tracking.
+**Slice 7** (this PR): Suggest icon. New `state/aiIcon.ts` direct-ports legacy's real batched
+`suggestIconsForNodeIds` and single-node `suggestIconChoiceForNode`: a local keyword→emoji lookup
+(`ICON_KEYWORD_MAP`, ~44 entries) and an exact-label historical match against the live document
+plus every saved document (`documentsStore.ts` gained a plain `loadDocNodesById` accessor for this)
+both run first and cost nothing — only labels that miss both tiers reach the AI, batched with
+identical labels deduped into one lookup. The single-node picker path is a closer, deliberately
+faithful port of a real legacy quirk: it always ALSO queries the AI for 4 more emoji options when a
+key is configured, even if a free-tier hit already exists, merging everything into one candidate
+list — auto-applying only when that adds up to exactly one option, otherwise handing the list to a
+new `IconPickerPopover.tsx` (backed by a small `iconPickerStore.ts`, since both the toolbar button
+and `OutlineTree.tsx`'s right-click menu need to open it and `OutlineTree.tsx` takes no props) for
+the person to choose from — one click applies and closes, Escape or an outside click dismisses with
+no change. `outlineStore.ts` gained `applySuggestedIcons` (batch, same in-flight-edit-guard
+re-resolve-by-id pattern as `aiRewrite.ts`'s own batch path, one undo checkpoint) and
+`applyIconChoice` (single, re-strips any existing leading icon before applying the new one). A new
+`utils/iconText.ts` holds the shared `splitLeadingIconCore` — kept out of both `outlineStore.ts` and
+`aiIcon.ts` specifically to avoid a circular import between them. One deliberate technique
+simplification from legacy: the picker always renders centered rather than anchored pixel-precisely
+above the node's own row, since `web/`'s tree rows have no stable selector equivalent to legacy's
+`.node-row[data-id]` — this reuses legacy's own real fallback path for when no anchor row is found,
+rather than inventing new positioning behavior. Verified end-to-end in real headless Chrome with the
+AI endpoint mocked via Playwright: keyword-tier auto-apply with no AI key configured making zero
+network calls; Undo reverting it; a multi-select batch correctly mixing a free-tier hit with an
+AI-resolved unmatched label in the same call; the single-node picker opening with 4 AI-suggested
+candidates and applying whichever one was clicked; the same picker opening from the right-click
+"Suggest icon" entry and Escape dismissing it with no change; "Suggest icons for all nodes" running
+cleanly across the whole document; the toolbar button staying enabled across a zero/one/multi
+selection change (unlike Expand/Tags' own exactly-one requirement) — zero console/page errors
+throughout.
+
+Still not built: Summarise selection, provider fallback chain UI, usage tracking.
 See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert

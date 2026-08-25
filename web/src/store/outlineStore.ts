@@ -32,6 +32,7 @@ import {
   type ParentLinkedNode
 } from '../core/nodeSelection';
 import { cleanupBacklinksFor, renameBacklinksFor } from '../core/backlinks';
+import { splitLeadingIconCore } from '../utils/iconText';
 
 /** The real outline node shape this store works with: parent-linked (nodeSelection.ts) plus
  * checkbox-aware (nodeQueries.ts's `CheckboxNode`) — every node carries both sets of fields
@@ -242,6 +243,24 @@ interface OutlineState {
    * `newTags` used for its success message), so a fully-redundant suggestion is a real no-op
    * (no undo checkpoint, no state change) rather than a no-op edit still consuming one. */
   addSuggestedTags: (id: number, tags: string[]) => string[];
+  /** §6.9 slice 7 (docs/phase6-full-parity-plan.md): Suggest icon's real batch-apply action.
+   * Direct port of legacy's real `applyAiBatchResults` as used by `suggestIconsForNodeIds`
+   * (legacy/index.html:28476-28486, 29191-29206) — each entry is re-resolved by id (so a
+   * deletion/reorder while the AI request was in flight can't corrupt the wrong node) and
+   * skipped, not applied, if the node's current text no longer matches `expectedText` (the
+   * in-flight-edit guard, same `aiSnapshotChanged` semantics `aiRewrite.ts`'s own batch path
+   * uses) or if `finalText` is empty (no usable icon found for that entry). A single undo
+   * checkpoint covers every entry that actually applies; none is pushed if nothing did. Returns
+   * how many entries were actually applied. */
+  applySuggestedIcons: (entries: { id: number; expectedText: string; finalText: string }[]) => number;
+  /** §6.9 slice 7: Suggest icon's single-node apply action, used both when there's exactly one
+   * candidate (auto-applied, no picker) and when the picker popover resolves a choice. Direct
+   * port of legacy's real `suggestIconChoiceForNode` apply step (legacy/index.html:29292-29294):
+   * re-strips any leading icon the node's text currently has (in case it changed since the
+   * candidates were computed) and prepends `icon` fresh, rather than trusting a bare label
+   * captured earlier. Returns false (no undo checkpoint, no state change) if the node no longer
+   * exists. */
+  applyIconChoice: (id: number, icon: string) => boolean;
 
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
@@ -711,6 +730,34 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     const next = nodes.map((n) => (n.id === id ? { ...n, tags: [...n.tags, ...newTags] } : n));
     set({ nodes: next });
     return newTags;
+  },
+
+  applySuggestedIcons: (entries) => {
+    const { nodes } = get();
+    const toApply = new Map<number, string>();
+    entries.forEach((e) => {
+      if (!e.finalText) return;
+      const idx = getIndex(nodes, e.id);
+      if (idx < 0) return;
+      if (nodes[idx].text !== e.expectedText) return;
+      toApply.set(e.id, e.finalText);
+    });
+    if (!toApply.size) return 0;
+    pushUndo();
+    const next = nodes.map((n) => (toApply.has(n.id) ? { ...n, text: toApply.get(n.id)! } : n));
+    set({ nodes: next });
+    return toApply.size;
+  },
+
+  applyIconChoice: (id, icon) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return false;
+    pushUndo();
+    const bare = splitLeadingIconCore(nodes[idx].text || '').rest;
+    const next = nodes.map((n) => (n.id === id ? { ...n, text: icon + ' ' + bare } : n));
+    set({ nodes: next });
+    return true;
   },
 
   newSiblingAbove: (id) => {

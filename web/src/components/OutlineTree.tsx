@@ -17,6 +17,8 @@ import { NodeText } from './NodeText';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
 import { useAutoRewriteStore } from '../store/autoRewriteStore';
 import { shouldAutoRewriteNode } from '../state/autoRewrite';
+import { suggestIconForSelection, suggestIconsForAllDocumentNodes } from '../state/aiIcon';
+import { useIconPickerStore } from '../store/iconPickerStore';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
   return {
@@ -220,6 +222,28 @@ export function OutlineTree() {
 
   async function handleRewriteDocument(): Promise<void> {
     const result = await rewriteDocument();
+    if (!result.ok) window.alert(result.message);
+  }
+
+  // §6.9 slice 7 (docs/phase6-full-parity-plan.md): Suggest icon / Suggest icons for all nodes
+  // context-menu entries. Unlike Rewrite's own context-menu handler above, legacy's real
+  // `ai-icon` action (`suggestIconForSelection`) does NOT consider which node was right-clicked
+  // at all -- it only ever looks at the CURRENT selection (`multiSelectedIds`/`selectedId`), so
+  // this deliberately ignores `contextMenu.nodeId` and just reuses the current selection, matching
+  // that real behavior exactly rather than the Rewrite entry's own right-clicked-node inference.
+  const openIconPicker = useIconPickerStore((s) => s.open);
+
+  async function handleContextIcon(): Promise<void> {
+    const outcome = await suggestIconForSelection(selectedIds());
+    if (outcome.candidates && outcome.nodeId !== undefined) {
+      openIconPicker(outcome.nodeId, outcome.candidates);
+      return;
+    }
+    if (!outcome.ok) window.alert(outcome.message);
+  }
+
+  async function handleSuggestIconsAll(): Promise<void> {
+    const result = await suggestIconsForAllDocumentNodes();
     if (!result.ok) window.alert(result.message);
   }
 
@@ -1473,15 +1497,15 @@ export function OutlineTree() {
           CTX_ACTION_ORDER has ~20 entries across insert/structure/ai/notes/delete groups,
           justifying that space-saving refinement; this list is deliberately much shorter).
           Included: the same 3 hover-toolbar actions (above/child/below) plus duplicate, focus,
-          up/down, fold, tags, delete -- every action this project has a real, working store
-          action for today. Deliberately NOT included, not silently dropped: AI rewrite/icon
-          suggestions (ai-rewrite, ai-rewrite-all, ai-icon, ai-icon-all -- web/ has no AI
-          integration at all), slide-divider (a Presenter-mode-specific field web/'s
-          PresenterMode.tsx doesn't use), note/qa/remark/where-used/version-history (each needs
-          its own real subsystem -- a rich note editor, per-node Q&A linking, a remarks system,
-          backlinks, or version snapshots -- none of which exist in web/ yet), date-time (a
-          simple text-insert, genuinely small, but there's no natural place to insert it without
-          an active edit-cursor position, which this menu doesn't track). */}
+          up/down, fold, tags, delete, and (§6.9) AI rewrite/AI icon suggestion (ai-rewrite,
+          ai-rewrite-all, ai-icon, ai-icon-all) -- every action this project has a real, working
+          store action for today. Deliberately NOT included, not silently dropped: slide-divider
+          (a Presenter-mode-specific field web/'s PresenterMode.tsx doesn't use), note/qa/remark/
+          where-used/version-history (each needs its own real subsystem -- a rich note editor,
+          per-node Q&A linking, a remarks system, backlinks, or version snapshots -- none of which
+          exist in web/ yet), date-time (a simple text-insert, genuinely small, but there's no
+          natural place to insert it without an active edit-cursor position, which this menu
+          doesn't track). */}
       {contextMenu && (
         <div
           ref={contextMenuRef}
@@ -1518,6 +1542,8 @@ export function OutlineTree() {
               { label: 'Tags…', action: () => setEditingTagsId(contextMenu.nodeId) },
               { label: '✦ Rewrite', action: () => void handleContextRewrite(contextMenu.nodeId) },
               { label: '✦ Rewrite document', action: () => void handleRewriteDocument() },
+              { label: '✦ Suggest icon', action: () => void handleContextIcon() },
+              { label: '✦ Suggest icons for all nodes', action: () => void handleSuggestIconsAll() },
               {
                 label: 'Delete',
                 danger: true,
