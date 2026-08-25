@@ -7,10 +7,17 @@ import type { ThemeTokens } from '../store/themeStore';
  * `QA_COMMANDS` itself, legacy/index.html:17066), which `web/` doesn't have a separate page for --
  * kept alongside `QuickInsertSettings.tsx` here instead, same reasoning that section's own header
  * already gives for its own master toggle's placement.
+ *
+ * §6.10 slice 4: added the search-results toggle, direct port of legacy's real
+ * `qaSearchResultsEnabled`/`#qa-search-enabled-toggle` -- separate from the master toggle above:
+ * this only controls whether `state/quickAssistSearch.ts`'s content-search hits are folded in
+ * below command/action matches, not Quick Assist itself.
  */
 export function QuickAssistSettings({ t }: { t: ThemeTokens }) {
   const enabled = useOutlinePrefsStore((s) => s.quickAssistEnabled);
   const setEnabled = useOutlinePrefsStore((s) => s.setQuickAssistEnabled);
+  const searchEnabled = useOutlinePrefsStore((s) => s.quickAssistSearchEnabled);
+  const setSearchEnabled = useOutlinePrefsStore((s) => s.setQuickAssistSearchEnabled);
 
   const sectionHeaderStyle: React.CSSProperties = {
     fontSize: 12,
@@ -37,6 +44,19 @@ export function QuickAssistSettings({ t }: { t: ThemeTokens }) {
             </div>
           </span>
         </label>
+
+        {enabled && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 24 }}>
+            <input type="checkbox" checked={searchEnabled} onChange={(e) => setSearchEnabled(e.currentTarget.checked)} aria-label="Show search results in Quick Assist" />
+            <span>
+              Search results
+              <div style={{ fontSize: 11, color: t.mutedText }}>
+                Also show matching documents, node text, notes, code, tags, and folders below the command matches. Off leaves Quick Assist as a
+                commands-only box.
+              </div>
+            </span>
+          </label>
+        )}
       </div>
     </>
   );

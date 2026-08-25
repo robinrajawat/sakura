@@ -8,6 +8,7 @@ import { rewriteDocument, rewriteNode, rewriteNodes } from './aiRewrite';
 import { expandNode, suggestTags } from './aiExpandTags';
 import { generateOutline, restructureText } from './aiOutline';
 import { summariseSelectionIntoParent } from './aiSummarise';
+import { collectQaSearchGroups, type QaSearchHit } from './quickAssistSearch';
 
 /**
  * §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist's command surface. Direct port of
@@ -40,11 +41,18 @@ import { summariseSelectionIntoParent } from './aiSummarise';
  * `web/` has no settings for most of what those ~40-setting snapshots would need to restore.
  *
  * Deliberately NOT part of this slice: category-prefix search scoping ("notes: budget"), the
- * chip-mode category picker, fuzzy matching, and Quick Assist's Global Search integration across
- * Documents/Notes/Tags/Settings/Help -- all of that is legacy's real search-hit half of Quick
- * Assist (`collectSearchGroups` and friends), scoped separately as §6.10 slice 4 in the plan doc.
- * This slice is the command-only half: open/close, type a phrase, match a command or action,
- * execute it with Undo.
+ * chip-mode category picker, and fuzzy matching -- all real legacy features, still deferred (see
+ * `state/quickAssistSearch.ts`'s own header). This slice is the command-only half: open/close,
+ * type a phrase, match a command or action, execute it with Undo.
+ *
+ * §6.10 slice 4: `buildQaEntries` now also appends search-hit rows (`kind: 'search'`) from
+ * `state/quickAssistSearch.ts` -- a direct, scoped port of legacy's real Global Search
+ * integration (`collectSearchGroups` and friends) for the 6 categories with a real, already-
+ * existing `web/` data source and a real legacy collector to port (Documents, In documents, Notes,
+ * Code, Tags, Folders) -- see that file's own header for the full per-category audit, including a
+ * significant finding: 4 of legacy's real 18 search categories (To-Dos/Meetings/Journal/Library)
+ * turn out to never have been implemented in legacy itself, so porting them here would invent
+ * behavior legacy never had, not complete a real gap.
  */
 
 export interface QaCommand {
@@ -431,7 +439,10 @@ export function qaExecuteCommand(cmd: QaCommand, verb: QaVerb | null): QaCommand
   return { changed: true, message: `${next ? 'Shown' : 'Hidden'}: ${cmd.label}`, undo: () => cmd.set(cur) };
 }
 
-export type QaEntry = { kind: 'command'; cmd: QaCommand; verb: QaVerb | null } | { kind: 'action'; action: QaAction; disabled: boolean };
+export type QaEntry =
+  | { kind: 'command'; cmd: QaCommand; verb: QaVerb | null }
+  | { kind: 'action'; action: QaAction; disabled: boolean }
+  | { kind: 'search'; hit: QaSearchHit; group: string };
 
 /** Direct port of the command/action-matching portion of legacy's real `qaRender`
  * (legacy/index.html:17342-17461) -- the search-hit portion (`collectSearchGroups` and the
@@ -440,7 +451,7 @@ export type QaEntry = { kind: 'command'; cmd: QaCommand; verb: QaVerb | null } |
  * actions, capped at 4) with `disabled` set on action rows needing a selection that isn't there --
  * matching legacy's own real behavior of still showing those rows (inert, with a reason) rather
  * than hiding them outright. */
-export function buildQaEntries(query: string, hasSelection: boolean, actions: QaAction[] = QA_ACTIONS): QaEntry[] {
+export function buildQaEntries(query: string, hasSelection: boolean, actions: QaAction[] = QA_ACTIONS, searchEnabled = true): QaEntry[] {
   const q = query.trim().toLowerCase().replace(/\s+/g, ' ');
   if (!q) return [];
   const { verb, targets } = qaParse(q);
@@ -462,6 +473,11 @@ export function buildQaEntries(query: string, hasSelection: boolean, actions: Qa
   actionRows.forEach((action) => {
     entries.push({ kind: 'action', action, disabled: action.requiresSelection && !hasSelection });
   });
+  if (searchEnabled) {
+    collectQaSearchGroups(q).forEach((group) => {
+      group.items.forEach((hit) => entries.push({ kind: 'search', hit, group: group.name }));
+    });
+  }
   return entries;
 }
 

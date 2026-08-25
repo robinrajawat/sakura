@@ -80,6 +80,7 @@ interface OutlinePrefs {
   quickInsertIconOnly?: unknown;
   quickInsertActions?: unknown;
   quickAssistEnabled?: unknown;
+  quickAssistSearchEnabled?: unknown;
 }
 
 interface ResolvedOutlinePrefs {
@@ -117,6 +118,11 @@ interface ResolvedOutlinePrefs {
    * toggle); kept here rather than a new store since both are outline-editing preferences with
    * the same persistence shape. */
   quickAssistEnabled: boolean;
+  /** §6.10 slice 4: matches legacy's real `qaSearchResultsEnabled` (legacy/index.html:8277's
+   * `nodes`/`qaItems` block) -- separate from `quickAssistEnabled` above: this only controls
+   * whether content-search hits are folded in below command/action matches, not Quick Assist's
+   * own on/off. Default `true`, matching legacy's own real default. */
+  quickAssistSearchEnabled: boolean;
 }
 
 /** Matches legacy's own real `setTreeIndentWidth` clamp (legacy/index.html:18991) exactly:
@@ -173,7 +179,8 @@ function loadOutlinePrefs(): ResolvedOutlinePrefs {
     quickInsertEnabled: raw.quickInsertEnabled === undefined ? true : !!raw.quickInsertEnabled,
     quickInsertIconOnly: raw.quickInsertIconOnly === undefined ? true : !!raw.quickInsertIconOnly,
     quickInsertActions: clampQuickInsertActions(raw.quickInsertActions),
-    quickAssistEnabled: raw.quickAssistEnabled === undefined ? true : !!raw.quickAssistEnabled
+    quickAssistEnabled: raw.quickAssistEnabled === undefined ? true : !!raw.quickAssistEnabled,
+    quickAssistSearchEnabled: raw.quickAssistSearchEnabled === undefined ? true : !!raw.quickAssistSearchEnabled
   };
 }
 
@@ -200,6 +207,7 @@ interface OutlinePrefsState extends ResolvedOutlinePrefs {
    * .filter(x=>set.has(x))` after adding/deleting from a `Set`). */
   setQuickInsertActionEnabled: (id: QuickInsertActionId, enabled: boolean) => void;
   setQuickAssistEnabled: (on: boolean) => void;
+  setQuickAssistSearchEnabled: (on: boolean) => void;
 }
 
 export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
@@ -222,7 +230,8 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       quickInsertEnabled: s.quickInsertEnabled,
       quickInsertIconOnly: s.quickInsertIconOnly,
       quickInsertActions: s.quickInsertActions,
-      quickAssistEnabled: s.quickAssistEnabled
+      quickAssistEnabled: s.quickAssistEnabled,
+      quickAssistSearchEnabled: s.quickAssistSearchEnabled
     });
   }
 
@@ -285,6 +294,10 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
     },
     setQuickAssistEnabled: (on) => {
       set({ quickAssistEnabled: !!on });
+      persist();
+    },
+    setQuickAssistSearchEnabled: (on) => {
+      set({ quickAssistSearchEnabled: !!on });
       persist();
     }
   };

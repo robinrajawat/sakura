@@ -34,7 +34,7 @@ already made and already documented at the time.
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
-| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box built with an audited subset of real toggle commands/actions (§6.10 slice 3) — no Global Search integration yet, see the Quick Assist & Quick Insert section below |
+| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions (§6.10 slice 3), plus a first Global Search sub-slice covering Documents/In documents/Notes/Code/Tags/Folders (§6.10 slice 4a) — Pad/Q&A/Diagrams/Remarks/Settings/Features/Help search, category-prefix scoping, and the chip-mode picker not built yet, see the Quick Assist & Quick Insert section below |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
@@ -396,9 +396,38 @@ toast with a working Undo button; Escape closes with no change; running an actio
 selected shows a "Done:" toast; an unmatched query shows "No matching command"; the Settings
 toggle hides the button and makes Ctrl/Cmd+K inert when off — zero console/page errors throughout.
 
-Still entirely unbuilt: Quick Assist's Global Search integration — search-hit rows across
-Documents/Notes/Tags/Settings/Help, category-prefix scoping, the chip-mode category picker, and
-fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
+**Slice 4a**: Quick Assist search integration, first sub-slice. New `state/quickAssistSearch.ts`
+directly ports legacy's real `collectSearchGroups` and its per-category collectors, scoped to the
+6 of legacy's real 18 search categories with both a real legacy collector and a real, already-
+existing `web/` data source: Documents, In documents (node text), Notes, Code, Tags, Folders. A
+significant finding, not just a scoping choice: legacy's own real `collectSearchGroups` also
+lists To-Dos/Meetings/Journal/Library, each guarded by
+`typeof collectXMatches==='function'?collectXMatches(q):[]` — but none of those four collector
+functions are ever actually defined anywhere in legacy/index.html or hub.html (confirmed by grep
+across both files), so legacy's own real behavior for those four is an unconditional empty array,
+always. Porting real Hub search would have invented behavior legacy itself never had, not
+completed a gap, so they're excluded on principle. `quickAssist.ts`'s `buildQaEntries` now
+appends search-hit rows below command/action matches, draining a single shared budget of 8 across
+every category combined, matching legacy's own real budget drain in `qaRender` exactly.
+`QuickAssistBar.tsx` renders a group header per category and navigates on click (switch document
+if needed, select the target node, open the note panel on the right tab for Notes/Code, or reveal
+a folder in the sidebar by expanding every closed ancestor). Deliberately simplified vs. legacy:
+plain-text snippets (no HTML highlighting), no trash-document scanning (`web/` has no trash
+concept yet), no fuzzy-match fallback, no category-prefix scoping or chip-mode picker — all
+deferred alongside the remaining search categories. New "Search results" sub-toggle in
+`components/QuickAssistSettings.tsx` (`outlinePrefsStore.ts` gained `quickAssistSearchEnabled`),
+separate from Quick Assist's own master toggle. Verified end-to-end in real headless Chrome:
+Documents/In documents groups render for the seed document's own title/node text; adding a tag,
+note, and folder through the real UI and searching for each surfaces the right group, and
+clicking a Notes hit opens the note panel on the correct node; disabling the search-results
+toggle removes every content-hit row, leaving the "No matching command or content" empty state —
+zero console/page errors throughout.
+
+Still unbuilt: Pad/Q&A/Diagrams/Remarks search (real legacy collectors, but `padStore.ts` isn't
+persisted per-document yet — only the currently-open document's Pad content is searchable);
+Templates (no live UI at all); Settings/Features/Help search (no searchable index, and no
+underlying system for Features at all); category-prefix scoping, the chip-mode category picker,
+and fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
 
 ## Preview, Presenter Mode & Export
 

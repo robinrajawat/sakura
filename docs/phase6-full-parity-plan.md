@@ -1593,9 +1593,24 @@ building the earlier ones):
    `outlinePrefsStore.ts`'s own prior note on why. Deliberately NOT part of this slice: category-
    prefix search scoping, the chip-mode category picker, fuzzy matching, and every search-hit row
    — all of that is item 4 below, Quick Assist's real Global Search half.
-4. Quick Assist search integration — Global Search across Documents/Notes/Tags/Settings/Help
-   (To-Dos/Library search folded in if their own search doesn't already exist as a separate
-   surface by then). The largest remaining piece; may itself split further once scoped in detail.
+4. **Quick Assist search integration** (first sub-slice landed, see Status) — Global Search
+   across legacy's real 18 `collectSearchGroups` categories, split further once scoped in
+   detail per an explicit per-category audit (not a guess): **sub-slice 4a** (landed) covers the
+   6 categories with both a real legacy collector AND a real, already-existing `web/` data
+   source needing no new store — Documents, In documents (node text), Notes, Code, Tags,
+   Folders. A significant finding from that audit: legacy's own real `collectSearchGroups` also
+   lists To-Dos/Meetings/Journal/Library, each guarded by
+   `typeof collectXMatches==='function'?collectXMatches(q):[]` — but none of those four collector
+   functions are ever actually defined anywhere in legacy/index.html or hub.html (confirmed by
+   grep across both files). Legacy's own real behavior for those four categories is therefore an
+   unconditional empty array, always — porting real Hub search here would invent behavior legacy
+   itself never had, not complete a gap, so they're excluded on principle, not because `web/`'s
+   own Hub stores lack content. Remaining, each its own separate blocker: Pad/Q&A/Diagrams/
+   Remarks (real legacy collectors, but `padStore.ts` isn't persisted per-document yet — only the
+   currently-open document's Pad content is searchable today, unlike the 6 categories above which
+   all have real per-document storage); Templates (no live UI at all in `web/`); Settings/
+   Features/Help (no searchable index for any of the three, and no underlying system to index for
+   Features at all).
 
 ### 6.11 — PWA & polish pass
 Static precache strategy to match legacy's (`web/public/sw.js`'s current runtime cache-first is
@@ -1782,7 +1797,7 @@ survives switching away and back, confirming sections truly stay mounted rather 
 remounting/losing state; reopening Settings resets to the default Appearance tab) — zero
 console/page errors across every check.
 
-**This PR**: Quick Assist UI shell + audited command subset (slice 3 of 4). New
+Third §6.10 slice: Quick Assist UI shell + audited command subset. New
 `state/quickAssist.ts` is a direct port of legacy's real `QA_COMMANDS`/`QA_ACTIONS` and their
 surrounding parse/match functions (`qaPhraseMatch`/`qaBestPhrase`/`qaParse`/
 `qaSuggestForBareVerb`/`qaParseActionsList`/`qaSuggestActionsForBareVerb`) — but scoped to only
@@ -1810,8 +1825,49 @@ typing a command phrase filters correctly; Enter executes, closes the box, and s
 toast with a working Undo button; Escape closes with no change; an action
 (`duplicate-node`) with a node selected runs and shows a "Done:" toast; an unmatched query shows
 "No matching command"; the Settings toggle is present, and disabling it both hides the button and
-makes Ctrl/Cmd+K inert — zero console/page errors across every check. Slice 4 (Quick Assist
-search integration) not yet started.
+makes Ctrl/Cmd+K inert — zero console/page errors across every check.
+
+**This PR**: Quick Assist search integration, sub-slice 4a (slice 4 of 4, split further once
+scoped — see this doc's §6.10 slice-sequence item 4 above). New `state/quickAssistSearch.ts`
+directly ports legacy's real `collectSearchGroups` and its per-category collectors
+(`collectDocMatches`/`collectNodeTextMatches`/`collectNoteMatches`/`collectCodeMatches`/
+`collectTagMatches`/`collectFolderMatches`), plus the shared `qaTokenizeQuery`/`qaHayMatches`/
+`buildMatchSnippetHtml` matching primitives — scoped to the 6 of legacy's real 18 search
+categories with both a real legacy collector and a real, already-existing `web/` data source
+needing no new store: Documents, In documents (node text), Notes, Code, Tags, Folders. A
+significant finding from the audit behind this scoping, not just a choice: legacy's own real
+`collectSearchGroups` also lists To-Dos/Meetings/Journal/Library, each guarded by
+`typeof collectXMatches==='function'?collectXMatches(q):[]` — but none of those four collector
+functions are ever actually defined anywhere in legacy/index.html or hub.html, confirmed by grep
+across both files. Legacy's own real behavior for those four categories is therefore an
+unconditional empty array, always — porting real Hub search would have invented behavior legacy
+itself never had, not completed a real gap, so they're excluded on principle. `quickAssist.ts`'s
+`buildQaEntries` now appends these search-hit rows (`kind: 'search'`) below command/action
+matches, draining a single shared budget of 8 across every category combined in group order,
+matching legacy's own real `qaRender` budget drain exactly. `QuickAssistBar.tsx` renders a group
+header ("Documents", "Notes", …) whenever the group changes, and a hit's row navigates instead of
+executing (switches document if needed, selects the target node, opens the note panel on the
+right tab for Notes/Code hits, or reveals a folder in the sidebar — expanding every closed
+ancestor, leaving already-open ones untouched). Deliberately simplified vs. legacy's real
+collectors: plain-text snippets (no `<mark>` HTML highlighting), no trash-document scanning
+(`web/` has no trash/deleted-documents concept at all yet), no fuzzy-match fallback (same
+simplification `quickAssist.ts`'s own command matching already makes), no category-prefix scoping
+or chip-mode category picker (both real legacy features, deferred alongside the remaining search
+categories). Click-to-navigate matches this project's own already-established simplification
+(`OutlineTree.tsx`'s wikilink click-navigate: a plain `selectNode(id)`, no ancestor-expansion/
+scroll-into-view/flash animation) rather than legacy's real `jumpToNodeInDoc`/`revealNodeInDoc`.
+New: a "Search results" sub-toggle in `components/QuickAssistSettings.tsx`
+(`outlinePrefsStore.ts` gained `quickAssistSearchEnabled`, direct port of legacy's real
+`qaSearchResultsEnabled`/`#qa-search-enabled-toggle`) — separate from Quick Assist's own master
+toggle, controls only whether search hits fold into the box at all. Verified end-to-end in real
+headless Chrome: Documents/In documents groups render for the seed document's own real title/node
+text; adding a tag, a note, and a folder through the real UI and then searching for each
+surfaces the right group with the right content, and clicking a Notes hit opens the note panel on
+the correct node; disabling the new search-results toggle removes every content-hit row for a
+query that previously produced them, leaving the "No matching command or content" empty state —
+zero console/page errors across every check. Remaining: sub-slices covering Pad/Q&A/Diagrams/
+Remarks (blocked on `padStore.ts` per-document persistence), and the rest of legacy's real
+category-prefix/chip-picker/fuzzy-match machinery — not started yet.
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

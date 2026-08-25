@@ -1969,10 +1969,78 @@ unmatched query shows "No matching command"; the Settings toggle is
 present with the right label, and disabling it both hides the toolbar
 button and makes Ctrl/Cmd+K a no-op, matching legacy's own real
 `toggleQa()` guard -- zero console/page errors throughout, across
-every one of those checks. Remaining §6.10 slice: Quick Assist's
-Global Search integration (search-hit rows across Documents/Notes/
-Tags/Settings/Help, category-prefix scoping, the chip-mode category
-picker, fuzzy matching) -- not started yet, flagged in the plan doc as
-the largest remaining piece that may itself split further once
-scoped in detail.
+every one of those checks.
+
+Fourth §6.10 slice landed (sub-slice 4a of what the plan doc flagged as
+possibly needing to split further -- it did): Quick Assist's Global
+Search integration, first sub-slice. New `state/quickAssistSearch.ts`
+directly ports legacy's real `collectSearchGroups` and its per-
+category collectors (`collectDocMatches`/`collectNodeTextMatches`/
+`collectNoteMatches`/`collectCodeMatches`/`collectTagMatches`/
+`collectFolderMatches`) plus the shared `qaTokenizeQuery`/
+`qaHayMatches`/`buildMatchSnippetHtml` matching primitives -- scoped
+to the 6 of legacy's real 18 search categories with both a real
+legacy collector AND a real, already-existing `web/` data source
+needing no new store: Documents, In documents (node text), Notes,
+Code, Tags, Folders. A significant finding from the audit behind this
+scoping, not just a choice: legacy's own real `collectSearchGroups`
+also lists To-Dos/Meetings/Journal/Library, each guarded by
+`typeof collectXMatches==='function'?collectXMatches(q):[]` -- but
+none of those four collector functions are ever actually DEFINED
+anywhere in legacy/index.html or hub.html, confirmed by grep across
+both files. Legacy's own real behavior for those four categories is
+therefore an unconditional empty array, always -- porting real Hub
+search would have invented behavior legacy itself never had, not
+completed a real gap, so they're excluded on principle, not because
+`web/`'s own Hub stores (`hubTodosStore.ts` etc.) lack real content --
+they don't, there's just nothing real in legacy to port.
+`quickAssist.ts`'s `buildQaEntries` now appends these search-hit rows
+(`kind: 'search'`) below command/action matches, draining a single
+shared budget of 8 across every category combined in group order,
+matching legacy's own real `qaRender` budget drain exactly.
+`QuickAssistBar.tsx` renders a group header ("Documents", "Notes", ...)
+whenever the group changes from the previous row, and a hit's own row
+navigates instead of executing: switches document if needed, selects
+the target node, opens the note panel on the right tab for Notes/Code
+hits, or reveals a folder in the sidebar by expanding every closed
+ancestor while leaving already-open ones untouched (a real, faithful
+port of legacy's own real `revealFolderInSidebar` ancestor-walk).
+Deliberately simplified vs. legacy's real collectors: plain-text
+snippets, no `<mark>` HTML highlighting; no trash-document scanning
+(`web/` has no trash/deleted-documents concept at all yet); no
+fuzzy-match fallback (same simplification `quickAssist.ts`'s own
+command matching already makes, for the same reasoning); no
+category-prefix scoping ("notes: budget") or chip-mode category
+picker -- both real legacy features, deferred alongside the remaining
+search categories. Click-to-navigate matches this project's own
+already-established simplification (`OutlineTree.tsx`'s wikilink
+click-navigate: a plain `selectNode(id)`, no ancestor-expansion/
+scroll-into-view/flash animation) rather than legacy's real
+`jumpToNodeInDoc`/`revealNodeInDoc` (which do all three) -- not a new
+gap introduced here, the same pattern this whole codebase already
+uses everywhere else a result needs to land on a specific node. New:
+a "Search results" sub-toggle in `components/QuickAssistSettings.tsx`
+(`outlinePrefsStore.ts` gained `quickAssistSearchEnabled`, a direct
+port of legacy's real `qaSearchResultsEnabled`/
+`#qa-search-enabled-toggle`) -- separate from Quick Assist's own
+master toggle, controls only whether search hits fold into the box at
+all. Verified end-to-end in real headless Chrome: Documents/In
+documents groups render correctly for the seed document's own real
+title ("Welcome") and node text ("Welcome to Sakura"), with the
+current document correctly marked; adding a tag, a note, and a folder
+through the real UI (not synthetic state) and then searching for each
+surfaces the right group with the right content, and clicking a Notes
+hit opens the note panel on the correct node; disabling the new
+search-results toggle removes every content-hit row for a query that
+previously produced them, leaving the "No matching command or
+content" empty state -- zero console/page errors throughout, across
+every one of those checks. Remaining: sub-slices covering Pad/Q&A/
+Diagrams/Remarks search (blocked on `padStore.ts` gaining real
+per-document persistence -- today only the currently-open document's
+Pad content is searchable, unlike the 6 categories above which all
+have real per-document storage already), Settings/Features/Help
+search (no searchable index for any of the three, and no underlying
+system to index for Features at all), Templates (no live UI at all),
+category-prefix scoping, and the chip-mode category picker -- none
+started yet.
 ```
