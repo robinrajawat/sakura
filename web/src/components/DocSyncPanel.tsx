@@ -6,8 +6,15 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 /**
  * Phase 4 slice (docs/framework-migration-plan.md): account/sync, part 2 -- doc sync panel.
  * Lists the signed-in user's real documents (users/{uid}/docs), loads one into the outline
- * editor, and pushes local changes back manually via "Push to cloud". See docSyncStore.ts's
- * own header for what's deliberately deferred (autosave, sharing, diagram XML, etc).
+ * editor, and syncs local changes back. §6.8 slice: replaced the old manual-only "Push to
+ * cloud" button with a real debounced autosave (docSyncStore.ts's own `loadDoc` now queues a
+ * push automatically ~1.5s after edits settle) plus a status line matching legacy's own real
+ * `updateSyncStatusUI` text states -- "Syncing…" / "Synced" / "Sync error — will retry on your
+ * next change" (idle shows nothing, same as legacy's own dot going transparent). No manual
+ * button anymore: legacy's own primary Firestore doc sync has never had one either, it's always
+ * been purely automatic-on-edit (a separate, explicitly opt-in "Auto-sync on edit" toggle exists
+ * in legacy only for its optional Gist/Drive whole-app backup feature, a different system this
+ * project hasn't built at all yet -- see docSyncStore.ts's own header for what's still deferred).
  */
 export function DocSyncPanel() {
   const user = useAuthStore((s) => s.user);
@@ -15,15 +22,26 @@ export function DocSyncPanel() {
   const docId = useDocSyncStore((s) => s.docId);
   const title = useDocSyncStore((s) => s.title);
   const loading = useDocSyncStore((s) => s.loading);
-  const syncing = useDocSyncStore((s) => s.syncing);
+  const syncStatus = useDocSyncStore((s) => s.syncStatus);
   const error = useDocSyncStore((s) => s.error);
   const crossTabNotice = useDocSyncStore((s) => s.crossTabNotice);
   const listDocs = useDocSyncStore((s) => s.listDocs);
   const loadDoc = useDocSyncStore((s) => s.loadDoc);
-  const pushDoc = useDocSyncStore((s) => s.pushDoc);
   const stopWatching = useDocSyncStore((s) => s.stopWatching);
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
+  const SYNC_STATUS_TEXT: Record<typeof syncStatus, string | null> = {
+    idle: null,
+    syncing: 'Syncing…',
+    synced: 'Synced',
+    error: 'Sync error — will retry on your next change'
+  };
+  const SYNC_STATUS_COLOR: Record<typeof syncStatus, string> = {
+    idle: t.mutedText,
+    syncing: t.mutedText,
+    synced: '#2fa84f',
+    error: '#e5484d'
+  };
 
   useEffect(() => {
     if (user) listDocs(user.uid);
@@ -58,10 +76,8 @@ export function DocSyncPanel() {
           ))}
         </select>
         {loading && <span style={{ color: t.mutedText }}>Loading...</span>}
-        {docId && (
-          <button type="button" onClick={() => pushDoc(user.uid)} disabled={syncing}>
-            {syncing ? 'Pushing...' : 'Push to cloud'}
-          </button>
+        {docId && SYNC_STATUS_TEXT[syncStatus] && (
+          <span style={{ color: SYNC_STATUS_COLOR[syncStatus], fontSize: 12 }}>{SYNC_STATUS_TEXT[syncStatus]}</span>
         )}
       </div>
       {docId && <div style={{ color: t.mutedText }}>Editing: {title}</div>}
