@@ -633,30 +633,61 @@ together.
 
 Asked next to complete the two remaining substantial §6.8 items:
 **"Full whole-app JSON Export/Import"** and **"Version History"** --
-following the same "ship separately" precedent, though both were
-researched and built in one continuous pass since Export/Import's own
+shipped as two separate PRs on two separate branches, following this
+session's own "ship separately" precedent, though both were researched
+and built in one continuous pass since Export/Import's own
 `preRestoreSnapshot` mechanism ("Undo last restore") turned out to be
 real, separately-scoped infrastructure both this slice AND tier 1's own
-safety-copy restore needed. Version History shipped first: a new
-`store/versionHistoryStore.ts`, deliberately scoped to a document's
-outline core only (nodes/title, active document only) -- legacy's own
-real feature is enormous (Pad/diagrams/Q&A/decision-log capture,
-per-node view, background-document restore, four separate Hub-domain
-histories), see that store's own header for the full scoping
-reasoning. Same real IndexedDB scheme legacy uses (`docrev:<id>`,
-10-minute auto-capture gap, 20-version cap). `documentsStore.ts`'s
-existing autosave now feeds the capture gate right before each
-overwrite (no new timer). A new `components/VersionHistoryPanel.tsx`
-(clock-icon header button, hidden with no document open) lists
-revisions, Save-a-version-now, Restore. Verified with 21 new unit
-tests plus a real, long headless-Chrome flow chained together with the
-Export/Import verification below (no Firebase dependency, so both
-could be exercised thoroughly): opened the panel, saved a manual
-checkpoint, restored it, confirmed the safety-checkpoint row appeared,
-confirmed History correctly showed an Auto revision captured from the
-whole-app import. Export/Import is next, on its own branch since
+safety-copy restore needed (git surgery: committed Version History's
+files on its own branch first, then switched back to `main` and
+branched again for the remaining uncommitted Export/Import files).
+
+Version History shipped first: a new `store/versionHistoryStore.ts`,
+deliberately scoped to a document's outline core only (nodes/title,
+active document only) -- legacy's own real feature is enormous
+(Pad/diagrams/Q&A/decision-log capture, per-node view,
+background-document restore, four separate Hub-domain histories), see
+that store's own header for the full scoping reasoning. Same real
+IndexedDB scheme legacy uses (`docrev:<id>`, 10-minute auto-capture
+gap, 20-version cap). `documentsStore.ts`'s existing autosave now feeds
+the capture gate right before each overwrite (no new timer). A new
+`components/VersionHistoryPanel.tsx` (clock-icon header button, hidden
+with no document open) lists revisions, Save-a-version-now, Restore.
+Verified with 21 new unit tests plus a real, long headless-Chrome flow
+chained together with the Export/Import verification below (no
+Firebase dependency, so both could be exercised thoroughly): opened
+the panel, saved a manual checkpoint, restored it, confirmed the
+safety-checkpoint row appeared, confirmed History correctly showed an
+Auto revision captured from the whole-app import.
+
+Export/Import shipped second, on its own branch since
 `documentsStore.ts`/`backupStore.ts` needed to diverge cleanly for two
-separate PRs -- see that PR's own description once opened.
+separate PRs. New `store/dataIoStore.ts`: direct port of legacy's real
+`exportAllData`/`importAllDataFromFile`/`importAllDataFromPayload`/
+`restoreFromPreRestoreSnapshot`. Export is a straight download, reusing
+the exact same envelope tier 1/tier 2 already write. Import's real
+safety mechanics ported faithfully: a loose shape check (legacy's own
+is exactly this loose), snapshot-before-overwrite, clear-and-rewrite
+with rollback-on-a-failed-write (re-reading the just-taken snapshot
+back from IndexedDB, matching legacy's own real mechanism, not a
+separately-held in-memory copy). `backupStore.ts`'s own tier-1 restore
+now writes the same shared snapshot too, so "Undo last restore" works
+after either restore path -- one level deep, matching legacy's own
+real behavior verbatim. New `components/DataIoSettings.tsx` (Export…/
+Import…/Undo… rows, confirms live in the component, not the store,
+matching `BackupSettings.tsx`'s own established split). Verified with
+12 new unit tests plus a real headless-Chrome flow (no Firebase
+dependency, so this could be exercised thoroughly): a real downloaded
+file with the right shape, an invalid-file import correctly alerting,
+a valid import actually taking effect, Undo correctly restoring the
+pre-import content and then correctly disappearing once consumed, zero
+console errors throughout. The tier-1-restore-also-snapshots
+integration specifically is unit-tested rather than further
+end-to-end verified -- chaining a second full page reload within one
+browser-automation run hit real Playwright navigation-timing
+flakiness unrelated to the feature itself (the identical
+`snapshotBeforeRestore` call already proven end-to-end via the import
+path), not worth forcing past for what's otherwise identical code.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
