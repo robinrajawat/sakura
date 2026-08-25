@@ -588,6 +588,28 @@ genuinely unverified against the real production project, exactly as
 flagged beforehand -- it fails safe either way (empty list, not a
 crash).
 
+Asked next to complete two more §6.8 remainders together: **"a real
+persistent sync-status indicator (top-bar dot)"** and **"two-tier
+automatic backup's tier 2 (auto-backup to file, File System Access
+API)"** -- following this session's own established precedent (two
+items asked together still ship as separate PRs, same as email/
+password sign-in + sharing did), the top-bar dot landed first. New
+`components/SyncStatusIndicator.tsx`, direct port of legacy's real
+`account-toggle-status-dot`/`updateSyncStatusUI` dot logic: an avatar/
+initial-fallback badge with an overlay dot in the header (next to the
+notification bell), hidden when signed out, matching legacy's exact
+state machine (syncing pulse, synced bright-for-4s then dims to a
+persistent idle-ok rather than fading to nothing, error persists). A
+new pure `state/syncStatusDot.ts` holds the tested resting-state
+mapping; the 4000ms fade is a local component timer, matching legacy's
+own un-abstracted `_syncDotFadeTimer`. Verified with a new pure-function
+test suite plus real headless Chrome for the signed-out state (dot and
+bell both correctly absent, zero console errors) -- the signed-in
+color-transition behavior itself wasn't verified against a real
+account, same constraint as every other §6.8 slice this session.
+Auto-backup-to-file (tier 2) is next, not yet started as of this
+paragraph.
+
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
