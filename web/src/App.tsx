@@ -18,6 +18,7 @@ import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
+import { NotificationBell } from './components/NotificationBell';
 import {
   useThemeStore,
   ACCENT_PRESETS,
@@ -335,6 +336,9 @@ export function App() {
               />
             ))}
           </div>
+          {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
+              nothing when signed out. */}
+          <NotificationBell />
           {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
               surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
               button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see

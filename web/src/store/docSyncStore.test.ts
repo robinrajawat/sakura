@@ -288,3 +288,57 @@ describe('debounced autosave (§6.8)', () => {
     await vi.waitFor(() => expect(useDocSyncStore.getState().syncStatus).toBe('synced'));
   });
 });
+
+describe('sharing: role/ownerUid state and the viewer-role push/autosave gate (§6.8)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockSetDoc.mockClear();
+    mockOnSnapshotCb = null;
+  });
+
+  afterEach(() => {
+    useDocSyncStore.getState().stopWatching();
+    vi.useRealTimers();
+  });
+
+  it('defaults to role "owner" with ownerUid set to the loading uid when no sharedMeta is passed', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+    const s = useDocSyncStore.getState();
+    expect(s.role).toBe('owner');
+    expect(s.ownerUid).toBe('uid1');
+    expect(s.ownerDisplayName).toBe('');
+    expect(s.ownerEmail).toBe('');
+  });
+
+  it('adopts the passed sharedMeta role/owner identity for a document opened via "Shared with me"', async () => {
+    await useDocSyncStore
+      .getState()
+      .loadDoc('owner-uid', 'doc1', { role: 'viewer', ownerDisplayName: 'Ada', ownerEmail: 'ada@example.com' });
+    const s = useDocSyncStore.getState();
+    expect(s.role).toBe('viewer');
+    expect(s.ownerUid).toBe('owner-uid');
+    expect(s.ownerDisplayName).toBe('Ada');
+    expect(s.ownerEmail).toBe('ada@example.com');
+  });
+
+  it('a viewer\'s pushDoc is a no-op -- best-effort client-side deterrent, matching legacy\'s isViewerOnCurrentDoc', async () => {
+    await useDocSyncStore.getState().loadDoc('owner-uid', 'doc1', { role: 'viewer', ownerDisplayName: '', ownerEmail: '' });
+    await useDocSyncStore.getState().pushDoc('owner-uid');
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    expect(useDocSyncStore.getState().syncStatus).toBe('idle');
+  });
+
+  it('a viewer\'s outline edits never schedule an autosave push', async () => {
+    await useDocSyncStore.getState().loadDoc('owner-uid', 'doc1', { role: 'viewer', ownerDisplayName: '', ownerEmail: '' });
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edited' }] });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('an editor\'s outline edits still autosave normally, unlike a viewer', async () => {
+    await useDocSyncStore.getState().loadDoc('owner-uid', 'doc1', { role: 'editor', ownerDisplayName: '', ownerEmail: '' });
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edited' }] });
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(mockSetDoc).toHaveBeenCalledTimes(1);
+  });
+});

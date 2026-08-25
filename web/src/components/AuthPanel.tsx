@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useProfileStore } from '../store/profileStore';
+import { useNotificationsStore } from '../store/notificationsStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 
 /**
@@ -30,6 +32,9 @@ export function AuthPanel() {
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
   const sendPasswordReset = useAuthStore((s) => s.sendPasswordReset);
   const signOut = useAuthStore((s) => s.signOut);
+  const ensureProfile = useProfileStore((s) => s.ensureProfile);
+  const resetProfile = useProfileStore((s) => s.reset);
+  const initNotifications = useNotificationsStore((s) => s.init);
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
 
@@ -47,6 +52,25 @@ export function AuthPanel() {
     // oversight, same as every other "run once on mount" effect in this codebase.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // notificationsStore.init() is idempotent (guarded internally, same convention as
+    // backupStore.ts's own init) -- AuthPanel is always mounted (App.tsx renders it
+    // unconditionally), so this is as good a "call once at app startup" site as any.
+    initNotifications();
+  }, [initNotifications]);
+
+  // §6.8 slice: keep the signed-in user's `profiles/{uid}` document current on every sign-in
+  // (email/displayName/photoURL refresh, `visibility` left untouched -- see profileStore.ts's
+  // own header), and drop the local visibility flag back to its private default on sign-out so
+  // a NEXT account signing in on this same device never briefly shows a stale prior visibility.
+  useEffect(() => {
+    if (user) void ensureProfile(user);
+    else resetProfile();
+    // ensureProfile/resetProfile are stable store actions, not meaningfully "changing" between
+    // renders -- same reasoning as DocSyncPanel.tsx's own [user]-only effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   async function handleSubmit() {
     const trimmedEmail = email.trim();
