@@ -18,7 +18,7 @@ import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
-import { useThemeStore } from './store/themeStore';
+import { useThemeStore, ACCENT_PRESETS, ACCENT_PRESET_ORDER, ACCENT_PRESET_LABELS } from './store/themeStore';
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
 
@@ -36,6 +36,8 @@ export function App() {
   const isMobile = useIsMobileViewport();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const accentPreset = useThemeStore((s) => s.accentPreset);
+  const setAccentPreset = useThemeStore((s) => s.setAccentPreset);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
@@ -70,6 +72,36 @@ export function App() {
           <button type="button" onClick={toggleTheme} title="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
+          {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
+              legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
+              same order, same radiogroup semantics -- as a small round-button row next to the
+              theme toggle rather than inside a dedicated Settings panel, since `web/` has no
+              Settings surface at all yet (a real, separately-scoped follow-up covering every
+              other toggle this phase and later ones reference, not just this one). The
+              `setAccentPreset` action itself has existed since Phase 6.1; this is the first UI
+              that actually calls it. */}
+          <div role="radiogroup" aria-label="Accent color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {ACCENT_PRESET_ORDER.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                role="radio"
+                aria-checked={accentPreset === preset}
+                aria-label={ACCENT_PRESET_LABELS[preset]}
+                title={ACCENT_PRESET_LABELS[preset]}
+                onClick={() => setAccentPreset(preset)}
+                style={{
+                  width: 16,
+                  height: 16,
+                  padding: 0,
+                  borderRadius: '50%',
+                  border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                  background: ACCENT_PRESETS[preset][theme],
+                  cursor: 'pointer'
+                }}
+              />
+            ))}
+          </div>
         </>
       }
       tabBar={<DocumentTabs />}

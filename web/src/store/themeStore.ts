@@ -212,9 +212,78 @@ export const ACCENT_PRESETS: Record<AccentPreset, { light: string; dark: string 
   amber: { light: '#917233', dark: '#bd9442' }
 };
 
+/** Legacy's own real swatch order and labels (legacy/index.html:4696-4702's `data-accent`/
+ * `data-tip` attributes, in DOM order) -- terracotta first (it's the default), the rest
+ * alphabetical-ish by legacy's own arbitrary but fixed ordering. Consumed by `App.tsx`'s accent
+ * picker so the label text lives next to the color data it describes, not duplicated at the
+ * call site. */
+export const ACCENT_PRESET_ORDER: AccentPreset[] = ['terracotta', 'teal', 'indigo', 'violet', 'plum', 'moss', 'amber'];
+
+export const ACCENT_PRESET_LABELS: Record<AccentPreset, string> = {
+  terracotta: 'Terracotta (default)',
+  teal: 'Teal',
+  indigo: 'Indigo',
+  violet: 'Violet',
+  plum: 'Plum',
+  moss: 'Moss',
+  amber: 'Amber'
+};
+
 /** legacy's real default: `body.theme-light`'s `--accent:#c2553d` is exactly the terracotta
  * preset's light value -- terracotta is the actual fresh-install default, not an arbitrary pick. */
 export const DEFAULT_ACCENT: AccentPreset = 'terracotta';
+
+// §6.7 slice (docs/phase6-full-parity-plan.md): theme/accent-preset persistence across sessions,
+// direct port of legacy's real `savePrefs`/`loadPrefs` persistence of these same two fields
+// (legacy's own theme/accentPreset live in its single big prefs blob; this store gets its own
+// small key instead, matching documentsStore.ts's own "one key per concern, not one giant blob"
+// convention -- see that file's own `ls()`/`readJson`/`writeJson` helpers, replicated here rather
+// than shared, since neither store imports from the other).
+const _THEME_PREFS_KEY = 'sakura_web_theme_prefs_v1';
+
+function ls(): Storage | null {
+  return typeof localStorage !== 'undefined' ? localStorage : null;
+}
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = ls()?.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key: string, value: unknown): void {
+  try {
+    ls()?.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage full/unavailable -- same "best effort, don't throw" convention as
+    // documentsStore.ts's own writeJson.
+  }
+}
+
+interface ThemePrefs {
+  theme?: unknown;
+  accentPreset?: unknown;
+}
+
+/** Reads persisted prefs, defensively validating each field against the real set of valid
+ * values rather than trusting stored JSON blindly (same "safe to store, safe to render"
+ * contract every other imported/persisted shape in this project already gets, e.g.
+ * `normalizeDecisionLogCore`) -- a corrupted or hand-edited localStorage value falls back to the
+ * real default for that field instead of poisoning the store with a bogus theme/accent. */
+function loadThemePrefs(): { theme: Theme; accentPreset: AccentPreset } {
+  const raw = readJson<ThemePrefs>(_THEME_PREFS_KEY, {});
+  const theme: Theme = raw.theme === 'dark' ? 'dark' : 'light';
+  const accentPreset: AccentPreset =
+    typeof raw.accentPreset === 'string' && raw.accentPreset in ACCENT_PRESETS ? (raw.accentPreset as AccentPreset) : DEFAULT_ACCENT;
+  return { theme, accentPreset };
+}
+
+function saveThemePrefs(theme: Theme, accentPreset: AccentPreset): void {
+  writeJson(_THEME_PREFS_KEY, { theme, accentPreset });
+}
 
 interface ThemeState {
   theme: Theme;
@@ -237,18 +306,21 @@ interface ThemeState {
 /**
  * Phase 3's original theming slice, extended in Phase 6.1 with real extracted color values,
  * accent-preset selection, and real CSS custom properties on `<body>` (see `CSS_VAR_MAP`/
- * `applyCssVariables` above). Still deliberately scoped down from legacy's fuller system: no
- * system-preference auto-detection ('system' mode), no persistence across sessions (savePrefs),
- * no Chrome background presets, no node-text-color presets, no accent intensity slider -- each a
- * real, separately-scoped follow-up within Phase 6.1/6.7, not silently dropped. The CSS custom
+ * `applyCssVariables` above), and in §6.7 with theme/accent-preset persistence across sessions
+ * (`loadThemePrefs`/`saveThemePrefs` above) and a real accent-swatch picker UI (`App.tsx`'s
+ * header actions -- the store's own `setAccentPreset` action existed since Phase 6.1 but had no
+ * UI ever calling it until this slice). Still deliberately scoped down from legacy's fuller
+ * system: no system-preference auto-detection ('system' mode), no Chrome background presets, no
+ * node-text-color presets, no accent intensity slider, no custom-color picker (`web/`'s own
+ * `AccentPreset` type has no `'custom'` variant at all, matching this scope-down) -- each a real,
+ * separately-scoped follow-up within §6.7, not silently dropped. The CSS custom
  * properties mechanism itself is only consumed by AppShell.tsx/DocumentTabs.tsx so far (the
  * components built in this same phase) -- every other existing component (OutlineTree.tsx, the
  * Hub panels, etc.) still reads `THEME_TOKENS[theme]` via plain React state, same as before this
  * slice; migrating those is its own separate, much larger follow-up, not attempted here.
  */
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: 'light',
-  accentPreset: DEFAULT_ACCENT,
+  ...loadThemePrefs(),
   init: () => {
     const { theme, accentColor } = get();
     applyCssVariables(theme, accentColor());
@@ -256,15 +328,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   setTheme: (theme) => {
     set({ theme });
     applyCssVariables(theme, get().accentColor());
+    saveThemePrefs(theme, get().accentPreset);
   },
   toggleTheme: () => {
     const theme = get().theme === 'light' ? 'dark' : 'light';
     set({ theme });
     applyCssVariables(theme, get().accentColor());
+    saveThemePrefs(theme, get().accentPreset);
   },
   setAccentPreset: (preset) => {
     set({ accentPreset: preset });
     applyAccentCssVariable(get().accentColor());
+    saveThemePrefs(get().theme, preset);
   },
   accentColor: () => {
     const { theme, accentPreset } = get();
