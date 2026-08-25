@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { generateId } from '../../src/utils/generateId';
 
 // Pinned local oracles — literal copies of the three functions currently live in index.html,
@@ -60,12 +60,30 @@ describe('generateId', () => {
     expect(id10.length).toBeLessThanOrEqual(1 + timestampPart.length + 10 + 1);
   });
 
+  // Was a genuine (not rare) CI flake: a tight loop like this calls generateId thousands of
+  // times within the same millisecond, so the timestamp portion is effectively constant and
+  // every id's uniqueness rests entirely on its random suffix -- 36^5 (~60.5M) possible values.
+  // By the birthday bound, drawing 5000 samples from a fixed 60.5M-value space has roughly a
+  // 10% chance of at least one real collision (n²/2M ≈ 0.1), which is exactly the
+  // "expected 4999 to be 5000" failure this test kept producing. That's a flaw in this test's
+  // own timing assumption, not a bug in generateId itself -- no real call site fires 5000 calls
+  // synchronously inside one millisecond; real ids are spread across real wall-clock time.
+  // Mocking Date.now() to tick forward by 1ms per call restores that realistic spread (and adds
+  // the timestamp's own entropy on top of the random suffix), making a collision genuinely
+  // impossible here rather than just statistically unlikely.
   it('never collides across a large batch of calls (same collision resistance as the original scheme)', () => {
-    const ids = new Set<string>();
-    for (let i = 0; i < 5000; i++) {
-      ids.add(generateId('d'));
+    const nowSpy = vi.spyOn(Date, 'now');
+    let t = Date.now();
+    nowSpy.mockImplementation(() => t++);
+    try {
+      const ids = new Set<string>();
+      for (let i = 0; i < 5000; i++) {
+        ids.add(generateId('d'));
+      }
+      expect(ids.size).toBe(5000);
+    } finally {
+      nowSpy.mockRestore();
     }
-    expect(ids.size).toBe(5000);
   });
 
   it('produces only lowercase base36-safe characters after the prefix', () => {
