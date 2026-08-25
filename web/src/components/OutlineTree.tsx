@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
-import { countDescendants, getCheckboxChildStats, buildVertFlags } from '../core/nodeQueries';
+import { countDescendants, getCheckboxChildStats, buildVertFlags, buildPrefix } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
@@ -129,6 +129,15 @@ export function OutlineTree() {
   const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
   const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
+  // §6.7 slice: `hideTreeLines` gains a real live-tree consumer (previously export-only, via
+  // ExportButtons.tsx) -- matches legacy's own real two-mode indentation exactly. Default
+  // (`true`) is CSS-padding indentation, same family as this component already used before this
+  // slice (just a different per-depth step -- 24px here vs. legacy's own 18px, a pre-existing,
+  // unrelated difference). `false` switches to legacy's own real monospace ASCII-connector
+  // prefix text (`buildPrefix`, already ported to `core/nodeQueries.ts` for exports only) instead
+  // of CSS padding at all -- `treeIndentWidth` sets that prefix's own per-depth character width.
+  const hideTreeLines = useOutlinePrefsStore((s) => s.hideTreeLines);
+  const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
   const rowDensity = compactRows ? 0.78 : 1;
   const decisions = usePadStore((s) => s.decisions);
   // §6.7 slice: inline note/remark/Q&A previews -- direct port of legacy's own real
@@ -154,6 +163,12 @@ export function OutlineTree() {
   // shared with the right-click context menu and out of scope for this specific slice; see this
   // component's own header for the fuller list of what's deferred and why.
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
+  // §6.7 slice: hover state specifically for the fold control (dot or arrow, depending on
+  // `hideTreeLines`) -- distinct from `hoveredNodeId` above, which fires for the whole row.
+  // Legacy's own real hover-to-glyph swap (both `.fold-dot`/`.fold-toggle`) is scoped to hovering
+  // the small control itself, not the row (legacy/index.html:18313-18320's own
+  // `mouseenter`/`mouseleave` bound directly to `foldBtn`), so this needs its own, narrower state.
+  const [hoveredFoldId, setHoveredFoldId] = useState<number | null>(null);
   // Phase 6.2 Quick Insert (Ctrl/Cmd+Space while editing a node's text) -- the last remaining
   // 6.2 item. Non-null while the menu is open, holding which node's <input> it's targeting
   // (always the currently-editing one, since Quick Insert only opens mid-edit) so a click on a
@@ -607,6 +622,16 @@ export function OutlineTree() {
         const remarkOpen = isInlineExpanded(alwaysExpandInlineEnabled, remarkExpandIds, node.id);
         const nodeQaItems = qaItems.filter((q) => q.anchorNodeId === node.id);
         const qaOpen = isInlineExpanded(alwaysExpandInlineEnabled, qaExpandIds, node.id);
+        // §6.7 slice: the monospace ASCII-connector prefix (├──/└──/│), legacy's own real
+        // alternate to CSS-padding indentation when `hideTreeLines` is off -- see this
+        // component's own `hideTreeLines` hook-read comment above for the two-mode story.
+        const treePrefix = !hideTreeLines ? buildPrefix(nodes, idx, treeIndentWidth, 0) : null;
+        const isFoldHovered = hoveredFoldId === node.id;
+        // Shared left-indent for the note/remark/Q&A preview lines below the row -- matches
+        // legacy's own real dual-mode formula (legacy/index.html:20359 etc.'s own
+        // `hideTreeLines?(depth*18+8*editorScale+24):(8*editorScale+24)`), adapted to this
+        // component's 24px step the same way the row's own `paddingLeft` above is.
+        const previewPaddingLeft = hideTreeLines ? node.depth * 24 + 32 : 8 * editorScale + 24;
 
         return (
           <div key={node.id}>
@@ -632,7 +657,7 @@ export function OutlineTree() {
               position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              paddingLeft: `${node.depth * 24 + 8}px`,
+              paddingLeft: hideTreeLines ? `${node.depth * 24 + 8}px` : `${8 * editorScale}px`,
               paddingTop: 4 * rowDensity,
               paddingBottom: 4 * rowDensity,
               cursor: isEditing ? 'text' : 'grab',
@@ -658,8 +683,13 @@ export function OutlineTree() {
                 rather than porting the literal pixel values, same "port the effect, not the exact
                 technique" precedent used elsewhere in this migration. `bottom: -2 * rowDensity`
                 lets each segment overlap slightly into the next row, matching legacy's own
-                `calc(-2px * var(--editor-scale) * var(--row-density))`. */}
-            {depthGuideLines &&
+                `calc(-2px * var(--editor-scale) * var(--row-density))`. Also matches legacy's
+                own real gating exactly (legacy/index.html:20355's own `if(hideTreeLines&&
+                depthGuideLines)`): guide lines only apply in the CSS-padding mode -- the
+                monospace-connector mode's own `│` prefix characters already draw the vertical
+                lines, so guides would be redundant (and misaligned) there. */}
+            {hideTreeLines &&
+              depthGuideLines &&
               buildVertFlags(nodes, idx, 0).map((_, d) => (
                 <span
                   key={d}
@@ -691,21 +721,101 @@ export function OutlineTree() {
                 }}
               />
             )}
+            {/* Monospace ASCII-connector prefix -- only in the `!hideTreeLines` mode, rendered
+                before the fold control exactly like legacy's own real DOM order (legacy/
+                index.html:20293's own `if(hideTreeLines){...} else {const prefix=buildPrefix
+                (...); ...row.appendChild(pfx)}`, both branches evaluated before the fold-control
+                append that follows). `letterSpacing`/`marginRight` approximate legacy's own real
+                `.node-prefix` CSS (legacy/index.html:564) closely enough for a monospace span;
+                pixel-exact font-metric matching isn't attempted. */}
+            {treePrefix && (treePrefix.vert || treePrefix.conn) && (
+              <span
+                aria-hidden="true"
+                style={{
+                  whiteSpace: 'pre',
+                  fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
+                  color: t.mutedText,
+                  userSelect: 'none',
+                  lineHeight: 'inherit'
+                }}
+              >
+                {treePrefix.vert}
+                {treePrefix.conn}
+              </span>
+            )}
+            {/* Fold control -- matches legacy's own real dual-control split exactly (legacy/
+                index.html:20293-20326's own `hasChildren&&hideTreeLines` / `hasChildren` /
+                `hideTreeLines` three-way branch): a Dynalist-style dot (plain circle at rest, a
+                ring added around it when folded, swaps to a +/- text glyph on hover) when
+                `hideTreeLines` is on, the existing ▸/▾ triangle (now ALSO swapping to +/- on
+                hover, matching legacy -- this component's own arrow previously stayed static)
+                when it's off. A leaf node gets a plain, non-interactive placeholder dot in the
+                dot mode (legacy's own comment: "parent-expanded and leaf look the same"); in
+                arrow mode it gets nothing at all, matching legacy's own real `else if(hideTreeLines)`
+                branch not firing when hideTreeLines is false -- the container span's fixed width
+                still reserves the same alignment space either way. */}
             <span
               onClick={(e) => {
                 e.stopPropagation();
                 if (hasChildren) toggleCollapse(node.id);
               }}
+              onMouseEnter={() => hasChildren && setHoveredFoldId(node.id)}
+              onMouseLeave={() => setHoveredFoldId((current) => (current === node.id ? null : current))}
+              title={hasChildren ? (isCollapsed ? 'Expand subtree' : 'Collapse subtree') : undefined}
               style={{
+                position: 'relative',
                 width: 16,
-                display: 'inline-block',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 textAlign: 'center',
                 cursor: hasChildren ? 'pointer' : 'default',
                 color: t.mutedText,
-                userSelect: 'none'
+                userSelect: 'none',
+                fontSize: isFoldHovered ? 15 : undefined,
+                fontWeight: isFoldHovered ? 600 : undefined
               }}
             >
-              {hasChildren ? (isCollapsed ? '▸' : '▾') : ''}
+              {hasChildren ? (
+                isFoldHovered ? (
+                  isCollapsed ? '+' : '−'
+                ) : hideTreeLines ? (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      border: isCollapsed ? `1.2px solid ${t.mutedText}` : 'none'
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: t.mutedText,
+                        opacity: 0.85
+                      }}
+                    />
+                  </span>
+                ) : isCollapsed ? (
+                  '▸'
+                ) : (
+                  '▾'
+                )
+              ) : hideTreeLines ? (
+                <span
+                  aria-hidden="true"
+                  style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: t.mutedText, opacity: 0.85 }}
+                />
+              ) : (
+                ''
+              )}
             </span>
             {node.isCheckbox && (
               <input
@@ -1209,7 +1319,7 @@ export function OutlineTree() {
             <div
               onClick={() => openNotePanel(node.id, true, !!node.codeBlock?.code?.trim(), 'note')}
               style={{
-                paddingLeft: `${node.depth * 24 + 32}px`,
+                paddingLeft: `${previewPaddingLeft}px`,
                 paddingBottom: 4,
                 fontSize: 13,
                 color: t.mutedText,
@@ -1231,7 +1341,7 @@ export function OutlineTree() {
               <div
                 key={r.id}
                 style={{
-                  paddingLeft: `${node.depth * 24 + 32}px`,
+                  paddingLeft: `${previewPaddingLeft}px`,
                   paddingBottom: 4,
                   fontSize: 13,
                   color: t.mutedText,
@@ -1253,7 +1363,7 @@ export function OutlineTree() {
               <div
                 key={item.id}
                 style={{
-                  paddingLeft: `${node.depth * 24 + 32}px`,
+                  paddingLeft: `${previewPaddingLeft}px`,
                   paddingBottom: 4,
                   fontSize: 13,
                   color: t.mutedText

@@ -112,7 +112,7 @@ breakdown.
 
 ## AI Features
 
-⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, first slice landed (this PR, following #227):
+⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, first slice landed (this PR, following #228):
 provider configuration UI — direct port of legacy's real seven-provider catalog
 (`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, now `state/aiProviderCatalog.ts`), the core
 `callAiByShape` network primitive covering all four real request/response shapes (`gemini`/
@@ -159,7 +159,7 @@ phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence
 | Chrome background presets | N/A | Investigated (§6.7): legacy has the real `CHROME_PRESETS`/`applyChromeColors`/`setChromePreset` data and logic, but its own trigger markup (`#chrome-swatch-row`) doesn't exist anywhere in legacy/index.html -- no real legacy user can ever reach this feature. Porting a picker for it would invent UI legacy itself doesn't expose, not port parity |
 | Node text color presets | ✅ | All 4 real presets, a swatch-row picker UI, and persistence across sessions, independent of the accent-color axis (§6.7) |
 | Editor's Choice preset | N/A | Investigated (§6.7): NOT a layout preset -- legacy's real `applyEditorsChoicePreset` is a ~40-setting personal configuration snapshot (toolbar-group visibility, hover-toolbar, context-menu ordering, Presenter auto-behaviors, AI thresholds, even a hardcoded personal name), most of which `web/` has no settings for at all. Marked N/A by explicit user decision rather than building an entire toolbar-customization subsystem first |
-| Layout controls (tree lines, depth guides, row style, compact rows, text size, indent width, limit reading width) | ⚠️ | Compact rows, text size, limit reading width, row style, and depth guide lines (a faint per-ancestor-depth vertical line in the live tree, `.node-vguide` equivalent) are all real, persisted, adjustable prefs, verified end-to-end in real headless Chrome; indent width/hide-tree-lines/outline-numbering remain export-only. Still not built: the monospace ASCII-connector alternate live-tree rendering mode (`hideTreeLines=false` -- a real but non-default legacy toggle; the DEFAULT live-tree mode is CSS-padding-based, the same family `web/` already uses, not a fundamentally different architecture as earlier noted here) |
+| Layout controls (tree lines, depth guides, row style, compact rows, text size, indent width, limit reading width) | ✅ | Compact rows, text size, limit reading width, row style, and depth guide lines are all real, persisted, adjustable prefs. Both live-tree indentation modes now built too: default CSS-padding (with `.node-vguide` depth guides) and `hideTreeLines=false`'s real monospace ASCII-connector prefix (`buildPrefix`, indent width now live-affecting, not export-only), including its real dot/arrow fold-control split matching legacy exactly. Verified end-to-end in real headless Chrome across both modes |
 | Inline note/remark previews | ✅ | §6.7: real per-node toggle dots + a document-wide "Always expand" default, matching legacy's own deviation-from-default mechanism exactly (`inlineExpandStore.ts`/`state/inlineExpand.ts`). Read-only previews (click the note preview to edit in the Note panel) rather than legacy's inline `contentEditable` -- a deliberate, documented scoping choice, not a gap |
 | Inline Q&A previews | ✅ | §6.7, same mechanism as above. Needed real node-anchoring added to Q&A first (`padStore.ts`'s `anchorNodeId`) |
 

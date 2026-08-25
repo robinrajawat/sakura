@@ -1101,31 +1101,32 @@ Status: **in progress.**
   arguably bigger than §6.10 itself. Put to the user directly given the scope; their call: mark
   N/A and keep moving on §6.7's real, buildable items rather than block on it, the same category
   of call as the Chrome-preset N/A.
-- **Depth guide lines landed; tree lines (the monospace-connector alternate mode) remain not
-  started, and turn out to be a non-default toggle, not the live tree's only rendering path.** A
-  correction to this bullet's own prior framing, found by reading `hideTreeLines`'s real call
-  sites rather than trusting the previous investigation's summary: legacy's live tree actually
-  has TWO rendering modes gated by `hideTreeLines` (default `true`). In the DEFAULT mode --
-  `hideTreeLines=true`, real code at legacy/index.html:20293 -- rows use plain CSS
-  `paddingLeft: depth*18+8*editorScale` indentation, exactly the same family as `web/`'s existing
-  `depth*24+8` padding (18px vs. 24px is a pre-existing, unrelated step-size difference, not a
-  gap this investigation introduced), optionally decorated with `.node-vguide` lines (a faint 1px
-  vertical line per ancestor depth, legacy/index.html:998) when `depthGuideLines` is also on
-  (default `true`) -- via `buildVertFlags` (legacy/index.html:17898, already ported to
-  `core/nodeQueries.ts`), which always returns `true` for every ancestor depth (not a real
-  per-sibling check despite the name) so every row draws its own full-height segment and
-  consecutive rows read as one continuous line. Only when `hideTreeLines=false` (a real but
-  non-default toggle) does legacy switch to literal monospace ASCII-connector row-prefix text via
-  `buildPrefix` (legacy/index.html:17876) instead of CSS padding at all -- this alternate mode is
-  the part that would be a real, risky rewrite of `web/`'s whole tree-rendering mechanism (no
-  live-mode-switching capability exists yet); a CSS-based visual approximation, if ever wanted, is
-  still the more idiomatic port for `web/`'s architecture than replicating legacy's own DOM
-  technique. **Depth guide lines are now built**: `OutlineTree.tsx` renders a `.node-vguide`
-  equivalent per ancestor depth (an absolutely-positioned 1px `<span>`, using the already-ported
-  `buildVertFlags` directly) whenever `outlinePrefsStore.ts`'s `depthGuideLines` pref is on, with
-  a new Settings checkbox to toggle it; position adapted to `web/`'s real 24px indent step rather
-  than porting legacy's literal 18px-based pixel math. Remaining: the `hideTreeLines=false`
-  monospace-connector alternate mode itself, a real, separately-scoped follow-up if still wanted.
+- **Both live-tree indentation modes are now built, including the `hideTreeLines=false`
+  monospace-connector mode and its real fold-control split.** Legacy's live tree has TWO
+  rendering modes gated by `hideTreeLines` (default `true`, real code at legacy/index.html:
+  20293). Default mode: plain CSS `paddingLeft: depth*18+8*editorScale` indentation, the same
+  family as `web/`'s existing `depth*24+8` padding (18px vs. 24px is a pre-existing, unrelated
+  step-size difference), optionally decorated with `.node-vguide` lines (a faint 1px vertical
+  line per ancestor depth, §6.7's own earlier depth-guide-lines slice) when `depthGuideLines` is
+  also on. `hideTreeLines=false` switches to
+  literal monospace ASCII-connector row-prefix text via `buildPrefix` (legacy/index.html:17876,
+  already ported to `core/nodeQueries.ts`) instead of CSS padding at all -- `OutlineTree.tsx` now
+  renders this directly (a `whiteSpace:'pre'`, monospace-font `<span>` holding `buildPrefix`'s
+  `vert`+`conn` strings) rather than a CSS-based approximation; the row's own `paddingLeft`
+  becomes a small fixed value (`8*editorScale`, matching legacy's real base `.node-row` padding)
+  instead of a depth-scaled one, since the prefix text itself now carries the indentation.
+  Depth-guide lines are correctly gated off in this mode (they'd be redundant with the prefix's
+  own `│` characters). Per explicit user request, the fold control now matches legacy's own real
+  two-control split too, not just the indentation: `hideTreeLines=true` gets a Dynalist-style dot
+  (plain circle at rest, a ring added when folded, swaps to a +/- text glyph on hover) for nodes
+  with children and a plain non-interactive dot placeholder for leaf nodes; `hideTreeLines=false`
+  keeps `web/`'s existing ▸/▾ arrow (which previously stayed static) but now ALSO swaps to +/- on
+  hover, matching legacy exactly, and leaf nodes get no dot at all in this mode. Rendered via real
+  nested `<span>`s rather than legacy's own CSS `::before`/`::after` pseudo-elements -- a
+  reasonable, idiomatic React substitute for the same visual result, not a pixel-exact port of
+  the CSS technique. Verified end-to-end in real headless Chrome: padding/guide-line counts at
+  multiple depths in both modes, fold-dot ring+hover-glyph behavior, collapsing via the dot,
+  arrow hover-glyph swap, and real connector characters appearing in the row text.
 - **Inline note/remark/Q&A previews remain not started, and are a bigger, separate feature than
   originally scoped.** Legacy's real mechanism (`alwaysExpandInlineEnabled`,
   legacy/index.html:8276) is a document-wide default (off by default) for whether every node's
@@ -1287,19 +1288,22 @@ rebuilding Decision Log to its real node-anchored schema, #225 Decision Log's li
 badges, #226 depth guide lines in the live tree, plus the correction that legacy's
 default live-tree mode is CSS-padding-based (much closer to `web/`'s existing approach than
 previously documented; only a non-default toggle switches to the monospace-connector mode), and
-#227 — real inline note/remark/Q&A previews (per-node deviation-from-default toggle state,
+#227 real inline note/remark/Q&A previews (per-node deviation-from-default toggle state,
 matching legacy's own `alwaysExpandInlineEnabled`/`inlineExpand*NodeIds` mechanism), plus
 node-anchoring for Remarks/Q&A (`padStore.ts`'s `anchorNodeId`), the prerequisite for their own
-previews to have anything real to show — see each section's own `Status:` line for the full
-breakdown. §6.8 not started. **§6.9 (AI Features) started, this PR** (following #227) — slice 1
-of the planned sequence above: provider configuration UI (`aiProviderCatalog.ts`, `aiCall.ts`,
-`aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus vault-aware key read/write extending
-`aiProviders.ts`), verified end-to-end in real headless Chrome (provider switch, curated + custom
-model selection, key save/status/persistence across reload, show/hide toggle, Test button's
-graceful failure handling against an unreachable endpoint). Slices 2-9 (Secure Storage vault UI,
-Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand/Tags, Suggest icon, Summarise
-selection, fallback+usage UI) not yet started. §6.10 onward not started. Update each phase's own
-section above with a `Status:` line and PR numbers as work lands, the same way
+previews to have anything real to show, and #228 — the `hideTreeLines=false` monospace-
+connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
+to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
+own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) started, this
+PR** (following #228, developed concurrently with the §6.7 work above in a separate session) —
+slice 1 of the planned sequence above: provider configuration UI (`aiProviderCatalog.ts`,
+`aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus vault-aware key read/write
+extending `aiProviders.ts`), verified end-to-end in real headless Chrome (provider switch,
+curated + custom model selection, key save/status/persistence across reload, show/hide toggle,
+Test button's graceful failure handling against an unreachable endpoint). Slices 2-9 (Secure
+Storage vault UI, Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand/Tags, Suggest
+icon, Summarise selection, fallback+usage UI) not yet started. §6.10 onward not started. Update
+each phase's own section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed

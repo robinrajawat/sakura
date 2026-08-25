@@ -183,12 +183,11 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `b7e9e4c` ("feat(outline):
-depth guide lines in the live editor (§6.7) (#226)"), with this
-session's next PR (inline note/remark/Q&A previews) about to open.
-The user then explicitly asked to complete two specific remaining
-items: inline previews (this PR) and the `hideTreeLines=false`
-monospace-connector tree mode (still pending, next up). #222
+As of this writing: `main` is at commit `178382a` ("feat(outline):
+inline note/remark/Q&A previews (§6.7) (#227)"), with this session's
+next PR (the `hideTreeLines=false` monospace-connector tree mode +
+its fold-control rebuild) about to open. This closes out both items
+the user explicitly asked to complete. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -333,6 +332,34 @@ fix, an already-known pre-existing gap: `padStore.ts`'s entire content
 (all 7 Pad tabs) still isn't wired into `documentsStore.ts`'s save/load
 cycle, so newly added remarks/Q&A don't survive a reload; `node.note`
 is unaffected since it lives on the outline node itself.
+
+The `hideTreeLines=false` monospace-connector tree mode (this PR)
+closes out both items the user named. Legacy's live tree turned out to
+have two real rendering modes gated by `hideTreeLines` (default
+`true`): the already-built CSS-padding mode, and (`false`) literal
+monospace ASCII-connector row-prefix text via `buildPrefix` (already
+ported for exports, now wired into `OutlineTree.tsx`'s own live
+rendering too) instead of CSS padding at all -- the row's own
+`paddingLeft` becomes a small fixed value in this mode since the
+prefix text itself carries the indentation, and depth-guide lines are
+correctly gated off (redundant with the prefix's own `│` characters).
+Asked directly whether the fold control should match legacy exactly
+too (not just the indentation) -- **user said yes** -- so this PR also
+rebuilt the fold control to legacy's real two-way split: a Dynalist-
+style dot (plain circle at rest, a ring when folded, swaps to a +/-
+glyph on hover) for `hideTreeLines=true`, the existing ▸/▾ arrow (now
+ALSO gaining the +/- hover-swap, which it never had before) for
+`hideTreeLines=false`, real nested `<span>`s standing in for legacy's
+own CSS `::before`/`::after` pseudo-elements. Verified end-to-end in
+real headless Chrome across both modes: padding/guide-line counts at
+multiple depths, the fold-dot's ring+hover-glyph behavior, collapsing
+via the dot, the arrow's hover-glyph swap, and real connector
+characters appearing in row text. This closes out the two items the
+user explicitly asked to complete -- next up per phase6-full-parity-
+plan.md's own §6.6/§6.7 remaining-work notes: Decision Log's
+anchor-picker UI and export-surface rendering (DOCX/PDF/PPTX cards,
+Excel export), or re-surfacing the still-open Whiteboard mirroring/
+client-side-routing question, per the user's own call on priority.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
@@ -1139,8 +1166,8 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 through #226 all merged and their local branches deleted this
-session; the inline-previews branch is the current one, about to
+#217 through #227 all merged and their local branches deleted this
+session; the tree-lines-mode branch is the current one, about to
 open as a PR. No feature branches should remain open for
 review once this PR also merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
