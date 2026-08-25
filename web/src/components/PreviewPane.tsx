@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOutlineStore } from '../store/outlineStore';
+import { usePadStore } from '../store/padStore';
+import type { DecisionTextField } from '../store/padStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
 import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { buildTocEntries } from '../state/previewToc';
 import { PreviewToc } from './PreviewToc';
+import { decisionStatusLabelCore, decisionStatusColorKeyCore } from '../state/decisionLogQueries';
+import { stripHtmlToText } from '../utils/stripHtmlToText';
+
+const PV_DL_FIELDS: { key: DecisionTextField; label: string }[] = [
+  { key: 'context', label: 'Context' },
+  { key: 'decision', label: 'Decision' },
+  { key: 'rationale', label: 'Rationale' },
+  { key: 'alternatives', label: 'Alternatives' },
+  { key: 'impact', label: 'Impact' }
+];
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): Preview Mode. A read-only rendered view of
@@ -27,15 +39,24 @@ import { PreviewToc } from './PreviewToc';
  * (legacy/index.html:38025-38031): `scrollIntoView({block:'start'})`, respecting
  * `prefers-reduced-motion`, plus a brief background flash on the target row.
  *
- * Deliberately still scoped down from legacy's real Preview: no decision-log
- * detection/grouping, no Presenter Mode slide deck, no word-count/author/updated-at meta
- * header, no TOC collapse/resize -- each a real, separately-scoped follow-up (Presenter Mode
- * itself is still §6.6's own unscoped remaining item).
+ * §6.7 slice: decision-log card rendering, direct port of legacy's real
+ * `previewRenderDecisionCard` (legacy/index.html:37355-37388) -- a bordered/shaded card (status-
+ * colored left accent + badge, matching `ThemeTokens.fcGreen`/`fcRed`/`fcGray`, the same real hex
+ * values legacy's own status-color function uses) showing every non-empty field. Deliberately no
+ * decision-log TOC-entry/grouping (a real, separately-scoped follow-up -- `previewToc.ts`'s own
+ * header would need its own extension for this).
+ *
+ * Deliberately still scoped down from legacy's real Preview: no Presenter Mode slide deck, no
+ * word-count/author/updated-at meta header, no TOC collapse/resize -- each a real,
+ * separately-scoped follow-up (Presenter Mode itself is still §6.6's own unscoped remaining
+ * item).
  */
 export function PreviewPane() {
   const nodes = useOutlineStore((s) => s.nodes);
+  const decisions = usePadStore((s) => s.decisions);
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
+  const statusAccent = { green: t.fcGreen, red: t.fcRed, gray: t.fcGray };
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
@@ -137,6 +158,63 @@ export function PreviewPane() {
                     {node.codeBlock.code}
                   </pre>
                 )}
+                {/* §6.7 slice: the decision-log card -- direct port of legacy's own real
+                    `previewRenderDecisionCard` (legacy/index.html:37355-37388), shared by both
+                    the on-screen Preview and the PDF export (`ExportButtons.tsx`'s `exportPdf`
+                    prints this same node list, so its own decision card is a separate but
+                    visually-matching implementation -- see that file's own header for why this
+                    project keeps two parallel renderers rather than one shared one, the same
+                    established pattern its note/code rendering already uses). */}
+                {(() => {
+                  const dl = decisions.find((d) => d.anchorNodeId === node.id);
+                  if (!dl) return null;
+                  const colorKey = decisionStatusColorKeyCore(dl.status);
+                  const accent = statusAccent[colorKey];
+                  const fields = PV_DL_FIELDS.filter((f) => dl[f.key]?.trim());
+                  let metaText = dl.author ? `— ${dl.author}` : '';
+                  if (dl.timestamp) metaText += (metaText ? ' · ' : '— ') + new Date(dl.timestamp).toLocaleDateString();
+                  return (
+                    <div
+                      style={{
+                        border: `1px solid ${t.border}`,
+                        borderLeft: `3px solid ${accent}`,
+                        borderRadius: 4,
+                        background: t.hoverBg,
+                        padding: '8px 10px',
+                        marginTop: 4,
+                        marginBottom: 4,
+                        maxWidth: '90%'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: fields.length ? 6 : 0 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Decision Log</span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '.02em',
+                            padding: '1px 6px',
+                            borderRadius: 999,
+                            background: `color-mix(in srgb, ${accent} 16%, transparent)`,
+                            color: accent
+                          }}
+                        >
+                          {decisionStatusLabelCore(dl.status)}
+                        </span>
+                      </div>
+                      {fields.map((f) => (
+                        <div key={f.key} style={{ marginBottom: 4 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.02em', color: t.mutedText }}>
+                            {f.label}
+                          </div>
+                          <div style={{ fontSize: 13 }}>{stripHtmlToText(dl[f.key])}</div>
+                        </div>
+                      ))}
+                      {metaText && <div style={{ fontSize: 11, fontStyle: 'italic', color: t.mutedText }}>{metaText}</div>}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
