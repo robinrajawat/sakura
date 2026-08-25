@@ -183,22 +183,43 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `e32ddee` ("docs: record §6.7
-investigation (Chrome presets unreachable, rest needs Settings panel)
-(#216)"). After that PR's check-in, the user delegated both of its
-open questions explicitly ("We have to cover everything anyway so you
-decide."): build a *minimal* Settings panel now (scoped only to prefs
-with a real existing consumer), and build Whiteboard mirroring/
-Audience View later via a routing-free query-param approximation
-rather than reversing the Phase 0 no-routing decision or accepting
-these as permanent gaps. Two PRs followed: PR #217 (`fix/outline-
-nextid-collision`, a real correctness bug affecting every fresh
-session -- see the new §6.7 bullets below for the full story) and this
-PR (the first minimal Settings-panel slice). Whiteboard mirroring/
-Audience View itself is NOT yet started -- no investigation done yet
-into legacy's exact real Audience View mechanism (query param name,
-`window.open()` pattern, cross-window state sync) -- pick that up next
-once these two land.
+As of this writing: `main` is at commit `b238a2c` ("feat(settings):
+first minimal Settings panel -- outline export-formatting prefs
+(§6.7/§6.10) (#218)"). After the #216 check-in, the user delegated
+both of its open questions explicitly ("We have to cover everything
+anyway so you decide."): build a *minimal* Settings panel now (scoped
+only to prefs with a real existing consumer), and build Whiteboard
+mirroring/Audience View later via a routing-free approximation.
+Three PRs landed from that: #217 (`fix/outline-nextid-collision`, a
+real correctness bug affecting every fresh session -- see the §6.7
+bullets below for the full story), #218 (the first minimal
+Settings-panel slice), and this PR -- an investigation into Whiteboard
+mirroring/Audience View that found the "routing-free approximation"
+framing itself was already slightly off: legacy's real mechanism
+needs NO client-side routing at all, approximated or otherwise, since
+it keys off a query PARAM (`?sakuraAudience=1`), not a path -- query
+strings never touch routing/rewrite rules, so a static host already
+serves the same `index.html` regardless. The actual blockers, found by
+reading legacy's real implementation end to end (legacy/index.html:
+38691-39096, 4489-4497): `PresenterMode.tsx`'s presenting state
+(slide index, blanked, laser, overview, notes) is local `useState`,
+not a shared store, so there's nothing external for a second window
+to drive the way legacy's cross-window direct-function-call mechanism
+does; and `web/`'s Diagrams panel has no `isWhiteboard` concept yet
+(confirmed: `padStore.ts`'s own `Diagram` type explicitly excludes it,
+listed as a deferred field from its original #172 slice) for
+Whiteboard mirroring to have anything to mirror. A full, concrete,
+code-referenced translation plan for building this (query-param boot
+check, lifting presenter state into a new `usePresenterStore.ts`, a
+`window`-exposed bridge object mirroring legacy's own cross-window
+function-call approach, letting the second window run its own full
+React instance off that store rather than DOM-cloning) is now recorded
+in `docs/phase6-full-parity-plan.md`'s §6.6 section -- not attempted
+in this pass, since multi-window popup coordination is real,
+architecturally significant scope, and meaningfully harder to verify
+than every other slice's real-headless-Chrome-in-one-window testing
+this project has relied on throughout. Pick it up next as its own
+multi-PR sub-sequence, following that plan.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -951,6 +972,39 @@ all six items landed:
   resets), via a new `nextIdForNodes()` helper. Two regression tests
   added to `documentsStore.test.ts`, confirmed to fail on the pre-fix
   code and pass after.
+- **Correction to the bullet two above (and to this plan's own prior
+  framing elsewhere): Whiteboard mirroring/Audience View was NOT
+  actually blocked on client-side routing, "routing-free approximation"
+  or otherwise.** Investigated by reading legacy's real implementation
+  end to end (legacy/index.html:38691-39096, 4489-4497) rather than
+  building anything sight-unseen. Legacy's actual mechanism keys off a
+  query PARAM (`?sakuraAudience=1`), never a path -- query strings
+  don't participate in routing/rewrite rules at all, so serving it
+  needs no router, no route, no approximation of either; a bare
+  `new URLSearchParams(location.search)` read at the app root is the
+  whole "routing" story. The real blockers, found by reading the whole
+  mechanism (`openAudienceWindow`'s same-origin `window.open()` of the
+  same `index.html`, direct cross-window function calls with no
+  `postMessage`, state reads via a function rather than property access
+  since top-level `let`/`const` never become `window` properties): (1)
+  `PresenterMode.tsx`'s presenting state (slide index/blanked/laser/
+  overview/notes) is local `useState`, not a shared store, so there is
+  nothing external for a second window to be driven through the way
+  legacy's cross-window calls depend on; (2) `web/`'s Diagrams panel
+  has no `isWhiteboard` concept at all yet for mirroring to have
+  anything to mirror -- confirmed via `padStore.ts`'s own `Diagram`
+  type, which explicitly lists `isWhiteboard` among fields deferred
+  from its original #172 slice. A full, concrete, code-referenced
+  translation plan (query-param boot check; lifting presenter state
+  into a new `usePresenterStore.ts`; a `window`-exposed bridge object
+  mirroring legacy's own direct-function-call approach; the second
+  window running its own full React instance off that store rather
+  than legacy's manual DOM-cloning) is recorded in
+  `docs/phase6-full-parity-plan.md`'s §6.6 section. Not attempted in
+  this pass -- real architectural scope, and multi-window popup
+  coordination is meaningfully harder to verify than this project's
+  usual real-headless-Chrome-in-one-window testing -- pick it up next
+  as its own multi-PR sub-sequence, following that plan.
 
 §6.8 onward not started.
 
@@ -971,12 +1025,11 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-As of this writing, two PRs are open and awaiting CI/merge: #217
-(`fix/outline-nextid-collision`, the node-id-collision bug fix) and
-this session's Settings-panel PR (`settings/outline-format-prefs`) --
-they touch disjoint files, so order of merging either first is fine.
-Once both are merged and their branches deleted, no feature branches
-should remain open for review (the merged
+#217 (`fix/outline-nextid-collision`) and #218
+(`settings/outline-format-prefs`) both merged and their local branches
+deleted this session; this PR (`docs/audience-view-rescoping`) is the
+current one, docs-only. No feature branches should remain open for
+review once this PR also merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past
