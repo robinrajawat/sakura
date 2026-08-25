@@ -355,11 +355,30 @@ real headless Chrome across both modes: padding/guide-line counts at
 multiple depths, the fold-dot's ring+hover-glyph behavior, collapsing
 via the dot, the arrow's hover-glyph swap, and real connector
 characters appearing in row text. This closes out the two items the
-user explicitly asked to complete -- next up per phase6-full-parity-
-plan.md's own §6.6/§6.7 remaining-work notes: Decision Log's
-anchor-picker UI and export-surface rendering (DOCX/PDF/PPTX cards,
-Excel export), or re-surfacing the still-open Whiteboard mirroring/
-client-side-routing question, per the user's own call on priority.
+user explicitly asked to complete.
+
+Asked next whether to move to §6.8 -- answered directly that §6.6/§6.7
+weren't fully closed (Decision Log's anchor-picker UI, export-surface
+rendering, and the still-open Whiteboard mirroring question all
+remained), and the **user chose to finish the anchor-picker UI and
+Decision Log exports (Word/PDF/PowerPoint cards + Excel .xlsx) before
+§6.8** -- not the Whiteboard question, which stays open. Anchor-picker
+UI landed first: a new generic `components/AnchorPicker.tsx` popover
+(search, "Not linked to a node", depth-indented candidates with taken
+nodes greyed/disabled) driving the already-existing `setDecisionAnchor`
+store action, direct port of legacy's real `#decision-anchor-suggest`.
+One deliberate scoping choice: legacy's own popover shows a full
+collapsible node tree when the search is empty; this always uses the
+flat, depth-indented list from the already-ported
+`getDecisionAnchorCandidatesCore` (which already handles the
+empty-query "every node" case) rather than porting the separate
+`buildAnchorTree` collapsible-tree renderer -- fully usable, just no
+expand/collapse branches for very large documents. `AnchorPicker`
+itself is domain-agnostic (plain `DecisionAnchorCandidate[]` props),
+ready to reuse for Diagrams' own still-missing anchor-picker later.
+Verified end-to-end in real headless Chrome. Decision Log's four
+export surfaces (DOCX/PDF/PPTX cards, Excel `.xlsx`) are next, each
+its own separately-scoped slice.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything

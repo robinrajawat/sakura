@@ -29,7 +29,7 @@ already made and already documented at the time.
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
 | Note panel | ⚠️ | Rich text (bold/italic/underline/strike/lists), links, images, tables, and the Backlinks section all built (Phase 6.3-6.4) — no AI (Rewrite/summarise) yet |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
-| Decision Log | ⚠️ | Rebuilt to its real node-anchored schema (one per node, 5 structured fields, status, author, §6.7 #224) with live-editor own-node + collapsed-subtree badge dots (§6.7 #225); still no anchor-picker UI, no card rendering in exports, no Excel export |
+| Decision Log | ⚠️ | Rebuilt to its real node-anchored schema (one per node, 5 structured fields, status, author, §6.7 #224) with live-editor own-node + collapsed-subtree badge dots (§6.7 #225) and a real anchor-picker popover (§6.7); still no card rendering in exports, no Excel export |
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
@@ -82,7 +82,7 @@ separately-scoped follow-up building on this foundation.
 | Code Block (lang picker, resizable window) | ⚠️ | Lang picker + textarea exist; not resizable/floating |
 | Pad — Notepad | ⚠️ | Plain textarea (Phase 3); no rich text toolbar, no Quote button |
 | Pad — Q&A | ⚠️ | Question/answer + search/filter (§6.3) + real node-anchoring and live-editor inline previews (§6.7, `anchorNodeId`) now built; no AI-assisted answering, bulk actions, PDF export, section headers |
-| Pad — Decision Log | ⚠️ | Real node-linking + structured fields (context/decision/rationale/alternatives/impact) + author/status built (§6.7 #224), plus outline badge dots (§6.7 #225); no anchor-picker UI yet (`setDecisionAnchor` exists on the store, no UI), no card rendering, no Excel export |
+| Pad — Decision Log | ⚠️ | Real node-linking + structured fields (context/decision/rationale/alternatives/impact) + author/status built (§6.7 #224), outline badge dots (§6.7 #225), and a real anchor-picker popover for re-anchoring (§6.7, `components/AnchorPicker.tsx`); no card rendering in exports, no Excel export |
 | Pad — Diagrams | ⚠️ | Real draw.io embed + Generate-from-outline built (§6.3 item 11, #172); no node-linking/status/thumbnails/Whiteboard/multi-page badge |
 | Pad — Mind Map | ⚠️ | A real freeform canvas built (§6.3 item 11, #174): pan/zoom/drag/connect/edit; no node-linking, Scratchpad, or Presenter-mode integration |
 | Pad — Files | ⚠️ | Real upload/storage + download built (§6.3 item 11, #168); no node-linking |
