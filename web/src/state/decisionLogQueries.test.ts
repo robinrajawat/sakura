@@ -7,6 +7,7 @@ import {
   decisionLogAnchorLabelCore,
   getDecisionAnchorCandidatesCore,
   subtreeHasDecisionCore,
+  decisionStatusColorKeyCore,
   type DecisionLogRecord,
   type AnchorableNode
 } from './decisionLogQueries';
@@ -218,5 +219,29 @@ describe('subtreeHasDecisionCore', () => {
 
   it('is false for a leaf node (no descendants at all)', () => {
     expect(subtreeHasDecisionCore(tree, [{ id: 'dl1', anchorNodeId: 3 }], 2)).toBe(false);
+  });
+});
+
+describe('decisionStatusColorKeyCore', () => {
+  it('maps approved to green', () => {
+    expect(decisionStatusColorKeyCore('approved')).toBe('green');
+  });
+
+  it('maps rejected to red', () => {
+    expect(decisionStatusColorKeyCore('rejected')).toBe('red');
+  });
+
+  it('maps proposed to gray', () => {
+    expect(decisionStatusColorKeyCore('proposed')).toBe('gray');
+  });
+
+  it('is case-insensitive, same as decisionStatusOfCore', () => {
+    expect(decisionStatusColorKeyCore('APPROVED')).toBe('green');
+  });
+
+  it('defaults an unrecognized or missing status to gray (proposed)', () => {
+    expect(decisionStatusColorKeyCore('archived')).toBe('gray');
+    expect(decisionStatusColorKeyCore(null)).toBe('gray');
+    expect(decisionStatusColorKeyCore(undefined)).toBe('gray');
   });
 });

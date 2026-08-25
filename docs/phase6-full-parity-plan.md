@@ -1193,8 +1193,27 @@ Status: **in progress.**
   own still-missing anchor-picker if that's ever picked up. Verified end-to-end in real headless
   Chrome: search/filter, selecting a candidate, taken-node disabled state (click is a no-op),
   unlinking via "Not linked to a node", and click-outside-to-close.
-  Still remaining for Decision Log: all export-surface rendering (DOCX card, PDF/Preview card,
-  PPTX card, Excel `.xlsx` export) -- each its own separately-scoped slice.
+- **Decision Log's Preview and PDF export card rendering landed.** Direct port of legacy's real
+  `previewRenderDecisionCard` (legacy/index.html:37355-37388): a bordered card with a
+  status-colored left accent and uppercase status badge, showing every non-empty field
+  (context/decision/rationale/alternatives/impact) plus an "— author · date" meta line. A new
+  pure `decisionStatusColorKeyCore` (`decisionLogQueries.ts`) maps a status to a semantic color
+  key (`'green'|'red'|'gray'`) matching legacy's own real `docxStatusColor` mapping exactly,
+  collapsed to this project's 3 real statuses; screen/PDF rendering resolves that key against
+  `ThemeTokens.fcGreen`/`fcRed`/`fcGray` (already the exact same hex values legacy's function
+  returns) or PDF's own fixed hex constants (exports are always light-themed regardless of the
+  app's live theme, same reasoning every other PDF color is fixed). Implemented twice --
+  `PreviewPane.tsx` (JSX) and `ExportButtons.tsx`'s `exportPdf` (a raw HTML string for a separate
+  print window) -- matching this project's own established "two parallel renderers, same visual
+  content" pattern its note/code rendering already uses, rather than a shared React component;
+  legacy's own comment on `previewRenderDecisionCard` says PDF and Preview share ONE renderer
+  because PDF is literally a print of the Preview DOM -- `web/`'s PDF export was never built that
+  way (a separate raw-HTML print window from the start), so keeping its own established
+  two-renderer pattern is the more idiomatic choice here than introducing a new shared-component
+  refactor mid-slice. Verified end-to-end in real headless Chrome: both Preview and the PDF popup
+  window show the "Decision Log" header, the correct status badge, and all filled field content.
+  Still remaining for Decision Log: DOCX card, PPTX card, and Excel `.xlsx` export -- each its
+  own separately-scoped slice.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
