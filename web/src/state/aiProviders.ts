@@ -19,6 +19,20 @@
  *   generator/test overhead (see header above).
  * - AI_CURATED_MODELS-driven model-list rendering — pure DOM building, no storage involved.
  *
+ * §6.9 addition (docs/phase6-full-parity-plan.md): legacy's real `getAiKeyForProvider`/
+ * `saveAiKey` (index.html:8917, 28181) store each provider's API key in this SAME blob, as a
+ * `key_<providerId>` field sitting alongside provider/model/modelByProvider/prompt — confirmed
+ * by reading both functions directly. They're deliberately NOT folded into `AiPrefsState`/
+ * `computeLoadedAiPrefs` above: those model fields every load resolves against `current`
+ * in-memory state, while a key has no meaningful in-memory "current" to merge against the way
+ * provider/model do — it's just read on demand per provider id.
+ * `getAiKeyForProviderCore`/`saveAiKeyForProviderCore` below are the pure halves of that pair
+ * (matching legacy's own non-vault branch exactly); `loadAiKeyForProvider`/
+ * `saveAiKeyForProviderStorage` do the same `initAiProvidersState`-injected localStorage IO as
+ * `loadAiPrefsCore`/`saveAiPrefsCore`. Vault-aware branching (locked/unlocked, encrypt-on-write)
+ * is orchestration that belongs in the store consuming this module — same "orchestration stays
+ * outside the pure module" split `vault.ts`'s own header documents — not here.
+ *
  * Deliberately no module-level constant for the storage key string (AI_PREFS_KEY):
  * index.html already declares this as a top-level `const`, still read directly by sibling AI
  * functions that remain hand-written. Since every generated block shares one script scope
@@ -131,6 +145,83 @@ export function saveAiPrefsCore(
     modelByProvider[provider] = model;
     d.modelByProvider = modelByProvider;
     d.prompt = prompt;
+    if (ls) ls.setItem(_AI_PREFS_STORAGE_KEY, JSON.stringify(d));
+  } catch {
+    // Original swallowed localStorage read/write failures — preserved exactly.
+  }
+}
+
+/** Pure: matches legacy's real `getAiKeyForProvider`'s non-vault branch (index.html:8917)
+ * exactly — reads `key_<providerId>` out of the raw stored blob, defaulting to `''` for a
+ * missing field, non-string value, or corrupt/absent JSON. */
+export function getAiKeyForProviderCore(raw: string | null, providerId: string): string {
+  try {
+    const d: Record<string, unknown> = raw ? JSON.parse(raw) : {};
+    const v = d['key_' + providerId];
+    return typeof v === 'string' ? v : '';
+  } catch {
+    return '';
+  }
+}
+
+/** Pure: matches legacy's real `saveAiKey`'s non-vault branch (index.html:28181) exactly —
+ * read-modify-write of the raw blob, touching only this provider's `key_<providerId>` field and
+ * preserving everything else already present (other providers' keys, provider/model/prompt).
+ * Corrupt existing JSON is treated as an empty object rather than thrown, matching the original. */
+export function saveAiKeyForProviderCore(raw: string | null, providerId: string, value: string): Record<string, unknown> {
+  let d: Record<string, unknown> = {};
+  try {
+    d = raw ? JSON.parse(raw) : {};
+  } catch {
+    d = {};
+  }
+  d['key_' + providerId] = value;
+  return d;
+}
+
+/** Reads the given provider's stored API key, never throwing — mirrors `loadAiPrefsCore`'s own
+ * defensive shape. Callers needing vault-aware behavior (locked/unlocked, decrypt) branch on
+ * `vaultActive()`/`vaultUnlocked()` themselves before falling back to this for the plain path. */
+export function loadAiKeyForProvider(providerId: string): string {
+  try {
+    const ls = requireAiProvDeps().getLocalStorage();
+    const raw = ls ? ls.getItem(_AI_PREFS_STORAGE_KEY) : null;
+    return getAiKeyForProviderCore(raw, providerId);
+  } catch {
+    return '';
+  }
+}
+
+/** Storage-backed wrapper around `hasStoredKeyForProviderCore` — see that function for why this
+ * check exists independently of `loadAiKeyForProvider` (it must work even when the vault is
+ * locked and the plaintext genuinely can't be read). */
+export function hasStoredKeyForProvider(providerId: string): boolean {
+  try {
+    const ls = requireAiProvDeps().getLocalStorage();
+    const raw = ls ? ls.getItem(_AI_PREFS_STORAGE_KEY) : null;
+    return hasStoredKeyForProviderCore(raw, providerId);
+  } catch {
+    return false;
+  }
+}
+
+/** Pure: whether a (possibly vault-encrypted) key is stored for this provider at all, regardless
+ * of whether it can currently be decrypted. Matches the presence check legacy's real
+ * `updateAiKeyStatus` combines with `vaultUnlocked()` to pick between "Key saved." / "Key saved,
+ * but Secure Storage is locked." / "No key saved." — a locked vault can't reveal the plaintext,
+ * but the raw blob still confirms *something* is stored under `key_<providerId>`. */
+export function hasStoredKeyForProviderCore(raw: string | null, providerId: string): boolean {
+  return getAiKeyForProviderCore(raw, providerId).length > 0;
+}
+
+/** Writes the given provider's API key (or, when the caller has already vault-encrypted it, its
+ * ciphertext) into the shared prefs blob. Never throws — a failed localStorage write is
+ * silently a no-op, matching `saveAiPrefsCore`'s own convention. */
+export function saveAiKeyForProviderStorage(providerId: string, value: string): void {
+  try {
+    const ls = requireAiProvDeps().getLocalStorage();
+    const raw = ls ? ls.getItem(_AI_PREFS_STORAGE_KEY) : null;
+    const d = saveAiKeyForProviderCore(raw, providerId, value);
     if (ls) ls.setItem(_AI_PREFS_STORAGE_KEY, JSON.stringify(d));
   } catch {
     // Original swallowed localStorage read/write failures — preserved exactly.

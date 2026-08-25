@@ -1208,6 +1208,52 @@ node, Suggest tags, Suggest icon, Summarise selection, provider fallback, usage 
 is the single largest unbuilt section in the checklist — budget accordingly, and expect it to be
 its own multi-PR sub-sequence.
 
+**Research pass (this PR's own predecessor step) read legacy's real implementation end to end**
+(`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, `callAiByShape`/`callAiByShapeWithFallback`, the
+Secure Storage vault, all seven per-capability prompts/parsers, auto-rewrite's real
+trigger/debounce logic, provider fallback, usage tracking — legacy/index.html:8580-8994,
+28181-29706 and scattered call sites) before any code was written, confirming/correcting two
+assumptions this doc previously carried: (1) custom/self-hosted AI providers are a real REMOVED
+legacy feature (dead storage key, zero reachable UI) — do not build a "manage providers" UI, the
+seven built-in providers are a closed list by design (a fixed `connect-src` CSP allowlist depends
+on it); (2) `web/src/state/aiProviders.ts` and `vault.ts` are not partial ports needing
+re-implementation — they're the literal, already-tested source modules legacy's own generator
+splices into index.html verbatim, just never wired into a React store/component before now.
+Two related pieces of `web/`'s own state, both already ported in earlier phases but unused until
+this section: `aiProviders.ts` (prefs blob load/save) and `vault.ts` (the AES-GCM/PBKDF2 vault
+crypto primitives) — see the Status line below for what's landed.
+
+Planned slice sequence (each its own PR, later ones may reorder/combine based on what's learned
+building the earlier ones):
+1. **Provider configuration UI** — provider/model select + API key entry/save/test, the core
+   `callAiByShape` network primitive, vault-aware key read/write (landed, see Status).
+2. Secure Storage vault setup/unlock UI (passphrase dialogs, status chip, migrating existing
+   plaintext keys) — the crypto primitives already exist (`vault.ts`), this slice is the
+   orchestration UI around them, matching legacy's own real hand-written
+   `setupVaultPassphrase`/`unlockVault`/`lockVault`/`disableVaultEncryption`.
+3. Rewrite (manual: toolbar/right-click/Quick-Assist triggers, sub-text-selection rewrite,
+   batch rewrite for multi-select) — the first real AI capability, needs `callAiApi`/
+   `callAiApiBatch` built on top of `callAiByShape`, plus the in-flight-edit-guard pattern
+   (`aiSnapshotChanged`/`applyAiBatchResults`) every later capability reuses.
+4. Auto-rewrite on commit — the exclusion filter, idle-timer/batch-cap dual trigger, paused-on-
+   no-key/resume behavior, status-bar chip.
+5. Generate Outline + Restructure Text — share `parseTextToTreeNodes` (a new port, also needed
+   by OPML/paste/Word-import fallbacks elsewhere), each with its own system prompt/insertion
+   behavior (nest-into-current-doc vs. always-new-doc).
+6. Expand node, Suggest tags — both simple single-node single-shot capabilities.
+7. Suggest icon — batched, with the keyword/historical-index tiers ahead of any AI call, plus the
+   single-node picker-popover variant.
+8. Summarise selection — multi-node-selection-specific.
+9. Provider fallback chain UI (drag-to-reorder, per-row enable checkbox) + usage tracking
+   display — both real, user-configurable, and every capability slice above already needs
+   `callAiByShapeWithFallback`'s usage-recording call sites in place, so this slice mostly
+   surfaces UI for state the earlier slices already produce.
+
+Full reference for every prompt/trigger/parser/quirk above (with legacy line numbers) is not
+duplicated here — see the research findings folded into each landed slice's own PR description
+and the relevant source file's header comment (`aiCall.ts`, `aiProviderCatalog.ts`,
+`aiSettingsStore.ts`, `AiProviderSettings.tsx`).
+
 ### 6.10 — Quick Assist, Quick Insert & Settings
 Quick Assist (Ctrl/Cmd+K command box: toggles, search, Run actions, AI Run actions) and Quick
 Insert (Ctrl/Cmd+Space character menu) — both entirely unbuilt. The Settings panel itself:
@@ -1261,14 +1307,20 @@ previously documented; only a non-default toggle switches to the monospace-conne
 #227 real inline note/remark/Q&A previews (per-node deviation-from-default toggle state,
 matching legacy's own `alwaysExpandInlineEnabled`/`inlineExpand*NodeIds` mechanism), plus
 node-anchoring for Remarks/Q&A (`padStore.ts`'s `anchorNodeId`), the prerequisite for their own
-previews to have anything real to show, and this PR — the `hideTreeLines=false` monospace-
+previews to have anything real to show, and #228 — the `hideTreeLines=false` monospace-
 connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
-to match legacy's fold control exactly, not just the indentation mechanism) —
-see each section's own `Status:` line for
-the full breakdown. §6.8 onward not started. Update each phase's own section above with a
-`Status:`
-line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
-"Update" notes track progress.
+to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
+own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) started, this
+PR** (following #228, developed concurrently with the §6.7 work above in a separate session) —
+slice 1 of the planned sequence above: provider configuration UI (`aiProviderCatalog.ts`,
+`aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus vault-aware key read/write
+extending `aiProviders.ts`), verified end-to-end in real headless Chrome (provider switch,
+curated + custom model selection, key save/status/persistence across reload, show/hide toggle,
+Test button's graceful failure handling against an unreachable endpoint). Slices 2-9 (Secure
+Storage vault UI, Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand/Tags, Suggest
+icon, Summarise selection, fallback+usage UI) not yet started. §6.10 onward not started. Update
+each phase's own section above with a `Status:` line and PR numbers as work lands, the same way
+`docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed
 

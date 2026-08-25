@@ -1,5 +1,6 @@
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePrefsStore';
+import { AiProviderSettings } from './AiProviderSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -22,6 +23,14 @@ import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePr
  * for the two corrections this investigation made to the plan doc's original list ("row style"
  * IS real, just under a different name; "collapse depth" is NOT a real legacy feature at all)
  * and for why "Editor's Choice"/"Documentation Mode" presets are marked N/A rather than attempted.
+ *
+ * §6.9 slice: added the "AI" section (`AiProviderSettings.tsx`, a separate component rather than
+ * inlined here given its own real state -- provider/model select, key entry/save/test -- to keep
+ * this file from growing an ever-longer flat list of unrelated section markup). Provider/model
+ * selection and API key storage+test only -- see `aiSettingsStore.ts`'s own header for what's
+ * deliberately still deferred (Secure Storage vault setup/unlock UI, the fallback-order list, the
+ * usage-tracking summary, and every AI capability itself -- Rewrite/Outline/Restructure/Expand/
+ * Tags/Icon/Summarise, each its own later §6.9 slice).
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -236,6 +245,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </span>
         </label>
       </div>
+      <AiProviderSettings t={t} />
     </div>
   );
 }
