@@ -1246,10 +1246,12 @@ Planned slice sequence (each its own PR, later ones may reorder/combine based on
 building the earlier ones):
 1. **Provider configuration UI** — provider/model select + API key entry/save/test, the core
    `callAiByShape` network primitive, vault-aware key read/write (landed, see Status).
-2. Secure Storage vault setup/unlock UI (passphrase dialogs, status chip, migrating existing
-   plaintext keys) — the crypto primitives already exist (`vault.ts`), this slice is the
-   orchestration UI around them, matching legacy's own real hand-written
-   `setupVaultPassphrase`/`unlockVault`/`lockVault`/`disableVaultEncryption`.
+2. **Secure Storage vault setup/unlock/lock/disable UI** (landed, see Status) — real passphrase
+   setup + existing-key migration, unlock via the verifier-ciphertext pattern, lock, and disable
+   (flush every decrypted key back to plaintext). Inline passphrase forms rather than legacy's own
+   modal dialogs (`web/` has no generic modal system yet). NOT ported: legacy's status-bar
+   `sb-vault-chip` (`web/` has no status bar surface yet, §6.1's own unbuilt item) and Cloud
+   Backup/Gist-token vault protection (`web/` has no Cloud Backup feature at all).
 3. Rewrite (manual: toolbar/right-click/Quick-Assist triggers, sub-text-selection rewrite,
    batch rewrite for multi-select) — the first real AI capability, needs `callAiApi`/
    `callAiApiBatch` built on top of `callAiByShape`, plus the in-flight-edit-guard pattern
@@ -1329,16 +1331,25 @@ node-anchoring for Remarks/Q&A (`padStore.ts`'s `anchorNodeId`), the prerequisit
 previews to have anything real to show, and #228 — the `hideTreeLines=false` monospace-
 connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
 to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
-own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) started, this
-PR** (following #228, developed concurrently with the §6.7 work above in a separate session) —
-slice 1 of the planned sequence above: provider configuration UI (`aiProviderCatalog.ts`,
-`aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus vault-aware key read/write
-extending `aiProviders.ts`), verified end-to-end in real headless Chrome (provider switch,
-curated + custom model selection, key save/status/persistence across reload, show/hide toggle,
-Test button's graceful failure handling against an unreachable endpoint). Slices 2-9 (Secure
-Storage vault UI, Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand/Tags, Suggest
-icon, Summarise selection, fallback+usage UI) not yet started. §6.10 onward not started. Update
-each phase's own section above with a `Status:` line and PR numbers as work lands, the same way
+own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) in progress**
+(developed concurrently with the §6.7 work above in a separate session) — slices 1-2 of the
+planned sequence above landed. **#230** (following #228): provider configuration UI
+(`aiProviderCatalog.ts`, `aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus
+vault-aware key read/write extending `aiProviders.ts`), verified end-to-end in real headless
+Chrome (provider switch, curated + custom model selection, key save/status/persistence across
+reload, show/hide toggle, Test button's graceful failure handling against an unreachable
+endpoint). **This PR**: the Secure Storage vault's real setup/unlock/lock/disable UI
+(`vaultStore.ts`, `SecureStorageSettings.tsx`, plus `vault.ts` gaining a real production
+`setVaultCryptoKey` setter and bulk `getAllVaultDecryptedKeys`/`clearVaultDecryptedKeys`
+accessors) — verified end-to-end in real headless Chrome (setup with existing-key migration,
+lock/unlock including a rejected wrong passphrase, save-while-locked correctly refused,
+disable flushing back to plaintext, a real reload confirming the session-only key never
+persists). A real bug was caught and fixed during that verification: the AI section's key-status
+line could show a stale pre-lock message after the vault's lock state changed elsewhere, fixed by
+clearing that transient message whenever the resolved lock state itself flips. Slices 3-9
+(Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand/Tags, Suggest icon, Summarise
+selection, fallback+usage UI) not yet started. §6.10 onward not started. Update each phase's own
+section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 
 ## Appendix — AI key vault (Cloudflare Worker), proposed

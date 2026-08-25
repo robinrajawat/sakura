@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAiSettingsStore } from '../store/aiSettingsStore';
+import { useVaultStore } from '../store/vaultStore';
 import { AI_BUILTIN_PROVIDERS, AI_CURATED_MODELS, getAiProviderById } from '../state/aiProviderCatalog';
 import type { ThemeTokens } from '../store/themeStore';
 
@@ -28,6 +29,13 @@ export function AiProviderSettings({ t }: { t: ThemeTokens }) {
   const keyStatusForProvider = useAiSettingsStore((s) => s.keyStatusForProvider);
   const saveKeyForProvider = useAiSettingsStore((s) => s.saveKeyForProvider);
   const testKeyForProvider = useAiSettingsStore((s) => s.testKeyForProvider);
+  // Not read directly below -- `keyStatusForProvider`/`getKeyForProvider` already branch on live
+  // vault state internally. Subscribing here exists purely so this component re-renders when the
+  // vault is set up/unlocked/locked/disabled elsewhere (`SecureStorageSettings.tsx`), since
+  // `vault.ts`'s own `vaultActive()`/`vaultUnlocked()` are plain function calls with no
+  // subscription mechanism of their own -- see `vaultStore.ts`'s header for the full reasoning.
+  useVaultStore((s) => s.active);
+  useVaultStore((s) => s.unlocked);
 
   const [keyInput, setKeyInput] = useState('');
   const [showKey, setShowKey] = useState(false);
@@ -44,6 +52,16 @@ export function AiProviderSettings({ t }: { t: ThemeTokens }) {
   const isCustomModel = model !== '' && !curatedModels.some((m) => m.v === model);
   const showCustomInput = customMode || isCustomModel;
   const keyStatus = keyStatusForProvider(provider);
+
+  // `statusMsg` is a transient "what just happened" message (a Save/Test result) layered over
+  // the always-live `keyStatus` text below -- but it's plain React state, so it doesn't
+  // automatically go stale when the vault's lock state changes elsewhere (SecureStorageSettings)
+  // without this component re-rendering for any other reason. Clearing it whenever `locked`
+  // itself flips (Lock/Unlock/Setup/Disable all change it) keeps a real vault-state change from
+  // being permanently masked by an old "Key saved." message.
+  useEffect(() => {
+    setStatusMsg(null);
+  }, [keyStatus.locked]);
 
   function handleProviderChange(nextId: string): void {
     setProvider(nextId);

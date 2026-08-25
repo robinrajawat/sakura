@@ -8,9 +8,11 @@ import {
   vaultEncrypt,
   vaultDecrypt,
   initVaultState,
-  setVaultCryptoKeyForTest,
+  setVaultCryptoKey,
   getVaultDecryptedKey,
   setVaultDecryptedKey,
+  getAllVaultDecryptedKeys,
+  clearVaultDecryptedKeys,
   type VaultDeps,
   type LocalStorageLike
 } from './vault';
@@ -69,12 +71,12 @@ describe('stateful vault (initVaultState + vaultActive/vaultUnlocked)', () => {
 
   it('vaultUnlocked is false until a session key is set, true after', () => {
     expect(vaultUnlocked()).toBe(false);
-    setVaultCryptoKeyForTest({} as CryptoKey); // any truthy value stands in for a real CryptoKey here
+    setVaultCryptoKey({} as CryptoKey); // any truthy value stands in for a real CryptoKey here
     expect(vaultUnlocked()).toBe(true);
   });
 
   it('initVaultState resets the session key back to locked', () => {
-    setVaultCryptoKeyForTest({} as CryptoKey);
+    setVaultCryptoKey({} as CryptoKey);
     expect(vaultUnlocked()).toBe(true);
     initVaultState(makeDeps());
     expect(vaultUnlocked()).toBe(false);
@@ -90,6 +92,28 @@ describe('stateful vault (initVaultState + vaultActive/vaultUnlocked)', () => {
     expect(getVaultDecryptedKey('gemini')).toBe('sk-gemini');
     expect(getVaultDecryptedKey('claude')).toBe('sk-claude');
     expect(getVaultDecryptedKey('openai')).toBe('');
+  });
+
+  it('getAllVaultDecryptedKeys returns every populated provider, keyed as stored', () => {
+    setVaultDecryptedKey('gemini', 'sk-gemini');
+    setVaultDecryptedKey('claude', 'sk-claude');
+    expect(getAllVaultDecryptedKeys()).toEqual({ key_gemini: 'sk-gemini', key_claude: 'sk-claude' });
+  });
+
+  it('getAllVaultDecryptedKeys returns a copy, not the live cache', () => {
+    setVaultDecryptedKey('gemini', 'sk-gemini');
+    const snapshot = getAllVaultDecryptedKeys();
+    setVaultDecryptedKey('gemini', 'changed');
+    expect(snapshot.key_gemini).toBe('sk-gemini');
+    expect(getVaultDecryptedKey('gemini')).toBe('changed');
+  });
+
+  it('clearVaultDecryptedKeys empties the cache without touching the session key', () => {
+    setVaultCryptoKey({} as CryptoKey);
+    setVaultDecryptedKey('gemini', 'sk-gemini');
+    clearVaultDecryptedKeys();
+    expect(getVaultDecryptedKey('gemini')).toBe('');
+    expect(vaultUnlocked()).toBe(true);
   });
 
   it('initVaultState clears the decrypted-key cache along with the session key', () => {
@@ -115,7 +139,7 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
   it('round-trips a plaintext value through a real derived AES-GCM key', async () => {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await deriveVaultKey('correct horse battery staple', salt);
-    setVaultCryptoKeyForTest(key);
+    setVaultCryptoKey(key);
 
     const plaintext = 'sk-example-provider-api-key-1234567890';
     const ciphertext = await vaultEncrypt(plaintext);
@@ -127,7 +151,7 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
   it('round-trips an empty string and unicode content', async () => {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await deriveVaultKey('pw', salt);
-    setVaultCryptoKeyForTest(key);
+    setVaultCryptoKey(key);
 
     expect(await vaultDecrypt(await vaultEncrypt(''))).toBe('');
     expect(await vaultDecrypt(await vaultEncrypt('héllo wörld 🔒'))).toBe('héllo wörld 🔒');
@@ -136,7 +160,7 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
   it('produces different ciphertext for the same plaintext each time (random IV)', async () => {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const key = await deriveVaultKey('pw', salt);
-    setVaultCryptoKeyForTest(key);
+    setVaultCryptoKey(key);
 
     const a = await vaultEncrypt('same plaintext');
     const b = await vaultEncrypt('same plaintext');
@@ -150,10 +174,10 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
     const keyA = await deriveVaultKey('correct passphrase', salt);
     const keyB = await deriveVaultKey('wrong passphrase', salt);
 
-    setVaultCryptoKeyForTest(keyA);
+    setVaultCryptoKey(keyA);
     const ciphertext = await vaultEncrypt('protected value');
 
-    setVaultCryptoKeyForTest(keyB);
+    setVaultCryptoKey(keyB);
     await expect(vaultDecrypt(ciphertext)).rejects.toThrow();
   });
 
@@ -162,9 +186,9 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
     const keyA = await deriveVaultKey('same passphrase', salt);
     const keyB = await deriveVaultKey('same passphrase', salt);
 
-    setVaultCryptoKeyForTest(keyA);
+    setVaultCryptoKey(keyA);
     const ciphertext = await vaultEncrypt('cross-key value');
-    setVaultCryptoKeyForTest(keyB);
+    setVaultCryptoKey(keyB);
     // If derivation is deterministic, keyB can decrypt what keyA encrypted.
     expect(await vaultDecrypt(ciphertext)).toBe('cross-key value');
   });
@@ -175,9 +199,9 @@ describe('vaultEncrypt / vaultDecrypt (real Web Crypto, no mocking)', () => {
     const keyA = await deriveVaultKey('same passphrase', saltA);
     const keyB = await deriveVaultKey('same passphrase', saltB);
 
-    setVaultCryptoKeyForTest(keyA);
+    setVaultCryptoKey(keyA);
     const ciphertext = await vaultEncrypt('salt-sensitive value');
-    setVaultCryptoKeyForTest(keyB);
+    setVaultCryptoKey(keyB);
     await expect(vaultDecrypt(ciphertext)).rejects.toThrow();
   });
 });

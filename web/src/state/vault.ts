@@ -36,6 +36,21 @@
  * `setVaultDecryptedKey` below are the narrow, provider-key-scoped accessors that close that gap
  * (matching legacy's own `decryptedKeyCache['key_'+pid]` indexing exactly) without exporting the
  * whole cache object.
+ *
+ * §6.9 follow-up addition: a real `store/vaultStore.ts` now provides the setup/unlock/lock/
+ * disable orchestration this file's header originally said would stay "hand-written, left in
+ * index.html" — that reasoning was legacy-specific (nothing to port from a React rewrite that
+ * doesn't exist yet). `setVaultCryptoKeyForTest` is renamed `setVaultCryptoKey` since it is now
+ * that orchestration layer's real production setter, not test-only; `getAllVaultDecryptedKeys`/
+ * `clearVaultDecryptedKeys` are the bulk counterparts to the single-provider accessors above,
+ * needed for disable-encryption's "flush every currently-decrypted key back to plaintext" and
+ * lock's "drop every decrypted key from memory." `SAKURA_VAULT_META_KEY`/
+ * `VAULT_VERIFIER_PLAINTEXT` are exported so `vaultStore.ts` doesn't duplicate these literals —
+ * an option legacy's own script-splicing constraint never had, per this file's other duplicated-
+ * literal comments elsewhere in this project. This module still deliberately does NOT own the
+ * actual `localStorage` writes for vault meta or the AI-key migration walk (`vaultStore.ts` does,
+ * using ambient `localStorage` directly, same convention `outlinePrefsStore.ts` already
+ * established) — scope stays crypto primitives + session state, orchestration stays outside.
  */
 
 export interface LocalStorageLike {
@@ -49,7 +64,10 @@ export interface VaultDeps {
 // Also read directly by hand-written code left in index.html (setupVaultPassphrase,
 // unlockVault, disableVaultEncryption) — see the file header for why these three specifically
 // were not worth pulling those functions in just to keep the constants "inside" too.
-const SAKURA_VAULT_META_KEY = 'sakura_vault_meta_v1';
+export const SAKURA_VAULT_META_KEY = 'sakura_vault_meta_v1';
+/** The fixed plaintext a successful unlock decrypts and compares against — a verifier-ciphertext
+ * pattern (not a password hash), matching legacy's own real `VAULT_VERIFIER_PLAINTEXT` exactly. */
+export const VAULT_VERIFIER_PLAINTEXT = 'sakura-vault-v1-ok';
 const VAULT_PBKDF2_ITERATIONS = 250000;
 
 let vaultDeps: VaultDeps | null = null;
@@ -77,13 +95,13 @@ function requireVaultDeps(): VaultDeps {
 }
 
 /**
- * Test-only hook: sets the in-memory session key directly. Production wiring never calls this —
- * setupVaultPassphrase/unlockVault/lockVault/disableVaultEncryption (hand-written, left in
- * index.html) assign the bare `vaultCryptoKey` variable directly, exactly as before this
- * extraction. This exists so tests can exercise vaultEncrypt/vaultDecrypt/vaultUnlocked without
- * needing to reimplement passphrase setup.
+ * Sets the in-memory session key directly — the real production setter `store/vaultStore.ts`'s
+ * setup/unlock/lock actions call after deriving (or clearing) the key, plus what tests use to
+ * exercise vaultEncrypt/vaultDecrypt/vaultUnlocked without needing to reimplement passphrase
+ * setup. (Named `...ForTest` in an earlier revision, back when only tests called it — legacy's
+ * real orchestration functions had no React-module equivalent yet to call it for real.)
  */
-export function setVaultCryptoKeyForTest(key: CryptoKey | null): void {
+export function setVaultCryptoKey(key: CryptoKey | null): void {
   vaultCryptoKey = key;
 }
 
@@ -112,6 +130,21 @@ export function getVaultDecryptedKey(providerId: string): string {
  * round trip. */
 export function setVaultDecryptedKey(providerId: string, value: string): void {
   decryptedKeyCache['key_' + providerId] = value;
+}
+
+/** A shallow copy of the whole session decrypted-key cache, keyed exactly as stored
+ * (`'key_<providerId>'`) — used by `vaultStore.ts`'s disable-encryption flow to flush every
+ * currently-decrypted key back to plaintext storage in one pass. Never the live object itself,
+ * so callers can't mutate the real cache by accident. */
+export function getAllVaultDecryptedKeys(): Record<string, string> {
+  return { ...decryptedKeyCache };
+}
+
+/** Drops every decrypted key from the in-memory session cache without touching the derived
+ * session key itself — used by `vaultStore.ts`'s lock action (which also nulls the session key
+ * separately) and by disable-encryption (after flushing every key to plaintext storage). */
+export function clearVaultDecryptedKeys(): void {
+  decryptedKeyCache = {};
 }
 
 export function b64FromBytes(bytes: Uint8Array): string {

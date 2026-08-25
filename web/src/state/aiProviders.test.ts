@@ -10,6 +10,10 @@ import {
   loadAiKeyForProvider,
   saveAiKeyForProviderStorage,
   hasStoredKeyForProvider,
+  mergeRawFieldsCore,
+  mergeRawFieldsStorage,
+  listStoredProviderKeysCore,
+  loadAllStoredProviderKeyFields,
   type AiPrefsState,
   type AiProvidersDeps
 } from './aiProviders';
@@ -285,5 +289,57 @@ describe('getAiKeyForProviderCore / saveAiKeyForProviderCore (pure)', () => {
     expect(hasStoredKeyForProviderCore(null, 'gemini')).toBe(false);
     expect(hasStoredKeyForProviderCore(JSON.stringify({ key_gemini: '' }), 'gemini')).toBe(false);
     expect(hasStoredKeyForProviderCore(JSON.stringify({ key_gemini: 'ciphertext-or-plaintext' }), 'gemini')).toBe(true);
+  });
+});
+
+describe('mergeRawFieldsCore / mergeRawFieldsStorage (pure + storage-backed bulk write)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    initAiProvidersState({ getLocalStorage: () => localStorage });
+  });
+
+  it('mergeRawFieldsCore overwrites given fields and preserves everything else', () => {
+    const raw = JSON.stringify({ provider: 'gemini', key_gemini: 'old' });
+    const result = mergeRawFieldsCore(raw, { key_gemini: 'new', key_claude: 'added' });
+    expect(result).toEqual({ provider: 'gemini', key_gemini: 'new', key_claude: 'added' });
+  });
+
+  it('mergeRawFieldsCore treats null/corrupt raw as an empty starting object', () => {
+    expect(mergeRawFieldsCore(null, { a: 'b' })).toEqual({ a: 'b' });
+    expect(mergeRawFieldsCore('{not valid', { a: 'b' })).toEqual({ a: 'b' });
+  });
+
+  it('mergeRawFieldsStorage writes all given fields in one read-modify-write', () => {
+    localStorage.setItem('sakura_ai_prefs_v1', JSON.stringify({ provider: 'gemini' }));
+    mergeRawFieldsStorage({ key_gemini: 'ct-1', key_claude: 'ct-2' });
+    const stored = JSON.parse(localStorage.getItem('sakura_ai_prefs_v1')!);
+    expect(stored).toEqual({ provider: 'gemini', key_gemini: 'ct-1', key_claude: 'ct-2' });
+  });
+});
+
+describe('listStoredProviderKeysCore / loadAllStoredProviderKeyFields', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    initAiProvidersState({ getLocalStorage: () => localStorage });
+  });
+
+  it('extracts every key_<providerId> field, ignoring unrelated fields', () => {
+    const raw = JSON.stringify({ provider: 'gemini', model: 'm', key_gemini: 'a', key_claude: 'b', key_openai: '' });
+    expect(listStoredProviderKeysCore(raw)).toEqual({ key_gemini: 'a', key_claude: 'b' });
+  });
+
+  it('includes a key_<id> field even for an id not in the current provider catalog', () => {
+    const raw = JSON.stringify({ key_some_removed_provider: 'still-here' });
+    expect(listStoredProviderKeysCore(raw)).toEqual({ key_some_removed_provider: 'still-here' });
+  });
+
+  it('returns {} for null/corrupt raw', () => {
+    expect(listStoredProviderKeysCore(null)).toEqual({});
+    expect(listStoredProviderKeysCore('{not valid')).toEqual({});
+  });
+
+  it('loadAllStoredProviderKeyFields reads from real storage', () => {
+    localStorage.setItem('sakura_ai_prefs_v1', JSON.stringify({ key_gemini: 'a', key_claude: 'b' }));
+    expect(loadAllStoredProviderKeyFields()).toEqual({ key_gemini: 'a', key_claude: 'b' });
   });
 });

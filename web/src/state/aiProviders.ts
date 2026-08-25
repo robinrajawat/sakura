@@ -214,6 +214,65 @@ export function hasStoredKeyForProviderCore(raw: string | null, providerId: stri
   return getAiKeyForProviderCore(raw, providerId).length > 0;
 }
 
+/** Pure: generic read-modify-write merge into the raw blob — every field in `fields` overwrites
+ * the same-named field in `raw` (or is added if absent), everything else is preserved. Used for
+ * bulk multi-field writes (`store/vaultStore.ts`'s setup-migration and disable-encryption flows)
+ * where writing one field at a time would mean N redundant localStorage read-modify-write round
+ * trips for what's really one logical write. Corrupt existing JSON is treated as an empty
+ * starting object, matching every other function in this file. */
+export function mergeRawFieldsCore(raw: string | null, fields: Record<string, string>): Record<string, unknown> {
+  let d: Record<string, unknown> = {};
+  try {
+    d = raw ? JSON.parse(raw) : {};
+  } catch {
+    d = {};
+  }
+  return { ...d, ...fields };
+}
+
+/** Storage-backed wrapper around `mergeRawFieldsCore`. Never throws — a failed localStorage
+ * write is silently a no-op, matching `saveAiPrefsCore`'s own convention. */
+export function mergeRawFieldsStorage(fields: Record<string, string>): void {
+  try {
+    const ls = requireAiProvDeps().getLocalStorage();
+    const raw = ls ? ls.getItem(_AI_PREFS_STORAGE_KEY) : null;
+    const d = mergeRawFieldsCore(raw, fields);
+    if (ls) ls.setItem(_AI_PREFS_STORAGE_KEY, JSON.stringify(d));
+  } catch {
+    // Original swallowed localStorage read/write failures — preserved exactly.
+  }
+}
+
+/** Pure: every `key_<providerId>` field present in the raw blob, regardless of whether that
+ * provider id is one of the seven currently-recognized built-ins — vault setup's migration walk
+ * needs to encrypt every existing key it finds, not just ones for currently-known providers (a
+ * provider could in principle have been removed from the catalog since a key was saved for it).
+ * Keyed exactly as stored (`'key_<providerId>'`), matching `getAllVaultDecryptedKeys`'s own
+ * shape so the two compose directly in `vaultStore.ts`. */
+export function listStoredProviderKeysCore(raw: string | null): Record<string, string> {
+  try {
+    const d: Record<string, unknown> = raw ? JSON.parse(raw) : {};
+    const result: Record<string, string> = {};
+    for (const [k, v] of Object.entries(d)) {
+      if (k.startsWith('key_') && typeof v === 'string' && v) result[k] = v;
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+/** Storage-backed wrapper around `listStoredProviderKeysCore`. Never throws. */
+export function loadAllStoredProviderKeyFields(): Record<string, string> {
+  try {
+    const ls = requireAiProvDeps().getLocalStorage();
+    const raw = ls ? ls.getItem(_AI_PREFS_STORAGE_KEY) : null;
+    return listStoredProviderKeysCore(raw);
+  } catch {
+    return {};
+  }
+}
+
 /** Writes the given provider's API key (or, when the caller has already vault-encrypted it, its
  * ciphertext) into the shared prefs blob. Never throws — a failed localStorage write is
  * silently a no-op, matching `saveAiPrefsCore`'s own convention. */

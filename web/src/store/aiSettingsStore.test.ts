@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { setVaultCryptoKeyForTest } from '../state/vault';
+import { setVaultCryptoKey } from '../state/vault';
 import * as aiCall from '../state/aiCall';
 
 vi.mock('../state/aiCall', async () => {
@@ -12,7 +12,7 @@ import { useAiSettingsStore } from './aiSettingsStore';
 describe('aiSettingsStore', () => {
   beforeEach(() => {
     localStorage.clear();
-    setVaultCryptoKeyForTest(null);
+    setVaultCryptoKey(null);
     useAiSettingsStore.setState({ provider: 'gemini', model: 'gemini-3.5-flash', modelByProvider: {}, prompt: useAiSettingsStore.getState().prompt });
     vi.mocked(aiCall.callAiByShape).mockReset();
   });
@@ -128,7 +128,7 @@ describe('aiSettingsStore', () => {
       const salt = crypto.getRandomValues(new Uint8Array(16));
       const { deriveVaultKey } = await import('../state/vault');
       const key = await deriveVaultKey('correct horse battery staple', salt);
-      setVaultCryptoKeyForTest(key);
+      setVaultCryptoKey(key);
 
       const result = await useAiSettingsStore.getState().saveKeyForProvider('gemini', 'sk-vaulted');
       expect(result.ok).toBe(true);
