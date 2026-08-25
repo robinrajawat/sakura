@@ -376,9 +376,29 @@ empty-query "every node" case) rather than porting the separate
 expand/collapse branches for very large documents. `AnchorPicker`
 itself is domain-agnostic (plain `DecisionAnchorCandidate[]` props),
 ready to reuse for Diagrams' own still-missing anchor-picker later.
-Verified end-to-end in real headless Chrome. Decision Log's four
-export surfaces (DOCX/PDF/PPTX cards, Excel `.xlsx`) are next, each
-its own separately-scoped slice.
+Verified end-to-end in real headless Chrome.
+
+Preview/PDF decision cards landed next: direct port of legacy's real
+`previewRenderDecisionCard`, a bordered card with a status-colored
+left accent and uppercase badge showing every non-empty field. A new
+pure `decisionStatusColorKeyCore` (`decisionLogQueries.ts`) maps a
+status to `'green'|'red'|'gray'`, matching legacy's own real
+`docxStatusColor` mapping; screen/PDF resolve that against
+`ThemeTokens.fcGreen`/`fcRed`/`fcGray` (already the exact same hex
+values) or PDF's own fixed hex constants. Implemented twice --
+`PreviewPane.tsx` (JSX) and `ExportButtons.tsx`'s `exportPdf` (a raw
+HTML string for a separate print window) -- matching this project's
+own established "two parallel renderers, same visual content" pattern
+(legacy shares ONE renderer between Preview/PDF because its own PDF
+export literally prints the Preview DOM; `web/`'s PDF export was never
+built that way, so keeping ITS OWN established two-renderer pattern
+was the more idiomatic call than a mid-slice shared-component
+refactor). Verified end-to-end in real headless Chrome, including a
+real PDF popup window (Playwright's `page.waitForEvent('popup')`).
+
+Remaining for Decision Log: DOCX card, PPTX card, and Excel `.xlsx`
+export (a new dependency, SheetJS/`xlsx`, not yet in this project) --
+each its own separately-scoped slice.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything

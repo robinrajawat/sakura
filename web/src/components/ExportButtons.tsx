@@ -17,6 +17,8 @@ import mammoth from 'mammoth';
 import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
+import { decisionStatusLabelCore, decisionStatusColorKeyCore } from '../state/decisionLogQueries';
+import type { DecisionTextField } from '../store/padStore';
 import { AlignmentType, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
@@ -125,6 +127,7 @@ export function ExportButtons() {
   const newDocument = useDocumentsStore((s) => s.newDocument);
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
+  const decisions = usePadStore((s) => s.decisions);
   const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
   const hideTreeLines = useOutlinePrefsStore((s) => s.hideTreeLines);
   const outlineNumbering = useOutlinePrefsStore((s) => s.outlineNumbering);
@@ -351,9 +354,17 @@ export function ExportButtons() {
   // a second real place `node.note` gets embedded as raw HTML, this time via
   // `printWindow.document.write`. Every node still renders regardless of fold state, same as
   // `PreviewPane.tsx`'s own deliberate choice (a folded subtree still belongs in the printed
-  // document) -- not a gap to close, unlike the note/code omission this fixes. Decision-card
-  // rendering remains a real, separately-scoped follow-up: Decision Log has no store/panel in
-  // `web/` yet, same blocker documented for Excel export and the cover page's meta line above.
+  // document) -- not a gap to close, unlike the note/code omission this fixes.
+  //
+  // §6.7 fidelity upgrade: a decision-log card (§6.7's Decision Log now being real) renders
+  // right below a node's own row, same content/visual treatment as `PreviewPane.tsx`'s own
+  // decision card (a bordered/status-accented block) -- this project's established "two
+  // parallel renderers, same visual content" pattern (see that component's own header for why),
+  // not a shared React component, since this exporter builds a raw HTML string for a separate
+  // print window rather than rendering JSX. Fixed light-theme hex values (matching
+  // `ThemeTokens.fcGreen`/`fcRed`/`fcGray`'s own real light-mode values), same reasoning every
+  // other color in this exporter is fixed rather than theme-reactive: exports are always
+  // light-themed regardless of the app's live theme.
   function exportPdf() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return; // popup blocked -- nothing more to do without a fallback UI here
@@ -376,6 +387,7 @@ export function ExportButtons() {
       <div style="width:52px;height:3px;background:#c2553d;margin-bottom:16px;"></div>
       <div style="font-size:13px;color:#666;">${escapeHtmlForPrint(metaParts.join(' · '))}</div>
     </div>`;
+    const DL_STATUS_HEX: Record<'green' | 'red' | 'gray', string> = { green: '#27824f', red: '#c0392b', gray: '#6f6b63' };
     const rows = nodes
       .map((node) => {
         const textRow = `<div style="text-decoration:${node.isCheckbox && node.checked ? 'line-through' : 'none'};">${
@@ -387,7 +399,30 @@ export function ExportButtons() {
         const codeRow = node.codeBlock
           ? `<pre style="background:#f0eee5;padding:6px;border-radius:4px;font-size:13px;overflow-x:auto;white-space:pre-wrap;">${escapeHtmlForPrint(node.codeBlock.code)}</pre>`
           : '';
-        return `<div style="padding-left:${node.depth * 24}px;margin-bottom:4px;">${textRow}${noteRow}${codeRow}</div>`;
+        const dl = decisions.find((d) => d.anchorNodeId === node.id);
+        let decisionRow = '';
+        if (dl) {
+          const accent = DL_STATUS_HEX[decisionStatusColorKeyCore(dl.status)];
+          const fieldRows = (
+            [
+              ['context', 'Context'],
+              ['decision', 'Decision'],
+              ['rationale', 'Rationale'],
+              ['alternatives', 'Alternatives'],
+              ['impact', 'Impact']
+            ] as [DecisionTextField, string][]
+          )
+            .filter(([key]) => dl[key]?.trim())
+            .map(
+              ([key, label]) =>
+                `<div style="margin-bottom:4px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#8a877e;">${label}</div><div style="font-size:13px;">${escapeHtmlForPrint(dl[key])}</div></div>`
+            )
+            .join('');
+          let metaText = dl.author ? `— ${escapeHtmlForPrint(dl.author)}` : '';
+          if (dl.timestamp) metaText += (metaText ? ' · ' : '— ') + new Date(dl.timestamp).toLocaleDateString();
+          decisionRow = `<div style="border:1px solid #e3e0d8;border-left:3px solid ${accent};border-radius:4px;background:#f7f5ef;padding:8px 10px;margin-top:4px;max-width:90%;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:${fieldRows ? 6 : 0}px;"><span style="font-size:12px;font-weight:700;color:${accent};">Decision Log</span><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;padding:1px 6px;border-radius:999px;background:${accent}29;color:${accent};">${decisionStatusLabelCore(dl.status)}</span></div>${fieldRows}${metaText ? `<div style="font-size:11px;font-style:italic;color:#73716b;">${metaText}</div>` : ''}</div>`;
+        }
+        return `<div style="padding-left:${node.depth * 24}px;margin-bottom:4px;">${textRow}${noteRow}${codeRow}${decisionRow}</div>`;
       })
       .join('');
     // §6.6 fidelity upgrade: the branding wordmark in the bottom-right corner of every printed

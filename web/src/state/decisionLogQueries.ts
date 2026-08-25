@@ -106,6 +106,21 @@ export function decisionStatusOfCore(dl: { status?: string | null } | null | und
   return _DECISION_STATUSES_QUERIES.includes(raw) ? raw : 'proposed';
 }
 
+/** Pure: matches legacy's own real status-to-accent-color mapping exactly (`docxStatusColor`/
+ * `previewStatusBadgeColor`, legacy/index.html:24751-24757 -- collapsed here to this project's
+ * own 3 real statuses, since `web/`'s `DecisionStatus` union has no "hold"/"pending"/"review"
+ * states legacy's own regex also matches). Returns a semantic color KEY, not a hex value --
+ * callers map it to their own real color source (`ThemeTokens.fcGreen`/`fcRed`/`fcGray` for
+ * screen/PDF rendering, since those already hold the exact same hex values legacy's own function
+ * does; DOCX/PPTX exports are always light-themed regardless of the app's live theme, so they use
+ * their own fixed hex constants instead of these tokens). */
+export function decisionStatusColorKeyCore(status: string | null | undefined): 'green' | 'red' | 'gray' {
+  const normalized = decisionStatusOfCore({ status });
+  if (normalized === 'approved') return 'green';
+  if (normalized === 'rejected') return 'red';
+  return 'gray';
+}
+
 /** Pure: matches index.html's own `decisionLogAnchorLabel` exactly — the human-readable
  * "anchored under..." label, same three-way branch and 60-character truncation as
  * `diagramAnchor.ts`'s `computeDiagramAnchorLabel`. */
