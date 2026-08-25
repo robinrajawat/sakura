@@ -29,6 +29,7 @@ import {
 } from './store/themeStore';
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
+import { SettingsPanel } from './components/SettingsPanel';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -41,6 +42,7 @@ import { useIsMobileViewport } from './utils/useIsMobileViewport';
  */
 export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const isMobile = useIsMobileViewport();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -156,6 +158,17 @@ export function App() {
                 }}
               />
             ))}
+          </div>
+          {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
+              surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
+              button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see
+              SettingsPanel.tsx's own header for exactly what it holds and why it's deliberately
+              minimal (a single flat section, not legacy's own multi-category rail). */}
+          <div style={{ position: 'relative' }}>
+            <button type="button" onClick={() => setSettingsOpen((open) => !open)} title="Settings" aria-pressed={settingsOpen}>
+              ⚙
+            </button>
+            {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
           </div>
         </>
       }

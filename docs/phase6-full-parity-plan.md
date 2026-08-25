@@ -873,19 +873,39 @@ Status: **in progress.**
   inventing UI legacy itself doesn't expose, not porting parity -- so it's being marked N/A here
   rather than silently skipped, the same "trust the real code" call already made for the
   'schedule' theme-mode comment above.
-- Investigated the rest of §6.7's remaining list -- unlike Chrome presets, these ARE real,
-  reachable legacy features (confirmed real markup + real event listeners: e.g. `#compact-rows-
-  toggle`/`#hide-tree-lines-toggle`/`#depth-guide-lines-toggle`, legacy/index.html:5127-5132,
-  27072+), but every one of them lives inside legacy's own Settings panel (`.settings-list-row`
-  markup), which `web/` has no equivalent of at all yet. The accent/node-font-color pickers
-  above worked as standalone header buttons because there were only 1-2 of them; Editor's
-  Choice/Documentation Mode presets, the ~7 layout controls (tree lines, depth guides, row
-  style, compact rows, text size, indent width, collapse depth), and inline note/remark/Q&A
-  previews are a materially bigger set that genuinely wants a real settings surface, not more
-  one-off toolbar buttons -- this is the natural point to build that surface (a real,
-  cross-cutting piece, see §6.10) rather than force each item in awkwardly. Not started; flagged
-  for the user rather than either building a Settings panel unasked or continuing to stuff the
-  header.
+- ✅ **First Settings-panel slice (§6.7/§6.10): outline export-formatting prefs.** `web/`'s
+  first real Settings surface -- a dropdown anchored under a new "⚙ Settings" header button
+  (`App.tsx`, `position:relative`/`position:absolute`, matching legacy's real
+  `.settings-wrap{position:relative}` button-anchored-dropdown UX), rendered by the new
+  `SettingsPanel.tsx`. Deliberately minimal: legacy's own real panel has a multi-category rail
+  (Appearance/Presets & modes/Bars & menus/Panels/Hub/Editing/Data & backup,
+  legacy/index.html:4622-4650); this first slice is a single flat section holding only the
+  three prefs that already had a real, existing consumer before this slice --
+  `treeIndentWidth`/`hideTreeLines`/`outlineNumbering` -- which previously lived as hardcoded
+  constants directly inside `ExportButtons.tsx` (with a comment literally noting `web/` had no
+  Settings panel yet to source them from). New `outlinePrefsStore.ts` gives them real,
+  persisted, adjustable state (`sakura_web_outline_prefs_v1`), matching legacy's own real
+  `setTreeIndentWidth` clamp (`legacy/index.html:18991`, 2-6) and defaults exactly.
+  Deliberately does NOT consolidate the already-shipped accent/node-font-color/theme-mode
+  header controls into this panel yet (a real, separately-scoped follow-up, matching legacy's
+  own layout where they DO live inside `#settings-panel`) and does NOT attempt the rest of
+  §6.7's "layout controls" list (tree lines, depth guides, row style, compact rows, text size,
+  collapse depth) -- confirmed via grep that `OutlineTree.tsx`, `web/`'s live editor, has zero
+  tree-line/connector rendering, row-density CSS, text-size, or depth-guide-line mechanism at
+  all (a fundamentally simpler CSS-padding-only rendering model than legacy's ASCII-connector
+  grid); those items need real new rendering infrastructure built first, not just a toggle
+  wired to existing state, and are out of scope for this slice. Verified end-to-end in real
+  headless Chrome: the panel opens/closes correctly, the indent-width slider and both checkboxes
+  take live effect on `.txt`/clipboard exports, and all three persist correctly across a full
+  page reload -- zero console/page errors. (While building this slice's verification document,
+  real headless-Chrome testing also surfaced and led to fixing an unrelated, more severe
+  pre-existing bug -- `outlineStore`'s `nextId` never advancing when a document's nodes loaded
+  in, causing node-id collisions on the very first "Add child" of a fresh session -- shipped
+  separately as its own PR, not bundled into this feature slice.)
+- The remaining §6.7 items -- Editor's Choice/Documentation Mode presets and the ~7 layout
+  controls above -- stay not started, gated on the new `OutlineTree.tsx` rendering
+  infrastructure noted above, and/or the Settings panel growing its full multi-category rail as
+  more prefs accumulate real backing state to show (see §6.10).
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
@@ -937,8 +957,9 @@ complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depend
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
 #202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (#213,
-#214, #215, Chrome-background-preset investigation + §6.7 check-in landing in this PR) — see
-each section's own `Status:` line for
+#214, #215, #216 Chrome-background-preset investigation, #217 a real outline `nextId`
+node-id-collision bug fix found while verifying this PR, and this PR's first minimal
+Settings-panel slice) — see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
