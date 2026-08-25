@@ -39,7 +39,7 @@ already made and already documented at the time.
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, and a floating Notes/Q&A panel (§6.6) — no Whiteboard mirroring or Audience View/dual-screen (blocked on web/ having no client-side routing) |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. No Excel export (blocked on Decision Log not existing as a real feature yet) |
 | Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
-| Deep theming | ⚠️ | Light/Dark toggle (Phase 3) and accent color, both persisted across sessions (§6.7) — no System/Schedule auto-theme, Chrome backgrounds, node-text color presets |
+| Deep theming | ⚠️ | Light/Dark toggle (Phase 3), accent color, and System auto-theme, all persisted across sessions (§6.7) — no Chrome backgrounds, node-text color presets |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
 | Two-tier automatic backup | ❌ | No local safety copy (IndexedDB mirror), no auto-backup-to-file |
 | Account sign-in + sync | ⚠️ | Google sign-in + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project — no email/password, no sharing/collaboration, manual push not autosave |
@@ -142,7 +142,7 @@ selection/provider fallback/usage tracking.
 | Feature | Status | Note |
 |---|---|---|
 | Light/Dark theme | ✅ | Phase 3, persisted across sessions (§6.7) |
-| Auto theme (System/Schedule) | ❌ | Not built |
+| Auto theme | ✅ | System mode built (§6.7): follows `prefers-color-scheme` live via a real `matchMedia` listener, with a temporary-override mechanic for manual clicks matching legacy's own real UX exactly; no "Schedule" mode -- confirmed that mode doesn't actually exist in legacy's own current code (its `setThemeMode` whitelist is `['manual','system']` only, despite a leftover comment mentioning a third mode) |
 | Accent color | ✅ | All 7 real presets, a swatch-row picker UI, and persistence across sessions (§6.7); no custom-color picker |
 | Chrome background presets | ❌ | Not built |
 | Node text color presets | ❌ | Not built |

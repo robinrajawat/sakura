@@ -818,7 +818,30 @@ Status: **in progress.**
   Moss's own dark-mode hex (not back to a default), the choice persists to `localStorage`, and a
   full page reload restores both the dark theme and the Moss accent exactly -- zero
   console/page errors.
-- Still not started: auto theme (System/Schedule), Chrome background presets, node text color
+- ✅ **System auto-theme.** Direct port of legacy's real two-mode `setThemeMode`/`applyAutoTheme`
+  (legacy/index.html:18954-18969) -- `'manual'` (Light/Dark switch only) or `'system'` (follows
+  the OS/browser `prefers-color-scheme` live, via a real `matchMedia` change listener, plus a
+  `visibilitychange` listener covering the case where the OS theme flipped while the tab was
+  backgrounded/asleep, which a bare change-event listener alone would miss). A manual theme
+  click still works while in System mode -- it starts a *temporary* override
+  (`_themeOverrideActive`, a plain module-scope flag, deliberately never persisted, matching
+  legacy's own real reasoning) that the next natural preference change quietly supersedes once
+  it catches up and agrees with the override again. Correcting the plan doc's own wording here:
+  legacy has a leftover comment mentioning a third `'schedule'` mode, but its own `setThemeMode`
+  whitelist (`['manual','system'].includes(mode)`) proves that mode doesn't actually exist in
+  the real, current legacy code -- a genuine stale-comment/dead-feature mismatch, not a real gap
+  this port needs to fill, so only System is built here. A small "🖥️" toggle button (`App.tsx`'s
+  header actions, next to the theme toggle) switches modes -- no Settings panel needed, same
+  approach the accent-picker slice above used. `themeMode` now persists alongside
+  theme/accentPreset. Verified end-to-end in REAL headless Chrome using Chromium's own
+  `prefers-color-scheme` emulation (not a mock) -- confirmed the OS preference is ignored until
+  System mode is enabled, enabling it applies the real current OS preference immediately, a real
+  live OS preference change updates the theme while in System mode, a manual toggle click starts
+  a real override that a disagreeing OS event doesn't disturb, the override clears once the OS
+  value catches up to agree with it (resuming auto-following on the next real change),
+  disabling System mode stops all of this, and the mode/theme choice survives a full page
+  reload with the OS preference still emulated the same way -- zero console/page errors.
+- Still not started: Chrome background presets, node text color
   presets, Editor's Choice / Documentation Mode presets, full layout controls, inline
   note/remark/Q&A previews -- each a real, separately-scoped follow-up. Most of these want a real
   Settings panel to live in, which doesn't exist yet (see §6.10).
@@ -872,8 +895,8 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (accent
-picker + theme/accent persistence landing in this PR) — see each section's own `Status:` line for
+#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (#213,
+System auto-theme landing in this PR) — see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own

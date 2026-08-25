@@ -263,31 +263,66 @@ function writeJson(key: string, value: unknown): void {
   }
 }
 
+/** Legacy's real two theme modes (`setThemeMode`'s own whitelist, legacy/index.html:18962-18969)
+ * -- 'manual' (Light/Dark switch only) or 'system' (follow `prefers-color-scheme`). Legacy has a
+ * leftover comment mentioning a third 'schedule' mode (legacy/index.html:18818, :27032) but its
+ * OWN `setThemeMode` whitelist (`['manual','system'].includes(mode)`) proves that mode doesn't
+ * actually exist in the real, current code -- a genuine stale-comment/dead-feature mismatch, not
+ * a real gap this port needs to fill (same "trust the real code over stale text" call this
+ * project has made before, e.g. the branding-default slice). */
+export type ThemeMode = 'manual' | 'system';
+
+/** Real `matchMedia` query for the OS/browser dark-mode preference -- module-level singleton (one
+ * real `MediaQueryList`, matching legacy's own `_themeMediaQuery`) rather than re-querying on
+ * every read. `null` outside a browser (SSR/test environments without `window.matchMedia`). */
+const _themeMediaQuery: MediaQueryList | null = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+
+function naturalSystemTheme(): Theme {
+  return _themeMediaQuery?.matches ? 'dark' : 'light';
+}
+
+/** Legacy's real `_themeOverrideActive` (legacy/index.html:18816-18822's own comment explains the
+ * full mechanic): a plain module-scope flag, not store state, and deliberately never persisted --
+ * "a session-only override reset on every fresh load" is the documented, intentional behavior
+ * (legacy's own comment: persisting it previously caused system sync to silently stay stuck on a
+ * stale theme after every reload). Distinguishes a manual `setTheme` click from a call
+ * `applyAutoTheme` itself makes, while `themeMode` is `'system'`: a manual click still applies
+ * immediately (nothing blocks it) but starts a *temporary* override that the next natural
+ * `prefers-color-scheme` change quietly supersedes -- see `applyAutoTheme` below for the other
+ * half. */
+let _themeOverrideActive = false;
+
 interface ThemePrefs {
   theme?: unknown;
   accentPreset?: unknown;
+  themeMode?: unknown;
 }
 
 /** Reads persisted prefs, defensively validating each field against the real set of valid
  * values rather than trusting stored JSON blindly (same "safe to store, safe to render"
  * contract every other imported/persisted shape in this project already gets, e.g.
  * `normalizeDecisionLogCore`) -- a corrupted or hand-edited localStorage value falls back to the
- * real default for that field instead of poisoning the store with a bogus theme/accent. */
-function loadThemePrefs(): { theme: Theme; accentPreset: AccentPreset } {
+ * real default for that field instead of poisoning the store with a bogus theme/accent/mode. When
+ * the persisted mode is `'system'`, the persisted `theme` value itself is ignored in favor of the
+ * REAL current system preference -- matching legacy's own real startup restoration call, which
+ * is an `isAuto=true` `setTheme` call, not a blind replay of whatever theme was last saved. */
+function loadThemePrefs(): { theme: Theme; accentPreset: AccentPreset; themeMode: ThemeMode } {
   const raw = readJson<ThemePrefs>(_THEME_PREFS_KEY, {});
-  const theme: Theme = raw.theme === 'dark' ? 'dark' : 'light';
+  const themeMode: ThemeMode = raw.themeMode === 'system' ? 'system' : 'manual';
   const accentPreset: AccentPreset =
     typeof raw.accentPreset === 'string' && raw.accentPreset in ACCENT_PRESETS ? (raw.accentPreset as AccentPreset) : DEFAULT_ACCENT;
-  return { theme, accentPreset };
+  const theme: Theme = themeMode === 'system' ? naturalSystemTheme() : raw.theme === 'dark' ? 'dark' : 'light';
+  return { theme, accentPreset, themeMode };
 }
 
-function saveThemePrefs(theme: Theme, accentPreset: AccentPreset): void {
-  writeJson(_THEME_PREFS_KEY, { theme, accentPreset });
+function saveThemePrefs(theme: Theme, accentPreset: AccentPreset, themeMode: ThemeMode): void {
+  writeJson(_THEME_PREFS_KEY, { theme, accentPreset, themeMode });
 }
 
 interface ThemeState {
   theme: Theme;
   accentPreset: AccentPreset;
+  themeMode: ThemeMode;
   /** Applies the CURRENT theme/accent as real CSS custom properties on `<body>` -- call once on
    * mount (AppShell.tsx's own init effect) so the properties exist before any explicit
    * `setTheme`/`setAccentPreset` call ever happens. Idempotent to call more than once (it just
@@ -295,9 +330,27 @@ interface ThemeState {
    * re-running with a `loaded` flag -- there's no persisted-state restore here to protect
    * against re-running, just a plain reapplication. */
   init: () => void;
-  setTheme: (theme: Theme) => void;
+  /** `isAuto` distinguishes a manual call (default, e.g. a direct click or `toggleTheme`) from a
+   * call `applyAutoTheme` itself makes -- matches legacy's own real `setTheme(theme,isAuto)`
+   * exactly (legacy/index.html:18822). A manual call while `themeMode!=='manual'` starts a
+   * temporary override (see `_themeOverrideActive`'s own comment above); an auto call never
+   * does. Almost every caller should omit `isAuto` -- only `applyAutoTheme` itself passes `true`. */
+  setTheme: (theme: Theme, isAuto?: boolean) => void;
   toggleTheme: () => void;
   setAccentPreset: (preset: AccentPreset) => void;
+  /** Direct port of legacy's real `setThemeMode` (legacy/index.html:18962-18969): switches
+   * between 'manual' and 'system', clearing any active temporary override on a real mode change,
+   * then immediately reconciles the theme against the new mode via `applyAutoTheme` (a no-op if
+   * the new mode is 'manual'). */
+  setThemeMode: (mode: ThemeMode) => void;
+  /** Direct port of legacy's real `applyAutoTheme` (legacy/index.html:18954-18959): while
+   * `themeMode==='system'`, applies the real current `prefers-color-scheme` value UNLESS a
+   * temporary manual override is still active and hasn't yet been caught up to by the natural
+   * value. Called from `setThemeMode`, the real `matchMedia` change listener, and a
+   * `visibilitychange` listener (below) covering the case where the OS theme changed while this
+   * tab was backgrounded or the machine was asleep. A safe no-op in 'manual' mode or outside a
+   * browser (no real `MediaQueryList` to read). */
+  applyAutoTheme: () => void;
   /** The resolved accent hex for the current theme + preset combination -- what a component
    * should actually render, e.g. a selection highlight or an active toolbar button. */
   accentColor: () => string;
@@ -307,10 +360,14 @@ interface ThemeState {
  * Phase 3's original theming slice, extended in Phase 6.1 with real extracted color values,
  * accent-preset selection, and real CSS custom properties on `<body>` (see `CSS_VAR_MAP`/
  * `applyCssVariables` above), and in §6.7 with theme/accent-preset persistence across sessions
- * (`loadThemePrefs`/`saveThemePrefs` above) and a real accent-swatch picker UI (`App.tsx`'s
- * header actions -- the store's own `setAccentPreset` action existed since Phase 6.1 but had no
- * UI ever calling it until this slice). Still deliberately scoped down from legacy's fuller
- * system: no system-preference auto-detection ('system' mode), no Chrome background presets, no
+ * (`loadThemePrefs`/`saveThemePrefs` above), a real accent-swatch picker UI (`App.tsx`'s header
+ * actions -- the store's own `setAccentPreset` action existed since Phase 6.1 but had no UI ever
+ * calling it until that slice), and now real System auto-theme (`setThemeMode`/`applyAutoTheme`
+ * above, a direct port of legacy's own real two-mode `'manual'`/`'system'` system -- legacy has a
+ * leftover comment mentioning a third 'schedule' mode that its own `setThemeMode` whitelist
+ * proves doesn't actually exist in the real code, so this port doesn't build one either; see
+ * `ThemeMode`'s own comment). Still deliberately scoped down from legacy's fuller
+ * system: no Chrome background presets, no
  * node-text-color presets, no accent intensity slider, no custom-color picker (`web/`'s own
  * `AccentPreset` type has no `'custom'` variant at all, matching this scope-down) -- each a real,
  * separately-scoped follow-up within §6.7, not silently dropped. The CSS custom
@@ -325,21 +382,35 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const { theme, accentColor } = get();
     applyCssVariables(theme, accentColor());
   },
-  setTheme: (theme) => {
+  setTheme: (theme, isAuto = false) => {
+    if (!isAuto && get().themeMode !== 'manual') _themeOverrideActive = true;
     set({ theme });
     applyCssVariables(theme, get().accentColor());
-    saveThemePrefs(theme, get().accentPreset);
+    saveThemePrefs(theme, get().accentPreset, get().themeMode);
   },
   toggleTheme: () => {
     const theme = get().theme === 'light' ? 'dark' : 'light';
-    set({ theme });
-    applyCssVariables(theme, get().accentColor());
-    saveThemePrefs(theme, get().accentPreset);
+    get().setTheme(theme);
   },
   setAccentPreset: (preset) => {
     set({ accentPreset: preset });
     applyAccentCssVariable(get().accentColor());
-    saveThemePrefs(get().theme, preset);
+    saveThemePrefs(get().theme, preset, get().themeMode);
+  },
+  setThemeMode: (mode) => {
+    const normalized: ThemeMode = mode === 'system' ? 'system' : 'manual';
+    if (normalized !== get().themeMode) _themeOverrideActive = false;
+    set({ themeMode: normalized });
+    saveThemePrefs(get().theme, get().accentPreset, normalized);
+    if (normalized !== 'manual') get().applyAutoTheme();
+  },
+  applyAutoTheme: () => {
+    if (get().themeMode !== 'system' || !_themeMediaQuery) return;
+    const natural = naturalSystemTheme();
+    if (!_themeOverrideActive || natural === get().theme) {
+      _themeOverrideActive = false;
+      get().setTheme(natural, true);
+    }
   },
   accentColor: () => {
     const { theme, accentPreset } = get();
@@ -356,3 +427,21 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
 // this module is imported, closes that gap before React ever renders anything. AppShell.tsx's
 // own effect call is harmless and kept regardless (idempotent -- reapplying the same values).
 useThemeStore.getState().init();
+
+// Real `matchMedia` change listener -- fires the instant the OS/browser dark-mode setting
+// changes, no polling needed, matching legacy's own real `_onSystemThemeChange` wiring
+// (legacy/index.html:27028-27031). Legacy also has an `addListener` fallback for pre-2020
+// Safari's older `MediaQueryList` API; skipped here as genuinely dead weight for a modern
+// Vite/React SPA target, not a fidelity gap -- no browser capable of running this build lacks
+// the standard `addEventListener` form.
+_themeMediaQuery?.addEventListener('change', () => useThemeStore.getState().applyAutoTheme());
+
+// A bare change-event listener misses the case where the OS theme flipped WHILE this tab was
+// backgrounded or the machine was asleep (no event fires retroactively) -- direct port of
+// legacy's own real `visibilitychange` listener covering exactly that gap
+// (legacy/index.html:27032-27035).
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) useThemeStore.getState().applyAutoTheme();
+  });
+}

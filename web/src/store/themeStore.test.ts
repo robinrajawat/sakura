@@ -1,9 +1,9 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS, CSS_VAR_MAP } from './themeStore';
 
 describe('themeStore', () => {
   beforeEach(() => {
-    useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT });
+    useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT, themeMode: 'manual' });
     document.body.removeAttribute('style');
     localStorage.clear();
   });
@@ -101,11 +101,11 @@ describe('themeStore', () => {
   });
 
   describe('persistence across sessions (§6.7)', () => {
-    it('setTheme persists the new theme (and the current accent) to localStorage', () => {
+    it('setTheme persists the new theme (and the current accent/mode) to localStorage', () => {
       useThemeStore.getState().setAccentPreset('moss');
       useThemeStore.getState().setTheme('dark');
       const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
-      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'moss' });
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'moss', themeMode: 'manual' });
     });
 
     it('toggleTheme persists too', () => {
@@ -114,11 +114,11 @@ describe('themeStore', () => {
       expect(persisted.theme).toBe('dark');
     });
 
-    it('setAccentPreset persists the new preset (and the current theme) to localStorage', () => {
+    it('setAccentPreset persists the new preset (and the current theme/mode) to localStorage', () => {
       useThemeStore.getState().setTheme('dark');
       useThemeStore.getState().setAccentPreset('indigo');
       const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
-      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'indigo' });
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'indigo', themeMode: 'manual' });
     });
 
     it('a fresh store load reads back a previously persisted theme/accent', async () => {
@@ -146,6 +146,127 @@ describe('themeStore', () => {
       const fresh = await import('./themeStore');
       expect(fresh.useThemeStore.getState().theme).toBe('light');
       expect(fresh.useThemeStore.getState().accentPreset).toBe(DEFAULT_ACCENT);
+      expect(fresh.useThemeStore.getState().themeMode).toBe('manual');
+    });
+  });
+
+  describe('System auto-theme (§6.7)', () => {
+    /** A controllable fake `MediaQueryList` for `(prefers-color-scheme: dark)` -- jsdom (this
+     * project's test environment) has no real `matchMedia` at all (`typeof matchMedia` is
+     * `undefined` here), so every one of these tests mocks it, then does a `vi.resetModules()` +
+     * fresh dynamic import of `themeStore.ts` so the module's own `_themeMediaQuery` constant
+     * (captured once, at module load) picks up the mock -- same "force a real re-execution"
+     * pattern the persistence tests above already use, for the same reason (module-load-time
+     * state can't be exercised by a plain `setState` reset). `setMatches` both updates `.matches`
+     * AND fires every registered 'change' listener, simulating a real OS-level preference flip. */
+    function mockMatchMedia(initialMatches: boolean) {
+      let matches = initialMatches;
+      const listeners: (() => void)[] = [];
+      const mql = {
+        get matches() {
+          return matches;
+        },
+        addEventListener: (_type: string, cb: () => void) => {
+          listeners.push(cb);
+        },
+        removeEventListener: () => {}
+      };
+      vi.stubGlobal('matchMedia', () => mql);
+      return {
+        setMatches: (next: boolean) => {
+          matches = next;
+          listeners.forEach((cb) => cb());
+        },
+        /** Changes the underlying value WITHOUT firing any 'change' listener -- simulates an OS
+         * preference flip that happened while this tab was backgrounded/asleep, which a real
+         * `matchMedia` change event would never have delivered retroactively. Used by the
+         * `visibilitychange` test below to prove THAT listener (not the 'change' one) is what
+         * catches this case up. */
+        setMatchesSilently: (next: boolean) => {
+          matches = next;
+        }
+      };
+    }
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('setThemeMode("system") immediately applies the real current system preference', async () => {
+      mockMatchMedia(true); // OS is in dark mode
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+    });
+
+    it('a real matchMedia "change" event live-updates the theme while in system mode', async () => {
+      const mm = mockMatchMedia(false); // OS starts in light mode
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+
+      mm.setMatches(true); // OS flips to dark
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+    });
+
+    it('a manual theme click while in system mode starts a temporary override the next matching change event does not disturb', async () => {
+      const mm = mockMatchMedia(true); // OS is dark
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+
+      fresh.useThemeStore.getState().setTheme('light'); // manual override, still system mode
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+
+      // A redundant change event where the natural value hasn't actually changed (still dark,
+      // disagreeing with the override) must NOT clobber the manual choice.
+      mm.setMatches(true);
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+    });
+
+    it('the override clears once the natural value catches up to agree with it, resuming normal auto governance', async () => {
+      const mm = mockMatchMedia(true); // OS is dark
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      fresh.useThemeStore.getState().setTheme('light'); // override: light, while natural is dark
+
+      mm.setMatches(false); // OS catches up to light -- agrees with the override, clearing it
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+
+      // Now that the override is cleared, a further real change should resume auto-following.
+      mm.setMatches(true);
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+    });
+
+    it('setThemeMode("manual") stops auto-following further changes', async () => {
+      const mm = mockMatchMedia(true); // OS is dark
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      fresh.useThemeStore.getState().setThemeMode('manual');
+
+      mm.setMatches(false); // OS flips to light -- should be ignored entirely in manual mode
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+    });
+
+    it('a visibilitychange event (tab foregrounded) re-syncs to a system preference change the "change" event alone missed', async () => {
+      const mm = mockMatchMedia(true); // OS starts dark
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      fresh.useThemeStore.getState().setThemeMode('system');
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+
+      // Flip the OS preference WITHOUT firing the mocked 'change' listener, then foreground the
+      // tab -- only the visibilitychange listener should catch this up.
+      mm.setMatchesSilently(false);
+      expect(fresh.useThemeStore.getState().theme).toBe('dark'); // unchanged so far -- proves the flip alone did nothing
+      Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
     });
   });
 });
