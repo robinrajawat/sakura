@@ -48,7 +48,7 @@ describe('generateOutline / restructureText', () => {
       const spy = vi.spyOn(aiCapabilities, 'callAiApiOutline').mockResolvedValue('- Point one\n- Point two\n  - Sub point');
       const result = await generateOutline('competitor analysis');
       expect(result.ok).toBe(true);
-      expect(spy).toHaveBeenCalledWith('competitor analysis', { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test' });
+      expect(spy).toHaveBeenCalledWith('competitor analysis', { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [] });
 
       const nodes = useOutlineStore.getState().nodes;
       // seed: node 1 (depth 0), node 2 (depth 1, selected) -- new nodes nest as children of 2,

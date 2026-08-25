@@ -1399,10 +1399,24 @@ building the earlier ones):
    own real context-menu AI group never includes this either (same as Expand/Tags). NOT built:
    legacy's unrelated same-named "Summarise subtree into note" note-panel capability (prose
    appended to a node's Note field) — `web/`'s note panel has no AI actions at all yet.
-9. Provider fallback chain UI (drag-to-reorder, per-row enable checkbox) + usage tracking
-   display — both real, user-configurable, and every capability slice above already needs
-   `callAiByShapeWithFallback`'s usage-recording call sites in place, so this slice mostly
-   surfaces UI for state the earlier slices already produce.
+9. **Provider fallback chain UI + usage tracking** (landed, see Status) — the final §6.9 slice.
+   `aiCall.ts` gained the real `callAiByShapeWithFallback` legacy's own header always named as
+   deferred: on a fallbackable error (`RateLimitError`/`FallbackableError`, never a plain 401) it
+   tries each enabled fallback candidate in order, recording usage (`state/aiUsage.ts`, same
+   `sakura_ai_usage_v1` storage key as legacy — AI settings are literal shared state with legacy,
+   same precedent `aiProviders.ts`/`vault.ts` already established) for every attempt. New
+   `state/aiFallback.ts` (`sakura_ai_fallback_v1`, same precedent) holds the pure prefs/chain-
+   resolution logic, injected with key/model lookups to avoid a real circular import
+   (`aiSettingsStore.ts` already imports `aiCall.ts`). `aiCapabilities.ts`'s single `callProvider`
+   funnel point is the one place that needed to change to make every capability built in slices
+   1-8 fallback-aware for free — each capability's own `resolveCallContext()` gained one line
+   (`fallbackChain: ai.getEffectiveFallbackChain()`). New `components/AiFallbackSettings.tsx`
+   ports legacy's real drag-to-reorder, per-row-enable list (including its own real splice-based
+   reorder quirk — dragging an entry forward lands it AFTER, not before, the drop target — see
+   `aiFallback.ts`'s own header) plus the empty-state warning banner; `AiProviderSettings.tsx`
+   gained the per-provider today's-usage summary line. Deliberately NOT built: legacy's real
+   fallback-success toast (`web/` has no generic toast system yet — the fallback itself is fully
+   functional, just silent on success; see `aiCapabilities.ts`'s own header).
 
 Full reference for every prompt/trigger/parser/quirk above (with legacy line numbers) is not
 duplicated here — see the research findings folded into each landed slice's own PR description
@@ -1465,8 +1479,8 @@ node-anchoring for Remarks/Q&A (`padStore.ts`'s `anchorNodeId`), the prerequisit
 previews to have anything real to show, and #228 — the `hideTreeLines=false` monospace-
 connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
 to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
-own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) in progress**
-(developed concurrently with the §6.7 work above in a separate session) — slices 1-5 of the
+own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) complete**
+(developed concurrently with the §6.7 work above in a separate session) — all 9 slices of the
 planned sequence above landed. **#230** (following #228): provider configuration UI
 (`aiProviderCatalog.ts`, `aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus
 vault-aware key read/write extending `aiProviders.ts`), verified end-to-end in real headless
@@ -1548,8 +1562,31 @@ wired to a toolbar "✦ Summarise" button enabled only with 2+ nodes selected �
 in real headless Chrome with the AI endpoint mocked via `page.route` (button disabled with a single
 selection and enabled at 2+; a no-key configured failure surfacing a clear alert; the new parent
 correctly inserted above both selected children in document order; Undo correctly reverting it) —
-zero console/page errors across every check. Slice
-9 (provider fallback chain UI + usage tracking) not yet started. §6.10
+zero console/page errors across every check. **This PR**: provider fallback chain UI + usage
+tracking — the ninth and final planned §6.9 slice. `aiCall.ts` gained the real
+`callAiByShapeWithFallback`: on a fallbackable error it tries each enabled fallback candidate in
+order, recording usage via new `state/aiUsage.ts` (same `sakura_ai_usage_v1` storage key as
+legacy) for every attempt, primary and fallback alike. New `state/aiFallback.ts`
+(`sakura_ai_fallback_v1`, same precedent) holds the pure prefs/chain-resolution logic, injected
+with key/model lookups rather than importing `aiSettingsStore.ts` directly (which already imports
+`aiCall.ts`, so that direction would complete a cycle). `aiCapabilities.ts`'s single `callProvider`
+funnel — the same one every earlier capability slice already calls through — is the one place that
+needed to change to make Rewrite/Generate Outline/Restructure/Expand/Tags/Suggest icon/Summarise
+all fallback-aware for free; each capability's own `resolveCallContext()` gained exactly one line.
+New `components/AiFallbackSettings.tsx` ports legacy's real drag-to-reorder, per-row-enable list
+(preserving its own real splice-based reorder quirk — dragging an entry forward lands it
+immediately AFTER, not before, the drop target) plus the empty-state warning banner;
+`AiProviderSettings.tsx` gained a per-provider today's-usage summary line. Deliberately NOT built:
+legacy's real fallback-success toast (`web/` has no generic toast system yet — the reliability
+behavior itself is fully functional, just silent on success). Verified end-to-end in real headless
+Chrome with the primary provider's endpoint mocked to return 429 and the fallback provider's
+endpoint mocked to succeed: the fallback list correctly rendering all 7 providers with the primary
+row disabled; the empty-state warning showing and clearing correctly as a candidate gains a saved
+key; a real AI capability (Expand node) succeeding via the fallback despite the primary failing;
+usage counters correctly showing 1 failed request for the primary and 1 successful request for the
+fallback afterward — zero unexpected console/page errors (one expected browser-logged network
+entry for the deliberately-mocked 429 response, not an application error). §6.9 is now complete —
+every item in its own original scope enumeration has landed. §6.10
 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

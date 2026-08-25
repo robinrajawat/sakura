@@ -65,7 +65,7 @@ describe('rewriteNode / rewriteNodes / rewriteDocument', () => {
     useAiSettingsStore.getState().setPrompt('a custom rewrite prompt');
     const spy = vi.spyOn(aiCapabilities, 'callAiApi').mockResolvedValue('x');
     await rewriteNode(2);
-    expect(spy).toHaveBeenCalledWith('child text here', 'a custom rewrite prompt', { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test' });
+    expect(spy).toHaveBeenCalledWith('child text here', 'a custom rewrite prompt', { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [] });
   });
 
   it('rewriteNode discards the result if the node was edited again while the request was in flight', async () => {

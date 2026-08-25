@@ -54,7 +54,7 @@ function resolveCallContext(): AiCallContext | null {
   const ai = useAiSettingsStore.getState();
   const apiKey = ai.getKeyForProvider(ai.provider);
   if (!apiKey) return null;
-  return { providerId: ai.provider, model: ai.model, apiKey };
+  return { providerId: ai.provider, model: ai.model, apiKey, fallbackChain: ai.getEffectiveFallbackChain() };
 }
 
 /** Matches legacy's real `ICON_KEYWORD_MAP` (index.html:29032-29079) verbatim — the free,

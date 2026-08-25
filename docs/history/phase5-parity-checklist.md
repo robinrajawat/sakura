@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), and Summarise selection landed — see AI Features section below. Still no provider fallback or usage tracking |
+| AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -96,7 +96,7 @@ separately-scoped follow-up building on this foundation.
 | To-Dos | ⚠️ | Priority/status/due-dates/repeat/subtasks (§6.5, #176), search filtering/urgency-sectioned grouping/completed-section/due-date reminder notifications (§6.5, #179) all built; no PDF export/Version History/Share (deferred to §6.6/§6.8 — cross-cutting infra, not Hub-specific). "Bulk-actions" and "tags", previously listed here, were removed after checking legacy/hub.html and legacy/index.html directly: neither exists anywhere in legacy's real To-Dos implementation, so they were never a real parity gap |
 | Journal | ⚠️ | One-entry-per-date editing, mood, rich text (bullet/numbered list + Ctrl/Cmd+B/I), and a calendar-popover date picker all built (§6.5, #185); no AI rewrite, PDF export, Version History, or search (legacy's own Journal search lives only in the shared Quick Assist / hub-wide search bar, which doesn't exist in web/ yet). Tags UI is correctly NOT a gap: legacy itself has no tags UI for Journal despite README.md referencing them -- a pre-existing doc/code mismatch |
 | Library | ⚠️ | Persistence, title/url/urlLabel/tags/favorites, search, tag filtering, and rich text (bullet/numbered list + Ctrl/Cmd+B/I, matching Journal's own narrower toolset) all built (§6.5, #187); no AI rewrite, images, Version History, PDF export, or Quick Assist/Global Search visibility (Quick Assist doesn't exist in web/ yet) |
-| Recap | ⚠️ | Real Today/This Week/Last Week period grouping and click-to-jump for To-Dos/Meeting Notes/Journal all built (§6.5, #189); no AI summarize (§6.9 not started), no outline-node/document-level activity grouping (blocked on `OutlineNode` having no per-node `createdAt`/`modifiedAt`/`completedAt` fields yet -- a separately-scoped data-model change), no Decision Log/Diagrams/Q&A/Mind Map activity (same blocker). Library was never part of legacy's own Recap scan, so its absence here is correct, not a gap |
+| Recap | ⚠️ | Real Today/This Week/Last Week period grouping and click-to-jump for To-Dos/Meeting Notes/Journal all built (§6.5, #189); no AI summarize (a distinct Hub-specific capability, never part of §6.9's own outline-level 9-slice scope, which is now complete), no outline-node/document-level activity grouping (blocked on `OutlineNode` having no per-node `createdAt`/`modifiedAt`/`completedAt` fields yet -- a separately-scoped data-model change), no Decision Log/Diagrams/Q&A/Mind Map activity (same blocker). Library was never part of legacy's own Recap scan, so its absence here is correct, not a gap |
 | Mobile Hub (hub.html equivalent) | ⚠️ | A real responsive breakpoint (`useIsMobileViewport.ts`) swaps in `MobileHub.tsx` -- swipe-to-act rows (direct port of legacy's own `initSwipeList` gesture engine) and bottom-sheet To-Dos/Journal editing, reusing every existing store action (§6.5, #191); no sign-in gate (a real, honest simplification -- this SPA has no separate-device-storage problem to bridge, since Hub cloud sync doesn't exist anywhere in web/ yet, §6.8 not started), no account menu/search bar/theme toggle from within this view (bypasses `AppShell` entirely) |
 
 ## Tags, Focus & Backlinks
@@ -112,7 +112,7 @@ breakdown.
 
 ## AI Features
 
-⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, two slices landed. **Slice 1** (#230, following
+✅ §6.9 (docs/phase6-full-parity-plan.md) complete — all 9 planned slices landed. **Slice 1** (#230, following
 #228): provider configuration UI — direct port of legacy's real seven-provider catalog
 (`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, now `state/aiProviderCatalog.ts`), the core
 `callAiByShape` network primitive covering all four real request/response shapes (`gemini`/
@@ -293,8 +293,41 @@ with a single selection and enabled once 2+ nodes are selected; a no-key-configu
 surfacing a clear alert; the new parent correctly inserted above both selected nodes in document
 order; Undo correctly reverting the whole insert — zero console/page errors throughout.
 
-Still not built: provider fallback chain UI, usage tracking.
-See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
+**Slice 9** (this PR, final §6.9 slice): provider fallback chain UI + usage tracking. New
+`state/aiUsage.ts` is a direct port of legacy's real per-provider usage counters (same
+`sakura_ai_usage_v1` storage key as legacy — AI settings are literal shared state between the two
+apps, matching `aiProviders.ts`/`vault.ts`'s own established precedent), and new
+`state/aiFallback.ts` ports the fallback-chain prefs/resolution logic (`sakura_ai_fallback_v1`,
+same precedent), deliberately store-agnostic (key/model lookups are injected rather than imported
+directly, since `aiSettingsStore.ts` already imports `aiCall.ts` and importing back would complete
+a cycle). `aiCall.ts` gained the real `callAiByShapeWithFallback`: on a fallbackable error
+(rate-limit or a generic server error, never a plain 401) it tries each enabled, key-and-model-
+resolved fallback candidate in order, recording usage for every attempt. The one integration point
+every earlier capability slice already funnels through, `aiCapabilities.ts`'s `callProvider`, is
+the single place that needed to change to make Rewrite/Generate Outline/Restructure Text/Expand
+node/Suggest tags/Suggest icon/Summarise selection all fallback-aware — each capability's own
+`resolveCallContext()` gained one line resolving the chain via a new `aiSettingsStore.ts` method,
+`getEffectiveFallbackChain`. New `components/AiFallbackSettings.tsx` is a direct port of legacy's
+real drag-to-reorder, per-row-enable-checkbox list (including its own real splice-based reorder
+quirk: dragging an entry forward lands it immediately AFTER, not before, the drop target — ported
+faithfully rather than "fixed"), plus the "no eligible fallback provider" warning banner and the
+locked-vault variant of that same warning; `AiProviderSettings.tsx` gained a per-provider today's-
+usage summary line. Deliberately NOT built: legacy's real fallback-success toast (`web/` has no
+generic toast system yet — the underlying reliability behavior is fully functional regardless,
+just silent on a successful fallback rather than announcing which provider actually served the
+request). Verified end-to-end in real headless Chrome with the primary provider's endpoint mocked
+to return 429 and the fallback provider's endpoint mocked to succeed: the fallback list correctly
+rendering all 7 built-in providers with the primary row shown disabled; the empty-state warning
+appearing and clearing correctly as a fallback candidate gains a saved key; a real AI capability
+(Expand node) succeeding via the fallback provider despite the primary failing; usage counters
+correctly showing 1 failed request for the primary and 1 successful request for the fallback
+afterward — zero unexpected console/page errors (one expected browser-logged network entry for the
+deliberately-mocked 429 response is not an application error).
+
+§6.9 (AI Features) is now complete — every item named in its original scope has landed:
+provider configuration, Secure Storage, manual Rewrite, auto-rewrite on commit, Generate
+Outline, Restructure Text, Expand node, Suggest tags, Suggest icon, Summarise selection, provider
+fallback, and usage tracking.
 
 ## Quick Assist & Quick Insert
 

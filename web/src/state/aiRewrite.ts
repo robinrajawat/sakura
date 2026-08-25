@@ -48,7 +48,7 @@ function resolveCallContext(): AiCallContext | null {
   const ai = useAiSettingsStore.getState();
   const apiKey = ai.getKeyForProvider(ai.provider);
   if (!apiKey) return null;
-  return { providerId: ai.provider, model: ai.model, apiKey };
+  return { providerId: ai.provider, model: ai.model, apiKey, fallbackChain: ai.getEffectiveFallbackChain() };
 }
 
 const NO_KEY_MESSAGE = 'No AI provider key configured — set one up in Settings → AI.';

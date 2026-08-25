@@ -87,7 +87,7 @@ describe('expandNode / suggestTags', () => {
       const result = await expandNode(1);
       expect(result.ok).toBe(true);
       expect(result.message).toContain('3 nodes');
-      expect(spy).toHaveBeenCalledWith(expect.any(String), 'Node: root text here', 512, { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test' });
+      expect(spy).toHaveBeenCalledWith(expect.any(String), 'Node: root text here', 512, { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [] });
       const nodes = useOutlineStore.getState().nodes;
       expect(nodes.map((n) => n.text)).toEqual(['root text here', 'Sub item A', 'Sub item B', 'Sub item C', 'child text here', '']);
     });

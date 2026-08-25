@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { callAiByShape, isRateLimitStatus, RateLimitError, FallbackableError } from './aiCall';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { callAiByShape, callAiByShapeWithFallback, isRateLimitStatus, RateLimitError, FallbackableError, type CallAiByShapeWithFallbackParams } from './aiCall';
+import { getAiUsageForProvider } from './aiUsage';
+import type { FallbackCandidate } from './aiFallback';
 
 function jsonResponse(status: number, body: unknown, statusText = ''): Response {
   return {
@@ -185,5 +187,97 @@ describe('callAiByShape — error classification', () => {
     await expect(
       callAiByShape({ shape: 'openai', baseUrl: 'https://x', apiKey: 'k', model: 'm', systemPrompt: '', userContent: 'u', maxTokens: 10, fetchImpl })
     ).rejects.toMatchObject({ message: 'Service Unavailable' });
+  });
+});
+
+describe('callAiByShapeWithFallback', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  function baseParams(overrides: Partial<CallAiByShapeWithFallbackParams> = {}): CallAiByShapeWithFallbackParams {
+    return {
+      shape: 'openai',
+      baseUrl: 'https://primary',
+      apiKey: 'k',
+      model: 'm',
+      systemPrompt: '',
+      userContent: 'u',
+      maxTokens: 10,
+      providerId: 'primary-provider',
+      primaryLabel: 'Primary',
+      fallbackChain: [],
+      ...overrides
+    };
+  }
+
+  it('records success usage for the primary provider and returns its result on success', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: 'hi' } }] }));
+    const result = await callAiByShapeWithFallback(baseParams({ fetchImpl }));
+    expect(result).toBe('hi');
+    const usage = getAiUsageForProvider('primary-provider');
+    expect(usage.count).toBe(1);
+    expect(usage.fails).toBe(0);
+  });
+
+  it('rethrows a non-fallbackable error (401) without recording or trying any fallback candidate', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(401, { error: { message: 'bad key' } }));
+    const candidate: FallbackCandidate = { providerId: 'backup', label: 'Backup', shape: 'openai', baseUrl: 'https://backup', model: 'm2', apiKey: 'k2' };
+    await expect(callAiByShapeWithFallback(baseParams({ fetchImpl, fallbackChain: [candidate] }))).rejects.toThrow('bad key');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const usage = getAiUsageForProvider('primary-provider');
+    expect(usage.count).toBe(1);
+    expect(usage.fails).toBe(1);
+    expect(getAiUsageForProvider('backup').count).toBe(0);
+  });
+
+  it('rethrows a fallbackable error unchanged when the chain is empty', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(429, { error: { message: 'rate limited' } }));
+    await expect(callAiByShapeWithFallback(baseParams({ fetchImpl }))).rejects.toBeInstanceOf(RateLimitError);
+  });
+
+  it('falls through to the first working candidate on a rate-limit error, recording usage for both attempts', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(429, { error: { message: 'rate limited' } }))
+      .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: 'from backup' } }] }));
+    const candidate: FallbackCandidate = { providerId: 'backup', label: 'Backup', shape: 'openai', baseUrl: 'https://backup', model: 'm2', apiKey: 'k2' };
+    let successMessage: string | undefined;
+    const result = await callAiByShapeWithFallback(
+      baseParams({ fetchImpl, fallbackChain: [candidate], onFallbackSuccess: (msg) => (successMessage = msg) })
+    );
+    expect(result).toBe('from backup');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[1][0]).toBe('https://backup');
+    expect(getAiUsageForProvider('primary-provider')).toMatchObject({ count: 1, fails: 1 });
+    expect(getAiUsageForProvider('backup')).toMatchObject({ count: 1, fails: 0 });
+    expect(successMessage).toBe('Quota hit on Primary — rewritten with Backup ✦');
+  });
+
+  it('tries every candidate in order and throws a combined error when the whole chain is exhausted', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(500, { error: { message: 'primary down' } }))
+      .mockResolvedValueOnce(jsonResponse(500, { error: { message: 'candidate 1 down' } }))
+      .mockResolvedValueOnce(jsonResponse(500, { error: { message: 'candidate 2 down' } }));
+    const c1: FallbackCandidate = { providerId: 'backup1', label: 'Backup 1', shape: 'openai', baseUrl: 'https://backup1', model: 'm2', apiKey: 'k2' };
+    const c2: FallbackCandidate = { providerId: 'backup2', label: 'Backup 2', shape: 'openai', baseUrl: 'https://backup2', model: 'm3', apiKey: 'k3' };
+    await expect(callAiByShapeWithFallback(baseParams({ fetchImpl, fallbackChain: [c1, c2] }))).rejects.toThrow(
+      'Error on Primary. All fallback providers also failed. Try again later.'
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(getAiUsageForProvider('backup1')).toMatchObject({ count: 1, fails: 1 });
+    expect(getAiUsageForProvider('backup2')).toMatchObject({ count: 1, fails: 1 });
+  });
+
+  it('stops immediately when a fallback candidate itself fails with a non-fallbackable error', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(500, { error: { message: 'primary down' } }))
+      .mockResolvedValueOnce(jsonResponse(401, { error: { message: 'backup key invalid' } }));
+    const c1: FallbackCandidate = { providerId: 'backup1', label: 'Backup 1', shape: 'openai', baseUrl: 'https://backup1', model: 'm2', apiKey: 'k2' };
+    const c2: FallbackCandidate = { providerId: 'backup2', label: 'Backup 2', shape: 'openai', baseUrl: 'https://backup2', model: 'm3', apiKey: 'k3' };
+    await expect(callAiByShapeWithFallback(baseParams({ fetchImpl, fallbackChain: [c1, c2] }))).rejects.toThrow('backup key invalid');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

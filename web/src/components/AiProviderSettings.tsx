@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react';
 import { useAiSettingsStore } from '../store/aiSettingsStore';
 import { useVaultStore } from '../store/vaultStore';
 import { AI_BUILTIN_PROVIDERS, AI_CURATED_MODELS, getAiProviderById } from '../state/aiProviderCatalog';
+import { getAiUsageForProvider, formatAgoCore } from '../state/aiUsage';
 import type { ThemeTokens } from '../store/themeStore';
 
 /**
  * §6.9 slice (docs/phase6-full-parity-plan.md): the "AI" section of Settings — provider select,
  * model select (curated list + a free-text "custom model id" fallback, matching legacy's real
  * `#ai-model-select`'s synthetic `__custom__` option), and API key entry/save/test. Direct port
- * of legacy's real `settings-section-ai-rewrite` markup (legacy/index.html:5336-5373), minus the
- * fallback-order list and usage summary (both real, separately-scoped §6.9 follow-ups — see
- * `aiSettingsStore.ts`'s own header for what this slice does and doesn't cover yet).
+ * of legacy's real `settings-section-ai-rewrite` markup (legacy/index.html:5336-5373). The
+ * fallback-order list is its own separate component, `AiFallbackSettings.tsx` (§6.9 slice 9).
+ *
+ * §6.9 slice 9: added the today's-usage summary line for the currently-selected provider,
+ * matching legacy's real `#ai-usage-summary` (index.html:8955-8967) — a plain read of
+ * `aiUsage.ts`'s `getAiUsageForProvider` at render time, not a live subscription (there's no
+ * store wrapping usage counters, since they're written from deep inside `aiCall.ts`'s async fetch
+ * flow with nothing to trigger a React re-render) — matches legacy's own real update trigger
+ * (`updateAiUsageDisplay()`, called right after `recordAiUsage`) closely enough for its purpose:
+ * this line reflects the true count the next time this panel renders, not necessarily the instant
+ * a request completes while the panel happens to already be open.
  *
  * The key input is intentionally never pre-filled with the saved plaintext (matches legacy: the
  * field clears after Save, and a saved key is represented only by the status line below it, not
@@ -190,8 +199,21 @@ export function AiProviderSettings({ t }: { t: ThemeTokens }) {
                   : 'No key saved.')}
           </div>
           <div style={{ fontSize: 11, color: t.mutedText }}>{providerDef.keyHint}</div>
+          <div style={{ fontSize: 11, color: t.mutedText }} role="status">
+            {usageSummaryText(provider)}
+          </div>
         </label>
       </div>
     </>
   );
+}
+
+/** Matches legacy's real `updateAiUsageDisplay`'s summary-text logic exactly. */
+function usageSummaryText(providerId: string): string {
+  const u = getAiUsageForProvider(providerId);
+  if (!u.count) return 'No requests to this provider yet today.';
+  let txt = u.count + ' request' + (u.count === 1 ? '' : 's') + ' today';
+  if (u.fails) txt += ' (' + u.fails + ' failed)';
+  if (u.lastTs) txt += ' · last ' + formatAgoCore(u.lastTs, Date.now()) + (u.lastOk ? ' ✓' : ' ✗');
+  return txt;
 }
