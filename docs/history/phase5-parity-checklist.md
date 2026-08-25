@@ -34,7 +34,7 @@ already made and already documented at the time.
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
-| Quick Assist / global search | ❌ | Not built |
+| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box built with an audited subset of real toggle commands/actions (§6.10 slice 3) — no Global Search integration yet, see the Quick Assist & Quick Insert section below |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
@@ -373,9 +373,32 @@ correctly, each showing only its own sections; a value typed into one section's 
 switching to another tab and back, confirming sections stay mounted rather than remounting;
 reopening Settings resets to the default Appearance tab — zero console/page errors throughout.
 
-Still entirely unbuilt: Quick Assist (the Ctrl/Cmd+K command box — plain-English toggle commands,
-Run/AI Run actions, and Global Search integration across Documents/Notes/Tags/Settings/Help/
-tasks/library). See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
+**Slice 3**: Quick Assist UI shell + audited command subset. New `state/quickAssist.ts` directly
+ports legacy's real `QA_COMMANDS`/`QA_ACTIONS` plus their parse/match functions
+(`qaPhraseMatch`/`qaBestPhrase`/`qaParse`/`qaSuggestForBareVerb`/`qaParseActionsList`/
+`qaSuggestActionsForBareVerb`) — but only the ids with a real, working `web/` equivalent today,
+per an explicit per-id audit: 11 of legacy's 39 `QA_COMMANDS` ids (sidebar, dark/light mode,
+auto-rewrite, tree lines, compact rows, always-expand-inline, outline numbering, Quick Insert's
+icon-only-row and master toggle, plus Quick Assist's own new master toggle) and 9 of legacy's 11
+`QA_ACTIONS` ids (new document, duplicate node, all 7 AI capabilities). New
+`components/QuickAssistBar.tsx` is the command box: a toolbar button + Ctrl/Cmd+K both open it,
+typing filters to matching commands (capped at 6) and actions (capped at 4, disabled-with-reason
+rather than hidden when a required selection is missing), Arrow keys cycle the navigable
+(non-disabled) rows with wraparound, Enter executes, Escape closes. A new small Undo-toast
+(`web/` had no generic toast-with-undo affordance anywhere before this) shows the result, with
+one deliberate deviation from legacy: an action failure shows its own real error message (e.g.
+"No AI provider key configured…") rather than legacy's generic "cancelled" text, matching how
+every other AI entry point in `web/` already surfaces real errors. New
+`components/QuickAssistSettings.tsx` adds the master enable toggle under Settings → Editing.
+Verified end-to-end in real headless Chrome: Ctrl/Cmd+K opens and focuses the box; hint phrases
+show on an empty query; typing a phrase filters correctly; Enter executes and shows the right
+toast with a working Undo button; Escape closes with no change; running an action with a node
+selected shows a "Done:" toast; an unmatched query shows "No matching command"; the Settings
+toggle hides the button and makes Ctrl/Cmd+K inert when off — zero console/page errors throughout.
+
+Still entirely unbuilt: Quick Assist's Global Search integration — search-hit rows across
+Documents/Notes/Tags/Settings/Help, category-prefix scoping, the chip-mode category picker, and
+fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
 
 ## Preview, Presenter Mode & Export
 

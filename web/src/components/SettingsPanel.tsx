@@ -6,6 +6,7 @@ import { SecureStorageSettings } from './SecureStorageSettings';
 import { AutoRewriteSettings } from './AutoRewriteSettings';
 import { AiFallbackSettings } from './AiFallbackSettings';
 import { QuickInsertSettings } from './QuickInsertSettings';
+import { QuickAssistSettings } from './QuickAssistSettings';
 import { BackupSettings } from './BackupSettings';
 
 /**
@@ -67,6 +68,9 @@ import { BackupSettings } from './BackupSettings';
  * cross-category settings-text search box (`#settings-search`, legacy/index.html:4611-4618) --
  * a real, separately-scoped follow-up (its own text-match/highlight engine over every section),
  * not attempted alongside the rail itself.
+ *
+ * §6.10 slice 3: added the "Quick Assist" section (`QuickAssistSettings.tsx`) -- the master
+ * enable toggle for the new Ctrl/Cmd+K command box (`QuickAssistBar.tsx`, `state/quickAssist.ts`).
  *
  * §6.8 slice 2: added `BackupSettings.tsx` (status text plus a "Restore…" button for
  * `backupStore.ts`'s new local IndexedDB safety-copy mirror) to the existing "data" category
@@ -331,6 +335,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ display: activeCategory === 'editing' ? 'block' : 'none' }}>
         <QuickInsertSettings t={t} />
+        <QuickAssistSettings t={t} />
       </div>
       <div style={{ display: activeCategory === 'ai' ? 'block' : 'none' }}>
         <AiProviderSettings t={t} />

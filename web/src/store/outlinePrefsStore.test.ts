@@ -15,6 +15,7 @@ const DEFAULTS: {
   quickInsertEnabled: boolean;
   quickInsertIconOnly: boolean;
   quickInsertActions: QuickInsertActionId[];
+  quickAssistEnabled: boolean;
 } = {
   treeIndentWidth: 3,
   hideTreeLines: true,
@@ -28,7 +29,8 @@ const DEFAULTS: {
   alwaysExpandInlineEnabled: false,
   quickInsertEnabled: true,
   quickInsertIconOnly: true,
-  quickInsertActions: ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time']
+  quickInsertActions: ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time'],
+  quickAssistEnabled: true
 };
 
 describe('outlinePrefsStore', () => {
@@ -152,7 +154,8 @@ describe('outlinePrefsStore', () => {
       alwaysExpandInlineEnabled: true,
       quickInsertEnabled: true,
       quickInsertIconOnly: true,
-      quickInsertActions: DEFAULTS.quickInsertActions
+      quickInsertActions: DEFAULTS.quickInsertActions,
+      quickAssistEnabled: true
     });
   });
 
@@ -252,6 +255,21 @@ describe('outlinePrefsStore', () => {
       vi.resetModules();
       const fresh = await import('./outlinePrefsStore');
       expect(fresh.useOutlinePrefsStore.getState().quickInsertActions).toEqual(DEFAULTS.quickInsertActions);
+    });
+  });
+
+  describe('Quick Assist master toggle (§6.10 slice 3)', () => {
+    it('setQuickAssistEnabled toggles and persists', () => {
+      useOutlinePrefsStore.getState().setQuickAssistEnabled(false);
+      expect(useOutlinePrefsStore.getState().quickAssistEnabled).toBe(false);
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_outline_prefs_v1')!);
+      expect(persisted.quickAssistEnabled).toBe(false);
+    });
+
+    it('defaults to true when nothing is persisted', async () => {
+      vi.resetModules();
+      const fresh = await import('./outlinePrefsStore');
+      expect(fresh.useOutlinePrefsStore.getState().quickAssistEnabled).toBe(true);
     });
   });
 });
