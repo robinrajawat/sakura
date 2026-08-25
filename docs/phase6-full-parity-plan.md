@@ -489,11 +489,10 @@ format, Word/OPML import.
   a real extra slide appended after the last content slide, included in slide count/navigation/
   overview exactly like legacy's own `previewSlideList.push({nodeId:null,...})`; text/subtitle
   hardcoded to legacy's own real defaults ("Thank you"/"Questions?") since no Settings panel
-  exists yet. Deliberately still not ported, each a real architectural gap: Audience View /
-  dual-screen (legacy's real implementation does a genuine second navigation of the same page
-  with a query param -- `web/` has no client-side routing at all, a Phase 0 decision, so there is
-  no page for a second window to load); Whiteboard mirroring (its poll loop only starts once
-  Audience View is live, inheriting that same blocker); floating Notes/Q&A during presenting
+  exists yet. Deliberately still not ported: Audience View/dual-screen and Whiteboard mirroring
+  (see the corrected scoping bullet directly below -- an earlier draft of this comment wrongly
+  blamed "no client-side routing," which turned out not to be the real blocker once actually
+  investigated); floating Notes/Q&A during presenting
   (legacy relocates the real Pad DOM nodes into a floating panel -- porting this well wants its
   own design pass on how `PadPanel.tsx`'s store-backed content should share itself between the
   normal Pad dock and a floating-during-Presenter view). Verified end-to-end in real headless
@@ -501,6 +500,67 @@ format, Word/OPML import.
   the closing slide showing "Thank you"/"Questions?", `Home` returns, `B` toggles the blackout
   overlay, the laser toggle button + mousemove renders the tracking dot -- zero console/page
   errors throughout.
+- **Audience View/dual-screen + Whiteboard mirroring, re-investigated and re-scoped -- the real
+  blocker is NOT client-side routing.** Read legacy's actual real implementation end to end
+  (legacy/index.html:38691-39096, 4489-4497, 38969-39003) rather than trusting this plan's own
+  prior "no client-side routing" framing (a real, corrected mislabel -- flagged rather than
+  quietly fixed, same discipline as the 'schedule' theme-mode and Chrome-preset corrections
+  elsewhere in this doc). What legacy actually does: `openAudienceWindow()` calls
+  `window.open(url, 'sakura-audience-view', 'width=1280,height=720,...')` where `url` is THIS
+  SAME `index.html`, with `?sakuraAudience=1` appended as a query param -- not a path, so it
+  needs zero path-based routing infrastructure to serve (a static host or dev server already
+  returns the same `index.html`/bundle for any query string on `/`, since query strings never
+  participate in routing/rewrite rules at all). A synchronous inline `<script>` very early in
+  `<head>` (before the body's markup exists) checks that param via regex on `location.search`
+  and adds a `visibility:hidden` class to `<html>` so the normal editor UI never flashes visible
+  in the second window before it's ready. Once that window's own boot finishes
+  (`SAKURA_AUDIENCE_MODE` block, a `window.load` listener plus a 300ms settle delay for
+  IndexedDB/tab-restore to finish), it un-hides, skips the welcome/tour overlays, shows a
+  click-or-`F`-to-fullscreen hint (a cross-window `requestFullscreen()` call has no real user
+  gesture behind it and gets silently blocked), and calls `window.opener.audienceWindowReady
+  (window)` to hand control back to the opener. From there the opener drives it directly --
+  same-origin `window.open()` returns a real handle to the child window's own global scope, so
+  the opener calls functions that already exist in ITS loaded copy of the app
+  (`win.switchDoc(id)`, `win.openPreview()`, `win.enterPresenterMode()`, etc.) rather than
+  cloning or diffing DOM -- no `postMessage` anywhere in this mechanism. State reads go through
+  a small function (`win.sakuraGetAudienceState()`) rather than direct property access, since
+  legacy's own comment explains why: top-level `let`/`const` bindings never become `window`
+  properties (unlike `var` or function declarations), so a bare `win.previewSlideIndex` always
+  reads back `undefined` -- only a function call executing in the target window's own scope and
+  returning a value by copy works. Ongoing content sync (`syncAudienceWindow`) re-clones the
+  relevant container's real HTML into the child window on navigation/toggle/content-change (not
+  per-frame -- mousemove for the laser pointer is the one exception); Whiteboard mirroring layers
+  on top of this same connection, syncing the draw.io iframe's XML via `syncAudienceWhiteboard`/
+  a poll loop that starts once presenting+Audience+Whiteboard are all simultaneously live.
+  **Concrete translation to `web/`'s actual architecture, for whoever picks this up next:** (1)
+  the query-param boot check translates directly and cheaply -- a single
+  `new URLSearchParams(location.search).get('sakuraAudience') === '1'` read at the app root, no
+  router library, no path route, nothing Phase 0's actual no-client-side-routing decision
+  (docs/framework-migration-plan.md decision #3) was ever about; (2) the REAL blocker is that
+  `PresenterMode.tsx`'s slide index/blanked/laser/overview/notes state is all local
+  `useState` inside that one component, not a Zustand store -- legacy's whole cross-window
+  design depends on being able to call a function in the OTHER window's own scope to change
+  its state and trigger ITS OWN re-render; `web/`'s equivalent needs that presenting state
+  lifted into a real store (a new `usePresenterStore.ts`) before a second window's own React
+  tree has anything external to be driven by; (3) the direct-global-function-call mechanism
+  itself translates naturally once that store exists -- expose a small stable bridge object on
+  `window` at app boot (e.g. `window.__sakuraAudience = { getState, switchDoc, enterPresenterMode,
+  ... }`, populated once from the store's own actions), and the opener calls it through the
+  `Window` handle `window.open()` already returns, exactly like legacy calls `win.switchDoc`;
+  (4) unlike legacy's manual DOM-cloning, the second window can just run its OWN full React app
+  instance (same bundle, same file, exactly like legacy's "real second navigation" of the same
+  `index.html`) and have it re-render itself off ITS OWN store, which the opener's bridge calls
+  update directly -- store-driven re-render is a more natural fit for this project's actual
+  architecture than legacy's own HTML-clone approach, not a compromise; (5) Whiteboard mirroring
+  is a separate, later layer on top of all of the above, and additionally needs `web/`'s Diagrams
+  panel to have a real Whiteboard concept at all (`isWhiteboard`-flagged diagram, matching
+  legacy's own `openOrCreateWhiteboard`) before there is anything to mirror -- confirmed NOT
+  built yet: `padStore.ts`'s own `Diagram` type explicitly excludes `isWhiteboard`, listed
+  alongside `anchorNodeId`/`status`/`previewSvg`/`pageCount` as deliberately-deferred fields from
+  its original §6.3 item 11 slice (#172). Not started -- multi-window popup coordination is also
+  meaningfully harder to verify than every other slice's real-headless-Chrome-in-one-window
+  testing this project has relied on throughout, so this is flagged as a real, scoped, buildable
+  plan rather than attempted in the same pass as this investigation.
 - ✅ **Word export: heading styles + TOC field.** A node with `styles.heading` set (1-6,
   already a real field since §6.2) now renders as a genuine Word heading paragraph
   (`docx`'s `HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat indented line, and the
@@ -956,10 +1016,12 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (#213,
+#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212, and this PR's Audience View/
+Whiteboard-mirroring re-scoping — see that section's own bullet for the corrected finding: not
+actually blocked on client-side routing), **§6.7 in progress** (#213,
 #214, #215, #216 Chrome-background-preset investigation, #217 a real outline `nextId`
-node-id-collision bug fix found while verifying this PR, and this PR's first minimal
-Settings-panel slice) — see each section's own `Status:` line for
+node-id-collision bug fix, #218 the first minimal Settings-panel slice) — see each section's
+own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
