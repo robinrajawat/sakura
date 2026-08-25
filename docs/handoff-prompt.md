@@ -183,28 +183,37 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `c5a3afe` ("docs: correct
-Audience View/Whiteboard-mirroring scoping (not blocked on routing)
-(#219)"). Following the user's "We have to cover everything anyway so
-you decide" delegation, four PRs have now landed in this stretch:
-#217 (a real `nextId` node-id-collision bug fix), #218 (the first
-minimal Settings-panel slice), #219 (a docs correction: Audience
-View/Whiteboard mirroring needs NO client-side routing at all --
-legacy's real mechanism keys off a query param, not a path -- the
-real blockers are `PresenterMode.tsx`'s presenting state living in
-local `useState` and Diagrams having no `isWhiteboard` concept yet;
-see phase6-full-parity-plan.md's §6.6 section for the full,
-code-referenced translation plan), and this PR -- step 1 of that plan:
-`PresenterMode.tsx`'s presenting state (slide index, blanked, laser,
-overview, notes, elapsed timer) moved into a new `usePresenterStore.ts`,
-a pure refactor verified behavior-identical in real headless Chrome
-(navigation, blackout, overview grid, notes panel, laser pointer,
-elapsed timer all re-tested against a real multi-slide deck). Still
-needed before Audience View itself works: the query-param boot check,
-a `window`-exposed cross-window bridge, the second window running its
-own React instance, and (separately) a real `isWhiteboard` concept in
-Diagrams for mirroring. Pick up the next step from
-phase6-full-parity-plan.md's §6.6 section.
+As of this writing: `main` is at commit `16ef62d` ("refactor(presenter):
+lift presenting state into a real store (§6.6 Audience View step 1)
+(#220)"). Following the user's "We have to cover everything anyway so
+you decide" delegation, five PRs have now landed in this stretch: #217
+(a real `nextId` node-id-collision bug fix), #218 (the first minimal
+Settings-panel slice), #219 (a docs correction: Audience View/
+Whiteboard mirroring needs NO client-side routing at all -- legacy's
+real mechanism keys off a query param, not a path -- recording a full,
+code-referenced translation plan in phase6-full-parity-plan.md's §6.6
+section), #220 (`PresenterMode.tsx`'s presenting state moved into a
+new `usePresenterStore.ts`, a pure refactor verified behavior-identical
+in real headless Chrome), and this PR -- the query-param boot check
+itself: `state/audienceMode.ts`'s `isAudienceWindow()` plus a new
+`AudienceWindow.tsx`, checked first in `App.tsx` before every other
+early-return branch. When `?sakuraAudience=1` is present, the entire
+normal editor shell (sidebar, toolbar, document tabs, Settings) never
+mounts -- instead a chromeless full-viewport `PresenterMode.tsx` shows
+the real active document (loaded via an explicit `documentsStore.init()`
+call, since `DocumentTabs.tsx`, the component that normally calls that,
+never mounts in this branch either). Verified end-to-end in real
+headless Chrome: the normal boot path is completely unaffected, and
+`?sakuraAudience=1` correctly shows the real persisted document
+chromeless with zero console/page errors. Deliberately NOT yet the
+full mechanism -- nothing opens this window yet, and nothing drives
+its state from another window yet. Still needed before Audience View
+itself works: a `window`-exposed cross-window bridge (most naturally
+built on `usePresenterStore`'s own Zustand `subscribe` API), the
+second window running its own React instance driven by that bridge
+(which `AudienceWindow.tsx` is already a real down payment on), and
+(separately) a real `isWhiteboard` concept in Diagrams for mirroring.
+Pick up the next step from phase6-full-parity-plan.md's §6.6 section.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -1010,8 +1019,8 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217, #218, and #219 all merged and their local branches deleted this
-session; this PR (`presenter/state-store`) is the current one. No
+#217, #218, #219, and #220 all merged and their local branches deleted
+this session; this PR (`audience/boot-check`) is the current one. No
 feature branches should remain open for review once this PR also
 merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy

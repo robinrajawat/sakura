@@ -581,9 +581,39 @@ format, Word/OPML import.
   `B` blackout toggle, `G` overview grid (including click-to-jump), `N` Notes panel
   (open/Escape-close), the laser pointer (toggle + a real tracked mousemove rendering the dot),
   and the running elapsed timer -- all identical to pre-refactor behavior, zero console/page
-  errors. Steps (1) (query-param boot check), (3) (the `window`-exposed bridge), (4) (the
-  second window running its own React instance), and (5) (Whiteboard mirroring, additionally
-  blocked on Diagrams getting a real `isWhiteboard` concept) remain not started.
+  errors.
+- ✅ **Step (1) of the plan above landed too (out of listed order -- (2) had to land first, (1)
+  itself has no real dependency on it): the query-param boot check + a chromeless audience
+  shell.** `state/audienceMode.ts`'s `isAudienceWindow(search)` is a direct, pure port of
+  legacy's real `SAKURA_AUDIENCE_MODE=/[?&]sakuraAudience=1(&|$)/.test(location.search)`
+  (legacy/index.html:38969), expressed via `URLSearchParams` instead of a regex (same match
+  semantics -- only the literal `'1'`, no `=true`/`=yes` variant, matching legacy's own real
+  behavior). `App.tsx` checks it before every other early-return branch (including the Mobile
+  Hub breakpoint check), matching legacy's own real boot-time priority -- its detection runs
+  synchronously before any other markup even paints. When true, `App.tsx` renders a new
+  `AudienceWindow.tsx` instead of the entire normal editor shell: no sidebar, no toolbar, no
+  document tabs, no Settings panel -- just `PresenterMode.tsx` (reused as-is, unmodified) in a
+  plain full-viewport container. Since `DocumentTabs.tsx` (the component that normally calls
+  `useDocumentsStore.getState().init()` on mount) never mounts in this branch,
+  `AudienceWindow.tsx` calls `init()` itself, so this window still loads the real active
+  document's persisted nodes from `localStorage` rather than staying on `outlineStore`'s own
+  bare in-memory seed. Deliberately NOT yet the full mechanism: this is a standalone chromeless
+  view, reachable only by navigating directly to the query param -- nothing opens it yet (step
+  3 below), and nothing drives its state from another window yet (step 4 below); until the
+  bridge exists, this window only ever shows whatever's already sitting in ITS OWN local
+  storage. Verified end-to-end in real headless Chrome: the normal boot path is completely
+  unaffected (Settings button, document tabs, editable outline all still present with no query
+  param); with `?sakuraAudience=1`, none of that chrome renders, the same real persisted
+  document's content shows through `PresenterMode` instead (confirmed against both the fresh
+  seed document and a real multi-node document edited and autosaved in a prior normal-boot
+  visit to the same origin) -- zero console/page errors across both paths.
+- Steps (3) (a `window`-exposed cross-window bridge, most naturally built on
+  `usePresenterStore`'s own `subscribe` -- Zustand's built-in subscription API -- pushing state
+  changes into the child window's own store directly, rather than legacy's manual poll/DOM-clone
+  approach), (4) (the second window running its own full React instance driven by that bridge,
+  which is now what `AudienceWindow.tsx` already is a real down payment on), and (5) (Whiteboard
+  mirroring, additionally blocked on Diagrams getting a real `isWhiteboard` concept) remain not
+  started.
 - ✅ **Word export: heading styles + TOC field.** A node with `styles.heading` set (1-6,
   already a real field since §6.2) now renders as a genuine Word heading paragraph
   (`docx`'s `HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat indented line, and the
