@@ -709,6 +709,69 @@ export function ExportButtons() {
     }
     const BOX_WIDTH_IN = 9; // matches the bullet text box's own w:'90%' of a 10in-wide slide
     const AVAIL_H = 5.625 - 0.4 - 1.3; // slide height, minus a bottom margin, minus the title's own bodyTop
+
+    // §6.7 slice: decision-log cards on PowerPoint slides, direct-effect port of legacy's real
+    // two-pass auto-scaling `addDecisionLogCard` (legacy/index.html:26124), simplified the same
+    // way as the Word/PDF/Preview decision cards above (this same file/`PreviewPane.tsx`): no
+    // auto-scale-to-fit (an oversized card can overflow its slide, matching the *existing*
+    // images-branch comment's own accepted overflow trade-off just above -- not a new one
+    // invented for this port), and no rich-list field parsing (plain-text fields only, matching
+    // `web/`'s own plain-textarea Decision schema -- same reasoning `buildDocxDecisionParagraphs`
+    // above gives). A card is placed as one more packable item in the same bullet-pagination
+    // loop below, immediately after the bullet for the node it's anchored to (matching the
+    // per-node placement the PDF/Word cards already use), so it can overflow onto a "(cont'd)"
+    // slide exactly like an overlong bullet list already does. Decision cards render on
+    // non-image slides ONLY: a slide with images already `continue`s past this per-node loop
+    // entirely (see the images branch above), so a node with both a note image and a decision
+    // only gets the image on its slide -- a real, documented scope gap, not a silent drop.
+    const CARD_TEXT_WIDTH_IN = BOX_WIDTH_IN - 0.3;
+    function decisionCardFieldLines(raw: string, fontSizePt: number): number {
+      return raw
+        .split('\n')
+        .reduce((sum, line) => sum + measureWrappedLines(line, CARD_TEXT_WIDTH_IN, fontSizePt, false), 0);
+    }
+    function decisionCardHeight(dl: Decision): number {
+      let h = 0.34; // header row ("DECISION LOG" + status badge)
+      DECISION_FIELD_META.forEach(({ key }) => {
+        const raw = dl[key]?.trim();
+        if (!raw) return;
+        h += 0.17; // field label line
+        h += decisionCardFieldLines(raw, 11) * pptxLineHeightIn(11, 1.2);
+      });
+      h += 0.22; // author/date meta line
+      return h + 0.14; // top/bottom card padding
+    }
+    function addDecisionLogCard(slide: PptxGenJS.Slide, dl: Decision, x: number, y: number, w: number, h: number): void {
+      const accent = DL_STATUS_HEX_OOXML[decisionStatusColorKeyCore(dl.status)];
+      slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.04, fill: { color: 'FAF8F3' }, line: { color: 'E4DFD3', width: 0.75 } });
+      slide.addShape('rect', { x, y, w: 0.06, h, fill: { color: accent }, line: { type: 'none' } });
+      let cy = y + 0.08;
+      slide.addText(
+        [
+          { text: 'DECISION LOG   ', options: { bold: true, fontSize: 9, color: accent } },
+          { text: decisionStatusLabelCore(dl.status).toUpperCase(), options: { bold: true, fontSize: 9, color: accent } }
+        ],
+        { x: x + 0.16, y: cy, w: w - 0.3, h: 0.2 }
+      );
+      cy += 0.3;
+      DECISION_FIELD_META.forEach(({ key, label }) => {
+        const raw = dl[key]?.trim();
+        if (!raw) return;
+        slide.addText(label.toUpperCase(), { x: x + 0.16, y: cy, w: w - 0.3, h: 0.15, fontSize: 7.5, bold: true, color: '6F6B63' });
+        cy += 0.17;
+        const fieldLines = raw.split('\n');
+        const runs = fieldLines.map((line, i) => ({ text: line, options: { breakLine: i < fieldLines.length - 1 } }));
+        const fieldH = decisionCardFieldLines(raw, 11) * pptxLineHeightIn(11, 1.2);
+        slide.addText(runs, { x: x + 0.16, y: cy, w: w - 0.3, h: fieldH, fontSize: 11, color: '2B2A27' });
+        cy += fieldH;
+      });
+      let metaText = dl.author ? `— ${dl.author}` : '';
+      if (dl.timestamp) metaText += (metaText ? ' · ' : '— ') + new Date(dl.timestamp).toLocaleDateString();
+      if (metaText) {
+        slide.addText(metaText, { x: x + 0.16, y: cy, w: w - 0.3, h: 0.2, fontSize: 8, italic: true, color: '938F84' });
+      }
+    }
+
     const slides = groupIntoSlides(nodes);
     for (const slideNodes of slides) {
       const minDepth = slideNodes[0].depth;
@@ -762,29 +825,64 @@ export function ExportButtons() {
         addBranding(slide);
         continue;
       }
-      const pages: (typeof bullets)[] = [];
-      let page: typeof bullets = [];
+      // Pack items in node order (a bullet, then that node's own decision card right after it,
+      // if any -- same per-node placement the PDF/Word cards already use), so a card paginates
+      // onto a "(cont'd)" slide exactly like an overlong bullet list already does. The bullet
+      // text box's height is now this real measured sum too, replacing the fixed `h:'75%'`
+      // placeholder this used to hardcode, so a card below it never overlaps.
+      type PackItem =
+        | { kind: 'bullet'; text: string; indentLevel: number; h: number }
+        | { kind: 'card'; dl: Decision; h: number };
+      function isBulletItem(item: PackItem): item is Extract<PackItem, { kind: 'bullet' }> {
+        return item.kind === 'bullet';
+      }
+      const CARD_GAP_IN = 0.12;
+      const packItems: PackItem[] = [];
+      const titleDl = decisions.find((d) => d.anchorNodeId === slideNodes[0].id);
+      if (titleDl) packItems.push({ kind: 'card', dl: titleDl, h: decisionCardHeight(titleDl) + CARD_GAP_IN });
+      for (const node of slideNodes.slice(1)) {
+        const text = (node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '') + (getNodePlainText(node) || '(empty)');
+        const indentLevel = node.depth - minDepth - 1;
+        const h = measureWrappedLines(text, BOX_WIDTH_IN, 16, false) * pptxLineHeightIn(16, 1.3);
+        packItems.push({ kind: 'bullet', text, indentLevel, h });
+        const dl = decisions.find((d) => d.anchorNodeId === node.id);
+        if (dl) packItems.push({ kind: 'card', dl, h: decisionCardHeight(dl) + CARD_GAP_IN });
+      }
+      const pages: PackItem[][] = [];
+      let page: PackItem[] = [];
       let usedH = 0;
-      for (const b of bullets) {
-        const h = measureWrappedLines(b.text, BOX_WIDTH_IN, 16, false) * pptxLineHeightIn(16, 1.3);
-        if (page.length && usedH + h > AVAIL_H) {
+      for (const item of packItems) {
+        if (page.length && usedH + item.h > AVAIL_H) {
           pages.push(page);
           page = [];
           usedH = 0;
         }
-        page.push(b);
-        usedH += h;
+        page.push(item);
+        usedH += item.h;
       }
       pages.push(page); // always at least one page, even with zero bullets (a leaf/title-only node)
-      pages.forEach((pageBullets, pi) => {
+      pages.forEach((pageItems, pi) => {
         const slide = pptx.addSlide();
         slide.addText(pi === 0 ? title : `${title} (cont'd)`, { x: 0.5, y: 0.4, fontSize: 28, bold: true });
-        const bulletLines = pageBullets.map((b) => ({
-          text: b.text,
-          options: { bullet: true, indentLevel: b.indentLevel, fontSize: 16 }
-        }));
-        if (bulletLines.length) {
-          slide.addText(bulletLines, { x: 0.5, y: 1.3, w: '90%', h: '75%' });
+        let cy = 1.3;
+        let i = 0;
+        while (i < pageItems.length) {
+          if (isBulletItem(pageItems[i])) {
+            const batch: Extract<PackItem, { kind: 'bullet' }>[] = [];
+            while (i < pageItems.length && isBulletItem(pageItems[i])) {
+              batch.push(pageItems[i] as Extract<PackItem, { kind: 'bullet' }>);
+              i++;
+            }
+            const bulletLines = batch.map((b) => ({ text: b.text, options: { bullet: true, indentLevel: b.indentLevel, fontSize: 16 } }));
+            const h = batch.reduce((sum, b) => sum + b.h, 0);
+            slide.addText(bulletLines, { x: 0.5, y: cy, w: '90%', h });
+            cy += h;
+          } else {
+            const card = pageItems[i] as Extract<PackItem, { kind: 'card' }>;
+            addDecisionLogCard(slide, card.dl, 0.5, cy, BOX_WIDTH_IN, card.h - CARD_GAP_IN);
+            cy += card.h;
+            i++;
+          }
         }
         addBranding(slide);
       });

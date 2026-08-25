@@ -1235,8 +1235,32 @@ Status: **in progress.**
   labels/content, and the real status-accent hex color (`27824f`) and shading fill
   (`FAF8F3`) -- confirming actual OOXML output, not just that the export function ran without
   throwing.
-  Still remaining for Decision Log: PPTX card and Excel `.xlsx` export -- each its own
-  separately-scoped slice.
+- **Decision Log's PowerPoint (.pptx) card rendering landed.** Direct-effect port of legacy's
+  real two-pass auto-scaling `addDecisionLogCard` (legacy/index.html:26124), simplified the same
+  way as the Word/PDF/Preview cards above: no auto-scale-to-fit (an oversized card can overflow
+  its slide, matching the *existing* images-branch comment's own accepted images+bullets overflow
+  trade-off, not a new one invented for this port) and no rich-list field parsing (plain-text
+  fields only, matching `web/`'s own plain-textarea Decision schema). A card renders as one more
+  packable item in the same per-node bullet-pagination loop, placed immediately after the bullet
+  for the node it's anchored to (same per-node placement the PDF/Word cards already use), so an
+  oversized card paginates onto a "(cont'd)" slide exactly like an overlong bullet list already
+  does -- this required a genuine prerequisite fix to that pagination loop, which used to size its
+  bullet text box with a fixed `h:'75%'` placeholder instead of a real measured height (now the
+  same `reduce`+`measureWrappedLines`+`pptxLineHeightIn` pattern the neighboring "slide with
+  images" branch already used). `DL_STATUS_HEX_OOXML`/`DECISION_FIELD_META`/
+  `decisionStatusColorKeyCore`/`decisionStatusLabelCore` are all reused from the Word card above,
+  no new duplicate constants. Decision cards render on non-image slides ONLY: a slide with images
+  already `continue`s past this per-node loop entirely (a real, pre-existing scope-down, not
+  something newly cut for this slice), so a node with both a note image and a decision only gets
+  the image on its slide -- documented in the code, not silently dropped. Verified end-to-end in
+  real headless Chrome: downloaded the real generated `.pptx`, unzipped it (also a plain
+  ZIP/OOXML archive), and grepped `ppt/slides/*.xml` directly for the header text, the uppercase
+  status badge, all 5 field labels/content (including a multi-line Alternatives field), and the
+  real status-accent hex color (`27824F`) and card fill shade (`FAF8F3`) -- confirming actual
+  OOXML slide output, not just that the export function ran without throwing.
+  Still remaining for Decision Log: Excel `.xlsx` export -- its own separately-scoped slice
+  (needs a new SheetJS/`xlsx` dependency, since no spreadsheet-export library exists in `web/`
+  yet).
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
