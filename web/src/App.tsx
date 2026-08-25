@@ -33,6 +33,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { AudienceWindow } from './components/AudienceWindow';
 import { isAudienceWindow } from './state/audienceMode';
 import { rewriteNode, rewriteNodes } from './state/aiRewrite';
+import { useAutoRewriteStore } from './store/autoRewriteStore';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -69,6 +70,15 @@ export function App() {
   const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
   const selectedIds = useOutlineStore((s) => s.selectedIds);
   const [aiRewriteBusy, setAiRewriteBusy] = useState(false);
+  const autoRewriteEnabled = useAutoRewriteStore((s) => s.enabled);
+  const setAutoRewriteEnabled = useAutoRewriteStore((s) => s.setEnabled);
+  const autoRewriteStatusText = useAutoRewriteStore((s) => s.statusText);
+  // Re-render the status chip on every queue/busy/paused change, not just `enabled` -- `statusText`
+  // itself is a plain function call (not a selector), so its result needs a live subscription to
+  // stay current the same way `keyStatusForProvider`'s callers do elsewhere.
+  useAutoRewriteStore((s) => s.queue.size);
+  useAutoRewriteStore((s) => s.busy);
+  useAutoRewriteStore((s) => s.pausedNoKey);
 
   // §6.9 slice (docs/phase6-full-parity-plan.md): Rewrite -- the first real AI capability.
   // Matches legacy's real qb-ai-rewrite toolbar button: a single selected node calls
@@ -202,7 +212,17 @@ export function App() {
       tabBar={<DocumentTabs />}
       sidebar={<SidebarFileExplorer />}
       statusLeft={<span>Phase 6.2, in progress</span>}
-      statusRight={<span>{mode}</span>}
+      statusRight={
+        <>
+          {/* §6.9 slice 4 (docs/phase6-full-parity-plan.md): the auto-rewrite status chip --
+              direct port of legacy's real sb-auto-rewrite-chip, a left-click toggle showing live
+              queue/paused/rewriting state. */}
+          <button type="button" onClick={() => setAutoRewriteEnabled(!autoRewriteEnabled)} title="Toggle auto-rewrite on commit" aria-pressed={autoRewriteEnabled} style={{ marginRight: 10 }}>
+            {autoRewriteStatusText()}
+          </button>
+          <span>{mode}</span>
+        </>
+      }
       contentRef={registerScrollContainer}
     >
       <div style={{ marginBottom: 12 }}>

@@ -1311,8 +1311,15 @@ building the earlier ones):
    input editing model doesn't expose yet) and Quick Assist triggers (Quick Assist itself doesn't
    exist in `web/` yet, §6.10). No provider fallback yet either (`aiCapabilities.ts`'s own header)
    — slice 9.
-4. Auto-rewrite on commit — the exclusion filter, idle-timer/batch-cap dual trigger, paused-on-
-   no-key/resume behavior, status-bar chip.
+4. **Auto-rewrite on commit** (landed, see Status) — `state/autoRewrite.ts`'s
+   `shouldAutoRewriteNode` exclusion filter (checkbox/heading/decisionlog/syntax, all real
+   ported thresholds/regexes) plus `store/autoRewriteStore.ts`'s real queue/flush engine
+   (idle-timer/batch-cap dual trigger, paused-on-no-key, `MAX_CONSECUTIVE_FAILS`-disables), wired
+   into `OutlineTree.tsx`'s two real commit call sites (Enter, blur) with paste-taint detection.
+   Status chip in `AppShell`'s status bar. Deliberate simplification: no auto-resume-on-key-saved
+   (a real circular-import risk between `autoRewriteStore.ts` and `aiSettingsStore.ts` for a
+   background convenience) — a paused queue needs an explicit "Retry now" click instead, see that
+   store's own header for the full reasoning.
 5. Generate Outline + Restructure Text — share `parseTextToTreeNodes` (a new port, also needed
    by OPML/paste/Word-import fallbacks elsewhere), each with its own system prompt/insertion
    behavior (nest-into-current-doc vs. always-new-doc).
@@ -1387,7 +1394,7 @@ previews to have anything real to show, and #228 — the `hideTreeLines=false` m
 connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
 to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
 own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) in progress**
-(developed concurrently with the §6.7 work above in a separate session) — slices 1-3 of the
+(developed concurrently with the §6.7 work above in a separate session) — slices 1-4 of the
 planned sequence above landed. **#230** (following #228): provider configuration UI
 (`aiProviderCatalog.ts`, `aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus
 vault-aware key read/write extending `aiProviders.ts`), verified end-to-end in real headless
@@ -1401,7 +1408,7 @@ lock/unlock including a rejected wrong passphrase, save-while-locked correctly r
 disable flushing back to plaintext, a real reload confirming the session-only key never
 persists). A real bug was caught and fixed during that verification: the AI section's key-status
 line could show a stale pre-lock message after the vault's lock state changed elsewhere, fixed by
-clearing that transient message whenever the resolved lock state itself flips. **This PR**:
+clearing that transient message whenever the resolved lock state itself flips. **#235**:
 Rewrite — `state/aiCapabilities.ts` (`callAiApi`/batched `callAiApiBatchChunk`/`callAiApiBatch`
 with the real sentinel-marker chunking protocol) and `state/aiRewrite.ts`
 (`rewriteNode`/`rewriteNodes`/`rewriteDocument`, the in-flight-edit-guard pattern via
@@ -1411,9 +1418,18 @@ entries) — verified end-to-end in real headless Chrome with the AI endpoint mo
 `page.route` (single-node rewrite + undo, multi-select batch rewrite, context-menu single/
 whole-document rewrite, the in-flight-edit-guard actually discarding a stale result, and a
 no-key configured failure surfacing a clear alert rather than hanging or throwing) — zero
-console/page errors across every check. Slices 4-9 (auto-rewrite on commit, Generate
-Outline/Restructure Text, Expand/Tags, Suggest icon, Summarise selection, fallback+usage UI) not
-yet started. §6.10 onward not started. Update each phase's own
+console/page errors across every check. **This PR**: auto-rewrite on commit —
+`state/autoRewrite.ts`'s `shouldAutoRewriteNode` exclusion filter and `store/autoRewriteStore.ts`'s
+real queue/flush engine (idle-timer/batch-cap dual trigger, paused-on-no-key, consecutive-fail
+auto-disable), wired into `OutlineTree.tsx`'s two real commit call sites with paste-taint
+detection, plus a status chip in the app's status bar and a new "Auto-rewrite" Settings section
+(`AutoRewriteSettings.tsx`) — verified end-to-end in real headless Chrome (idle-timer flush
+applying the AI result and updating the chip, batch-cap flushing immediately without waiting for
+the idle delay, the checkbox exclusion correctly skipping a checkbox node's commit, and a
+simulated paste-sourced commit correctly NOT queuing while still committing the text) — zero
+console/page errors across every check. Slices 5-9 (Generate Outline/Restructure Text,
+Expand/Tags, Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10 onward
+not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 

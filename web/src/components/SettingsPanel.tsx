@@ -2,6 +2,7 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePrefsStore';
 import { AiProviderSettings } from './AiProviderSettings';
 import { SecureStorageSettings } from './SecureStorageSettings';
+import { AutoRewriteSettings } from './AutoRewriteSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -32,9 +33,12 @@ import { SecureStorageSettings } from './SecureStorageSettings';
  *
  * §6.9 slice 2: added the "Secure Storage" section (`SecureStorageSettings.tsx`) -- the vault
  * setup/unlock/lock/disable UI `aiSettingsStore.ts`'s own header named as deferred from slice 1.
- * See both components' own headers for what's still deferred (the fallback-order list, the
- * usage-tracking summary, and every AI capability itself -- Rewrite/Outline/Restructure/Expand/
- * Tags/Icon/Summarise, each its own later §6.9 slice).
+ *
+ * §6.9 slice 4: added the "Auto-rewrite" section (`AutoRewriteSettings.tsx`) -- the enable
+ * toggle, exclusion checkboxes, and threshold controls for `store/autoRewriteStore.ts`'s real
+ * queue/flush engine. See these three AI components' own headers for what's still deferred (the
+ * fallback-order list, the usage-tracking summary, and every remaining AI capability itself --
+ * Generate Outline/Restructure/Expand/Tags/Icon/Summarise, each its own later §6.9 slice).
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -250,6 +254,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </label>
       </div>
       <AiProviderSettings t={t} />
+      <AutoRewriteSettings t={t} />
       <SecureStorageSettings t={t} />
     </div>
   );
