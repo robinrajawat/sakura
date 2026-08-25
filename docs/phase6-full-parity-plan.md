@@ -1367,10 +1367,45 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   outline edit, and confirmed a real Restore -- accepting the real `window.confirm` dialog,
   through the real page reload -- actually wipes a planted "corruption" key and brings the edited
   content back. Zero console/page errors throughout.
-  Still remaining for §6.8: everything else listed above, PLUS tier 2 of two-tier automatic
-  backup (auto-backup to file, File System Access API, Chrome/Edge only -- a materially bigger,
-  more platform-specific follow-up needing its own file-handle-permission UX) -- each its own
-  separately-scoped slice.
+  Still remaining for §6.8 at that point: everything else listed above, PLUS tier 2 of two-tier
+  automatic backup (auto-backup to file, File System Access API, Chrome/Edge only -- a materially
+  bigger, more platform-specific follow-up needing its own file-handle-permission UX) -- each its
+  own separately-scoped slice.
+- ✅ **Email/password sign-in landed.** Direct port of legacy's real `wireEmailAuthForm`
+  submit/forgot-password handlers (legacy/index.html:13920-13984), using the SDK's own
+  `createUserWithEmailAndPassword`/`signInWithEmailAndPassword`/`sendPasswordResetEmail`
+  (`authStore.ts`). A new pure `emailAuthErrorMessageCore` (`state/authErrors.ts`) matches
+  legacy's real per-error-code message table exactly, including its own real fallback message.
+  `AuthPanel.tsx` gained a collapsed-by-default "Or use email" toggle revealing a sign-in/
+  create-account mode switch, email + password inputs, and a "Forgot password?" link -- direct
+  port of legacy's real form UX, with client-side validation (non-empty fields; 6+ char password
+  on sign-up) gating the actual SDK call, matching legacy's own real validation. One real,
+  deliberate simplification vs. legacy: legacy wires this exact form into TWO separate DOM
+  surfaces (a landing-page overlay and the account panel, each with its own local form-scoped
+  error text); `web/` has no landing/onboarding overlay at all yet (a real, separately-scoped
+  gap, not attempted here), so this is the one surface, and its error reuses `authStore`'s own
+  single shared `error` slot rather than a second local copy. Worth repeating verbatim, since
+  it's the reason this ships safely regardless of unverifiable production config: legacy's own
+  comment there says "Needs the Email/Password provider turned on in the Firebase console
+  (Authentication → Sign-in method) — this is a project-level setting outside this file, not
+  something the client code can enable itself." If that provider isn't enabled, every call fails
+  with `auth/operation-not-allowed`, which `emailAuthErrorMessageCore` turns into a real, honest
+  message rather than a raw SDK error -- matching legacy's own graceful-degradation exactly.
+  Verified with a new pure-function test suite for `authErrors.ts` (all 10 real Firebase error
+  codes plus the unrecognized/missing-code fallback). `authStore.ts`'s own stateful Firebase
+  calls stay deliberately untested at the unit level, matching this file's own established
+  header philosophy (an untested thin SDK wrapper is a lower real risk than building a fake auth
+  backend to exercise it) -- instead verified end-to-end in real headless Chrome by intercepting
+  every real `identitytoolkit.googleapis.com` request via `page.route` and aborting it before it
+  could ever reach the live production Firebase project (the same "mock the network boundary,
+  never the live backend" approach the concurrent §6.9 session's own Rewrite verification used
+  for its AI provider endpoint): confirmed empty-field and weak-password submits never reach the
+  network at all (client-side validation blocks them), confirmed the mode toggle's button label
+  and link text actually flip, confirmed a valid-looking submit DOES reach the real SDK call (a
+  real `identitytoolkit.googleapis.com` URL, proving the full click-to-SDK wiring executes) and
+  that an aborted/failed network call surfaces a real user-facing error rather than hanging or
+  throwing silently, confirmed "Forgot password?" requires an email first and otherwise reaches
+  its own real SDK call too. No real account was ever created or mutated against production.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven

@@ -6,9 +6,23 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   type Auth,
   type User
 } from 'firebase/auth';
+import { emailAuthErrorMessageCore } from '../state/authErrors';
+
+/** Firebase Auth SDK errors are always a real `FirebaseError` with a `.code` string
+ * (`'auth/...'`), but importing that type just for a duck-typed field read is unnecessary --
+ * this reads the field the same defensive way `err instanceof Error ? err.message : ...` already
+ * does elsewhere in this file. */
+function firebaseErrorCode(err: unknown): string | undefined {
+  return err && typeof err === 'object' && 'code' in err && typeof (err as { code: unknown }).code === 'string'
+    ? (err as { code: string }).code
+    : undefined;
+}
 
 // The SAME real, live production Firebase project config legacy/index.html already embeds
 // (const FIREBASE_CONFIG at that file's own line ~13662) -- not a new project, not a secret
@@ -49,6 +63,9 @@ interface AuthState {
   error: string | null;
   init: () => void;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<boolean>;
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
+  sendPasswordReset: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -68,6 +85,21 @@ interface AuthState {
  * separately-scoped follow-up). This file's own logic is thin enough (three near-literal SDK
  * calls) that the risk of an untested wrapper bug is low relative to the cost of building a
  * fake auth backend just to exercise it.
+ *
+ * §6.8 slice: `signUpWithEmail`/`signInWithEmail`/`sendPasswordReset` are a direct port of
+ * legacy's real `wireEmailAuthForm` submit/forgot-password handlers (legacy/index.html:
+ * 13920-13984), using the SDK's own `createUserWithEmailAndPassword`/
+ * `signInWithEmailAndPassword`/`sendPasswordResetEmail`. Legacy's own comment there is worth
+ * repeating verbatim: "Needs the Email/Password provider turned on in the Firebase console
+ * (Authentication → Sign-in method) — this is a project-level setting outside this file, not
+ * something the client code can enable itself." If that provider isn't enabled, every call here
+ * fails with `auth/operation-not-allowed`, which `emailAuthErrorMessageCore` already turns into
+ * a real, honest message ("Email/password sign-in isn't enabled for this app yet.") rather than
+ * a raw SDK error -- so this ships safely regardless of that project-level setting's current
+ * state, matching legacy's own graceful-degradation behavior exactly. Each of the three actions
+ * returns a boolean (`true` on success) instead of throwing, matching this file's own established
+ * "set `error`, don't throw" convention (`signInWithGoogle` below) -- the return value exists
+ * purely so the calling UI knows whether to clear its own form inputs.
  */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -87,6 +119,39 @@ export const useAuthStore = create<AuthState>((set) => ({
       await signInWithPopup(getFirebaseAuth(), provider);
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Sign-in failed' });
+    }
+  },
+
+  signUpWithEmail: async (email, password) => {
+    set({ error: null });
+    try {
+      await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
+      return true;
+    } catch (err) {
+      set({ error: emailAuthErrorMessageCore(firebaseErrorCode(err)) });
+      return false;
+    }
+  },
+
+  signInWithEmail: async (email, password) => {
+    set({ error: null });
+    try {
+      await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+      return true;
+    } catch (err) {
+      set({ error: emailAuthErrorMessageCore(firebaseErrorCode(err)) });
+      return false;
+    }
+  },
+
+  sendPasswordReset: async (email) => {
+    set({ error: null });
+    try {
+      await sendPasswordResetEmail(getFirebaseAuth(), email);
+      return true;
+    } catch (err) {
+      set({ error: emailAuthErrorMessageCore(firebaseErrorCode(err)) });
+      return false;
     }
   },
 
