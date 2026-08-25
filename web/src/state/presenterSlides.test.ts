@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupIntoSlides, slideLabel, formatElapsed } from './PresenterMode';
+import { groupIntoSlides, slideLabel, formatElapsed } from './presenterSlides';
 import type { OutlineNode } from '../store/outlineStore';
 import { defaultNodeStyles } from '../store/outlineStore';
 

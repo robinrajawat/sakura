@@ -183,37 +183,46 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `16ef62d` ("refactor(presenter):
-lift presenting state into a real store (§6.6 Audience View step 1)
-(#220)"). Following the user's "We have to cover everything anyway so
-you decide" delegation, five PRs have now landed in this stretch: #217
-(a real `nextId` node-id-collision bug fix), #218 (the first minimal
+As of this writing: `main` is at commit `7e33e9b` ("feat(presenter):
+query-param Audience View boot check (§6.6 step 2) (#221)"). Following
+the user's "We have to cover everything anyway so you decide"
+delegation, six PRs have now landed in this stretch: #217 (a real
+`nextId` node-id-collision bug fix), #218 (the first minimal
 Settings-panel slice), #219 (a docs correction: Audience View/
-Whiteboard mirroring needs NO client-side routing at all -- legacy's
-real mechanism keys off a query param, not a path -- recording a full,
-code-referenced translation plan in phase6-full-parity-plan.md's §6.6
-section), #220 (`PresenterMode.tsx`'s presenting state moved into a
-new `usePresenterStore.ts`, a pure refactor verified behavior-identical
-in real headless Chrome), and this PR -- the query-param boot check
-itself: `state/audienceMode.ts`'s `isAudienceWindow()` plus a new
-`AudienceWindow.tsx`, checked first in `App.tsx` before every other
-early-return branch. When `?sakuraAudience=1` is present, the entire
-normal editor shell (sidebar, toolbar, document tabs, Settings) never
-mounts -- instead a chromeless full-viewport `PresenterMode.tsx` shows
-the real active document (loaded via an explicit `documentsStore.init()`
-call, since `DocumentTabs.tsx`, the component that normally calls that,
-never mounts in this branch either). Verified end-to-end in real
-headless Chrome: the normal boot path is completely unaffected, and
-`?sakuraAudience=1` correctly shows the real persisted document
-chromeless with zero console/page errors. Deliberately NOT yet the
-full mechanism -- nothing opens this window yet, and nothing drives
-its state from another window yet. Still needed before Audience View
-itself works: a `window`-exposed cross-window bridge (most naturally
-built on `usePresenterStore`'s own Zustand `subscribe` API), the
-second window running its own React instance driven by that bridge
-(which `AudienceWindow.tsx` is already a real down payment on), and
-(separately) a real `isWhiteboard` concept in Diagrams for mirroring.
-Pick up the next step from phase6-full-parity-plan.md's §6.6 section.
+Whiteboard mirroring needs NO client-side routing at all), #220
+(`PresenterMode.tsx`'s presenting state moved into a new
+`usePresenterStore.ts`), #221 (the query-param boot check + a
+chromeless `AudienceWindow.tsx`), and this PR -- **Audience View is
+now a genuinely working feature end to end, not just a boot path.**
+`state/audienceBridge.ts` installs `window.__sakuraAudience` on every
+window at boot (`main.tsx`), unconditionally, regardless of role --
+the direct equivalent of legacy's own pattern of always defining
+cross-window functions on every window. `openAudienceWindow()` is a
+direct port of legacy's real one (same popup feature string);
+`AudienceWindow.tsx` signals readiness via
+`window.opener.__sakuraAudienceChildReady(window)` on mount (the
+equivalent of legacy's own `audienceWindowReady`); the opener then
+pushes live `usePresenterStore` state into the child via Zustand's own
+`subscribe` API (simpler than legacy's manual poll/DOM-clone
+approach). A real "Open Audience View"/"Close Audience View" toggle
+button now lives in `PresenterMode.tsx`'s toolbar. A real
+architectural correction landed in the same slice: `AudienceWindow.tsx`
+no longer renders the full `PresenterMode.tsx` -- it now renders a new
+`PresenterSlideView.tsx`, the passive slide-content block extracted
+out of `PresenterMode.tsx` (which still renders it internally via a
+new `interactive` prop), since legacy's real Audience window has none
+of its own interactive controls and `web/`'s shouldn't either (a
+second window with its own live Prev/Next buttons would fight the
+state the bridge pushes into it). Verified end-to-end in real headless
+Chrome with two real coordinated browser windows (Playwright's own
+`context.waitForEvent('page')` catching the real `window.open()`
+call): the popup correctly mirrors slide navigation, blackout, and a
+real tracked laser-pointer position live, and closes cleanly via the
+opener's own button -- zero console/page errors on either window.
+**Only one piece of the §6.6 Audience View plan remains: Whiteboard
+mirroring, blocked on `web/`'s Diagrams panel gaining a real
+`isWhiteboard` concept** (a separately-scoped §6.3 follow-up -- see
+phase6-full-parity-plan.md's §6.6 section for the full detail).
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -1019,9 +1028,9 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217, #218, #219, and #220 all merged and their local branches deleted
-this session; this PR (`audience/boot-check`) is the current one. No
-feature branches should remain open for review once this PR also
+#217 through #221 all merged and their local branches deleted this
+session; this PR (`audience/cross-window-bridge`) is the current one.
+No feature branches should remain open for review once this PR also
 merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw

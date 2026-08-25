@@ -592,8 +592,9 @@ format, Word/OPML import.
   Hub breakpoint check), matching legacy's own real boot-time priority -- its detection runs
   synchronously before any other markup even paints. When true, `App.tsx` renders a new
   `AudienceWindow.tsx` instead of the entire normal editor shell: no sidebar, no toolbar, no
-  document tabs, no Settings panel -- just `PresenterMode.tsx` (reused as-is, unmodified) in a
-  plain full-viewport container. Since `DocumentTabs.tsx` (the component that normally calls
+  document tabs, no Settings panel -- originally just `PresenterMode.tsx` reused as-is; the next
+  bullet below explains why that later changed to a dedicated passive view. Since
+  `DocumentTabs.tsx` (the component that normally calls
   `useDocumentsStore.getState().init()` on mount) never mounts in this branch,
   `AudienceWindow.tsx` calls `init()` itself, so this window still loads the real active
   document's persisted nodes from `localStorage` rather than staying on `outlineStore`'s own
@@ -607,13 +608,51 @@ format, Word/OPML import.
   document's content shows through `PresenterMode` instead (confirmed against both the fresh
   seed document and a real multi-node document edited and autosaved in a prior normal-boot
   visit to the same origin) -- zero console/page errors across both paths.
-- Steps (3) (a `window`-exposed cross-window bridge, most naturally built on
-  `usePresenterStore`'s own `subscribe` -- Zustand's built-in subscription API -- pushing state
-  changes into the child window's own store directly, rather than legacy's manual poll/DOM-clone
-  approach), (4) (the second window running its own full React instance driven by that bridge,
-  which is now what `AudienceWindow.tsx` already is a real down payment on), and (5) (Whiteboard
-  mirroring, additionally blocked on Diagrams getting a real `isWhiteboard` concept) remain not
-  started.
+- ✅ **Steps (3) and (4) landed: the real cross-window bridge, the "Open Audience View" trigger,
+  and a passive driven display.** Audience View is now a genuinely working feature end to end,
+  not just a boot path. `state/audienceBridge.ts`'s `installAudienceBridge()` (called once from
+  `main.tsx`, unconditionally, on every window regardless of role) exposes
+  `window.__sakuraAudience.setSyncState` -- the direct equivalent of legacy's own pattern of
+  always defining cross-window functions like `switchDoc` on every window. `openAudienceWindow()`
+  is a direct port of legacy's real `openAudienceWindow` (legacy/index.html:38718-38734, same
+  popup feature string), returning a real handle into the new window's own scope since it's the
+  same origin. `AudienceWindow.tsx` signals readiness via
+  `window.opener.__sakuraAudienceChildReady(window)` on mount -- the direct equivalent of
+  legacy's own `window.opener.audienceWindowReady(window)` (legacy/index.html:39000), waiting for
+  an explicit signal rather than guessing a fixed delay, same reasoning legacy's own comment
+  gives. Once ready, the opener pushes the current presenting state immediately, then keeps
+  pushing on every subsequent `usePresenterStore` change via Zustand's own `subscribe` API --
+  simpler than legacy's manual poll/DOM-clone approach, since a subscription callback already
+  fires exactly on every real state change. A new `audienceWindowOpen` field on
+  `usePresenterStore` (deliberately excluded from the synced subset -- a driven window never
+  opens a further audience window of its own) drives a real "Open Audience View"/"Close Audience
+  View" toggle button in `PresenterMode.tsx`'s own toolbar, reactive to the popup actually
+  closing (detected via a 1s poll, matching legacy's own `startAudienceWinPoll`, since there's no
+  DOM event to subscribe to for that). The click-or-`F`-to-fullscreen hint is a direct port of
+  legacy's own real one (legacy/index.html:38985-38993) -- a cross-window `requestFullscreen()`
+  call has no genuine user gesture behind it and is silently blocked, so this needs a real click
+  or keypress inside the audience window itself. **A real architectural correction made in the
+  same slice:** `AudienceWindow.tsx` no longer renders the full `PresenterMode.tsx` (which it did
+  in step (2), since nothing was driving it yet) -- it now renders a new
+  `PresenterSlideView.tsx`, the passive slide-content block extracted out of `PresenterMode.tsx`
+  (which still renders it internally via a new `interactive` prop, unchanged in its own
+  behavior). Legacy's real Audience window has none of its own interactive Prev/Next buttons or
+  keyboard shortcuts -- only the plain presenting surface -- and `web/`'s should not either: a
+  second window with its own live controls would fight the state the bridge pushes into it. The
+  pure slide-deck helpers (`groupIntoSlides`/`slideLabel`/`formatElapsed`) and shared constants
+  moved to a new `state/presenterSlides.ts` in the same slice, purely to break the resulting
+  circular import between `PresenterMode.tsx` (which now needs to import `PresenterSlideView.tsx`
+  to render it) and `PresenterSlideView.tsx` (which needs those same helpers) -- still re-exported
+  from `PresenterMode.tsx` unchanged, so nothing importing them from there needed to change.
+  Verified end-to-end in real headless Chrome with two real coordinated browser windows/pages
+  (Playwright's own popup-capture, `context.waitForEvent('page')`, catching the real
+  `window.open()` call): the popup opens with the correct query param and no editor chrome,
+  shows the fullscreen hint, correctly mirrors the opener's slide navigation, blackout toggle,
+  and a real tracked laser-pointer position live, and closes cleanly via the opener's own button
+  (with the button's own label reverting correctly) -- zero console/page errors on either window
+  throughout.
+- Step (5) (Whiteboard mirroring, blocked on Diagrams getting a real `isWhiteboard` concept)
+  remains not started -- the only piece of this plan still open.
 - ✅ **Word export: heading styles + TOC field.** A node with `styles.heading` set (1-6,
   already a real field since §6.2) now renders as a genuine Word heading paragraph
   (`docx`'s `HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat indented line, and the
@@ -1069,9 +1108,11 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212, and this PR's Audience View/
-Whiteboard-mirroring re-scoping — see that section's own bullet for the corrected finding: not
-actually blocked on client-side routing), **§6.7 in progress** (#213,
+#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212, #219 Audience View/
+Whiteboard-mirroring re-scoping, #220 presenting state into `usePresenterStore.ts`, #221 the
+query-param boot check, and this PR — the real cross-window bridge, closing out Audience View
+end to end except Whiteboard mirroring itself, still blocked on Diagrams getting a real
+`isWhiteboard` concept), **§6.7 in progress** (#213,
 #214, #215, #216 Chrome-background-preset investigation, #217 a real outline `nextId`
 node-id-collision bug fix, #218 the first minimal Settings-panel slice) — see each section's
 own `Status:` line for
