@@ -1471,6 +1471,94 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   dot), two-tier automatic backup's tier 2 (auto-backup to file), full whole-app JSON Export/
   Import, Version History, and the deliberately-excluded presence tracking noted above -- each its
   own separately-scoped slice.
+- ✅ **Real persistent sync-status top-bar dot landed.** Direct port of legacy's real
+  `account-toggle-status-dot` (legacy/index.html:482-487) and `updateSyncStatusUI`'s dot logic
+  (legacy/index.html:15583-15612) -- previously `web/` only had `DocSyncPanel.tsx`'s own
+  `syncStatus` text line, scoped to whichever document happens to be open and only visible while
+  that panel is in view. A new `components/SyncStatusIndicator.tsx`, mounted in the header next
+  to the notification bell: a small avatar (or a colored-circle initial fallback, matching
+  legacy's own real fallback exactly) with an overlay dot, hidden entirely when signed out
+  (mirrors legacy's own avatar-wrap `display:none` while signed out -- there's nothing to show a
+  status for). States match legacy's real dot classList logic exactly: `syncing` pulses the
+  accent color (a real `accountDotPulse` opacity-loop keyframe, `1<->0.35`); a completed push
+  shows bright green (`synced`) for 4000ms then settles into a dim, persistent green (`idle-ok`)
+  rather than fading to nothing -- legacy's own comment there is worth repeating: previously it
+  faded to fully transparent, so between sync events (i.e. most of the time) there was no
+  indicator on screen at all; `error` persists red until the next successful sync. A new pure
+  `syncDotVisualForStatus` (`state/syncStatusDot.ts`) is the tested resting-state mapping from
+  `docSyncStore`'s own `syncStatus` to the dot's visual state (`idle` -> `idle-ok`, matching
+  legacy's own "give the dot a baseline presence right away" behavior the moment someone is
+  signed in); the 4000ms bright-then-dim fade itself is a local component timer, matching
+  legacy's own `_syncDotFadeTimer` -- legacy doesn't express that part as a pure function either
+  (it's a bare `setTimeout` inside imperative DOM code), so this doesn't force it into one just
+  for its own sake. One real, deliberate simplification vs. legacy: no click-to-open account
+  dropdown menu -- `web/` has no account dropdown surface at all yet (`AuthPanel.tsx`/
+  `DocSyncPanel.tsx` are flat panels, not a menu), a real, separately-scoped gap already true
+  before this slice; this dot is a glanceable status indicator only, with the current status
+  available via its `title` attribute on hover. Verified with a new pure-function test suite for
+  `syncStatusDot.ts` (all four status->visual mappings) and real headless Chrome for the
+  signed-out state (a real account isn't available in this environment, same constraint as
+  every other §6.8 auth-gated slice): confirmed the dot is genuinely absent when signed out
+  alongside the notification bell, zero console/page errors. The signed-in color-transition/
+  fade-timer behavior wasn't verified end-to-end against a real account, for the same reason as
+  the sharing slice's own signed-in flow -- the pure mapping function is this slice's real
+  verification of that logic.
+- ✅ **Two-tier automatic backup's tier 2 (auto-backup to file) landed.** Direct port of legacy's
+  real File System Access API auto-backup layer (legacy/index.html:31336-31474): a new
+  `store/fsBackupStore.ts` with the exact same real state machine as legacy's own
+  `initFsBackup`/`connectFsBackup`/`reconnectFsBackup`/`disconnectFsBackup`/`writeFsBackupNow`
+  (`'unsupported' | 'disconnected' | 'connected' | 'permission-needed' | 'handle-lost'`), a new
+  "Auto-backup to file" row in `BackupSettings.tsx` (Connect…/Disconnect…/Reconnect/Backup now,
+  under the same "Data & Backup" section tier 1 already lives in, matching legacy's own real rail
+  grouping). The live `FileSystemFileHandle` is kept as a module-level variable, not Zustand
+  state, same "opaque non-serializable object lives outside the store" convention
+  `docSyncStore.ts`'s own `rawNodesById`/`unsubscribe` already established -- persisted across
+  reloads by writing the handle itself into the SAME `sakura_backup_db`/`kv` IndexedDB store tier
+  1's safety copy already uses (`FileSystemFileHandle` objects are structured-cloneable, so
+  IndexedDB can store the live handle, not just a reference). `backupStore.ts`'s existing 1200ms
+  debounce subscription now drives BOTH tiers from the one shared timer, matching legacy's real
+  `scheduleBackupWrite` (which calls `mirrorToIndexedDb()` and `writeFsBackupNow()` together, not
+  from two independent timers) -- `snapshotLocalStorage` moved from `backupStore.ts` into the
+  shared, dependency-free `state/backupPayload.ts` so both stores build the identical payload
+  shape without a circular import between them. `init()`'s real 150ms-then-retry-once guard
+  against a startup race (both tiers' `init()` fire unawaited at nearly the same tick) is ported
+  verbatim, not invented. A new local ambient `.d.ts` (`types/fileSystemAccess.d.ts`)
+  declaration-merges the two real pieces missing from TypeScript's own bundled `lib.dom.d.ts`
+  (which already has `FileSystemFileHandle`/`FileSystemWritableFileStream` as of TS 5.9, just not
+  the still-non-standard `queryPermission`/`requestPermission` permission extension or
+  `window.showSaveFilePicker` itself) rather than pulling in a whole external types package for
+  the small surface actually used.
+  Deliberately NOT built in this slice: the status-bar chip surface (legacy's OTHER real
+  indicator for this feature, separate from its Settings-panel row -- the Settings row is the
+  primary control surface either way, and `web/`'s status bar already has one real precedent for
+  this kind of chip, the §6.9 auto-rewrite chip, so this isn't a new architectural gap); backup-
+  history rotation (legacy keeps up to 5 timestamped snapshots in IndexedDB alongside the live
+  file, `rotateFsBackupHistory`) and the "you haven't backed up in N days" reminder nag
+  (`checkBackupReminder`) -- both genuinely separate capabilities layered on the live single-file
+  write this slice builds, matching the same "core mechanism now, point-in-time recovery/
+  reminders later" call tier 1's own slice already made for `preRestoreSnapshot`/"Undo last
+  restore"; and Gist/Drive cloud auto-push -- legacy's OTHER backup channels entirely, unrelated
+  to the File System Access API.
+  Verified with a new test suite for `fsBackupStore.ts` (16 tests, mocking the `idbKv.ts` module
+  boundary matching `backupStore.test.ts`'s own established precedent, plus `vi.resetModules()` +
+  a fresh dynamic import per test -- the same pattern `themeStore.test.ts` already established --
+  since `supported` is computed once at module load from `window.showSaveFilePicker`'s presence):
+  every status transition (unsupported/disconnected/connected/permission-needed/handle-lost), the
+  150ms retry guard, connect/reconnect/disconnect's real IndexedDB and localStorage-flag
+  side effects, and `writeNow`'s no-op-when-disconnected + real payload-write + failure-recovery-
+  to-permission-needed behavior. Also verified in REAL headless Chrome, genuinely more thoroughly
+  than most other §6.8 slices could be (no Firebase/auth dependency at all here, unlike sharing/
+  email-auth/the sync-status dot): the Settings row renders with the correct "Not connected"
+  status, clicking "Connect…" calls the real `window.showSaveFilePicker` (confirmed present in
+  Playwright's own real Chromium build) which correctly rejects with a real `AbortError` in a
+  headless context (no OS file-picker surface exists there) -- confirmed the app handles that
+  exactly like legacy does (a silent no-op, not a crash or a stray error), confirmed nothing was
+  written to IndexedDB's `fsHandle` key on the aborted pick, zero console/page errors throughout.
+  The "successfully picked a file and it writes live" happy path itself couldn't be verified this
+  way (there's no real OS file-picker surface in a headless/automated browser to interact with,
+  the same fundamental constraint every browser automation tool has for this specific API) -- the
+  16 unit tests, which mock the handle itself, are this slice's real verification of that path's
+  actual write/error-recovery logic.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven

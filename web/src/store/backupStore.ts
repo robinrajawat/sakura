@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { useOutlineStore } from './outlineStore';
 import { idbGet, idbSet } from '../utils/idbKv';
-import { buildBackupPayloadCore, type BackupPayload } from '../state/backupPayload';
+import { buildBackupPayloadCore, snapshotLocalStorage, type BackupPayload } from '../state/backupPayload';
+import { useFsBackupStore } from './fsBackupStore';
 
 /**
  * §6.8 slice (docs/phase6-full-parity-plan.md): the "local safety copy" half of legacy's real
@@ -29,9 +30,14 @@ import { buildBackupPayloadCore, type BackupPayload } from '../state/backupPaylo
  * `preRestoreSnapshot`/"Undo last restore" -- legacy snapshots the pre-restore state specifically
  * so that feature can undo a restore; without that feature built yet, snapshotting into an unused
  * key would just be dead writes, so it's skipped until "Undo last restore" is itself a real
- * scoped slice. Also NOT in this slice: auto-backup-to-file (legacy's OTHER real backup tier,
- * File System Access API, Chrome/Edge only) and Gist/Drive cloud backup -- each its own
- * separately-scoped follow-up, not attempted here.
+ * scoped slice. Also NOT in this slice: Gist/Drive cloud backup -- a separately-scoped follow-up,
+ * not attempted here.
+ *
+ * §6.8 slice 2: this store's own debounce subscription now also drives tier 2 (auto-backup to
+ * file, `fsBackupStore.ts`) -- matching legacy's real `scheduleBackupWrite`, which calls
+ * `mirrorToIndexedDb()` and `writeFsBackupNow()` together from the SAME 1200ms timer, not two
+ * independent ones. `fsBackupStore`'s own `writeNow()` is a no-op unless a file is actually
+ * connected, so this costs nothing for the (default) case where tier 2 was never set up.
  */
 
 const SAFETY_COPY_KEY = 'localStorageMirror';
@@ -51,15 +57,6 @@ interface BackupState {
   restoreFromSafetyCopy: () => Promise<boolean>;
 }
 
-function snapshotLocalStorage(): Record<string, string> {
-  const data: Record<string, string> = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key !== null) data[key] = localStorage.getItem(key) ?? '';
-  }
-  return data;
-}
-
 let mirrorTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useBackupStore = create<BackupState>((set, get) => ({
@@ -75,6 +72,7 @@ export const useBackupStore = create<BackupState>((set, get) => ({
       if (mirrorTimer) clearTimeout(mirrorTimer);
       mirrorTimer = setTimeout(() => {
         void get().mirrorNow();
+        void useFsBackupStore.getState().writeNow();
       }, MIRROR_DEBOUNCE_MS);
     });
   },
