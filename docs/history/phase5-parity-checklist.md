@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ❌ | None built — no provider config, no Rewrite/outline-gen/restructure/etc. |
+| AI features | ⚠️ | §6.9 started: provider configuration UI (7 built-in providers, curated + custom model select, API key entry/save/test, Secure-Storage-vault-aware key read/write) landed — see AI Features section below. Still none of Rewrite/auto-rewrite/Generate outline/Restructure text/Expand node/Suggest tags/Suggest icon/Summarise selection/provider fallback/usage tracking, and the Secure Storage vault itself has no setup/unlock UI yet (its crypto primitives are wired, just not exposed) |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -112,9 +112,21 @@ breakdown.
 
 ## AI Features
 
-❌ Entirely not built — no provider configuration UI, no API key storage, none of Rewrite/
-auto-rewrite/Generate outline/Restructure text/Expand node/Suggest tags/Suggest icon/Summarise
-selection/provider fallback/usage tracking.
+⚠️ §6.9 (docs/phase6-full-parity-plan.md) started, first slice landed (this PR, following #227):
+provider configuration UI — direct port of legacy's real seven-provider catalog
+(`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, now `state/aiProviderCatalog.ts`), the core
+`callAiByShape` network primitive covering all four real request/response shapes (`gemini`/
+`openai`/`anthropic`/`cerebras`, now `state/aiCall.ts`), and provider/model selection + API key
+entry/save/test wired into a new "AI" section of Settings (`AiProviderSettings.tsx` +
+`store/aiSettingsStore.ts`). Key storage is vault-aware from the start (branches on
+`vaultActive()`/`vaultUnlocked()` exactly like legacy's real `getAiKeyForProvider`/`saveAiKey`,
+now extended into `state/aiProviders.ts`), reusing the AES-GCM/PBKDF2 crypto primitives already
+sitting unwired in `state/vault.ts` since an earlier phase — but the vault's own setup/unlock UI
+(passphrase dialogs, a status chip, migrating existing plaintext keys) is a real, separately-scoped
+follow-up, not built yet, so every key today takes the plain-localStorage path. Still not built:
+Rewrite (incl. auto-rewrite on commit), Generate Outline, Restructure Text, Expand node, Suggest
+tags, Suggest icon, Summarise selection, provider fallback chain UI, usage tracking. See
+phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert
 

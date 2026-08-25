@@ -4,6 +4,12 @@ import {
   initAiProvidersState,
   loadAiPrefsCore,
   saveAiPrefsCore,
+  getAiKeyForProviderCore,
+  saveAiKeyForProviderCore,
+  hasStoredKeyForProviderCore,
+  loadAiKeyForProvider,
+  saveAiKeyForProviderStorage,
+  hasStoredKeyForProvider,
   type AiPrefsState,
   type AiProvidersDeps
 } from './aiProviders';
@@ -202,5 +208,82 @@ describe('stateful aiProviders prefs (initAiProvidersState + load/save core)', (
   it('saveAiPrefsCore silently no-ops on corrupt existing JSON rather than throwing', () => {
     storageData['sakura_ai_prefs_v1'] = '{not valid json';
     expect(() => saveAiPrefsCore('gemini', 'm', {}, 'p')).not.toThrow();
+  });
+
+  it('loadAiKeyForProvider returns the stored key_<providerId> field', () => {
+    storageData['sakura_ai_prefs_v1'] = JSON.stringify({ provider: 'gemini', key_gemini: 'sk-abc' });
+    expect(loadAiKeyForProvider('gemini')).toBe('sk-abc');
+  });
+
+  it('loadAiKeyForProvider returns "" when no key is stored for that provider', () => {
+    storageData['sakura_ai_prefs_v1'] = JSON.stringify({ provider: 'gemini' });
+    expect(loadAiKeyForProvider('claude')).toBe('');
+  });
+
+  it('saveAiKeyForProviderStorage writes key_<providerId> without disturbing prefs or other providers keys', () => {
+    storageData['sakura_ai_prefs_v1'] = JSON.stringify({ provider: 'gemini', model: 'gemini-3.5-flash', key_groq: 'sk-groq' });
+    saveAiKeyForProviderStorage('gemini', 'sk-gemini');
+    const stored = JSON.parse(storageData['sakura_ai_prefs_v1']);
+    expect(stored.key_gemini).toBe('sk-gemini');
+    expect(stored.key_groq).toBe('sk-groq');
+    expect(stored.provider).toBe('gemini');
+    expect(stored.model).toBe('gemini-3.5-flash');
+  });
+
+  it('saveAiKeyForProviderStorage silently no-ops on a storage write failure', () => {
+    const throwingStorage: LocalStorageLike = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      }
+    };
+    initAiProvidersState(makeDeps({ getLocalStorage: () => throwingStorage as unknown as Storage }));
+    expect(() => saveAiKeyForProviderStorage('gemini', 'sk')).not.toThrow();
+  });
+
+  it('hasStoredKeyForProvider is true once a key (plaintext or ciphertext) is stored, false otherwise', () => {
+    expect(hasStoredKeyForProvider('gemini')).toBe(false);
+    saveAiKeyForProviderStorage('gemini', 'sk-or-ciphertext');
+    expect(hasStoredKeyForProvider('gemini')).toBe(true);
+    expect(hasStoredKeyForProvider('claude')).toBe(false);
+  });
+});
+
+describe('getAiKeyForProviderCore / saveAiKeyForProviderCore (pure)', () => {
+  it('getAiKeyForProviderCore returns "" for null raw', () => {
+    expect(getAiKeyForProviderCore(null, 'gemini')).toBe('');
+  });
+
+  it('getAiKeyForProviderCore returns "" for corrupt JSON, never throws', () => {
+    expect(() => getAiKeyForProviderCore('{not valid', 'gemini')).not.toThrow();
+    expect(getAiKeyForProviderCore('{not valid', 'gemini')).toBe('');
+  });
+
+  it('getAiKeyForProviderCore returns "" when the field is present but not a string', () => {
+    expect(getAiKeyForProviderCore(JSON.stringify({ key_gemini: 42 }), 'gemini')).toBe('');
+  });
+
+  it('getAiKeyForProviderCore reads the right provider-scoped field', () => {
+    const raw = JSON.stringify({ key_gemini: 'a', key_claude: 'b' });
+    expect(getAiKeyForProviderCore(raw, 'gemini')).toBe('a');
+    expect(getAiKeyForProviderCore(raw, 'claude')).toBe('b');
+    expect(getAiKeyForProviderCore(raw, 'openai')).toBe('');
+  });
+
+  it('saveAiKeyForProviderCore preserves every other field via read-modify-write', () => {
+    const raw = JSON.stringify({ provider: 'gemini', key_groq: 'kept' });
+    const result = saveAiKeyForProviderCore(raw, 'gemini', 'new-key');
+    expect(result).toEqual({ provider: 'gemini', key_groq: 'kept', key_gemini: 'new-key' });
+  });
+
+  it('saveAiKeyForProviderCore treats null/corrupt raw as an empty starting object', () => {
+    expect(saveAiKeyForProviderCore(null, 'gemini', 'k')).toEqual({ key_gemini: 'k' });
+    expect(saveAiKeyForProviderCore('{not valid', 'gemini', 'k')).toEqual({ key_gemini: 'k' });
+  });
+
+  it('hasStoredKeyForProviderCore is false for an absent key and true once one is present', () => {
+    expect(hasStoredKeyForProviderCore(null, 'gemini')).toBe(false);
+    expect(hasStoredKeyForProviderCore(JSON.stringify({ key_gemini: '' }), 'gemini')).toBe(false);
+    expect(hasStoredKeyForProviderCore(JSON.stringify({ key_gemini: 'ciphertext-or-plaintext' }), 'gemini')).toBe(true);
   });
 });

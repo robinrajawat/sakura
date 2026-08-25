@@ -9,6 +9,8 @@ import {
   vaultDecrypt,
   initVaultState,
   setVaultCryptoKeyForTest,
+  getVaultDecryptedKey,
+  setVaultDecryptedKey,
   type VaultDeps,
   type LocalStorageLike
 } from './vault';
@@ -76,6 +78,24 @@ describe('stateful vault (initVaultState + vaultActive/vaultUnlocked)', () => {
     expect(vaultUnlocked()).toBe(true);
     initVaultState(makeDeps());
     expect(vaultUnlocked()).toBe(false);
+  });
+
+  it('getVaultDecryptedKey returns "" for a provider never populated this session', () => {
+    expect(getVaultDecryptedKey('gemini')).toBe('');
+  });
+
+  it('setVaultDecryptedKey/getVaultDecryptedKey round-trip per provider, independently', () => {
+    setVaultDecryptedKey('gemini', 'sk-gemini');
+    setVaultDecryptedKey('claude', 'sk-claude');
+    expect(getVaultDecryptedKey('gemini')).toBe('sk-gemini');
+    expect(getVaultDecryptedKey('claude')).toBe('sk-claude');
+    expect(getVaultDecryptedKey('openai')).toBe('');
+  });
+
+  it('initVaultState clears the decrypted-key cache along with the session key', () => {
+    setVaultDecryptedKey('gemini', 'sk-gemini');
+    initVaultState(makeDeps());
+    expect(getVaultDecryptedKey('gemini')).toBe('');
   });
 });
 

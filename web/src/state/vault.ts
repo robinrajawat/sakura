@@ -28,6 +28,14 @@
  * vaultActive/vaultUnlocked/vaultEncrypt/vaultDecrypt/deriveVaultKey: every hand-written
  * function left behind (and every one of those external call sites) calls them as bare
  * identifiers exactly as before extraction.
+ *
+ * §6.9 addition (docs/phase6-full-parity-plan.md): `web/`'s AI-key wiring lives in a real
+ * separate module (`store/aiSettingsStore.ts`), not spliced into this same script scope the way
+ * legacy's hand-written `getAiKeyForProvider`/`saveAiKey` are — so unlike those, it genuinely
+ * cannot read/write `decryptedKeyCache` as a bare identifier. `getVaultDecryptedKey`/
+ * `setVaultDecryptedKey` below are the narrow, provider-key-scoped accessors that close that gap
+ * (matching legacy's own `decryptedKeyCache['key_'+pid]` indexing exactly) without exporting the
+ * whole cache object.
  */
 
 export interface LocalStorageLike {
@@ -51,7 +59,6 @@ let vaultCryptoKey: CryptoKey | null = null; // in-memory CryptoKey; null = lock
 // loadCloudBackupPrefs, the Gist-token-save click handler — see the file header) reads/writes
 // these directly as bare identifiers. That's real, load-bearing usage at runtime; ESLint just
 // can't see across the splice boundary.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let decryptedKeyCache: Record<string, string> = {}; // {'key_groq': 'plaintext', ...} populated on unlock
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- same as decryptedKeyCache above.
 let decryptedGistTokenCache = '';
@@ -90,6 +97,21 @@ export function vaultActive(): boolean {
 
 export function vaultUnlocked(): boolean {
   return !!vaultCryptoKey;
+}
+
+/** Reads a provider's decrypted key out of the in-memory session cache — `''` if the vault has
+ * never been unlocked this session, or was never populated for that provider. Matches legacy's
+ * own `decryptedKeyCache['key_'+pid]||''` indexing exactly. */
+export function getVaultDecryptedKey(providerId: string): string {
+  return decryptedKeyCache['key_' + providerId] || '';
+}
+
+/** Populates the in-memory session cache for one provider — called after a successful vault
+ * unlock (bulk-decrypting every stored `key_*` field) or right after saving a new key while the
+ * vault is unlocked, so the freshly-saved plaintext is immediately readable without a re-decrypt
+ * round trip. */
+export function setVaultDecryptedKey(providerId: string, value: string): void {
+  decryptedKeyCache['key_' + providerId] = value;
 }
 
 export function b64FromBytes(bytes: Uint8Array): string {

@@ -1157,4 +1157,61 @@ issue (`web/`'s outline store booted every visitor into Phase 0 dev/spike
 placeholder text instead of a real document; fixed in #122, but `deploy.yml`
 was deliberately left pointed at `legacy/` rather than re-attempting cutover,
 since the fix alone doesn't clear Phase 6's actual gate).
+
+**§6.9 (AI Features) started this session, in a separate branch/session running
+concurrently with the §6.7 live-editor tree-rendering work above** (different
+Claude session, same repo — this section and the §6.7 narrative above may
+interleave PR numbers as both merge). A full research pass read legacy's real
+AI implementation end to end (legacy/index.html:8580-8994, 28181-29706 and
+scattered call sites) before writing anything — full findings folded into
+`docs/phase6-full-parity-plan.md`'s §6.9 section and the new source files'
+own header comments, not duplicated here. Two corrections that research made
+to this project's own prior assumptions: custom/self-hosted AI providers are
+a real REMOVED legacy feature (dead storage key, zero reachable UI) -- don't
+build a "manage providers" UI, ever; and `web/src/state/aiProviders.ts`/
+`vault.ts` were not partial ports needing rework -- they're the literal,
+already-tested source modules legacy's own generator splices into
+index.html verbatim, just never wired into a React store/component before
+this slice.
+
+First slice landed: provider configuration UI. New `state/aiProviderCatalog.ts`
+(the real seven-provider catalog + curated models, `AI_BUILTIN_PROVIDERS`/
+`AI_CURATED_MODELS`, a closed list matching legacy exactly) and
+`state/aiCall.ts` (`callAiByShape`, the one real network-call primitive
+covering all four request/response shapes -- gemini/openai/anthropic/
+cerebras -- every later AI capability will build on). `state/aiProviders.ts`
+gained vault-aware key storage functions
+(`getAiKeyForProviderCore`/`saveAiKeyForProviderCore` and their
+storage-backed wrappers) matching legacy's real `getAiKeyForProvider`/
+`saveAiKey` exactly -- confirmed via direct code reading that provider API
+keys live in the SAME `sakura_ai_prefs_v1` blob as provider/model/prompt,
+as `key_<providerId>` fields, not a separate storage key as might be
+assumed. `state/vault.ts` gained two narrow accessors
+(`getVaultDecryptedKey`/`setVaultDecryptedKey`) so the new store can reach
+its session-only decrypted-key cache without exporting the whole object. New
+`store/aiSettingsStore.ts` wires all of this together (provider/model
+select, vault-aware `getKeyForProvider`/`saveKeyForProvider`, and
+`testKeyForProvider` which calls `callAiByShape` directly, matching legacy's
+real `testAiKey`'s own deliberate bypass of the fallback wrapper and usage
+counter -- "a connectivity/credentials check, not real feature usage"). New
+`components/AiProviderSettings.tsx` renders as an additive new "AI" section
+inside the existing `SettingsPanel.tsx` (append-only edit, to minimize
+conflict risk with the concurrent §6.7 session also touching that area of
+the app). Deliberately NOT built in this slice, each its own planned
+follow-up (`phase6-full-parity-plan.md`'s §6.9 section lists the full
+9-slice sequence): the Secure Storage vault's own setup/unlock UI (the
+crypto primitives are wired and tested, just not exposed -- every key today
+takes the plain-localStorage path since `vaultActive()` can never become
+true yet), Rewrite/auto-rewrite, Generate Outline/Restructure Text, Expand
+node/Suggest tags, Suggest icon, Summarise selection, the provider-fallback-
+chain UI, and usage tracking. Verified end-to-end in real headless Chrome:
+provider switch (7 options), curated model list per provider, switching into
+and typing a custom model id, saving a key (input clears after save,
+matching legacy), key-status text before/after save, the show/hide key
+toggle, full persistence of provider/model/key across a page reload, and the
+Test button failing gracefully (no crash, no unhandled rejection) against an
+unreachable endpoint in this sandboxed environment -- zero page errors
+(the one console entry, a TLS cert error from the sandbox's own proxy
+intercepting the outbound test call, is expected here per this
+environment's own network setup, not an app bug).
 ```
