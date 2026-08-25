@@ -112,7 +112,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           <span>
             Hide tree lines
             <div style={{ fontSize: 11, color: t.mutedText }}>
-              Clean indented view in .txt/clipboard exports, no │├└─ connectors. Indentation stays the same either way.
+              Clean indented view everywhere -- the live editor and .txt/clipboard exports alike --
+              instead of │├└─ connector characters. Off shows real tree-line connectors in the live
+              editor too (using the indent width below); depth guide lines only apply while this is on.
             </div>
           </span>
         </label>
