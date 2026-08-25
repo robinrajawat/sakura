@@ -147,7 +147,7 @@ selection/provider fallback/usage tracking.
 | Chrome background presets | N/A | Investigated (§6.7): legacy has the real `CHROME_PRESETS`/`applyChromeColors`/`setChromePreset` data and logic, but its own trigger markup (`#chrome-swatch-row`) doesn't exist anywhere in legacy/index.html -- no real legacy user can ever reach this feature. Porting a picker for it would invent UI legacy itself doesn't expose, not port parity |
 | Node text color presets | ✅ | All 4 real presets, a swatch-row picker UI, and persistence across sessions, independent of the accent-color axis (§6.7) |
 | Editor's Choice preset | ❌ | Not built |
-| Layout controls (tree lines, depth guides, row style, compact rows, text size, indent width, collapse depth) | ❌ | Not built |
+| Layout controls (tree lines, depth guides, row style, compact rows, text size, indent width, collapse depth) | ⚠️ | Partial (§6.7/§6.10): the three that already had a real consumer -- indent width, hide tree lines, outline numbering -- are now real, persisted, adjustable prefs in the new minimal Settings panel, applied to `.txt`/clipboard exports. The rest (depth guides, row style, compact rows, text size, collapse depth) are still not built -- they configure the LIVE editor's own rendering, and `OutlineTree.tsx` has no tree-line/connector/row-density/text-size/depth-guide mechanism at all yet to hang a toggle on |
 | Inline note/remark previews | ❌ | Not built |
 | Inline Q&A previews | ❌ | Not built |
 
@@ -185,9 +185,12 @@ selection/provider fallback/usage tracking.
 
 ## Settings Reference
 
-❌ web/ has no Settings panel at all. Every setting in the README's reference table is
-either not applicable yet (the feature it configures doesn't exist) or hardcoded to a
-single behavior with no toggle.
+⚠️ `web/` now has a first, minimal Settings panel (§6.7/§6.10: a "⚙ Settings" header button
+opening a dropdown), holding only three export-formatting prefs (tree indent width, hide tree
+lines, outline numbering) -- the only settings with a real existing consumer so far. Legacy's
+own real panel has a multi-category rail with dozens more; every other setting in the README's
+reference table is still either not applicable yet (the feature it configures doesn't exist) or
+hardcoded to a single behavior with no toggle.
 
 ## Keyboard Shortcuts
 

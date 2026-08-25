@@ -183,18 +183,22 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `09f0e65` ("feat(theming):
-node-text-color presets (§6.7) (#215)"), with this PR being a
-docs-only correction (no code change) recording a §6.7 investigation:
-Chrome background presets were found to be dead/unreachable code in
-legacy itself (see below) and are NOT being built; the rest of
-§6.7's remaining items (layout controls, Editor's Choice/Documentation
-Mode presets, inline note/remark/Q&A previews) were confirmed to be
-real, reachable legacy features but all gated behind legacy's own
-Settings panel, which `web/` has no equivalent of yet -- this is
-flagged to the user as a natural check-in point rather than either
-building a Settings panel unasked or continuing to stuff one-off
-toolbar buttons into the header.
+As of this writing: `main` is at commit `e32ddee` ("docs: record §6.7
+investigation (Chrome presets unreachable, rest needs Settings panel)
+(#216)"). After that PR's check-in, the user delegated both of its
+open questions explicitly ("We have to cover everything anyway so you
+decide."): build a *minimal* Settings panel now (scoped only to prefs
+with a real existing consumer), and build Whiteboard mirroring/
+Audience View later via a routing-free query-param approximation
+rather than reversing the Phase 0 no-routing decision or accepting
+these as permanent gaps. Two PRs followed: PR #217 (`fix/outline-
+nextid-collision`, a real correctness bug affecting every fresh
+session -- see the new §6.7 bullets below for the full story) and this
+PR (the first minimal Settings-panel slice). Whiteboard mirroring/
+Audience View itself is NOT yet started -- no investigation done yet
+into legacy's exact real Audience View mechanism (query param name,
+`window.open()` pattern, cross-window state sync) -- pick that up next
+once these two land.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -892,6 +896,61 @@ all six items landed:
   cross-cutting piece, §6.10) rather than force each item in
   awkwardly -- flagged to the user rather than building a Settings
   panel unasked or continuing to stuff the header.
+- After that check-in, the user delegated both open decisions
+  explicitly ("We have to cover everything anyway so you decide."):
+  (1) build a *minimal* Settings panel now, scoped only to prefs with
+  a real existing consumer, not the full multi-category rail; (2)
+  build Whiteboard mirroring/Audience View later via a routing-free
+  approximation (a single query-param check at the app root, not a
+  general router or a reversal of the Phase 0 no-client-side-routing
+  decision) rather than accepting them as permanent gaps -- not yet
+  started as of this writing, no investigation done yet into legacy's
+  exact real Audience View mechanism (query param name, second-window
+  `window.open()` pattern, cross-window state sync).
+- First Settings-panel slice landed: `web/`'s first real Settings
+  surface, a "⚙ Settings" header button opening a dropdown
+  (`SettingsPanel.tsx`, anchored the same way legacy's own
+  `.settings-wrap` is). Deliberately minimal -- a single flat section
+  holding only the three prefs that already had a real consumer before
+  this slice (`treeIndentWidth`/`hideTreeLines`/`outlineNumbering`,
+  previously hardcoded directly inside `ExportButtons.tsx`), now real
+  persisted state in a new `outlinePrefsStore.ts`
+  (`sakura_web_outline_prefs_v1`, matching legacy's real
+  `setTreeIndentWidth` clamp exactly). Does NOT consolidate the
+  already-shipped accent/node-font-color/theme-mode header controls
+  into this panel yet, and does NOT attempt the rest of §6.7's layout
+  controls (tree lines, depth guides, row style, compact rows, text
+  size, collapse depth) -- confirmed via grep that `OutlineTree.tsx`
+  has zero tree-line/connector/row-density/text-size/depth-guide
+  rendering mechanism at all yet to hang a toggle on; those need real
+  new rendering infrastructure first, out of scope here. Verified
+  end-to-end in real headless Chrome: panel opens/closes, all three
+  controls take live effect on `.txt`/clipboard exports and persist
+  across a full reload, zero console/page errors.
+- **A real, more severe bug was found and fixed while building that
+  slice's own verification document (shipped as its own separate PR,
+  not bundled into the Settings-panel feature PR):** adding a single
+  child node under the seed document's root, on a completely fresh
+  session, corrupted the outline -- the new node collided with an
+  existing node's id, one sharing a React key with the other, and the
+  existing sibling's text silently vanished from both the live editor
+  and every export. Root cause: `documentsStore.ts` loaded a
+  document's `nodes` into `outlineStore` in half a dozen places (first-
+  launch welcome-doc creation, tab open/switch, reload) but never once
+  advanced `outlineStore`'s own `nextId` counter to account for the ids
+  already in use -- it stayed at its unrelated module-level default
+  (2) while the welcome doc's own seed nodes already used ids 1/2/3,
+  so the very first "Add child" of a fresh session minted a colliding
+  id. This is very likely the same root cause as the "two nodes
+  sharing an id under rapid programmatic node creation" finding
+  flagged as a known open item back in the Preview-TOC slice (#194,
+  see above) -- that finding was left unfixed as out-of-scope at the
+  time; this session traced it to ground and fixed it at every load
+  site (`applyTabView`'s two branches, `init()`'s existing-session
+  load, `init()`'s welcome-doc creation, the two no-tabs-remain
+  resets), via a new `nextIdForNodes()` helper. Two regression tests
+  added to `documentsStore.test.ts`, confirmed to fail on the pre-fix
+  code and pass after.
 
 §6.8 onward not started.
 
@@ -912,7 +971,12 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-No feature branches are currently open for review (the merged
+As of this writing, two PRs are open and awaiting CI/merge: #217
+(`fix/outline-nextid-collision`, the node-id-collision bug fix) and
+this session's Settings-panel PR (`settings/outline-format-prefs`) --
+they touch disjoint files, so order of merging either first is fine.
+Once both are merged and their branches deleted, no feature branches
+should remain open for review (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past
@@ -920,8 +984,7 @@ sessions this repo's branch protection has always blocked it anyway --
 same repo-wide outcome as every prior feature branch back through PR #1,
 none of which auto-deletes on merge; this is this repo's actual standing
 state, not a new problem, and matches the "verify both actually happened"
-caveat this file's own workflow rules already call out). No PR is
-mid-review.
+caveat this file's own workflow rules already call out).
 Production (`www.sakura-notes.com`) is on `legacy/`, confirmed working — a Phase 5
 cutover attempt was made and reverted the same day after a real production
 issue (`web/`'s outline store booted every visitor into Phase 0 dev/spike

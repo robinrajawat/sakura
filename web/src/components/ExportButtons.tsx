@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useOutlineStore, defaultNodeStyles, type OutlineNode } from '../store/outlineStore';
 import { useDocumentsStore } from '../store/documentsStore';
 import { usePadStore } from '../store/padStore';
+import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
@@ -21,18 +22,14 @@ import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
 
 /**
- * Plain-text/clipboard export options shared by `exportPlainText`/`exportClipboard` below.
- * Matches legacy's own real defaults for a brand-new user with no saved prefs yet
- * (index.html's top-level `let treeIndentWidth=3` / `let hideTreeLines=true`) -- web/ has no
- * settings panel for either yet, same "no silent default for a live user-preference toggle
- * that doesn't exist here yet" deferral `exportMarkdown`/`exportOpml` already use for
- * `outlineNumbering` above. `rebaseDepth` is always false: legacy only rebases when exporting a
- * subset (Focus mode / a partial selection), and web/ has no such subset concept for these two
- * exports yet -- always the whole tree, depths as stored.
+ * §6.7/§6.10 fidelity upgrade: `treeIndentWidth`/`hideTreeLines`/`outlineNumbering` (used by
+ * `exportPlainText`/`exportClipboard`/`exportMarkdown` below) now read from the real
+ * `outlinePrefsStore` (a new Settings panel's first real backing state) instead of the fixed
+ * placeholder constants this file used to hardcode here -- see that store's own header for the
+ * full story. `rebaseDepth` is still always false: legacy only rebases when exporting a subset
+ * (Focus mode / a partial selection), and web/ has no such subset concept for these two exports
+ * yet -- always the whole tree, depths as stored.
  */
-const TREE_INDENT_WIDTH = 3;
-const HIDE_TREE_LINES = true;
-const OUTLINE_NUMBERING = false;
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): exports. Markdown, OPML, and this slice's
@@ -128,6 +125,9 @@ export function ExportButtons() {
   const newDocument = useDocumentsStore((s) => s.newDocument);
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
+  const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
+  const hideTreeLines = useOutlinePrefsStore((s) => s.hideTreeLines);
+  const outlineNumbering = useOutlinePrefsStore((s) => s.outlineNumbering);
   const opmlFileInputRef = useRef<HTMLInputElement>(null);
   const sakuraDocFileInputRef = useRef<HTMLInputElement>(null);
   const docxFileInputRef = useRef<HTMLInputElement>(null);
@@ -265,10 +265,9 @@ export function ExportButtons() {
   }
 
   function exportMarkdown() {
-    // rebaseDepth=false, outlineNumbering=false -- matches legacy's exportMarkdown call's own
-    // defaults (outlineNumbering off unless the user has that preference on; web/ has no such
-    // preference yet, deferred alongside the other export formats' own settings).
-    download('outline.md', 'text/markdown;charset=utf-8', serializeMarkdown(nodes, false, false));
+    // rebaseDepth=false always (see this file's own header); outlineNumbering now reads the
+    // real Settings panel preference, matching legacy's own exportMarkdown call exactly.
+    download('outline.md', 'text/markdown;charset=utf-8', serializeMarkdown(nodes, false, outlineNumbering));
   }
 
   function exportOpml() {
@@ -282,11 +281,7 @@ export function ExportButtons() {
   // any UI). No scope deferrals here: unlike Word/PDF/PowerPoint, the ASCII-tree format has no
   // richer fidelity to defer -- this is a full-parity export.
   function exportPlainText() {
-    download(
-      'outline.txt',
-      'text/plain;charset=utf-8',
-      serializeTreeTextCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES)
-    );
+    download('outline.txt', 'text/plain;charset=utf-8', serializeTreeTextCore(nodes, false, outlineNumbering, treeIndentWidth, hideTreeLines));
   }
 
   // "Copy as Text" -- direct port of legacy's real `exportToClipboard(forceFull=true)`: writes
@@ -299,8 +294,8 @@ export function ExportButtons() {
   // export), so always copies the whole tree, and no Sakura-specific decision-log/diagram
   // clip-payload comment embedded in the HTML (Decision Log/Diagrams aren't ported to web/ yet).
   async function exportClipboard() {
-    const plain = serializeTreeTextCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES);
-    const html = serializeClipboardHtmlCore(nodes, false, OUTLINE_NUMBERING, TREE_INDENT_WIDTH, HIDE_TREE_LINES);
+    const plain = serializeTreeTextCore(nodes, false, outlineNumbering, treeIndentWidth, hideTreeLines);
+    const html = serializeClipboardHtmlCore(nodes, false, outlineNumbering, treeIndentWidth, hideTreeLines);
     try {
       if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
         const item = new ClipboardItem({
