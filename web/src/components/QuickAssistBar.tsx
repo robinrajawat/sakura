@@ -13,11 +13,12 @@ import { buildQaActionsWithRestructureDialog, buildQaEntries, navigableQaEntries
  * builds -- see that file's own header for exactly which of legacy's real ids this covers and why.
  *
  * Deliberately smaller than legacy's real box: no category-prefix scoping, no chip-mode category
- * picker, no fuzzy matching, no search-hit rows (Documents/Notes/Tags/Settings/Help) -- that's
- * legacy's real Global Search half of Quick Assist, scoped separately as §6.10 slice 4. No
- * render-debounce either: legacy's own `QA_RENDER_DEBOUNCE_MS` exists because `collectSearchGroups`
- * rescans every open document's full content on every keystroke; this slice's matching is a
- * synchronous filter over ~20 fixed entries, cheap enough to run on every keystroke directly.
+ * picker, no fuzzy matching -- see `state/quickAssistSearch.ts`'s own header for the search-hit
+ * rows this slice does add (§6.10 slice 4) and which of legacy's real 18 search categories they
+ * cover. No render-debounce either: legacy's own `QA_RENDER_DEBOUNCE_MS` exists because its real
+ * `collectSearchGroups` has no per-category or per-document result cap until AFTER the full scan;
+ * this port's own collectors early-exit as soon as each category's own small cap (4-6 items) is
+ * hit, so even the search-hit path stays cheap enough to run synchronously on every keystroke.
  *
  * Also new here: a small Undo-toast, since legacy's real `showActionToast` (an "Undo" chip after
  * every command/action) has no existing equivalent anywhere in `web/` yet (this project's
@@ -35,6 +36,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   const closeBox = useQuickAssistStore((s) => s.closeBox);
   const toggleBox = useQuickAssistStore((s) => s.toggleBox);
   const quickAssistEnabled = useOutlinePrefsStore((s) => s.quickAssistEnabled);
+  const quickAssistSearchEnabled = useOutlinePrefsStore((s) => s.quickAssistSearchEnabled);
   const hasSelection = useOutlineStore((s) => s.selectedId !== null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
@@ -59,7 +61,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   }, []);
 
   const actions = buildQaActionsWithRestructureDialog(openRestructureDialog);
-  const entries: QaEntry[] = buildQaEntries(query, hasSelection, actions);
+  const entries: QaEntry[] = buildQaEntries(query, hasSelection, actions, quickAssistSearchEnabled);
   const navEntries = navigableQaEntries(entries);
 
   function showToast(message: string, undo?: () => void): void {
@@ -72,7 +74,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
     if (entry.kind === 'command') {
       const result = qaExecuteCommand(entry.cmd, entry.verb);
       showToast(result.message, result.undo);
-    } else {
+    } else if (entry.kind === 'action') {
       const action = entry.action;
       void action.run().then((result) => {
         if (result.handledElsewhere) return;
@@ -87,6 +89,11 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
           showToast(result.message || `${action.label} cancelled`);
         }
       });
+    } else {
+      // Search-hit rows navigate instead of executing -- matches legacy's own real
+      // qaActivateSelection: `else entry.item.action();` with no toast, since navigating is its
+      // own visible feedback.
+      entry.hit.action();
     }
     closeBox();
   }
@@ -196,9 +203,9 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
               </div>
             )}
             {!!query.trim() && entries.length === 0 && (
-              <div style={{ fontSize: 12, color: t.mutedText, padding: '8px 4px' }}>No matching command for &quot;{query.trim()}&quot;</div>
+              <div style={{ fontSize: 12, color: t.mutedText, padding: '8px 4px' }}>No matching command or content for &quot;{query.trim()}&quot;</div>
             )}
-            {entries.map((entry) => {
+            {entries.map((entry, i) => {
               if (entry.kind === 'command') {
                 const navIndex = navEntries.indexOf(entry);
                 const verbLabel = qaVerbLabel(entry.verb, entry.cmd);
@@ -216,22 +223,44 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
                   </button>
                 );
               }
-              const navIndex = entry.disabled ? -1 : navEntries.indexOf(entry);
+              if (entry.kind === 'action') {
+                const navIndex = entry.disabled ? -1 : navEntries.indexOf(entry);
+                return (
+                  <button
+                    key={`action-${entry.action.id}`}
+                    type="button"
+                    disabled={entry.disabled}
+                    onClick={() => activate(entry)}
+                    onMouseEnter={() => {
+                      if (!entry.disabled) setActiveIndex(navIndex);
+                    }}
+                    style={qaRowStyle(t, navIndex >= 0 && navIndex === activeIndex, entry.disabled)}
+                  >
+                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Run</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.action.label}</span>
+                    {entry.disabled && <span style={{ fontSize: 10, color: t.mutedText }}>select a node first</span>}
+                  </button>
+                );
+              }
+              // Search-hit row -- shows a group header ("Documents", "Notes", ...) whenever the
+              // group changes from the previous entry, matching legacy's own real `gs-group-title`
+              // insertion in qaRender.
+              const prev = entries[i - 1];
+              const showGroupHeader = !prev || prev.kind !== 'search' || prev.group !== entry.group;
+              const navIndex = navEntries.indexOf(entry);
               return (
-                <button
-                  key={`action-${entry.action.id}`}
-                  type="button"
-                  disabled={entry.disabled}
-                  onClick={() => activate(entry)}
-                  onMouseEnter={() => {
-                    if (!entry.disabled) setActiveIndex(navIndex);
-                  }}
-                  style={qaRowStyle(t, navIndex >= 0 && navIndex === activeIndex, entry.disabled)}
-                >
-                  <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Run</span>
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.action.label}</span>
-                  {entry.disabled && <span style={{ fontSize: 10, color: t.mutedText }}>select a node first</span>}
-                </button>
+                <div key={`search-${entry.group}-${i}`}>
+                  {showGroupHeader && (
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: t.mutedText, padding: '8px 8px 2px' }}>
+                      {entry.group}
+                    </div>
+                  )}
+                  <button type="button" onClick={() => activate(entry)} onMouseEnter={() => setActiveIndex(navIndex)} style={qaRowStyle(t, navIndex === activeIndex)}>
+                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Go to</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.hit.label}</span>
+                    {entry.hit.meta && <span style={{ fontSize: 10, color: t.mutedText }}>{entry.hit.meta}</span>}
+                  </button>
+                </div>
               );
             })}
           </div>

@@ -16,6 +16,7 @@ const DEFAULTS: {
   quickInsertIconOnly: boolean;
   quickInsertActions: QuickInsertActionId[];
   quickAssistEnabled: boolean;
+  quickAssistSearchEnabled: boolean;
 } = {
   treeIndentWidth: 3,
   hideTreeLines: true,
@@ -30,7 +31,8 @@ const DEFAULTS: {
   quickInsertEnabled: true,
   quickInsertIconOnly: true,
   quickInsertActions: ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time'],
-  quickAssistEnabled: true
+  quickAssistEnabled: true,
+  quickAssistSearchEnabled: true
 };
 
 describe('outlinePrefsStore', () => {
@@ -155,7 +157,8 @@ describe('outlinePrefsStore', () => {
       quickInsertEnabled: true,
       quickInsertIconOnly: true,
       quickInsertActions: DEFAULTS.quickInsertActions,
-      quickAssistEnabled: true
+      quickAssistEnabled: true,
+      quickAssistSearchEnabled: true
     });
   });
 
@@ -270,6 +273,14 @@ describe('outlinePrefsStore', () => {
       vi.resetModules();
       const fresh = await import('./outlinePrefsStore');
       expect(fresh.useOutlinePrefsStore.getState().quickAssistEnabled).toBe(true);
+    });
+
+    it('setQuickAssistSearchEnabled toggles and persists independently of setQuickAssistEnabled', () => {
+      useOutlinePrefsStore.getState().setQuickAssistSearchEnabled(false);
+      expect(useOutlinePrefsStore.getState().quickAssistSearchEnabled).toBe(false);
+      expect(useOutlinePrefsStore.getState().quickAssistEnabled).toBe(true);
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_outline_prefs_v1')!);
+      expect(persisted.quickAssistSearchEnabled).toBe(false);
     });
   });
 });
