@@ -861,10 +861,31 @@ Status: **in progress.**
   `applyCssVariables` fix works), a non-default accent and a non-default node-font-color preset
   coexist independently, and both choices survive a full page reload exactly -- zero
   console/page errors.
-- Still not started: Chrome background presets,
-  Editor's Choice / Documentation Mode presets, full layout controls, inline
-  note/remark/Q&A previews -- each a real, separately-scoped follow-up. Most of these want a real
-  Settings panel to live in, which doesn't exist yet (see §6.10).
+- **Chrome background presets investigated and NOT built -- confirmed unreachable in legacy
+  itself, not a gap in this port.** legacy has real `CHROME_PRESETS`/`applyChromeColors`/
+  `setChromePreset` data and logic (legacy/index.html:18763-18771), and `chromePreset` is a real
+  persisted pref -- but `setChromePreset` looks for its own trigger markup at
+  `#chrome-swatch-row .accent-swatch`, and that id does not exist ANYWHERE in legacy/index.html
+  (confirmed by grep across the whole file) -- unlike `#accent-swatch-row`/`#node-font-swatch-
+  row`, which both have real rendered markup. No real legacy user can ever reach this feature
+  through its UI; the only way `chromePreset` changes is a value already sitting in a restored
+  prefs blob (e.g. from a much older version, or hand-edited). Porting a picker for this would be
+  inventing UI legacy itself doesn't expose, not porting parity -- so it's being marked N/A here
+  rather than silently skipped, the same "trust the real code" call already made for the
+  'schedule' theme-mode comment above.
+- Investigated the rest of §6.7's remaining list -- unlike Chrome presets, these ARE real,
+  reachable legacy features (confirmed real markup + real event listeners: e.g. `#compact-rows-
+  toggle`/`#hide-tree-lines-toggle`/`#depth-guide-lines-toggle`, legacy/index.html:5127-5132,
+  27072+), but every one of them lives inside legacy's own Settings panel (`.settings-list-row`
+  markup), which `web/` has no equivalent of at all yet. The accent/node-font-color pickers
+  above worked as standalone header buttons because there were only 1-2 of them; Editor's
+  Choice/Documentation Mode presets, the ~7 layout controls (tree lines, depth guides, row
+  style, compact rows, text size, indent width, collapse depth), and inline note/remark/Q&A
+  previews are a materially bigger set that genuinely wants a real settings surface, not more
+  one-off toolbar buttons -- this is the natural point to build that surface (a real,
+  cross-cutting piece, see §6.10) rather than force each item in awkwardly. Not started; flagged
+  for the user rather than either building a Settings panel unasked or continuing to stuff the
+  header.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
@@ -916,7 +937,8 @@ complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depend
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
 #202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (#213,
-#214, node-text-color presets landing in this PR) — see each section's own `Status:` line for
+#214, #215, Chrome-background-preset investigation + §6.7 check-in landing in this PR) — see
+each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
