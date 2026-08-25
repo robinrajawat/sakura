@@ -1343,9 +1343,22 @@ building the earlier ones):
    (a real circular-import risk between `autoRewriteStore.ts` and `aiSettingsStore.ts` for a
    background convenience) — a paused queue needs an explicit "Retry now" click instead, see that
    store's own header for the full reasoning.
-5. Generate Outline + Restructure Text — share `parseTextToTreeNodes` (a new port, also needed
-   by OPML/paste/Word-import fallbacks elsewhere), each with its own system prompt/insertion
-   behavior (nest-into-current-doc vs. always-new-doc).
+5. **Generate Outline + Restructure Text** (landed, see Status) — `utils/parseTextToTree.ts`'s
+   `parseTextToTreeNodesCore`/`looksAlreadyStructuredCore` (a direct, differentially-tested port
+   of legacy's real heuristic parser — also the general engine OPML/paste/Word-import fallbacks
+   elsewhere could reuse, though none of those call sites are wired to it yet), `aiCapabilities.ts`'s
+   `callAiApiOutline`/`callAiApiRestructure`, and `state/aiOutline.ts`'s orchestration. Each keeps
+   its own real insertion behavior (Generate Outline nests as children of the current selection in
+   the CURRENT doc, via a new `outlineStore.ts` `insertGeneratedOutline` action with a real undo
+   checkpoint; Restructure Text always lands in a brand-new document, matching legacy's own
+   deliberate "never silently merge into what's open" guarantee — no undo checkpoint for that
+   initial population, matching the same precedent `ExportButtons.tsx`'s OPML/Sakura-Document
+   imports already established). A new `RestructureTextDialog.tsx` (a real textarea modal, not
+   `window.prompt` — multi-line paste needs one) plus toolbar buttons and the real
+   Ctrl/Cmd+Shift+O / Ctrl/Cmd+Shift+R keyboard shortcuts. NOT built: stashing Restructure's
+   original pasted text into the new document's Pad (a real, separately-scoped gap — `web/`'s
+   `padStore.ts` has no per-document scoping at all yet, the same architectural gap already
+   documented elsewhere in this project).
 6. Expand node, Suggest tags — both simple single-node single-shot capabilities.
 7. Suggest icon — batched, with the keyword/historical-index tiers ahead of any AI call, plus the
    single-node picker-popover variant.
@@ -1417,7 +1430,7 @@ previews to have anything real to show, and #228 — the `hideTreeLines=false` m
 connector live-tree mode plus its real dot/arrow fold-control split (per explicit user request
 to match legacy's fold control exactly, not just the indentation mechanism) — see each section's
 own `Status:` line for the full breakdown. §6.8 not started. **§6.9 (AI Features) in progress**
-(developed concurrently with the §6.7 work above in a separate session) — slices 1-4 of the
+(developed concurrently with the §6.7 work above in a separate session) — slices 1-5 of the
 planned sequence above landed. **#230** (following #228): provider configuration UI
 (`aiProviderCatalog.ts`, `aiCall.ts`, `aiSettingsStore.ts`, `AiProviderSettings.tsx`, plus
 vault-aware key read/write extending `aiProviders.ts`), verified end-to-end in real headless
@@ -1450,9 +1463,22 @@ detection, plus a status chip in the app's status bar and a new "Auto-rewrite" S
 applying the AI result and updating the chip, batch-cap flushing immediately without waiting for
 the idle delay, the checkbox exclusion correctly skipping a checkbox node's commit, and a
 simulated paste-sourced commit correctly NOT queuing while still committing the text) — zero
-console/page errors across every check. Slices 5-9 (Generate Outline/Restructure Text,
-Expand/Tags, Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10 onward
-not started. Update each phase's own
+console/page errors across every check. **This PR**: Generate Outline + Restructure Text —
+`utils/parseTextToTree.ts`'s `parseTextToTreeNodesCore`/`looksAlreadyStructuredCore` (a direct
+port of legacy's real heuristic parser, differentially tested against the real function extracted
+and run from `legacy/index.html` for 19 representative cases — bullet/numbered/lettered/roman
+lists, tree-connector glyphs, checkbox markers, separator lines, branch-only lines, wrapped
+continuation lines, empty/whitespace input), `aiCapabilities.ts`'s
+`callAiApiOutline`/`callAiApiRestructure`, `outlineStore.ts`'s new `insertGeneratedOutline` action
+(a real undo checkpoint, unlike `applyAiTextResult`), and `state/aiOutline.ts`'s orchestration —
+verified end-to-end in real headless Chrome with the AI endpoint mocked via `page.route`
+(Generate Outline via the toolbar and via `Ctrl+Shift+O`, correctly nesting under the selected
+node and correctly no-op'ing when the topic prompt is cancelled; Restructure Text via the toolbar
+and via `Ctrl+Shift+R`, both the already-structured free-parse bypass — confirmed zero AI calls —
+and the AI-driven path for flat unstructured text, each correctly landing in a genuine new
+document; the dialog's own Cancel button) — zero console/page errors across every check. Slices
+6-9 (Expand/Tags, Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10
+onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 

@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, and auto-rewrite on commit (real queue/flush engine, exclusion filter, status chip) landed — see AI Features section below. Still no Generate outline, Restructure text, Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, and Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts) landed — see AI Features section below. Still no Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -185,9 +185,37 @@ immediately without waiting for the (much longer) idle delay, the checkbox exclu
 skipping a checkbox node's commit, and a simulated paste-sourced commit correctly not queuing
 while the text itself still committed — zero console/page errors throughout.
 
-Still not built: Generate Outline, Restructure Text, Expand node, Suggest tags, Suggest icon,
-Summarise selection, provider fallback chain UI, usage tracking. See
-phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
+**Slice 5** (this PR): Generate Outline + Restructure Text. New `utils/parseTextToTree.ts`
+(`parseTextToTreeNodesCore`/`looksAlreadyStructuredCore`) is a direct port of legacy's real
+heuristic text-to-tree parser — differentially tested against the real function itself (extracted
+and run standalone from `legacy/index.html`) across 19 representative inputs (bullet/numbered/
+lettered/roman lists, tree-connector box-drawing glyphs, checkbox markers, separator lines,
+branch-only lines that deepen the next real line, wrapped continuation lines, empty/whitespace
+input) to catch any subtle porting mistake a hand-written test suite alone might miss. New
+`aiCapabilities.ts` functions (`callAiApiOutline`/`callAiApiRestructure`, real system prompts and
+`maxTokens` verbatim from legacy) and `state/aiOutline.ts` orchestrate the two features, each
+with its own real insertion behavior matching legacy exactly: Generate Outline nests the result as
+children of the current selection in the document already open (via a new `outlineStore.ts`
+`insertGeneratedOutline` action with a real undo checkpoint — a genuine addition to content the
+user was already looking at); Restructure Text always lands in a brand-new document, matching
+legacy's own deliberate "never silently merge into what's open" guarantee, with the same
+already-structured free-parse bypass legacy uses to skip the AI call entirely when the pasted
+text already carries visible structure. A new `RestructureTextDialog.tsx` provides a real
+textarea modal (not `window.prompt`, which can't reliably hold multi-line pasted text) plus
+toolbar buttons for both and the real `Ctrl/Cmd+Shift+O` / `Ctrl/Cmd+Shift+R` keyboard shortcuts.
+Not built: stashing Restructure's original pasted text into the new document's Pad — a real,
+separately-scoped gap (`padStore.ts` has no per-document scoping at all yet, the same
+architectural gap already documented for Sakura Document export/import). Verified end-to-end in
+real headless Chrome with the AI endpoint mocked via Playwright: Generate Outline via both the
+toolbar and the keyboard shortcut, correctly nesting under the selected node and correctly
+no-op'ing when the topic prompt is cancelled; Restructure Text via both the toolbar and the
+keyboard shortcut, both the already-structured bypass (confirmed zero AI calls made) and the
+AI-driven path for flat unstructured text, each correctly landing in a genuine new document; the
+dialog's own Cancel button — zero console/page errors throughout.
+
+Still not built: Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback
+chain UI, usage tracking. See phase6-full-parity-plan.md's §6.9 section for the full remaining
+slice sequence.
 
 ## Quick Assist & Quick Insert
 

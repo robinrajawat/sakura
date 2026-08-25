@@ -45,6 +45,33 @@ export function callAiApi(text: string, systemPrompt: string, ctx: AiCallContext
   return callProvider(ctx, systemPrompt, text, 1024);
 }
 
+/** Matches legacy's real `AI_OUTLINE_SYSTEM_PROMPT` (index.html:29350) verbatim. */
+export const AI_OUTLINE_SYSTEM_PROMPT =
+  'You write outlines as plain nested lists. Given a short topic or document type, respond with ONLY a nested outline: one item per line, using "-" for each item, indenting child items by exactly 2 spaces per level beneath their parent. Do not add numbering, headings, commentary, code fences, or any text before or after the list. Keep each label short (a few words), 3-5 levels deep, sized as a working outline rather than a finished document.';
+
+/** Matches legacy's real `callAiApiOutline` (index.html:29373-29378) — Generate Outline's entry
+ * point. `maxTokens=2048` matches legacy's own real budget. */
+export function callAiApiOutline(topic: string, ctx: AiCallContext): Promise<string> {
+  return callProvider(ctx, AI_OUTLINE_SYSTEM_PROMPT, 'Topic: ' + topic, 2048);
+}
+
+/** Matches legacy's real `AI_RESTRUCTURE_SYSTEM_PROMPT` (index.html:29351) verbatim. */
+export const AI_RESTRUCTURE_SYSTEM_PROMPT =
+  'You convert unstructured or messy pasted text into a hierarchical outline for a tree-based outliner. Prioritize making each node read well as a tree item over preserving the source verbatim: fix broken mid-sentence line wraps (common artifacts of copying from PDFs/Word), trim filler and redundant phrasing, and tighten long sentences into concise node labels. Reformat tabular data into nested parent/child nodes (e.g. a table row becomes a parent node with its columns as child nodes) rather than dumping raw rows as one line. You may infer grouping and hierarchy from headings, numbering, and context even when the source has no indentation at all. The one hard rule: do not invent facts, names, numbers, codes, or claims that are not present in the source text — every node must trace back to something actually in the input. Split the input into logical line items and nest them by topic/sub-topic. Respond with ONLY a nested outline: one item per line, using "-" for each item, indenting child items by exactly 2 spaces per level beneath their parent. Do not add commentary, code fences, or any text before or after the list. If the input already reads as a flat list of short items with no obvious grouping, keep it flat rather than forcing artificial nesting.';
+
+/** Matches legacy's real `AI_RESTRUCTURE_MAX_CHARS` (index.html:29382) — caps the source text so
+ * a single giant paste doesn't blow the request size or the response token budget. */
+export const AI_RESTRUCTURE_MAX_CHARS = 16000;
+
+/** Matches legacy's real `callAiApiRestructure` (index.html:29383-29389) — Restructure Text's
+ * entry point. `maxTokens=4096` matches legacy's own real budget (larger than Outline's, since
+ * this can echo back a much longer structured document). */
+export function callAiApiRestructure(text: string, ctx: AiCallContext): Promise<string> {
+  const truncated = text.length > AI_RESTRUCTURE_MAX_CHARS;
+  const userMsg = 'Text to restructure:\n\n' + text.slice(0, AI_RESTRUCTURE_MAX_CHARS) + (truncated ? '\n\n[...truncated — input was longer than the supported limit]' : '');
+  return callProvider(ctx, AI_RESTRUCTURE_SYSTEM_PROMPT, userMsg, 4096);
+}
+
 const AI_BATCH_CHUNK_SIZE = 30; // matches legacy's own real AI_BATCH_CHUNK_SIZE exactly
 
 const BATCH_ITEM_REGEX = /<<<SAKURA-ITEM-(\d+)>>>\s*\n?([\s\S]*?)(?=\n<<<SAKURA-ITEM-\d+>>>|$)/g;

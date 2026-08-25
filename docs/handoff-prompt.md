@@ -1531,4 +1531,67 @@ stayed idle, nothing queued), and a simulated paste-sourced commit event
 correctly not queuing while the pasted text itself still committed to
 the node normally -- zero console/page errors throughout, across every
 one of those checks.
+
+Fifth §6.9 slice landed next in the same session: Generate Outline +
+Restructure Text. Before writing any code, the real
+`parseTextToTreeNodes` function was extracted directly from
+legacy/index.html and run standalone in node against 19 representative
+inputs (bullet/numbered/lettered/roman lists, tree-connector box-drawing
+glyphs, checkbox markers, separator lines, a bare branch connector that
+deepens the next real line, wrapped continuation lines under tree-
+connector mode, empty/whitespace input) -- the new
+`utils/parseTextToTree.ts` port (`parseTextToTreeNodesCore`) was then
+differentially tested against those exact captured outputs, not just
+against this session's own idea of correct behavior, since a subtle
+off-by-one in an indent-width stack algorithm like this one is exactly
+the kind of bug a hand-written test suite alone can miss. All 19 cases
+matched exactly. `looksAlreadyStructuredCore` (the free, no-API-call
+"does this text already read as a hierarchy" check Restructure Text
+uses to skip the AI entirely) was ported the same way. New
+`aiCapabilities.ts` functions `callAiApiOutline`/`callAiApiRestructure`
+carry legacy's real system prompts and `maxTokens` budgets (2048/4096)
+verbatim. New `state/aiOutline.ts` orchestrates both features, each
+keeping its own real, different insertion behavior: Generate Outline
+nests the parsed result as children of whatever's currently selected in
+the document already open (a new `outlineStore.ts` action,
+`insertGeneratedOutline`, with a real undo checkpoint -- unlike
+`applyAiTextResult`, this is a genuine user-visible addition to content
+they were already looking at, not a background-safe substitution);
+Restructure Text always lands in a brand-new document, matching
+legacy's own deliberate "an import can never silently merge into
+whatever's open" guarantee -- reusing the exact same
+`newDocument()`-then-direct-`setState` pattern
+`ExportButtons.tsx`'s own OPML/Sakura-Document imports already
+established, including that same precedent's real divergence from
+legacy (no undo checkpoint for a brand-new document's own initial
+population). New `components/RestructureTextDialog.tsx` is a real
+overlay modal with an actual `<textarea>` -- deliberately NOT
+`window.prompt()`, unlike Generate Outline's short single-line topic
+(a good fit for `window.prompt`, matching this project's established
+native-primitive convention): most browsers strip or collapse newlines
+pasted into a single-line `<input>`, which would silently corrupt
+exactly the kind of large multi-line paste this feature exists for.
+Toolbar buttons for both, plus the real `Ctrl/Cmd+Shift+O`
+(Generate Outline) and `Ctrl/Cmd+Shift+R` (Restructure Text) keyboard
+shortcuts, wired via a document-level `keydown` listener in `App.tsx`
+(a genuinely global shortcut, unlike `OutlineTree.tsx`'s own undo/redo
+binding which needs that component's own tree container to hold DOM
+focus). Deliberately NOT built, a real, separately-scoped gap: legacy's
+real Restructure also stashes the original pasted text into the new
+document's Pad as a source-of-truth reference -- skipped because
+`web/`'s `padStore.ts` has no per-document scoping at all yet, the same
+architectural gap this project's own Sakura-Document-export history
+already documents. Verified end-to-end in real headless Chrome with the
+Gemini endpoint mocked via Playwright's `page.route`: Generate Outline
+triggered via both the toolbar button and the keyboard shortcut,
+correctly nesting the AI's parsed result under the selected node and
+correctly no-op'ing when the topic prompt is cancelled (confirmed via
+`window.prompt`'s own dialog-dismiss path); Restructure Text triggered
+via both the toolbar button and the keyboard shortcut, exercising both
+real paths -- the already-structured free-parse bypass (confirmed zero
+AI network calls were made) and the AI-driven path for genuinely flat,
+unstructured prose -- each correctly landing in a real, separate new
+document; and the dialog's own Cancel button closing with no side
+effects -- zero console/page errors throughout, across every one of
+those checks.
 ```

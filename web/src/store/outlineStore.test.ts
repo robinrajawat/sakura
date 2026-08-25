@@ -179,6 +179,73 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe(originalText);
   });
 
+  it('insertGeneratedOutline nests rows as children of the selected node (depth+1)', () => {
+    // seed: selectedId=2 (depth 1)
+    const ids = useOutlineStore.getState().insertGeneratedOutline([
+      { text: 'child of 2', depth: 0 },
+      { text: 'grandchild', depth: 1 }
+    ]);
+    expect(ids).toHaveLength(2);
+    const nodes = useOutlineStore.getState().nodes;
+    const a = nodes.find((n) => n.id === ids[0])!;
+    const b = nodes.find((n) => n.id === ids[1])!;
+    expect(a.depth).toBe(2); // selected node 2's own depth (1) + 1
+    expect(b.depth).toBe(3);
+    expect(a.text).toBe('child of 2');
+    expect(b.text).toBe('grandchild');
+  });
+
+  it('insertGeneratedOutline splices right after the selected node\'s own subtree', () => {
+    const ids = useOutlineStore.getState().insertGeneratedOutline([{ text: 'new', depth: 0 }]);
+    const nodes = useOutlineStore.getState().nodes;
+    // seed order: 1 (root), 2 (child, selected), 3 (sibling) -- inserted after node 2's subtree end
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, ids[0], 3]);
+  });
+
+  it('insertGeneratedOutline replaces the whole document when nothing is selected', () => {
+    useOutlineStore.setState({ selectedId: null });
+    const ids = useOutlineStore.getState().insertGeneratedOutline([
+      { text: 'a', depth: 0 },
+      { text: 'b', depth: 1 }
+    ]);
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.map((n) => n.id)).toEqual(ids);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1]);
+  });
+
+  it('insertGeneratedOutline replaces the whole document when it is empty', () => {
+    useOutlineStore.setState({ nodes: [], selectedId: null });
+    const ids = useOutlineStore.getState().insertGeneratedOutline([{ text: 'only node', depth: 0 }]);
+    expect(useOutlineStore.getState().nodes.map((n) => n.id)).toEqual(ids);
+  });
+
+  it('insertGeneratedOutline is a no-op for an empty rows array', () => {
+    const before = useOutlineStore.getState().nodes;
+    const ids = useOutlineStore.getState().insertGeneratedOutline([]);
+    expect(ids).toEqual([]);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('insertGeneratedOutline mints new ids from nextId and bumps it past what it used', () => {
+    const startNextId = useOutlineStore.getState().nextId;
+    const ids = useOutlineStore.getState().insertGeneratedOutline([{ text: 'a', depth: 0 }, { text: 'b', depth: 0 }]);
+    expect(ids).toEqual([startNextId, startNextId + 1]);
+    expect(useOutlineStore.getState().nextId).toBe(startNextId + 2);
+  });
+
+  it('insertGeneratedOutline selects the first newly-inserted node', () => {
+    const ids = useOutlineStore.getState().insertGeneratedOutline([{ text: 'a', depth: 0 }]);
+    expect(useOutlineStore.getState().selectedId).toBe(ids[0]);
+  });
+
+  it('insertGeneratedOutline pushes a real undo checkpoint', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().insertGeneratedOutline([{ text: 'a', depth: 0 }]);
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();
