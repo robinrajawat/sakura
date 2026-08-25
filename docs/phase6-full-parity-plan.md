@@ -1424,12 +1424,48 @@ and the relevant source file's header comment (`aiCall.ts`, `aiProviderCatalog.t
 `aiSettingsStore.ts`, `AiProviderSettings.tsx`).
 
 ### 6.10 — Quick Assist, Quick Insert & Settings
-Quick Assist (Ctrl/Cmd+K command box: toggles, search, Run actions, AI Run actions) and Quick
-Insert (Ctrl/Cmd+Space character menu) — both entirely unbuilt. The Settings panel itself:
-`web/` currently has no Settings surface at all; every toggle referenced by earlier phases
-(feature on/off switches, per-panel settings, right-click menu customization, etc.) needs a real
-home, so this phase's Settings-panel work runs partly in parallel with whichever earlier phase
-introduces each toggle, not strictly after all of them.
+
+**Research pass corrections to this section's own prior text**, found by actually reading legacy's
+code and `web/`'s current state rather than trusting this doc's stale description: (1) this
+section previously said "the Settings panel itself: `web/` currently has no Settings surface at
+all" — false by the time this research pass ran; `SettingsPanel.tsx` has existed since a §6.7/6.9
+slice and already holds real content (Layout, AI, Auto-rewrite, Secure Storage sections) as a
+single flat page, not the multi-category rail legacy's own real Settings uses. (2) Quick Insert
+(Ctrl/Cmd+Space character menu) was NOT "entirely unbuilt" — a real, working, mouse-driven popup
+already existed in `OutlineTree.tsx` since an earlier Phase 6.2 slice (before this plan doc even
+had a separate §6.10), just missing real keyboard navigation, the icon-only-row default, and any
+Settings surface. (3) Quick Assist (the Ctrl/Cmd+K command box) genuinely has zero scaffolding
+anywhere in `web/` — confirmed by grep, this part of the stale text was accurate.
+
+Quick Assist itself is a large feature — legacy's real `QA_COMMANDS` is ~50 plain-English toggle
+commands (most pointing at settings/features `web/` doesn't have yet — zen mode, expanded toolbar,
+Cloud Backup auto-sync, per-panel Feature Activation flags, etc.), `QA_ACTIONS` is a much smaller
+11-entry "fire-and-forget" registry (new document, duplicate node, Editor's Choice/Documentation
+Mode presets, and the 7 AI capabilities §6.9 already built real orchestration functions for), and
+it also surfaces the same results Global Search finds across Documents/Notes/Tags/Settings/Help/
+To-Dos/Library. Legacy's own header comment on `QA_COMMANDS` is the guiding principle for scoping
+any of this: "every one of these already has a real settings-panel control backing it — Quick
+Assist is just a faster front door onto code that already exists." The corollary for `web/`: only
+wire a QA command/action for a toggle/capability that already has real, working state behind it
+today — never invent a "front door" onto a feature that doesn't exist, matching this whole
+project's established discipline for every other phase.
+
+Planned slice sequence (each its own PR, later ones may reorder/combine based on what's learned
+building the earlier ones):
+1. **Quick Insert completion** (landed, see Status) — real keyboard navigation (arrow keys,
+   Enter/Tab to commit, matching legacy's real `horizNav` icon-row swap), the icon-only-row
+   default, and per-action/master-enable Settings for the pre-existing Phase 6.2 popup.
+2. Settings-panel category rail — legacy's real multi-category sidebar (Appearance/Presets &
+   modes/Bars & menus/Panels/Hub/Editing/Data & backup) vs. `web/`'s current single flat page.
+   Needed before Quick Assist's own Settings section (item 4) has a sane home, and before Quick
+   Assist's search-category system (item 3) can index Settings entries meaningfully.
+3. Quick Assist UI shell + QA_ACTIONS + the QA_COMMANDS subset with real backing state today —
+   the command box itself (open/close, keyboard nav, execute-with-Undo-toast), wired only to
+   toggles/actions that already have real, working `web/` state (a real audit against every
+   toggle already ported by earlier phases, not a guess).
+4. Quick Assist search integration — Global Search across Documents/Notes/Tags/Settings/Help
+   (To-Dos/Library search folded in if their own search doesn't already exist as a separate
+   surface by then). The largest remaining piece; may itself split further once scoped in detail.
 
 ### 6.11 — PWA & polish pass
 Static precache strategy to match legacy's (`web/public/sw.js`'s current runtime cache-first is
@@ -1586,8 +1622,26 @@ key; a real AI capability (Expand node) succeeding via the fallback despite the 
 usage counters correctly showing 1 failed request for the primary and 1 successful request for the
 fallback afterward — zero unexpected console/page errors (one expected browser-logged network
 entry for the deliberately-mocked 429 response, not an application error). §6.9 is now complete —
-every item in its own original scope enumeration has landed. §6.10
-onward not started. Update each phase's own
+every item in its own original scope enumeration has landed. **§6.10 (Quick Assist, Quick Insert
+& Settings) started** — a research pass corrected this section's own stale text (see §6.10's own
+intro above): `SettingsPanel.tsx` already existed (not "no Settings surface at all"), and Quick
+Insert already had a real, working, mouse-driven popup since an earlier Phase 6.2 slice (not
+"entirely unbuilt") — only Quick Assist itself turned out to have zero scaffolding. **This PR**:
+Quick Insert completion (slice 1 of 4) — real keyboard navigation (`OutlineTree.tsx`'s
+`handleInputKeyDown` gained a direct port of legacy's real `onEditorKeyDown`'s `if(_nqaState){...}`
+block: ArrowDown/Up cycle the active item, swapping to Left/Right in icon-row mode; Enter/Tab
+commits it; the same Ctrl/Cmd+Space shortcut closes without reopening; any other key closes and
+falls through to normal typing), the icon-only-row default (`outlinePrefsStore.ts` gained
+`quickInsertEnabled`/`quickInsertIconOnly`/`quickInsertActions`, matching legacy's own real
+`nodeQuickAssistEnabled`/`nqaIconOnly`/`nodeQuickAssistActions` defaults exactly), and a new
+`components/QuickInsertSettings.tsx` (master toggle, icon-only toggle, 7 per-action checkboxes) —
+verified end-to-end in real headless Chrome (popup opening with the real icon-only default;
+arrow-nav + Enter/Tab correctly inserting the highlighted item; Escape and typing-through both
+correctly dismissing; the icon-only↔label-list Settings toggle; per-action and master-enable
+toggles correctly hiding/disabling the popup) — zero console/page errors across every check.
+Slices 2-4 (Settings rail, Quick Assist UI shell + audited command subset, Quick Assist search
+integration) not yet started.
+Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
 

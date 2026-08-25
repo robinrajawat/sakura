@@ -60,6 +60,11 @@ function writeJson(key: string, value: unknown): void {
 export type RowHighlightStyle = 'original' | 'dot' | 'bar' | 'outline';
 const ROW_HIGHLIGHT_STYLES: RowHighlightStyle[] = ['original', 'dot', 'bar', 'outline'];
 
+/** Matches legacy's real `NODE_QA_ACTION_ORDER` (legacy/index.html:19377) exactly — both the
+ * fixed display order and the full set of valid ids. */
+export type QuickInsertActionId = 'emdash' | 'endash' | 'arrow' | 'checkmark' | 'crossmark' | 'middot' | 'date-time';
+export const QUICK_INSERT_ACTION_ORDER: QuickInsertActionId[] = ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time'];
+
 interface OutlinePrefs {
   treeIndentWidth?: unknown;
   hideTreeLines?: unknown;
@@ -71,6 +76,9 @@ interface OutlinePrefs {
   editorReadingWidth?: unknown;
   rowHighlightStyle?: unknown;
   alwaysExpandInlineEnabled?: unknown;
+  quickInsertEnabled?: unknown;
+  quickInsertIconOnly?: unknown;
+  quickInsertActions?: unknown;
 }
 
 interface ResolvedOutlinePrefs {
@@ -89,6 +97,19 @@ interface ResolvedOutlinePrefs {
    * track DEVIATION from this default, not "is expanded" directly -- see that store's own header
    * for why, and `state/inlineExpand.ts`'s `isInlineExpanded` for the XOR that resolves them. */
   alwaysExpandInlineEnabled: boolean;
+  /** §6.10 slice (docs/phase6-full-parity-plan.md): matches legacy's real `nodeQuickAssistEnabled`
+   * (the master on/off for Quick Insert, legacy/index.html:8277) — default `true`. */
+  quickInsertEnabled: boolean;
+  /** Matches legacy's real `nqaIconOnly` (index.html:8277) — default `true`, a compact icon row
+   * rather than the full label list. `OutlineTree.tsx`'s own pre-existing Quick Insert popup
+   * (Phase 6.2) hardcoded the opposite (always full labels, never icon-only) before this slice. */
+  quickInsertIconOnly: boolean;
+  /** Matches legacy's real `nodeQuickAssistActions` (index.html:8277) — which of
+   * `QUICK_INSERT_ACTION_ORDER`'s 7 actions are enabled, and in what order they render (a
+   * subsequence of `QUICK_INSERT_ACTION_ORDER`, not an independently-orderable list — matches
+   * legacy's own real `NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a))` reconciliation exactly).
+   * Default: all 7. */
+  quickInsertActions: QuickInsertActionId[];
 }
 
 /** Matches legacy's own real `setTreeIndentWidth` clamp (legacy/index.html:18991) exactly:
@@ -119,6 +140,16 @@ function clampRowHighlightStyle(value: unknown): RowHighlightStyle {
   return ROW_HIGHLIGHT_STYLES.includes(value as RowHighlightStyle) ? (value as RowHighlightStyle) : 'original';
 }
 
+/** Matches legacy's real `nodeQuickAssistActions` reconciliation (index.html:13300's own
+ * `NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a))`) — an invalid/unknown saved id is silently
+ * dropped rather than erroring, and the real fixed display order always wins over whatever order
+ * a corrupt/hand-edited storage blob might hold. */
+function clampQuickInsertActions(value: unknown): QuickInsertActionId[] {
+  if (!Array.isArray(value)) return [...QUICK_INSERT_ACTION_ORDER];
+  const saved = new Set(value);
+  return QUICK_INSERT_ACTION_ORDER.filter((a) => saved.has(a));
+}
+
 function loadOutlinePrefs(): ResolvedOutlinePrefs {
   const raw = readJson<OutlinePrefs>(_OUTLINE_PREFS_KEY, {});
   return {
@@ -131,7 +162,10 @@ function loadOutlinePrefs(): ResolvedOutlinePrefs {
     editorReadingWidthEnabled: !!raw.editorReadingWidthEnabled,
     editorReadingWidth: raw.editorReadingWidth === undefined ? 900 : clampEditorReadingWidth(raw.editorReadingWidth),
     rowHighlightStyle: clampRowHighlightStyle(raw.rowHighlightStyle),
-    alwaysExpandInlineEnabled: !!raw.alwaysExpandInlineEnabled
+    alwaysExpandInlineEnabled: !!raw.alwaysExpandInlineEnabled,
+    quickInsertEnabled: raw.quickInsertEnabled === undefined ? true : !!raw.quickInsertEnabled,
+    quickInsertIconOnly: raw.quickInsertIconOnly === undefined ? true : !!raw.quickInsertIconOnly,
+    quickInsertActions: clampQuickInsertActions(raw.quickInsertActions)
   };
 }
 
@@ -150,6 +184,13 @@ interface OutlinePrefsState extends ResolvedOutlinePrefs {
   setEditorReadingWidth: (width: number) => void;
   setRowHighlightStyle: (style: RowHighlightStyle) => void;
   setAlwaysExpandInlineEnabled: (on: boolean) => void;
+  setQuickInsertEnabled: (on: boolean) => void;
+  setQuickInsertIconOnly: (on: boolean) => void;
+  /** Flips a single action's membership in `quickInsertActions`, preserving
+   * `QUICK_INSERT_ACTION_ORDER`'s fixed order (not insertion order) — matches legacy's real
+   * per-checkbox toggle handler exactly (index.html:27555-27560's own `NODE_QA_ACTION_ORDER
+   * .filter(x=>set.has(x))` after adding/deleting from a `Set`). */
+  setQuickInsertActionEnabled: (id: QuickInsertActionId, enabled: boolean) => void;
 }
 
 export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
@@ -168,7 +209,10 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       editorReadingWidthEnabled: s.editorReadingWidthEnabled,
       editorReadingWidth: s.editorReadingWidth,
       rowHighlightStyle: s.rowHighlightStyle,
-      alwaysExpandInlineEnabled: s.alwaysExpandInlineEnabled
+      alwaysExpandInlineEnabled: s.alwaysExpandInlineEnabled,
+      quickInsertEnabled: s.quickInsertEnabled,
+      quickInsertIconOnly: s.quickInsertIconOnly,
+      quickInsertActions: s.quickInsertActions
     });
   }
 
@@ -212,6 +256,21 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
     },
     setAlwaysExpandInlineEnabled: (on) => {
       set({ alwaysExpandInlineEnabled: !!on });
+      persist();
+    },
+    setQuickInsertEnabled: (on) => {
+      set({ quickInsertEnabled: !!on });
+      persist();
+    },
+    setQuickInsertIconOnly: (on) => {
+      set({ quickInsertIconOnly: !!on });
+      persist();
+    },
+    setQuickInsertActionEnabled: (id, enabled) => {
+      const current = new Set(get().quickInsertActions);
+      if (enabled) current.add(id);
+      else current.delete(id);
+      set({ quickInsertActions: QUICK_INSERT_ACTION_ORDER.filter((a) => current.has(a)) });
       persist();
     }
   };

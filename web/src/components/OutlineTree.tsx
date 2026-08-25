@@ -4,7 +4,7 @@ import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats, buildVertFlags, buildPrefix } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
-import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
+import { useOutlinePrefsStore, type QuickInsertActionId } from '../store/outlinePrefsStore';
 import { useNotePanelStore } from '../store/notePanelStore';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { findNodeByText } from '../core/backlinks';
@@ -19,6 +19,28 @@ import { useAutoRewriteStore } from '../store/autoRewriteStore';
 import { shouldAutoRewriteNode } from '../state/autoRewrite';
 import { suggestIconForSelection, suggestIconsForAllDocumentNodes } from '../state/aiIcon';
 import { useIconPickerStore } from '../store/iconPickerStore';
+
+/** §6.10 slice (docs/phase6-full-parity-plan.md): matches legacy's real `NODE_QA_ACTION_META`
+ * (legacy/index.html:19378-19386) -- glyph/label per Quick Insert action. `date-time` has no
+ * fixed glyph in this map (a calendar emoji stands in for its icon slot) since its actual insert
+ * text is computed fresh at commit time via `formatNow()`, not pre-baked here -- matches legacy's
+ * own real `runNodeQuickAssistAction`/`insertDateTime` calling `formatNow()` at the moment of
+ * insertion, not when the popup opens. */
+const QUICK_INSERT_ACTION_META: Record<QuickInsertActionId, { label: string; glyph: string }> = {
+  emdash: { label: 'Insert em dash', glyph: '—' },
+  endash: { label: 'Insert en dash', glyph: '–' },
+  arrow: { label: 'Insert arrow', glyph: '➜' },
+  checkmark: { label: 'Insert check mark', glyph: '✓' },
+  crossmark: { label: 'Insert cross mark', glyph: '✗' },
+  middot: { label: 'Insert middle dot', glyph: '·' },
+  'date-time': { label: 'Insert date/time', glyph: '📅' }
+};
+
+/** Pure: the literal text a Quick Insert action inserts -- every action but `date-time` is just
+ * its own glyph; `date-time` is computed fresh via `formatNow()` at call time. */
+function quickInsertText(id: QuickInsertActionId): string {
+  return id === 'date-time' ? formatNow() : QUICK_INSERT_ACTION_META[id].glyph;
+}
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
   return {
@@ -135,6 +157,13 @@ export function OutlineTree() {
   const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
   const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
+  // §6.10 slice (docs/phase6-full-parity-plan.md): Quick Insert completion -- these three were
+  // ported into `outlinePrefsStore.ts` this slice specifically to back the real keyboard nav/
+  // icon-only-row/per-action-enable behavior added below, completing the Phase 6.2 popup that
+  // already existed here (mouse-only, always-full-labels, no real keyboard nav until now).
+  const quickInsertEnabled = useOutlinePrefsStore((s) => s.quickInsertEnabled);
+  const quickInsertIconOnly = useOutlinePrefsStore((s) => s.quickInsertIconOnly);
+  const quickInsertActions = useOutlinePrefsStore((s) => s.quickInsertActions);
   // §6.7 slice: `hideTreeLines` gains a real live-tree consumer (previously export-only, via
   // ExportButtons.tsx) -- matches legacy's own real two-mode indentation exactly. Default
   // (`true`) is CSS-padding indentation, same family as this component already used before this
@@ -181,6 +210,11 @@ export function OutlineTree() {
   // menu item knows where to insert without needing editingId to still be readable by then.
   const [quickInsertNodeId, setQuickInsertNodeId] = useState<number | null>(null);
   const quickInsertRef = useRef<HTMLDivElement>(null);
+  // §6.10 slice: real keyboard-nav active index, matching legacy's own real `_nqaActiveIdx`
+  // (legacy/index.html:26724) -- the Phase 6.2 popup above was mouse-only until this slice, with
+  // no equivalent state at all. Reset to 0 whenever the popup newly opens (see the space-trigger
+  // branch in handleInputKeyDown below).
+  const [quickInsertActiveIdx, setQuickInsertActiveIdx] = useState(0);
   // Phase 6.4 `@`-mention autocomplete (docs/phase6-full-parity-plan.md -- the wikilink
   // rendering/click-navigate half of this phase landed in #160; this is the "insert a reference
   // while editing" half legacy calls _atState/openAtSuggest/renderAtSuggest/commitAtSuggest,
@@ -361,6 +395,14 @@ export function OutlineTree() {
     const newPos = start + text.length;
     el.focus();
     el.setSelectionRange(newPos, newPos);
+  }
+
+  /** Matches legacy's real `commitNodeQuickAssist` (legacy/index.html:26934-26939) -- close first,
+   * then insert, same order legacy uses (avoids the popup's own unmount racing the caret restore
+   * `insertAtCursor` does). */
+  function commitQuickInsert(id: QuickInsertActionId): void {
+    setQuickInsertNodeId(null);
+    insertAtCursor(quickInsertText(id));
   }
 
   /** Nodes eligible to be `@`-mentioned for the currently-open popup's query -- direct port of
@@ -545,9 +587,51 @@ export function OutlineTree() {
         return;
       }
     }
-    if (e.key === ' ' && (e.metaKey || e.ctrlKey)) {
+    // §6.10 slice: Quick Insert popup navigation -- direct port of legacy's real
+    // `onEditorKeyDown`'s own `if(_nqaState){...}` block (legacy/index.html:26943-26953).
+    // ArrowDown/Up cycle the active item (wrapping); Left/Right do the same instead when the
+    // popup is in icon-row mode (a horizontal layout, matching legacy's own real `horizNav`
+    // swap); Enter/Tab commits the active item; the SAME shortcut that opened it (Ctrl/Cmd+Space)
+    // closes it without reopening (an explicit `return`, so the open-trigger check below never
+    // re-fires for this same keystroke); any other key closes the popup and falls through
+    // (no `return`) to the rest of this handler / the browser's own default behavior, matching
+    // legacy's real "resuming normal typing dismisses it".
+    if (quickInsertNodeId === id) {
+      const candidates = quickInsertActions;
+      const horizNav = quickInsertIconOnly;
+      if (e.key === 'ArrowDown' || (horizNav && e.key === 'ArrowRight')) {
+        e.preventDefault();
+        if (candidates.length) setQuickInsertActiveIdx((i) => (i + 1) % candidates.length);
+        return;
+      }
+      if (e.key === 'ArrowUp' || (horizNav && e.key === 'ArrowLeft')) {
+        e.preventDefault();
+        if (candidates.length) setQuickInsertActiveIdx((i) => (i - 1 + candidates.length) % candidates.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (candidates.length) {
+          e.preventDefault();
+          commitQuickInsert(candidates[quickInsertActiveIdx] ?? candidates[0]);
+          return;
+        }
+        setQuickInsertNodeId(null);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setQuickInsertNodeId(null);
+        return;
+      } else if (e.key === ' ' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setQuickInsertNodeId(null);
+        return;
+      } else {
+        setQuickInsertNodeId(null);
+      }
+    }
+    if (quickInsertEnabled && e.key === ' ' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       setAtSuggest(null);
+      setQuickInsertActiveIdx(0);
       setQuickInsertNodeId(id);
       return;
     }
@@ -934,32 +1018,31 @@ export function OutlineTree() {
                     padding: '0 4px'
                   }}
                 />
-                {/* Quick Insert (Phase 6.2) -- Ctrl/Cmd+Space while editing opens this small
-                    character-insert menu, matching legacy's own real menu exactly: same 7
-                    actions in the same order (NODE_QA_ACTION_ORDER), same glyphs
-                    (NODE_QA_ACTION_META). Node-specific actions from legacy's own version
-                    (note/tags/etc) are deliberately excluded -- legacy's own help text says
-                    exactly why: "For actions on a specific node... use the right-click menu
-                    instead" (this project's context menu, #147). Arrow-key navigation +
-                    Enter/click to select, Escape/click-outside to close -- same interaction
-                    pattern as DocumentTabs.tsx's own tab-switcher dropdown. */}
+                {/* Quick Insert (Phase 6.2, keyboard nav/icon-row/per-action-enable completed
+                    §6.10) -- Ctrl/Cmd+Space while editing opens this small character-insert menu,
+                    matching legacy's own real menu exactly: `quickInsertActions` (already the
+                    correctly-ordered, filtered subsequence of the 7 real actions -- see
+                    `outlinePrefsStore.ts`'s own header) drives which items render and in what
+                    order. Node-specific actions from legacy's own version (note/tags/etc) are
+                    deliberately excluded -- legacy's own help text says exactly why: "For actions
+                    on a specific node... use the right-click menu instead" (this project's
+                    context menu, #147). Real arrow-key navigation + Enter/Tab to select are
+                    handled in handleInputKeyDown above (the input holds focus throughout, not
+                    this popup, so keyboard handling lives there); this div's own job is purely
+                    visual (active-item highlight) plus mouse interaction. Click-outside-to-close
+                    is the useEffect above; Escape is handled in handleInputKeyDown too. */}
                 {quickInsertNodeId === node.id && (
                   <div
                     ref={quickInsertRef}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setQuickInsertNodeId(null);
-                        inputRef.current?.focus();
-                      }
-                    }}
                     style={{
                       position: 'absolute',
                       top: '100%',
                       left: 0,
                       marginTop: 2,
-                      minWidth: 170,
+                      display: quickInsertIconOnly ? 'flex' : 'block',
+                      flexWrap: quickInsertIconOnly ? 'wrap' : undefined,
+                      width: quickInsertIconOnly ? 190 : undefined,
+                      minWidth: quickInsertIconOnly ? undefined : 170,
                       background: t.background,
                       border: `1px solid ${t.border}`,
                       borderRadius: 8,
@@ -969,49 +1052,66 @@ export function OutlineTree() {
                       font: "400 13px 'Inter', sans-serif"
                     }}
                   >
-                    {(
-                      [
-                        { label: 'Insert em dash', glyph: '—', text: '—' },
-                        { label: 'Insert en dash', glyph: '–', text: '–' },
-                        { label: 'Insert arrow', glyph: '➜', text: '➜' },
-                        { label: 'Insert check mark', glyph: '✓', text: '✓' },
-                        { label: 'Insert cross mark', glyph: '✗', text: '✗' },
-                        { label: 'Insert middle dot', glyph: '·', text: '·' },
-                        { label: 'Insert date/time', glyph: '📅', text: formatNow() }
-                      ] as { label: string; glyph: string; text: string }[]
-                    ).map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onMouseDown={(e) => {
-                          // mousedown (not click) so this fires BEFORE the input's own onBlur
-                          // -- committing the edit is not what should happen when picking a
-                          // Quick Insert item; the item should land in the still-open input.
-                          e.preventDefault();
-                          insertAtCursor(item.text);
-                          setQuickInsertNodeId(null);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '6px 8px',
-                          border: 'none',
-                          background: 'transparent',
-                          borderRadius: 5,
-                          cursor: 'pointer',
-                          color: t.text,
-                          font: "400 13px 'Inter', sans-serif"
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = t.hoverBg)}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <span style={{ width: 18, textAlign: 'center', color: t.mutedText }}>{item.glyph}</span>
-                        {item.label}
-                      </button>
-                    ))}
+                    {quickInsertActions.length === 0 ? (
+                      <div style={{ padding: '8px 10px', fontSize: 12, color: t.mutedText, maxWidth: 220 }}>
+                        No characters enabled — Settings → Editing → Quick Insert
+                      </div>
+                    ) : (
+                      quickInsertActions.map((id, i) => {
+                        const meta = QUICK_INSERT_ACTION_META[id];
+                        const active = i === quickInsertActiveIdx;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            title={quickInsertIconOnly ? meta.label : undefined}
+                            aria-label={meta.label}
+                            onMouseDown={(e) => {
+                              // mousedown (not click) so this fires BEFORE the input's own onBlur
+                              // -- committing the edit is not what should happen when picking a
+                              // Quick Insert item; the item should land in the still-open input.
+                              e.preventDefault();
+                              commitQuickInsert(id);
+                            }}
+                            onMouseEnter={() => setQuickInsertActiveIdx(i)}
+                            style={
+                              quickInsertIconOnly
+                                ? {
+                                    width: 34,
+                                    height: 34,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: 'none',
+                                    borderRadius: 6,
+                                    cursor: 'pointer',
+                                    color: t.text,
+                                    background: active ? t.hoverBg : 'transparent',
+                                    boxShadow: active ? `inset 0 0 0 1.5px ${t.border}` : 'none',
+                                    font: "400 13px 'Inter', sans-serif"
+                                  }
+                                : {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '6px 8px',
+                                    border: 'none',
+                                    background: active ? t.hoverBg : 'transparent',
+                                    borderRadius: 5,
+                                    cursor: 'pointer',
+                                    color: t.text,
+                                    font: "400 13px 'Inter', sans-serif"
+                                  }
+                            }
+                          >
+                            <span style={{ width: 18, textAlign: 'center', color: t.mutedText }}>{meta.glyph}</span>
+                            {!quickInsertIconOnly && meta.label}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 )}
                 {/* @-mention autocomplete (Phase 6.4) -- opens as soon as handleAtInput detects a
