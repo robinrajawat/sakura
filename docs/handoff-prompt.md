@@ -183,9 +183,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `01ef2ff` ("feat(export):
-PowerPoint image embedding (§6.6) (#212)"), with this PR's §6.7 accent
-picker + theme/accent persistence slice about to land on top.
+As of this writing: `main` is at commit `6ab6333` ("feat(theming):
+accent-color picker + theme/accent persistence (§6.7) (#213)"), with
+this PR's §6.7 System auto-theme slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -780,7 +780,7 @@ all six items landed:
 
 ### §6.7 — Theming & Appearance
 
-- Accent-color picker + theme/accent persistence landed in this PR:
+- Accent-color picker + theme/accent persistence landed in #213:
   `themeStore.ts`'s own `setAccentPreset` action and all 7 real accent
   presets have existed since Phase 6.1, but no UI anywhere ever called
   `setAccentPreset` (confirmed by grepping every component for the
@@ -804,7 +804,34 @@ all six items landed:
   own dark-mode hex, the choice persists to `localStorage`, and a full
   page reload restores both the dark theme and the Moss accent exactly
   -- zero console/page errors.
-- Still open in §6.7: auto theme (System/Schedule), Chrome background
+- System auto-theme landed in this PR: direct port of legacy's real
+  two-mode `setThemeMode`/`applyAutoTheme` (legacy/index.html:18954-
+  18969) -- `'manual'` (Light/Dark switch only) or `'system'` (follows
+  `prefers-color-scheme` live via a real `matchMedia` change listener,
+  plus a `visibilitychange` listener covering an OS flip that happened
+  while the tab was backgrounded/asleep, which the change listener
+  alone would miss). A manual theme click still works in System mode
+  -- it starts a temporary override (a plain module-scope flag,
+  deliberately never persisted, matching legacy's own real reasoning)
+  that the next natural preference change quietly supersedes once it
+  catches up and agrees with the override again. Correction to this
+  plan doc's own prior wording: legacy has a leftover comment
+  mentioning a third `'schedule'` mode, but its own `setThemeMode`
+  whitelist (`['manual','system']`) proves that mode doesn't actually
+  exist in the real, current legacy code -- only System is built here,
+  not a gap. A small "🖥️" toggle button (`App.tsx`'s header actions)
+  switches modes, no Settings panel needed. `themeMode` now persists
+  alongside theme/accentPreset. Verified end-to-end in REAL headless
+  Chrome using Chromium's own `prefers-color-scheme` emulation (not a
+  mock): confirmed the OS preference is ignored until System mode is
+  enabled, enabling it applies the real current preference
+  immediately, a live OS change updates the theme while enabled, a
+  manual toggle click starts a real override a disagreeing OS event
+  doesn't disturb, the override clears once the OS value catches up
+  (resuming auto-following), disabling System mode stops all of this,
+  and the mode/theme choice survives a full page reload with the OS
+  preference still emulated the same way -- zero console/page errors.
+- Still open in §6.7: Chrome background
   presets, node text color presets, Editor's Choice / Documentation
   Mode presets, full layout controls, inline note/remark/Q&A previews
   -- each a real, separately-scoped follow-up, most wanting a real

@@ -38,6 +38,8 @@ export function App() {
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const accentPreset = useThemeStore((s) => s.accentPreset);
   const setAccentPreset = useThemeStore((s) => s.setAccentPreset);
+  const themeMode = useThemeStore((s) => s.themeMode);
+  const setThemeMode = useThemeStore((s) => s.setThemeMode);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
@@ -71,6 +73,21 @@ export function App() {
           </button>
           <button type="button" onClick={toggleTheme} title="Toggle theme">
             {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+          {/* §6.7 slice (docs/phase6-full-parity-plan.md): System auto-theme. Direct port of
+              legacy's real two-mode `setThemeMode`/`applyAutoTheme` (`themeStore.ts`'s own
+              header comment has the full story, including why there's no third "Schedule" mode
+              despite a leftover legacy comment mentioning one -- it doesn't actually exist in
+              legacy's real code either). Clicking the theme button above still works while this
+              is on -- it starts a temporary override, matching legacy's real UX, until the OS
+              preference naturally catches up and agrees with it again. */}
+          <button
+            type="button"
+            onClick={() => setThemeMode(themeMode === 'system' ? 'manual' : 'system')}
+            title="Follow system theme"
+            aria-pressed={themeMode === 'system'}
+          >
+            🖥️
           </button>
           {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
               legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
