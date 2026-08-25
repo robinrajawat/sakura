@@ -93,6 +93,19 @@ const TABS: { id: PadTab; label: string }[] = [
  * their own store file. Deliberately a simpler data model than legacy's real one: no parentId
  * tree, no branch colors, no auto-layout modes -- see that store's own header for the full
  * reasoning. `MindMapsTab` here is the same list-of-named-canvases shape as `DiagramsTab` above.
+ *
+ * §6.7 slice: `QaTab`/`RemarksTab`'s own generic "+ New" now passes the currently-selected
+ * outline node's id (`useOutlineStore`'s `selectedId`) as the new item's `anchorNodeId` -- the
+ * prerequisite for `OutlineTree.tsx`'s inline remark/Q&A previews to have anything real to show.
+ * For Remarks this matches legacy's own real `addRemark()` exactly (`anchorNodeId:
+ * selectedId??null`, legacy/index.html:42375). For Q&A it's a deliberate, documented divergence:
+ * legacy's own generic `addQaRow` (bound to this same panel's "+ New") never auto-anchors --
+ * only a SEPARATE per-node entry point (`saveNodeQuestion`, a right-click "Ask a question about
+ * this node" action this project hasn't built) does. Auto-anchoring here too gives this panel's
+ * one real "+ New" a working, testable path to an anchored Q&A item without first building that
+ * separate entry point -- a real product-shape difference from legacy, not silently copied, and
+ * worth revisiting if the right-click entry point is ever built (it would let this stay
+ * unanchored, matching legacy exactly, while the new action carries the anchoring).
  */
 export function PadPanel() {
   const [tab, setTab] = useState<PadTab>('notes');
@@ -286,6 +299,7 @@ function QaTab({ t }: { t: Tokens }) {
   const qaItems = usePadStore((s) => s.qaItems);
   const addQaItem = usePadStore((s) => s.addQaItem);
   const removeQaItem = usePadStore((s) => s.removeQaItem);
+  const selectedId = useOutlineStore((s) => s.selectedId);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [search, setSearch] = useState('');
@@ -356,7 +370,7 @@ function QaTab({ t }: { t: Tokens }) {
           type="button"
           onClick={() => {
             if (!question.trim()) return;
-            addQaItem(question, answer);
+            addQaItem(question, answer, selectedId);
             setQuestion('');
             setAnswer('');
           }}
@@ -372,6 +386,7 @@ function RemarksTab({ t }: { t: Tokens }) {
   const remarks = usePadStore((s) => s.remarks);
   const addRemark = usePadStore((s) => s.addRemark);
   const removeRemark = usePadStore((s) => s.removeRemark);
+  const selectedId = useOutlineStore((s) => s.selectedId);
   const [person, setPerson] = useState('');
   const [text, setText] = useState('');
   // Newest first, matching legacy's own renderRemarksList ordering ("a remarks log reads
@@ -406,7 +421,7 @@ function RemarksTab({ t }: { t: Tokens }) {
           type="button"
           onClick={() => {
             if (!text.trim()) return;
-            addRemark(person || 'Anonymous', text);
+            addRemark(person || 'Anonymous', text, selectedId);
             setPerson('');
             setText('');
           }}

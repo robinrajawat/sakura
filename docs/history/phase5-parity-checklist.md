@@ -81,12 +81,12 @@ separately-scoped follow-up building on this foundation.
 | Note (rich text, images, tables, AI, backlinks) | ⚠️ | Rich text, images, tables, links, and backlinks all built — no AI yet |
 | Code Block (lang picker, resizable window) | ⚠️ | Lang picker + textarea exist; not resizable/floating |
 | Pad — Notepad | ⚠️ | Plain textarea (Phase 3); no rich text toolbar, no Quote button |
-| Pad — Q&A | ⚠️ | Flat list with question/answer (Phase 3); no AI-assisted answering, bulk actions, search, PDF export, node-linking |
+| Pad — Q&A | ⚠️ | Question/answer + search/filter (§6.3) + real node-anchoring and live-editor inline previews (§6.7, `anchorNodeId`) now built; no AI-assisted answering, bulk actions, PDF export, section headers |
 | Pad — Decision Log | ⚠️ | Real node-linking + structured fields (context/decision/rationale/alternatives/impact) + author/status built (§6.7 #224), plus outline badge dots (§6.7 #225); no anchor-picker UI yet (`setDecisionAnchor` exists on the store, no UI), no card rendering, no Excel export |
 | Pad — Diagrams | ⚠️ | Real draw.io embed + Generate-from-outline built (§6.3 item 11, #172); no node-linking/status/thumbnails/Whiteboard/multi-page badge |
 | Pad — Mind Map | ⚠️ | A real freeform canvas built (§6.3 item 11, #174): pan/zoom/drag/connect/edit; no node-linking, Scratchpad, or Presenter-mode integration |
 | Pad — Files | ⚠️ | Real upload/storage + download built (§6.3 item 11, #168); no node-linking |
-| Pad — Remarks | ⚠️ | Flat list with person/text (Phase 3); no date field, no node-linking, no export inclusion |
+| Pad — Remarks | ⚠️ | Person/text/date (§6.3) + real node-anchoring and live-editor inline previews (§6.7, `anchorNodeId`) now built; no export inclusion |
 
 ## Hub
 
@@ -148,8 +148,8 @@ selection/provider fallback/usage tracking.
 | Node text color presets | ✅ | All 4 real presets, a swatch-row picker UI, and persistence across sessions, independent of the accent-color axis (§6.7) |
 | Editor's Choice preset | N/A | Investigated (§6.7): NOT a layout preset -- legacy's real `applyEditorsChoicePreset` is a ~40-setting personal configuration snapshot (toolbar-group visibility, hover-toolbar, context-menu ordering, Presenter auto-behaviors, AI thresholds, even a hardcoded personal name), most of which `web/` has no settings for at all. Marked N/A by explicit user decision rather than building an entire toolbar-customization subsystem first |
 | Layout controls (tree lines, depth guides, row style, compact rows, text size, indent width, limit reading width) | ⚠️ | Compact rows, text size, limit reading width, row style, and depth guide lines (a faint per-ancestor-depth vertical line in the live tree, `.node-vguide` equivalent) are all real, persisted, adjustable prefs, verified end-to-end in real headless Chrome; indent width/hide-tree-lines/outline-numbering remain export-only. Still not built: the monospace ASCII-connector alternate live-tree rendering mode (`hideTreeLines=false` -- a real but non-default legacy toggle; the DEFAULT live-tree mode is CSS-padding-based, the same family `web/` already uses, not a fundamentally different architecture as earlier noted here) |
-| Inline note/remark previews | ❌ | Not built |
-| Inline Q&A previews | ❌ | Not built |
+| Inline note/remark previews | ✅ | §6.7: real per-node toggle dots + a document-wide "Always expand" default, matching legacy's own deviation-from-default mechanism exactly (`inlineExpandStore.ts`/`state/inlineExpand.ts`). Read-only previews (click the note preview to edit in the Note panel) rather than legacy's inline `contentEditable` -- a deliberate, documented scoping choice, not a gap |
+| Inline Q&A previews | ✅ | §6.7, same mechanism as above. Needed real node-anchoring added to Q&A first (`padStore.ts`'s `anchorNodeId`) |
 
 ## Installing as an App (PWA)
 

@@ -1133,11 +1133,31 @@ Status: **in progress.**
   (`.node-note-dot`, legacy/index.html:20326) letting a reader override that default node-by-
   node -- real per-node expand/collapse state (`inlineExpandNoteNodeIds`/
   `inlineExpandRemarksNodeIds`/`inlineExpandQaNodeIds`, three separate `Set`s), not just a
-  single global toggle. `web/`'s `OutlineTree.tsx` already shows an inline note preview
-  unconditionally today (no toggle, no per-node override) and has no remark/Q&A inline rendering
-  at all -- porting the real mechanism means adding genuinely new state (three per-node
-  expand-state sets) and new rendering (remark/Q&A preview blocks), not just wiring an existing
-  toggle to existing behavior. Not started; a real, separately-scoped follow-up.
+  single global toggle. **Now built.** `outlinePrefsStore.ts` gained the real, persisted
+  `alwaysExpandInlineEnabled` default; a new session-only `store/inlineExpandStore.ts` holds the
+  three per-node deviation Sets (`noteExpandIds`/`remarkExpandIds`/`qaExpandIds`, matching
+  legacy's own real `inlineExpand*NodeIds` -- never persisted, exactly like legacy's own comment
+  says they shouldn't be); a new pure `state/inlineExpand.ts`'s `isInlineExpanded` resolves the
+  XOR (deviation-from-default) the same way legacy's real render logic does. `OutlineTree.tsx`'s
+  note preview is now correctly gated on this (previously unconditional whenever `node.note` was
+  truthy); real remark/Q&A dots + inline preview blocks were added alongside it. Two real,
+  documented divergences from a pixel-exact port: (1) previews are READ-ONLY (click the note
+  preview to open the full Note panel for editing; remarks/Q&A have no equivalent dedicated
+  panel yet) rather than legacy's own inline `contentEditable` editing surfaces -- consistent
+  with this project's existing "preview, not a second editing surface" pattern (the note preview
+  already worked this way before this slice); (2) remarks/Q&A needed real node-anchoring added
+  first (`padStore.ts`'s `anchorNodeId`, the prerequisite for "does this belong under this
+  node" at all) -- Q&A's own generic "+ New" now also auto-anchors to the selected node, a
+  deliberate divergence from legacy (whose generic Q&A "+ New" never auto-anchors; only a
+  separate right-click entry point this project hasn't built does), documented in
+  `PadPanel.tsx`'s own header. Verified end-to-end in real headless Chrome including the
+  XOR-against-the-live-default behavior itself (toggling the global default correctly flips
+  every node NOT individually overridden while leaving overridden nodes exactly as left).
+  One known, pre-existing, separately-scoped gap surfaced during verification (not caused by
+  this slice, not fixed here): `padStore.ts`'s entire content -- all 7 Pad tabs, not just
+  Remarks/Q&A -- still isn't wired into `documentsStore.ts`'s save/load cycle at all, so newly
+  added remarks/Q&A items (like every other Pad item) don't survive a page reload; `node.note`
+  itself is unaffected since it lives directly on the outline node, which does persist normally.
 - **Decision Log rebuilt to its real legacy schema (node-anchored, 5 structured fields, status,
   author), plus live-editor badges.** `web/`'s Decision Log was a flat title/description list
   with numeric ids -- investigation found legacy's real Decision Log is node-anchored (one per
@@ -1218,9 +1238,13 @@ node-id-collision bug fix, #218 the first minimal Settings-panel slice, #223 the
 legacy "Layout" settings section (compact rows/text size/limit reading width/row style),
 plus marking Editor's Choice/Documentation Mode N/A after investigating the real scope, #224
 rebuilding Decision Log to its real node-anchored schema, #225 Decision Log's live-editor
-badges, and this PR — depth guide lines in the live tree, plus the correction that legacy's
+badges, #226 depth guide lines in the live tree, plus the correction that legacy's
 default live-tree mode is CSS-padding-based (much closer to `web/`'s existing approach than
-previously documented; only a non-default toggle switches to the monospace-connector mode) —
+previously documented; only a non-default toggle switches to the monospace-connector mode), and
+this PR — real inline note/remark/Q&A previews (per-node deviation-from-default toggle state,
+matching legacy's own `alwaysExpandInlineEnabled`/`inlineExpand*NodeIds` mechanism), plus
+node-anchoring for Remarks/Q&A (`padStore.ts`'s `anchorNodeId`), the prerequisite for their own
+previews to have anything real to show —
 see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`

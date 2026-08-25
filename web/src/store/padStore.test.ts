@@ -98,21 +98,33 @@ describe('padStore', () => {
     expect(usePadStore.getState().decisions.map((d) => d.id)).toEqual([b, c, a]);
   });
 
-  it('addQaItem/removeQaItem', () => {
+  it('addQaItem/removeQaItem, defaulting to unanchored', () => {
     usePadStore.getState().addQaItem('Why Zustand?', 'Simple and small');
-    expect(usePadStore.getState().qaItems).toEqual([{ id: 1, question: 'Why Zustand?', answer: 'Simple and small' }]);
+    expect(usePadStore.getState().qaItems).toEqual([
+      { id: 1, question: 'Why Zustand?', answer: 'Simple and small', anchorNodeId: null }
+    ]);
     usePadStore.getState().removeQaItem(1);
     expect(usePadStore.getState().qaItems).toEqual([]);
   });
 
-  it('addRemark/removeRemark', () => {
+  it('addQaItem anchors to the given node id when passed', () => {
+    usePadStore.getState().addQaItem('Q', 'A', 7);
+    expect(usePadStore.getState().qaItems[0].anchorNodeId).toBe(7);
+  });
+
+  it('addRemark/removeRemark, defaulting to unanchored', () => {
     usePadStore.getState().addRemark('Ajay', 'Looks good');
     const remarks = usePadStore.getState().remarks;
     expect(remarks).toHaveLength(1);
-    expect(remarks[0]).toMatchObject({ id: 1, person: 'Ajay', text: 'Looks good' });
+    expect(remarks[0]).toMatchObject({ id: 1, person: 'Ajay', text: 'Looks good', anchorNodeId: null });
     expect(remarks[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     usePadStore.getState().removeRemark(1);
     expect(usePadStore.getState().remarks).toEqual([]);
+  });
+
+  it('addRemark anchors to the given node id when passed', () => {
+    usePadStore.getState().addRemark('Ajay', 'Looks good', 4);
+    expect(usePadStore.getState().remarks[0].anchorNodeId).toBe(4);
   });
 
   it('addFile stores real upload fields (size, dataUrl, mimeType, addedAt) and removeFile removes by id', () => {

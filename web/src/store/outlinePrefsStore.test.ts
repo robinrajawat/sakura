@@ -10,7 +10,8 @@ const DEFAULTS = {
   editorScale: 1,
   editorReadingWidthEnabled: false,
   editorReadingWidth: 900,
-  rowHighlightStyle: 'original' as const
+  rowHighlightStyle: 'original' as const,
+  alwaysExpandInlineEnabled: false
 };
 
 describe('outlinePrefsStore', () => {
@@ -104,6 +105,11 @@ describe('outlinePrefsStore', () => {
     expect(useOutlinePrefsStore.getState().rowHighlightStyle).toBe('original');
   });
 
+  it('setAlwaysExpandInlineEnabled toggles the value', () => {
+    useOutlinePrefsStore.getState().setAlwaysExpandInlineEnabled(true);
+    expect(useOutlinePrefsStore.getState().alwaysExpandInlineEnabled).toBe(true);
+  });
+
   it('persists every setter to localStorage', () => {
     useOutlinePrefsStore.getState().setTreeIndentWidth(4);
     useOutlinePrefsStore.getState().setHideTreeLines(false);
@@ -114,6 +120,7 @@ describe('outlinePrefsStore', () => {
     useOutlinePrefsStore.getState().setEditorReadingWidthEnabled(true);
     useOutlinePrefsStore.getState().setEditorReadingWidth(1000);
     useOutlinePrefsStore.getState().setRowHighlightStyle('bar');
+    useOutlinePrefsStore.getState().setAlwaysExpandInlineEnabled(true);
     const persisted = JSON.parse(localStorage.getItem('sakura_web_outline_prefs_v1')!);
     expect(persisted).toEqual({
       treeIndentWidth: 4,
@@ -124,7 +131,8 @@ describe('outlinePrefsStore', () => {
       editorScale: 1.1,
       editorReadingWidthEnabled: true,
       editorReadingWidth: 1000,
-      rowHighlightStyle: 'bar'
+      rowHighlightStyle: 'bar',
+      alwaysExpandInlineEnabled: true
     });
   });
 
@@ -140,7 +148,8 @@ describe('outlinePrefsStore', () => {
         editorScale: 1.3,
         editorReadingWidthEnabled: true,
         editorReadingWidth: 1200,
-        rowHighlightStyle: 'outline'
+        rowHighlightStyle: 'outline',
+        alwaysExpandInlineEnabled: true
       })
     );
     vi.resetModules();
@@ -154,7 +163,8 @@ describe('outlinePrefsStore', () => {
       editorScale: 1.3,
       editorReadingWidthEnabled: true,
       editorReadingWidth: 1200,
-      rowHighlightStyle: 'outline'
+      rowHighlightStyle: 'outline',
+      alwaysExpandInlineEnabled: true
     });
   });
 
