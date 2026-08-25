@@ -55,12 +55,14 @@ function download(filename: string, mimeType: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-// §6.7 slice: fixed hex palette (no '#' prefix -- OOXML `w:color` values are bare hex digits)
-// for a decision's status accent in the Word export specifically. Matches legacy's own real
-// `docxStatusColor` values exactly (also the same hex `ThemeTokens.fcGreen`/`fcRed`/`fcGray` use
-// in light mode) -- the PDF exporter below has its own local, `#`-prefixed copy of the same 3
-// values for CSS, not this one, since the two need different string formats.
-const DL_STATUS_HEX_DOCX: Record<'green' | 'red' | 'gray', string> = { green: '27824f', red: 'c0392b', gray: '6f6b63' };
+// §6.7 slice: fixed hex palette (no '#' prefix -- both OOXML `w:color` values and pptxgenjs's
+// own color options are bare hex digits) for a decision's status accent, shared by the Word AND
+// PowerPoint decision cards below (named distinctly from `exportPdf`'s own local `DL_STATUS_HEX`
+// further down, a `#`-prefixed copy of the same 3 values for CSS -- same values, different
+// string shape per format, so kept as separate constants rather than one shared shape needing a
+// per-caller prefix strip/add). Matches legacy's own real `docxStatusColor` values exactly (also
+// the same hex `ThemeTokens.fcGreen`/`fcRed`/`fcGray` use in light mode).
+const DL_STATUS_HEX_OOXML: Record<'green' | 'red' | 'gray', string> = { green: '27824f', red: 'c0392b', gray: '6f6b63' };
 
 const DECISION_FIELD_META: { key: DecisionTextField; label: string }[] = [
   { key: 'context', label: 'Context' },
@@ -82,7 +84,7 @@ const DECISION_FIELD_META: { key: DecisionTextField; label: string }[] = [
 // `TextRun`s joined by `break: 1` within one paragraph -- a real, not just possible,
 // simplification given the two projects' different field schemas, not a corner cut.
 function buildDocxDecisionParagraphs(dl: Decision, leftTwips: number): Paragraph[] {
-  const accentColor = DL_STATUS_HEX_DOCX[decisionStatusColorKeyCore(dl.status)];
+  const accentColor = DL_STATUS_HEX_OOXML[decisionStatusColorKeyCore(dl.status)];
   const fillShade = 'FAF8F3';
   const outerBorder = { style: BorderStyle.SINGLE, size: 6, color: 'E4DFD3', space: 6 } as const;
   const leftBorder = { style: BorderStyle.SINGLE, size: 18, color: accentColor, space: 8 } as const;
