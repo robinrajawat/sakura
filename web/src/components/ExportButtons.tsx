@@ -21,7 +21,9 @@ import { decisionStatusLabelCore, decisionStatusColorKeyCore } from '../state/de
 import type { Decision, DecisionTextField } from '../store/padStore';
 import { AlignmentType, BorderStyle, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, ShadingType, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
+import * as XLSX from 'xlsx';
 import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
+import { formatNow } from '../utils/formatNow';
 
 /**
  * §6.7/§6.10 fidelity upgrade: `treeIndentWidth`/`hideTreeLines`/`outlineNumbering` (used by
@@ -970,6 +972,52 @@ export function ExportButtons() {
     await pptx.writeFile({ fileName: 'outline.pptx' });
   }
 
+  // §6.7 slice: Decision Log's Excel (.xlsx) export -- direct port of legacy's real
+  // `exportDecisionLogXlsx` (legacy/index.html:33107-33157), using `xlsx` (SheetJS, npm, MIT),
+  // pinned to the exact same 0.18.5 version legacy itself loads from a CDN -- same "genuinely the
+  // same library, not a substitute" reasoning `pptxgenjs`'s own header comment above gives.
+  // Legacy iterates every outline node checking for an attached decision; `web/` iterates
+  // `decisions` directly instead (its own array of record, not a per-node lookup), which is the
+  // more natural shape here and covers the same set (one row per decision, in creation order --
+  // legacy's own node-iteration order and this one only differ when a document has decisions
+  // whose anchors are unlinked or point at deleted nodes, neither orderable by node position
+  // anyway). One real, deliberate simplification vs. legacy: `web/`'s Decision fields are plain
+  // `<textarea>` text (no rich HTML, unlike Note/Remark), so no `stripHtmlToText` pass is needed
+  // -- the raw field value already IS the row's plain-text cell content.
+  //
+  // One real, discovered (not assumed) library-behavior gap vs. legacy's own comment: legacy's
+  // comment claims "SheetJS community edition supports basic cell props" and sets `ws[addr].s`
+  // (bold header font, wrapped-text body cells) directly on each cell. Verified in real headless
+  // Chrome that the community `xlsx` npm package accepts that `.s` assignment without throwing,
+  // but does NOT actually serialize any style information into the written `.xlsx` file's real
+  // `xl/styles.xml` -- cell style *writing* has been a Pro-only SheetJS feature since long before
+  // 0.18.5, the community build only ever kept style *reading* on the way in. So `ws['!cols']`
+  // (column width) is set (a plain worksheet property, not a style, and does get written), but
+  // the `.s` assignments are skipped here rather than shipped as dead code that looks like it
+  // does something it doesn't.
+  function exportDecisionLogXlsx() {
+    const rows = decisions.map((dl) => {
+      const node = dl.anchorNodeId != null ? nodes.find((n) => n.id === dl.anchorNodeId) : undefined;
+      return {
+        Timestamp: dl.timestamp ? formatNow(new Date(dl.timestamp)) : '',
+        Author: dl.author || '',
+        Node: node ? getNodePlainText(node) : '',
+        Context: dl.context || '',
+        Decision: dl.decision || '',
+        Rationale: dl.rationale || '',
+        Alternatives: dl.alternatives || '',
+        Impact: dl.impact || '',
+        Status: decisionStatusLabelCore(dl.status)
+      };
+    });
+    if (!rows.length) return;
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [18, 14, 24, 36, 36, 36, 36, 30, 14].map((wch) => ({ wch }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Decision Log');
+    XLSX.writeFile(wb, 'outline-decision-log.xlsx');
+  }
+
   return (
     <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
       <button type="button" onClick={exportClipboard}>
@@ -992,6 +1040,9 @@ export function ExportButtons() {
       </button>
       <button type="button" onClick={exportPowerpoint}>
         Export .pptx
+      </button>
+      <button type="button" onClick={exportDecisionLogXlsx}>
+        Export Decision Log .xlsx
       </button>
       <button type="button" onClick={exportSakuraDocument}>
         Export .sakura.json

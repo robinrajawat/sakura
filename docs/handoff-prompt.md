@@ -183,16 +183,18 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `51e8097` ("feat(export):
-Decision Log Word (.docx) card rendering (§6.7) (#232)"), with this
-session's next PR (the PowerPoint/.pptx decision card) about to open --
-Excel `.xlsx` export is the one item left after that. Note: a SECOND,
-concurrent Claude session is also active in this same repo on its own
-branches, working §6.9 (AI Features) -- its PRs so far (#230, provider
-config UI/key storage/the core AI call primitive; #233, Secure Storage
-vault setup/unlock/lock/disable UI) are already merged into `main`
-too; anything in this file describing `main`'s state includes that
-session's work as well as this one's. #222
+As of this writing: `main` is at commit `9331278` ("feat(export):
+Decision Log PowerPoint (.pptx) card rendering (§6.7) (#234)"), with
+this session's next PR (Decision Log's Excel `.xlsx` export) about to
+open -- the last item on the user's "finish these two" list (anchor-
+picker UI, done; Word/PDF/Preview/PowerPoint/Excel export surfaces,
+all built once this PR lands too). Note: a SECOND, concurrent Claude
+session is also active in this same repo on its own branches, working
+§6.9 (AI Features) -- its PRs so far (#230, provider config UI/key
+storage/the core AI call primitive; #233, Secure Storage vault setup/
+unlock/lock/disable UI) are already merged into `main` too; anything
+in this file describing `main`'s state includes that session's work
+as well as this one's. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -447,9 +449,38 @@ for the header, status badge, all 5 field labels/content (including a
 multi-line field), and the real status-accent hex color and card fill
 shade -- confirming actual OOXML slide output.
 
-Remaining for Decision Log: Excel `.xlsx` export (a new dependency,
-SheetJS/`xlsx`, not yet in this project) -- its own separately-scoped
-slice, not yet started.
+The Excel (.xlsx) export landed last, the fourth and final Decision
+Log export surface: direct port of legacy's real
+`exportDecisionLogXlsx`, using `xlsx` (SheetJS, npm, MIT) pinned to
+the exact same `0.18.5` version legacy loads from a CDN. One row per
+decision (iterating `decisions` directly rather than legacy's per-node
+scan -- the more natural shape for `web/`'s own data model, same
+resulting rows), 9 columns matching legacy's own real schema
+(timestamp, author, linked node's text, the 5 structured fields,
+status). No `stripHtmlToText` pass needed, same reasoning as the other
+three cards: `web/`'s Decision fields are already plain text. One
+real, *discovered* library-behavior gap: legacy's own comment claims
+SheetJS community edition supports the bold-header/wrapped-body cell
+styling it sets via `ws[addr].s` -- verified in a real Node script
+that the community `xlsx` npm package accepts that assignment without
+throwing but never actually serializes it into the written file's real
+`xl/styles.xml` (style *writing* has been Pro-only in SheetJS CE for
+years; only style *reading* survived in the community build). Column
+widths (`ws['!cols']`, a plain worksheet property, not a style) are
+set and do get written; the no-op `.s` assignments are skipped rather
+than shipped as dead code. Verified end-to-end in real headless
+Chrome: created two decisions (one with all 5 fields including a
+multi-line Alternatives value, an author, and status approved),
+downloaded the actual generated `.xlsx`, unzipped it (also a plain
+ZIP/OOXML archive, using inline strings rather than a shared-strings
+table), and grepped `xl/worksheets/sheet1.xml` directly for the header
+row's 9 columns and both rows' real content -- confirming actual OOXML
+spreadsheet output.
+
+**All four Decision Log export surfaces the user asked for (Preview/
+PDF, Word, PowerPoint, Excel) are now complete**, along with the
+anchor-picker UI -- the full "let's finish these two first" ask from
+this session is done.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
@@ -703,16 +734,15 @@ all six items landed:
   Sakura-specific decision-log/diagram clip-payload comment in the HTML.
   Verified end-to-end in real headless Chrome: `.txt` download and both
   clipboard payloads read back correctly, zero console/page errors.
-- **Excel (Decision Log .xlsx) is blocked, not a small gap:** legacy's
-  real Excel export is Decision-Log-specific
-  (`exportDecisionLogXlsx`, legacy/index.html:33107), not a general
-  outline export -- a scoping correction from an earlier draft of this
-  doc. `web/` only has Decision Log's pure normalize/query/filter logic
-  ported (`state/decisionLog.ts`, `decisionLogQueries.ts`,
-  `decisionFilter.ts`) plus preserve-on-sync in `docSyncStore.ts` --
-  there is no Decision Log store or panel component in `web/` at all, so
-  there's nothing yet for an Excel export to read. Needs a real Decision
-  Log feature built first.
+- **Excel (Decision Log .xlsx) was blocked at the time this note was
+  written** (`web/` had only Decision Log's pure normalize/query/filter
+  logic ported then, no store/panel to export from) -- **since resolved**:
+  Decision Log became a real feature (§6.7), and its Excel export
+  (`exportDecisionLogXlsx`, direct port of legacy's real function of
+  the same name, legacy/index.html:33107) landed too, the last of its
+  four export surfaces. Legacy's real Excel export is Decision-Log-
+  specific, not a general outline export -- that scoping observation
+  from this note held up and is exactly what got built.
 - Presenter Mode depth (timer, blackout, laser pointer, overview grid,
   closing slide) landed in this PR: direct port of legacy's real
   `startPresenterTimer`/`setPresenterBlank`/`previewSetLaser`/
@@ -763,8 +793,10 @@ all six items landed:
   read time, last-modified date), on its own page via `page-break-
   after: always` before the outline content. No author line (`web/`'s
   `DocSummary` has no author field yet) and no decision-count in the
-  meta line (Decision Log has no store/panel in `web/` yet, same
-  blocker as Excel export). Wordmark text ("S A K U R A") is legacy's
+  meta line (Decision Log became a real feature later, §6.7, but
+  wiring its count into this specific meta line was never revisited --
+  a small, separately-scoped follow-up, not blocked on anything now).
+  Wordmark text ("S A K U R A") is legacy's
   own real default, hardcoded since no Settings panel exists yet.
   Verified end-to-end in real headless Chrome: exported PDF, inspected
   the print popup's own DOM directly (word count/read time/last-

@@ -465,16 +465,13 @@ format, Word/OPML import.
   yet -- see the Excel item below). Verified end-to-end in real headless Chrome: `.txt` downloads
   the correct ASCII tree, "Copy as Text" clipboard-writes both a matching `text/plain` and a
   correctly-styled `text/html` payload, zero console/page errors.
-- **Excel (Decision Log .xlsx) -- blocked, not started.** Legacy's real Excel export
-  (legacy/index.html:33107 `exportDecisionLogXlsx`) is scoped specifically to Decision Log data
-  (timestamp, author, linked node's text, decision-log fields) via `XLSX.writeFile` -- it is
-  *not* a general outline-to-spreadsheet export, a real scoping correction from an earlier draft
-  of this doc. `web/` has only Decision Log's pure normalization/query logic ported
-  (`state/decisionLog.ts`, `state/decisionLogQueries.ts`, `state/decisionFilter.ts`) plus
-  preserve-on-sync handling in `docSyncStore.ts` -- there is no Decision Log store or panel
-  component anywhere in `web/` yet, so there is nothing for an Excel export to read. Needs a real
-  Decision Log feature (its own Pad tab, matching legacy's) built first; tracked here as blocked
-  on that, not as a small export-fidelity gap.
+- ✅ **Excel (Decision Log .xlsx) landed (§6.7).** Decision Log now being a real feature
+  (`padStore.ts`'s `decisions`, the Pad's own tab), this is no longer blocked -- see the §6.7
+  section below for the full slice (`exportDecisionLogXlsx`, direct port of legacy's real
+  function of the same name, legacy/index.html:33107). Scoped specifically to Decision Log data
+  (timestamp, author, linked node's text, the 5 structured fields, status) via `xlsx` (SheetJS)
+  `XLSX.writeFile` -- it is *not* a general outline-to-spreadsheet export, matching legacy's own
+  real scope exactly.
 - ✅ **Presenter Mode depth (timer, blackout, laser pointer, overview grid, closing slide)** --
   direct port of legacy's real `startPresenterTimer`/`setPresenterBlank`/`previewSetLaser`/
   `openPresenterOverview`/closing-slide logic (legacy/index.html:38514-38689,37921-37936). Timer
@@ -673,7 +670,8 @@ format, Word/OPML import.
   `page-break-after: always` before the outline content, matching legacy's own `.has-cover-page`
   CSS approach. Scoped down: no author line (`web/`'s `DocSummary` has no author field yet, a
   document-model gap, not a small omission) and no decision-count in the meta line (Decision Log
-  has no store/panel in `web/` yet, the same blocker already documented for Excel export). The
+  is now a real feature in `web/`, §6.7, but wiring its count into this specific meta line hasn't
+  been done -- a small, separately-scoped follow-up, not blocked on anything). The
   wordmark text ("S A K U R A") is legacy's own real default (`getBrandingDisplayText`'s
   fallback), hardcoded since no Settings panel exists yet to hold the branding-toggle/custom-text
   preferences. Verified end-to-end in real headless Chrome: exported PDF, inspected the print
@@ -1258,9 +1256,34 @@ Status: **in progress.**
   status badge, all 5 field labels/content (including a multi-line Alternatives field), and the
   real status-accent hex color (`27824F`) and card fill shade (`FAF8F3`) -- confirming actual
   OOXML slide output, not just that the export function ran without throwing.
-  Still remaining for Decision Log: Excel `.xlsx` export -- its own separately-scoped slice
-  (needs a new SheetJS/`xlsx` dependency, since no spreadsheet-export library exists in `web/`
-  yet).
+- **Decision Log's Excel (.xlsx) export landed -- the last of the four export surfaces.**
+  Direct port of legacy's real `exportDecisionLogXlsx` (legacy/index.html:33107-33157), using
+  `xlsx` (SheetJS, npm, MIT), pinned to the exact same `0.18.5` version legacy itself loads from
+  a CDN -- same "genuinely the same library, not a substitute" reasoning `pptxgenjs`'s own header
+  comment gives. Legacy iterates every outline node checking for an attached decision; `web/`
+  iterates `decisions` directly instead (its own array of records, the more natural shape here,
+  covering the same set of rows). One real, deliberate simplification vs. legacy: `web/`'s
+  Decision fields are plain `<textarea>` text (no rich HTML, unlike Note/Remark), so no
+  `stripHtmlToText` pass is needed -- the raw field value already IS the row's plain-text cell
+  content. One real, *discovered* (not assumed) library-behavior gap vs. legacy's own comment:
+  legacy's comment claims "SheetJS community edition supports basic cell props" and sets
+  `ws[addr].s` directly (bold header font, wrapped-text body cells). Verified in a real Node
+  script that the community `xlsx` npm package accepts that `.s` assignment without throwing but
+  does NOT actually serialize any style information into the written `.xlsx` file's real
+  `xl/styles.xml` -- cell style *writing* has been a Pro-only SheetJS feature since long before
+  0.18.5, the community build only ever kept style *reading* on the way in. So `ws['!cols']`
+  (column width, a plain worksheet property, not a style) is set and does get written, but the
+  `.s` assignments are skipped here rather than shipped as dead code that looks like it does
+  something it doesn't. Verified end-to-end in real headless Chrome: created two decisions (one
+  with all 5 fields, a multi-line Alternatives value, an author, and status approved; one
+  minimal), downloaded the actual generated `.xlsx`, unzipped it (also a plain ZIP/OOXML
+  archive, using inline strings rather than a shared-strings table), and grepped
+  `xl/worksheets/sheet1.xml` directly for the header row's 9 columns, both rows' real field
+  content (including both lines of the multi-line field), the author, and the status label --
+  confirming actual OOXML spreadsheet output, not just that the export function ran without
+  throwing.
+  **All four Decision Log export surfaces (Preview/PDF, Word, PowerPoint, Excel) are now
+  complete.**
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
