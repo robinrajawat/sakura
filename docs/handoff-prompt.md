@@ -518,7 +518,75 @@ this could inspect the real database directly and drive an actual
 Restore through a real page reload. Tier 2 (auto-backup to file, File
 System Access API) is a separate, not-yet-started follow-up -- bigger
 and more platform-specific (Chrome/Edge only, needs a file-handle
-permission grant flow).
+permission grant flow). (This paragraph is PR #246.)
+
+Mid-flight on that PR, a genuine, non-rare (~10% observed) CI flake was
+found in `generateId.test.ts`'s collision test (probability-based, not
+the earlier-noted rare flake) -- flagged to the user while waiting on
+CI, who said **"Let's resolve it if it can save some time on later
+PRs."** Fixed properly (PR #247), not just probability-reduced: the
+test now mocks `Date.now()` to tick +1ms per call, making a
+5000-iteration collision check deterministically collision-free rather
+than ~90%-likely-to-pass, in both `legacy/tests/unit/` and `web/`'s own
+copy.
+
+Asked again what to do given email/password sign-in and sharing were
+the two remaining §6.8 items flagged as carrying real, unverifiable
+backend-config risk (Firebase Auth provider enablement; Firestore
+security rules/indexes) -- the user's next message was the terse,
+explicit **"email/password sign-in, sharing"**, directing both,
+overriding the earlier caution. Email/password sign-in landed first
+(PR #249): direct port of legacy's real `wireEmailAuthForm`
+(`AuthPanel.tsx`'s "Or use email" toggle, `authStore.ts`'s
+`signUpWithEmail`/`signInWithEmail`/`sendPasswordReset`, a new pure
+`state/authErrors.ts` matching legacy's real per-error-code message
+table). Ships safely regardless of whether the Email/Password provider
+is actually enabled in production -- a disabled provider surfaces a
+real, honest message (`auth/operation-not-allowed` ->
+"Email/password sign-in isn't enabled for this app yet.") rather than
+failing silently. Verified in real headless Chrome by intercepting and
+aborting every `identitytoolkit.googleapis.com` request via
+`page.route`, so no real account was ever created against production.
+
+Moving to sharing -- given its much larger scope and one specific
+unverifiable risk (`loadSharedWithMe`'s Firestore collectionGroup query
+needing a composite index on `sharedWithUids` that may or may not
+already exist in production) -- the user was asked via
+`AskUserQuestion` how much to build: "Core loop only," "Just the owner
+side," "Full feature, one big PR," or "Hold off." **The user picked
+"Full feature, one big PR."** That PR landed the entire feature: profile
+discoverability (`store/profileStore.ts`, private by default, a new
+"Account" Settings category toggle), grant/revoke/role-change with
+notifications (`store/sharingStore.ts`), name-prefix + exact-email
+search, the share dialog/collaborator list/"Shared with me" list (all
+added to `DocSyncPanel.tsx`, a documented simplification vs. legacy's
+sidebar placement), a `SharedDocBanner` for non-owned documents, and a
+notification bell (`store/notificationsStore.ts`, wrapping
+`state/notifications.ts` -- an already-ported, previously entirely
+unwired module discovered from the Phase 1/2 bulk-port era, PR #86/#137
+-- plus `components/NotificationBell.tsx` in the header).
+`docSyncStore.ts` gained `role`/`ownerUid` so the SAME load/autosave/
+realtime machinery serves a shared document too, with a `role:'viewer'`
+document never scheduling or performing a push (client-side deterrent
+only -- Firestore rules are the real enforcement). Deliberately did NOT
+use the also-already-ported-but-unwired `state/sharedDocSync.ts` (a
+genuinely different realtime-listener decision legacy needs only
+because of its own localStorage-index limitation, which doesn't apply
+to `web/`'s state model -- see `docSyncStore.ts`'s own header).
+Deliberately NOT built: real-time presence (`state/presence.ts`,
+another unwired module from the same bulk-port era) -- a related but
+distinct feature, a real, separately-scoped follow-up. Verified with 61
+new tests across four suites (mocking the `firebase/firestore` boundary,
+this project's established pattern) plus real headless-Chrome
+verification of the signed-out state -- the signed-in flow itself
+wasn't verified end-to-end against a real account, since Firestore's
+gRPC-Web wire protocol (unlike Auth's plain REST calls) isn't
+practically fakeable via `page.route`; the 61 unit tests are this
+slice's real verification of that logic. The `sharedWithUids`
+collection-group index risk named when this slice was scoped remains
+genuinely unverified against the real production project, exactly as
+flagged beforehand -- it fails safe either way (empty list, not a
+crash).
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything

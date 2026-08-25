@@ -113,6 +113,20 @@ interface DocSummary {
 // bright-then-dim fade choreography, just the status text itself (see DocSyncPanel.tsx).
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
+// §6.8 slice: 'owner' is the normal case (a document under `users/{currentUser.uid}/docs`);
+// 'editor'/'viewer' mean this doc was opened via `sharingStore.ts`'s "Shared with me" list --
+// `ownerUid` then points at whichever OTHER account's `users/{ownerUid}/docs` collection this
+// document actually lives under (the `uid` `loadDoc`/`pushDoc` have always taken as their first
+// param -- both already just read/write whatever uid they're given, so no signature change was
+// needed there to support this, only the bookkeeping to know which case is which).
+export type DocRole = 'owner' | 'editor' | 'viewer';
+
+interface SharedDocMeta {
+  role: DocRole;
+  ownerDisplayName: string;
+  ownerEmail: string;
+}
+
 interface DocSyncState {
   docs: DocSummary[];
   docId: string | null;
@@ -121,9 +135,13 @@ interface DocSyncState {
   syncStatus: SyncStatus;
   error: string | null;
   crossTabNotice: boolean;
+  role: DocRole;
+  ownerUid: string | null;
+  ownerDisplayName: string;
+  ownerEmail: string;
 
   listDocs: (uid: string) => Promise<void>;
-  loadDoc: (uid: string, docId: string) => Promise<void>;
+  loadDoc: (uid: string, docId: string, sharedMeta?: SharedDocMeta) => Promise<void>;
   pushDoc: (uid: string) => Promise<void>;
   stopWatching: () => void;
 }
@@ -202,10 +220,37 @@ function applyCloudDoc(
  * `updateSyncStatusUI` states (idle/syncing/synced/error) for the panel's status text -- see that
  * type's own header for the one real simplification (no separate fading "dot" choreography).
  *
- * Deliberately NOT in this slice: sharing/collaboration (`sharedWith`, `grantDocumentAccess`),
- * diagram XML in the push payload, the `_docTooLargeToastShown` 1MB-limit UX, cross-tab banner
- * dismissal UI (`crossTabNotice` is exposed as a flag; the panel shows and lets it be
- * acknowledged, nothing fancier). Each a real, separately-scoped follow-up.
+ * §6.8 slice: sharing/collaboration. `role`/`ownerUid`/`ownerDisplayName`/`ownerEmail` let this
+ * SAME store/sync machinery serve both "my own doc" (`role:'owner'`, the default, `ownerUid` ==
+ * the signed-in uid) and "a doc shared with me" (`sharingStore.ts`'s "Shared with me" list calls
+ * `loadDoc(ownerUid, docId, sharedMeta)`, where `ownerUid` is deliberately NOT the signed-in
+ * uid) -- both cases read/write the exact same `users/{ownerUid}/docs/{docId}` path, since
+ * `loadDoc`/`pushDoc` have always taken `uid` as a plain param rather than assuming "current
+ * user", no signature change was needed to support this. A `role:'viewer'` document never
+ * schedules or performs a push (see `pushDoc`'s own guard) -- a best-effort client-side
+ * deterrent only, matching legacy's own real `isViewerOnCurrentDoc`; Firestore security rules
+ * are the actual, server-side enforcement of a viewer's read-only access, not this guard.
+ *
+ * Deliberately NOT used here: `state/sharedDocSync.ts`'s `shouldApplySharedDocRealtimeUpdate` --
+ * an already-ported (earlier bulk-port phase) pure function matching legacy's real SEPARATE,
+ * simpler realtime-listener decision for a document shared TO the current account (echo/
+ * existence/first-snapshot/open-tab checks only, no staleness comparison). Legacy needs a
+ * separate function there because its own localStorage doc index only tracks the CURRENT
+ * account's own documents, so a shared document has no local `updatedAt` to compare against at
+ * all. That constraint doesn't exist here: `lastKnownUpdatedAt` (this file's own module-level
+ * variable) is populated fresh by `loadDoc`'s own initial `applyCloudDoc` call regardless of
+ * whose document this is, so the SAME `shouldApplyIncomingSyncCore` staleness check already used
+ * for an owned document works correctly, and arguably more precisely, for a shared one too --
+ * unifying both cases onto the one already-`stopWatching()`-guarded `onSnapshot` listener/timer
+ * pair rather than forking loadDoc into two separate listener-setup code paths for a difference
+ * that turns out not to apply to this project's own state model. `sharedDocSync.ts` stays
+ * unwired, same as before this slice.
+ *
+ * Deliberately NOT in this slice: diagram XML in the push payload, the `_docTooLargeToastShown`
+ * 1MB-limit UX, cross-tab banner dismissal UI (`crossTabNotice` is exposed as a flag; the panel
+ * shows and lets it be acknowledged, nothing fancier), and real-time presence (`state/
+ * presence.ts` exists, unwired, from an earlier bulk port -- a related but distinct real-time
+ * feature outside this sharing slice's own scope). Each a real, separately-scoped follow-up.
  */
 export const useDocSyncStore = create<DocSyncState>((set, get) => ({
   docs: [],
@@ -215,6 +260,10 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
   syncStatus: 'idle',
   error: null,
   crossTabNotice: false,
+  role: 'owner',
+  ownerUid: null,
+  ownerDisplayName: '',
+  ownerEmail: '',
 
   listDocs: async (uid) => {
     // NOTE: this queries the `docs` subcollection directly (a collection-level list), which
@@ -241,9 +290,19 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
     }
   },
 
-  loadDoc: async (uid, docId) => {
+  loadDoc: async (uid, docId, sharedMeta) => {
     get().stopWatching();
-    set({ loading: true, error: null, docId, crossTabNotice: false, syncStatus: 'idle' });
+    set({
+      loading: true,
+      error: null,
+      docId,
+      crossTabNotice: false,
+      syncStatus: 'idle',
+      role: sharedMeta?.role ?? 'owner',
+      ownerUid: uid,
+      ownerDisplayName: sharedMeta?.ownerDisplayName ?? '',
+      ownerEmail: sharedMeta?.ownerEmail ?? ''
+    });
     try {
       const ref = doc(getDb(), 'users', uid, 'docs', docId);
       const snap = await getDoc(ref);
@@ -265,8 +324,11 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
       // reasoning/legacy citation. `isApplyingRemoteUpdate` (set around the `applyCloudDoc`
       // calls above and in `stopWatching`'s caller, `loadDoc` itself, via the initial
       // `applyCloudDoc` call above) means an incoming cloud update never queues its own echo.
+      // `role === 'viewer'` skips scheduling entirely -- matching legacy's real
+      // `isViewerOnCurrentDoc` best-effort client-side deterrent (see `pushDoc`'s own guard for
+      // the full reasoning); no point starting a timer whose own `pushDoc` call would just no-op.
       outlineUnsubscribe = useOutlineStore.subscribe(() => {
-        if (isApplyingRemoteUpdate) return;
+        if (isApplyingRemoteUpdate || get().role === 'viewer') return;
         if (syncTimer) clearTimeout(syncTimer);
         syncTimer = setTimeout(() => {
           void get().pushDoc(uid);
@@ -282,8 +344,15 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
     // document from listDocs' results) -- pushDoc can therefore never create a stray new
     // top-level document with an unexpected id; it only ever writes into a document that
     // already existed before this session touched it. Deliberate, not incidental.
-    const { docId, title } = get();
+    const { docId, title, role } = get();
     if (!docId) return;
+    // §6.8 slice: a viewer's edits are never pushed. This is a best-effort client-side
+    // deterrent, NOT the real security boundary -- matching legacy's own real
+    // `isViewerOnCurrentDoc` guard and its own comment there almost verbatim: Firestore security
+    // rules already correctly reject a viewer's write server-side regardless of this check; the
+    // worst case if some edit path ever slipped past this guard is a wasted local edit silently
+    // overwritten on the next pull, not a data-integrity or security issue.
+    if (role === 'viewer') return;
     set({ syncStatus: 'syncing', error: null });
     try {
       const nodes = useOutlineStore.getState().nodes;
