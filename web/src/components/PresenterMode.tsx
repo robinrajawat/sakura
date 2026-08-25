@@ -1,10 +1,15 @@
 import { useEffect, useMemo } from 'react';
-import { useOutlineStore, type OutlineNode } from '../store/outlineStore';
+import { useOutlineStore } from '../store/outlineStore';
 import { usePadStore } from '../store/padStore';
 import { usePresenterStore } from '../store/presenterStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
-import { NodeText } from './NodeText';
-import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+import { PresenterSlideView } from './PresenterSlideView';
+import { groupIntoSlides, slideLabel, formatElapsed, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from '../state/presenterSlides';
+import { openAudienceWindow, closeAudienceWindow } from '../state/audienceBridge';
+
+// Re-exported unchanged so existing importers (`ExportButtons.tsx`) don't need to change --
+// see presenterSlides.ts's own header for why the actual definitions live there now.
+export { groupIntoSlides, slideLabel, formatElapsed, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT };
 
 /**
  * Phase 3 slice (docs/framework-migration-plan.md): Presenter Mode, built directly on
@@ -31,13 +36,12 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
  * live user-preference toggle that doesn't exist here yet" deferral used elsewhere in this
  * project).
  *
- * Deliberately still not ported, each a real architectural gap rather than a small omission:
- * Audience View / dual-screen (legacy's real implementation is a genuine second navigation of
- * the same page with a query param telling it which mode to boot into -- `web/` has no
- * client-side routing at all, a Phase 0 decision, so there is no page for a second window to
- * load); Whiteboard mirroring (its own poll loop only starts once Audience View is live, so it
- * inherits that same blocker, on top of Whiteboard/diagram-editing itself being its own
- * separately-scoped §6.3 concern).
+ * Deliberately still not ported: Whiteboard mirroring (blocked on `web/`'s Diagrams panel
+ * gaining a real `isWhiteboard` concept, a separately-scoped §6.3 follow-up). Audience View/
+ * dual-screen itself is now under active construction as its own multi-PR sequence -- see
+ * phase6-full-parity-plan.md's §6.6 section for the full, corrected scoping (an earlier draft
+ * of this comment wrongly blamed "no client-side routing"; that was never the real blocker) and
+ * this file's own later header paragraphs for what's landed of it so far.
  *
  * A later §6.6 slice adds the branding wordmark (`BRANDING_TEXT` below) to the presenter bar
  * itself, matching legacy's real always-on `#presenter-branding` element -- the same mark this
@@ -63,53 +67,19 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
  * tree needs something external to actually be driven through (a future audience-window bridge
  * will read/drive this store directly), which local component state can never provide. See that
  * store's own header comment for the full reasoning.
+ *
+ * §6.6 slice: the actual slide-content rendering (the bordered container, the laser-tracking
+ * mousemove handler, the laser dot) moved out into `PresenterSlideView.tsx`, rendered below with
+ * `interactive` -- `AudienceWindow.tsx` renders that same component with `interactive={false}`,
+ * showing the identical presenting surface without also getting a second, independent copy of
+ * this file's own Prev/Next buttons and keyboard shortcuts. The pure slide-deck helpers
+ * (`groupIntoSlides`/`slideLabel`/`formatElapsed`) and shared constants
+ * (`CLOSING_SLIDE_TEXT`/`CLOSING_SLIDE_SUBTITLE`/`BRANDING_TEXT`) moved to
+ * `state/presenterSlides.ts` in the same slice: this file now imports `PresenterSlideView.tsx`
+ * to render it, so `PresenterSlideView.tsx` can no longer import those helpers FROM this file
+ * (a circular module dependency) -- both files import them from `presenterSlides.ts` instead.
+ * Still re-exported here unchanged, so nothing importing them from this file needed to change.
  */
-export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
-  const slides: OutlineNode[][] = [];
-  for (const node of nodes) {
-    if (node.depth === 0 || slides.length === 0) slides.push([node]);
-    else slides[slides.length - 1].push(node);
-  }
-  return slides;
-}
-
-// Legacy's own real closing-slide defaults (`previewClosingSlideText`/`previewClosingSlideSubtitle`
-// top-level globals) -- hardcoded here, see this file's header for why. Exported so
-// `ExportButtons.tsx`'s PowerPoint export can append the same real closing slide legacy's own
-// `buildPptxPresentation` does (as the genuine last slide in the deck), without duplicating
-// these two strings in a second place.
-export const CLOSING_SLIDE_TEXT = 'Thank you';
-export const CLOSING_SLIDE_SUBTITLE = 'Questions?';
-
-// Legacy's own real branding wordmark default (`getBrandingDisplayText`'s fallback when no
-// custom `previewBrandingText` is set) -- exported so `ExportButtons.tsx`'s Word/PDF/PowerPoint
-// exports show the exact same mark as this file's own presenter-bar branding below, one source
-// of truth instead of four hardcoded copies. Legacy's real `previewPresenterBranding` toggle
-// defaults to `true` in the code (`let previewPresenterBranding=true`, and `loadPrefs`'s own
-// `d.previewPresenterBranding===undefined?true:...` fallback agrees) -- the Settings panel's own
-// description text claims "Off by default," a real, pre-existing doc/code mismatch in legacy
-// itself; the actual code default (on) is what this hardcodes, same "trust the real behavior,
-// not the description" precedent already used elsewhere in this port. No Settings panel exists
-// in `web/` yet to make this toggleable or to hold a custom `previewBrandingText` override.
-export const BRANDING_TEXT = 'S A K U R A';
-
-/** Pure: matches legacy's own real per-slide label logic exactly (legacy/index.html:37507) --
- * the slide's first node's text, semantic markers stripped, brackets stripped (a `[Section]`
- * node's own label shouldn't keep its brackets), falling back to "Untitled" when empty. */
-export function slideLabel(node: OutlineNode): string {
-  const bracketless = String(node.text || '').trim().replace(/^\[|\]$/g, '');
-  return stripSemanticMarkers(bracketless).trim() || 'Untitled';
-}
-
-/** Pure: matches legacy's own real `updatePresenterTimerDisplay` format exactly -- h:mm:ss once
- * past an hour, m:ss before that. */
-export function formatElapsed(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
-}
-
 export function PresenterMode() {
   const nodes = useOutlineStore((s) => s.nodes);
   const theme = useThemeStore((s) => s.theme);
@@ -125,8 +95,6 @@ export function PresenterMode() {
   const setBlanked = usePresenterStore((s) => s.setBlanked);
   const laserOn = usePresenterStore((s) => s.laserOn);
   const setLaserOn = usePresenterStore((s) => s.setLaserOn);
-  const laserPos = usePresenterStore((s) => s.laserPos);
-  const setLaserPos = usePresenterStore((s) => s.setLaserPos);
   const overviewOpen = usePresenterStore((s) => s.overviewOpen);
   const setOverviewOpen = usePresenterStore((s) => s.setOverviewOpen);
   const notesOpen = usePresenterStore((s) => s.notesOpen);
@@ -134,6 +102,7 @@ export function PresenterMode() {
   const elapsedSec = usePresenterStore((s) => s.elapsedSec);
   const enterPresenting = usePresenterStore((s) => s.enterPresenting);
   const tickElapsed = usePresenterStore((s) => s.tickElapsed);
+  const audienceWindowOpen = usePresenterStore((s) => s.audienceWindowOpen);
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
 
@@ -208,67 +177,9 @@ export function PresenterMode() {
     setOverviewOpen(false);
   }
 
-  const slide = onClosingSlide ? null : slides[clampedIndex];
-  const minDepth = slide ? slide[0].depth : 0;
-
   return (
     <div>
-      <div
-        onMouseMove={laserOn ? (e) => setLaserPos({ x: e.clientX, y: e.clientY }) : undefined}
-        style={{
-          position: 'relative',
-          border: `1px solid ${t.border}`,
-          borderRadius: 8,
-          padding: '2rem',
-          minHeight: 240,
-          background: t.background,
-          color: t.text,
-          fontFamily: 'sans-serif',
-          cursor: laserOn ? 'none' : undefined
-        }}
-      >
-        {blanked ? (
-          <div style={{ position: 'absolute', inset: 0, background: '#000', borderRadius: 8 }} />
-        ) : onClosingSlide ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingTop: '4rem' }}>
-            <div style={{ width: 52, height: 5, borderRadius: 3, background: 'var(--accent)', marginBottom: 28 }} />
-            <div style={{ font: "700 2.2em/1.25 'Inter', sans-serif", marginBottom: 14 }}>{CLOSING_SLIDE_TEXT}</div>
-            {CLOSING_SLIDE_SUBTITLE && (
-              <div style={{ font: "500 1.1em 'Inter', sans-serif", color: t.mutedText }}>{CLOSING_SLIDE_SUBTITLE}</div>
-            )}
-          </div>
-        ) : (
-          slide!.map((node) => (
-            <div
-              key={node.id}
-              style={{
-                paddingLeft: `${(node.depth - minDepth) * 24}px`,
-                marginBottom: 8,
-                fontSize: node.depth === minDepth ? 24 : 16
-              }}
-            >
-              {node.text ? <NodeText text={node.text} /> : <span style={{ color: t.mutedText }}>(empty)</span>}
-            </div>
-          ))
-        )}
-        {laserOn && laserPos && (
-          <div
-            style={{
-              position: 'fixed',
-              left: laserPos.x,
-              top: laserPos.y,
-              width: 9,
-              height: 9,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(255,70,60,1) 0%, rgba(255,70,60,1) 65%, rgba(224,49,47,0) 100%)',
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none',
-              boxShadow: '0 0 5px 1px rgba(224,49,47,.6)',
-              zIndex: 5001
-            }}
-          />
-        )}
-      </div>
+      <PresenterSlideView interactive />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontFamily: 'sans-serif', flexWrap: 'wrap' }}>
         <button type="button" onClick={() => jumpTo(clampedIndex - 1)} disabled={clampedIndex === 0}>
           ← Prev
@@ -291,6 +202,13 @@ export function PresenterMode() {
         </button>
         <button type="button" onClick={() => setNotesOpen(!notesOpen)} aria-pressed={notesOpen}>
           Notes (N)
+        </button>
+        <button
+          type="button"
+          onClick={() => (audienceWindowOpen ? closeAudienceWindow() : openAudienceWindow())}
+          aria-pressed={audienceWindowOpen}
+        >
+          {audienceWindowOpen ? 'Close Audience View' : 'Open Audience View'}
         </button>
         <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 600, letterSpacing: '.22em', color: t.hintText }}>
           {BRANDING_TEXT}

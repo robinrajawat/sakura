@@ -28,6 +28,11 @@ interface PresenterState {
   notesOpen: boolean;
   elapsedSec: number;
   startedAt: number;
+  /** Whether THIS window currently has a live Audience window open -- set by
+   * `state/audienceBridge.ts`, not by anything in this file. Deliberately excluded from the
+   * subset of fields that bridge pushes into a driven audience window's own store (that window
+   * never opens a further audience window of its own); see that module's own `pickSyncState`. */
+  audienceWindowOpen: boolean;
 
   /** Resets every field to its fresh-session default and stamps `startedAt` to now -- called
    * once when Presenter Mode is entered, the same moment legacy's own `startPresenterTimer`
@@ -42,6 +47,7 @@ interface PresenterState {
   /** Recomputes `elapsedSec` from `startedAt` against the current clock -- called once a second
    * by PresenterMode's own running-timer interval, matching `formatElapsed`'s expected input. */
   tickElapsed: () => void;
+  setAudienceWindowOpen: (on: boolean) => void;
 }
 
 export const usePresenterStore = create<PresenterState>((set, get) => ({
@@ -53,7 +59,12 @@ export const usePresenterStore = create<PresenterState>((set, get) => ({
   notesOpen: false,
   elapsedSec: 0,
   startedAt: Date.now(),
+  audienceWindowOpen: false,
 
+  // Deliberately does NOT reset `audienceWindowOpen` -- that field reflects a real external
+  // popup-window relationship (tracked by `state/audienceBridge.ts`, outside this store, outside
+  // React entirely) that outlives any single mount of the component calling this, unlike every
+  // other field here which really is scoped to "this particular presenting session."
   enterPresenting: () =>
     set({
       slideIndex: 0,
@@ -71,5 +82,6 @@ export const usePresenterStore = create<PresenterState>((set, get) => ({
   setLaserPos: (pos) => set({ laserPos: pos }),
   setOverviewOpen: (on) => set({ overviewOpen: on }),
   setNotesOpen: (on) => set({ notesOpen: on }),
-  tickElapsed: () => set({ elapsedSec: Math.floor((Date.now() - get().startedAt) / 1000) })
+  tickElapsed: () => set({ elapsedSec: Math.floor((Date.now() - get().startedAt) / 1000) }),
+  setAudienceWindowOpen: (on) => set({ audienceWindowOpen: on })
 }));

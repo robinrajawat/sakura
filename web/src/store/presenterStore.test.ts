@@ -11,7 +11,8 @@ describe('presenterStore', () => {
       overviewOpen: false,
       notesOpen: false,
       elapsedSec: 0,
-      startedAt: Date.now()
+      startedAt: Date.now(),
+      audienceWindowOpen: false
     });
   });
 
@@ -24,6 +25,20 @@ describe('presenterStore', () => {
     expect(s.overviewOpen).toBe(false);
     expect(s.notesOpen).toBe(false);
     expect(s.elapsedSec).toBe(0);
+    expect(s.audienceWindowOpen).toBe(false);
+  });
+
+  it('setAudienceWindowOpen updates the flag', () => {
+    usePresenterStore.getState().setAudienceWindowOpen(true);
+    expect(usePresenterStore.getState().audienceWindowOpen).toBe(true);
+    usePresenterStore.getState().setAudienceWindowOpen(false);
+    expect(usePresenterStore.getState().audienceWindowOpen).toBe(false);
+  });
+
+  it('enterPresenting does NOT reset audienceWindowOpen -- it reflects a real external popup relationship, not this presenting session', () => {
+    usePresenterStore.getState().setAudienceWindowOpen(true);
+    usePresenterStore.getState().enterPresenting();
+    expect(usePresenterStore.getState().audienceWindowOpen).toBe(true);
   });
 
   it('setSlideIndex updates the slide index', () => {
