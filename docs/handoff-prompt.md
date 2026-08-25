@@ -183,11 +183,12 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `c664f2e` ("feat(export): PDF
-note and code-block rendering (§6.6) (#211)"), with this PR's
-PowerPoint image embedding slice about to land on top.
+As of this writing: `main` is at commit `01ef2ff` ("feat(export):
+PowerPoint image embedding (§6.6) (#212)"), with this PR's §6.7 accent
+picker + theme/accent persistence slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
-Presenter & Export) is now in progress: Preview TOC/scroll-spy/progress
+Presenter & Export) is now essentially complete for everything
+currently buildable: Preview TOC/scroll-spy/progress
 bar (#194), plain text/clipboard export (#196), Presenter Mode depth
 (#197), Word export heading styles + TOC field (#198), PDF cover page
 (#199), PowerPoint Notepad/Q&A/closing slides (#200), OPML import
@@ -198,8 +199,19 @@ note-image embedding (#206), Word Notepad/Q&A sections (#207),
 PowerPoint overflow "(cont'd)" slides (#208), Presenter Mode's
 floating Notes/Q&A panel (#209), PowerPoint Notepad/Q&A section
 pagination (#210), PDF note/code-block rendering (#211), and
-PowerPoint image embedding (this PR) are all
-landed. One note on this
+PowerPoint image embedding (#212) all landed this session. What's left
+in §6.6 (Whiteboard mirroring, Audience View/dual-screen, Word
+tables/Decision Log cards, PDF/PowerPoint decision cards, PDF's
+"render from a real Preview-equivalent" architecture) is either
+blocked on a missing feature (no table concept or Decision Log
+store/panel in `web/` at all) or needs the user's explicit call on
+reversing a Phase 0 architectural decision (client-side routing) -- a
+summary was sent to the user asking how they want to proceed on
+Whiteboard/Audience View specifically; their one-word reply
+("Continue") after that question didn't pick one of the three offered
+options, so work moved on to §6.7 rather than guessing which one they
+meant -- **that question is still genuinely open, re-ask or re-surface
+it if picking this back up.** One note on this
 session's CI: PR
 #204 hit a real,
 pre-existing flaky test (`generateId.test.ts`'s probabilistic
@@ -211,12 +223,12 @@ again elsewhere, same "flake is not a root cause" reasoning. Per the
 user's
 explicit "We have to complete everything so just keep going" (this
 session, after the 6-PR status
-check-in), work continues autonomously through the rest of §6.6's
-remaining items -- no further check-in needed before picking up the
-next slice, EXCEPT before touching Whiteboard mirroring/Audience View
-(that one needs client-side routing web/ deliberately doesn't have, a
-Phase 0 decision reversal -- flag it to the user rather than building
-a workaround unasked).
+check-in) and the later "Continue" (after the §6.6-completion
+check-in), work continues autonomously into §6.7 -- no further
+check-in needed before picking up the next slice, EXCEPT before
+touching Whiteboard mirroring/Audience View (see above) or anything
+else that turns out to need a real architectural decision only the
+user can make.
 
 **Note on this session's own commits (#187-#191):** every commit
 originally carried a `Co-authored-by: Claude Sonnet 5
@@ -721,7 +733,7 @@ all six items landed:
   sanitize-on-write) and confirmed the exported print window's HTML has
   no `<script>` tag and no `onerror` attribute, and neither payload
   actually executed -- zero console/page errors across both checks.
-- PowerPoint image embedding landed in this PR: direct port of legacy's
+- PowerPoint image embedding landed in #212: direct port of legacy's
   real per-slide image row (legacy's own `pptxLayoutImageRow`, ported
   to `utils/pptxLayoutImageRow.ts`) -- one image per node
   (`extractFirstImageDataUrl`, the same helper Word export already
@@ -758,9 +770,47 @@ all six items landed:
   at all yet (`state/decisionLog.ts` is a pure validate/normalize
   function with one real call site in node-import normalization, not a
   real feature) -- not buildable as export-side slices until that
-  feature exists earlier in the roadmap.
-  §6.7 onward
-  not started.
+  feature exists earlier in the roadmap. §6.6 is otherwise essentially
+  complete -- a check-in was sent to the user summarizing what landed
+  and asking how to proceed on Whiteboard/Audience View specifically
+  (add routing, a routing-free approximation, or accept as a documented
+  gap); their reply ("Continue") didn't pick one of those options, so
+  this is still an open question, not a resolved one -- re-ask before
+  building either feature.
+
+### §6.7 — Theming & Appearance
+
+- Accent-color picker + theme/accent persistence landed in this PR:
+  `themeStore.ts`'s own `setAccentPreset` action and all 7 real accent
+  presets have existed since Phase 6.1, but no UI anywhere ever called
+  `setAccentPreset` (confirmed by grepping every component for the
+  action/type before scoping this). Adds the missing picker: a
+  7-swatch radiogroup (`App.tsx`'s header actions, next to the existing
+  theme toggle), direct port of legacy's real `#accent-swatch-row`
+  (same 7 presets, order, labels, and `role="radiogroup"`/
+  `role="radio"`/`aria-checked` semantics) -- no dedicated Settings
+  panel needed for this, since `web/` has no Settings surface at all
+  yet (a real, separately-scoped follow-up covering every other toggle
+  this phase and later ones reference -- see §6.10). Also adds
+  theme/accent-preset persistence across sessions
+  (`sakura_web_theme_prefs_v1` in `localStorage`, direct port of
+  legacy's real `savePrefs`/`loadPrefs` for these two fields),
+  defensively validated on read. No `'custom'` color option (`web/`'s
+  own `AccentPreset` type has no `'custom'` variant, matching legacy's
+  own swatch-row markup) -- a separate, bigger follow-up. Verified
+  end-to-end in real headless Chrome: confirmed the default `--accent`
+  resolves to terracotta, clicking the Moss swatch updates `--accent`
+  live and marks it `aria-checked`, toggling dark mode swaps to Moss's
+  own dark-mode hex, the choice persists to `localStorage`, and a full
+  page reload restores both the dark theme and the Moss accent exactly
+  -- zero console/page errors.
+- Still open in §6.7: auto theme (System/Schedule), Chrome background
+  presets, node text color presets, Editor's Choice / Documentation
+  Mode presets, full layout controls, inline note/remark/Q&A previews
+  -- each a real, separately-scoped follow-up, most wanting a real
+  Settings panel to live in (§6.10).
+
+§6.8 onward not started.
 
 Item 11's three §6.3 sub-features, for reference on how each was scoped:
 Files (#168, real upload/storage via FileReader.readAsDataURL, base64

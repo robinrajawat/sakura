@@ -1,10 +1,11 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS, CSS_VAR_MAP } from './themeStore';
 
 describe('themeStore', () => {
   beforeEach(() => {
     useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT });
     document.body.removeAttribute('style');
+    localStorage.clear();
   });
 
   it('defaults to light', () => {
@@ -96,6 +97,55 @@ describe('themeStore', () => {
       for (const [field, varName] of Object.entries(CSS_VAR_MAP) as [keyof typeof THEME_TOKENS.light, string][]) {
         expect(document.body.style.getPropertyValue(varName), `${varName} (from ${field})`).toBe(THEME_TOKENS.light[field]);
       }
+    });
+  });
+
+  describe('persistence across sessions (§6.7)', () => {
+    it('setTheme persists the new theme (and the current accent) to localStorage', () => {
+      useThemeStore.getState().setAccentPreset('moss');
+      useThemeStore.getState().setTheme('dark');
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'moss' });
+    });
+
+    it('toggleTheme persists too', () => {
+      useThemeStore.getState().toggleTheme();
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
+      expect(persisted.theme).toBe('dark');
+    });
+
+    it('setAccentPreset persists the new preset (and the current theme) to localStorage', () => {
+      useThemeStore.getState().setTheme('dark');
+      useThemeStore.getState().setAccentPreset('indigo');
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'indigo' });
+    });
+
+    it('a fresh store load reads back a previously persisted theme/accent', async () => {
+      localStorage.setItem('sakura_web_theme_prefs_v1', JSON.stringify({ theme: 'dark', accentPreset: 'plum' }));
+      // `vi.resetModules()` + a fresh dynamic import forces the module to re-execute from
+      // scratch (including its `create<ThemeState>((set, get) => ({ ...loadThemePrefs(), ... }))`
+      // initializer), the same way a real page reload would -- a plain `setState` reset wouldn't
+      // exercise `loadThemePrefs()` at all, since that only ever runs once, at module load.
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      expect(fresh.useThemeStore.getState().theme).toBe('dark');
+      expect(fresh.useThemeStore.getState().accentPreset).toBe('plum');
+    });
+
+    it('falls back to real defaults for a corrupted persisted value rather than trusting it blindly', async () => {
+      localStorage.setItem('sakura_web_theme_prefs_v1', JSON.stringify({ theme: 'not-a-real-theme', accentPreset: 'not-a-real-preset' }));
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+      expect(fresh.useThemeStore.getState().accentPreset).toBe(DEFAULT_ACCENT);
+    });
+
+    it('falls back to real defaults when nothing is persisted at all', async () => {
+      vi.resetModules();
+      const fresh = await import('./themeStore');
+      expect(fresh.useThemeStore.getState().theme).toBe('light');
+      expect(fresh.useThemeStore.getState().accentPreset).toBe(DEFAULT_ACCENT);
     });
   });
 });

@@ -797,6 +797,32 @@ color presets, Editor's Choice / Documentation Mode presets, full layout control
 depth guides, row style, compact rows, text size, indent width, collapse depth), inline
 note/remark/Q&A previews.
 
+Status: **in progress.**
+- ✅ **Accent-color picker + theme/accent persistence.** `themeStore.ts`'s own `setAccentPreset`
+  action and all 7 real accent presets (`ACCENT_PRESETS`) have existed since Phase 6.1, but no UI
+  anywhere ever called `setAccentPreset` -- confirmed by grepping every component for the
+  action/type before scoping this slice. This slice adds the missing picker: a 7-swatch
+  radiogroup (`App.tsx`'s header actions, next to the existing theme toggle), direct port of
+  legacy's real `#accent-swatch-row` (same 7 presets, same order, same labels, same
+  `role="radiogroup"`/`role="radio"`/`aria-checked` semantics) -- no dedicated Settings panel
+  needed for this, since `web/` has no Settings surface at all yet (a real, separately-scoped
+  follow-up covering every other toggle this phase and later ones reference). Also adds
+  theme/accent-preset persistence across sessions (`sakura_web_theme_prefs_v1` in
+  `localStorage`, direct port of legacy's real `savePrefs`/`loadPrefs` for these two fields),
+  defensively validated on read (a corrupted/hand-edited value falls back to the real default
+  rather than poisoning the store). No `'custom'` color option (`web/`'s own `AccentPreset` type
+  has no `'custom'` variant, matching legacy's own swatch-row markup, which also has no visible
+  custom swatch) -- a separate, bigger follow-up (a real color-picker UI). Verified end-to-end in
+  real headless Chrome: confirmed the default `--accent` resolves to terracotta, clicking the
+  Moss swatch updates `--accent` live and marks it `aria-checked`, toggling dark mode swaps to
+  Moss's own dark-mode hex (not back to a default), the choice persists to `localStorage`, and a
+  full page reload restores both the dark theme and the Moss accent exactly -- zero
+  console/page errors.
+- Still not started: auto theme (System/Schedule), Chrome background presets, node text color
+  presets, Editor's Choice / Documentation Mode presets, full layout controls, inline
+  note/remark/Q&A previews -- each a real, separately-scoped follow-up. Most of these want a real
+  Settings panel to live in, which doesn't exist yet (see §6.10).
+
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
 (view/edit/notifications), sync health indicator, two-tier automatic backup (IndexedDB mirror +
@@ -846,9 +872,10 @@ Every item below, checked in that order, before any cutover PR is even opened:
 complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depended on), **§6.5
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
-#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, PowerPoint image embedding landing in
-this PR) — see each section's own `Status:` line for the
-full breakdown. §6.7 onward not started. Update each phase's own section above with a `Status:`
+#202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (accent
+picker + theme/accent persistence landing in this PR) — see each section's own `Status:` line for
+the full breakdown. §6.8 onward not started. Update each phase's own section above with a
+`Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
 "Update" notes track progress.
 
