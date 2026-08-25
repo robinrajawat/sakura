@@ -1132,6 +1132,26 @@ Status: **in progress.**
   at all -- porting the real mechanism means adding genuinely new state (three per-node
   expand-state sets) and new rendering (remark/Q&A preview blocks), not just wiring an existing
   toggle to existing behavior. Not started; a real, separately-scoped follow-up.
+- **Decision Log rebuilt to its real legacy schema (node-anchored, 5 structured fields, status,
+  author), plus live-editor badges.** `web/`'s Decision Log was a flat title/description list
+  with numeric ids -- investigation found legacy's real Decision Log is node-anchored (one per
+  node, the same anchoring pattern already ported for Diagrams via `diagramAnchor.ts`) with 5
+  rich-text fields (context/decision/rationale/alternatives/impact), a status (proposed/approved/
+  rejected), an author, and string ids in legacy's own `'dl'+timestamp+random` format (matching
+  the already-existing `generateId('dl')` helper exactly). `padStore.ts`'s `Decision` type and
+  actions were rebuilt to match (#224); `PadPanel.tsx`'s `DecisionTab` now has a status-cycle
+  button, anchor label, and 5-field expand/collapse editor. Then the outline tree's own two
+  legacy decision-log dots were ported (#225): a dot on a node's own row when a decision log is
+  anchored to it, and a separate rolled-up dot on a folded node showing a descendant has one
+  (`decisionLogQueries.ts`'s new `subtreeHasDecisionCore`, direct port of legacy's
+  `subtreeHasDecisionLog`). Both dots are deliberately non-interactive for now -- legacy's own
+  dots open the Pad panel to the Decision Log tab and expand the specific entry, but `web/`'s Pad
+  panel tab state is still local `useState` inside `PadPanel.tsx`, not lifted into a shared store
+  the tree can reach yet; every other Pad-domain dot (files/remarks/diagrams/Q&A/meetings/
+  to-dos/mind map) has the same gap. Still remaining for Decision Log: the anchor-picker UI
+  (`setDecisionAnchor` already exists on the store, no UI to drive it yet), and all export-surface
+  rendering (DOCX card, PDF/Preview card, PPTX card, Excel `.xlsx` export) -- each its own
+  separately-scoped slice.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
@@ -1188,10 +1208,11 @@ query-param boot check, and this PR — the real cross-window bridge, closing ou
 end to end except Whiteboard mirroring itself, still blocked on Diagrams getting a real
 `isWhiteboard` concept), **§6.7 in progress** (#213,
 #214, #215, #216 Chrome-background-preset investigation, #217 a real outline `nextId`
-node-id-collision bug fix, #218 the first minimal Settings-panel slice, and this PR — the real
+node-id-collision bug fix, #218 the first minimal Settings-panel slice, #223 the real
 legacy "Layout" settings section (compact rows/text size/limit reading width/row style),
-plus marking Editor's Choice/Documentation Mode N/A after investigating the real scope — see
-each section's own `Status:` line for
+plus marking Editor's Choice/Documentation Mode N/A after investigating the real scope, #224
+rebuilding Decision Log to its real node-anchored schema, and #225 Decision Log's live-editor
+badges — see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own

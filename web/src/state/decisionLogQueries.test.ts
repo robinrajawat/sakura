@@ -6,10 +6,12 @@ import {
   decisionStatusOfCore,
   decisionLogAnchorLabelCore,
   getDecisionAnchorCandidatesCore,
+  subtreeHasDecisionCore,
   type DecisionLogRecord,
   type AnchorableNode
 } from './decisionLogQueries';
 import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+import type { QueryableNode } from '../core/nodeQueries';
 
 // decisionLogQueries.ts references stripSemanticMarkers as an ambient global (declare function,
 // erased at compile time — see the module's own header for why). In the real app that global is
@@ -179,5 +181,42 @@ describe('getDecisionAnchorCandidatesCore', () => {
     }));
     const result = getDecisionAnchorCandidatesCore(many, [], '');
     expect(result).toHaveLength(50);
+  });
+});
+
+describe('subtreeHasDecisionCore', () => {
+  const tree: QueryableNode[] = [
+    { id: 1, text: 'Parent', depth: 0 },
+    { id: 2, text: 'Child A', depth: 1 },
+    { id: 3, text: 'Grandchild', depth: 2 },
+    { id: 4, text: 'Sibling', depth: 0 },
+  ];
+
+  it('is false when no descendant has a decision log', () => {
+    expect(subtreeHasDecisionCore(tree, [], 0)).toBe(false);
+  });
+
+  it('is true when a direct child has a decision log', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 2 }];
+    expect(subtreeHasDecisionCore(tree, logsList, 0)).toBe(true);
+  });
+
+  it('is true when a deeper descendant has a decision log', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 3 }];
+    expect(subtreeHasDecisionCore(tree, logsList, 0)).toBe(true);
+  });
+
+  it('excludes the node itself -- a decision log anchored to the subtree root does not count', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 1 }];
+    expect(subtreeHasDecisionCore(tree, logsList, 0)).toBe(false);
+  });
+
+  it('does not look past the subtree boundary (a sibling with a decision log does not count)', () => {
+    const logsList: DecisionLogRecord[] = [{ id: 'dl1', anchorNodeId: 4 }];
+    expect(subtreeHasDecisionCore(tree, logsList, 0)).toBe(false);
+  });
+
+  it('is false for a leaf node (no descendants at all)', () => {
+    expect(subtreeHasDecisionCore(tree, [{ id: 'dl1', anchorNodeId: 3 }], 2)).toBe(false);
   });
 });

@@ -183,12 +183,14 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `5d8658b` ("feat(presenter):
-real cross-window Audience View bridge (§6.6 steps 3-4) (#222)"),
-closing out Audience View end to end except Whiteboard mirroring
-itself (blocked on Diagrams gaining a real `isWhiteboard` concept, a
-separately-scoped §6.3 follow-up -- see phase6-full-parity-plan.md's
-§6.6 section for the full mechanism, built across #219-#222).
+As of this writing: `main` is at commit `4f1f661` ("feat(pad): rebuild
+Decision Log to legacy's real schema (§6.7) (#224)"), with PR #225
+(Decision Log's live-editor badges) open and its CI green, not yet
+merged. #222 closed out Audience View end to end except Whiteboard
+mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
+concept, a separately-scoped §6.3 follow-up -- see
+phase6-full-parity-plan.md's §6.6 section for the full mechanism,
+built across #219-#222).
 
 After that, the user asked directly why §6.6/§6.7 were still "in
 progress" -- answered by walking both sections' real remaining items
@@ -250,6 +252,34 @@ subagent once the user said "Continue"):
   expand/collapse state or remark/Q&A previews at all) remain not
   started -- pick up either next, or move to Decision Log, per
   phase6-full-parity-plan.md's §6.7 section.
+
+Decision Log was picked up next (unblocks most of §6.6's own
+remainder too, not just §6.7). Two PRs so far, first two of the
+5-7 PR sequence scoped above: **#224** rebuilt `padStore.ts`'s
+`Decision` type and actions to legacy's real schema (`anchorNodeId`,
+the 5 rich-text fields, status, author, string `'dl'+timestamp+random`
+ids via the already-existing `generateId('dl')` helper), and rewrote
+`PadPanel.tsx`'s `DecisionTab` for it (status-cycle button, anchor
+label, 5-field expand/collapse editor). **#225** ported legacy's own
+two live-editor decision-log dots into `OutlineTree.tsx`: an own-node
+dot (unconditional on that node's collapsed state) plus a rolled-up
+collapsed-subtree dot (`decisionLogQueries.ts`'s new
+`subtreeHasDecisionCore`, a direct port of legacy's
+`subtreeHasDecisionLog`). A real bug was caught and fixed during
+manual verification of #225: an early draft gated the own-node dot
+behind `!isCollapsed`, which would have hidden it entirely on a
+collapsed node that itself had a decision anchored to it -- fixed to
+match legacy's real, unconditional behavior before merging. Both dots
+are deliberately non-interactive for now (no click-to-open) --
+`web/`'s Pad panel tab state is still local `useState` inside
+`PadPanel.tsx`, not lifted into a shared store the tree can reach;
+every other Pad-domain dot has the same gap, so lifting that state is
+a real, separately-scoped follow-up rather than something worth doing
+just for Decision Log's own dot. Still remaining for Decision Log:
+the anchor-picker UI, and DOCX/PDF-Preview/PPTX card rendering +
+Excel export -- each its own slice, per phase6-full-parity-plan.md's
+§6.7 section.
+
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -1055,10 +1085,10 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 through #222 all merged and their local branches deleted this
-session; this PR (`outline/layout-settings`) is the current one. No
-feature branches should remain open for review once this PR also
-merges (the merged
+#217 through #224 all merged and their local branches deleted this
+session; PR #225 (`decision-log/outline-badges`) is the current one,
+CI green, awaiting merge. No feature branches should remain open for
+review once this PR also merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past

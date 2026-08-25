@@ -1,4 +1,5 @@
 import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
+import { getSubtreeEnd, type QueryableNode } from '../core/nodeQueries';
 
 /**
  * Pure lookup/anchor-label/status-query layer for the Decision Log domain — second slice (see
@@ -117,6 +118,23 @@ export function decisionLogAnchorLabelCore(
   if (!node) return 'Linked node no longer exists';
   const text = stripSemanticMarkers(node.text || '').trim();
   return 'Under: ' + (text ? text.slice(0, 60) : '(untitled node)');
+}
+
+/** Pure: matches index.html's own `subtreeHasDecisionLog` exactly — true if any node strictly
+ * inside `nodes[idx]`'s subtree (excluding the node itself) has a decision log anchored to it.
+ * Used by the outline tree's collapsed-branch indicator dot (a folded node's own row can't show
+ * its descendants' badges, so this rolls them up into one "something's in here" marker). Takes
+ * `idx` (not a node id) matching `getSubtreeEnd`'s own indexing convention. */
+export function subtreeHasDecisionCore(
+  nodes: QueryableNode[],
+  decisionLogs: DecisionLogRecord[],
+  idx: number
+): boolean {
+  const end = getSubtreeEnd(nodes, idx);
+  for (let i = idx + 1; i < end; i++) {
+    if (decisionLogForNodeCore(decisionLogs, nodes[i].id)) return true;
+  }
+  return false;
 }
 
 /** Pure: matches index.html's own `getDecisionAnchorCandidates` exactly — candidate list for the
