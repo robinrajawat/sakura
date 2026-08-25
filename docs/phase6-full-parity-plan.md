@@ -1175,10 +1175,26 @@ Status: **in progress.**
   dots open the Pad panel to the Decision Log tab and expand the specific entry, but `web/`'s Pad
   panel tab state is still local `useState` inside `PadPanel.tsx`, not lifted into a shared store
   the tree can reach yet; every other Pad-domain dot (files/remarks/diagrams/Q&A/meetings/
-  to-dos/mind map) has the same gap. Still remaining for Decision Log: the anchor-picker UI
-  (`setDecisionAnchor` already exists on the store, no UI to drive it yet), and all export-surface
-  rendering (DOCX card, PDF/Preview card, PPTX card, Excel `.xlsx` export) -- each its own
-  separately-scoped slice.
+  to-dos/mind map) has the same gap.
+- **Decision Log anchor-picker UI landed.** A new generic `components/AnchorPicker.tsx` popover
+  (search input, "Not linked to a node", a depth-indented candidate list with taken nodes greyed
+  and disabled) drives the already-existing `setDecisionAnchor` store action -- direct port of
+  legacy's real `#decision-anchor-suggest` (legacy/index.html:35111-35163), reusing the
+  already-ported `getDecisionAnchorCandidatesCore` for both the filtered-search list AND the
+  empty-query "every node" case. One deliberate, documented scoping choice: legacy's own popover
+  shows a full collapsible node TREE when the search is empty, switching to the flat candidate
+  list only once there's a query (`buildAnchorTree`, a separate, more complex renderer this
+  project hasn't ported); this component always uses the flat, depth-indented list, which the
+  same pure function already provides for the empty-query case too -- fully usable, just without
+  expand/collapse branches for very large documents. `AnchorPicker` itself is domain-agnostic
+  (takes a plain `DecisionAnchorCandidate[]`), matching this project's precedent of reusing
+  anchor-domain helpers directly (`diagramAnchor.ts`'s `computeDiagramAnchorLabel`/
+  `reorderDiagramsCore`) rather than writing per-domain duplicates -- ready to reuse for Diagrams'
+  own still-missing anchor-picker if that's ever picked up. Verified end-to-end in real headless
+  Chrome: search/filter, selecting a candidate, taken-node disabled state (click is a no-op),
+  unlinking via "Not linked to a node", and click-outside-to-close.
+  Still remaining for Decision Log: all export-surface rendering (DOCX card, PDF/Preview card,
+  PPTX card, Excel `.xlsx` export) -- each its own separately-scoped slice.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing

@@ -6,12 +6,13 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
-import { decisionLogAnchorLabelCore, decisionStatusLabelCore } from '../state/decisionLogQueries';
+import { decisionLogAnchorLabelCore, decisionStatusLabelCore, getDecisionAnchorCandidatesCore } from '../state/decisionLogQueries';
 import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
 import { DiagramEditor } from './DiagramEditor';
 import { MindMapCanvas } from './MindMapCanvas';
+import { AnchorPicker } from './AnchorPicker';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -194,10 +195,15 @@ function DecisionTab({ t }: { t: Tokens }) {
   const setDecisionStatus = usePadStore((s) => s.setDecisionStatus);
   const setDecisionField = usePadStore((s) => s.setDecisionField);
   const setDecisionAuthor = usePadStore((s) => s.setDecisionAuthor);
+  const setDecisionAnchor = usePadStore((s) => s.setDecisionAnchor);
   const nodes = useOutlineStore((s) => s.nodes);
   const selectedId = useOutlineStore((s) => s.selectedId);
   const [openOnly, setOpenOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // §6.7 slice: the anchor-picker popover -- which decision's picker is open (by id), and its
+  // own live search query. Reset together whenever the picker closes/reopens on a different row.
+  const [anchorPickerId, setAnchorPickerId] = useState<string | null>(null);
+  const [anchorQuery, setAnchorQuery] = useState('');
 
   const openCount = decisions.filter(decisionIsOpen).length;
   const visibleDecisions = decisionVisibleItems(decisions, openOnly);
@@ -251,7 +257,42 @@ function DecisionTab({ t }: { t: Tokens }) {
               >
                 {decisionStatusLabelCore(d.status)}
               </button>
-              <span style={{ flex: 1, color: t.mutedText, fontSize: 12 }}>{decisionLogAnchorLabelCore(d, nodes)}</span>
+              <span style={{ position: 'relative', flex: 1 }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAnchorQuery('');
+                    setAnchorPickerId(anchorPickerId === d.id ? null : d.id);
+                  }}
+                  title="Change which node this decision is linked to"
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    fontSize: 12,
+                    color: t.mutedText,
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {decisionLogAnchorLabelCore(d, nodes)}
+                </button>
+                {anchorPickerId === d.id && (
+                  <AnchorPicker
+                    t={t}
+                    query={anchorQuery}
+                    onQueryChange={setAnchorQuery}
+                    candidates={getDecisionAnchorCandidatesCore(nodes, decisions, anchorQuery, d.id)}
+                    onSelect={(nodeId) => {
+                      setDecisionAnchor(d.id, nodeId);
+                      setAnchorPickerId(null);
+                    }}
+                    onClose={() => setAnchorPickerId(null)}
+                  />
+                )}
+              </span>
               <button
                 type="button"
                 onClick={(e) => {
