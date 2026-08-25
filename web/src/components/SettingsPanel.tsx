@@ -48,6 +48,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
   const setEditorReadingWidth = useOutlinePrefsStore((s) => s.setEditorReadingWidth);
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
+  const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
+  const setDepthGuideLines = useOutlinePrefsStore((s) => s.setDepthGuideLines);
   const setRowHighlightStyle = useOutlinePrefsStore((s) => s.setRowHighlightStyle);
 
   return (
@@ -140,6 +142,18 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         Layout
       </div>
       <div style={{ display: 'grid', gap: 12, fontSize: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={depthGuideLines}
+            onChange={(e) => setDepthGuideLines(e.currentTarget.checked)}
+            aria-label="Depth guide lines"
+          />
+          <span>
+            Depth guide lines
+            <div style={{ fontSize: 11, color: t.mutedText }}>Faint vertical lines marking each indent level in the live outline.</div>
+          </span>
+        </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input type="checkbox" checked={compactRows} onChange={(e) => setCompactRows(e.currentTarget.checked)} aria-label="Compact rows" />
           <span>
