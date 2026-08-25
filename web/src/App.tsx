@@ -32,6 +32,7 @@ import { useIsMobileViewport } from './utils/useIsMobileViewport';
 import { SettingsPanel } from './components/SettingsPanel';
 import { AudienceWindow } from './components/AudienceWindow';
 import { isAudienceWindow } from './state/audienceMode';
+import { rewriteNode, rewriteNodes } from './state/aiRewrite';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -66,6 +67,24 @@ export function App() {
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
   const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
+  const selectedIds = useOutlineStore((s) => s.selectedIds);
+  const [aiRewriteBusy, setAiRewriteBusy] = useState(false);
+
+  // §6.9 slice (docs/phase6-full-parity-plan.md): Rewrite -- the first real AI capability.
+  // Matches legacy's real qb-ai-rewrite toolbar button: a single selected node calls
+  // rewriteNode, more than one calls the batch rewriteNodes. Sub-text-selection rewrite
+  // (rewriting just a highlighted substring within an actively-edited node) is deliberately not
+  // built here -- see aiRewrite.ts's own header for why. Errors surface via window.alert,
+  // matching this project's established "no generic toast/modal system yet, use a native
+  // browser primitive" convention (see e.g. HubLibraryPanel.tsx's own window.confirm usage).
+  async function handleAiRewrite(): Promise<void> {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    setAiRewriteBusy(true);
+    const result = ids.length === 1 ? await rewriteNode(ids[0]) : await rewriteNodes(ids);
+    setAiRewriteBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
 
   // §6.6 slice (docs/phase6-full-parity-plan.md), Audience View step 2: checked before every
   // other early-return branch, matching legacy's own real boot-time priority (its
@@ -319,6 +338,11 @@ export function App() {
             <rect x="3" y="3" width="18" height="18" rx="3" />
             <path d="M9 12l2.5 2.5L15 9" />
           </svg>
+        </button>
+        {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the current
+            selection (single node or a whole multi-select batch) via aiRewrite.ts. */}
+        <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 12 }}>
+          {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit

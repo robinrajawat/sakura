@@ -200,6 +200,22 @@ interface OutlineState {
   startEditing: (id: number) => void;
   commitEdit: (id: number, text: string) => void;
   cancelEdit: () => void;
+  /** §6.9 slice (docs/phase6-full-parity-plan.md): applies an AI-generated replacement text to a
+   * node, for Rewrite and later AI capabilities that programmatically replace a node's text
+   * out-of-band (not through the live-editing textarea). Deliberately NOT `commitEdit` reused
+   * directly: `commitEdit` unconditionally sets `editingId: null`, which would incorrectly close
+   * out a DIFFERENT node's active edit session if an AI result for this node happens to land
+   * while the user is mid-edit on another one -- a real race `commitEdit`'s own design doesn't
+   * need to guard against (it's only ever called for the node currently being edited) but this
+   * one does. Also skips the checkbox/heading auto-convert regexes `commitEdit` runs -- those
+   * exist for raw typed `[ ] `/`# ` syntax at the moment of commit, not applicable to AI output
+   * (a checkbox node's `text` never contains its `[ ] ` marker in the first place; it's already
+   * a separate `isCheckbox`/`checked` field). Still reuses `renameBacklinksFor`, same as
+   * `commitEdit`, so a rewritten node's own `[[mention]]` text keeps pointing at it correctly.
+   * A no-op (no undo checkpoint, no state change) if the node doesn't exist or the text is
+   * unchanged -- callers are expected to have already resolved any in-flight-edit race via
+   * `aiSnapshotChanged` (`state/aiRewrite.ts`) before calling this. */
+  applyAiTextResult: (id: number, text: string) => void;
 
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
@@ -577,6 +593,18 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
   },
 
   cancelEdit: () => set({ editingId: null }),
+
+  applyAiTextResult: (id, text) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return;
+    const oldText = nodes[idx].text ?? '';
+    if (oldText === text) return;
+    pushUndo();
+    let next = nodes.map((n) => (n.id === id ? { ...n, text } : n));
+    next = renameBacklinksFor(next, oldText, text);
+    set({ nodes: next });
+  },
 
   newSiblingAbove: (id) => {
     const { nodes, nextId } = get();
