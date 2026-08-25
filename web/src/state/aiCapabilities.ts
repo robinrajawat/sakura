@@ -45,6 +45,13 @@ export function callAiApi(text: string, systemPrompt: string, ctx: AiCallContext
   return callProvider(ctx, systemPrompt, text, 1024);
 }
 
+/** Matches legacy's real `callAiApiWithPrompt` (index.html:29367-29371) — the generic
+ * single-shot entry point Expand node/Suggest tags/Summarise selection all share (unlike
+ * `callAiApi`, which is hardcoded to the Rewrite prompt/1024 tokens). */
+export function callAiApiWithPrompt(systemPrompt: string, userMsg: string, maxTokens: number, ctx: AiCallContext): Promise<string> {
+  return callProvider(ctx, systemPrompt, userMsg, maxTokens);
+}
+
 /** Matches legacy's real `AI_OUTLINE_SYSTEM_PROMPT` (index.html:29350) verbatim. */
 export const AI_OUTLINE_SYSTEM_PROMPT =
   'You write outlines as plain nested lists. Given a short topic or document type, respond with ONLY a nested outline: one item per line, using "-" for each item, indenting child items by exactly 2 spaces per level beneath their parent. Do not add numbering, headings, commentary, code fences, or any text before or after the list. Keep each label short (a few words), 3-5 levels deep, sized as a working outline rather than a finished document.';

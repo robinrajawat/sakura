@@ -1594,4 +1594,47 @@ unstructured prose -- each correctly landing in a real, separate new
 document; and the dialog's own Cancel button closing with no side
 effects -- zero console/page errors throughout, across every one of
 those checks.
+
+Sixth §6.9 slice landed next in the same session: Expand node +
+Suggest tags, both simple single-node single-shot capabilities. A new
+generic `callAiApiWithPrompt` on `aiCapabilities.ts` (system prompt +
+user message + `maxTokens` + call context, no chunk-batching --
+neither capability ever needs it, unlike Rewrite) backs both. New
+`state/aiExpandTags.ts` holds the two orchestrations plus their pure
+response parsers: `parseExpandResponseCore` strips bullet-prefixes
+from a flat list of lines (deliberately no indentation/depth parsing,
+unlike Generate Outline's parser -- Expand's response is always flat
+by design); `parseTagsResponseCore` tries a JSON array first (stripping
+a ```json fence the model sometimes wraps it in), falling back to a
+comma/newline split if that fails, with every resulting tag run
+through `normalizeTagCore` (lowercase, spaces to hyphens, strip
+anything outside `[a-z0-9-]`, cap at 40 chars) regardless of which
+path produced it. `outlineStore.ts` gained two new actions:
+`expandNodeChildren` splices the new nodes in immediately after the
+parent (`idx + 1`, not at the end of its existing subtree), so they
+become the parent's first children even when it already has some --
+matching legacy's real behavior exactly; `addSuggestedTags` adds only
+genuinely new tags to a node and, like `applyAiTextResult`, pushes no
+undo checkpoint when nothing actually changes (every suggested tag
+already present). Trigger surface is toolbar-only ("✦ Expand"/"✦ Tags"
+buttons, enabled only when exactly one node is selected) since neither
+the right-click menu nor Quick Assist exist yet as surfaces for these
+two. Verified end-to-end in real headless Chrome with the AI endpoint
+mocked via Playwright's `page.route`: the buttons correctly enabling
+with exactly one selection and disabling with zero or multiple;
+Expand inserting the right number of correctly-texted children
+immediately after the parent; Suggest Tags applying only genuinely-new
+tags (with `#` display) and reporting cleanly, with no error alert,
+when every suggested tag is already present; Undo correctly reverting
+an Expand -- zero console/page errors throughout. A real bug was found
+and fixed during that verification: the toolbar buttons' enabled state
+was computed in the render body from `selectedIds()`, but the only
+subscribed store value that could have forced a re-render on a
+selection-shape change (`selectedId !== null`) doesn't change value
+across a single-select -> multi-select transition, so the buttons
+stayed visually enabled during an actual multi-select until some
+unrelated re-render happened to catch it up; fixed by also subscribing
+to `multiSelectedIds` (always a fresh array reference on every
+selection change, including plain single clicks) purely to force the
+re-render.
 ```

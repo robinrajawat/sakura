@@ -35,6 +35,7 @@ import { isAudienceWindow } from './state/audienceMode';
 import { rewriteNode, rewriteNodes } from './state/aiRewrite';
 import { useAutoRewriteStore } from './store/autoRewriteStore';
 import { generateOutline, restructureText } from './state/aiOutline';
+import { expandNode, suggestTags } from './state/aiExpandTags';
 import { RestructureTextDialog } from './components/RestructureTextDialog';
 
 /**
@@ -120,6 +121,39 @@ export function App() {
     setAiOutlineBusy(true);
     const result = await restructureText(text);
     setAiOutlineBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  // §6.9 slice 6 (docs/phase6-full-parity-plan.md): Expand node + Suggest tags -- both real
+  // legacy toolbar actions requiring exactly one selected node (matching legacy's own real
+  // qb-ai-expand/qb-ai-tags; neither is in the right-click context menu at all, toolbar/Quick
+  // Assist only -- Quick Assist itself doesn't exist in `web/` yet, §6.10).
+  const [aiExpandTagsBusy, setAiExpandTagsBusy] = useState(false);
+  // Not read directly below -- `selectedIds()` itself always returns live data regardless of
+  // React's render cycle (it's a Zustand action calling `get()` at invocation time), but
+  // `singleSelectedId`'s ENABLED/DISABLED rendering needs an actual re-render to reflect a
+  // selection change, and neither `hasSelection` (a boolean, unchanged across most re-selections)
+  // nor any other hook already subscribed here changes reference on every `clickNode` call.
+  // Subscribing to `multiSelectedIds` directly (a fresh array reference on every selection
+  // change) closes that gap -- same reasoning as `AiProviderSettings.tsx`'s own vault-state
+  // subscription.
+  useOutlineStore((s) => s.multiSelectedIds);
+  const currentSelectedIds = selectedIds();
+  const singleSelectedId = currentSelectedIds.length === 1 ? currentSelectedIds[0] : null;
+
+  async function handleExpandNode(): Promise<void> {
+    if (singleSelectedId === null) return;
+    setAiExpandTagsBusy(true);
+    const result = await expandNode(singleSelectedId);
+    setAiExpandTagsBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  async function handleSuggestTags(): Promise<void> {
+    if (singleSelectedId === null) return;
+    setAiExpandTagsBusy(true);
+    const result = await suggestTags(singleSelectedId);
+    setAiExpandTagsBusy(false);
     if (!result.ok) window.alert(result.message);
   }
 
@@ -417,8 +451,15 @@ export function App() {
           {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
         </button>
         {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new document. */}
-        <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 12 }}>
+        <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 4 }}>
           ✦ Restructure
+        </button>
+        {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
+        <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ marginRight: 4 }}>
+          ✦ Expand
+        </button>
+        <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 12 }}>
+          ✦ Tags
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit

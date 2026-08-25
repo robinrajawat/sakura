@@ -1359,7 +1359,18 @@ building the earlier ones):
    original pasted text into the new document's Pad (a real, separately-scoped gap — `web/`'s
    `padStore.ts` has no per-document scoping at all yet, the same architectural gap already
    documented elsewhere in this project).
-6. Expand node, Suggest tags — both simple single-node single-shot capabilities.
+6. **Expand node, Suggest tags** (landed, see Status) — both simple single-node single-shot
+   capabilities, built on the same `aiCapabilities.ts` foundation via a new generic
+   `callAiApiWithPrompt`. `state/aiExpandTags.ts` holds both orchestrations plus their pure
+   parsers (`parseExpandResponseCore`'s flat bullet-strip, `normalizeTagCore`/
+   `parseTagsResponseCore`'s JSON-array-with-comma/newline-fallback tag cleanup).
+   `outlineStore.ts` gained `expandNodeChildren` (splices new nodes immediately after the parent
+   at `idx + 1`, so they become the parent's first children even when it already has some) and
+   `addSuggestedTags` (adds only genuinely new tags, no undo checkpoint pushed when every
+   suggested tag is already present). Toolbar-only trigger surface ("✦ Expand"/"✦ Tags" buttons,
+   enabled only with exactly one node selected) — neither the right-click menu nor Quick Assist
+   exist yet as surfaces for these. NOT built: legacy's icon-suggestion sibling capability
+   (slice 7, separate) and any batching (both are single-node by design, unlike Rewrite).
 7. Suggest icon — batched, with the keyword/historical-index tiers ahead of any AI call, plus the
    single-node picker-popover variant.
 8. Summarise selection — multi-node-selection-specific.
@@ -1476,8 +1487,20 @@ verified end-to-end in real headless Chrome with the AI endpoint mocked via `pag
 node and correctly no-op'ing when the topic prompt is cancelled; Restructure Text via the toolbar
 and via `Ctrl+Shift+R`, both the already-structured free-parse bypass — confirmed zero AI calls —
 and the AI-driven path for flat unstructured text, each correctly landing in a genuine new
-document; the dialog's own Cancel button) — zero console/page errors across every check. Slices
-6-9 (Expand/Tags, Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10
+document; the dialog's own Cancel button) — zero console/page errors across every check. **This
+PR**: Expand node + Suggest tags — `state/aiExpandTags.ts` (`expandNode`/`suggestTags` plus pure
+`parseExpandResponseCore`/`normalizeTagCore`/`parseTagsResponseCore`), a new generic
+`callAiApiWithPrompt` on `aiCapabilities.ts`, and two new `outlineStore.ts` actions
+(`expandNodeChildren`, `addSuggestedTags`), wired to toolbar "✦ Expand"/"✦ Tags" buttons enabled
+only with exactly one node selected — verified end-to-end in real headless Chrome (buttons
+correctly enabling/disabling across zero/one/multi selection, Expand inserting the right children
+immediately after the parent, Suggest Tags applying only new tags and reporting cleanly when every
+suggestion is already present, Undo reverting an Expand) — zero console/page errors across every
+check. A real bug was caught and fixed during that verification: the toolbar buttons' enabled
+state was computed from a value (`selectedId !== null`) that doesn't change reference or value
+across a single-select → multi-select transition, so React never re-rendered them; fixed by also
+subscribing to `multiSelectedIds`, which is always a fresh array on every selection change. Slices
+7-9 (Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10
 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
