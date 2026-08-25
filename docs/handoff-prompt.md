@@ -183,46 +183,73 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `7e33e9b` ("feat(presenter):
-query-param Audience View boot check (§6.6 step 2) (#221)"). Following
-the user's "We have to cover everything anyway so you decide"
-delegation, six PRs have now landed in this stretch: #217 (a real
-`nextId` node-id-collision bug fix), #218 (the first minimal
-Settings-panel slice), #219 (a docs correction: Audience View/
-Whiteboard mirroring needs NO client-side routing at all), #220
-(`PresenterMode.tsx`'s presenting state moved into a new
-`usePresenterStore.ts`), #221 (the query-param boot check + a
-chromeless `AudienceWindow.tsx`), and this PR -- **Audience View is
-now a genuinely working feature end to end, not just a boot path.**
-`state/audienceBridge.ts` installs `window.__sakuraAudience` on every
-window at boot (`main.tsx`), unconditionally, regardless of role --
-the direct equivalent of legacy's own pattern of always defining
-cross-window functions on every window. `openAudienceWindow()` is a
-direct port of legacy's real one (same popup feature string);
-`AudienceWindow.tsx` signals readiness via
-`window.opener.__sakuraAudienceChildReady(window)` on mount (the
-equivalent of legacy's own `audienceWindowReady`); the opener then
-pushes live `usePresenterStore` state into the child via Zustand's own
-`subscribe` API (simpler than legacy's manual poll/DOM-clone
-approach). A real "Open Audience View"/"Close Audience View" toggle
-button now lives in `PresenterMode.tsx`'s toolbar. A real
-architectural correction landed in the same slice: `AudienceWindow.tsx`
-no longer renders the full `PresenterMode.tsx` -- it now renders a new
-`PresenterSlideView.tsx`, the passive slide-content block extracted
-out of `PresenterMode.tsx` (which still renders it internally via a
-new `interactive` prop), since legacy's real Audience window has none
-of its own interactive controls and `web/`'s shouldn't either (a
-second window with its own live Prev/Next buttons would fight the
-state the bridge pushes into it). Verified end-to-end in real headless
-Chrome with two real coordinated browser windows (Playwright's own
-`context.waitForEvent('page')` catching the real `window.open()`
-call): the popup correctly mirrors slide navigation, blackout, and a
-real tracked laser-pointer position live, and closes cleanly via the
-opener's own button -- zero console/page errors on either window.
-**Only one piece of the §6.6 Audience View plan remains: Whiteboard
-mirroring, blocked on `web/`'s Diagrams panel gaining a real
-`isWhiteboard` concept** (a separately-scoped §6.3 follow-up -- see
-phase6-full-parity-plan.md's §6.6 section for the full detail).
+As of this writing: `main` is at commit `5d8658b` ("feat(presenter):
+real cross-window Audience View bridge (§6.6 steps 3-4) (#222)"),
+closing out Audience View end to end except Whiteboard mirroring
+itself (blocked on Diagrams gaining a real `isWhiteboard` concept, a
+separately-scoped §6.3 follow-up -- see phase6-full-parity-plan.md's
+§6.6 section for the full mechanism, built across #219-#222).
+
+After that, the user asked directly why §6.6/§6.7 were still "in
+progress" -- answered by walking both sections' real remaining items
+(§6.6: Word/PDF/PowerPoint decision cards + Excel export, all blocked
+on Decision Log not existing as a real feature; PDF's deeper
+"render from a real Preview-equivalent" architecture gap. §6.7:
+Editor's Choice/Documentation Mode presets; ~7 live-editor layout
+controls, blocked on `OutlineTree.tsx` having zero tree-line/row-
+density/text-size rendering infrastructure; inline note/remark/Q&A
+previews) -- then the user said: **"Then let's try to complete both of
+these before we move to 6.8."** This is the current standing
+instruction superseding the general "you decide" delegation for scope
+-- §6.6 and §6.7 specifically are the priority now, not moving on to
+§6.8 until both are as complete as they can honestly be.
+
+Two research passes followed (one hit the session's API rate limit
+mid-run and was continued directly via Grep/Read instead of a second
+subagent once the user said "Continue"):
+- **Decision Log** (unblocks most of §6.6's remainder): legacy's real
+  schema is `anchorNodeId` + 5 rich fields (context/decision/
+  rationale/alternatives/impact) + author + status + timestamps, with
+  a real one-decision-per-node rule (unlike Diagrams' many-per-node).
+  Card rendering needed in three places (Word, PDF/Preview -- these
+  two share one renderer since PDF is literally a print of Preview,
+  PowerPoint), plus a simple flat Excel export (9 columns, SheetJS).
+  `web/`'s current `Decision` type (`padStore.ts`) is just title/
+  description/status -- realistically a 5-7 PR sequence: store
+  rebuild, anchor picker + node-linking, panel UI, outline badges,
+  DOCX card, PDF/Preview card, PPTX card, Excel export (some
+  combinable). Not yet started.
+- **Layout controls** (unblocks most of §6.7's remainder): legacy's
+  live tree renders literal monospace ASCII-connector text
+  (`buildPrefix`, legacy/index.html:17876 -- the SAME function `web/`
+  already ported into `core/nodeQueries.ts` for exports only) rather
+  than CSS padding, a genuine architecture difference from `web/`'s
+  current `depth*24`px approach -- porting tree lines faithfully means
+  either replacing that whole mechanism or building a CSS-based visual
+  approximation (the latter is the idiomatic call for `web/`'s actual
+  architecture, matching the same "port the effect, not the technique"
+  precedent Audience View itself used). Two real corrections to the
+  plan doc's own prior list: "row style" IS a real legacy feature
+  (`rowHighlightStyle`, just named differently), "collapse depth" is
+  NOT a real legacy feature under any name. A real setting neither the
+  plan doc nor `outlinePrefsStore.ts` had listed at all, "Limit
+  reading width," was found too. "Editor's Choice preset" turned out
+  to be a ~40-setting personal configuration snapshot (toolbar-group
+  visibility, hover-toolbar, Presenter auto-behaviors, AI thresholds,
+  even a hardcoded personal name) -- most of which `web/` has no
+  settings for at all; the user chose **mark N/A, keep going**
+  (same category of call as the Chrome-preset N/A) rather than build
+  an entire toolbar-customization subsystem first.
+  **This PR landed the real, tractable part**: compact rows, text
+  size, limit reading width, and row style, all in the Settings
+  panel's new "Layout" section, verified end-to-end in real headless
+  Chrome. Tree-line connectors/depth-guide lines (the bigger,
+  architecturally-novel piece) and inline note/remark/Q&A previews
+  (a real, separate, non-trivial feature -- `web/` already shows an
+  inline note preview unconditionally today, but has no per-node
+  expand/collapse state or remark/Q&A previews at all) remain not
+  started -- pick up either next, or move to Decision Log, per
+  phase6-full-parity-plan.md's §6.7 section.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -1028,9 +1055,9 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 through #221 all merged and their local branches deleted this
-session; this PR (`audience/cross-window-bridge`) is the current one.
-No feature branches should remain open for review once this PR also
+#217 through #222 all merged and their local branches deleted this
+session; this PR (`outline/layout-settings`) is the current one. No
+feature branches should remain open for review once this PR also
 merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw

@@ -1054,10 +1054,84 @@ Status: **in progress.**
   pre-existing bug -- `outlineStore`'s `nextId` never advancing when a document's nodes loaded
   in, causing node-id collisions on the very first "Add child" of a fresh session -- shipped
   separately as its own PR, not bundled into this feature slice.)
-- The remaining §6.7 items -- Editor's Choice/Documentation Mode presets and the ~7 layout
-  controls above -- stay not started, gated on the new `OutlineTree.tsx` rendering
-  infrastructure noted above, and/or the Settings panel growing its full multi-category rail as
-  more prefs accumulate real backing state to show (see §6.10).
+- ✅ **The real legacy "Layout" settings section landed: compact rows, text size, limit
+  reading width, and row style.** Re-investigated §6.7's remaining-items list directly against
+  legacy's own code rather than the plan doc's original description, and found two corrections:
+  "row style" IS a real legacy feature (`rowHighlightStyle`, legacy/index.html:13543 -- just
+  named differently than the plan doc assumed; controls how the selected row is visually
+  indicated: a background tint / a small dot / an inset left bar / a full inset outline), while
+  "collapse depth" is NOT a real legacy feature under any name (confirmed by grep across the
+  whole file) -- same "trust the real code" correction pattern as the Chrome-preset and
+  'schedule'-theme-mode corrections elsewhere in this project. A real legacy Layout setting
+  neither the plan doc nor `outlinePrefsStore.ts` had listed at all, "Limit reading width"
+  (legacy/index.html:18972-18990, `editorReadingWidthEnabled`/`editorReadingWidth`, 600-1400px),
+  is added here too. `outlinePrefsStore.ts` gains `compactRows`/`editorScale`/
+  `editorReadingWidthEnabled`/`editorReadingWidth`/`rowHighlightStyle` (plus `depthGuideLines`,
+  wired into rendering in a later slice), matching legacy's own real defaults and clamp ranges
+  exactly (legacy/index.html:8276-8277's own top-level `let` declarations; `setEditorScale`'s
+  real [0.85,1.4] clamp at legacy/index.html:18971; `setEditorReadingWidth`'s real [600,1400]
+  clamp at legacy/index.html:18984). Applied as plain JS-computed inline-style values in
+  `OutlineTree.tsx` (a row-density multiplier on row padding, a text-scale multiplier on the
+  tree's base font-size, a `maxWidth`/`margin:auto` wrapper for reading width) rather than CSS
+  custom properties consumed by `calc()` in a stylesheet -- `web/`'s row rendering has always
+  been 100% inline-style-driven, not a stylesheet with `var()`-based rules, so this keeps the
+  same pattern the rest of this component already uses instead of introducing a new one for
+  just these two prefs. Row style's `dot`/`bar`/`outline` variants are a new pure function,
+  `state/rowHighlight.ts`'s `resolveRowHighlightStyle`, reproducing legacy's own exact
+  `color-mix(in srgb, var(--accent) N%, transparent)` CSS values as literal strings (native
+  browser support, no JS color-blending library needed) -- `web/` has no separate "anchor within
+  a multi-select" concept distinct from "the single selected node," so a multi-selected node
+  always renders at the weaker of legacy's two levels (`.selected`, never `.primary-selection`),
+  a real, deliberate simplification. Verified end-to-end in real headless Chrome: compact rows
+  toggling measurably changes row height, the text-size slider measurably changes row height at
+  140%, limiting reading width measurably narrows the tree container to the chosen pixel value,
+  each row style renders its own real visual marker (a dot element, an inset box-shadow bar) on
+  the selected row, and every setting survives a full page reload -- zero console/page errors.
+- **"Editor's Choice"/"Documentation Mode" presets are marked N/A, not attempted.** Investigated
+  the real `applyEditorsChoicePreset` (legacy/index.html:41054-41103+) rather than trusting the
+  plan doc's original "layout controls" framing, and found it is NOT a layout preset at all --
+  it's a ~40-setting personal configuration snapshot spanning toolbar-group visibility (History/
+  Structure/Move/Extras hidden entirely; Format/Fold/Insert/AI trimmed to specific buttons),
+  hover-toolbar on/off, sidebar/Pad open state, context-menu quick-action ordering, status-bar
+  item visibility, app-bar decluttering, Presenter auto-behaviors (auto-laser, auto-presenter,
+  branding, timer/overview/notes enablement), AI rewrite thresholds, typewriter mode, and even a
+  hardcoded `lastDecisionAuthor='Robin Rajawat'` -- a literal personal value, not a generic
+  template. Most of these settings have no equivalent anywhere in `web/` yet; building this
+  preset faithfully would mean building most of an entire toolbar-customization subsystem first,
+  arguably bigger than §6.10 itself. Put to the user directly given the scope; their call: mark
+  N/A and keep moving on §6.7's real, buildable items rather than block on it, the same category
+  of call as the Chrome-preset N/A.
+- **Tree lines and depth guide lines (the live editor's own connectors/guides, not the
+  already-built export-only `hideTreeLines`/`treeIndentWidth`) remain not started.** A real
+  finding while investigating the Layout section above: legacy's LIVE tree does not use CSS
+  padding/border-line indentation at all -- it renders literal monospace ASCII connector
+  characters (`├──`/`└──`/`│`) as row-prefix text via `buildPrefix` (legacy/index.html:17876),
+  the SAME function `web/` already ported into `core/nodeQueries.ts` for exports only, applied
+  to the LIVE tree too via a `.node-prefix{white-space:pre;font-family:monospace}` span
+  (legacy/index.html:564) -- `treeIndentWidth`/`hideTreeLines` genuinely drive both surfaces in
+  legacy, unlike `web/`'s current architecture where they're export-only and the live tree uses
+  a completely different, simpler `depth * 24`px CSS-padding indent. Faithfully replacing
+  `web/`'s live indentation mechanism with legacy's monospace-prefix approach would be a real,
+  risky rewrite of how the whole tree renders; a CSS-based visual approximation (connector-style
+  border lines layered onto the existing padding-based rows) is the more idiomatic port for
+  `web/`'s actual architecture, matching this project's own precedent of adapting legacy's
+  *effect* to the target architecture rather than mechanically replicating its *technique* (see
+  Audience View's own store-driven-re-render vs. legacy's DOM-cloning, §6.6). Depth guide lines
+  (`.node-vguide`, legacy/index.html:998, a faint absolutely-positioned 1px line per indent
+  level) are the more tractable half and a reasonable next slice on their own. Not started in
+  this pass -- flagged as the next concrete piece of unstarted §6.7 work.
+- **Inline note/remark/Q&A previews remain not started, and are a bigger, separate feature than
+  originally scoped.** Legacy's real mechanism (`alwaysExpandInlineEnabled`,
+  legacy/index.html:8276) is a document-wide default (off by default) for whether every node's
+  note/remark/Q&A content shows inline under its row automatically, with a per-node dot
+  (`.node-note-dot`, legacy/index.html:20326) letting a reader override that default node-by-
+  node -- real per-node expand/collapse state (`inlineExpandNoteNodeIds`/
+  `inlineExpandRemarksNodeIds`/`inlineExpandQaNodeIds`, three separate `Set`s), not just a
+  single global toggle. `web/`'s `OutlineTree.tsx` already shows an inline note preview
+  unconditionally today (no toggle, no per-node override) and has no remark/Q&A inline rendering
+  at all -- porting the real mechanism means adding genuinely new state (three per-node
+  expand-state sets) and new rendering (remark/Q&A preview blocks), not just wiring an existing
+  toggle to existing behavior. Not started; a real, separately-scoped follow-up.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
@@ -1114,8 +1188,10 @@ query-param boot check, and this PR — the real cross-window bridge, closing ou
 end to end except Whiteboard mirroring itself, still blocked on Diagrams getting a real
 `isWhiteboard` concept), **§6.7 in progress** (#213,
 #214, #215, #216 Chrome-background-preset investigation, #217 a real outline `nextId`
-node-id-collision bug fix, #218 the first minimal Settings-panel slice) — see each section's
-own `Status:` line for
+node-id-collision bug fix, #218 the first minimal Settings-panel slice, and this PR — the real
+legacy "Layout" settings section (compact rows/text size/limit reading width/row style),
+plus marking Editor's Choice/Documentation Mode N/A after investigating the real scope — see
+each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own

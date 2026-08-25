@@ -4,9 +4,11 @@ import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
 import { useNotePanelStore } from '../store/notePanelStore';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { findNodeByText } from '../core/backlinks';
+import { resolveRowHighlightStyle } from '../state/rowHighlight';
 import { NodeText } from './NodeText';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
@@ -104,6 +106,25 @@ export function OutlineTree() {
   const redo = useOutlineStore((s) => s.redo);
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const openNotePanel = useNotePanelStore((s) => s.openPanel);
+  // §6.7 slice (docs/phase6-full-parity-plan.md), the real legacy "Layout" settings section
+  // (legacy/index.html:5693-5698's own summary, verified against the real code). `compactRows`/
+  // `editorScale` port legacy's own `--row-density`/`--editor-scale` CSS custom properties as
+  // plain JS multipliers instead (`web/`'s row-rendering is 100% inline-style-driven, not a
+  // stylesheet with `calc(... * var(...))` rules -- see this file's own header on why CSS custom
+  // properties aren't this component's pattern), applied to the same real values legacy's own
+  // CSS uses (`compactRows`: 0.78 vs 1 row-density factor; `editorScale`: 0.85-1.4 range).
+  // `editorReadingWidthEnabled`/`editorReadingWidth` port legacy's own `#editor-pane-inner{max-
+  // width:var(--editor-reading-width,none);margin:0 auto}`. `rowHighlightStyle` ports legacy's
+  // own `body.row-hl-{original|dot|bar|outline}` selected-row indicator variants
+  // (legacy/index.html:561). `hideTreeLines`/`depthGuideLines` (already-existing/new fields on
+  // this same store) are wired into this file in a separate, later slice -- see this file's own
+  // header for why that one's bigger.
+  const compactRows = useOutlinePrefsStore((s) => s.compactRows);
+  const editorScale = useOutlinePrefsStore((s) => s.editorScale);
+  const editorReadingWidthEnabled = useOutlinePrefsStore((s) => s.editorReadingWidthEnabled);
+  const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
+  const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
+  const rowDensity = compactRows ? 0.78 : 1;
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
   // Phase 6.2 node hover toolbar. Tracks only the CURRENTLY-hovered row's id, matching legacy's
   // own default hoverToolbarActions=['child','above','below'] -- the fuller, user-configurable
@@ -486,7 +507,7 @@ export function OutlineTree() {
   const focusedNode = focusedId !== null ? nodes.find((n) => n.id === focusedId) : undefined;
 
   return (
-    <div>
+    <div style={editorReadingWidthEnabled ? { maxWidth: editorReadingWidth, margin: '0 auto' } : undefined}>
       {/* Focus (zoom-in) breadcrumb + active tag-filter indicator -- Tags & Focus mode slice
           (docs/phase5-parity-checklist.md). Only rendered when relevant, matching the rest of
           this file's "no chrome for inactive state" convention (e.g. note/code preview rows). */}
@@ -536,6 +557,7 @@ export function OutlineTree() {
         onKeyDown={handleTreeKeyDown}
         style={{
           fontFamily: 'sans-serif',
+          fontSize: 14 * editorScale,
           border: `1px solid ${t.border}`,
           borderRadius: 8,
           padding: '0.5rem',
@@ -555,6 +577,8 @@ export function OutlineTree() {
         const showDropChild = dropTarget?.id === node.id && dropTarget.mode === 'child';
         const hasChildren = nodeHasChildrenFn(node.id);
         const isCollapsed = collapsedIds.has(node.id);
+        const highlight = resolveRowHighlightStyle(rowHighlightStyle, isSelected, isMultiSelected, t.dropIndicator, t.selectedBg, t.multiSelectedBg);
+        const showHighlightDot = rowHighlightStyle === 'dot' && (isSelected || isMultiSelected);
 
         return (
           <div key={node.id}>
@@ -577,26 +601,36 @@ export function OutlineTree() {
               setContextMenu({ x: e.clientX, y: e.clientY, nodeId: node.id });
             }}
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               paddingLeft: `${node.depth * 24 + 8}px`,
-              paddingTop: 4,
-              paddingBottom: 4,
+              paddingTop: 4 * rowDensity,
+              paddingBottom: 4 * rowDensity,
               cursor: isEditing ? 'text' : 'grab',
               opacity: isDragging ? 0.4 : 1,
-              backgroundColor: showDropChild
-                ? `${t.dropIndicator}1f`
-                : isSelected
-                  ? t.selectedBg
-                  : isMultiSelected
-                    ? t.multiSelectedBg
-                    : 'transparent',
-              boxShadow: showDropChild ? `inset 0 0 0 1.5px ${t.dropIndicator}` : 'none',
+              backgroundColor: showDropChild ? `${t.dropIndicator}1f` : highlight.backgroundColor ?? 'transparent',
+              boxShadow: showDropChild ? `inset 0 0 0 1.5px ${t.dropIndicator}` : (highlight.boxShadow ?? 'none'),
               borderTop: showDropAbove ? `2px solid ${t.dropIndicator}` : '2px solid transparent',
               borderBottom: showDropBelow ? `2px solid ${t.dropIndicator}` : '2px solid transparent',
               borderRadius: 4
             }}
           >
+            {showHighlightDot && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  left: 2,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: isSelected ? 6 : 5,
+                  height: isSelected ? 6 : 5,
+                  borderRadius: '50%',
+                  background: isSelected ? t.dropIndicator : `color-mix(in srgb, ${t.dropIndicator} 65%, transparent)`
+                }}
+              />
+            )}
             <span
               onClick={(e) => {
                 e.stopPropagation();
