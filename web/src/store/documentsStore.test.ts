@@ -1,12 +1,14 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { useDocumentsStore } from './documentsStore';
 import { useOutlineStore, defaultNodeStyles } from './outlineStore';
+import { useVersionHistoryStore } from './versionHistoryStore';
 
 describe('documentsStore', () => {
   beforeEach(() => {
     localStorage.clear();
     useDocumentsStore.setState({ docsIndex: [], openTabs: [], activeDocId: null, loaded: false, folders: [], docFolderMap: {} });
     useOutlineStore.setState({ nodes: [] });
+    useVersionHistoryStore.setState({ docId: null, revisions: [], loading: false });
   });
 
   it('newDocument creates a document, opens it as a tab, and makes it active', () => {
@@ -492,6 +494,91 @@ describe('documentsStore', () => {
       expect(useOutlineStore.getState().canUndo()).toBe(true);
       useOutlineStore.getState().undo();
       expect(useOutlineStore.getState().nodes.find((n) => n.id === nodeId)?.text).not.toBe('edited before close');
+    });
+  });
+
+  describe('Version History integration (§6.8)', () => {
+    it('saveActiveDocNodes hands the PREVIOUS stored content to maybeCapture, matching legacy\'s "before overwrite" trigger', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      const spy = vi.spyOn(useVersionHistoryStore.getState(), 'maybeCapture').mockResolvedValue(undefined);
+
+      const originalNodes = useOutlineStore.getState().nodes;
+      useOutlineStore.setState({
+        nodes: [{ ...originalNodes[0], text: 'edited' }]
+      });
+      useDocumentsStore.getState().saveActiveDocNodes();
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [capturedId, capturedNodes] = spy.mock.calls[0];
+      expect(capturedId).toBe(id);
+      // The PREVIOUS (pre-edit) nodes, not the just-written new ones.
+      expect(capturedNodes[0].text).toBe(originalNodes[0].text);
+      spy.mockRestore();
+    });
+
+    it('saveActiveDocNodes never calls maybeCapture when there is no previously stored content at all', () => {
+      // Bypasses newDocument() (which writes storage immediately) to construct the genuine
+      // "activeDocId is set but docStorageKey(activeDocId) has never been written" case.
+      useDocumentsStore.setState({
+        docsIndex: [{ id: 'never-saved', title: 'Untitled', createdAt: 0, modifiedAt: 0 }],
+        openTabs: ['never-saved'],
+        activeDocId: 'never-saved'
+      });
+      const spy = vi.spyOn(useVersionHistoryStore.getState(), 'maybeCapture').mockResolvedValue(undefined);
+      useDocumentsStore.getState().saveActiveDocNodes();
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    it('restoreDocRevision returns false for a document that is not the active one', async () => {
+      useDocumentsStore.getState().newDocument();
+      const result = await useDocumentsStore.getState().restoreDocRevision('not-the-active-doc', 12345);
+      expect(result).toBe(false);
+    });
+
+    it('restoreDocRevision returns false when the requested revision does not exist', async () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      useVersionHistoryStore.setState({ docId: id, revisions: [] });
+      const result = await useDocumentsStore.getState().restoreDocRevision(id, 99999);
+      expect(result).toBe(false);
+    });
+
+    it('restoreDocRevision applies the revision\'s nodes/title, resets selection, and updates docsIndex', async () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      const revisionNodes = [
+        { id: 501, depth: 0, text: 'restored node', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ];
+      useVersionHistoryStore.setState({
+        docId: id,
+        revisions: [{ ts: 1000, reason: 'Manual checkpoint', nodes: revisionNodes, title: 'Restored Title' }]
+      });
+
+      const result = await useDocumentsStore.getState().restoreDocRevision(id, 1000);
+
+      expect(result).toBe(true);
+      expect(useOutlineStore.getState().nodes).toEqual(revisionNodes);
+      expect(useOutlineStore.getState().selectedId).toBe(501);
+      expect(useOutlineStore.getState().multiSelectedIds).toEqual([]);
+      expect(useDocumentsStore.getState().docsIndex.find((d) => d.id === id)?.title).toBe('Restored Title');
+    });
+
+    it('restoreDocRevision loads revisions first if the store is not already scoped to this doc', async () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      const loadSpy = vi.spyOn(useVersionHistoryStore.getState(), 'loadRevisions').mockImplementation(async (docId) => {
+        useVersionHistoryStore.setState({
+          docId,
+          revisions: [{ ts: 2000, reason: 'Auto', nodes: [], title: 'From Load' }]
+        });
+      });
+      // docId left at its default (null) from beforeEach -- forces the "not already scoped" path.
+      const result = await useDocumentsStore.getState().restoreDocRevision(id, 2000);
+      expect(loadSpy).toHaveBeenCalled();
+      expect(result).toBe(true);
+      loadSpy.mockRestore();
     });
   });
 });

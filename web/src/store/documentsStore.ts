@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useOutlineStore, type OutlineNode, type UndoSnapshot, defaultNodeStyles } from './outlineStore';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
+import { useVersionHistoryStore } from './versionHistoryStore';
 
 export interface DocSummary {
   id: string;
@@ -159,6 +160,16 @@ interface DocumentsState {
   renameDocument: (id: string, title: string) => void;
   deleteDocument: (id: string) => void;
   saveActiveDocNodes: () => void;
+  /** §6.8 slice: restores a Version History revision into the ACTIVE document only -- matches
+   * legacy's real `restoreDocRevision`'s "restoring is never destructive" behavior (the current
+   * live content is itself recorded as a fresh `'Before restoring an older version'` revision
+   * first), but deliberately doesn't support restoring into a document that isn't the currently
+   * active one (legacy's own separate background-document restore path -- see
+   * `versionHistoryStore.ts`'s own header for why that's out of this slice's scope). Resets
+   * selection/undo history the same way loading a fresh document does, rather than trying to
+   * preserve whatever was selected in the content being replaced. Returns whether the requested
+   * revision was actually found and restored. */
+  restoreDocRevision: (docId: string, ts: number) => Promise<boolean>;
   /** Creates a new folder named "New Folder" under `parentId` (`null` = top-level), matching
    * legacy's own `createFolder` default name and open-by-default state
    * (legacy/index.html:31016-31021) -- minus legacy's own immediate inline-rename prompt, which
@@ -538,12 +549,52 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     const nodes = useOutlineStore.getState().nodes;
     const existing = docsIndex.find((d) => d.id === activeDocId);
     const title = existing?.title ?? 'Untitled';
+    // §6.8 slice: Version History's real automatic-snapshot trigger -- read the PREVIOUS stored
+    // content (about to be overwritten below) and hand it to the capture gate, matching legacy's
+    // own real "previous state recorded right before a save overwrites it" comment exactly. Not
+    // awaited: a version-history write is a background safety net, not something any caller of
+    // saveActiveDocNodes should ever block on.
+    const prevStored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
+    if (prevStored) void useVersionHistoryStore.getState().maybeCapture(activeDocId, prevStored.nodes, prevStored.title);
     writeJson(docStorageKey(activeDocId), { title, nodes });
     if (existing) {
       const nextIndex = docsIndex.map((d) => (d.id === activeDocId ? { ...d, modifiedAt: Date.now() } : d));
       writeJson(_DOCS_INDEX_KEY, nextIndex);
       set({ docsIndex: nextIndex });
     }
+  },
+
+  restoreDocRevision: async (docId, ts) => {
+    if (docId !== get().activeDocId) return false;
+    if (useVersionHistoryStore.getState().docId !== docId) {
+      await useVersionHistoryStore.getState().loadRevisions(docId);
+    }
+    const rev = useVersionHistoryStore.getState().revisions.find((r) => r.ts === ts);
+    if (!rev) return false;
+
+    // Restoring is never itself destructive -- snapshot the live content as a fresh revision
+    // first, matching legacy's own real behavior (Settings -> Version History still shows the
+    // content you just restored away from, right at the top).
+    const currentNodes = useOutlineStore.getState().nodes;
+    const currentTitle = get().docsIndex.find((d) => d.id === docId)?.title ?? 'Untitled';
+    await useVersionHistoryStore.getState().recordRevision(docId, currentNodes, currentTitle, 'Before restoring an older version');
+
+    const nodes = rev.nodes;
+    useOutlineStore.setState({
+      nodes,
+      nextId: nextIdForNodes(nodes),
+      selectedId: nodes[0]?.id ?? null,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: nodes[0]?.id ?? null,
+      collapsedIds: new Set()
+    });
+    writeJson(docStorageKey(docId), { title: rev.title, nodes });
+    const docsIndex = get().docsIndex.map((d) => (d.id === docId ? { ...d, title: rev.title || d.title, modifiedAt: Date.now() } : d));
+    writeJson(_DOCS_INDEX_KEY, docsIndex);
+    set({ docsIndex });
+    await useVersionHistoryStore.getState().loadRevisions(docId);
+    return true;
   },
 
   registerScrollContainer: (el) => {
