@@ -633,17 +633,37 @@ together.
 
 Asked next to complete the two remaining substantial §6.8 items:
 **"Full whole-app JSON Export/Import"** and **"Version History"** --
-built in one continuous pass (Export/Import's own `preRestoreSnapshot`
-mechanism, "Undo last restore," turned out to be real infrastructure
-both this slice AND tier 1's own safety-copy restore needed), shipped
-as two separate PRs on two separate branches (git surgery: committed
-Version History's files on its own branch first, then switched back to
-`main` and branched again for the remaining uncommitted Export/Import
-files) per this session's own "ship separately" precedent. This
-paragraph covers Export/Import; see Version History's own paragraph
-(wherever this file lands relative to that PR) for the other half.
-New `store/dataIoStore.ts`: direct port of legacy's real `exportAllData`/
-`importAllDataFromFile`/`importAllDataFromPayload`/
+shipped as two separate PRs on two separate branches, following this
+session's own "ship separately" precedent, though both were researched
+and built in one continuous pass since Export/Import's own
+`preRestoreSnapshot` mechanism ("Undo last restore") turned out to be
+real, separately-scoped infrastructure both this slice AND tier 1's own
+safety-copy restore needed (git surgery: committed Version History's
+files on its own branch first, then switched back to `main` and
+branched again for the remaining uncommitted Export/Import files).
+
+Version History shipped first: a new `store/versionHistoryStore.ts`,
+deliberately scoped to a document's outline core only (nodes/title,
+active document only) -- legacy's own real feature is enormous
+(Pad/diagrams/Q&A/decision-log capture, per-node view,
+background-document restore, four separate Hub-domain histories), see
+that store's own header for the full scoping reasoning. Same real
+IndexedDB scheme legacy uses (`docrev:<id>`, 10-minute auto-capture
+gap, 20-version cap). `documentsStore.ts`'s existing autosave now feeds
+the capture gate right before each overwrite (no new timer). A new
+`components/VersionHistoryPanel.tsx` (clock-icon header button, hidden
+with no document open) lists revisions, Save-a-version-now, Restore.
+Verified with 21 new unit tests plus a real, long headless-Chrome flow
+chained together with the Export/Import verification below (no
+Firebase dependency, so both could be exercised thoroughly): opened
+the panel, saved a manual checkpoint, restored it, confirmed the
+safety-checkpoint row appeared, confirmed History correctly showed an
+Auto revision captured from the whole-app import.
+
+Export/Import shipped second, on its own branch since
+`documentsStore.ts`/`backupStore.ts` needed to diverge cleanly for two
+separate PRs. New `store/dataIoStore.ts`: direct port of legacy's real
+`exportAllData`/`importAllDataFromFile`/`importAllDataFromPayload`/
 `restoreFromPreRestoreSnapshot`. Export is a straight download, reusing
 the exact same envelope tier 1/tier 2 already write. Import's real
 safety mechanics ported faithfully: a loose shape check (legacy's own

@@ -1601,6 +1601,51 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   within one browser-automation run hit real Playwright navigation-timing flakiness unrelated to
   the feature itself (the exact same `snapshotBeforeRestore` call already proven end-to-end via
   the import path above), not worth forcing past for a call site that's otherwise identical code.
+- ✅ **Version History landed -- outline core, deliberately scoped down from legacy's own much
+  larger feature.** Legacy's real Version History spans automatic + manual snapshots of a
+  document's outline/diagrams/decision logs/Q&A/Pad/attachments/remarks, a per-node view lens
+  over the same storage, restoring into either the active OR a background document, and FOUR
+  entirely separate Hub-domain histories (To-Dos/Meeting Notes/Journal/Library, each its own real
+  mechanism) -- genuinely one of the largest single features in the whole app
+  (legacy/index.html:10029-11170). This slice ports the CORE: a document's `nodes`/`title` only,
+  matching the same "capture the highest-value, highest-frequency surface now, document the
+  rest" pattern already used for both backup tiers.
+  New `store/versionHistoryStore.ts`: the same real IndexedDB key scheme (`docrev:<id>`, the SAME
+  `sakura_backup_db`/`kv` store the two backup tiers already use), same real constants
+  (`REVISION_MIN_GAP_MS` = 10 minutes, `REVISION_MAX_PER_DOC` = 20, oldest dropped first), same
+  three real `reason` strings (`'Auto'`, `'Manual checkpoint'`, `'Before restoring an older
+  version'`). `documentsStore.ts`'s existing `saveActiveDocNodes` now hands the PREVIOUS stored
+  content to the capture gate right before overwriting it, matching legacy's own real "previous
+  state recorded right before a save overwrites it" comment exactly -- no new debounce timer, it
+  rides the same 800ms autosave that already existed. A new `restoreDocRevision` action applies a
+  chosen revision back onto live state, snapshotting the current content as a fresh `'Before
+  restoring an older version'` revision first (restoring is never itself destructive, matching
+  legacy's real behavior). New `components/VersionHistoryPanel.tsx` (a purpose-built overlay
+  modal, `web/` has no generic modal system, same precedent `RestructureTextDialog.tsx` already
+  established) -- a clock-icon header button (hidden with no document open, matching legacy's own
+  `if(currentDocId)` guard) opens it; lists revisions newest-first, "Save a version now",
+  "Restore" per row with a `window.confirm` (restoring is non-destructive, so the confirm text
+  says so).
+  Deliberately NOT built: per-node version history (legacy's own separate UI lens over this same
+  storage, `openNodeVersionHistory` -- a real, tractable follow-up once the whole-document view
+  exists); restoring into a document that ISN'T the active one (legacy's own separate
+  background-document restore path -- `web/`'s `documentsStore.ts` always operates through the
+  single active `useOutlineStore`); Pad/diagrams/Q&A/decision-log/attachment/remark capture
+  (matching `backupStore.ts`'s own already-documented "Pad's entire content isn't wired into
+  documentsStore.ts's save/load cycle yet" gap -- capturing what isn't tracked here at all isn't
+  possible); orphaned-diagram/decision-log-link messaging after a restore (moot, since nothing but
+  nodes/title is captured or restored); and the four separate Hub-domain histories -- each a real,
+  separately-scoped follow-up.
+  Verified with two new test suites (16 tests for `versionHistoryStore.ts`'s capture-gate/dedup/
+  cap logic, mocking the `idbKv.ts` module boundary; 5 new integration tests in
+  `documentsStore.test.ts` for the capture-hook wiring and `restoreDocRevision`) plus real
+  headless Chrome, end-to-end through a genuinely long real flow (no Firebase dependency at all,
+  so this could be exercised as thoroughly as tier 2's own backup slice): opened the panel,
+  confirmed the empty state, "Save a version now" created a real Manual-checkpoint row,
+  "Restore" on it round-tripped correctly and added its own "Before restoring an older version"
+  safety row, confirmed the History panel correctly reflects an Auto revision captured from a
+  prior whole-app import (chained together with the Export/Import slice's own real flow), zero
+  console/page errors throughout.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
