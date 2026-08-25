@@ -110,6 +110,40 @@ describe('documentsStore', () => {
     expect(useDocumentsStore.getState().docsIndex).toHaveLength(1);
   });
 
+  it('init() on first-ever launch advances outlineStore\'s nextId past the welcome document\'s own node ids, so the first newChild() cannot collide with them', () => {
+    // Regression test for a real bug: the welcome document seeds nodes with ids 1/2/3, but
+    // outlineStore's own module-level default `nextId` is 2 (from its unrelated single-node
+    // seedNodes()). Without explicitly advancing `nextId` here, the very first newChild() call
+    // minted a new node with id 2 -- colliding with the existing "This is your first
+    // document..." node and corrupting the outline (two nodes sharing one React key, one of
+    // them silently vanishing from the rendered tree).
+    useDocumentsStore.getState().init();
+    useOutlineStore.getState().newChild(1);
+    const { nodes } = useOutlineStore.getState();
+    const ids = nodes.map((n) => n.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(nodes.find((n) => n.text?.startsWith('This is your first document'))).toBeDefined();
+  });
+
+  it('openDocument advances outlineStore\'s nextId past the incoming document\'s own node ids', () => {
+    useDocumentsStore.getState().newDocument();
+    const highId = useDocumentsStore.getState().activeDocId!;
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 50, depth: 1, text: 'a much higher existing id', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useDocumentsStore.getState().saveActiveDocNodes();
+    // Switch away and back so the incoming load goes through openDocument's real
+    // read-from-storage path (not just leftover in-memory state from the setState above).
+    useDocumentsStore.getState().newDocument();
+    useDocumentsStore.getState().openDocument(highId);
+    useOutlineStore.getState().newChild(1);
+    const newNode = useOutlineStore.getState().nodes.find((n) => n.parentId === 1 && n.text === '');
+    expect(newNode?.id).toBe(51);
+  });
+
   describe('per-tab view state (Phase 6.1: per-tab independent scroll/selection)', () => {
     it('restores the selected node when switching back to a previously-visited tab, instead of resetting to the first node', () => {
       useDocumentsStore.getState().newDocument();
