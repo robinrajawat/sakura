@@ -8,6 +8,7 @@ import { AiFallbackSettings } from './AiFallbackSettings';
 import { QuickInsertSettings } from './QuickInsertSettings';
 import { QuickAssistSettings } from './QuickAssistSettings';
 import { BackupSettings } from './BackupSettings';
+import { DataIoSettings } from './DataIoSettings';
 import { ProfileVisibilitySettings } from './ProfileVisibilitySettings';
 
 /**
@@ -79,6 +80,10 @@ import { ProfileVisibilitySettings } from './ProfileVisibilitySettings';
  * copy" and Secure Storage both live under its "Data" category. The other, File-System-Access-
  * API half of legacy's real two-tier backup layer, "auto-backup to file", is a separate,
  * not-yet-built follow-up.
+ *
+ * §6.8 slice 4: added `DataIoSettings.tsx` (full whole-app JSON Export/Import, plus "Undo last
+ * restore") to the "data" category, alongside Secure Storage and the two backup tiers -- matching
+ * legacy's own real rail grouping exactly.
  *
  * §6.8 slice (sharing): added the real 5th "account" category (legacy's own rail has one; this
  * project's just didn't need it until now) holding `ProfileVisibilitySettings.tsx` -- the
@@ -353,6 +358,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       <div style={{ display: activeCategory === 'data' ? 'block' : 'none' }}>
         <SecureStorageSettings t={t} />
         <BackupSettings t={t} />
+        <DataIoSettings t={t} />
       </div>
       <div style={{ display: activeCategory === 'account' ? 'block' : 'none' }}>
         <ProfileVisibilitySettings t={t} />

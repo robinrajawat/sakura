@@ -45,3 +45,18 @@ export function snapshotLocalStorage(): Record<string, string> {
   }
   return data;
 }
+
+/** §6.8 slice: the shared IndexedDB key/shape for legacy's real "Undo last restore" safety net
+ * (legacy/index.html:31560-31600's own `preRestoreSnapshot`) -- a single-slot (not a stack)
+ * snapshot of whatever was in the app right before the MOST RECENT restore, written by every
+ * restore path that can overwrite localStorage wholesale (tier 1's safety-copy restore in
+ * `backupStore.ts`, and whole-app JSON import in `dataIoStore.ts`) and consumed by
+ * `dataIoStore.ts`'s own `undoLastRestore`. Shared here, not duplicated per-store, so both
+ * writers and the one reader agree on the exact key/shape without importing each other. */
+export const PRE_RESTORE_SNAPSHOT_KEY = 'preRestoreSnapshot';
+
+export interface PreRestoreSnapshotEntry {
+  payload: BackupPayload;
+  savedAt: number;
+  reason: string;
+}

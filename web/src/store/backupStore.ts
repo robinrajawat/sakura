@@ -3,6 +3,7 @@ import { useOutlineStore } from './outlineStore';
 import { idbGet, idbSet } from '../utils/idbKv';
 import { buildBackupPayloadCore, snapshotLocalStorage, type BackupPayload } from '../state/backupPayload';
 import { useFsBackupStore } from './fsBackupStore';
+import { snapshotBeforeRestore } from './dataIoStore';
 
 /**
  * §6.8 slice (docs/phase6-full-parity-plan.md): the "local safety copy" half of legacy's real
@@ -38,6 +39,11 @@ import { useFsBackupStore } from './fsBackupStore';
  * `mirrorToIndexedDb()` and `writeFsBackupNow()` together from the SAME 1200ms timer, not two
  * independent ones. `fsBackupStore`'s own `writeNow()` is a no-op unless a file is actually
  * connected, so this costs nothing for the (default) case where tier 2 was never set up.
+ *
+ * §6.8 slice 3: `restoreFromSafetyCopy` now writes a `preRestoreSnapshot` (via `dataIoStore.ts`'s
+ * shared `snapshotBeforeRestore`) before overwriting localStorage, matching legacy's real
+ * `restoreFromIndexedDbMirror` exactly -- so "Undo last restore" (`dataIoStore.ts`) works after
+ * a tier-1 restore too, not only after a whole-app JSON import.
  */
 
 const SAFETY_COPY_KEY = 'localStorageMirror';
@@ -108,6 +114,7 @@ export const useBackupStore = create<BackupState>((set, get) => ({
       return false;
     }
     if (!entry?.payload?.data) return false;
+    await snapshotBeforeRestore('restore from safety copy');
     localStorage.clear();
     for (const [key, value] of Object.entries(entry.payload.data)) {
       localStorage.setItem(key, value);

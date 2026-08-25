@@ -98,4 +98,16 @@ describe('backupStore', () => {
     expect(restored).toBe(false);
     expect(localStorage.getItem('kept')).toBe('yes');
   });
+
+  it('restoreFromSafetyCopy() writes a preRestoreSnapshot of the CURRENT content before overwriting it, matching legacy\'s real restoreFromIndexedDbMirror -- so "Undo last restore" works after a tier-1 restore too', async () => {
+    localStorage.setItem('sakura_web_theme', 'dark');
+    mockIdbGet.mockResolvedValue({ payload: { data: { sakura_web_theme: 'light' } }, savedAt: 1000 });
+    mockIdbSet.mockClear();
+    await useBackupStore.getState().restoreFromSafetyCopy();
+    const snapshotCall = mockIdbSet.mock.calls.find(([key]) => key === 'preRestoreSnapshot');
+    expect(snapshotCall).toBeTruthy();
+    expect(snapshotCall![1].reason).toBe('restore from safety copy');
+    // The snapshot must capture what was there BEFORE the restore overwrote it.
+    expect(snapshotCall![1].payload.data).toEqual({ sakura_web_theme: 'dark' });
+  });
 });

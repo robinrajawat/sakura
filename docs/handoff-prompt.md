@@ -631,6 +631,44 @@ this PR's own description/the plan doc's §6.8 section for the full
 reasoning on each). This closes out both items the user asked for
 together.
 
+Asked next to complete the two remaining substantial §6.8 items:
+**"Full whole-app JSON Export/Import"** and **"Version History"** --
+built in one continuous pass (Export/Import's own `preRestoreSnapshot`
+mechanism, "Undo last restore," turned out to be real infrastructure
+both this slice AND tier 1's own safety-copy restore needed), shipped
+as two separate PRs on two separate branches (git surgery: committed
+Version History's files on its own branch first, then switched back to
+`main` and branched again for the remaining uncommitted Export/Import
+files) per this session's own "ship separately" precedent. This
+paragraph covers Export/Import; see Version History's own paragraph
+(wherever this file lands relative to that PR) for the other half.
+New `store/dataIoStore.ts`: direct port of legacy's real `exportAllData`/
+`importAllDataFromFile`/`importAllDataFromPayload`/
+`restoreFromPreRestoreSnapshot`. Export is a straight download, reusing
+the exact same envelope tier 1/tier 2 already write. Import's real
+safety mechanics ported faithfully: a loose shape check (legacy's own
+is exactly this loose), snapshot-before-overwrite, clear-and-rewrite
+with rollback-on-a-failed-write (re-reading the just-taken snapshot
+back from IndexedDB, matching legacy's own real mechanism, not a
+separately-held in-memory copy). `backupStore.ts`'s own tier-1 restore
+now writes the same shared snapshot too, so "Undo last restore" works
+after either restore path -- one level deep, matching legacy's own
+real behavior verbatim. New `components/DataIoSettings.tsx` (Export…/
+Import…/Undo… rows, confirms live in the component, not the store,
+matching `BackupSettings.tsx`'s own established split). Verified with
+12 new unit tests plus a real headless-Chrome flow (no Firebase
+dependency, so this could be exercised thoroughly): a real downloaded
+file with the right shape, an invalid-file import correctly alerting,
+a valid import actually taking effect, Undo correctly restoring the
+pre-import content and then correctly disappearing once consumed, zero
+console errors throughout. The tier-1-restore-also-snapshots
+integration specifically is unit-tested rather than further
+end-to-end verified -- chaining a second full page reload within one
+browser-automation run hit real Playwright navigation-timing
+flakiness unrelated to the feature itself (the identical
+`snapshotBeforeRestore` call already proven end-to-end via the import
+path), not worth forcing past for what's otherwise identical code.
+
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress

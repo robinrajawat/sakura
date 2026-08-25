@@ -1559,6 +1559,48 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   the same fundamental constraint every browser automation tool has for this specific API) -- the
   16 unit tests, which mock the handle itself, are this slice's real verification of that path's
   actual write/error-recovery logic.
+- ✅ **Full whole-app JSON Export/Import landed**, plus "Undo last restore" -- direct port of
+  legacy's real `exportAllData`/`importAllDataFromFile`/`importAllDataFromPayload`
+  (legacy/index.html:31947-32043) and `restoreFromPreRestoreSnapshot`
+  (legacy/index.html:31559-31573). New `store/dataIoStore.ts` reuses the exact same envelope
+  (`buildBackupPayloadCore`/`SAKURA_EXPORT_FORMAT_VERSION`) tier 1's local safety copy already
+  writes -- an exported file, the safety copy, and a File System Access auto-backup are all
+  byte-shape-compatible with each other and with legacy's own real format. Export is a straight
+  download (`sakura-backup-<date>.json`, matching legacy's filename exactly). Import's real
+  safety mechanics ported faithfully: a loose shape check (legacy's own real validation is
+  exactly this loose -- just "does this look like a backup," no `formatVersion` check at all);
+  snapshot the CURRENT state into a shared `PRE_RESTORE_SNAPSHOT_KEY` (new in
+  `state/backupPayload.ts`) before overwriting anything; clear and rewrite localStorage, rolling
+  back by RE-READING that same snapshot from IndexedDB on a partial write failure -- matching
+  legacy's own real rollback mechanism exactly, not a separately-held in-memory copy.
+  `backupStore.ts`'s own tier-1 `restoreFromSafetyCopy` now writes the same shared snapshot
+  before restoring too (legacy's real `restoreFromIndexedDbMirror` does this), so "Undo last
+  restore" works after either restore path, matching legacy's real Settings row appearing after
+  ANY restore, not just a file import -- one level deep only, matching legacy's own real
+  behavior verbatim ("it holds only what was there before your most recent restore, not a full
+  history"). Confirmation dialogs live in the new `components/DataIoSettings.tsx` (Export…/
+  Import…/Undo… rows under the same "Data & Backup" section, matching legacy's own real rail
+  grouping), not the store -- matching `backupStore.ts`'s own established store/UI split.
+  Two real, deliberate simplifications vs. legacy: no `preserveKeys`/secret-preservation logic
+  (legacy's own real file-import call site already passes none -- there's nothing to port, not
+  an omission); no `SAKURA_JUST_RESTORED_KEY`/cloud-pull-and-merge interaction guard (that exists
+  specifically for legacy's own whole-app pull-and-merge-on-reload mechanism, which has no
+  equivalent in `web/`'s architecture at all -- `web/`'s cloud sync is per-document, triggered by
+  `docSyncStore.ts`'s own `loadDoc`, a real architectural difference, not a gap).
+  Verified with a new test suite (12 tests for `dataIoStore.ts`: export's real download/blob
+  shape, import's valid/invalid/rollback-on-failure paths, undo's restore/delete/failure paths)
+  plus a new regression test on `backupStore.test.ts` confirming tier-1 restore now also writes
+  the shared snapshot, plus real headless Chrome end-to-end through the file-import path (no
+  Firebase dependency, so this could be exercised thoroughly): downloaded a real file and
+  confirmed its exact shape/content, imported an invalid file and confirmed the real alert,
+  imported a valid file with distinguishable content and confirmed it actually took effect,
+  confirmed "Undo last restore" appeared and correctly restored the pre-import content, confirmed
+  the row correctly disappears once the one-level-deep snapshot is consumed, zero console/page
+  errors throughout. The tier-1-restore-also-writes-a-snapshot integration specifically is
+  unit-tested rather than further end-to-end verified -- chaining a SECOND full page reload
+  within one browser-automation run hit real Playwright navigation-timing flakiness unrelated to
+  the feature itself (the exact same `snapshotBeforeRestore` call already proven end-to-end via
+  the import path above), not worth forcing past for a call site that's otherwise identical code.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
