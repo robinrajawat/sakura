@@ -384,6 +384,51 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes).toEqual(before);
   });
 
+  it('applySummaryParent inserts a new parent above the first root at its depth/parentId, indenting whole subtrees underneath', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 2, depth: 1, text: 'child A', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 2, text: 'grandchild of A', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 4, depth: 1, text: 'child B', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    const newParentId = useOutlineStore.getState().applySummaryParent([2, 4], 'Group Label');
+    expect(newParentId).not.toBe(null);
+    const nodes = useOutlineStore.getState().nodes;
+    expect(nodes.map((n) => [n.id, n.depth, n.text])).toEqual([
+      [1, 0, 'root'],
+      [newParentId, 1, 'Group Label'],
+      [2, 2, 'child A'],
+      [3, 3, 'grandchild of A'],
+      [4, 2, 'child B']
+    ]);
+    expect(nodes.find((n) => n.id === newParentId)?.parentId).toBe(1);
+    expect(useOutlineStore.getState().selectedId).toBe(newParentId);
+  });
+
+  it('applySummaryParent returns null (no state change) when a root was deleted while the AI request was in flight', () => {
+    const before = useOutlineStore.getState().nodes;
+    const result = useOutlineStore.getState().applySummaryParent([2, 999999], 'Group Label');
+    expect(result).toBe(null);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('applySummaryParent pushes a real undo checkpoint', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().applySummaryParent([2, 3], 'Group Label');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
+  it('applySummaryParent mints the new parent id from nextId and bumps it', () => {
+    const startNextId = useOutlineStore.getState().nextId;
+    const newParentId = useOutlineStore.getState().applySummaryParent([2, 3], 'Group Label');
+    expect(newParentId).toBe(startNextId);
+    expect(useOutlineStore.getState().nextId).toBe(startNextId + 1);
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();

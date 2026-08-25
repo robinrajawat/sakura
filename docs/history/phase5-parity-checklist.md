@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, and Suggest icon (keyword/historical-index free tiers, batch + single-node picker) landed — see AI Features section below. Still no Summarise selection, provider fallback, or usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), and Summarise selection landed — see AI Features section below. Still no provider fallback or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -271,7 +271,29 @@ cleanly across the whole document; the toolbar button staying enabled across a z
 selection change (unlike Expand/Tags' own exactly-one requirement) — zero console/page errors
 throughout.
 
-Still not built: Summarise selection, provider fallback chain UI, usage tracking.
+**Slice 8** (this PR): Summarise selection. New `state/aiSummarise.ts` direct-ports legacy's real
+`summariseSelectionWithAi`: the current selection's TOP-LEVEL roots (via the already-ported
+`selectionRootIndexes()`, not every individually-selected node) are sent to the AI as a bulleted
+list, and the AI's one-line label becomes a new parent node. A new `outlineStore.ts` action,
+`applySummaryParent`, does the actual insert: the new parent lands immediately above the first
+(lowest-index) selected root, at that root's own original depth/parentId, and every selected
+root's WHOLE SUBTREE (not just the root node itself) is indented one level underneath it. The
+in-flight-edit guard here is deliberately all-or-nothing, matching legacy's own real behavior
+exactly: if ANY selected root was deleted while the AI request was in flight, the whole operation
+aborts with no state change, rather than the per-entry-skip guard `applySuggestedIcons`/Rewrite's
+batch path use — a "summary of a different set of nodes than what was actually sent to the AI"
+wouldn't be a meaningful result. Toolbar-only trigger ("✦ Summarise" button, enabled only with 2+
+nodes selected, matching legacy's own real `qb-ai-summarise` disabled logic) — legacy's own
+context-menu AI group never includes this capability either, same as Expand/Tags from the
+previous slice. NOT built: legacy's unrelated same-named "Summarise subtree into note" note-panel
+capability (appends a prose summary to a node's Note field) — a genuinely different feature that
+only shares a name; `web/`'s note panel has no AI actions at all yet. Verified end-to-end in real
+headless Chrome with the AI endpoint mocked via Playwright: the toolbar button correctly disabled
+with a single selection and enabled once 2+ nodes are selected; a no-key-configured failure
+surfacing a clear alert; the new parent correctly inserted above both selected nodes in document
+order; Undo correctly reverting the whole insert — zero console/page errors throughout.
+
+Still not built: provider fallback chain UI, usage tracking.
 See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert
