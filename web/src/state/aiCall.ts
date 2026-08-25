@@ -17,15 +17,19 @@
  * project's existing convention (e.g. `wrapLineCount.ts`'s injected `measureTextWidth`) rather
  * than a new pattern.
  *
- * Deliberately NOT built here, left for later §6.9 slices: `callAiByShapeWithFallback` (usage
- * recording + the provider fallback chain), `callAiApi`/`callAiApiWithPrompt`/`callAiApiOutline`/
- * `callAiApiRestructure`/`callAiRaw` (the per-capability thin wrappers each feature slice — the
- * one exception is `testAiKey`'s own logic, which this module's `callAiByShape` alone is
- * sufficient for since legacy's real `testAiKey` deliberately bypasses both the fallback wrapper
- * and the usage counter, calling `callAiByShape` directly).
+ * `callAiByShapeWithFallback` (below, §6.9 slice 9) is the real fallback-aware wrapper every
+ * per-capability thin wrapper (`callAiApi`/`callAiApiWithPrompt`/`callAiApiOutline`/
+ * `callAiApiRestructure`/`callAiRaw`, all in `aiCapabilities.ts`/each capability's own state
+ * module) funnels through — direct port of legacy's real `callAiByShapeWithFallback`
+ * (legacy/index.html:28267-28305). The one exception is `testKeyForProvider`'s own logic, which
+ * this module's `callAiByShape` alone is sufficient for since legacy's real `testAiKey`
+ * deliberately bypasses both the fallback wrapper and the usage counter, calling `callAiByShape`
+ * directly.
  */
 
 import type { AiProviderShape } from './aiProviderCatalog';
+import { recordAiUsage } from './aiUsage';
+import type { FallbackCandidate } from './aiFallback';
 
 export class RateLimitError extends Error {}
 
@@ -146,4 +150,65 @@ export async function callAiByShape(params: CallAiByShapeParams): Promise<string
   if (!res.ok) await throwForFailedResponse(res);
   const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   return (data?.choices?.[0]?.message?.content || '').trim();
+}
+
+export interface CallAiByShapeWithFallbackParams extends CallAiByShapeParams {
+  /** The primary call's own provider id — needed for usage recording (`aiUsage.ts`) and to
+   * build the "Quota hit on X" / "Error on X" reason legacy's own real fallback-success toast
+   * uses, distinct from `shape`/`baseUrl` since those alone don't carry a human-readable label. */
+  providerId: string;
+  primaryLabel: string;
+  /** Every other enabled, key-and-model-resolved provider to try, in order, if the primary call
+   * fails with a fallbackable error — already resolved by the caller via `aiFallback.ts`'s
+   * `getEffectiveFallbackChainCore` (empty when fallback is off or nothing is eligible). */
+  fallbackChain: FallbackCandidate[];
+  /** Called once, only when a fallback candidate succeeds — the caller decides whether/how to
+   * surface it (`web/` has no generic toast system yet, unlike legacy's real `showToast` call
+   * here, so every current caller leaves this unset and the fallback simply succeeds silently;
+   * see `aiCapabilities.ts`'s own header for the fuller reasoning). */
+  onFallbackSuccess?: (message: string) => void;
+}
+
+/** Matches legacy's real `callAiByShapeWithFallback` exactly: records usage for the primary call
+ * (success or failure), and — only for a fallbackable error (`RateLimitError`/
+ * `FallbackableError`, never a plain `Error` like a bad-key 401) — tries each fallback candidate
+ * in order, recording usage for every attempt, until one succeeds or the chain is exhausted. A
+ * non-fallbackable error from a FALLBACK candidate itself still stops the loop immediately and
+ * rethrows (matches legacy's own real behavior: a candidate's own bad key isn't worth trying yet
+ * another provider for). */
+export async function callAiByShapeWithFallback(params: CallAiByShapeWithFallbackParams): Promise<string> {
+  const { providerId, primaryLabel, fallbackChain, onFallbackSuccess, ...shapeParams } = params;
+  try {
+    const result = await callAiByShape(shapeParams);
+    recordAiUsage(providerId, true);
+    return result;
+  } catch (err) {
+    const isFallbackable = err instanceof RateLimitError || err instanceof FallbackableError;
+    recordAiUsage(providerId, false, err instanceof Error ? err.message : String(err));
+    if (!isFallbackable) throw err;
+    if (!fallbackChain.length) throw err;
+    const reason = err instanceof RateLimitError ? `Quota hit on ${primaryLabel}` : `Error on ${primaryLabel}`;
+    for (const candidate of fallbackChain) {
+      try {
+        const result = await callAiByShape({
+          shape: candidate.shape,
+          baseUrl: candidate.baseUrl,
+          apiKey: candidate.apiKey,
+          model: candidate.model,
+          systemPrompt: shapeParams.systemPrompt,
+          userContent: shapeParams.userContent,
+          maxTokens: shapeParams.maxTokens,
+          extraHeaders: candidate.extraHeaders,
+          fetchImpl: shapeParams.fetchImpl
+        });
+        recordAiUsage(candidate.providerId, true);
+        onFallbackSuccess?.(`${reason} — rewritten with ${candidate.label} ✦`);
+        return result;
+      } catch (e2) {
+        recordAiUsage(candidate.providerId, false, e2 instanceof Error ? e2.message : String(e2));
+        if (!(e2 instanceof RateLimitError) && !(e2 instanceof FallbackableError)) throw e2;
+      }
+    }
+    throw new Error(`${reason}. All fallback providers also failed. Try again later.`);
+  }
 }

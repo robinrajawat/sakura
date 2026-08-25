@@ -1,31 +1,34 @@
 /**
- * Per-capability thin wrappers over `aiCall.ts`'s `callAiByShape` — direct port of legacy's real
- * `callAiApi`/`callAiApiBatchChunk`/`callAiApiBatch` (legacy/index.html:28306-28348), each just
- * resolving a provider/model/key into a `callAiByShape` call with a fixed `maxTokens` and (for
+ * Per-capability thin wrappers over `aiCall.ts`'s `callAiByShapeWithFallback` — direct port of
+ * legacy's real `callAiApi`/`callAiApiBatchChunk`/`callAiApiBatch` (legacy/index.html:28306-
+ * 28348), each just resolving a provider/model/key into a call with a fixed `maxTokens` and (for
  * the batch functions) the sentinel-marker chunking protocol every batched AI capability in this
- * app shares (Rewrite today; Suggest icon later reuses the exact same chunking, per
- * §6.9's own plan).
+ * app shares.
  *
- * **Deliberately single-provider, no fallback, in this slice.** Legacy's real `callAiApi` goes
- * through `callAiByShapeWithFallback` (usage recording + the provider fallback chain) — this
- * project's own §6.9 plan (docs/phase6-full-parity-plan.md) sequences that as its own later
- * slice (9 of 9), after every capability that calls through here already exists. `callAiApi`
- * below calls `callAiByShape` directly for now; when slice 9 lands, it becomes the one place that
- * needs to change to make every capability built on top of it fallback-aware for free.
+ * **Fallback-aware since §6.9 slice 9**: `AiCallContext.fallbackChain` (already resolved by each
+ * capability's own `resolveCallContext()` via `aiSettingsStore.ts`'s `getEffectiveFallbackChain`)
+ * is threaded straight through to `callAiByShapeWithFallback` here — this is the one place that
+ * change needed to make, since every capability already funnels through `callProvider` below.
+ * `onFallbackSuccess` is deliberately left unset: `web/` has no generic toast system yet (unlike
+ * legacy's own real `showToast` call on a successful fallback), so a fallback that succeeds does
+ * so silently for now — the reliability behavior (auto-retry with another configured provider on
+ * a quota hit or transient error) is real and complete either way.
  */
 
-import { callAiByShape } from './aiCall';
+import { callAiByShapeWithFallback } from './aiCall';
 import { getAiProviderById, extraHeadersForProvider } from './aiProviderCatalog';
+import type { FallbackCandidate } from './aiFallback';
 
 export interface AiCallContext {
   providerId: string;
   model: string;
   apiKey: string;
+  fallbackChain: FallbackCandidate[];
 }
 
 function callProvider(ctx: AiCallContext, systemPrompt: string, userContent: string, maxTokens: number): Promise<string> {
   const provider = getAiProviderById(ctx.providerId);
-  return callAiByShape({
+  return callAiByShapeWithFallback({
     shape: provider.shape,
     baseUrl: provider.baseUrl,
     apiKey: ctx.apiKey,
@@ -33,7 +36,10 @@ function callProvider(ctx: AiCallContext, systemPrompt: string, userContent: str
     systemPrompt,
     userContent,
     maxTokens,
-    extraHeaders: extraHeadersForProvider(ctx.providerId)
+    extraHeaders: extraHeadersForProvider(ctx.providerId),
+    providerId: ctx.providerId,
+    primaryLabel: provider.label,
+    fallbackChain: ctx.fallbackChain
   });
 }
 

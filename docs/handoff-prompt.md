@@ -1735,4 +1735,75 @@ run correctly inserting the new parent immediately above both selected
 nodes in document order; Undo correctly reverting the whole insert in
 one step -- zero console/page errors throughout, across every one of
 those checks.
+
+Ninth and final §6.9 slice landed next in the same session: provider
+fallback chain UI + usage tracking. `aiCall.ts` gained the real
+`callAiByShapeWithFallback` its own header always named as deferred:
+on a fallbackable error (`RateLimitError`/`FallbackableError` -- never
+a plain `Error` like a bad-key 401, which is never worth trying
+another provider for) it tries each enabled, key-and-model-resolved
+fallback candidate in order, recording usage for every attempt via new
+`state/aiUsage.ts`. That module uses the SAME storage key as legacy
+(`sakura_ai_usage_v1`, not a `_web_`-namespaced variant) -- matches
+`aiProviders.ts`/`vault.ts`'s own established precedent that AI
+settings are literal shared state between legacy and `web/`, unlike
+documents/templates/folders, which are deliberately namespaced
+separately since those are fundamentally different data models between
+the two apps. New `state/aiFallback.ts` (`sakura_ai_fallback_v1`, same
+precedent) holds the pure fallback-prefs/chain-resolution logic,
+deliberately store-agnostic: `aiSettingsStore.ts` already imports
+`aiCall.ts` (for `testKeyForProvider`), and `aiCall.ts` needs
+`aiFallback.ts`'s own `getEffectiveFallbackChainCore` for its new
+`callAiByShapeWithFallback` -- importing `aiSettingsStore.ts` from
+`aiFallback.ts` would complete a cycle, so key/model lookup is
+injected instead, same dependency-injection convention
+`templatesIndex.ts` already established for a leaf module that still
+needs caller-owned state. The single integration point every earlier
+capability slice already funnels through, `aiCapabilities.ts`'s own
+`callProvider`, is the one place that needed to change to make
+Rewrite/Generate Outline/Restructure Text/Expand node/Suggest
+tags/Suggest icon/Summarise selection all fallback-aware for free --
+each capability's own `resolveCallContext()` gained exactly one line
+resolving the chain via a new `aiSettingsStore.ts` method,
+`getEffectiveFallbackChain`. New `components/AiFallbackSettings.tsx`
+is a direct port of legacy's real drag-to-reorder, per-row-enable-
+checkbox list (`renderFallbackOrderList`) -- including its own real
+splice-based reorder quirk, preserved faithfully rather than "fixed":
+`targetId`'s index is captured once before either splice call and
+reused directly on the already-shortened array, so dragging an entry
+FORWARD past the drop target lands it immediately AFTER that target,
+not before. The empty-state warning banner (and its locked-vault
+variant, with a real "unlock it" link) came along with it.
+`AiProviderSettings.tsx` gained a per-provider today's-usage summary
+line, matching legacy's real `#ai-usage-summary` -- a plain read at
+render time, not a live subscription (usage is written from deep
+inside `aiCall.ts`'s async fetch flow with nothing to trigger a React
+re-render, so this reflects the true count the next time the panel
+renders, not necessarily the instant a request completes while the
+panel happens to already be open -- close enough to legacy's own real
+update trigger for its actual purpose). Deliberately NOT built:
+legacy's real fallback-success toast (`web/` has no generic toast
+system yet -- the underlying reliability behavior, auto-retry with
+another configured provider on a quota hit or transient error, is
+fully functional regardless, just silent on a successful fallback
+rather than announcing which provider actually served the request).
+Verified end-to-end in real headless Chrome with the primary
+provider's endpoint mocked to return 429 and a configured fallback
+provider's endpoint mocked to succeed: the fallback list correctly
+rendering all 7 built-in providers with the primary row shown
+disabled and de-emphasized; the empty-state warning appearing when
+fallback is on with no eligible candidate and clearing correctly once
+one gains a saved key; a real AI capability (Expand node) succeeding
+via the fallback provider despite the primary call failing; usage
+counters correctly showing 1 failed request for the primary provider
+and 1 successful request for the fallback provider afterward -- zero
+unexpected console/page errors (one expected browser-logged network
+entry for the deliberately-mocked 429 response, inherent to any test
+that mocks a failing HTTP response, not an application defect).
+
+§6.9 (AI Features) is now complete -- every item named in its own
+original scope has landed: provider configuration UI, Secure Storage,
+manual Rewrite, auto-rewrite on commit, Generate Outline, Restructure
+Text, Expand node, Suggest tags, Suggest icon, Summarise selection,
+provider fallback, and usage tracking.
 ```

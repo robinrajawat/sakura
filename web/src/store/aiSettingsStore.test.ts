@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { setVaultCryptoKey } from '../state/vault';
 import * as aiCall from '../state/aiCall';
+import { loadAiFallbackPrefs } from '../state/aiFallback';
 
 vi.mock('../state/aiCall', async () => {
   const actual = await vi.importActual<typeof import('../state/aiCall')>('../state/aiCall');
@@ -13,7 +14,19 @@ describe('aiSettingsStore', () => {
   beforeEach(() => {
     localStorage.clear();
     setVaultCryptoKey(null);
-    useAiSettingsStore.setState({ provider: 'gemini', model: 'gemini-3.5-flash', modelByProvider: {}, prompt: useAiSettingsStore.getState().prompt });
+    // fallbackEnabled/fallbackOrder are only read from storage once, at module-init time (same as
+    // provider/model/modelByProvider/prompt above) -- localStorage.clear() alone doesn't reset the
+    // already-created store's in-memory state, so every field this describe block can mutate needs
+    // an explicit reset here, not just the ones the pre-existing tests happened to touch.
+    const freshFallback = loadAiFallbackPrefs();
+    useAiSettingsStore.setState({
+      provider: 'gemini',
+      model: 'gemini-3.5-flash',
+      modelByProvider: {},
+      prompt: useAiSettingsStore.getState().prompt,
+      fallbackEnabled: freshFallback.enabled,
+      fallbackOrder: freshFallback.order
+    });
     vi.mocked(aiCall.callAiByShape).mockReset();
   });
 
@@ -171,6 +184,56 @@ describe('aiSettingsStore', () => {
       const result = await useAiSettingsStore.getState().testKeyForProvider('claude', 'claude-haiku-4-5-20251001', 'bad-key');
       expect(result.ok).toBe(false);
       expect(result.message).toBe('Claude API test failed: Invalid API key');
+    });
+  });
+
+  describe('fallback chain (§6.9 slice 9)', () => {
+    it('starts disabled with every built-in provider present in fallbackOrder', () => {
+      const s = useAiSettingsStore.getState();
+      expect(s.fallbackEnabled).toBe(false);
+      expect(s.fallbackOrder.length).toBeGreaterThan(0);
+    });
+
+    it('setFallbackEnabled toggles and persists, surviving a store re-read', () => {
+      useAiSettingsStore.getState().setFallbackEnabled(true);
+      expect(useAiSettingsStore.getState().fallbackEnabled).toBe(true);
+      expect(JSON.parse(localStorage.getItem('sakura_ai_fallback_v1') || '{}').enabled).toBe(true);
+    });
+
+    it('setFallbackEntryEnabled flips just that one entry', () => {
+      useAiSettingsStore.getState().setFallbackEntryEnabled('claude', true);
+      const entry = useAiSettingsStore.getState().fallbackOrder.find((e) => e.id === 'claude');
+      expect(entry?.enabled).toBe(true);
+    });
+
+    it('reorderFallback moves an entry and persists the new order', () => {
+      const before = useAiSettingsStore.getState().fallbackOrder.map((e) => e.id);
+      const [a, , c] = before;
+      useAiSettingsStore.getState().reorderFallback(a, c);
+      const after = useAiSettingsStore.getState().fallbackOrder.map((e) => e.id);
+      expect(after).not.toEqual(before);
+      const stored = JSON.parse(localStorage.getItem('sakura_ai_fallback_v1') || '{}');
+      expect(stored.order.map((e: { id: string }) => e.id)).toEqual(after);
+    });
+
+    it('getEffectiveFallbackChain returns [] when fallback is disabled', () => {
+      expect(useAiSettingsStore.getState().getEffectiveFallbackChain()).toEqual([]);
+    });
+
+    it('getEffectiveFallbackChain resolves enabled entries with a saved key, excluding the primary provider', async () => {
+      await useAiSettingsStore.getState().saveKeyForProvider('groq', 'sk-groq');
+      useAiSettingsStore.getState().setFallbackEnabled(true);
+      useAiSettingsStore.getState().setFallbackEntryEnabled('groq', true);
+      const chain = useAiSettingsStore.getState().getEffectiveFallbackChain();
+      expect(chain.map((c) => c.providerId)).toEqual(['groq']);
+      expect(chain[0].apiKey).toBe('sk-groq');
+    });
+
+    it('getEffectiveFallbackChain excludes an enabled entry with no saved key', () => {
+      useAiSettingsStore.getState().setFallbackEnabled(true);
+      useAiSettingsStore.getState().setFallbackEntryEnabled('groq', true);
+      const chain = useAiSettingsStore.getState().getEffectiveFallbackChain();
+      expect(chain.map((c) => c.providerId)).not.toContain('groq');
     });
   });
 });

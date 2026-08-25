@@ -11,6 +11,14 @@ import {
 import { initVaultState, vaultActive, vaultUnlocked, vaultEncrypt, getVaultDecryptedKey, setVaultDecryptedKey } from '../state/vault';
 import { callAiByShape } from '../state/aiCall';
 import { AI_BUILTIN_PROVIDERS, getAiProviderById, defaultModelForProvider, extraHeadersForProvider } from '../state/aiProviderCatalog';
+import {
+  loadAiFallbackPrefs,
+  saveAiFallbackPrefs,
+  getEffectiveFallbackChainCore,
+  reorderFallbackEntryCore,
+  type AiFallbackEntry,
+  type FallbackCandidate
+} from '../state/aiFallback';
 
 /**
  * §6.9 slice (docs/phase6-full-parity-plan.md): AI provider configuration — the first §6.9
@@ -70,6 +78,12 @@ interface AiSettingsState {
   model: string;
   modelByProvider: Record<string, string>;
   prompt: string;
+  /** §6.9 slice 9 (docs/phase6-full-parity-plan.md): the provider fallback chain — matches
+   * legacy's real `aiFallbackEnabled`/`aiFallbackOrder` exactly, stored separately from the rest
+   * of this state (its own real storage key, `aiFallback.ts`'s own `sakura_ai_fallback_v1`, not
+   * the main AI-prefs blob `persist()` below writes to). */
+  fallbackEnabled: boolean;
+  fallbackOrder: AiFallbackEntry[];
 
   setProvider: (providerId: string) => void;
   setModel: (model: string) => void;
@@ -80,10 +94,23 @@ interface AiSettingsState {
   keyStatusForProvider: (providerId: string) => KeyStatus;
   saveKeyForProvider: (providerId: string, value: string) => Promise<TestKeyResult>;
   testKeyForProvider: (providerId: string, model: string, keyOverride?: string) => Promise<TestKeyResult>;
+
+  setFallbackEnabled: (enabled: boolean) => void;
+  setFallbackEntryEnabled: (providerId: string, enabled: boolean) => void;
+  reorderFallback: (draggedId: string, targetId: string) => void;
+  /** Matches legacy's real `getEffectiveFallbackChain` — resolves `fallbackOrder` into real,
+   * ready-to-call candidates (skipping any entry missing a key or a model), for
+   * `aiCall.ts`'s `callAiByShapeWithFallback` to try if the primary provider call fails. */
+  getEffectiveFallbackChain: () => FallbackCandidate[];
 }
 
 export const useAiSettingsStore = create<AiSettingsState>((set, get) => {
   const initial = loadAiPrefsCore({ provider: 'gemini', model: defaultModelForProvider('gemini'), modelByProvider: {}, prompt: AI_DEFAULT_PROMPT }, VALID_PROVIDER_IDS);
+  const initialFallback = loadAiFallbackPrefs();
+
+  function persistFallback(enabled: boolean, order: AiFallbackEntry[]): void {
+    saveAiFallbackPrefs({ enabled, order });
+  }
 
   function persist(next: AiPrefsState): void {
     saveAiPrefsCore(next.provider, next.model, next.modelByProvider, next.prompt);
@@ -91,6 +118,8 @@ export const useAiSettingsStore = create<AiSettingsState>((set, get) => {
 
   return {
     ...initial,
+    fallbackEnabled: initialFallback.enabled,
+    fallbackOrder: initialFallback.order,
 
     setProvider: (providerId) => {
       if (!VALID_PROVIDER_IDS.includes(providerId)) return;
@@ -173,6 +202,34 @@ export const useAiSettingsStore = create<AiSettingsState>((set, get) => {
         const message = err instanceof Error ? err.message : String(err);
         return { ok: false, message: `${provider.label} test failed: ${message}` };
       }
+    },
+
+    setFallbackEnabled: (enabled) => {
+      set({ fallbackEnabled: enabled });
+      persistFallback(enabled, get().fallbackOrder);
+    },
+
+    setFallbackEntryEnabled: (providerId, enabled) => {
+      const order = get().fallbackOrder.map((e) => (e.id === providerId ? { ...e, enabled } : e));
+      set({ fallbackOrder: order });
+      persistFallback(get().fallbackEnabled, order);
+    },
+
+    reorderFallback: (draggedId, targetId) => {
+      const order = reorderFallbackEntryCore(get().fallbackOrder, draggedId, targetId);
+      if (order === get().fallbackOrder) return;
+      set({ fallbackOrder: order });
+      persistFallback(get().fallbackEnabled, order);
+    },
+
+    getEffectiveFallbackChain: () => {
+      const s = get();
+      return getEffectiveFallbackChainCore(
+        { enabled: s.fallbackEnabled, order: s.fallbackOrder },
+        s.provider,
+        (providerId) => get().getKeyForProvider(providerId),
+        s.modelByProvider
+      );
     }
   };
 });

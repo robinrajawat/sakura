@@ -3,6 +3,7 @@ import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePr
 import { AiProviderSettings } from './AiProviderSettings';
 import { SecureStorageSettings } from './SecureStorageSettings';
 import { AutoRewriteSettings } from './AutoRewriteSettings';
+import { AiFallbackSettings } from './AiFallbackSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -36,9 +37,14 @@ import { AutoRewriteSettings } from './AutoRewriteSettings';
  *
  * §6.9 slice 4: added the "Auto-rewrite" section (`AutoRewriteSettings.tsx`) -- the enable
  * toggle, exclusion checkboxes, and threshold controls for `store/autoRewriteStore.ts`'s real
- * queue/flush engine. See these three AI components' own headers for what's still deferred (the
- * fallback-order list, the usage-tracking summary, and every remaining AI capability itself --
- * Generate Outline/Restructure/Expand/Tags/Icon/Summarise, each its own later §6.9 slice).
+ * queue/flush engine.
+ *
+ * §6.9 slice 9: added the "AI Fallback" section (`AiFallbackSettings.tsx`) -- the provider
+ * fallback chain's enable toggle and drag-to-reorder, per-row-enable list. Closes out §6.9's own
+ * planned slice sequence (`docs/phase6-full-parity-plan.md`'s §6.9 section) alongside `aiCall.ts`'s
+ * new `callAiByShapeWithFallback` and `state/aiUsage.ts`'s usage counters, which every capability
+ * built in earlier slices now goes through automatically -- no further per-capability wiring
+ * needed.
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -254,6 +260,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </label>
       </div>
       <AiProviderSettings t={t} />
+      <AiFallbackSettings t={t} />
       <AutoRewriteSettings t={t} />
       <SecureStorageSettings t={t} />
     </div>

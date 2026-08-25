@@ -3,12 +3,12 @@ import { callAiApi, callAiApiBatchChunk, callAiApiBatch, buildBatchUserContent, 
 import * as aiCall from './aiCall';
 
 function ctx(overrides: Partial<Parameters<typeof callAiApi>[2]> = {}) {
-  return { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', ...overrides };
+  return { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [], ...overrides };
 }
 
 describe('callAiApiWithPrompt', () => {
   it('passes through the given systemPrompt/userMsg/maxTokens exactly', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('result');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('result');
     const result = await callAiApiWithPrompt('a system prompt', 'a user message', 512, ctx());
     expect(result).toBe('result');
     expect(spy.mock.calls[0][0].systemPrompt).toBe('a system prompt');
@@ -20,7 +20,7 @@ describe('callAiApiWithPrompt', () => {
 
 describe('callAiApi', () => {
   it('calls callAiByShape with the resolved provider shape/baseUrl, maxTokens=1024', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('rewritten text');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('rewritten text');
     const result = await callAiApi('original text', 'a system prompt', ctx());
     expect(result).toBe('rewritten text');
     const call = spy.mock.calls[0][0];
@@ -33,7 +33,7 @@ describe('callAiApi', () => {
   });
 
   it('resolves extraHeaders per provider (e.g. GitHub Models)', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('x');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('x');
     await callAiApi('t', 'p', ctx({ providerId: 'seed_github_models', model: 'openai/gpt-4o-mini' }));
     expect(spy.mock.calls[0][0].extraHeaders).toEqual({ Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' });
     spy.mockRestore();
@@ -72,7 +72,7 @@ describe('buildBatchUserContent / parseBatchResponse (pure)', () => {
 
 describe('callAiApiBatchChunk', () => {
   it('sends one call for the whole chunk and parses the response back per item', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('<<<SAKURA-ITEM-1>>>\nA\n<<<SAKURA-ITEM-2>>>\nB');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('<<<SAKURA-ITEM-1>>>\nA\n<<<SAKURA-ITEM-2>>>\nB');
     const result = await callAiApiBatchChunk(['a', 'b'], 'sys', ctx());
     expect(result).toEqual(['A', 'B']);
     expect(spy).toHaveBeenCalledTimes(1);
@@ -83,7 +83,7 @@ describe('callAiApiBatchChunk', () => {
 
 describe('callAiApiBatch', () => {
   it('makes one call for a batch under the chunk size', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('<<<SAKURA-ITEM-1>>>\nA');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('<<<SAKURA-ITEM-1>>>\nA');
     const result = await callAiApiBatch(['a'], 'sys', ctx());
     expect(result).toEqual(['A']);
     expect(spy).toHaveBeenCalledTimes(1);
@@ -92,7 +92,7 @@ describe('callAiApiBatch', () => {
 
   it('splits into multiple sequential calls when texts exceed the chunk size (30)', async () => {
     const texts = Array.from({ length: 35 }, (_, i) => `item-${i}`);
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockImplementation(async ({ userContent }) => {
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockImplementation(async ({ userContent }) => {
       const count = (userContent.match(/<<<SAKURA-ITEM-/g) || []).length;
       return Array.from({ length: count }, (_, i) => `<<<SAKURA-ITEM-${i + 1}>>>\nresult-${i}`).join('\n');
     });
@@ -104,7 +104,7 @@ describe('callAiApiBatch', () => {
 
   it('reports progress after each chunk completes', async () => {
     const texts = Array.from({ length: 35 }, (_, i) => `item-${i}`);
-    vi.spyOn(aiCall, 'callAiByShape').mockImplementation(async ({ userContent }) => {
+    vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockImplementation(async ({ userContent }) => {
       const count = (userContent.match(/<<<SAKURA-ITEM-/g) || []).length;
       return Array.from({ length: count }, (_, i) => `<<<SAKURA-ITEM-${i + 1}>>>\nr`).join('\n');
     });
@@ -120,7 +120,7 @@ describe('callAiApiBatch', () => {
 
 describe('callAiApiOutline', () => {
   it('sends "Topic: <topic>" as userContent with maxTokens=2048', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('- a\n- b');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('- a\n- b');
     const result = await callAiApiOutline('competitor analysis', ctx());
     expect(result).toBe('- a\n- b');
     expect(spy.mock.calls[0][0].userContent).toBe('Topic: competitor analysis');
@@ -131,7 +131,7 @@ describe('callAiApiOutline', () => {
 
 describe('callAiApiRestructure', () => {
   it('sends the source text prefixed, with maxTokens=4096', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('- a\n- b');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('- a\n- b');
     await callAiApiRestructure('some messy notes', ctx());
     expect(spy.mock.calls[0][0].userContent).toBe('Text to restructure:\n\nsome messy notes');
     expect(spy.mock.calls[0][0].maxTokens).toBe(4096);
@@ -139,7 +139,7 @@ describe('callAiApiRestructure', () => {
   });
 
   it('truncates input longer than AI_RESTRUCTURE_MAX_CHARS and appends a truncation notice', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('x');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('x');
     const longText = 'a'.repeat(AI_RESTRUCTURE_MAX_CHARS + 500);
     await callAiApiRestructure(longText, ctx());
     const sent = spy.mock.calls[0][0].userContent;
@@ -150,7 +150,7 @@ describe('callAiApiRestructure', () => {
   });
 
   it('does not truncate input at or under the limit', async () => {
-    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('x');
+    const spy = vi.spyOn(aiCall, 'callAiByShapeWithFallback').mockResolvedValue('x');
     const text = 'a'.repeat(AI_RESTRUCTURE_MAX_CHARS);
     await callAiApiRestructure(text, ctx());
     expect(spy.mock.calls[0][0].userContent).not.toContain('truncated');

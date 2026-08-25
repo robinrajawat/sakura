@@ -125,7 +125,7 @@ describe('suggestIconsForNodeIds / suggestIconChoiceForNode / applyIconChoice', 
       const spy = vi.spyOn(aiCapabilities, 'callAiApiWithPrompt').mockResolvedValue('[1] 🚀');
       const result = await suggestIconsForNodeIds([2]);
       expect(result.ok).toBe(true);
-      expect(spy).toHaveBeenCalledWith('', expect.stringContaining('[1] a completely unmatched label'), expect.any(Number), { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test' });
+      expect(spy).toHaveBeenCalledWith('', expect.stringContaining('[1] a completely unmatched label'), expect.any(Number), { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [] });
       expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('🚀 a completely unmatched label');
     });
 

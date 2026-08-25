@@ -62,7 +62,7 @@ describe('summariseSelectionIntoParent', () => {
     const result = await summariseSelectionIntoParent();
     expect(result.ok).toBe(true);
     expect(result.message).toBe('Summarised into: Group Label');
-    expect(spy).toHaveBeenCalledWith(expect.any(String), 'Nodes:\n- child A\n- child B', 128, { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test' });
+    expect(spy).toHaveBeenCalledWith(expect.any(String), 'Nodes:\n- child A\n- child B', 128, { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', fallbackChain: [] });
     const nodes = useOutlineStore.getState().nodes;
     expect(nodes.map((n) => n.text)).toEqual(['root', 'Group Label', 'child A', 'child B']);
   });
