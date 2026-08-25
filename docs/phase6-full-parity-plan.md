@@ -1212,8 +1212,31 @@ Status: **in progress.**
   two-renderer pattern is the more idiomatic choice here than introducing a new shared-component
   refactor mid-slice. Verified end-to-end in real headless Chrome: both Preview and the PDF popup
   window show the "Decision Log" header, the correct status badge, and all filled field content.
-  Still remaining for Decision Log: DOCX card, PPTX card, and Excel `.xlsx` export -- each its
-  own separately-scoped slice.
+- **Decision Log's Word (.docx) card rendering landed.** Direct port of legacy's real
+  `docxBuildDecisionCard` (legacy/index.html:25037-25067), using the `docx` library's own real
+  `border`/`shading` paragraph options (`IBordersOptions` confirmed to support an independent
+  `left` border, contrary to this file's own PRIOR comment claiming otherwise for the Q&A
+  section -- that comment was wrong, not a real API limitation; not revisited here since fixing
+  Q&A's own left-accent gap is out of this slice's scope) rather than legacy's raw hand-written
+  OOXML XML strings -- same "port the effect via an idiomatic library API" reasoning used
+  throughout. `DL_STATUS_HEX_OOXML`/`DECISION_FIELD_META` are shared module-level constants
+  (`DL_STATUS_HEX_OOXML` renamed from an initial `DL_STATUS_HEX_DOCX` -- caught via self-review
+  before it shipped, since `exportPdf`'s own local, differently-formatted `DL_STATUS_HEX`
+  constant further down the same file would otherwise have collided in name, not behavior),
+  reused by the PDF card (§6.7's own prior slice) to remove what would otherwise be a second
+  duplicate field-list literal. One real, deliberate simplification: legacy's own version runs
+  each field's raw HTML through `docxNoteBlocks` to split rich paragraphs/lists into separate
+  bordered blocks; `web/`'s own Decision fields are plain `<textarea>` text (no rich HTML at all,
+  unlike Note/Remark), so this only needs to split on literal newlines into `TextRun`s joined by
+  `break: 1` within one paragraph -- a real simplification given the two projects' different
+  field schemas, not a corner cut. Verified end-to-end in real headless Chrome: downloaded the
+  real generated `.docx`, unzipped it (a `.docx` is a plain ZIP archive), and grepped
+  `word/document.xml` directly for the header text, the uppercase status badge, all 5 field
+  labels/content, and the real status-accent hex color (`27824f`) and shading fill
+  (`FAF8F3`) -- confirming actual OOXML output, not just that the export function ran without
+  throwing.
+  Still remaining for Decision Log: PPTX card and Excel `.xlsx` export -- each its own
+  separately-scoped slice.
 
 ### 6.8 — Account, Sync, Sharing & Data
 Email/password sign-in, autosave on doc sync (currently manual push), sharing

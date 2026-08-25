@@ -18,8 +18,8 @@ import { serializeTreeTextCore } from '../utils/serializeTreeText';
 import { serializeClipboardHtmlCore } from '../utils/serializeClipboardHtml';
 import { getNodePlainText } from '../utils/stripSemanticMarkers';
 import { decisionStatusLabelCore, decisionStatusColorKeyCore } from '../state/decisionLogQueries';
-import type { DecisionTextField } from '../store/padStore';
-import { AlignmentType, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, TableOfContents, TextRun } from 'docx';
+import type { Decision, DecisionTextField } from '../store/padStore';
+import { AlignmentType, BorderStyle, Document, Footer, HeadingLevel, ImageRun, Packer, Paragraph, ShadingType, TableOfContents, TextRun } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import { groupIntoSlides, CLOSING_SLIDE_TEXT, CLOSING_SLIDE_SUBTITLE, BRANDING_TEXT } from './PresenterMode';
 
@@ -53,6 +53,93 @@ function download(filename: string, mimeType: string, content: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// §6.7 slice: fixed hex palette (no '#' prefix -- both OOXML `w:color` values and pptxgenjs's
+// own color options are bare hex digits) for a decision's status accent, shared by the Word AND
+// PowerPoint decision cards below (named distinctly from `exportPdf`'s own local `DL_STATUS_HEX`
+// further down, a `#`-prefixed copy of the same 3 values for CSS -- same values, different
+// string shape per format, so kept as separate constants rather than one shared shape needing a
+// per-caller prefix strip/add). Matches legacy's own real `docxStatusColor` values exactly (also
+// the same hex `ThemeTokens.fcGreen`/`fcRed`/`fcGray` use in light mode).
+const DL_STATUS_HEX_OOXML: Record<'green' | 'red' | 'gray', string> = { green: '27824f', red: 'c0392b', gray: '6f6b63' };
+
+const DECISION_FIELD_META: { key: DecisionTextField; label: string }[] = [
+  { key: 'context', label: 'Context' },
+  { key: 'decision', label: 'Decision' },
+  { key: 'rationale', label: 'Rationale' },
+  { key: 'alternatives', label: 'Alternatives' },
+  { key: 'impact', label: 'Impact' }
+];
+
+// §6.7 slice: the Word decision card -- direct port of legacy's own real `docxBuildDecisionCard`
+// (legacy/index.html:25037-25067), using the `docx` library's own real `border`/`shading`
+// paragraph options (confirmed to support a single-sided `left` border independently of
+// top/right/bottom, IBordersOptions) rather than the raw OOXML XML strings legacy hand-writes --
+// same "port the effect via an idiomatic library API, not the exact hand-rolled technique"
+// reasoning used throughout this migration. One real, deliberate simplification: legacy's own
+// version runs each field's raw HTML through `docxNoteBlocks` to split rich paragraphs/lists
+// into separate bordered blocks; `web/`'s own Decision fields are plain `<textarea>` text (no
+// rich HTML at all, unlike Note/Remark), so this only needs to split on literal newlines into
+// `TextRun`s joined by `break: 1` within one paragraph -- a real, not just possible,
+// simplification given the two projects' different field schemas, not a corner cut.
+function buildDocxDecisionParagraphs(dl: Decision, leftTwips: number): Paragraph[] {
+  const accentColor = DL_STATUS_HEX_OOXML[decisionStatusColorKeyCore(dl.status)];
+  const fillShade = 'FAF8F3';
+  const outerBorder = { style: BorderStyle.SINGLE, size: 6, color: 'E4DFD3', space: 6 } as const;
+  const leftBorder = { style: BorderStyle.SINGLE, size: 18, color: accentColor, space: 8 } as const;
+  const shading = { type: ShadingType.CLEAR, color: 'auto', fill: fillShade } as const;
+  const indent = { left: leftTwips + 200, right: 200 };
+  function textRunsFor(raw: string, size: number, color?: string): TextRun[] {
+    return raw.split('\n').map((line, i) => new TextRun({ text: line, size, color, break: i > 0 ? 1 : undefined }));
+  }
+  const paras: Paragraph[] = [];
+  paras.push(
+    new Paragraph({
+      border: { top: outerBorder, left: leftBorder, right: outerBorder },
+      shading,
+      indent,
+      spacing: { before: 120, after: 40 },
+      children: [
+        new TextRun({ text: 'DECISION LOG   ', bold: true, size: 16, color: accentColor }),
+        new TextRun({ text: decisionStatusLabelCore(dl.status).toUpperCase(), bold: true, size: 16, color: accentColor })
+      ]
+    })
+  );
+  DECISION_FIELD_META.forEach(({ key, label }) => {
+    const raw = dl[key]?.trim();
+    if (!raw) return;
+    paras.push(
+      new Paragraph({
+        border: { left: leftBorder, right: outerBorder },
+        shading,
+        indent,
+        spacing: { before: 0, after: 20 },
+        children: [new TextRun({ text: label.toUpperCase(), bold: true, size: 16, color: '6F6B63' })]
+      })
+    );
+    paras.push(
+      new Paragraph({
+        border: { left: leftBorder, right: outerBorder },
+        shading,
+        indent,
+        spacing: { before: 0, after: 20 },
+        children: textRunsFor(raw, 20)
+      })
+    );
+  });
+  let metaText = dl.author ? `— ${dl.author}` : '';
+  if (dl.timestamp) metaText += (metaText ? ' · ' : '— ') + new Date(dl.timestamp).toLocaleDateString();
+  paras.push(
+    new Paragraph({
+      border: { left: leftBorder, right: outerBorder, bottom: outerBorder },
+      shading,
+      indent,
+      spacing: { before: 0, after: 160 },
+      children: metaText ? [new TextRun({ text: metaText, italics: true, size: 16, color: '938F84' })] : [new TextRun(' ')]
+    })
+  );
+  return paras;
 }
 
 function escapeHtmlForPrint(text: string): string {
@@ -403,18 +490,9 @@ export function ExportButtons() {
         let decisionRow = '';
         if (dl) {
           const accent = DL_STATUS_HEX[decisionStatusColorKeyCore(dl.status)];
-          const fieldRows = (
-            [
-              ['context', 'Context'],
-              ['decision', 'Decision'],
-              ['rationale', 'Rationale'],
-              ['alternatives', 'Alternatives'],
-              ['impact', 'Impact']
-            ] as [DecisionTextField, string][]
-          )
-            .filter(([key]) => dl[key]?.trim())
+          const fieldRows = DECISION_FIELD_META.filter(({ key }) => dl[key]?.trim())
             .map(
-              ([key, label]) =>
+              ({ key, label }) =>
                 `<div style="margin-bottom:4px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#8a877e;">${label}</div><div style="font-size:13px;">${escapeHtmlForPrint(dl[key])}</div></div>`
             )
             .join('');
@@ -441,10 +519,11 @@ export function ExportButtons() {
   // Word export -- unlike PDF, there's no browser-native equivalent, so this genuinely needs a
   // real document-generation library. `docx` (npm, MIT-licensed) is the first new runtime
   // dependency this project has added; a plain, well-maintained pure-JS OOXML writer, no native
-  // bindings. Scoped way down from legacy's real Word export (no tables or decision cards) --
-  // one paragraph per node, indented via docx's own `indent` property (720 twips = 0.5in per
-  // depth level, the standard Word indent unit), with a literal "[ ] "/"[x] " checkbox prefix
-  // since a real interactive checkbox isn't something a static Word paragraph can represent.
+  // bindings. One paragraph per node, indented via docx's own `indent` property (720 twips =
+  // 0.5in per depth level, the standard Word indent unit), with a literal "[ ] "/"[x] " checkbox
+  // prefix since a real interactive checkbox isn't something a static Word paragraph can
+  // represent. Decision-log cards now built too (§6.7, `buildDocxDecisionParagraphs`); still no
+  // tables (a real, separately-scoped follow-up if ever wanted).
   //
   // §6.6 fidelity upgrade: a node with `styles.heading` set (1-6, already a real field since
   // §6.2's rich-formatting slice) now renders as a genuine Word heading paragraph
@@ -488,6 +567,11 @@ export function ExportButtons() {
         const imageParagraph = await buildDocxImageParagraph(imageDataUrl);
         if (imageParagraph) nodeParagraphs.push(imageParagraph);
       }
+      // §6.7 fidelity upgrade: a decision-log card right after its own node's paragraph(s), same
+      // real bordered/shaded block `buildDocxDecisionParagraphs` builds (see that function's own
+      // header for the full port story).
+      const dl = decisions.find((d) => d.anchorNodeId === node.id);
+      if (dl) nodeParagraphs.push(...buildDocxDecisionParagraphs(dl, node.depth * 720));
     }
     // §6.6 fidelity upgrade: a Notepad section (Pad's plain-text `notesText`, if non-empty) and
     // a Q&A section (Pad's `qaItems` -- question bold, answer below in a muted color, "No answer

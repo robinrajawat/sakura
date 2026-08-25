@@ -29,7 +29,7 @@ already made and already documented at the time.
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
 | Note panel | ⚠️ | Rich text (bold/italic/underline/strike/lists), links, images, tables, and the Backlinks section all built (Phase 6.3-6.4) — no AI (Rewrite/summarise) yet |
 | Code block panel | ⚠️ | Lang + code only (Phase 3) — no resizable window, matches legacy's lang list |
-| Decision Log | ⚠️ | Rebuilt to its real node-anchored schema (one per node, 5 structured fields, status, author, §6.7 #224) with live-editor own-node + collapsed-subtree badge dots (§6.7 #225), a real anchor-picker popover (§6.7), and Preview/PDF card rendering (§6.7); still no DOCX/PPTX cards, no Excel export |
+| Decision Log | ⚠️ | Rebuilt to its real node-anchored schema (one per node, 5 structured fields, status, author, §6.7 #224) with live-editor own-node + collapsed-subtree badge dots (§6.7 #225), a real anchor-picker popover (§6.7), and Preview/PDF/Word card rendering (§6.7); still no PPTX card, no Excel export |
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
@@ -82,7 +82,7 @@ separately-scoped follow-up building on this foundation.
 | Code Block (lang picker, resizable window) | ⚠️ | Lang picker + textarea exist; not resizable/floating |
 | Pad — Notepad | ⚠️ | Plain textarea (Phase 3); no rich text toolbar, no Quote button |
 | Pad — Q&A | ⚠️ | Question/answer + search/filter (§6.3) + real node-anchoring and live-editor inline previews (§6.7, `anchorNodeId`) now built; no AI-assisted answering, bulk actions, PDF export, section headers |
-| Pad — Decision Log | ⚠️ | Real node-linking + structured fields (context/decision/rationale/alternatives/impact) + author/status built (§6.7 #224), outline badge dots (§6.7 #225), a real anchor-picker popover for re-anchoring (§6.7, `components/AnchorPicker.tsx`), and Preview/PDF card rendering (§6.7); no DOCX/PPTX cards, no Excel export |
+| Pad — Decision Log | ⚠️ | Real node-linking + structured fields (context/decision/rationale/alternatives/impact) + author/status built (§6.7 #224), outline badge dots (§6.7 #225), a real anchor-picker popover for re-anchoring (§6.7, `components/AnchorPicker.tsx`), and Preview/PDF/Word card rendering (§6.7); no PPTX card, no Excel export |
 | Pad — Diagrams | ⚠️ | Real draw.io embed + Generate-from-outline built (§6.3 item 11, #172); no node-linking/status/thumbnails/Whiteboard/multi-page badge |
 | Pad — Mind Map | ⚠️ | A real freeform canvas built (§6.3 item 11, #174): pan/zoom/drag/connect/edit; no node-linking, Scratchpad, or Presenter-mode integration |
 | Pad — Files | ⚠️ | Real upload/storage + download built (§6.3 item 11, #168); no node-linking |
@@ -155,7 +155,7 @@ tracking. See phase6-full-parity-plan.md's §6.9 section for the full remaining 
 |---|---|---|
 | Preview (TOC, scroll-spy, progress bar) | ⚠️ | Real TOC (section/heading entries), scroll-spy, a scroll progress bar (§6.6, #194), and a real decision-log card render under an anchored node (§6.7) all built; no Decision Log TOC entries, no TOC collapse/resize, no word-count/author/updated-at meta header |
 | Presenter Mode | ⚠️ | See Overview table above |
-| Word export | ⚠️ | Real .docx via the `docx` library (Phase 3); heading styles, a real TOC field, a branding footer, note-image embedding, and Notepad/Q&A sections now built (§6.6); no Decision Log cards, rich formatting, tables |
+| Word export | ⚠️ | Real .docx via the `docx` library (Phase 3); heading styles, a real TOC field, a branding footer, note-image embedding, Notepad/Q&A sections (§6.6), and decision-log cards (§6.7, bordered/shaded via `docx`'s own real per-side border/shading paragraph options) now built; no rich formatting, tables |
 | PDF export | ⚠️ | Browser print-to-PDF (Phase 3); cover page, per-page branding, page margins (20mm), a date/page-count footer, per-node note/code-block rendering (§6.6, real CSS `@page` margin-box rules), and decision-log cards (§6.7) now built; still not rendered from a real Preview-equivalent (a separate parallel HTML-string renderer, matching this project's own established pattern) |
 | PowerPoint export | ⚠️ | Real .pptx via `pptxgenjs` (Phase 3), same slide breakdown as Presenter Mode; Notepad slide, Q&A slide, closing slide, per-slide branding, real overflow "(cont'd)" pagination (canvas-measured wrapped-line height, covering per-node slides AND Notepad/Q&A sections), and per-node note-image embedding (aspect-ratio-scaled image row, legacy's own `pptxLayoutImageRow` ported) now built (§6.6); still no decision cards (not started -- §6.7's own next slice) |
 | Branding | ✅ | Built (§6.6): wordmark in the Word page footer, PowerPoint slide corners, PDF cover page + every printed page (CSS `@page{@bottom-right{...}}`), and the live Presenter Mode bar — always on, no Settings toggle/custom text yet |
