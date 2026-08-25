@@ -183,9 +183,18 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `18d7cc6` ("feat(theming):
-System auto-theme (§6.7) (#214)"), with
-this PR's §6.7 node-text-color presets slice about to land on top.
+As of this writing: `main` is at commit `09f0e65` ("feat(theming):
+node-text-color presets (§6.7) (#215)"), with this PR being a
+docs-only correction (no code change) recording a §6.7 investigation:
+Chrome background presets were found to be dead/unreachable code in
+legacy itself (see below) and are NOT being built; the rest of
+§6.7's remaining items (layout controls, Editor's Choice/Documentation
+Mode presets, inline note/remark/Q&A previews) were confirmed to be
+real, reachable legacy features but all gated behind legacy's own
+Settings panel, which `web/` has no equivalent of yet -- this is
+flagged to the user as a natural check-in point rather than either
+building a Settings panel unasked or continuing to stuff one-off
+toolbar buttons into the header.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -831,7 +840,7 @@ all six items landed:
   (resuming auto-following), disabling System mode stops all of this,
   and the mode/theme choice survives a full page reload with the OS
   preference still emulated the same way -- zero console/page errors.
-- Node-text-color presets landed in this PR: direct port of legacy's
+- Node-text-color presets landed in #215: direct port of legacy's
   real `NODE_FONT_COLOR_PRESETS`/`applyNodeFontColor`/
   `setNodeFontColorPreset` (legacy/index.html:18781-18797) -- a second,
   independent color axis from accent: 4 presets (Default/Black/
@@ -853,11 +862,36 @@ all six items landed:
   `applyCssVariables` fix works), a non-default accent and node-font
   color coexist independently, and both survive a full page reload --
   zero console/page errors.
-- Still open in §6.7: Chrome background
-  presets, Editor's Choice / Documentation
-  Mode presets, full layout controls, inline note/remark/Q&A previews
-  -- each a real, separately-scoped follow-up, most wanting a real
-  Settings panel to live in (§6.10).
+- Chrome background presets investigated in this PR and NOT built --
+  confirmed unreachable in legacy itself, not a gap in this port.
+  Legacy has real `CHROME_PRESETS`/`applyChromeColors`/
+  `setChromePreset` data and logic (legacy/index.html:18763-18771),
+  and `chromePreset` is a real persisted pref -- but `setChromePreset`
+  looks for its own trigger markup at `#chrome-swatch-row
+  .accent-swatch`, and that id doesn't exist anywhere in
+  legacy/index.html (confirmed by grep across the whole file), unlike
+  `#accent-swatch-row`/`#node-font-swatch-row`, which both have real
+  rendered markup. No real legacy user can ever reach this feature
+  through its UI. Porting a picker for it would invent UI legacy
+  itself doesn't expose, not port parity -- marked N/A rather than
+  silently skipped, same "trust the real code" call already made for
+  the 'schedule' theme-mode comment.
+- Investigated the rest of §6.7's remaining list in this PR too --
+  unlike Chrome presets, these ARE real, reachable legacy features
+  (confirmed real markup + real event listeners: e.g.
+  `#compact-rows-toggle`/`#hide-tree-lines-toggle`/
+  `#depth-guide-lines-toggle`, legacy/index.html:5127-5132, 27072+),
+  but every one lives inside legacy's own Settings panel
+  (`.settings-list-row` markup), which `web/` has no equivalent of at
+  all yet. The accent/node-font-color pickers worked as standalone
+  header buttons because there were only 1-2 of them; Editor's
+  Choice/Documentation Mode presets, the ~7 layout controls, and
+  inline note/remark/Q&A previews are a materially bigger set that
+  genuinely wants a real settings surface, not more one-off toolbar
+  buttons. This is the natural point to build that surface (a real,
+  cross-cutting piece, §6.10) rather than force each item in
+  awkwardly -- flagged to the user rather than building a Settings
+  panel unasked or continuing to stuff the header.
 
 §6.8 onward not started.
 
