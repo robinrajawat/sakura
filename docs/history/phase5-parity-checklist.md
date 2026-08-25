@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, and manual Rewrite (toolbar + right-click, single/multi/whole-document, real in-flight-edit guard) landed — see AI Features section below. Still no auto-rewrite on commit, Generate outline, Restructure text, Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, and auto-rewrite on commit (real queue/flush engine, exclusion filter, status chip) landed — see AI Features section below. Still no Generate outline, Restructure text, Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -165,8 +165,28 @@ guard actually discarding a result for a node edited mid-flight (confirmed the e
 not the stale AI one), and rewriting with no AI key configured surfacing a clear alert rather
 than hanging or throwing — zero console/page errors throughout.
 
-Still not built: auto-rewrite on commit, Generate Outline, Restructure Text, Expand node, Suggest
-tags, Suggest icon, Summarise selection, provider fallback chain UI, usage tracking. See
+**Slice 4** (this PR): auto-rewrite on commit. New `state/autoRewrite.ts`
+(`shouldAutoRewriteNode`, the real exclusion filter — checkbox/heading/Decision-Log-field/
+backlink-or-code-syntax, all four independently toggleable, plus a minimum-word-count threshold)
+and `store/autoRewriteStore.ts` (the real queue/flush engine: a committed node joins a pending
+`Set`, flushing on whichever comes first — a `batchCap` node count or an `idleSec` idle timer —
+pausing rather than discarding the queue when no AI key is available, and disabling itself after
+3 consecutive failed flushes). Wired into `OutlineTree.tsx`'s two real commit call sites (Enter,
+blur) with real paste-taint detection (an `insertFromPaste`/`insertFromDrop`/`insertFromYank`
+input event marks the session tainted, so a pasted commit still saves but never queues). A status
+chip in the app's status bar (click to toggle on/off, live "N queued"/"paused"/"rewriting" text)
+and a new "Auto-rewrite" Settings section. Deliberate simplification, documented in
+`autoRewriteStore.ts`'s own header: unlike legacy's real auto-resume-the-moment-a-key-exists
+behavior, a paused (no-key) queue here needs an explicit "Retry now" click — auto-resuming would
+need `autoRewriteStore.ts` and `aiSettingsStore.ts` to import each other, a real circular-import
+risk for a background convenience. Verified end-to-end in real headless Chrome: an idle-timer
+flush correctly applying the AI result and updating the chip, a batch-cap flush firing
+immediately without waiting for the (much longer) idle delay, the checkbox exclusion correctly
+skipping a checkbox node's commit, and a simulated paste-sourced commit correctly not queuing
+while the text itself still committed — zero console/page errors throughout.
+
+Still not built: Generate Outline, Restructure Text, Expand node, Suggest tags, Suggest icon,
+Summarise selection, provider fallback chain UI, usage tracking. See
 phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert

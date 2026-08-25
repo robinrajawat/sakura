@@ -1486,4 +1486,49 @@ stale result when a node was mutated mid-flight during the test itself
 rewriting with no AI key configured surfacing a clear alert rather than
 hanging or throwing silently -- zero console/page errors throughout,
 across every one of those checks.
+
+Fourth §6.9 slice landed next in the same session: auto-rewrite on
+commit. New `state/autoRewrite.ts` has `shouldAutoRewriteNode`, a direct
+port of legacy's real exclusion filter -- a minimum-word-count threshold
+plus four independently-toggleable exclusions (checkbox, heading,
+Decision-Log's own structured-field text via a real ported regex,
+backlink/inline-code syntax). New `store/autoRewriteStore.ts` is the
+real queue/flush engine: a committed node joins a pending `Set`,
+flushing on whichever comes first -- reaching `batchCap` nodes queued,
+or `idleSec` seconds with no further commits (a plain module-level
+`setTimeout` handle, reset on every new queued node rather than
+stacking). A flush with no AI key available pauses rather than
+discarding the queue (`pausedNoKey`); three consecutive failed flushes
+disable auto-rewrite entirely, both matching legacy's own real behavior.
+One deliberate, documented simplification: legacy auto-resumes a paused
+queue the instant a key becomes available again; this instead needs an
+explicit "Retry now" click, since wiring true auto-resume would need
+`autoRewriteStore.ts` and `aiSettingsStore.ts` to import each other -- a
+real circular-import risk not worth taking for a background convenience.
+Queueing itself is triggered from `OutlineTree.tsx`'s own two real
+commit call sites (Enter key, blur) rather than from `outlineStore.ts`
+or the new store, matching `aiRewrite.ts`'s own established "plain
+orchestration in the UI layer, not AI-awareness baked into the outline
+store" precedent. Real paste-taint detection was added alongside this:
+a `pasteTaintedRef`, reset every time a new node starts editing, gets
+set whenever the editing input's own `input` event reports an
+`insertFromPaste`/`insertFromDrop`/`insertFromYank` `inputType` --
+checked (and cleared) at the next real commit, so a pasted change still
+saves normally but never joins the auto-rewrite queue, matching
+legacy's own real reasoning exactly. A status chip landed in `AppShell`'s
+existing status bar (a left-click toggle showing live "N queued"/
+"paused (N waiting)"/"Rewriting…"/plain idle text, matching legacy's
+real `sb-auto-rewrite-chip` states) and a new "Auto-rewrite" Settings
+section (enable toggle, the four exclusion checkboxes, and range inputs
+for minimum words/batch cap/idle delay, all backed by real persisted
+prefs in `sakura_web_auto_rewrite_v1`). Verified end-to-end in real
+headless Chrome with the Gemini endpoint mocked via Playwright's
+`page.route`: an idle-timer flush correctly applying the AI result to
+the node and returning the chip to its idle state, a batch-cap flush
+firing immediately without waiting for a much longer idle delay, the
+checkbox exclusion correctly skipping a checkbox node's commit (chip
+stayed idle, nothing queued), and a simulated paste-sourced commit event
+correctly not queuing while the pasted text itself still committed to
+the node normally -- zero console/page errors throughout, across every
+one of those checks.
 ```

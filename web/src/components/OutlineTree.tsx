@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats, buildVertFlags, buildPrefix } from '../core/nodeQueries';
@@ -15,6 +15,8 @@ import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
 import { NodeText } from './NodeText';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
+import { useAutoRewriteStore } from '../store/autoRewriteStore';
+import { shouldAutoRewriteNode } from '../state/autoRewrite';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
   return {
@@ -219,6 +221,48 @@ export function OutlineTree() {
   async function handleRewriteDocument(): Promise<void> {
     const result = await rewriteDocument();
     if (!result.ok) window.alert(result.message);
+  }
+
+  // §6.9 slice 4 (docs/phase6-full-parity-plan.md): auto-rewrite on commit. `pasteTaintedRef`
+  // matches legacy's real single global `autoRewritePasteTainted` flag (not per-node, since only
+  // one node can be actively edited at a time) -- set whenever the editing input's own `input`
+  // event reports a paste/drop/yank `inputType`, checked and cleared at the next real commit.
+  // Reset for every new edit session (not just after a commit) so a paste in a PREVIOUS session
+  // can never taint a later, unrelated one.
+  const pasteTaintedRef = useRef(false);
+  useEffect(() => {
+    pasteTaintedRef.current = false;
+  }, [editingId]);
+
+  function handleEditingInputChange(e: ChangeEvent<HTMLInputElement>, nodeId: number): void {
+    const inputType = (e.nativeEvent as InputEvent).inputType;
+    if (inputType && /insertFromPaste|insertFromDrop|insertFromYank/i.test(inputType)) {
+      pasteTaintedRef.current = true;
+    }
+    handleAtInput(e, nodeId);
+  }
+
+  /** The real single "did this commit actually change the text, and should it queue for
+   * auto-rewrite" check -- matches legacy's own `commitEdit()` inline call
+   * (`if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid)`). Reads the node's
+   * text before AND after `commitEdit` (rather than trusting the raw typed `text` param) so the
+   * checkbox/heading auto-convert `commitEdit` itself may have just applied is reflected in both
+   * the "did it really change" check and the `shouldAutoRewriteNode` exclusion check. */
+  function handleCommitAndQueueAutoRewrite(id: number, text: string): void {
+    const before = nodes.find((n) => n.id === id)?.text ?? '';
+    commitEdit(id, text);
+    const pasteTainted = pasteTaintedRef.current;
+    pasteTaintedRef.current = false;
+    if (pasteTainted) return;
+    const after = useOutlineStore.getState().nodes.find((n) => n.id === id);
+    if (!after) return;
+    const afterText = after.text ?? '';
+    if (afterText === before) return;
+    const autoRewrite = useAutoRewriteStore.getState();
+    if (!autoRewrite.enabled) return;
+    if (shouldAutoRewriteNode(afterText, after, autoRewrite.exclusions, autoRewrite.minWords)) {
+      autoRewrite.queueNode(id);
+    }
   }
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
@@ -495,7 +539,7 @@ export function OutlineTree() {
     }
     if (e.key === 'Enter') {
       e.preventDefault();
-      commitEdit(id, e.currentTarget.value);
+      handleCommitAndQueueAutoRewrite(id, e.currentTarget.value);
       if (e.metaKey || e.ctrlKey) {
         newChild(id);
       } else {
@@ -854,8 +898,8 @@ export function OutlineTree() {
                   ref={inputRef}
                   defaultValue={node.text ?? ''}
                   onKeyDown={(e) => handleInputKeyDown(e, node.id)}
-                  onChange={(e) => handleAtInput(e, node.id)}
-                  onBlur={(e) => commitEdit(node.id, e.currentTarget.value)}
+                  onChange={(e) => handleEditingInputChange(e, node.id)}
+                  onBlur={(e) => handleCommitAndQueueAutoRewrite(node.id, e.currentTarget.value)}
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
