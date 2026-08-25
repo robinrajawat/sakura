@@ -8,6 +8,7 @@ import { AiFallbackSettings } from './AiFallbackSettings';
 import { QuickInsertSettings } from './QuickInsertSettings';
 import { QuickAssistSettings } from './QuickAssistSettings';
 import { BackupSettings } from './BackupSettings';
+import { ProfileVisibilitySettings } from './ProfileVisibilitySettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -78,6 +79,12 @@ import { BackupSettings } from './BackupSettings';
  * copy" and Secure Storage both live under its "Data" category. The other, File-System-Access-
  * API half of legacy's real two-tier backup layer, "auto-backup to file", is a separate,
  * not-yet-built follow-up.
+ *
+ * §6.8 slice (sharing): added the real 5th "account" category (legacy's own rail has one; this
+ * project's just didn't need it until now) holding `ProfileVisibilitySettings.tsx` -- the
+ * profile-discoverability toggle sharing's Share dialog depends on (see profileStore.ts's own
+ * header). Exactly the "adding a 5th category" extension this file's own header above already
+ * described as the expected shape for a future addition.
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -88,13 +95,14 @@ const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
 
 /** Matches legacy's real `data-cat` values verbatim (legacy/index.html:4623-4670) -- only the
  * subset with real content in `web/` today. See this file's own header for how to add a 5th. */
-type SettingsCategory = 'general' | 'editing' | 'ai' | 'data';
+type SettingsCategory = 'general' | 'editing' | 'ai' | 'data' | 'account';
 
 const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string }[] = [
   { id: 'general', label: 'Appearance' },
   { id: 'editing', label: 'Editing' },
   { id: 'ai', label: 'AI' },
-  { id: 'data', label: 'Data & Backup' }
+  { id: 'data', label: 'Data & Backup' },
+  { id: 'account', label: 'Account' }
 ];
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -345,6 +353,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       <div style={{ display: activeCategory === 'data' ? 'block' : 'none' }}>
         <SecureStorageSettings t={t} />
         <BackupSettings t={t} />
+      </div>
+      <div style={{ display: activeCategory === 'account' ? 'block' : 'none' }}>
+        <ProfileVisibilitySettings t={t} />
       </div>
         </div>
       </div>

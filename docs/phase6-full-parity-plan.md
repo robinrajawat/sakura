@@ -1406,6 +1406,71 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   that an aborted/failed network call surfaces a real user-facing error rather than hanging or
   throwing silently, confirmed "Forgot password?" requires an email first and otherwise reaches
   its own real SDK call too. No real account was ever created or mutated against production.
+- ✅ **Sharing (view/edit/notifications) landed -- the full feature in one PR, not a scoped-down
+  slice, per an explicit user decision** weighing this against the alternative of a smaller
+  core-loop-only cut. Direct port of legacy's real sharing machinery (legacy/index.html:
+  14100-14650+): profile discoverability (`store/profileStore.ts`, `profiles/{uid}` docs,
+  private by default, a `visibility` toggle in a new "Account" Settings category), grant/revoke/
+  role-change with collaborator notifications (`store/sharingStore.ts`, `sharedWith.<uid>` on the
+  owner's doc plus a `sharedWithUids` array field solely so `loadSharedWithMe`'s
+  `collectionGroup` query is indexable -- Firestore indexes a collectionGroup query by exact
+  literal field path, so the dynamic `sharedWith.<uid>.role` path could never scale past one
+  hardcoded uid), name-prefix + exact-email search (reusing `profileStore.ts`'s own "starts with"
+  range-query technique), the share dialog/collaborator list/"Shared with me" list (all three
+  added to `DocSyncPanel.tsx`, a documented, deliberate simplification vs. legacy's own sidebar
+  placement -- `web/`'s sidebar is file-explorer-shaped, not yet a place for a second, unrelated
+  list), a `SharedDocBanner` shown above the outline for a non-owned document, and a notification
+  bell (`store/notificationsStore.ts`, a thin wrapper around `state/notifications.ts` -- an
+  already-ported, already-tested, previously entirely unwired module discovered from an earlier
+  bulk-port phase, PR #86/#137 era -- plus `components/NotificationBell.tsx` mounted in the
+  header). `docSyncStore.ts` gained a `role` (`'owner'|'editor'|'viewer'`) and `ownerUid`/
+  `ownerDisplayName`/`ownerEmail`, letting the SAME load/autosave/realtime machinery already
+  built for an owned document serve a shared one too (`loadDoc`'s new optional `sharedMeta`
+  param) rather than a parallel document-loading system; a `role:'viewer'` document never
+  schedules or performs a push (`pushDoc`'s own guard) -- a best-effort client-side deterrent
+  only, matching legacy's own real `isViewerOnCurrentDoc`; Firestore security rules are the
+  actual, server-side enforcement. Deliberately NOT used: the already-ported (earlier bulk-port
+  phase) `state/sharedDocSync.ts`'s `shouldApplySharedDocRealtimeUpdate` -- legacy needs a
+  separate, simpler realtime-listener decision for a shared document because its own localStorage
+  doc index only tracks the current account's own documents; `web/`'s `lastKnownUpdatedAt` has no
+  such gap (populated fresh by `loadDoc` regardless of whose document it is), so the existing
+  `shouldApplyIncomingSyncCore` staleness check already used for an owned document works
+  correctly, and more precisely, for a shared one too (see `docSyncStore.ts`'s own header for the
+  full reasoning) -- `sharedDocSync.ts` stays unwired, same as before this slice. Deliberately NOT
+  built in this slice: real-time presence (`state/presence.ts`, another already-ported-but-unwired
+  module from the same earlier bulk-port phase) -- a related but genuinely distinct real-time
+  feature outside this slice's own scope, a real, separately-scoped follow-up.
+  Verified with four new test suites (`profileStore.test.ts`, `sharingStore.test.ts`,
+  `notificationsStore.test.ts`, plus new cases added to `docSyncStore.test.ts` for the role/
+  ownerUid/viewer-gate behavior) mocking the `firebase/firestore` module boundary, matching this
+  project's established precedent -- 61 new tests total, covering: self-share refusal, the exact
+  `sharedWith.<uid>`/`sharedWithUids` write shape, notification-write-failure not blocking the
+  access change itself, collaborator-map/`sharedWithMe` in-memory updates, the collection-group-
+  index-missing failure mode degrading to an empty list rather than a crash, search dedup/self-
+  exclusion/8-result cap and its own degrade-to-email-only-results failure mode, and a viewer's
+  edits never scheduling or performing a push while an editor's still do. Also verified end-to-end
+  in real headless Chrome for the signed-out state (a real Google/email account isn't available in
+  this environment, same constraint as the email/password sign-in slice above): the "Account"
+  Settings category renders with its sign-in prompt, the notification bell correctly renders
+  nothing, `DocSyncPanel` shows its sign-in prompt, zero console/page errors, and -- with every
+  `googleapis.com` request aborted defensively -- confirmed the signed-out path never attempts a
+  network call at all. The signed-in sharing flow itself (the Share dialog, live notifications,
+  the "Shared with me" list against a real document) was NOT verified end-to-end against a real
+  account: unlike the email/password slice's REST-shaped `identitytoolkit.googleapis.com` calls,
+  Firestore's real wire protocol (gRPC-Web, not plain JSON REST) is impractical to fake
+  convincingly via `page.route` interception in this environment, and a half-faithful fake risked
+  a false-positive pass more than it added real coverage -- the 61 new unit tests are this slice's
+  real verification of that logic. The one remaining, explicitly-flagged, genuinely unverifiable
+  risk from before this slice began still stands: `loadSharedWithMe`'s `collectionGroup` query
+  needs its own one-time Firebase Console setup (a composite index on `sharedWithUids`,
+  array-contains) that this project has no way to confirm is actually provisioned in the real
+  production project -- it fails safely either way (a caught, logged error and an empty list, not
+  a crash), matching legacy's own real behavior exactly, including its own console message
+  pointing at the direct "create this index" link Firestore itself prints.
+  Still remaining for §6.8 after this slice: a real persistent sync-status indicator (a top-bar
+  dot), two-tier automatic backup's tier 2 (auto-backup to file), full whole-app JSON Export/
+  Import, Version History, and the deliberately-excluded presence tracking noted above -- each its
+  own separately-scoped slice.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
