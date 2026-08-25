@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { usePadStore, PAD_ATTACH_MAX_BYTES } from '../store/padStore';
-import type { DecisionStatus } from '../store/padStore';
+import type { DecisionStatus, DecisionTextField } from '../store/padStore';
 import { useMindMapStore } from '../store/mindMapStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
+import { decisionLogAnchorLabelCore, decisionStatusLabelCore } from '../state/decisionLogQueries';
 import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
@@ -140,21 +141,64 @@ function NotesTab({ t }: { t: Tokens }) {
   );
 }
 
+// Matches legacy's real `DL_FIELDS` exactly (legacy/index.html:8313-8319) -- both the field set
+// and this order, including the ghost-text prompts.
+const DECISION_FIELDS: { key: DecisionTextField; label: string; placeholder: string }[] = [
+  { key: 'context', label: 'Context', placeholder: 'What prompted this decision?' },
+  { key: 'decision', label: 'Decision', placeholder: 'What was decided?' },
+  { key: 'rationale', label: 'Rationale', placeholder: 'Why was this option chosen?' },
+  { key: 'alternatives', label: 'Alternatives', placeholder: 'What other options were considered?' },
+  { key: 'impact', label: 'Impact', placeholder: 'What systems or people are affected?' }
+];
+
+// Matches legacy's real status-cycle order (legacy/index.html:35483-35495): clicking the status
+// pill advances proposed -> approved -> rejected -> proposed.
+const DECISION_STATUS_CYCLE: Record<DecisionStatus, DecisionStatus> = {
+  proposed: 'approved',
+  approved: 'rejected',
+  rejected: 'proposed'
+};
+
+/**
+ * §6.6 slice (docs/phase6-full-parity-plan.md): rebuilt for `padStore.ts`'s real Decision Log
+ * schema (see that file's own header). Still a real, deliberate simplification of legacy's full
+ * panel (that file's own header has the complete list of what's ported vs. not) -- this slice's
+ * own scope: collapsed rows that expand in place into the 5 real fields + author + a
+ * click-to-cycle status pill, "+ New" auto-anchoring to the currently-selected outline node if
+ * it's free (matching legacy's real `createDecisionLog` behavior), and delete. Deliberately NOT
+ * yet built: an anchor-picker UI to change/set a link after creation (`setDecisionAnchor` exists
+ * on the store already, just has no UI entry point here yet), rich-text fields (plain
+ * `<textarea>`s for now, matching this project's own "plain first, rich text later if genuinely
+ * needed" precedent for smaller surfaces), per-field undo, author autocomplete, drag-reorder
+ * (`reorderDecision` exists on the store already too), copy/paste, and the author filter
+ * dropdown (`decisionFilter.ts`'s own header already explains why that one needs a real
+ * `author` field -- which now exists -- but the filter UI itself is still a separate follow-up).
+ */
 function DecisionTab({ t }: { t: Tokens }) {
   const decisions = usePadStore((s) => s.decisions);
-  const addDecision = usePadStore((s) => s.addDecision);
+  const createDecision = usePadStore((s) => s.createDecision);
   const removeDecision = usePadStore((s) => s.removeDecision);
   const setDecisionStatus = usePadStore((s) => s.setDecisionStatus);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const setDecisionField = usePadStore((s) => s.setDecisionField);
+  const setDecisionAuthor = usePadStore((s) => s.setDecisionAuthor);
+  const nodes = useOutlineStore((s) => s.nodes);
+  const selectedId = useOutlineStore((s) => s.selectedId);
   const [openOnly, setOpenOnly] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const openCount = decisions.filter(decisionIsOpen).length;
   const visibleDecisions = decisionVisibleItems(decisions, openOnly);
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <button
+          type="button"
+          onClick={() => setExpandedId(createDecision(selectedId))}
+          style={{ fontSize: 11, padding: '2px 8px' }}
+        >
+          + New
+        </button>
         <button
           type="button"
           disabled={!openOnly && (decisions.length === 0 || openCount === 0)}
@@ -174,52 +218,66 @@ function DecisionTab({ t }: { t: Tokens }) {
         </button>
       </div>
       {visibleDecisions.length === 0 && decisions.length > 0 && (
-        <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>
-          No open decisions.
-        </div>
+        <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>No open decisions.</div>
       )}
-      {visibleDecisions.map((d) => (
-        <div key={d.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
-          <strong>{d.title}</strong> — {d.description}{' '}
-          <select
-            value={d.status}
-            onChange={(e) => setDecisionStatus(d.id, e.currentTarget.value as DecisionStatus)}
-            style={{ fontSize: 11 }}
-          >
-            <option value="proposed">Proposed</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>{' '}
-          <button type="button" onClick={() => removeDecision(d.id)} style={{ fontSize: 11 }}>
-            remove
-          </button>
-        </div>
-      ))}
-      <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.currentTarget.value)}
-          style={{ fontSize: 12, flex: 1 }}
-        />
-        <input
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.currentTarget.value)}
-          style={{ fontSize: 12, flex: 2 }}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            if (!title.trim()) return;
-            addDecision(title, description);
-            setTitle('');
-            setDescription('');
-          }}
-        >
-          Add
-        </button>
-      </div>
+      {decisions.length === 0 && (
+        <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>No decisions logged yet.</div>
+      )}
+      {visibleDecisions.map((d) => {
+        const isExpanded = d.id === expandedId;
+        return (
+          <div key={d.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '6px 0', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setExpandedId(isExpanded ? null : d.id)}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDecisionStatus(d.id, DECISION_STATUS_CYCLE[d.status]);
+                }}
+                style={{ fontSize: 11 }}
+              >
+                {decisionStatusLabelCore(d.status)}
+              </button>
+              <span style={{ flex: 1, color: t.mutedText, fontSize: 12 }}>{decisionLogAnchorLabelCore(d, nodes)}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeDecision(d.id);
+                  if (isExpanded) setExpandedId(null);
+                }}
+                style={{ fontSize: 11 }}
+              >
+                delete
+              </button>
+            </div>
+            {isExpanded && (
+              <div style={{ display: 'grid', gap: 6, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                {DECISION_FIELDS.map((f) => (
+                  <label key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: t.mutedText }}>{f.label}</span>
+                    <textarea
+                      defaultValue={d[f.key]}
+                      placeholder={f.placeholder}
+                      rows={2}
+                      onBlur={(e) => setDecisionField(d.id, f.key, e.currentTarget.value)}
+                      style={{ width: '100%', font: 'inherit', fontSize: 12, border: `1px solid ${t.border}`, borderRadius: 4 }}
+                    />
+                  </label>
+                ))}
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: t.mutedText }}>Author</span>
+                  <input
+                    defaultValue={d.author}
+                    onBlur={(e) => setDecisionAuthor(d.id, e.currentTarget.value)}
+                    style={{ fontSize: 12, border: `1px solid ${t.border}`, borderRadius: 4 }}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
