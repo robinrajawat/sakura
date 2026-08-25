@@ -1,10 +1,22 @@
 import { describe, it, expect, vi } from 'vitest';
-import { callAiApi, callAiApiBatchChunk, callAiApiBatch, buildBatchUserContent, parseBatchResponse, callAiApiOutline, callAiApiRestructure, AI_RESTRUCTURE_MAX_CHARS } from './aiCapabilities';
+import { callAiApi, callAiApiBatchChunk, callAiApiBatch, buildBatchUserContent, parseBatchResponse, callAiApiOutline, callAiApiRestructure, AI_RESTRUCTURE_MAX_CHARS, callAiApiWithPrompt } from './aiCapabilities';
 import * as aiCall from './aiCall';
 
 function ctx(overrides: Partial<Parameters<typeof callAiApi>[2]> = {}) {
   return { providerId: 'gemini', model: 'gemini-3.5-flash', apiKey: 'sk-test', ...overrides };
 }
+
+describe('callAiApiWithPrompt', () => {
+  it('passes through the given systemPrompt/userMsg/maxTokens exactly', async () => {
+    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('result');
+    const result = await callAiApiWithPrompt('a system prompt', 'a user message', 512, ctx());
+    expect(result).toBe('result');
+    expect(spy.mock.calls[0][0].systemPrompt).toBe('a system prompt');
+    expect(spy.mock.calls[0][0].userContent).toBe('a user message');
+    expect(spy.mock.calls[0][0].maxTokens).toBe(512);
+    spy.mockRestore();
+  });
+});
 
 describe('callAiApi', () => {
   it('calls callAiByShape with the resolved provider shape/baseUrl, maxTokens=1024', async () => {

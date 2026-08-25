@@ -246,6 +246,71 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes).toEqual(before);
   });
 
+  it('expandNodeChildren inserts new children right after the parent, at depth+1', () => {
+    // seed: node 1 (depth 0), node 2 (depth 1, child of 1), node 3 (depth 1, sibling)
+    const ids = useOutlineStore.getState().expandNodeChildren(1, ['a', 'b']);
+    expect(ids).toHaveLength(2);
+    const nodes = useOutlineStore.getState().nodes;
+    // spliced at idx+1 (immediately after node 1), so they land BEFORE node 1's existing child 2
+    expect(nodes.map((n) => n.id)).toEqual([1, ids[0], ids[1], 2, 3]);
+    expect(nodes.find((n) => n.id === ids[0])?.depth).toBe(1);
+    expect(nodes.find((n) => n.id === ids[0])?.parentId).toBe(1);
+  });
+
+  it('expandNodeChildren is a no-op for an empty texts array', () => {
+    const before = useOutlineStore.getState().nodes;
+    const ids = useOutlineStore.getState().expandNodeChildren(1, []);
+    expect(ids).toEqual([]);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('expandNodeChildren is a no-op for a parent id that does not exist', () => {
+    const before = useOutlineStore.getState().nodes;
+    const ids = useOutlineStore.getState().expandNodeChildren(999999, ['a']);
+    expect(ids).toEqual([]);
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('expandNodeChildren selects the first new child and pushes a real undo checkpoint', () => {
+    const before = useOutlineStore.getState().nodes;
+    const ids = useOutlineStore.getState().expandNodeChildren(1, ['a', 'b']);
+    expect(useOutlineStore.getState().selectedId).toBe(ids[0]);
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
+  it('addSuggestedTags adds only genuinely new tags and returns them', () => {
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, tags: ['existing'] } : n))
+    });
+    const added = useOutlineStore.getState().addSuggestedTags(2, ['existing', 'new-one', 'new-two']);
+    expect(added).toEqual(['new-one', 'new-two']);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.tags).toEqual(['existing', 'new-one', 'new-two']);
+  });
+
+  it('addSuggestedTags is a real no-op (no undo checkpoint) when every tag is already present', () => {
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, tags: ['a', 'b'] } : n))
+    });
+    const canUndoBefore = useOutlineStore.getState().canUndo();
+    const added = useOutlineStore.getState().addSuggestedTags(2, ['a', 'b']);
+    expect(added).toEqual([]);
+    expect(useOutlineStore.getState().canUndo()).toBe(canUndoBefore);
+  });
+
+  it('addSuggestedTags returns [] for a node id that does not exist', () => {
+    expect(useOutlineStore.getState().addSuggestedTags(999999, ['x'])).toEqual([]);
+  });
+
+  it('addSuggestedTags pushes a real undo checkpoint when tags actually change', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().addSuggestedTags(2, ['brand-new']);
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();

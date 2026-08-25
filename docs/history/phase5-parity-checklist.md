@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, and Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts) landed — see AI Features section below. Still no Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), and Expand node/Suggest tags landed — see AI Features section below. Still no Suggest icon, Summarise selection, provider fallback, or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -213,9 +213,36 @@ keyboard shortcut, both the already-structured bypass (confirmed zero AI calls m
 AI-driven path for flat unstructured text, each correctly landing in a genuine new document; the
 dialog's own Cancel button — zero console/page errors throughout.
 
-Still not built: Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback
-chain UI, usage tracking. See phase6-full-parity-plan.md's §6.9 section for the full remaining
-slice sequence.
+**Slice 6** (this PR): Expand node + Suggest tags, both simple single-node single-shot
+capabilities. A new generic `callAiApiWithPrompt` on `aiCapabilities.ts` (system prompt + user
+message + `maxTokens` + call context, no batching — unlike Rewrite, neither of these ever needs
+it) backs both. `state/aiExpandTags.ts` holds the two orchestrations (`expandNode`/`suggestTags`)
+plus their pure response parsers: `parseExpandResponseCore` strips bullet-prefixes from a flat
+list (no indentation parsing, unlike Generate Outline's parser — Expand's response is always
+flat by design); `parseTagsResponseCore` parses a JSON array (stripping a ```json fence the model
+sometimes adds), falling back to a comma/newline split if that fails, with every resulting tag run
+through `normalizeTagCore` (lowercase, spaces to hyphens, strip anything outside `[a-z0-9-]`, cap
+40 chars) regardless of which path produced it. `outlineStore.ts` gained two actions:
+`expandNodeChildren` splices the new nodes in immediately after the parent (at `idx + 1`, not at
+the end of its subtree), so they become the parent's first children even if it already has some —
+matching legacy's real behavior; `addSuggestedTags` adds only genuinely new tags and — like
+`applyAiTextResult` — pushes no undo checkpoint when nothing actually changes (every suggested tag
+already present). Trigger surface is toolbar-only ("✦ Expand"/"✦ Tags" buttons, enabled only with
+exactly one node selected) since neither the right-click menu nor Quick Assist exist yet as
+surfaces for these two. Verified end-to-end in real headless Chrome with the AI endpoint mocked via
+Playwright: the buttons correctly enabling with exactly one selection and disabling with zero or
+multiple; Expand inserting the right number of correctly-texted children right after the parent;
+Suggest Tags applying only genuinely-new tags (with `#` display) and reporting cleanly, with no
+error, when every suggested tag is already present; Undo correctly reverting an Expand — zero
+console/page errors throughout. A real bug was found and fixed during that verification: the
+toolbar buttons' enabled/disabled state was computed from `selectedId !== null`, which doesn't
+change value across a single-select → multi-select transition, so React never re-rendered the
+buttons on that transition and they stayed visually enabled during an actual multi-select; fixed
+by also subscribing to `multiSelectedIds` (always a fresh array reference on every selection
+change) purely to force the re-render.
+
+Still not built: Suggest icon, Summarise selection, provider fallback chain UI, usage tracking.
+See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert
 

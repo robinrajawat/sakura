@@ -228,6 +228,20 @@ interface OutlineState {
    * needs to be undoable the same way any other real edit is. Returns the new nodes' ids (empty
    * if `rows` was empty) so the caller can report a count without re-deriving it. */
   insertGeneratedOutline: (rows: { text: string; depth: number }[]) => number[];
+  /** §6.9 slice (docs/phase6-full-parity-plan.md): Expand node's real insertion action. Direct
+   * port of legacy's real `expandNodeWithAi` splice (legacy/index.html:28352-28376): new child
+   * nodes are spliced in at `idx + 1` — immediately after the parent, NOT after the parent's
+   * whole subtree (`getSubtreeEnd`) — so they become the parent's FIRST children even if it
+   * already had existing children, matching legacy's own real (and only) behavior exactly.
+   * Returns the new nodes' ids (empty if `texts` was empty or `parentId` doesn't resolve, so the
+   * caller can distinguish "nothing to expand" from "the node was deleted mid-flight"). */
+  expandNodeChildren: (parentId: number, texts: string[]) => number[];
+  /** §6.9 slice: Suggest tags' real bulk-add action. Direct port of legacy's real
+   * `suggestTagsWithAi` tag-merge (legacy/index.html:28379-28408) — only genuinely NEW tags (not
+   * already on the node) get added, and only those are returned (matching legacy's own real
+   * `newTags` used for its success message), so a fully-redundant suggestion is a real no-op
+   * (no undo checkpoint, no state change) rather than a no-op edit still consuming one. */
+  addSuggestedTags: (id: number, tags: string[]) => string[];
 
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
@@ -650,6 +664,53 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
       selectionAnchorId: mapped[0].id
     });
     return mapped.map((n) => n.id);
+  },
+
+  expandNodeChildren: (parentId, texts) => {
+    if (!texts.length) return [];
+    const { nodes, nextId } = get();
+    const idx = getIndex(nodes, parentId);
+    if (idx < 0) return [];
+    pushUndo();
+    const depth = nodes[idx].depth + 1;
+    let id = nextId;
+    const newNodes: OutlineNode[] = texts.map((t) => ({
+      id: id++,
+      depth,
+      text: t,
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    }));
+    const next = nodes.map((n) => ({ ...n }));
+    next.splice(idx + 1, 0, ...newNodes);
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: id,
+      selectedId: newNodes[0].id,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: newNodes[0].id
+    });
+    return newNodes.map((n) => n.id);
+  },
+
+  addSuggestedTags: (id, tags) => {
+    const { nodes } = get();
+    const idx = getIndex(nodes, id);
+    if (idx < 0) return [];
+    const current = new Set(nodes[idx].tags);
+    const newTags = tags.filter((t) => !current.has(t));
+    if (!newTags.length) return [];
+    pushUndo();
+    const next = nodes.map((n) => (n.id === id ? { ...n, tags: [...n.tags, ...newTags] } : n));
+    set({ nodes: next });
+    return newTags;
   },
 
   newSiblingAbove: (id) => {
