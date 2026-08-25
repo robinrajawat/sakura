@@ -1720,6 +1720,38 @@ can be precached at build time), maskable-icon verification, title-bar theme-col
 visual pass against Section 6.1's tokens now that every screen exists, to catch any component
 that drifted from the shared system during individual feature phases.
 
+Planned slice sequence:
+1. **Title-bar theme-color sync + maskable-icon verification** (landed, see Status) — small,
+   well-defined items handled together. Maskable-icon verification turned out to need no code
+   change at all: `web/public/icon-512-maskable.png` is byte-identical to legacy's own real
+   `icon-512-maskable.png` (confirmed via `md5sum`), correctly referenced in `manifest.json` with
+   `"purpose": "maskable"`, and visually inspected to have proper safe-zone padding (the flower
+   glyph sits well within the center ~80%, doesn't touch the edges a circular/rounded OS mask
+   would clip) — the parity checklist's prior note claiming "no maskable-variant distinction" was
+   stale, corrected as part of this slice. Theme-color sync WAS a real gap: `index.html`'s
+   `<meta name="theme-color">` was static forever after first paint, unlike legacy's real
+   `applyChromeColors()` (called from every `setTheme()`), which re-writes it to the current
+   theme's toolbar-background color every time light/dark changes. Ported as
+   `themeStore.ts`'s new `syncThemeColorMeta`, called from the same `applyCssVariables` both
+   `init()` and `setTheme()` already share, so both first paint and every later theme swap stay
+   in sync — reads `THEME_TOKENS[theme].toolbarBackground` directly rather than legacy's
+   `getComputedStyle` round-trip, since `web/` has no reachable Chrome-preset feature that could
+   make `--tb-bg` diverge from the plain theme default (investigated in §6.7, confirmed
+   unreachable in legacy's own UI too).
+2. **Static precache strategy** — port legacy's real `sw.js` strategy (network-first for
+   navigation requests, cache-first for static asset destinations, an explicit `PRECACHE_URLS`
+   list installed up front) onto `web/`'s Vite build, which — unlike legacy's single unhashed
+   `index.html` — emits content-hashed filenames that change every build. Needs a small
+   build-time step reading Vite's own asset manifest (`build.manifest: true`) to generate the
+   real hashed-filename list at build time, not a hand-written array. Not yet scoped in detail.
+3. **Full visual pass against Section 6.1's tokens** — audit every component for hardcoded
+   colors/spacing that drifted from the shared `THEME_TOKENS`/CSS-custom-property system instead
+   of reading it, now that every screen in the app exists to check. Not yet scoped in detail —
+   an initial grep found ~15 component files with hardcoded hex colors; most look like legitimate
+   uses (export/PDF-generation code that must bake literal colors into a static file format, or
+   semantic-markup colors that are intentionally theme-independent) rather than real drift, but
+   each needs individual verification before ruling it in or out.
+
 ## 9 — Pre-cutover gate (do this before touching `deploy.yml`)
 
 Every item below, checked in that order, before any cutover PR is even opened:
@@ -1995,6 +2027,24 @@ command rows and scopes search results to just that category — zero console/pa
 every check. Remaining: sub-slices covering Pad/Q&A/Diagrams/Remarks (blocked on `padStore.ts`
 per-document persistence) and Settings/Features/Help/Templates search (no searchable index or
 live UI exists for any of the four) — not started yet.
+
+§6.10 (Quick Assist, Quick Insert & Settings) is closed as complete within its own real scope —
+see that section's own closing note above for exactly what's out of scope and why.
+
+First §6.11 slice: title-bar theme-color sync + maskable-icon verification. Maskable-icon
+verification needed no code change: `web/public/icon-512-maskable.png` is byte-identical to
+legacy's own real icon (`md5sum`-verified), correctly declared `"purpose": "maskable"` in
+`manifest.json`, with proper safe-zone padding on visual inspection — the parity checklist's
+prior claim of "no maskable-variant distinction" was stale, corrected as part of this slice.
+Theme-color sync was a real gap: `index.html`'s `<meta name="theme-color">` never updated after
+first paint. New `themeStore.ts` `syncThemeColorMeta`, called from the shared
+`applyCssVariables` (both `init()` and every `setTheme()` already go through it), direct-ports
+legacy's real `applyChromeColors()` theme-color write, reading `THEME_TOKENS[theme].toolbarBackground`
+directly since `web/` has no reachable Chrome-preset feature that could make the real `--tb-bg`
+diverge from that plain default. Verified end-to-end in real headless Chrome: light theme shows
+`#f8f8f6`, clicking Dark updates it to `#181816`, clicking back to Light restores `#f8f8f6` —
+zero console/page errors. Remaining §6.11 slices: the static precache strategy and the full
+visual pass against Section 6.1's tokens — neither started yet.
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
