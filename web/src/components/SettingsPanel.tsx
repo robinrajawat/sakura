@@ -6,6 +6,7 @@ import { SecureStorageSettings } from './SecureStorageSettings';
 import { AutoRewriteSettings } from './AutoRewriteSettings';
 import { AiFallbackSettings } from './AiFallbackSettings';
 import { QuickInsertSettings } from './QuickInsertSettings';
+import { BackupSettings } from './BackupSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -66,6 +67,13 @@ import { QuickInsertSettings } from './QuickInsertSettings';
  * cross-category settings-text search box (`#settings-search`, legacy/index.html:4611-4618) --
  * a real, separately-scoped follow-up (its own text-match/highlight engine over every section),
  * not attempted alongside the rail itself.
+ *
+ * §6.8 slice 2: added `BackupSettings.tsx` (status text plus a "Restore…" button for
+ * `backupStore.ts`'s new local IndexedDB safety-copy mirror) to the existing "data" category
+ * alongside Secure Storage -- matching legacy's own real rail grouping, where "Local safety
+ * copy" and Secure Storage both live under its "Data" category. The other, File-System-Access-
+ * API half of legacy's real two-tier backup layer, "auto-backup to file", is a separate,
+ * not-yet-built follow-up.
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -331,6 +339,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ display: activeCategory === 'data' ? 'block' : 'none' }}>
         <SecureStorageSettings t={t} />
+        <BackupSettings t={t} />
       </div>
         </div>
       </div>
