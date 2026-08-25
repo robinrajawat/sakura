@@ -358,11 +358,24 @@ the full label list, with Tab (not just Enter) also committing there; disabling 
 Settings removing just that one from the popup while the others stay; disabling Quick Insert
 entirely making Ctrl+Space do nothing — zero console/page errors throughout.
 
+**Slice 2**: Settings-panel category rail. Direct port of legacy's real `#settings-rail` /
+`applySettingsCategory` — a left-hand list of category buttons where clicking one shows only that
+category's sections, done via CSS `display:''`/`'none'` toggling rather than conditional
+mount/unmount (matching legacy's own real mechanism exactly, and critically preserving each
+section's own local component state across a category switch). `SettingsPanel.tsx` gained a
+4-category rail (Appearance/Editing/AI/Data & Backup) covering the 4-of-legacy's-real-12
+categories that have actual content in `web/` today — Export formatting + Layout under
+Appearance, `QuickInsertSettings` under Editing, `AiProviderSettings` + `AiFallbackSettings` +
+`AutoRewriteSettings` under AI, `SecureStorageSettings` under Data & Backup. Deliberately not
+built: legacy's own cross-category settings-text search box (`#settings-search`), a separately-
+scoped follow-up. Verified end-to-end in real headless Chrome: all 4 tabs render and switch
+correctly, each showing only its own sections; a value typed into one section's field survives
+switching to another tab and back, confirming sections stay mounted rather than remounting;
+reopening Settings resets to the default Appearance tab — zero console/page errors throughout.
+
 Still entirely unbuilt: Quick Assist (the Ctrl/Cmd+K command box — plain-English toggle commands,
 Run/AI Run actions, and Global Search integration across Documents/Notes/Tags/Settings/Help/
-tasks/library) and the Settings-panel category rail (`web/`'s current `SettingsPanel.tsx` is still
-a single flat page, unlike legacy's real multi-category sidebar). See
-phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
+tasks/library). See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
 
 ## Preview, Presenter Mode & Export
 

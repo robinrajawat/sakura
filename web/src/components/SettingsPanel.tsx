@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePrefsStore';
 import { AiProviderSettings } from './AiProviderSettings';
@@ -47,16 +48,41 @@ import { QuickInsertSettings } from './QuickInsertSettings';
  * built in earlier slices now goes through automatically -- no further per-capability wiring
  * needed.
  *
- * §6.10 slice: added the "Quick Insert" section (`QuickInsertSettings.tsx`) -- the master enable
+ * §6.10 slice 1: added the "Quick Insert" section (`QuickInsertSettings.tsx`) -- the master enable
  * toggle, icon-only-row toggle, and 7 per-action checkboxes for `OutlineTree.tsx`'s Quick Insert
  * popup (a Phase 6.2 feature that existed with real mouse interaction but no settings at all, and
  * no real keyboard navigation, until this slice gave it both).
+ *
+ * §6.10 slice 2: added the real category rail -- direct port of legacy's own real
+ * `#settings-rail`/`applySettingsCategory` (legacy/index.html:4622-4671, 16137-16142): a
+ * left-hand list of category buttons, clicking one shows just that category's sections (CSS
+ * `display` toggling, matching legacy's own real mechanism exactly -- every section stays
+ * mounted, not conditionally rendered, so no component loses its own local state on a category
+ * switch). Legacy's real rail has 12 categories (general/presets/toolbar/panels/hub/editing/
+ * data/account/ai/features/shortcuts/about); this only builds the 4 that have any real content
+ * in `web/` today (general/editing/ai/data) -- adding a 5th is just adding one `SettingsCategory`
+ * union member, one rail button, and wrapping that slice's own new section in the matching
+ * `display` check, no rework of what's already here. Deliberately NOT built: legacy's own
+ * cross-category settings-text search box (`#settings-search`, legacy/index.html:4611-4618) --
+ * a real, separately-scoped follow-up (its own text-match/highlight engine over every section),
+ * not attempted alongside the rail itself.
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
   { value: 'dot', label: 'Dot' },
   { value: 'bar', label: 'Bar' },
   { value: 'outline', label: 'Outline' }
+];
+
+/** Matches legacy's real `data-cat` values verbatim (legacy/index.html:4623-4670) -- only the
+ * subset with real content in `web/` today. See this file's own header for how to add a 5th. */
+type SettingsCategory = 'general' | 'editing' | 'ai' | 'data';
+
+const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string }[] = [
+  { id: 'general', label: 'Appearance' },
+  { id: 'editing', label: 'Editing' },
+  { id: 'ai', label: 'AI' },
+  { id: 'data', label: 'Data & Backup' }
 ];
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -82,6 +108,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const alwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.alwaysExpandInlineEnabled);
   const setAlwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.setAlwaysExpandInlineEnabled);
   const setRowHighlightStyle = useOutlinePrefsStore((s) => s.setRowHighlightStyle);
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
   return (
     <div
@@ -92,7 +119,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         top: 'calc(100% + 8px)',
         right: 0,
         zIndex: 120,
-        width: 320,
+        width: 460,
         maxWidth: '92vw',
         background: t.background,
         border: `1px solid ${t.border}`,
@@ -109,6 +136,34 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           ✕
         </button>
       </div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div role="tablist" aria-label="Settings categories" style={{ display: 'flex', flexDirection: 'column', gap: 2, width: 96, flexShrink: 0 }}>
+          {SETTINGS_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              role="tab"
+              aria-selected={activeCategory === cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              style={{
+                textAlign: 'left',
+                font: 'inherit',
+                fontSize: 12,
+                padding: '6px 8px',
+                borderRadius: 6,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeCategory === cat.id ? t.hoverBg : 'transparent',
+                color: activeCategory === cat.id ? t.text : t.mutedText,
+                fontWeight: activeCategory === cat.id ? 600 : 400
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ flex: 1, minWidth: 0, maxHeight: 440, overflowY: 'auto' }}>
+      <div style={{ display: activeCategory === 'general' ? 'block' : 'none' }}>
       <div
         style={{
           fontSize: 12,
@@ -265,11 +320,20 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </span>
         </label>
       </div>
-      <QuickInsertSettings t={t} />
-      <AiProviderSettings t={t} />
-      <AiFallbackSettings t={t} />
-      <AutoRewriteSettings t={t} />
-      <SecureStorageSettings t={t} />
+      </div>
+      <div style={{ display: activeCategory === 'editing' ? 'block' : 'none' }}>
+        <QuickInsertSettings t={t} />
+      </div>
+      <div style={{ display: activeCategory === 'ai' ? 'block' : 'none' }}>
+        <AiProviderSettings t={t} />
+        <AiFallbackSettings t={t} />
+        <AutoRewriteSettings t={t} />
+      </div>
+      <div style={{ display: activeCategory === 'data' ? 'block' : 'none' }}>
+        <SecureStorageSettings t={t} />
+      </div>
+        </div>
+      </div>
     </div>
   );
 }
