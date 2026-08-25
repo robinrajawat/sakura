@@ -841,8 +841,28 @@ Status: **in progress.**
   value catches up to agree with it (resuming auto-following on the next real change),
   disabling System mode stops all of this, and the mode/theme choice survives a full page
   reload with the OS preference still emulated the same way -- zero console/page errors.
-- Still not started: Chrome background presets, node text color
-  presets, Editor's Choice / Documentation Mode presets, full layout controls, inline
+- ✅ **Node-text-color presets.** Direct port of legacy's real `NODE_FONT_COLOR_PRESETS`/
+  `applyNodeFontColor`/`setNodeFontColorPreset` (legacy/index.html:18781-18797) -- a second,
+  independent color axis from accent: 4 presets (Default/Black/Charcoal/Slate) recoloring node
+  text itself via `--node-fg`, each with its own light/dark hex. Unlike the accent picker, this
+  slice builds the store logic AND the UI both (no existing `setAccentPreset`-style action to
+  wire up -- `web/` had no node-text-color axis at all before this). A 4-swatch radiogroup
+  (`App.tsx`'s header actions, next to the accent picker), same UI pattern as the accent picker.
+  Required one supporting fix to `applyCssVariables` itself: that function's bulk CSS_VAR_MAP
+  loop unconditionally sets `--node-fg` from `THEME_TOKENS[theme].nodeText` (the theme's own
+  default), which would silently clobber a non-default node-font-color preset on every theme
+  swap -- `applyCssVariables` now takes the resolved node-font color as an explicit third
+  argument and overrides `--node-fg` with it after the loop, the same "explicit override after
+  the bulk pass" pattern `--accent` already used. `nodeFontColorPreset` now persists alongside
+  theme/accentPreset/themeMode. Verified end-to-end in real headless Chrome: confirmed the
+  default `--node-fg` resolves to the default preset, clicking the Slate swatch updates
+  `--node-fg` live and marks it `aria-checked` (leaving `--accent` untouched), toggling dark mode
+  resolves Slate's own dark hex rather than resetting to the theme's default (proving the
+  `applyCssVariables` fix works), a non-default accent and a non-default node-font-color preset
+  coexist independently, and both choices survive a full page reload exactly -- zero
+  console/page errors.
+- Still not started: Chrome background presets,
+  Editor's Choice / Documentation Mode presets, full layout controls, inline
   note/remark/Q&A previews -- each a real, separately-scoped follow-up. Most of these want a real
   Settings panel to live in, which doesn't exist yet (see §6.10).
 
@@ -896,7 +916,7 @@ complete** (#159–#161, #163 — the mention infrastructure §6.3 item 7 depend
 complete** (#176, #179, #181, #185, #187, #189, #191) — all
 six Hub items now landed, and **§6.6 in progress** (#194, #196, #197, #198, #199, #200, #201,
 #202, #203, #204, #205, #206, #207, #208, #209, #210, #211, #212), **§6.7 in progress** (#213,
-System auto-theme landing in this PR) — see each section's own `Status:` line for
+#214, node-text-color presets landing in this PR) — see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own

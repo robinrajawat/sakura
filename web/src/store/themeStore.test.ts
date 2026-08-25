@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS, CSS_VAR_MAP } from './themeStore';
+import { useThemeStore, ACCENT_PRESETS, DEFAULT_ACCENT, THEME_TOKENS, CSS_VAR_MAP, NODE_FONT_COLOR_PRESETS, DEFAULT_NODE_FONT_COLOR } from './themeStore';
 
 describe('themeStore', () => {
   beforeEach(() => {
-    useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT, themeMode: 'manual' });
+    useThemeStore.setState({ theme: 'light', accentPreset: DEFAULT_ACCENT, themeMode: 'manual', nodeFontColorPreset: DEFAULT_NODE_FONT_COLOR });
     document.body.removeAttribute('style');
     localStorage.clear();
   });
@@ -101,11 +101,11 @@ describe('themeStore', () => {
   });
 
   describe('persistence across sessions (§6.7)', () => {
-    it('setTheme persists the new theme (and the current accent/mode) to localStorage', () => {
+    it('setTheme persists the new theme (and the current accent/mode/node-font-color) to localStorage', () => {
       useThemeStore.getState().setAccentPreset('moss');
       useThemeStore.getState().setTheme('dark');
       const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
-      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'moss', themeMode: 'manual' });
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'moss', themeMode: 'manual', nodeFontColorPreset: 'default' });
     });
 
     it('toggleTheme persists too', () => {
@@ -114,15 +114,22 @@ describe('themeStore', () => {
       expect(persisted.theme).toBe('dark');
     });
 
-    it('setAccentPreset persists the new preset (and the current theme/mode) to localStorage', () => {
+    it('setAccentPreset persists the new preset (and the current theme/mode/node-font-color) to localStorage', () => {
       useThemeStore.getState().setTheme('dark');
       useThemeStore.getState().setAccentPreset('indigo');
       const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
-      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'indigo', themeMode: 'manual' });
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: 'indigo', themeMode: 'manual', nodeFontColorPreset: 'default' });
     });
 
-    it('a fresh store load reads back a previously persisted theme/accent', async () => {
-      localStorage.setItem('sakura_web_theme_prefs_v1', JSON.stringify({ theme: 'dark', accentPreset: 'plum' }));
+    it('setNodeFontColorPreset persists the new preset (and the current theme/mode/accent) to localStorage', () => {
+      useThemeStore.getState().setTheme('dark');
+      useThemeStore.getState().setNodeFontColorPreset('slate');
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_theme_prefs_v1')!);
+      expect(persisted).toEqual({ theme: 'dark', accentPreset: DEFAULT_ACCENT, themeMode: 'manual', nodeFontColorPreset: 'slate' });
+    });
+
+    it('a fresh store load reads back a previously persisted theme/accent/node-font-color', async () => {
+      localStorage.setItem('sakura_web_theme_prefs_v1', JSON.stringify({ theme: 'dark', accentPreset: 'plum', nodeFontColorPreset: 'charcoal' }));
       // `vi.resetModules()` + a fresh dynamic import forces the module to re-execute from
       // scratch (including its `create<ThemeState>((set, get) => ({ ...loadThemePrefs(), ... }))`
       // initializer), the same way a real page reload would -- a plain `setState` reset wouldn't
@@ -131,14 +138,19 @@ describe('themeStore', () => {
       const fresh = await import('./themeStore');
       expect(fresh.useThemeStore.getState().theme).toBe('dark');
       expect(fresh.useThemeStore.getState().accentPreset).toBe('plum');
+      expect(fresh.useThemeStore.getState().nodeFontColorPreset).toBe('charcoal');
     });
 
     it('falls back to real defaults for a corrupted persisted value rather than trusting it blindly', async () => {
-      localStorage.setItem('sakura_web_theme_prefs_v1', JSON.stringify({ theme: 'not-a-real-theme', accentPreset: 'not-a-real-preset' }));
+      localStorage.setItem(
+        'sakura_web_theme_prefs_v1',
+        JSON.stringify({ theme: 'not-a-real-theme', accentPreset: 'not-a-real-preset', nodeFontColorPreset: 'not-a-real-node-color' })
+      );
       vi.resetModules();
       const fresh = await import('./themeStore');
       expect(fresh.useThemeStore.getState().theme).toBe('light');
       expect(fresh.useThemeStore.getState().accentPreset).toBe(DEFAULT_ACCENT);
+      expect(fresh.useThemeStore.getState().nodeFontColorPreset).toBe(DEFAULT_NODE_FONT_COLOR);
     });
 
     it('falls back to real defaults when nothing is persisted at all', async () => {
@@ -147,6 +159,51 @@ describe('themeStore', () => {
       expect(fresh.useThemeStore.getState().theme).toBe('light');
       expect(fresh.useThemeStore.getState().accentPreset).toBe(DEFAULT_ACCENT);
       expect(fresh.useThemeStore.getState().themeMode).toBe('manual');
+      expect(fresh.useThemeStore.getState().nodeFontColorPreset).toBe(DEFAULT_NODE_FONT_COLOR);
+    });
+  });
+
+  describe('node-text-color presets (§6.7)', () => {
+    it('defaults to the "default" node-font-color preset', () => {
+      expect(useThemeStore.getState().nodeFontColorPreset).toBe(DEFAULT_NODE_FONT_COLOR);
+    });
+
+    it('setNodeFontColorPreset sets an explicit preset', () => {
+      useThemeStore.getState().setNodeFontColorPreset('slate');
+      expect(useThemeStore.getState().nodeFontColorPreset).toBe('slate');
+    });
+
+    it('nodeFontColor resolves the preset against the current theme', () => {
+      useThemeStore.getState().setNodeFontColorPreset('black');
+      expect(useThemeStore.getState().nodeFontColor()).toBe(NODE_FONT_COLOR_PRESETS.black.light);
+      useThemeStore.getState().setTheme('dark');
+      expect(useThemeStore.getState().nodeFontColor()).toBe(NODE_FONT_COLOR_PRESETS.black.dark);
+    });
+
+    it('every node-font-color preset has a distinct light and dark value', () => {
+      for (const preset of Object.values(NODE_FONT_COLOR_PRESETS)) {
+        expect(preset.light).not.toBe(preset.dark);
+        expect(preset.light).toMatch(/^#[0-9a-f]{6}$/i);
+        expect(preset.dark).toMatch(/^#[0-9a-f]{6}$/i);
+      }
+    });
+
+    it('setNodeFontColorPreset mutates ONLY --node-fg, leaving other custom properties untouched', () => {
+      useThemeStore.getState().init();
+      const bgBefore = document.body.style.getPropertyValue('--bg');
+      const accentBefore = document.body.style.getPropertyValue('--accent');
+
+      useThemeStore.getState().setNodeFontColorPreset('charcoal');
+
+      expect(document.body.style.getPropertyValue('--node-fg')).toBe(NODE_FONT_COLOR_PRESETS.charcoal.light);
+      expect(document.body.style.getPropertyValue('--bg')).toBe(bgBefore);
+      expect(document.body.style.getPropertyValue('--accent')).toBe(accentBefore);
+    });
+
+    it('a non-default node-font-color preset survives a theme swap instead of being reset to that theme\'s own default', () => {
+      useThemeStore.getState().setNodeFontColorPreset('slate');
+      useThemeStore.getState().setTheme('dark');
+      expect(document.body.style.getPropertyValue('--node-fg')).toBe(NODE_FONT_COLOR_PRESETS.slate.dark);
     });
   });
 

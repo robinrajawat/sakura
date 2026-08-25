@@ -183,9 +183,9 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `6ab6333` ("feat(theming):
-accent-color picker + theme/accent persistence (§6.7) (#213)"), with
-this PR's §6.7 System auto-theme slice about to land on top.
+As of this writing: `main` is at commit `18d7cc6` ("feat(theming):
+System auto-theme (§6.7) (#214)"), with
+this PR's §6.7 node-text-color presets slice about to land on top.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -804,7 +804,7 @@ all six items landed:
   own dark-mode hex, the choice persists to `localStorage`, and a full
   page reload restores both the dark theme and the Moss accent exactly
   -- zero console/page errors.
-- System auto-theme landed in this PR: direct port of legacy's real
+- System auto-theme landed in #214: direct port of legacy's real
   two-mode `setThemeMode`/`applyAutoTheme` (legacy/index.html:18954-
   18969) -- `'manual'` (Light/Dark switch only) or `'system'` (follows
   `prefers-color-scheme` live via a real `matchMedia` change listener,
@@ -831,8 +831,30 @@ all six items landed:
   (resuming auto-following), disabling System mode stops all of this,
   and the mode/theme choice survives a full page reload with the OS
   preference still emulated the same way -- zero console/page errors.
+- Node-text-color presets landed in this PR: direct port of legacy's
+  real `NODE_FONT_COLOR_PRESETS`/`applyNodeFontColor`/
+  `setNodeFontColorPreset` (legacy/index.html:18781-18797) -- a second,
+  independent color axis from accent: 4 presets (Default/Black/
+  Charcoal/Slate) recoloring node text itself via `--node-fg`. Unlike
+  the accent picker, this slice builds the store logic AND the UI both
+  -- `web/` had no node-text-color axis at all before this. A 4-swatch
+  radiogroup (`App.tsx`'s header actions, next to the accent picker).
+  Required one supporting fix: `applyCssVariables`'s bulk CSS_VAR_MAP
+  loop unconditionally set `--node-fg` from the theme's own default,
+  which would silently clobber a non-default node-font-color preset on
+  every theme swap -- it now takes the resolved node-font color as an
+  explicit third argument and overrides `--node-fg` with it after the
+  loop, same pattern `--accent` already used. `nodeFontColorPreset` now
+  persists alongside theme/accentPreset/themeMode. Verified end-to-end
+  in real headless Chrome: confirmed the default `--node-fg` resolves
+  correctly, clicking the Slate swatch updates `--node-fg` live
+  (leaving `--accent` untouched), toggling dark mode resolves Slate's
+  own dark hex rather than resetting to the theme default (proving the
+  `applyCssVariables` fix works), a non-default accent and node-font
+  color coexist independently, and both survive a full page reload --
+  zero console/page errors.
 - Still open in §6.7: Chrome background
-  presets, node text color presets, Editor's Choice / Documentation
+  presets, Editor's Choice / Documentation
   Mode presets, full layout controls, inline note/remark/Q&A previews
   -- each a real, separately-scoped follow-up, most wanting a real
   Settings panel to live in (§6.10).

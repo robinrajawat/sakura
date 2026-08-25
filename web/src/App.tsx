@@ -18,7 +18,15 @@ import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
-import { useThemeStore, ACCENT_PRESETS, ACCENT_PRESET_ORDER, ACCENT_PRESET_LABELS } from './store/themeStore';
+import {
+  useThemeStore,
+  ACCENT_PRESETS,
+  ACCENT_PRESET_ORDER,
+  ACCENT_PRESET_LABELS,
+  NODE_FONT_COLOR_PRESETS,
+  NODE_FONT_COLOR_PRESET_ORDER,
+  NODE_FONT_COLOR_PRESET_LABELS
+} from './store/themeStore';
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
 
@@ -40,6 +48,8 @@ export function App() {
   const setAccentPreset = useThemeStore((s) => s.setAccentPreset);
   const themeMode = useThemeStore((s) => s.themeMode);
   const setThemeMode = useThemeStore((s) => s.setThemeMode);
+  const nodeFontColorPreset = useThemeStore((s) => s.nodeFontColorPreset);
+  const setNodeFontColorPreset = useThemeStore((s) => s.setNodeFontColorPreset);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
@@ -114,6 +124,34 @@ export function App() {
                   borderRadius: '50%',
                   border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
                   background: ACCENT_PRESETS[preset][theme],
+                  cursor: 'pointer'
+                }}
+              />
+            ))}
+          </div>
+          {/* §6.7 slice (docs/phase6-full-parity-plan.md): node-text-color picker. Direct port of
+              legacy's real `#node-font-swatch-row` (legacy/index.html:4707-4711) -- a separate
+              color axis from accent above (this one recolors node text itself, `--node-fg`, not
+              the accent highlight), same 4 presets/order/radiogroup semantics. Unlike the accent
+              picker, `setNodeFontColorPreset` itself is new in this slice, not just its UI --
+              `web/` had no node-text-color axis at all before this. */}
+          <div role="radiogroup" aria-label="Node text color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {NODE_FONT_COLOR_PRESET_ORDER.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                role="radio"
+                aria-checked={nodeFontColorPreset === preset}
+                aria-label={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                title={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                onClick={() => setNodeFontColorPreset(preset)}
+                style={{
+                  width: 16,
+                  height: 16,
+                  padding: 0,
+                  borderRadius: '50%',
+                  border: nodeFontColorPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                  background: NODE_FONT_COLOR_PRESETS[preset][theme],
                   cursor: 'pointer'
                 }}
               />

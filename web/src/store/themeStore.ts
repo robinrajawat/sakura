@@ -178,13 +178,18 @@ export const CSS_VAR_MAP: Partial<Record<keyof ThemeTokens, string>> = {
  * theme swap (`setTheme`/`toggleTheme`) and the initial mount (`useThemeStore.getState().init()`
  * below). A no-op outside a browser (SSR/test environments without `document`), same guard
  * style as documentsStore.ts's own `ls()` helper. */
-function applyCssVariables(theme: Theme, accent: string): void {
+function applyCssVariables(theme: Theme, accent: string, nodeFontColor: string): void {
   if (typeof document === 'undefined') return;
   const tokens = THEME_TOKENS[theme];
   for (const [field, varName] of Object.entries(CSS_VAR_MAP) as [keyof ThemeTokens, string][]) {
     document.body.style.setProperty(varName, tokens[field]);
   }
   document.body.style.setProperty('--accent', accent);
+  // `nodeFontColor` overrides the `--node-fg` value the loop above just set from
+  // `THEME_TOKENS[theme].nodeText` -- same "explicit override after the bulk pass" pattern as
+  // `--accent` above, needed so a non-default node-text-color preset survives a theme swap
+  // instead of getting silently reset back to that theme's own default node color.
+  document.body.style.setProperty('--node-fg', nodeFontColor);
 }
 
 /** Mutates ONLY `--accent`, leaving every other custom property untouched -- matches legacy's
@@ -196,6 +201,14 @@ function applyCssVariables(theme: Theme, accent: string): void {
 function applyAccentCssVariable(accent: string): void {
   if (typeof document === 'undefined') return;
   document.body.style.setProperty('--accent', accent);
+}
+
+/** Mutates ONLY `--node-fg`, same "one custom property, no full reapplication" pattern as
+ * `applyAccentCssVariable` above -- direct port of legacy's real `applyNodeFontColor`
+ * (legacy/index.html:18788). */
+function applyNodeFontColorCssVariable(color: string): void {
+  if (typeof document === 'undefined') return;
+  document.body.style.setProperty('--node-fg', color);
 }
 
 /** Legacy's real 7 accent presets (ACCENT_PRESETS in legacy/index.html), each with a distinct
@@ -228,6 +241,34 @@ export const ACCENT_PRESET_LABELS: Record<AccentPreset, string> = {
   moss: 'Moss',
   amber: 'Amber'
 };
+
+/** Legacy's real 4 node-text-color presets (`NODE_FONT_COLOR_PRESETS`, legacy/index.html:18781-
+ * 18786) -- a separate axis from the accent color above: this one recolors node text itself
+ * (`--node-fg`), not the accent highlight. Each preset gets its own light/dark hex, same "stays
+ * legible against either background" reasoning as `ACCENT_PRESETS`. */
+export type NodeFontColorPreset = 'default' | 'black' | 'charcoal' | 'slate';
+
+export const NODE_FONT_COLOR_PRESETS: Record<NodeFontColorPreset, { light: string; dark: string }> = {
+  default: { light: '#3d3929', dark: '#e8e5dc' },
+  black: { light: '#0a0a0a', dark: '#fafafa' },
+  charcoal: { light: '#1a1816', dark: '#f2f0ea' },
+  slate: { light: '#232a33', dark: '#dbe2ea' }
+};
+
+/** Legacy's own real swatch order and labels (`NODE_FONT_COLOR_LABELS`/legacy/index.html:4708-
+ * 4711's DOM order) -- 'default' first (it's the default), matching `ACCENT_PRESET_ORDER`'s own
+ * "default first" convention. */
+export const NODE_FONT_COLOR_PRESET_ORDER: NodeFontColorPreset[] = ['default', 'black', 'charcoal', 'slate'];
+
+export const NODE_FONT_COLOR_PRESET_LABELS: Record<NodeFontColorPreset, string> = {
+  default: 'Default',
+  black: 'Black',
+  charcoal: 'Charcoal',
+  slate: 'Slate'
+};
+
+/** legacy's real default: `nodeFontColorPreset='default'` (legacy's own top-level default). */
+export const DEFAULT_NODE_FONT_COLOR: NodeFontColorPreset = 'default';
 
 /** legacy's real default: `body.theme-light`'s `--accent:#c2553d` is exactly the terracotta
  * preset's light value -- terracotta is the actual fresh-install default, not an arbitrary pick. */
@@ -296,6 +337,7 @@ interface ThemePrefs {
   theme?: unknown;
   accentPreset?: unknown;
   themeMode?: unknown;
+  nodeFontColorPreset?: unknown;
 }
 
 /** Reads persisted prefs, defensively validating each field against the real set of valid
@@ -306,23 +348,28 @@ interface ThemePrefs {
  * the persisted mode is `'system'`, the persisted `theme` value itself is ignored in favor of the
  * REAL current system preference -- matching legacy's own real startup restoration call, which
  * is an `isAuto=true` `setTheme` call, not a blind replay of whatever theme was last saved. */
-function loadThemePrefs(): { theme: Theme; accentPreset: AccentPreset; themeMode: ThemeMode } {
+function loadThemePrefs(): { theme: Theme; accentPreset: AccentPreset; themeMode: ThemeMode; nodeFontColorPreset: NodeFontColorPreset } {
   const raw = readJson<ThemePrefs>(_THEME_PREFS_KEY, {});
   const themeMode: ThemeMode = raw.themeMode === 'system' ? 'system' : 'manual';
   const accentPreset: AccentPreset =
     typeof raw.accentPreset === 'string' && raw.accentPreset in ACCENT_PRESETS ? (raw.accentPreset as AccentPreset) : DEFAULT_ACCENT;
+  const nodeFontColorPreset: NodeFontColorPreset =
+    typeof raw.nodeFontColorPreset === 'string' && raw.nodeFontColorPreset in NODE_FONT_COLOR_PRESETS
+      ? (raw.nodeFontColorPreset as NodeFontColorPreset)
+      : DEFAULT_NODE_FONT_COLOR;
   const theme: Theme = themeMode === 'system' ? naturalSystemTheme() : raw.theme === 'dark' ? 'dark' : 'light';
-  return { theme, accentPreset, themeMode };
+  return { theme, accentPreset, themeMode, nodeFontColorPreset };
 }
 
-function saveThemePrefs(theme: Theme, accentPreset: AccentPreset, themeMode: ThemeMode): void {
-  writeJson(_THEME_PREFS_KEY, { theme, accentPreset, themeMode });
+function saveThemePrefs(theme: Theme, accentPreset: AccentPreset, themeMode: ThemeMode, nodeFontColorPreset: NodeFontColorPreset): void {
+  writeJson(_THEME_PREFS_KEY, { theme, accentPreset, themeMode, nodeFontColorPreset });
 }
 
 interface ThemeState {
   theme: Theme;
   accentPreset: AccentPreset;
   themeMode: ThemeMode;
+  nodeFontColorPreset: NodeFontColorPreset;
   /** Applies the CURRENT theme/accent as real CSS custom properties on `<body>` -- call once on
    * mount (AppShell.tsx's own init effect) so the properties exist before any explicit
    * `setTheme`/`setAccentPreset` call ever happens. Idempotent to call more than once (it just
@@ -338,6 +385,10 @@ interface ThemeState {
   setTheme: (theme: Theme, isAuto?: boolean) => void;
   toggleTheme: () => void;
   setAccentPreset: (preset: AccentPreset) => void;
+  /** Direct port of legacy's real `setNodeFontColorPreset` (legacy/index.html:18789-18797) --
+   * mutates ONLY `--node-fg` (`applyNodeFontColorCssVariable`), same live-without-a-full-
+   * React-re-render mechanism `setAccentPreset` already uses for `--accent`. */
+  setNodeFontColorPreset: (preset: NodeFontColorPreset) => void;
   /** Direct port of legacy's real `setThemeMode` (legacy/index.html:18962-18969): switches
    * between 'manual' and 'system', clearing any active temporary override on a real mode change,
    * then immediately reconciles the theme against the new mode via `applyAutoTheme` (a no-op if
@@ -354,6 +405,9 @@ interface ThemeState {
   /** The resolved accent hex for the current theme + preset combination -- what a component
    * should actually render, e.g. a selection highlight or an active toolbar button. */
   accentColor: () => string;
+  /** The resolved node-text hex for the current theme + preset combination, mirroring
+   * `accentColor`'s own shape. */
+  nodeFontColor: () => string;
 }
 
 /**
@@ -366,11 +420,13 @@ interface ThemeState {
  * above, a direct port of legacy's own real two-mode `'manual'`/`'system'` system -- legacy has a
  * leftover comment mentioning a third 'schedule' mode that its own `setThemeMode` whitelist
  * proves doesn't actually exist in the real code, so this port doesn't build one either; see
- * `ThemeMode`'s own comment). Still deliberately scoped down from legacy's fuller
- * system: no Chrome background presets, no
- * node-text-color presets, no accent intensity slider, no custom-color picker (`web/`'s own
- * `AccentPreset` type has no `'custom'` variant at all, matching this scope-down) -- each a real,
- * separately-scoped follow-up within §6.7, not silently dropped. The CSS custom
+ * `ThemeMode`'s own comment), and node-text-color presets (`setNodeFontColorPreset`/
+ * `NODE_FONT_COLOR_PRESETS` above, direct port of legacy's real `NODE_FONT_COLOR_PRESETS`/
+ * `applyNodeFontColor` -- a separate color axis from accent, recoloring node text itself via
+ * `--node-fg`). Still deliberately scoped down from legacy's fuller system: no Chrome background
+ * presets, no accent intensity slider, no custom-color picker for either axis (`web/`'s own
+ * `AccentPreset`/`NodeFontColorPreset` types have no `'custom'` variant at all, matching this
+ * scope-down) -- each a real, separately-scoped follow-up within §6.7, not silently dropped. The CSS custom
  * properties mechanism itself is only consumed by AppShell.tsx/DocumentTabs.tsx so far (the
  * components built in this same phase) -- every other existing component (OutlineTree.tsx, the
  * Hub panels, etc.) still reads `THEME_TOKENS[theme]` via plain React state, same as before this
@@ -379,14 +435,14 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   ...loadThemePrefs(),
   init: () => {
-    const { theme, accentColor } = get();
-    applyCssVariables(theme, accentColor());
+    const { theme, accentColor, nodeFontColor } = get();
+    applyCssVariables(theme, accentColor(), nodeFontColor());
   },
   setTheme: (theme, isAuto = false) => {
     if (!isAuto && get().themeMode !== 'manual') _themeOverrideActive = true;
     set({ theme });
-    applyCssVariables(theme, get().accentColor());
-    saveThemePrefs(theme, get().accentPreset, get().themeMode);
+    applyCssVariables(theme, get().accentColor(), get().nodeFontColor());
+    saveThemePrefs(theme, get().accentPreset, get().themeMode, get().nodeFontColorPreset);
   },
   toggleTheme: () => {
     const theme = get().theme === 'light' ? 'dark' : 'light';
@@ -395,13 +451,18 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   setAccentPreset: (preset) => {
     set({ accentPreset: preset });
     applyAccentCssVariable(get().accentColor());
-    saveThemePrefs(get().theme, preset, get().themeMode);
+    saveThemePrefs(get().theme, preset, get().themeMode, get().nodeFontColorPreset);
+  },
+  setNodeFontColorPreset: (preset) => {
+    set({ nodeFontColorPreset: preset });
+    applyNodeFontColorCssVariable(get().nodeFontColor());
+    saveThemePrefs(get().theme, get().accentPreset, get().themeMode, preset);
   },
   setThemeMode: (mode) => {
     const normalized: ThemeMode = mode === 'system' ? 'system' : 'manual';
     if (normalized !== get().themeMode) _themeOverrideActive = false;
     set({ themeMode: normalized });
-    saveThemePrefs(get().theme, get().accentPreset, normalized);
+    saveThemePrefs(get().theme, get().accentPreset, normalized, get().nodeFontColorPreset);
     if (normalized !== 'manual') get().applyAutoTheme();
   },
   applyAutoTheme: () => {
@@ -415,6 +476,10 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   accentColor: () => {
     const { theme, accentPreset } = get();
     return ACCENT_PRESETS[accentPreset][theme];
+  },
+  nodeFontColor: () => {
+    const { theme, nodeFontColorPreset } = get();
+    return NODE_FONT_COLOR_PRESETS[nodeFontColorPreset][theme];
   }
 }));
 
