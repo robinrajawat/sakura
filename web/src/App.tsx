@@ -20,6 +20,7 @@ import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
+import { VersionHistoryPanel } from './components/VersionHistoryPanel';
 import {
   useThemeStore,
   ACCENT_PRESETS,
@@ -69,6 +70,8 @@ export function App() {
   const nodeFontColorPreset = useThemeStore((s) => s.nodeFontColorPreset);
   const setNodeFontColorPreset = useThemeStore((s) => s.setNodeFontColorPreset);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
+  const activeDocId = useDocumentsStore((s) => s.activeDocId);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
   const undo = useOutlineStore((s) => s.undo);
@@ -337,6 +340,17 @@ export function App() {
               />
             ))}
           </div>
+          {/* §6.8 slice: Version History for the active document -- direct port of legacy's
+              real "More" menu "Version history…" entry point (legacy/index.html:6489), moved to
+              the header toolbar since `web/` has no "More" menu of its own yet, same convention
+              already used for the Settings/notification-bell/sync-dot entry points. Hidden
+              entirely with no document open, matching legacy's own `if(currentDocId)` guard. */}
+          {activeDocId && (
+            <button type="button" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
+              🕐
+            </button>
+          )}
+          {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
           {/* §6.8 slice: the real persistent top-bar sync-status dot -- see
               SyncStatusIndicator.tsx's own header. Renders nothing when signed out. */}
           <SyncStatusIndicator />

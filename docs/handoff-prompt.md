@@ -631,6 +631,33 @@ this PR's own description/the plan doc's §6.8 section for the full
 reasoning on each). This closes out both items the user asked for
 together.
 
+Asked next to complete the two remaining substantial §6.8 items:
+**"Full whole-app JSON Export/Import"** and **"Version History"** --
+following the same "ship separately" precedent, though both were
+researched and built in one continuous pass since Export/Import's own
+`preRestoreSnapshot` mechanism ("Undo last restore") turned out to be
+real, separately-scoped infrastructure both this slice AND tier 1's own
+safety-copy restore needed. Version History shipped first: a new
+`store/versionHistoryStore.ts`, deliberately scoped to a document's
+outline core only (nodes/title, active document only) -- legacy's own
+real feature is enormous (Pad/diagrams/Q&A/decision-log capture,
+per-node view, background-document restore, four separate Hub-domain
+histories), see that store's own header for the full scoping
+reasoning. Same real IndexedDB scheme legacy uses (`docrev:<id>`,
+10-minute auto-capture gap, 20-version cap). `documentsStore.ts`'s
+existing autosave now feeds the capture gate right before each
+overwrite (no new timer). A new `components/VersionHistoryPanel.tsx`
+(clock-icon header button, hidden with no document open) lists
+revisions, Save-a-version-now, Restore. Verified with 21 new unit
+tests plus a real, long headless-Chrome flow chained together with the
+Export/Import verification below (no Firebase dependency, so both
+could be exercised thoroughly): opened the panel, saved a manual
+checkpoint, restored it, confirmed the safety-checkpoint row appeared,
+confirmed History correctly showed an Auto revision captured from the
+whole-app import. Export/Import is next, on its own branch since
+`documentsStore.ts`/`backupStore.ts` needed to diverge cleanly for two
+separate PRs -- see that PR's own description once opened.
+
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
