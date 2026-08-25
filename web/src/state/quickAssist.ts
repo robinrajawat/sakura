@@ -8,7 +8,7 @@ import { rewriteDocument, rewriteNode, rewriteNodes } from './aiRewrite';
 import { expandNode, suggestTags } from './aiExpandTags';
 import { generateOutline, restructureText } from './aiOutline';
 import { summariseSelectionIntoParent } from './aiSummarise';
-import { collectQaSearchGroups, type QaSearchHit } from './quickAssistSearch';
+import { collectQaSearchGroups, qaParseCategoryPrefix, QA_SEARCH_CATEGORIES, QA_CATEGORY_PRIMARY_PREFIX, type QaSearchHit, type QaSearchCategoryKey } from './quickAssistSearch';
 
 /**
  * §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist's command surface. Direct port of
@@ -439,46 +439,81 @@ export function qaExecuteCommand(cmd: QaCommand, verb: QaVerb | null): QaCommand
   return { changed: true, message: `${next ? 'Shown' : 'Hidden'}: ${cmd.label}`, undo: () => cmd.set(cur) };
 }
 
+/** The picker's own verb chips also include "run" (legacy's real `QA_ACTIONS` bare-verb trigger,
+ * `QA_RUN_PHRASES`) alongside the 3 real `QaVerb` toggle verbs -- a distinct, slightly larger set
+ * from `QaVerb` since "run" isn't a command verb, it's the actions-list equivalent. */
+export type QaPickerVerb = QaVerb | 'run';
+
 export type QaEntry =
   | { kind: 'command'; cmd: QaCommand; verb: QaVerb | null }
   | { kind: 'action'; action: QaAction; disabled: boolean }
-  | { kind: 'search'; hit: QaSearchHit; group: string };
+  | { kind: 'search'; hit: QaSearchHit; group: string }
+  | { kind: 'verb'; verb: QaPickerVerb }
+  | { kind: 'category'; categoryKey: QaSearchCategoryKey; group: string };
 
 /** Direct port of the command/action-matching portion of legacy's real `qaRender`
- * (legacy/index.html:17342-17461) -- the search-hit portion (`collectSearchGroups` and the
- * category/chip/fuzzy machinery around it) is out of scope for this slice, see this file's own
- * header. Returns every matched row in legacy's own real order (commands first, capped at 6, then
- * actions, capped at 4) with `disabled` set on action rows needing a selection that isn't there --
+ * (legacy/index.html:17342-17461), including its real category-prefix short-circuit
+ * (legacy/index.html:17349-17357): a recognized "notes: budget"-style prefix skips command/action
+ * matching entirely and scopes search-hit rows to just that one category. Returns every matched
+ * row in legacy's own real order (commands first, capped at 6, then actions, capped at 4, then
+ * search hits) with `disabled` set on action rows needing a selection that isn't there --
  * matching legacy's own real behavior of still showing those rows (inert, with a reason) rather
  * than hiding them outright. */
 export function buildQaEntries(query: string, hasSelection: boolean, actions: QaAction[] = QA_ACTIONS, searchEnabled = true): QaEntry[] {
-  const q = query.trim().toLowerCase().replace(/\s+/g, ' ');
+  const prefixed = qaParseCategoryPrefix(query);
+  const scopedCategoryKey = prefixed ? prefixed.categoryKey : null;
+  const q = (prefixed ? prefixed.rest : query).trim().toLowerCase().replace(/\s+/g, ' ');
   if (!q) return [];
-  const { verb, targets } = qaParse(q);
-  let commands = targets.slice(0, 6);
-  let effVerb = verb;
-  if (!commands.length) {
-    const bare = qaSuggestForBareVerb(q);
-    if (bare.verb && bare.suggestions.length) {
-      commands = bare.suggestions;
-      effVerb = bare.verb;
+  const entries: QaEntry[] = [];
+  if (!scopedCategoryKey) {
+    const { verb, targets } = qaParse(q);
+    let commands = targets.slice(0, 6);
+    let effVerb = verb;
+    if (!commands.length) {
+      const bare = qaSuggestForBareVerb(q);
+      if (bare.verb && bare.suggestions.length) {
+        commands = bare.suggestions;
+        effVerb = bare.verb;
+      }
     }
+    commands.forEach((cmd) => entries.push({ kind: 'command', cmd, verb: effVerb }));
+    let actionRows = qaParseActionsList(q, actions).slice(0, 4);
+    if (!actionRows.length) {
+      const bareRun = qaSuggestActionsForBareVerb(q, actions);
+      if (bareRun.matched && bareRun.actions.length) actionRows = bareRun.actions;
+    }
+    actionRows.forEach((action) => {
+      entries.push({ kind: 'action', action, disabled: action.requiresSelection && !hasSelection });
+    });
   }
-  const entries: QaEntry[] = commands.map((cmd) => ({ kind: 'command', cmd, verb: effVerb }));
-  let actionRows = qaParseActionsList(q, actions).slice(0, 4);
-  if (!actionRows.length) {
-    const bareRun = qaSuggestActionsForBareVerb(q, actions);
-    if (bareRun.matched && bareRun.actions.length) actionRows = bareRun.actions;
-  }
-  actionRows.forEach((action) => {
-    entries.push({ kind: 'action', action, disabled: action.requiresSelection && !hasSelection });
-  });
   if (searchEnabled) {
-    collectQaSearchGroups(q).forEach((group) => {
+    collectQaSearchGroups(q, scopedCategoryKey).forEach((group) => {
       group.items.forEach((hit) => entries.push({ kind: 'search', hit, group: group.name }));
     });
   }
   return entries;
+}
+
+/** Direct port of legacy's real `qaRenderCategoryPicker` (legacy/index.html:17522-17557) --
+ * verb chips (Show/Hide/Toggle/Run) followed by category chips, both stepping stones that insert
+ * text into the input rather than executing anything, matching legacy's real "browse by
+ * action…"/"search within…" two-row picker. Scoped to this slice's real 6 search categories
+ * (`QA_SEARCH_CATEGORIES`), not legacy's real 18 -- same audit-driven scoping as everywhere else
+ * in this file. */
+export const QA_PICKER_VERBS: QaPickerVerb[] = ['show', 'hide', 'toggle', 'run'];
+
+export function buildQaPickerEntries(): QaEntry[] {
+  const entries: QaEntry[] = QA_PICKER_VERBS.map((verb) => ({ kind: 'verb', verb }));
+  QA_SEARCH_CATEGORIES.forEach((c) => entries.push({ kind: 'category', categoryKey: c.key, group: c.group }));
+  return entries;
+}
+
+/** What typing a picked verb or category chip inserts into the input, matching legacy's real
+ * `qaActivateSelection`'s own `entry.verb+' '` / `QA_CATEGORY_PRIMARY_PREFIX[...]+': '` inserts
+ * exactly -- both stepping stones, not completed actions, so the caller should keep the box open
+ * and refocus the input rather than closing (see `QuickAssistBar.tsx`'s own `activate`). */
+export function qaPickerInsertText(entry: Extract<QaEntry, { kind: 'verb' | 'category' }>): string {
+  return entry.kind === 'verb' ? entry.verb + ' ' : QA_CATEGORY_PRIMARY_PREFIX[entry.categoryKey] + ': ';
 }
 
 /** The subset of `buildQaEntries`' output that keyboard navigation (ArrowUp/Down, Enter) actually

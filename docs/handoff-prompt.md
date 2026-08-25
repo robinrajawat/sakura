@@ -2034,13 +2034,48 @@ hit opens the note panel on the correct node; disabling the new
 search-results toggle removes every content-hit row for a query that
 previously produced them, leaving the "No matching command or
 content" empty state -- zero console/page errors throughout, across
-every one of those checks. Remaining: sub-slices covering Pad/Q&A/
-Diagrams/Remarks search (blocked on `padStore.ts` gaining real
-per-document persistence -- today only the currently-open document's
-Pad content is searchable, unlike the 6 categories above which all
-have real per-document storage already), Settings/Features/Help
-search (no searchable index for any of the three, and no underlying
-system to index for Features at all), Templates (no live UI at all),
-category-prefix scoping, and the chip-mode category picker -- none
-started yet.
+every one of those checks.
+
+Fifth §6.10 slice landed: Quick Assist search integration, sub-slice
+4b -- category-prefix scoping and the chip-mode category picker, both
+real legacy features scoped to sub-slice 4a's same 6 categories.
+`state/quickAssistSearch.ts` gained direct ports of legacy's real
+`QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PREFIXES`/
+`QA_CATEGORY_PRIMARY_PREFIX`/`qaParseCategoryPrefix`, and
+`collectQaSearchGroups` now accepts an optional `scopedCategoryKey`
+that filters to just one category (the same shared budget-of-8 drain
+still applies, just with fewer groups left to drain from).
+`state/quickAssist.ts`'s `buildQaEntries` now parses a category
+prefix first, matching legacy's real `qaRender` short-circuit exactly:
+a recognized prefix like "notes: budget" skips command/action
+matching entirely and scopes search hits to just that category. New
+`buildQaPickerEntries`/`qaPickerInsertText`/`QA_PICKER_VERBS` build
+the chip-mode picker's own entries (4 verb chips -- Show/Hide/
+Toggle/Run -- plus the 6 real category chips) as two new `QaEntry`
+kinds (`'verb'`/`'category'`), both stepping stones: picking one
+inserts its prefix into the input and keeps the box open, matching
+legacy's real `qaActivateSelection` deliberately skipping
+`setQaOpen(false)` for these two kinds specifically.
+`QuickAssistBar.tsx` gained a "⋯" category-icon button and a
+Space-on-empty-input trigger (both matching legacy's real triggers
+exactly) that swap the rendered list for the picker's two chip rows.
+One deliberate simplification: legacy's real chip navigation
+(`qaMoveChip`) does true 2D geometric bounding-box arrow-key nav,
+needed for its own 18-category chip row wrapping across several lines
+-- this port uses plain sequential nav instead, since 4 verb chips
+plus 6 category chips fit in one or two short rows at any reasonable
+width, a "port the effect, not the exact technique" call, not a
+functional gap. Verified end-to-end in real headless Chrome: the "⋯"
+button and Space-on-empty both open the picker; a verb chip and a
+category chip both render and are clickable; clicking the Notes
+category chip inserts "note: " and keeps the box open; Escape from
+the picker closes just the picker, leaving the box open; a
+category-prefixed query ("notes: welcome") shows no command rows and
+scopes search results to just that category -- zero console/page
+errors throughout, across every one of those checks. Remaining:
+sub-slices covering Pad/Q&A/Diagrams/Remarks search (blocked on
+`padStore.ts` gaining real per-document persistence), Settings/
+Features/Help search (no searchable index for any of the three, and
+no underlying system to index for Features at all), Templates (no
+live UI at all), and fuzzy matching -- none started yet.
 ```

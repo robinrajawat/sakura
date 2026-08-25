@@ -34,7 +34,7 @@ already made and already documented at the time.
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
-| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions (§6.10 slice 3), plus a first Global Search sub-slice covering Documents/In documents/Notes/Code/Tags/Folders (§6.10 slice 4a) — Pad/Q&A/Diagrams/Remarks/Settings/Features/Help search, category-prefix scoping, and the chip-mode picker not built yet, see the Quick Assist & Quick Insert section below |
+| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions (§6.10 slice 3), plus Global Search covering Documents/In documents/Notes/Code/Tags/Folders with real category-prefix scoping and a chip-mode category picker (§6.10 slices 4a-4b) — Pad/Q&A/Diagrams/Remarks/Settings/Features/Help search and fuzzy matching not built yet, see the Quick Assist & Quick Insert section below |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
@@ -423,11 +423,32 @@ clicking a Notes hit opens the note panel on the correct node; disabling the sea
 toggle removes every content-hit row, leaving the "No matching command or content" empty state —
 zero console/page errors throughout.
 
+**Slice 4b**: category-prefix scoping and the chip-mode category picker, both direct ports of
+legacy's real mechanism scoped to sub-slice 4a's same 6 categories. `state/quickAssistSearch.ts`
+gained `QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PREFIXES`/`QA_CATEGORY_PRIMARY_PREFIX`/
+`qaParseCategoryPrefix`; `collectQaSearchGroups` now accepts an optional `scopedCategoryKey` that
+filters to just one category. `state/quickAssist.ts`'s `buildQaEntries` parses a category prefix
+first — a recognized prefix like "notes: budget" skips command/action matching entirely and
+scopes search hits to that one category, matching legacy's real `qaRender` short-circuit exactly.
+New `buildQaPickerEntries`/`qaPickerInsertText` build the chip-mode picker's own entries (4 verb
+chips — Show/Hide/Toggle/Run — plus the 6 real category chips) as two new stepping-stone `QaEntry`
+kinds: picking one inserts its prefix into the input and keeps the box open, rather than
+executing anything. `QuickAssistBar.tsx` gained a "⋯" category-icon button and a
+Space-on-empty-input trigger, both matching legacy's real triggers exactly. One deliberate
+simplification: legacy's real chip navigation does true 2D geometric bounding-box arrow-key nav
+(needed for its own 18-category chip row wrapping across several lines) — this port uses plain
+sequential nav instead, since 10 total chips fit in one or two short rows at any reasonable
+width. Verified end-to-end in real headless Chrome: the "⋯" button and Space-on-empty both open
+the picker; verb and category chips render and are clickable; clicking a category chip inserts
+its prefix and keeps the box open; Escape from the picker closes just the picker; a
+category-prefixed query shows no command rows and scopes results to that one category — zero
+console/page errors throughout.
+
 Still unbuilt: Pad/Q&A/Diagrams/Remarks search (real legacy collectors, but `padStore.ts` isn't
 persisted per-document yet — only the currently-open document's Pad content is searchable);
 Templates (no live UI at all); Settings/Features/Help search (no searchable index, and no
-underlying system for Features at all); category-prefix scoping, the chip-mode category picker,
-and fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
+underlying system for Features at all); fuzzy matching. See phase6-full-parity-plan.md's §6.10
+section for the planned slice sequence.
 
 ## Preview, Presenter Mode & Export
 

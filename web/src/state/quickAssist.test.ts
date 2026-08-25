@@ -26,7 +26,11 @@ import {
   qaExecuteCommand,
   buildQaEntries,
   navigableQaEntries,
-  type QaAction
+  buildQaPickerEntries,
+  qaPickerInsertText,
+  QA_PICKER_VERBS,
+  type QaAction,
+  type QaEntry
 } from './quickAssist';
 
 function findCommand(id: string) {
@@ -355,5 +359,49 @@ describe('buildQaEntries / navigableQaEntries', () => {
     const entries = buildQaEntries('show', true);
     const commandCount = entries.filter((e) => e.kind === 'command').length;
     expect(commandCount).toBeLessThanOrEqual(6);
+  });
+
+  describe('category-prefix scoping (§6.10 slice 4b)', () => {
+    beforeEach(() => {
+      useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a', openTabs: ['a'], folders: [], docFolderMap: {} });
+      useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'toggle dark mode notes', parentId: null, isCheckbox: false, checked: false, note: '<p>toggle dark mode notes</p>', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
+    });
+
+    it('a recognized prefix skips command/action matching entirely, even for a phrase that would otherwise match', () => {
+      const entries = buildQaEntries('notes: toggle dark mode', true);
+      expect(entries.some((e) => e.kind === 'command' || e.kind === 'action')).toBe(false);
+    });
+
+    it('a recognized prefix scopes search hits to just that one category', () => {
+      const entries = buildQaEntries('notes: toggle dark mode', true) as Extract<QaEntry, { kind: 'search' }>[];
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries.every((e) => e.group === 'Notes')).toBe(true);
+    });
+
+    it('an unrecognized prefix falls back to normal command/search parsing', () => {
+      const entries = buildQaEntries('zzz: dark mode', true);
+      expect(entries.some((e) => e.kind === 'command')).toBe(true);
+    });
+  });
+});
+
+describe('buildQaPickerEntries / qaPickerInsertText', () => {
+  it('returns the 4 verb chips followed by all 6 category chips, in order', () => {
+    const entries = buildQaPickerEntries();
+    const verbs = entries.filter((e) => e.kind === 'verb');
+    const categories = entries.filter((e) => e.kind === 'category');
+    expect(verbs.map((e) => (e as Extract<QaEntry, { kind: 'verb' }>).verb)).toEqual(QA_PICKER_VERBS);
+    expect(categories).toHaveLength(6);
+    expect(entries.indexOf(verbs[0])).toBeLessThan(entries.indexOf(categories[0]));
+  });
+
+  it('qaPickerInsertText inserts "<verb> " for a verb chip', () => {
+    expect(qaPickerInsertText({ kind: 'verb', verb: 'toggle' })).toBe('toggle ');
+    expect(qaPickerInsertText({ kind: 'verb', verb: 'run' })).toBe('run ');
+  });
+
+  it('qaPickerInsertText inserts "<prefix>: " for a category chip, using each category\'s real primary prefix', () => {
+    expect(qaPickerInsertText({ kind: 'category', categoryKey: 'notes', group: 'Notes' })).toBe('note: ');
+    expect(qaPickerInsertText({ kind: 'category', categoryKey: 'in-documents', group: 'In documents' })).toBe('text: ');
   });
 });

@@ -38,14 +38,25 @@ import { stripHtmlToText } from '../utils/stripHtmlToText';
  * cosmetic, not behavioral); no trash-document scanning (`web/` has no trash/deleted-documents
  * concept at all yet, unlike legacy's own `searchIncludesTrash` toggle); no fuzzy-match fallback
  * (same simplification `quickAssist.ts`'s own command matching already makes, for the same
- * "small, jargon-heavy corpus" reasoning legacy's own comment gives); no category-prefix scoping
- * ("notes: budget") or chip-mode category picker -- both real legacy features, deferred to a
- * later slice alongside the categories above. Navigation on click matches this project's own
- * already-established simplification (see `OutlineTree.tsx`'s wikilink click-navigate, `onLinkClick`
- * around line 1201: a plain `selectNode(id)`, no ancestor-expansion/scroll-into-view/flash
- * animation) rather than legacy's real `jumpToNodeInDoc`/`revealNodeInDoc` (which do all three) --
- * not a new gap introduced here, the same pattern this whole codebase already uses everywhere a
- * result needs to land on a specific node.
+ * "small, jargon-heavy corpus" reasoning legacy's own comment gives). Navigation on click matches
+ * this project's own already-established simplification (see `OutlineTree.tsx`'s wikilink
+ * click-navigate, `onLinkClick` around line 1201: a plain `selectNode(id)`, no ancestor-expansion/
+ * scroll-into-view/flash animation) rather than legacy's real `jumpToNodeInDoc`/`revealNodeInDoc`
+ * (which do all three) -- not a new gap introduced here, the same pattern this whole codebase
+ * already uses everywhere a result needs to land on a specific node.
+ *
+ * §6.10 slice 4b: added category-prefix scoping (typing "note: budget" or "notes: budget" scopes
+ * results to just the Notes category, skipping command/action matching entirely, matching
+ * legacy's real `qaParseCategoryPrefix`/`QA_CATEGORY_PREFIXES` exactly) and the chip-mode category
+ * picker (`QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PRIMARY_PREFIX`, direct ports of legacy's real
+ * constants of the same name -- but scoped to only this slice's real 6 categories, not legacy's
+ * real 18, matching the same audit-driven scoping `quickAssist.ts`'s own header explains for
+ * QA_COMMANDS/QA_ACTIONS). The picker chip UI itself (verb + category rows, click/keyboard to
+ * insert a prefix into the input) lives in `components/QuickAssistBar.tsx` -- legacy's own real
+ * geometric bounding-box chip navigation (`qaMoveChip`, needed for its 18-category chip row
+ * wrapping across several lines) is simplified here to plain sequential nav, since 6 category
+ * chips plus 4 verb chips fit in one or two short rows at any reasonable width -- a "port the
+ * effect, not the exact technique" call, not a functional gap.
  */
 
 export interface QaSearchHit {
@@ -57,6 +68,64 @@ export interface QaSearchHit {
 export interface QaSearchGroup {
   name: string;
   items: QaSearchHit[];
+}
+
+/** This slice's 6 real categories -- matches the `key`s legacy's own real `QA_SEARCH_CATEGORIES`
+ * (legacy/index.html:17226-17245) uses for these same 6, not an invented naming scheme. */
+export type QaSearchCategoryKey = 'documents' | 'in-documents' | 'notes' | 'code' | 'tags' | 'folders';
+
+/** Direct port of legacy's real `QA_SEARCH_CATEGORIES`, filtered to this slice's 6 real
+ * categories -- drives the category-picker chip row in `QuickAssistBar.tsx`. */
+export const QA_SEARCH_CATEGORIES: { key: QaSearchCategoryKey; group: string }[] = [
+  { key: 'documents', group: 'Documents' },
+  { key: 'in-documents', group: 'In documents' },
+  { key: 'notes', group: 'Notes' },
+  { key: 'code', group: 'Code' },
+  { key: 'tags', group: 'Tags' },
+  { key: 'folders', group: 'Folders' }
+];
+
+/** Direct port of legacy's real `QA_CATEGORY_PREFIXES` (legacy/index.html:17252-17271), filtered
+ * to this slice's 6 real categories -- every alias a person can type before a colon
+ * ("notes: budget", "note: budget") to scope a search to just that category. */
+export const QA_CATEGORY_PREFIXES: Record<string, QaSearchCategoryKey> = {
+  doc: 'documents',
+  docs: 'documents',
+  documents: 'documents',
+  text: 'in-documents',
+  content: 'in-documents',
+  indocs: 'in-documents',
+  note: 'notes',
+  notes: 'notes',
+  code: 'code',
+  tag: 'tags',
+  tags: 'tags',
+  folder: 'folders',
+  folders: 'folders'
+};
+
+/** Direct port of legacy's real `QA_CATEGORY_PRIMARY_PREFIX` (legacy/index.html:17289-17293),
+ * filtered to this slice's 6 real categories -- the one canonical alias the category picker
+ * inserts when a category chip is clicked (`QA_CATEGORY_PREFIXES` above has every alias a person
+ * can type by hand; this is just which one the picker itself uses). */
+export const QA_CATEGORY_PRIMARY_PREFIX: Record<QaSearchCategoryKey, string> = {
+  documents: 'doc',
+  'in-documents': 'text',
+  notes: 'note',
+  code: 'code',
+  tags: 'tag',
+  folders: 'folder'
+};
+
+/** Direct port of legacy's real `qaParseCategoryPrefix` (legacy/index.html:17272-17278) -- an
+ * unrecognized prefix (or no colon at all) returns `null`, leaving the text to be parsed as a
+ * normal command/search query instead. */
+export function qaParseCategoryPrefix(text: string): { categoryKey: QaSearchCategoryKey; rest: string } | null {
+  const m = String(text || '').match(/^\s*([a-zA-Z]+)\s*:\s*(.*)$/s);
+  if (!m) return null;
+  const key = QA_CATEGORY_PREFIXES[m[1].toLowerCase()];
+  if (!key) return null;
+  return { categoryKey: key, rest: m[2] };
 }
 
 /** Direct port of legacy's real `qaTokenizeQuery` (legacy/index.html:16492). */
@@ -294,23 +363,27 @@ function collectFolderMatches(tokens: string[]): QaSearchHit[] {
  * number of search-hit rows across every category combined is capped at 8, whichever categories'
  * results come first in group order get first claim on that budget. Returns `[]` for an empty
  * query, matching legacy's own real short-circuit. */
-export function collectQaSearchGroups(query: string): QaSearchGroup[] {
+export function collectQaSearchGroups(query: string, scopedCategoryKey?: QaSearchCategoryKey | null): QaSearchGroup[] {
   // Lowercases defensively rather than relying on the caller having already normalized (`quickAssist.ts`'s
   // `buildQaEntries` does, but this is this module's own public entry point) -- `qaHayMatches` itself
   // does not lowercase its `tokens` argument, matching legacy's own real `qaHayMatches` contract exactly.
   const tokens = qaTokenizeQuery(query.toLowerCase());
   if (!tokens.length) return [];
-  const groups: QaSearchGroup[] = [
-    { name: 'Documents', items: collectDocMatches(tokens) },
-    { name: 'In documents', items: collectNodeTextMatches(tokens) },
-    { name: 'Notes', items: collectNoteMatches(tokens) },
-    { name: 'Code', items: collectCodeMatches(tokens) },
-    { name: 'Tags', items: collectTagMatches(tokens) },
-    { name: 'Folders', items: collectFolderMatches(tokens) }
+  const groups: (QaSearchGroup & { key: QaSearchCategoryKey })[] = [
+    { key: 'documents', name: 'Documents', items: collectDocMatches(tokens) },
+    { key: 'in-documents', name: 'In documents', items: collectNodeTextMatches(tokens) },
+    { key: 'notes', name: 'Notes', items: collectNoteMatches(tokens) },
+    { key: 'code', name: 'Code', items: collectCodeMatches(tokens) },
+    { key: 'tags', name: 'Tags', items: collectTagMatches(tokens) },
+    { key: 'folders', name: 'Folders', items: collectFolderMatches(tokens) }
   ];
+  // A category prefix scopes to just that one group, matching legacy's real `qaRender`'s own
+  // `.filter(g=>...key===scopedCategoryKey...)` -- the same shared budget-of-8 drain still
+  // applies below, it just has only one group left to drain from.
+  const scoped = scopedCategoryKey ? groups.filter((g) => g.key === scopedCategoryKey) : groups;
   let budget = 8;
   const rendered: QaSearchGroup[] = [];
-  for (const g of groups) {
+  for (const g of scoped) {
     if (budget <= 0 || !g.items.length) continue;
     const items = g.items.slice(0, budget);
     budget -= items.length;
