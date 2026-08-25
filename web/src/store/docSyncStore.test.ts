@@ -1,6 +1,35 @@
-import { describe, expect, it } from 'vitest';
-import { cloudNodeToOutlineNode, outlineNodeToRawNode, type RawNode } from './docSyncStore';
-import { defaultNodeStyles } from './outlineStore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultNodeStyles, useOutlineStore } from './outlineStore';
+
+// §6.8 slice: mocking `firebase/firestore` so the store's real stateful actions (loadDoc/
+// pushDoc/the debounced-autosave subscription below) are actually exercised by a test for the
+// first time -- this file previously only tested the two pure helper functions, leaving
+// loadDoc/pushDoc/stopWatching completely unverified by anything automated. `onSnapshot`'s
+// callback is captured on the mock itself (`mockOnSnapshotCb`) so a test can simulate a
+// realtime cloud update by invoking it directly, exactly like the real Firestore SDK would.
+let mockOnSnapshotCb: ((snap: { exists: () => boolean; data: () => Record<string, unknown> }) => void) | null = null;
+const mockSetDoc = vi.fn().mockResolvedValue(undefined);
+const mockUnsubscribe = vi.fn();
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(() => ({})),
+  collection: vi.fn(),
+  getDocs: vi.fn(),
+  doc: vi.fn(() => ({})),
+  getDoc: vi.fn().mockResolvedValue({
+    exists: () => true,
+    data: () => ({ nodes: [{ id: 1, depth: 0, text: 'hello' }], title: 'Doc A', updatedAt: 1000 })
+  }),
+  setDoc: (...args: unknown[]) => mockSetDoc(...args),
+  onSnapshot: vi.fn((_ref: unknown, cb: (snap: { exists: () => boolean; data: () => Record<string, unknown> }) => void) => {
+    mockOnSnapshotCb = cb;
+    return mockUnsubscribe;
+  })
+}));
+
+vi.mock('./authStore', () => ({ getFirebaseApp: vi.fn(() => ({})) }));
+
+import { cloudNodeToOutlineNode, outlineNodeToRawNode, useDocSyncStore, type RawNode } from './docSyncStore';
 
 describe('cloudNodeToOutlineNode', () => {
   it('maps the fields web/ understands from a full legacy-shaped node', () => {
@@ -192,5 +221,70 @@ describe('outlineNodeToRawNode', () => {
     expect(result.checked).toBe(true);
     expect(result.tags).toEqual(['work']);
     expect(result.marker).toBe('issue');
+  });
+});
+
+describe('debounced autosave (§6.8)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockSetDoc.mockClear();
+    mockOnSnapshotCb = null;
+  });
+
+  afterEach(() => {
+    useDocSyncStore.getState().stopWatching();
+    vi.useRealTimers();
+  });
+
+  it('queues a push 1500ms after an outline edit settles, matching legacy\'s own real queueSync/flushSyncQueue timer', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+    expect(mockSetDoc).not.toHaveBeenCalled();
+
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edited' }] });
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(mockSetDoc).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockSetDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets the debounce on a second edit, so rapid edits only push once', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edit 1' }] });
+    await vi.advanceTimersByTimeAsync(1000);
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edit 2' }] });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mockSetDoc).not.toHaveBeenCalled(); // only 1000ms since the second edit -- not yet 1500ms
+    await vi.advanceTimersByTimeAsync(500);
+    expect(mockSetDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT queue a push for an incoming realtime cloud update -- only a real local edit should', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+    expect(mockOnSnapshotCb).not.toBeNull();
+
+    // Simulate the Firestore SDK delivering a genuinely newer realtime update.
+    mockOnSnapshotCb!({
+      exists: () => true,
+      data: () => ({ nodes: [{ id: 1, depth: 0, text: 'changed elsewhere' }], title: 'Doc A', updatedAt: 2000 })
+    });
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('stopWatching tears down the debounce timer, so a pending edit never pushes after leaving the doc', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edited' }] });
+    useDocSyncStore.getState().stopWatching();
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(mockSetDoc).not.toHaveBeenCalled();
+  });
+
+  it('sets syncStatus through syncing -> synced across a real push', async () => {
+    await useDocSyncStore.getState().loadDoc('uid1', 'doc1');
+    useOutlineStore.setState({ nodes: [{ ...useOutlineStore.getState().nodes[0], text: 'edited' }] });
+    await vi.advanceTimersByTimeAsync(1500);
+    // The push itself is a resolved mock promise; flush microtasks so pushDoc's `set` calls land.
+    await vi.waitFor(() => expect(useDocSyncStore.getState().syncStatus).toBe('synced'));
   });
 });

@@ -107,12 +107,18 @@ interface DocSummary {
   title: string;
 }
 
+// Matches legacy's own real sync-status states (`updateSyncStatusUI`, legacy/index.html:15583) --
+// 'idle' covers both "nothing loaded yet" and legacy's separate resting 'idle-ok' dot state,
+// collapsed into one here since this slice doesn't reproduce the dot's own brief
+// bright-then-dim fade choreography, just the status text itself (see DocSyncPanel.tsx).
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
+
 interface DocSyncState {
   docs: DocSummary[];
   docId: string | null;
   title: string;
   loading: boolean;
-  syncing: boolean;
+  syncStatus: SyncStatus;
   error: string | null;
   crossTabNotice: boolean;
 
@@ -129,6 +135,19 @@ const rawNodesById = new Map<string, RawNode>();
 let lastPushedTs: number | undefined;
 let lastKnownUpdatedAt: number | null = null;
 let unsubscribe: Unsubscribe | null = null;
+// The outline-change listener that queues an autosave push (see loadDoc/scheduleSync below),
+// and its own pending debounce timer -- both live only while a doc is actually loaded.
+let outlineUnsubscribe: (() => void) | null = null;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Set for the duration of an incoming-cloud-data apply (`applyCloudDoc`'s own `setState` call
+// below) so the outline-change subscription `loadDoc` sets up (see its own comment) can tell
+// "the user just edited something, queue a push" apart from "this state change IS a push's own
+// echo coming back down" -- without this, every realtime update would immediately queue a
+// redundant push of the exact content just received, matching neither legacy's real behavior
+// (`queueSync` is only ever called from the local-edit-commit path, never from
+// `applyIncomingDocData`) nor anyone's actual intent.
+let isApplyingRemoteUpdate = false;
 
 function applyCloudDoc(
   cloud: RawNode,
@@ -144,6 +163,7 @@ function applyCloudDoc(
     return cloudNodeToOutlineNode(raw);
   });
   rebuildParentIdsCore(nodes);
+  isApplyingRemoteUpdate = true;
   useOutlineStore.setState({
     nodes,
     selectedId: nodes[0]?.id ?? null,
@@ -151,6 +171,7 @@ function applyCloudDoc(
     multiSelectedIds: [],
     selectionAnchorId: nodes[0]?.id ?? null
   });
+  isApplyingRemoteUpdate = false;
   lastKnownUpdatedAt = Number(cloud.updatedAt) || 0;
   setDocSyncState({
     title: typeof cloud.title === 'string' ? cloud.title : 'Untitled',
@@ -164,13 +185,22 @@ function applyCloudDoc(
  * users' documents already live in (see outlineNodeToRawNode's own header for how this avoids
  * destroying legacy-only per-node fields).
  *
- * Bidirectional: `pushDoc` writes (manual, not legacy's ~1.2s-debounced autosave -- deliberately
- * so, to avoid spamming production Firestore writes while this is new and being verified;
- * real autosave is a real, separately-scoped follow-up once this path is trusted). `loadDoc`
- * subscribes via `onSnapshot` for live updates, reusing the already-ported (Phase 1)
- * `shouldApplyIncomingSyncCore` for the exact same "is this our own write echoing back, or a
- * genuinely newer external change" decision legacy's own `applyIncomingDocData` makes --
- * matching legacy's real conflict-resolution semantics, not a simplified approximation of them.
+ * Bidirectional: `pushDoc` writes, now on the SAME real debounced-autosave schedule legacy's own
+ * `queueSync`/`flushSyncQueue` uses (legacy/index.html:15576-15607) -- §6.8 slice, once manual
+ * push had been trusted for a while. `loadDoc` sets up an `useOutlineStore.subscribe` listener
+ * (torn down in `stopWatching`, same lifetime as the Firestore `onSnapshot` listener below) that
+ * debounces 1500ms before calling `pushDoc`, matching legacy's own real timer constant exactly
+ * (`_syncPushTimer=setTimeout(flushSyncQueue,1500)`) -- not the "~1.2s" figure a few of this
+ * project's other comments/docs describe it as, which was this project's own earlier
+ * approximation before actually reading the real constant. `isApplyingRemoteUpdate` (above)
+ * guards against a realtime pull re-triggering that same subscription and queueing a pointless
+ * echo push straight back to the cloud. `loadDoc` subscribes to Firestore via `onSnapshot` for
+ * live updates, reusing the already-ported (Phase 1) `shouldApplyIncomingSyncCore` for the exact
+ * same "is this our own write echoing back, or a genuinely newer external change" decision
+ * legacy's own `applyIncomingDocData` makes -- matching legacy's real conflict-resolution
+ * semantics, not a simplified approximation of them. `syncStatus` mirrors legacy's own real
+ * `updateSyncStatusUI` states (idle/syncing/synced/error) for the panel's status text -- see that
+ * type's own header for the one real simplification (no separate fading "dot" choreography).
  *
  * Deliberately NOT in this slice: sharing/collaboration (`sharedWith`, `grantDocumentAccess`),
  * diagram XML in the push payload, the `_docTooLargeToastShown` 1MB-limit UX, cross-tab banner
@@ -182,7 +212,7 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
   docId: null,
   title: '',
   loading: false,
-  syncing: false,
+  syncStatus: 'idle',
   error: null,
   crossTabNotice: false,
 
@@ -213,7 +243,7 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
 
   loadDoc: async (uid, docId) => {
     get().stopWatching();
-    set({ loading: true, error: null, docId, crossTabNotice: false });
+    set({ loading: true, error: null, docId, crossTabNotice: false, syncStatus: 'idle' });
     try {
       const ref = doc(getDb(), 'users', uid, 'docs', docId);
       const snap = await getDoc(ref);
@@ -231,6 +261,17 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
         if (!shouldApplyIncomingSyncCore(cloud.updatedAt, lastKnownUpdatedAt, lastPushedTs)) return;
         applyCloudDoc(cloud, true, set);
       });
+      // Debounced autosave (§6.8) -- see this store's own header comment for the full
+      // reasoning/legacy citation. `isApplyingRemoteUpdate` (set around the `applyCloudDoc`
+      // calls above and in `stopWatching`'s caller, `loadDoc` itself, via the initial
+      // `applyCloudDoc` call above) means an incoming cloud update never queues its own echo.
+      outlineUnsubscribe = useOutlineStore.subscribe(() => {
+        if (isApplyingRemoteUpdate) return;
+        if (syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+          void get().pushDoc(uid);
+        }, 1500);
+      });
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Failed to load document' });
     }
@@ -243,7 +284,7 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
     // already existed before this session touched it. Deliberate, not incidental.
     const { docId, title } = get();
     if (!docId) return;
-    set({ syncing: true, error: null });
+    set({ syncStatus: 'syncing', error: null });
     try {
       const nodes = useOutlineStore.getState().nodes;
       const rawNodes = nodes.map((n) => outlineNodeToRawNode(n, rawNodesById.get(String(n.id))));
@@ -264,9 +305,9 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
       rawNodes.forEach((raw) => {
         if (typeof raw.id === 'number' || typeof raw.id === 'string') rawNodesById.set(String(raw.id), raw);
       });
-      set({ syncing: false });
+      set({ syncStatus: 'synced' });
     } catch (err) {
-      set({ syncing: false, error: err instanceof Error ? err.message : 'Failed to push document' });
+      set({ syncStatus: 'error', error: err instanceof Error ? err.message : 'Failed to push document' });
     }
   },
 
@@ -274,6 +315,14 @@ export const useDocSyncStore = create<DocSyncState>((set, get) => ({
     if (unsubscribe) {
       unsubscribe();
       unsubscribe = null;
+    }
+    if (outlineUnsubscribe) {
+      outlineUnsubscribe();
+      outlineUnsubscribe = null;
+    }
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
     }
   }
 }));

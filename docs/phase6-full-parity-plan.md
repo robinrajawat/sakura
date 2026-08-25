@@ -931,15 +931,15 @@ format, Word/OPML import.
   horizontally centered in the remaining space) -- every dimension matched to 4 decimal places --
   with the title, both bullets, the image, and the branding wordmark all present together on one
   slide -- zero console/page errors.
-- Still not started: Word tables/decision-log cards; PDF's remaining fidelity gap (decision-card
-  rendering, and the bigger "render from a real Preview-equivalent" architecture legacy's own PDF
-  export uses -- see the note/code-rendering slice above for why fold-state itself isn't actually
-  part of this gap); PowerPoint's remaining fidelity gap (decision cards). Word
-  tables/decision-log cards and PDF/PowerPoint decision cards are blocked on the same missing
-  feature: `web/` has no table concept and no Decision Log store/panel at all yet (confirmed by
-  investigation -- `state/decisionLog.ts` is a pure validate/normalize function with one real
-  call site in node-import normalization, not a real feature), so these aren't buildable as
-  export-side slices until that feature exists earlier in the roadmap.
+- **Decision-log cards are now built across all three exports (Word, PDF, PowerPoint) plus
+  Preview** -- see the §6.7 section below for the full four-surface slice (Preview/PDF, Word,
+  PowerPoint, Excel), landed after Decision Log became a real feature. What's genuinely still
+  not started in §6.6 itself: Word tables (`web/` has no table concept in its document model at
+  all -- a real, separate gap, not tied to Decision Log); PDF's bigger "render from a real
+  Preview-equivalent" architecture gap (legacy's own PDF export literally prints the Preview DOM;
+  `web/`'s PDF export has always been a separate raw-HTML-string print-window builder instead --
+  see the note/code-rendering slice above for why fold-state itself isn't actually part of this
+  gap).
 
 ### 6.7 — Theming & Appearance
 Auto theme (System/Schedule), accent color (all seven), Chrome background presets, node text
@@ -1289,6 +1289,47 @@ Status: **in progress.**
 Email/password sign-in, autosave on doc sync (currently manual push), sharing
 (view/edit/notifications), sync health indicator, two-tier automatic backup (IndexedDB mirror +
 auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
+
+**Status: in progress.**
+- ✅ **Autosave on doc sync + a real sync-status indicator landed.** Direct port of legacy's
+  real `queueSync`/`flushSyncQueue` (legacy/index.html:15576-15607): an outline edit now queues
+  a debounced push exactly 1500ms after edits settle -- the real constant legacy's own code uses
+  (`setTimeout(flushSyncQueue,1500)`), not the "~1.2s" figure a few of this project's own earlier
+  comments/docs approximated it as before this slice actually read the real number. Implemented
+  as a `useOutlineStore.subscribe` listener `docSyncStore.ts`'s `loadDoc` sets up (torn down in
+  `stopWatching`, same lifetime as the existing Firestore `onSnapshot` listener) that debounces
+  and then calls the same `pushDoc` action a manual push used to trigger. A new
+  `isApplyingRemoteUpdate` module-level guard flag (set for the duration of `applyCloudDoc`'s own
+  `setState` call) stops an incoming realtime cloud update from queueing a pointless echo push
+  right back to the cloud -- matching legacy's real design, where `queueSync` is only ever called
+  from the local-edit-commit path, never from `applyIncomingDocData`. The old manual "Push to
+  cloud" button is gone from `DocSyncPanel.tsx`, replaced by a `syncStatus` (`idle`/`syncing`/
+  `synced`/`error`) text line matching legacy's real `updateSyncStatusUI` text states exactly
+  ("Syncing…" / "Synced" / "Sync error — will retry on your next change") -- a real, deliberate
+  simplification vs. legacy's own version: no separate fading status-bar dot choreography (the
+  brief bright-then-dim-to-`idle-ok` animation), just the text state, since `web/` has no
+  persistent top-bar status-dot location yet (see the Sync health indicator item below). Also a
+  real, deliberate scope call: legacy's OWN primary Firestore doc sync has never had a manual
+  push button either -- it's always been purely automatic-on-edit; the manual button this
+  project briefly had was this project's own interim safety valve while the sync path was new
+  and unverified (see this file's own prior comment, now removed), not something being newly
+  taken away from users relative to legacy. Verified with a new, real automated test suite for
+  `docSyncStore.ts`'s previously-completely-untested stateful actions (`loadDoc`/`pushDoc`/
+  `stopWatching` had zero test coverage before this slice, only the two pure helper functions
+  did) -- `firebase/firestore`'s module functions are mocked (a new pattern for this project;
+  the real production Firebase config is safe to construct client-side without mocking, but the
+  actual network-calling functions need to be) with Vitest's fake timers, confirming: a push
+  fires at exactly 1500ms after an edit and not a moment before; a second edit within the window
+  resets the timer so rapid edits only push once; a simulated incoming realtime update does NOT
+  queue a push; `stopWatching` actually cancels a still-pending debounce; and `syncStatus`
+  transitions `syncing` → `synced` across a real push. Also verified in real headless Chrome
+  (signed-out state, since a real Google account isn't available in this environment): the
+  Account/Sync panels render correctly, the "Push to cloud" button is genuinely gone from the
+  whole page, zero console/page errors.
+  Still remaining for §6.8: email/password sign-in, sharing (view/edit/notifications), a real
+  persistent sync-status indicator (a top-bar dot, not just the panel's own text line -- needs a
+  home in `web/`'s shell first), two-tier automatic backup, full whole-app JSON Export/Import,
+  Version History -- each its own separately-scoped slice.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven

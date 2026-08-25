@@ -42,7 +42,7 @@ already made and already documented at the time.
 | Deep theming | ⚠️ | Light/Dark toggle (Phase 3), accent color, System auto-theme, and node-text color presets, all persisted across sessions (§6.7) — no Chrome background presets (investigated (§6.7): confirmed unreachable in legacy's own UI, not a gap in this port) |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
 | Two-tier automatic backup | ❌ | No local safety copy (IndexedDB mirror), no auto-backup-to-file |
-| Account sign-in + sync | ⚠️ | Google sign-in + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project — no email/password, no sharing/collaboration, manual push not autosave |
+| Account sign-in + sync | ⚠️ | Google sign-in + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project. Real debounced autosave now built too (§6.8): an outline edit queues a push 1500ms after edits settle, matching legacy's own real `queueSync`/`flushSyncQueue` timer exactly, plus a sync-status indicator (Syncing…/Synced/error text) replacing the old manual "Push to cloud" button — no email/password, no sharing/collaboration, no sync health indicator beyond this status line, no two-tier backup, no full JSON export/import, no Version History |
 | Version History | ❌ | Not built for any surface |
 
 ## Core Editing
@@ -378,9 +378,9 @@ fallback, and usage tracking.
 |---|---|---|
 | Google sign-in | ✅ | Phase 4, wired to the real production Firebase project |
 | Email/password sign-in | ❌ | Not built |
-| Document sync | ⚠️ | Phase 4 — bidirectional, real production Firestore collection, built to preserve legacy-only per-node fields on round-trip; manual push (not autosave), no folders/templates/settings sync, single-document only (no multi-doc concept in web/ yet) |
+| Document sync | ⚠️ | Phase 4 — bidirectional, real production Firestore collection, built to preserve legacy-only per-node fields on round-trip. Debounced autosave landed §6.8 (direct port of legacy's real `queueSync`/`flushSyncQueue`, 1500ms debounce, an `isApplyingRemoteUpdate` guard so a realtime pull never queues its own echo push) — replaced the old manual "Push to cloud" button, matching legacy's own primary sync path (which has never had a manual button either). Still: no folders/templates/settings sync, single-document only (no multi-doc concept in web/ yet) |
 | Sharing (Can view/Can edit, Share chip, Shared section, notifications) | ❌ | Not built |
-| Sync health status-bar dot | ❌ | Not built |
+| Sync health status-bar dot | ⚠️ | A text-based sync-status line landed §6.8 in `DocSyncPanel.tsx` (Syncing…/Synced/error, matching legacy's real `updateSyncStatusUI` text states) — not yet in the persistent top-bar status-dot location legacy uses (`account-toggle-status-dot`), which needs its own real top toolbar/status-bar location in `web/`'s shell first |
 
 ## Data & Backup
 

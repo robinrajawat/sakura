@@ -183,18 +183,20 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `9331278` ("feat(export):
-Decision Log PowerPoint (.pptx) card rendering (§6.7) (#234)"), with
-this session's next PR (Decision Log's Excel `.xlsx` export) about to
-open -- the last item on the user's "finish these two" list (anchor-
-picker UI, done; Word/PDF/Preview/PowerPoint/Excel export surfaces,
-all built once this PR lands too). Note: a SECOND, concurrent Claude
-session is also active in this same repo on its own branches, working
-§6.9 (AI Features) -- its PRs so far (#230, provider config UI/key
-storage/the core AI call primitive; #233, Secure Storage vault setup/
-unlock/lock/disable UI) are already merged into `main` too; anything
-in this file describing `main`'s state includes that session's work
-as well as this one's. #222
+As of this writing: `main` is at commit `a793db9` ("feat(export):
+Decision Log Excel (.xlsx) export (§6.7) (#236)"), with this session's
+next PR (§6.8's autosave + sync-status slice) about to open. The
+user's "finish these two" list (anchor-picker UI + all four Decision
+Log export surfaces) is fully done and merged -- asked what to do
+next via `AskUserQuestion`, the user picked §6.8 (Account, Sync,
+Sharing & Data) over the still-open Whiteboard-mirroring question or
+small polish gaps. Note: a SECOND, concurrent Claude session is also
+active in this same repo on its own branches, working §6.9 (AI
+Features) -- its PRs so far (#230, provider config UI/key storage/the
+core AI call primitive; #233, Secure Storage vault setup/unlock/lock/
+disable UI; #235, manual Rewrite) are already merged into `main` too;
+anything in this file describing `main`'s state includes that
+session's work as well as this one's. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
