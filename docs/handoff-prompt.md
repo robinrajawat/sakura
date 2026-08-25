@@ -183,11 +183,14 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `178382a` ("feat(outline):
-inline note/remark/Q&A previews (§6.7) (#227)"), with this session's
-next PR (the `hideTreeLines=false` monospace-connector tree mode +
-its fold-control rebuild) about to open. This closes out both items
-the user explicitly asked to complete. #222
+As of this writing: `main` is at commit `e43f507` ("feat(export):
+Decision Log Preview + PDF card rendering (§6.7) (#231)"), with this
+session's next PR (the Word/.docx decision card) about to open. Note:
+a SECOND, concurrent Claude session is also active in this same repo
+on its own branches, working §6.9 (AI Features) -- its first PR (#230,
+provider config UI/key storage/the core AI call primitive) is already
+merged into `main` too; anything in this file describing `main`'s
+state includes that session's work as well as this one's. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -396,9 +399,28 @@ was the more idiomatic call than a mid-slice shared-component
 refactor). Verified end-to-end in real headless Chrome, including a
 real PDF popup window (Playwright's `page.waitForEvent('popup')`).
 
-Remaining for Decision Log: DOCX card, PPTX card, and Excel `.xlsx`
-export (a new dependency, SheetJS/`xlsx`, not yet in this project) --
-each its own separately-scoped slice.
+The Word (.docx) card landed next: direct port of legacy's real
+`docxBuildDecisionCard`, using the `docx` library's own real per-side
+`border`/`shading` paragraph options -- confirmed `IBordersOptions`
+supports an independent `left` border (contrary to `ExportButtons.tsx`'s
+own PRIOR comment claiming that wasn't possible, written for the Q&A
+section's own left-accent omission; that comment was simply wrong, not
+a real API gap -- not revisited here, out of this slice's scope).
+`DL_STATUS_HEX_DOCX`/`DECISION_FIELD_META` are now shared module-level
+constants, reused by the PDF card too (removed a duplicate field-list
+literal). One real simplification vs. legacy: `web/`'s Decision fields
+are plain `<textarea>` text (no rich HTML, unlike Note/Remark), so no
+`docxNoteBlocks`-equivalent rich-paragraph-splitting is needed -- just
+newline-splitting into `TextRun`s joined by `break: 1`. Verified in
+real headless Chrome by downloading the actual generated `.docx`,
+unzipping it (a real ZIP archive), and grepping `word/document.xml`
+directly for the header, status badge, all 5 field labels/content, and
+the real status-accent hex color -- confirming actual OOXML output,
+not just that the export ran without throwing.
+
+Remaining for Decision Log: PPTX card and Excel `.xlsx` export (a new
+dependency, SheetJS/`xlsx`, not yet in this project) -- each its own
+separately-scoped slice.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
