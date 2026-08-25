@@ -588,6 +588,36 @@ genuinely unverified against the real production project, exactly as
 flagged beforehand -- it fails safe either way (empty list, not a
 crash).
 
+Asked next to complete two more §6.8 remainders together: **"a real
+persistent sync-status indicator (top-bar dot)"** and **"two-tier
+automatic backup's tier 2 (auto-backup to file, File System Access
+API)"** -- following this session's own established precedent (two
+items asked together still ship as separate PRs, same as email/
+password sign-in + sharing did). The top-bar dot shipped as its own PR
+(see that PR's own branch/description if this file hasn't been synced
+past it yet). Tier 2 landed here: a new `store/fsBackupStore.ts`,
+direct port of legacy's real `initFsBackup`/`connectFsBackup`/
+`reconnectFsBackup`/`disconnectFsBackup`/`writeFsBackupNow` state
+machine, plus a new "Auto-backup to file" row in `BackupSettings.tsx`.
+`backupStore.ts`'s existing 1200ms debounce now drives both backup
+tiers from the one shared timer, matching legacy's real
+`scheduleBackupWrite` exactly. Notably verified MORE thoroughly in real
+headless Chrome than most other §6.8 slices could be, since this
+feature has no Firebase/auth dependency at all: clicking "Connect…"
+calls the real `window.showSaveFilePicker`, which correctly rejects
+with a real `AbortError` in a headless context (no OS file-picker
+surface exists there) -- confirmed the app handles that exactly like
+legacy does, a silent no-op, zero console errors, nothing stray written
+to IndexedDB. The "successfully picked a file" happy path itself can't
+be driven from headless automation (no OS UI to interact with, a
+fundamental constraint of this specific browser API) -- 16 new unit
+tests (mocking the handle) are this slice's real verification of that
+path's actual logic. Deliberately not built: the status-bar chip
+surface, backup-history rotation, the backup-reminder nag, and Gist/
+Drive cloud auto-push -- each a real, separately-scoped follow-up (see
+this PR's own description/the plan doc's §6.8 section for the full
+reasoning on each).
+
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress

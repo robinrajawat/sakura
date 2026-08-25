@@ -8,10 +8,11 @@
  * either, and the surface needed here (get/set on one object store) is small enough not to
  * justify a new dependency.
  *
- * Scoped down from legacy's own fuller helper set: no `idbDelete`/`idbGetAllKeys` yet, since
- * this slice's only caller (`backupStore.ts`) never needs to delete or enumerate keys -- real,
- * separately-scoped additions whenever a caller actually needs them (e.g. a future "overflow
- * store" for diagram blobs, matching legacy's own use of this same database for that).
+ * Scoped down from legacy's own fuller helper set: no `idbGetAllKeys` yet, since no caller here
+ * needs to enumerate keys -- a real, separately-scoped addition whenever one does (e.g. a future
+ * "overflow store" for diagram blobs, matching legacy's own use of this same database for that).
+ * `idbDelete` WAS added in the §6.8 tier-2 backup slice -- `fsBackupStore.ts`'s `disconnect()`
+ * needs to remove the stored `FileSystemFileHandle`, matching legacy's real `idbDelete('fsHandle')`.
  */
 
 const DB_NAME = 'sakura_backup_db';
@@ -70,6 +71,21 @@ export async function idbSet(key: string, value: unknown): Promise<boolean> {
     return await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    return false;
+  }
+}
+
+// Same never-throw posture as `idbSet` above, matching legacy's own real `idbDelete`.
+export async function idbDelete(key: string): Promise<boolean> {
+  try {
+    const db = await idbOpen();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(key);
       tx.oncomplete = () => resolve(true);
       tx.onerror = () => reject(tx.error);
     });
