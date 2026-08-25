@@ -41,8 +41,8 @@ already made and already documented at the time.
 | Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
 | Deep theming | ⚠️ | Light/Dark toggle (Phase 3), accent color, System auto-theme, and node-text color presets, all persisted across sessions (§6.7) — no Chrome background presets (investigated (§6.7): confirmed unreachable in legacy's own UI, not a gap in this port) |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
-| Two-tier automatic backup | ❌ | No local safety copy (IndexedDB mirror), no auto-backup-to-file |
-| Account sign-in + sync | ⚠️ | Google sign-in + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project. Real debounced autosave now built too (§6.8): an outline edit queues a push 1500ms after edits settle, matching legacy's own real `queueSync`/`flushSyncQueue` timer exactly, plus a sync-status indicator (Syncing…/Synced/error text) replacing the old manual "Push to cloud" button — no email/password, no sharing/collaboration, no sync health indicator beyond this status line, no two-tier backup, no full JSON export/import, no Version History |
+| Two-tier automatic backup | ⚠️ | Tier 1 (local safety copy, an IndexedDB mirror of localStorage) built §6.8 — direct port of legacy's real `mirrorToIndexedDb`, 1200ms debounce on outline edits, a "Restore…" button under Settings → Data & Backup. Tier 2 (auto-backup to file, File System Access API) not built yet |
+| Account sign-in + sync | ⚠️ | Google sign-in + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project. Real debounced autosave now built too (§6.8): an outline edit queues a push 1500ms after edits settle, matching legacy's own real `queueSync`/`flushSyncQueue` timer exactly, plus a sync-status indicator (Syncing…/Synced/error text) replacing the old manual "Push to cloud" button — no email/password, no sharing/collaboration, no sync health indicator beyond this status line, no full JSON export/import, no Version History |
 | Version History | ❌ | Not built for any surface |
 
 ## Core Editing
@@ -454,7 +454,7 @@ fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned 
 | Layer | Status | Note |
 |---|---|---|
 | 0. Account sync | ⚠️ | See above |
-| 1. Local safety copy (IndexedDB mirror) | ❌ | Not built |
+| 1. Local safety copy (IndexedDB mirror) | ✅ | Built §6.8: direct port of legacy's real `mirrorToIndexedDb`/`updateSafetyCopyStatus`/`restoreFromIndexedDbMirror`, same real IndexedDB database/store/key names and 1200ms debounce (`store/backupStore.ts`). "Restore…" button under Settings → Data & Backup. Debounce is wired to outline edits only (the highest-value, highest-frequency edit surface — `web/`'s multi-store architecture has no single "anything changed" event the way legacy's one script does), and doesn't yet snapshot a `preRestoreSnapshot` (needs "Undo last restore" itself to be worth writing) |
 | 2. Auto-backup to file (File System Access API) | ❌ | Not built |
 | 3. Export/Import (whole-app JSON) | ❌ | Not built |
 | Undo last restore | ❌ | Not applicable — no restore mechanism exists |

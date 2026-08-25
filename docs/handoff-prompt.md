@@ -183,20 +183,26 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `a793db9` ("feat(export):
-Decision Log Excel (.xlsx) export (§6.7) (#236)"), with this session's
-next PR (§6.8's autosave + sync-status slice) about to open. The
-user's "finish these two" list (anchor-picker UI + all four Decision
-Log export surfaces) is fully done and merged -- asked what to do
-next via `AskUserQuestion`, the user picked §6.8 (Account, Sync,
-Sharing & Data) over the still-open Whiteboard-mirroring question or
-small polish gaps. Note: a SECOND, concurrent Claude session is also
-active in this same repo on its own branches, working §6.9 (AI
-Features) -- its PRs so far (#230, provider config UI/key storage/the
-core AI call primitive; #233, Secure Storage vault setup/unlock/lock/
-disable UI; #235, manual Rewrite) are already merged into `main` too;
-anything in this file describing `main`'s state includes that
-session's work as well as this one's. #222
+As of this writing: `main` is at commit `ff2aec9` ("feat(sync):
+debounced autosave + sync-status indicator (§6.8) (#244)"), with this
+session's next PR (§6.8's local safety copy / IndexedDB mirror slice)
+about to open. The user's "finish these two" list (anchor-picker UI +
+all four Decision Log export surfaces) is fully done and merged --
+asked what to do next via `AskUserQuestion`, the user picked §6.8
+(Account, Sync, Sharing & Data) over the still-open Whiteboard-
+mirroring question or small polish gaps; within §6.8, after the
+autosave slice landed, asked again which sub-item to pick next (email/
+password sign-in and sharing both carry real backend-config risk this
+session can't verify from here) and the user picked two-tier automatic
+backup. Note: a SECOND, concurrent Claude session is also active in
+this same repo on its own branches -- it finished §6.9 (AI Features)
+entirely (PRs #230, #233, #235, and several more through #242 covering
+Generate Outline/Restructure Text/Expand node/Suggest tags/Suggest
+icon/Summarise selection/provider fallback+usage tracking/auto-rewrite)
+and has since moved into §6.10 (#243, Quick Insert keyboard nav +
+settings) -- all already merged into `main`; anything in this file
+describing `main`'s state includes that session's work as well as this
+one's. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -483,6 +489,36 @@ spreadsheet output.
 PDF, Word, PowerPoint, Excel) are now complete**, along with the
 anchor-picker UI -- the full "let's finish these two first" ask from
 this session is done.
+
+Asked what to work on next, the user picked §6.8 (Account, Sync,
+Sharing & Data) via `AskUserQuestion` over the still-open Whiteboard-
+mirroring question or small polish gaps. First §6.8 slice: real
+debounced autosave for the Firestore doc sync, direct port of
+legacy's real `queueSync`/`flushSyncQueue` (1500ms debounce after an
+outline edit settles, wired as a `useOutlineStore.subscribe` listener
+in `docSyncStore.ts`'s own `loadDoc`), replacing the old manual "Push
+to cloud" button with a `syncStatus` text line matching legacy's real
+`updateSyncStatusUI` states. Also added `docSyncStore.ts`'s first-ever
+automated test coverage for its stateful actions, mocking
+`firebase/firestore`'s module functions with Vitest fake timers.
+
+Asked again which §6.8 sub-item to pick next (email/password sign-in
+and sharing both carry real backend-config risk this session can't
+verify without production access), the user picked two-tier automatic
+backup. Landed tier 1, the local safety copy: direct port of legacy's
+real `mirrorToIndexedDb`/`updateSafetyCopyStatus`/
+`restoreFromIndexedDbMirror`, same real IndexedDB database/store/key
+names, same 1200ms debounce (a genuinely different real constant from
+the cloud sync's 1500ms), a new "Data & Backup" Settings section with
+status text + a "Restore…" button. `utils/idbKv.ts` is `web/`'s first
+IndexedDB usage at all. Verified with mocked-module-boundary unit
+tests (same pattern as the cloud-sync tests) AND real headless
+Chrome -- unlike jsdom, a real browser actually has `indexedDB`, so
+this could inspect the real database directly and drive an actual
+Restore through a real page reload. Tier 2 (auto-backup to file, File
+System Access API) is a separate, not-yet-started follow-up -- bigger
+and more platform-specific (Chrome/Edge only, needs a file-handle
+permission grant flow).
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
