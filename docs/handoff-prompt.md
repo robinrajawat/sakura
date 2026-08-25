@@ -406,9 +406,14 @@ supports an independent `left` border (contrary to `ExportButtons.tsx`'s
 own PRIOR comment claiming that wasn't possible, written for the Q&A
 section's own left-accent omission; that comment was simply wrong, not
 a real API gap -- not revisited here, out of this slice's scope).
-`DL_STATUS_HEX_DOCX`/`DECISION_FIELD_META` are now shared module-level
+`DL_STATUS_HEX_OOXML`/`DECISION_FIELD_META` are now shared module-level
 constants, reused by the PDF card too (removed a duplicate field-list
-literal). One real simplification vs. legacy: `web/`'s Decision fields
+literal). `DL_STATUS_HEX_OOXML` was renamed from an initial
+`DL_STATUS_HEX_DOCX` -- caught via self-review before it shipped, since
+`exportPdf`'s own local, differently-formatted `DL_STATUS_HEX` constant
+further down the same file would otherwise have collided in name (not
+behavior -- JS scoping already resolved the shadow correctly). One real
+simplification vs. legacy: `web/`'s Decision fields
 are plain `<textarea>` text (no rich HTML, unlike Note/Remark), so no
 `docxNoteBlocks`-equivalent rich-paragraph-splitting is needed -- just
 newline-splitting into `TextRun`s joined by `break: 1`. Verified in

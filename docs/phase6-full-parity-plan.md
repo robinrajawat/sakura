@@ -1219,7 +1219,10 @@ Status: **in progress.**
   section -- that comment was wrong, not a real API limitation; not revisited here since fixing
   Q&A's own left-accent gap is out of this slice's scope) rather than legacy's raw hand-written
   OOXML XML strings -- same "port the effect via an idiomatic library API" reasoning used
-  throughout. `DL_STATUS_HEX_DOCX`/`DECISION_FIELD_META` are shared module-level constants,
+  throughout. `DL_STATUS_HEX_OOXML`/`DECISION_FIELD_META` are shared module-level constants
+  (`DL_STATUS_HEX_OOXML` renamed from an initial `DL_STATUS_HEX_DOCX` -- caught via self-review
+  before it shipped, since `exportPdf`'s own local, differently-formatted `DL_STATUS_HEX`
+  constant further down the same file would otherwise have collided in name, not behavior),
   reused by the PDF card (§6.7's own prior slice) to remove what would otherwise be a second
   duplicate field-list literal. One real, deliberate simplification: legacy's own version runs
   each field's raw HTML through `docxNoteBlocks` to split rich paragraphs/lists into separate
