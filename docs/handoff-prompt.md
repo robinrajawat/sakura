@@ -183,14 +183,16 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `e43f507` ("feat(export):
-Decision Log Preview + PDF card rendering (§6.7) (#231)"), with this
-session's next PR (the Word/.docx decision card) about to open. Note:
-a SECOND, concurrent Claude session is also active in this same repo
-on its own branches, working §6.9 (AI Features) -- its first PR (#230,
-provider config UI/key storage/the core AI call primitive) is already
-merged into `main` too; anything in this file describing `main`'s
-state includes that session's work as well as this one's. #222
+As of this writing: `main` is at commit `51e8097` ("feat(export):
+Decision Log Word (.docx) card rendering (§6.7) (#232)"), with this
+session's next PR (the PowerPoint/.pptx decision card) about to open --
+Excel `.xlsx` export is the one item left after that. Note: a SECOND,
+concurrent Claude session is also active in this same repo on its own
+branches, working §6.9 (AI Features) -- its PRs so far (#230, provider
+config UI/key storage/the core AI call primitive; #233, Secure Storage
+vault setup/unlock/lock/disable UI) are already merged into `main`
+too; anything in this file describing `main`'s state includes that
+session's work as well as this one's. #222
 closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
@@ -423,9 +425,31 @@ directly for the header, status badge, all 5 field labels/content, and
 the real status-accent hex color -- confirming actual OOXML output,
 not just that the export ran without throwing.
 
-Remaining for Decision Log: PPTX card and Excel `.xlsx` export (a new
-dependency, SheetJS/`xlsx`, not yet in this project) -- each its own
-separately-scoped slice.
+The PowerPoint (.pptx) card landed next: direct-effect port of
+legacy's real two-pass auto-scaling `addDecisionLogCard`, simplified
+the same way as the Word/PDF/Preview cards (no auto-scale-to-fit, no
+rich-list field parsing). A card is packed as one more item in the
+same per-node bullet-pagination loop, right after the bullet for the
+node it's anchored to, so an oversized card can overflow onto a
+"(cont'd)" slide exactly like an overlong bullet list already does --
+this required first fixing that loop's bullet text box to use a real
+measured height (`reduce`+`measureWrappedLines`+`pptxLineHeightIn`,
+the same pattern the neighboring "slide with images" branch already
+used) instead of a fixed `h:'75%'` placeholder. Reuses
+`DL_STATUS_HEX_OOXML`/`DECISION_FIELD_META`/`decisionStatusColorKeyCore`/
+`decisionStatusLabelCore` from the Word card -- no new duplicate
+constants. Cards render on non-image slides only (a slide with images
+already `continue`s past the per-node loop entirely, a real
+pre-existing scope-down, not newly cut). Verified in real headless
+Chrome by downloading the actual generated `.pptx`, unzipping it (also
+a plain ZIP/OOXML archive), and grepping `ppt/slides/*.xml` directly
+for the header, status badge, all 5 field labels/content (including a
+multi-line field), and the real status-accent hex color and card fill
+shade -- confirming actual OOXML slide output.
+
+Remaining for Decision Log: Excel `.xlsx` export (a new dependency,
+SheetJS/`xlsx`, not yet in this project) -- its own separately-scoped
+slice, not yet started.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
