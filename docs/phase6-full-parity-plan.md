@@ -1326,10 +1326,51 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   (signed-out state, since a real Google account isn't available in this environment): the
   Account/Sync panels render correctly, the "Push to cloud" button is genuinely gone from the
   whole page, zero console/page errors.
-  Still remaining for §6.8: email/password sign-in, sharing (view/edit/notifications), a real
-  persistent sync-status indicator (a top-bar dot, not just the panel's own text line -- needs a
-  home in `web/`'s shell first), two-tier automatic backup, full whole-app JSON Export/Import,
-  Version History -- each its own separately-scoped slice.
+  Still remaining for §6.8 at that point: email/password sign-in, sharing (view/edit/
+  notifications), a real persistent sync-status indicator (a top-bar dot, not just the panel's
+  own text line -- needs a home in `web/`'s shell first), two-tier automatic backup, full
+  whole-app JSON Export/Import, Version History -- each its own separately-scoped slice.
+- ✅ **Local safety copy (tier 1 of two-tier automatic backup) landed.** Direct port of legacy's
+  real `mirrorToIndexedDb`/`updateSafetyCopyStatus`/`restoreFromIndexedDbMirror`
+  (legacy/index.html:31532-31550) -- same real IndexedDB database (`sakura_backup_db`), object
+  store (`kv`), and mirror key (`localStorageMirror`), same `{payload, savedAt}` entry shape, and
+  the same real `SAKURA_EXPORT_FORMAT_VERSION`/envelope shape legacy's own
+  `buildFullBackupPayload` uses (`state/backupPayload.ts`) -- so a mirror `web/` writes is
+  byte-shape-compatible with legacy's own backup format, not a new `web/`-only shape. A small raw
+  IndexedDB helper (`utils/idbKv.ts`, direct port of legacy's own `idbOpen`/`idbGet`/`idbSet`,
+  including its memoized-single-connection pattern -- legacy's own comment there explains why:
+  unmemoized, two near-simultaneous callers opening the same database is a known source of subtle
+  cross-browser IndexedDB races) is a new capability for `web/`, which had no IndexedDB usage
+  anywhere before this slice. Debounced 1200ms after an outline edit settles -- legacy's own real
+  `scheduleBackupWrite` constant, a genuinely different number from the cloud-sync autosave's
+  1500ms (`queueSync`) just above, both ported faithfully rather than collapsed into one shared
+  constant. Same real, deliberate scope-down the cloud autosave slice already established: only
+  the outline-edit trigger is wired (the highest-value, highest-frequency edit surface; `web/`'s
+  several independent Zustand stores have no single "anything changed" event the way legacy's one
+  monolithic script does), and no `preRestoreSnapshot`/"Undo last restore" (that machinery exists
+  in legacy purely to support the Undo-last-restore feature, which isn't built here -- writing an
+  unused snapshot key would just be dead writes). A new "Data & Backup" section
+  (`components/BackupSettings.tsx`) in the Settings panel shows the real status text ("Last saved
+  X ago" / "No safety copy yet", matching `updateSafetyCopyStatus`'s own text exactly) and a
+  "Restore…" button (`window.confirm`, this project's established native-primitive convention,
+  rather than legacy's own richer `sakuraConfirm` dialog). Verified with a new automated test
+  suite mocking the `idbKv.ts` module boundary (the same "mock the platform/SDK boundary" approach
+  `docSyncStore.test.ts` already established for `firebase/firestore` -- jsdom, this project's
+  test environment, has no `indexedDB` global at all) with Vitest's fake timers: `init()` mirrors
+  immediately on mount and is idempotent against double-calling; a mirror write fires at exactly
+  1200ms after an edit; `restoreFromSafetyCopy` clears `localStorage` and writes back every entry
+  from the mirror, or returns `false` without touching anything when there's no safety copy yet.
+  Also verified end-to-end in REAL headless Chrome (unlike the mocked unit tests, real
+  `indexedDB` genuinely exists in an actual browser): inspected the real IndexedDB database
+  directly via `page.evaluate` to confirm the mirror entry's real shape after mount, confirmed the
+  mirror's `savedAt` advances and its data includes freshly-edited node text ~1200ms after a real
+  outline edit, and confirmed a real Restore -- accepting the real `window.confirm` dialog,
+  through the real page reload -- actually wipes a planted "corruption" key and brings the edited
+  content back. Zero console/page errors throughout.
+  Still remaining for §6.8: everything else listed above, PLUS tier 2 of two-tier automatic
+  backup (auto-backup to file, File System Access API, Chrome/Edge only -- a materially bigger,
+  more platform-specific follow-up needing its own file-handle-permission UX) -- each its own
+  separately-scoped slice.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
