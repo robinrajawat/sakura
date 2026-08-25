@@ -1387,7 +1387,18 @@ building the earlier ones):
    inventing new positioning (see that component's own header). Historical-icon-index scope is
    also narrower than legacy's: live document + every saved document, not templates (`web/` has no
    live Templates surface to read from yet).
-8. Summarise selection — multi-node-selection-specific.
+8. **Summarise selection** (landed, see Status) — `state/aiSummarise.ts` direct-ports legacy's
+   real `summariseSelectionWithAi`: the current selection's TOP-LEVEL roots (via the already-
+   ported `selectionRootIndexes()`, not every individually-selected node) are sent to the AI for
+   one short label, and a new `outlineStore.ts` action (`applySummaryParent`) inserts a parent
+   node carrying that label immediately above the first selected root, indenting every selected
+   root's WHOLE SUBTREE underneath it — an all-or-nothing in-flight-edit guard (abort entirely,
+   not partial-apply, if any selected root was deleted mid-request) rather than the per-entry-skip
+   guard `applySuggestedIcons`/Rewrite's batch path use, matching legacy's own real behavior
+   exactly. Toolbar-only ("✦ Summarise" button, enabled only with 2+ nodes selected) — legacy's
+   own real context-menu AI group never includes this either (same as Expand/Tags). NOT built:
+   legacy's unrelated same-named "Summarise subtree into note" note-panel capability (prose
+   appended to a node's Note field) — `web/`'s note panel has no AI actions at all yet.
 9. Provider fallback chain UI (drag-to-reorder, per-row enable checkbox) + usage tracking
    display — both real, user-configurable, and every capability slice above already needs
    `callAiByShapeWithFallback`'s usage-recording call sites in place, so this slice mostly
@@ -1529,8 +1540,16 @@ unmatched label; the single-node picker opening with the AI's 4 suggested candid
 whichever one was clicked; the same picker opening from the right-click menu and Escape dismissing
 it with no change; "Suggest icons for all nodes" running cleanly; the toolbar button staying
 enabled across zero-vs-one-vs-multi selection changes, unlike Expand/Tags' exactly-one
-requirement) — zero console/page errors across every check. Slices
-8-9 (Summarise selection, fallback+usage UI) not yet started. §6.10
+requirement) — zero console/page errors across every check. **This PR**: Summarise selection —
+`state/aiSummarise.ts` (`summariseSelectionIntoParent`, plus the pure `stripSummaryLabelCore`) and
+a new `outlineStore.ts` action (`applySummaryParent` — inserts a new parent above the selection's
+top-level roots, indenting each root's whole subtree underneath, all-or-nothing in-flight guard),
+wired to a toolbar "✦ Summarise" button enabled only with 2+ nodes selected — verified end-to-end
+in real headless Chrome with the AI endpoint mocked via `page.route` (button disabled with a single
+selection and enabled at 2+; a no-key configured failure surfacing a clear alert; the new parent
+correctly inserted above both selected children in document order; Undo correctly reverting it) —
+zero console/page errors across every check. Slice
+9 (provider fallback chain UI + usage tracking) not yet started. §6.10
 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

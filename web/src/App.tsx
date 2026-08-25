@@ -40,6 +40,7 @@ import { RestructureTextDialog } from './components/RestructureTextDialog';
 import { suggestIconForSelection, suggestIconsForAllDocumentNodes } from './state/aiIcon';
 import { useIconPickerStore } from './store/iconPickerStore';
 import { IconPickerPopover } from './components/IconPickerPopover';
+import { summariseSelectionIntoParent } from './state/aiSummarise';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -188,6 +189,20 @@ export function App() {
     setAiIconBusy(true);
     const result = await suggestIconsForAllDocumentNodes();
     setAiIconBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  // §6.9 slice 8 (docs/phase6-full-parity-plan.md): Summarise selection. Matches legacy's real
+  // `qb-ai-summarise` toolbar button (`disabled=!multiCount`, index.html:20455) -- enabled only
+  // with 2 or more nodes selected, since a new parent above a single node isn't a meaningful
+  // "summary." Toolbar-only, same as Expand/Tags: legacy's own real context-menu AI group
+  // (`CTX_ACTION_ORDER`) only ever includes Rewrite/Suggest icon, never Expand/Tags/Summarise.
+  const [aiSummariseBusy, setAiSummariseBusy] = useState(false);
+
+  async function handleSummariseSelection(): Promise<void> {
+    setAiSummariseBusy(true);
+    const result = await summariseSelectionIntoParent();
+    setAiSummariseBusy(false);
     if (!result.ok) window.alert(result.message);
   }
 
@@ -502,8 +517,13 @@ export function App() {
         </button>
         {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all whole-document
             action, always auto-applying as a batch. */}
-        <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 12 }}>
+        <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 4 }}>
           ✦ Icons (all)
+        </button>
+        {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected roots,
+            indenting their whole subtrees underneath. */}
+        <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection" style={{ marginRight: 12 }}>
+          ✦ Summarise
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit

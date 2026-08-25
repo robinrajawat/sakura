@@ -261,6 +261,19 @@ interface OutlineState {
    * captured earlier. Returns false (no undo checkpoint, no state change) if the node no longer
    * exists. */
   applyIconChoice: (id: number, icon: string) => boolean;
+  /** §6.9 slice 8 (docs/phase6-full-parity-plan.md): Summarise selection's real insert-and-
+   * indent action. Direct port of legacy's real `summariseSelectionWithAi` splice/indent
+   * (legacy/index.html:28425-28448): `rootIds` are the selected roots' ids as captured BEFORE the
+   * AI call, re-resolved by id here (so a deletion/reorder while the request was in flight can't
+   * corrupt the wrong nodes) — if ANY of them is gone, this aborts entirely (returns `null`, no
+   * state change) rather than partially summarising a different set of nodes than what was
+   * actually sent to the AI, matching legacy's own real all-or-nothing guard exactly (unlike the
+   * per-entry-skip guard `applySuggestedIcons`/`aiRewrite.ts`'s batch path use). On success, a new
+   * parent node carrying `label` is inserted immediately above the first (lowest-index) resolved
+   * root, at that root's own original depth/parentId, and every resolved root's WHOLE SUBTREE
+   * (not just the root node) is indented by one level underneath it. Returns the new parent's id,
+   * or `null` on abort. */
+  applySummaryParent: (rootIds: number[], label: string) => number | null;
 
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
@@ -758,6 +771,46 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     const next = nodes.map((n) => (n.id === id ? { ...n, text: icon + ' ' + bare } : n));
     set({ nodes: next });
     return true;
+  },
+
+  applySummaryParent: (rootIds, label) => {
+    const { nodes, nextId } = get();
+    const freshIndexes = rootIds.map((id) => getIndex(nodes, id));
+    if (freshIndexes.some((i) => i < 0)) return null;
+    freshIndexes.sort((a, b) => a - b);
+    pushUndo();
+    const firstIdx = freshIndexes[0];
+    const parentNode: OutlineNode = {
+      id: nextId,
+      depth: nodes[firstIdx].depth,
+      text: label,
+      parentId: nodes[firstIdx].parentId,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    };
+    const next = nodes.map((n) => ({ ...n }));
+    next.splice(firstIdx, 0, parentNode);
+    // Every resolved root shifted by exactly 1 -- `firstIdx` is their own minimum, so the splice
+    // lands at or before every one of them, matching legacy's own same shift-by-1 assumption.
+    const newRootIndexes = freshIndexes.map((i) => i + 1);
+    newRootIndexes.forEach((i) => {
+      const end = getSubtreeEnd(next, i);
+      for (let j = i; j < end; j++) next[j].depth++;
+    });
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: nextId + 1,
+      selectedId: parentNode.id,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: parentNode.id
+    });
+    return parentNode.id;
   },
 
   newSiblingAbove: (id) => {

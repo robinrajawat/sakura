@@ -1697,4 +1697,42 @@ crash; the toolbar button correctly staying enabled across a
 zero/one/multi selection change -- unlike Expand/Tags' own exactly-one
 requirement from the previous slice -- zero console/page errors
 throughout, across every one of those checks.
+
+Eighth §6.9 slice landed next in the same session: Summarise
+selection. New `state/aiSummarise.ts` direct-ports legacy's real
+`summariseSelectionWithAi`: the current selection's TOP-LEVEL roots
+(via the already-ported `selectionRootIndexes()` action -- not every
+individually-selected node, so selecting a parent and one of its own
+children only counts the parent) are sent to the AI as a bulleted
+list, and its one-line reply becomes a new parent node's label. A new
+`outlineStore.ts` action, `applySummaryParent`, does the actual
+insert: the new parent lands immediately above the first (lowest-
+index) selected root, at that root's own original depth/parentId, and
+every selected root's WHOLE SUBTREE -- not just the root node itself
+-- gets indented one level underneath it, matching legacy's real
+`getSubtreeEnd`-driven indent loop exactly. The in-flight-edit guard
+here is deliberately all-or-nothing rather than the per-entry-skip
+guard `applySuggestedIcons`/Rewrite's own batch path use: if ANY
+selected root was deleted while the AI request was in flight, the
+whole operation aborts with no state change at all, matching legacy's
+own real behavior -- a "summary of a different set of nodes than what
+was actually sent to the AI" wouldn't be a meaningful result to apply
+partially. Toolbar-only trigger (a "✦ Summarise" button, enabled only
+with 2 or more nodes selected, matching legacy's own real
+`qb-ai-summarise` disabled logic exactly) -- legacy's own context-menu
+AI group never includes this capability either, same as Expand/Tags
+from the previous slice. Deliberately NOT built, a genuinely different
+capability that only shares a name: legacy's own "Summarise subtree
+into note" note-panel feature (`ntb-ai-summarise`), which appends a
+prose summary to a node's Note field rather than inserting a new
+outline parent -- `web/`'s note panel has no AI actions of any kind
+yet. Verified end-to-end in real headless Chrome with the Gemini
+endpoint mocked via Playwright's `page.route`: the toolbar button
+correctly disabled with only a single node selected and enabled once a
+second node joins the selection; a no-AI-key-configured attempt
+surfacing a clear alert rather than hanging or throwing; a successful
+run correctly inserting the new parent immediately above both selected
+nodes in document order; Undo correctly reverting the whole insert in
+one step -- zero console/page errors throughout, across every one of
+those checks.
 ```
