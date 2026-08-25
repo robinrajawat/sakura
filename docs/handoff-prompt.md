@@ -183,43 +183,28 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `b238a2c` ("feat(settings):
-first minimal Settings panel -- outline export-formatting prefs
-(§6.7/§6.10) (#218)"). After the #216 check-in, the user delegated
-both of its open questions explicitly ("We have to cover everything
-anyway so you decide."): build a *minimal* Settings panel now (scoped
-only to prefs with a real existing consumer), and build Whiteboard
-mirroring/Audience View later via a routing-free approximation.
-Three PRs landed from that: #217 (`fix/outline-nextid-collision`, a
-real correctness bug affecting every fresh session -- see the §6.7
-bullets below for the full story), #218 (the first minimal
-Settings-panel slice), and this PR -- an investigation into Whiteboard
-mirroring/Audience View that found the "routing-free approximation"
-framing itself was already slightly off: legacy's real mechanism
-needs NO client-side routing at all, approximated or otherwise, since
-it keys off a query PARAM (`?sakuraAudience=1`), not a path -- query
-strings never touch routing/rewrite rules, so a static host already
-serves the same `index.html` regardless. The actual blockers, found by
-reading legacy's real implementation end to end (legacy/index.html:
-38691-39096, 4489-4497): `PresenterMode.tsx`'s presenting state
-(slide index, blanked, laser, overview, notes) is local `useState`,
-not a shared store, so there's nothing external for a second window
-to drive the way legacy's cross-window direct-function-call mechanism
-does; and `web/`'s Diagrams panel has no `isWhiteboard` concept yet
-(confirmed: `padStore.ts`'s own `Diagram` type explicitly excludes it,
-listed as a deferred field from its original #172 slice) for
-Whiteboard mirroring to have anything to mirror. A full, concrete,
-code-referenced translation plan for building this (query-param boot
-check, lifting presenter state into a new `usePresenterStore.ts`, a
-`window`-exposed bridge object mirroring legacy's own cross-window
-function-call approach, letting the second window run its own full
-React instance off that store rather than DOM-cloning) is now recorded
-in `docs/phase6-full-parity-plan.md`'s §6.6 section -- not attempted
-in this pass, since multi-window popup coordination is real,
-architecturally significant scope, and meaningfully harder to verify
-than every other slice's real-headless-Chrome-in-one-window testing
-this project has relied on throughout. Pick it up next as its own
-multi-PR sub-sequence, following that plan.
+As of this writing: `main` is at commit `c5a3afe` ("docs: correct
+Audience View/Whiteboard-mirroring scoping (not blocked on routing)
+(#219)"). Following the user's "We have to cover everything anyway so
+you decide" delegation, four PRs have now landed in this stretch:
+#217 (a real `nextId` node-id-collision bug fix), #218 (the first
+minimal Settings-panel slice), #219 (a docs correction: Audience
+View/Whiteboard mirroring needs NO client-side routing at all --
+legacy's real mechanism keys off a query param, not a path -- the
+real blockers are `PresenterMode.tsx`'s presenting state living in
+local `useState` and Diagrams having no `isWhiteboard` concept yet;
+see phase6-full-parity-plan.md's §6.6 section for the full,
+code-referenced translation plan), and this PR -- step 1 of that plan:
+`PresenterMode.tsx`'s presenting state (slide index, blanked, laser,
+overview, notes, elapsed timer) moved into a new `usePresenterStore.ts`,
+a pure refactor verified behavior-identical in real headless Chrome
+(navigation, blackout, overview grid, notes panel, laser pointer,
+elapsed timer all re-tested against a real multi-slide deck). Still
+needed before Audience View itself works: the query-param boot check,
+a `window`-exposed cross-window bridge, the second window running its
+own React instance, and (separately) a real `isWhiteboard` concept in
+Diagrams for mirroring. Pick up the next step from
+phase6-full-parity-plan.md's §6.6 section.
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
 currently buildable: Preview TOC/scroll-spy/progress
@@ -1025,11 +1010,10 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 (`fix/outline-nextid-collision`) and #218
-(`settings/outline-format-prefs`) both merged and their local branches
-deleted this session; this PR (`docs/audience-view-rescoping`) is the
-current one, docs-only. No feature branches should remain open for
-review once this PR also merges (the merged
+#217, #218, and #219 all merged and their local branches deleted this
+session; this PR (`presenter/state-store`) is the current one. No
+feature branches should remain open for review once this PR also
+merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw
 branch-delete call, and even when one has been available in past

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useOutlineStore, type OutlineNode } from '../store/outlineStore';
 import { usePadStore } from '../store/padStore';
+import { usePresenterStore } from '../store/presenterStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { NodeText } from './NodeText';
 import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
@@ -54,6 +55,14 @@ import { stripSemanticMarkers } from '../utils/stripSemanticMarkers';
  * scoped follow-up if ever wanted), toggled by the same `N` key legacy's own Notes shortcut
  * uses, closed by `N` again or `Escape` (joining the same close-priority chain `B`/`G` already
  * use).
+ *
+ * §6.6 slice: presenting state (slide index, blanked, laser, overview, notes, elapsed timer)
+ * moved from this component's own local `useState` into `usePresenterStore.ts` -- a pure
+ * refactor, no behavior change, but a real prerequisite for the Audience View work
+ * phase6-full-parity-plan.md's §6.6 section now scopes concretely: a second window's own React
+ * tree needs something external to actually be driven through (a future audience-window bridge
+ * will read/drive this store directly), which local component state can never provide. See that
+ * store's own header comment for the full reasoning.
  */
 export function groupIntoSlides(nodes: OutlineNode[]): OutlineNode[][] {
   const slides: OutlineNode[][] = [];
@@ -107,17 +116,24 @@ export function PresenterMode() {
   const t = THEME_TOKENS[theme];
   const slides = useMemo(() => groupIntoSlides(nodes), [nodes]);
   const totalSlides = slides.length + 1; // +1 for the closing slide, always on -- see header
-  const [index, setIndex] = useState(0);
+  const index = usePresenterStore((s) => s.slideIndex);
+  const setIndex = usePresenterStore((s) => s.setSlideIndex);
   const clampedIndex = Math.min(index, Math.max(0, totalSlides - 1));
   const onClosingSlide = slides.length > 0 && clampedIndex === slides.length;
 
-  const [blanked, setBlanked] = useState(false);
-  const [laserOn, setLaserOn] = useState(false);
-  const [laserPos, setLaserPos] = useState<{ x: number; y: number } | null>(null);
-  const [overviewOpen, setOverviewOpen] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [elapsedSec, setElapsedSec] = useState(0);
-  const startedAtRef = useRef(Date.now());
+  const blanked = usePresenterStore((s) => s.blanked);
+  const setBlanked = usePresenterStore((s) => s.setBlanked);
+  const laserOn = usePresenterStore((s) => s.laserOn);
+  const setLaserOn = usePresenterStore((s) => s.setLaserOn);
+  const laserPos = usePresenterStore((s) => s.laserPos);
+  const setLaserPos = usePresenterStore((s) => s.setLaserPos);
+  const overviewOpen = usePresenterStore((s) => s.overviewOpen);
+  const setOverviewOpen = usePresenterStore((s) => s.setOverviewOpen);
+  const notesOpen = usePresenterStore((s) => s.notesOpen);
+  const setNotesOpen = usePresenterStore((s) => s.setNotesOpen);
+  const elapsedSec = usePresenterStore((s) => s.elapsedSec);
+  const enterPresenting = usePresenterStore((s) => s.enterPresenting);
+  const tickElapsed = usePresenterStore((s) => s.tickElapsed);
   const notesText = usePadStore((s) => s.notesText);
   const qaItems = usePadStore((s) => s.qaItems);
 
@@ -125,10 +141,10 @@ export function PresenterMode() {
   // mounts it while `mode === 'present'`, the same "entering presenter mode" moment legacy's own
   // `startPresenterTimer` fires at), not tied to slide count or paced against anything.
   useEffect(() => {
-    startedAtRef.current = Date.now();
-    setElapsedSec(0);
-    const handle = setInterval(() => setElapsedSec(Math.floor((Date.now() - startedAtRef.current) / 1000)), 1000);
+    enterPresenting();
+    const handle = setInterval(tickElapsed, 1000);
     return () => clearInterval(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -151,17 +167,17 @@ export function PresenterMode() {
       }
       if (e.key === 'g' || e.key === 'G') {
         e.preventDefault();
-        setOverviewOpen((o) => !o);
+        setOverviewOpen(!overviewOpen);
         return;
       }
       if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
-        setBlanked((b) => !b);
+        setBlanked(!blanked);
         return;
       }
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
-        setNotesOpen((o) => !o);
+        setNotesOpen(!notesOpen);
         return;
       }
       if (overviewOpen) return;
@@ -181,7 +197,7 @@ export function PresenterMode() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [totalSlides, clampedIndex, overviewOpen, blanked, notesOpen]);
+  }, [totalSlides, clampedIndex, overviewOpen, blanked, notesOpen, setIndex, setOverviewOpen, setNotesOpen, setBlanked]);
 
   if (!slides.length) {
     return <div style={{ color: t.mutedText, fontStyle: 'italic' }}>This document is empty.</div>;
@@ -264,16 +280,16 @@ export function PresenterMode() {
           Next →
         </button>
         <span style={{ color: t.mutedText, fontSize: 13, marginLeft: 12 }}>⏱ {formatElapsed(elapsedSec)}</span>
-        <button type="button" onClick={() => setLaserOn((v) => !v)} aria-pressed={laserOn}>
+        <button type="button" onClick={() => setLaserOn(!laserOn)} aria-pressed={laserOn}>
           {laserOn ? 'Laser: on' : 'Laser'}
         </button>
-        <button type="button" onClick={() => setBlanked((v) => !v)} aria-pressed={blanked}>
+        <button type="button" onClick={() => setBlanked(!blanked)} aria-pressed={blanked}>
           {blanked ? 'Unblank (B)' : 'Blank (B)'}
         </button>
-        <button type="button" onClick={() => setOverviewOpen((v) => !v)} aria-pressed={overviewOpen}>
+        <button type="button" onClick={() => setOverviewOpen(!overviewOpen)} aria-pressed={overviewOpen}>
           Overview (G)
         </button>
-        <button type="button" onClick={() => setNotesOpen((v) => !v)} aria-pressed={notesOpen}>
+        <button type="button" onClick={() => setNotesOpen(!notesOpen)} aria-pressed={notesOpen}>
           Notes (N)
         </button>
         <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 600, letterSpacing: '.22em', color: t.hintText }}>

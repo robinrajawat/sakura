@@ -557,10 +557,33 @@ format, Word/OPML import.
   legacy's own `openOrCreateWhiteboard`) before there is anything to mirror -- confirmed NOT
   built yet: `padStore.ts`'s own `Diagram` type explicitly excludes `isWhiteboard`, listed
   alongside `anchorNodeId`/`status`/`previewSvg`/`pageCount` as deliberately-deferred fields from
-  its original §6.3 item 11 slice (#172). Not started -- multi-window popup coordination is also
-  meaningfully harder to verify than every other slice's real-headless-Chrome-in-one-window
-  testing this project has relied on throughout, so this is flagged as a real, scoped, buildable
-  plan rather than attempted in the same pass as this investigation.
+  its original §6.3 item 11 slice (#172). Multi-window popup coordination is also meaningfully
+  harder to verify than every other slice's real-headless-Chrome-in-one-window testing this
+  project has relied on throughout, so the actual multi-window build is flagged as a real,
+  scoped, buildable plan rather than attempted in the same pass as this investigation.
+- ✅ **Step (2) of the plan above landed: presenting state lifted into a real store.**
+  `PresenterMode.tsx`'s slide index/blanked/laser/overview/notes/elapsed-timer state -- all
+  local `useState` before this slice -- now lives in a new `usePresenterStore.ts` (a plain
+  Zustand store, deliberately NOT persisted to `localStorage`, matching the exact ephemeral
+  per-session behavior the local state it replaces already had). A pure refactor with no
+  behavior change of its own: `enterPresenting()` resets every field on mount (replacing the
+  old mount effect's `setElapsedSec(0)`/`startedAtRef.current=Date.now()` pair),
+  `tickElapsed()` recomputes `elapsedSec` from a stored `startedAt` each second (replacing the
+  old `setInterval` closure over a ref), and every setter/keyboard-shortcut/button handler now
+  reads and writes the store instead of local state (React's `setX((v) => !v)` updater-function
+  style doesn't exist on a plain Zustand setter, so each toggle site was rewritten as
+  `setX(!x)`, reading the current value from the store the same render already has). This alone
+  changes nothing about how Presenter Mode behaves -- it only makes that state reachable from
+  outside the component, which is the real prerequisite item (2) needed: a future
+  audience-window bridge (item 3 of the plan above) has a real store to read/drive once it
+  exists. Verified end-to-end in real headless Chrome against a 3-real-slide-plus-closing-slide
+  deck: Arrow-key/Next-button navigation, End/Home jumping to the closing and first slide,
+  `B` blackout toggle, `G` overview grid (including click-to-jump), `N` Notes panel
+  (open/Escape-close), the laser pointer (toggle + a real tracked mousemove rendering the dot),
+  and the running elapsed timer -- all identical to pre-refactor behavior, zero console/page
+  errors. Steps (1) (query-param boot check), (3) (the `window`-exposed bridge), (4) (the
+  second window running its own React instance), and (5) (Whiteboard mirroring, additionally
+  blocked on Diagrams getting a real `isWhiteboard` concept) remain not started.
 - ✅ **Word export: heading styles + TOC field.** A node with `styles.heading` set (1-6,
   already a real field since §6.2) now renders as a genuine Word heading paragraph
   (`docx`'s `HeadingLevel.HEADING_1`..`HEADING_6`) instead of a flat indented line, and the
