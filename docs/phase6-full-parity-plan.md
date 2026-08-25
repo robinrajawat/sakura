@@ -1471,6 +1471,38 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   dot), two-tier automatic backup's tier 2 (auto-backup to file), full whole-app JSON Export/
   Import, Version History, and the deliberately-excluded presence tracking noted above -- each its
   own separately-scoped slice.
+- ✅ **Real persistent sync-status top-bar dot landed.** Direct port of legacy's real
+  `account-toggle-status-dot` (legacy/index.html:482-487) and `updateSyncStatusUI`'s dot logic
+  (legacy/index.html:15583-15612) -- previously `web/` only had `DocSyncPanel.tsx`'s own
+  `syncStatus` text line, scoped to whichever document happens to be open and only visible while
+  that panel is in view. A new `components/SyncStatusIndicator.tsx`, mounted in the header next
+  to the notification bell: a small avatar (or a colored-circle initial fallback, matching
+  legacy's own real fallback exactly) with an overlay dot, hidden entirely when signed out
+  (mirrors legacy's own avatar-wrap `display:none` while signed out -- there's nothing to show a
+  status for). States match legacy's real dot classList logic exactly: `syncing` pulses the
+  accent color (a real `accountDotPulse` opacity-loop keyframe, `1<->0.35`); a completed push
+  shows bright green (`synced`) for 4000ms then settles into a dim, persistent green (`idle-ok`)
+  rather than fading to nothing -- legacy's own comment there is worth repeating: previously it
+  faded to fully transparent, so between sync events (i.e. most of the time) there was no
+  indicator on screen at all; `error` persists red until the next successful sync. A new pure
+  `syncDotVisualForStatus` (`state/syncStatusDot.ts`) is the tested resting-state mapping from
+  `docSyncStore`'s own `syncStatus` to the dot's visual state (`idle` -> `idle-ok`, matching
+  legacy's own "give the dot a baseline presence right away" behavior the moment someone is
+  signed in); the 4000ms bright-then-dim fade itself is a local component timer, matching
+  legacy's own `_syncDotFadeTimer` -- legacy doesn't express that part as a pure function either
+  (it's a bare `setTimeout` inside imperative DOM code), so this doesn't force it into one just
+  for its own sake. One real, deliberate simplification vs. legacy: no click-to-open account
+  dropdown menu -- `web/` has no account dropdown surface at all yet (`AuthPanel.tsx`/
+  `DocSyncPanel.tsx` are flat panels, not a menu), a real, separately-scoped gap already true
+  before this slice; this dot is a glanceable status indicator only, with the current status
+  available via its `title` attribute on hover. Verified with a new pure-function test suite for
+  `syncStatusDot.ts` (all four status->visual mappings) and real headless Chrome for the
+  signed-out state (a real account isn't available in this environment, same constraint as
+  every other §6.8 auth-gated slice): confirmed the dot is genuinely absent when signed out
+  alongside the notification bell, zero console/page errors. The signed-in color-transition/
+  fade-timer behavior wasn't verified end-to-end against a real account, for the same reason as
+  the sharing slice's own signed-in flow -- the pure mapping function is this slice's real
+  verification of that logic.
 
 ### 6.9 — AI Features
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
