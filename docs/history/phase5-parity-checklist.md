@@ -33,7 +33,7 @@ already made and already documented at the time.
 | Pad (Notepad/Q&A/Diagrams/Mind Map/Files/Remarks) | ⚠️ | All 7 tabs functional (Diagrams and Mind Map both gained real editors, §6.3 item 11, #172/#174) — depth still varies per tab, see the Panels section below |
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
-| AI features | ⚠️ | §6.9 in progress: provider configuration UI + Secure Storage vault setup/unlock/lock/disable UI (7 built-in providers, curated + custom model select, API key entry/save/test, real AES-GCM/PBKDF2 passphrase encryption with existing-key migration) landed — see AI Features section below. Still none of Rewrite/auto-rewrite/Generate outline/Restructure text/Expand node/Suggest tags/Suggest icon/Summarise selection/provider fallback/usage tracking |
+| AI features | ⚠️ | §6.9 in progress: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, and manual Rewrite (toolbar + right-click, single/multi/whole-document, real in-flight-edit guard) landed — see AI Features section below. Still no auto-rewrite on commit, Generate outline, Restructure text, Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback, or usage tracking |
 | Quick Assist / global search | ❌ | Not built |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
@@ -141,9 +141,33 @@ showing a stale "Key saved." message after the vault was locked/unlocked elsewhe
 Save/Test result message wasn't being cleared when the vault's lock state changed out from under
 it — fixed by clearing that transient message whenever the resolved lock state itself flips.
 
-Still not built: Rewrite (incl. auto-rewrite on commit), Generate Outline, Restructure Text,
-Expand node, Suggest tags, Suggest icon, Summarise selection, provider fallback chain UI, usage
-tracking. See phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
+**Slice 3** (this PR): Rewrite — manual only (no auto-rewrite on commit yet). New
+`state/aiCapabilities.ts` (`callAiApi`, plus batched `callAiApiBatchChunk`/`callAiApiBatch` using
+legacy's real `<<<SAKURA-ITEM-N>>>` sentinel-marker chunking, falling back to each item's own
+original text if its marker doesn't parse cleanly) and `state/aiRewrite.ts`
+(`rewriteNode`/`rewriteNodes`/`rewriteDocument`, plus `aiSnapshotChanged`, legacy's real
+in-flight-edit-guard check that discards a stale AI result if the node was edited again before
+the request finished). `outlineStore.ts` gained a new `applyAiTextResult` action rather than
+reusing `commitEdit` directly — `commitEdit` unconditionally clears `editingId`, which would
+wrongly close out a *different* node's active edit session if an AI result for another node
+happens to land mid-edit, a race `commitEdit` was never designed to guard against. Three real
+trigger points: a toolbar "✦ Rewrite" button (single selection → `rewriteNode`, multi-select →
+`rewriteNodes`) and two right-click context-menu entries ("✦ Rewrite", selection-aware the same
+way; "✦ Rewrite document" → `rewriteDocument`). Not built in this slice: sub-text-selection
+rewrite (needs live textarea selection-range access `OutlineTree.tsx`'s uncontrolled-input
+editing model doesn't expose anywhere yet) and Quick Assist triggers (Quick Assist itself doesn't
+exist in `web/` yet). No provider fallback yet either — deliberately deferred to slice 9,
+`aiCapabilities.ts`'s `callAiApi` calls `callAiByShape` directly for now. Verified end-to-end in
+real headless Chrome with the Gemini endpoint mocked via Playwright's `page.route` (no real key
+needed): single-node rewrite via the toolbar plus a real undo reverting it, multi-select batch
+rewrite via the toolbar, both context-menu entries, and two failure paths — the in-flight-edit
+guard actually discarding a result for a node edited mid-flight (confirmed the edited text won,
+not the stale AI one), and rewriting with no AI key configured surfacing a clear alert rather
+than hanging or throwing — zero console/page errors throughout.
+
+Still not built: auto-rewrite on commit, Generate Outline, Restructure Text, Expand node, Suggest
+tags, Suggest icon, Summarise selection, provider fallback chain UI, usage tracking. See
+phase6-full-parity-plan.md's §6.9 section for the full remaining slice sequence.
 
 ## Quick Assist & Quick Insert
 

@@ -1331,4 +1331,76 @@ Remaining §6.9 slices (Rewrite/auto-rewrite, Generate Outline/Restructure
 Text, Expand node/Suggest tags, Suggest icon, Summarise selection,
 provider fallback chain UI, usage tracking) not yet started -- see
 phase6-full-parity-plan.md's §6.9 section for the full sequence.
+
+Third §6.9 slice landed next in the same session: Rewrite -- the first
+real AI capability, and the one everything else in this section builds
+toward. New `state/aiCapabilities.ts` gives `aiCall.ts`'s `callAiByShape`
+its per-capability wrappers: `callAiApi` (single node, `maxTokens=1024`,
+matching legacy's real hardcoded budget exactly, independent of the
+`ai-max-tokens-select` setting which scopes to a different, non-outline
+Rewrite surface -- see that file's own header) and batched
+`callAiApiBatchChunk`/`callAiApiBatch`, porting legacy's real
+`<<<SAKURA-ITEM-N>>>` sentinel-marker protocol so one API call can cover
+up to 30 nodes at once, falling back to each item's own original text if
+its marker doesn't parse back out cleanly. New `state/aiRewrite.ts` is
+the actual orchestration -- `rewriteNode`/`rewriteNodes`/
+`rewriteDocument`, plain functions reading/writing `outlineStore`/
+`aiSettingsStore` via `.getState()` rather than a new Zustand store
+(matching this project's own established convention for cross-store
+click-handler logic, e.g. `ExportButtons.tsx`'s own direct
+`.getState()` calls) -- plus `aiSnapshotChanged`, a direct port of
+legacy's real in-flight-edit-guard check: if a node gets edited again
+while its rewrite request is still in flight, the AI's result is
+discarded rather than silently overwriting the newer edit. A plain
+module-level `Set` tracks in-flight node ids to prevent double-firing,
+matching legacy's own real `aiRewriteInFlight`. `outlineStore.ts` gained
+a new `applyAiTextResult` action specifically because `commitEdit`
+wasn't safe to reuse here: `commitEdit` unconditionally clears
+`editingId`, which would incorrectly close out a *different* node's
+active edit session if an AI result for this node happened to land
+while the user was mid-edit on another one -- a real race `commitEdit`
+was never designed to guard against, since it's normally only ever
+called for whichever node is currently being edited. `applyAiTextResult`
+still reuses `renameBacklinksFor`, so a rewritten node's own
+`[[mention]]` text keeps pointing at it correctly, same as `commitEdit`.
+Three real UI trigger points, matching legacy's own real dual-purpose
+selection semantics as closely as this slice's research could confirm
+(the research pass's own findings didn't quote legacy's exact context-
+menu branch verbatim, so this is a documented inference, not a literal
+port): a toolbar "✦ Rewrite" button next to the checkbox-toggle button
+(single selection calls `rewriteNode`, a multi-select calls
+`rewriteNodes`), and two right-click context-menu entries in
+`OutlineTree.tsx` ("✦ Rewrite" -- the whole current multi-selection if
+the right-clicked node is part of it, otherwise just that one node
+alone; "✦ Rewrite document" -- every node via `rewriteDocument`).
+Deliberately NOT built in this slice, each documented as a real,
+separately-scoped follow-up: sub-text-selection rewrite (legacy's real
+`rewriteSubTextSelection`, rewriting just a highlighted substring within
+an actively-edited node and splicing the result back at the same
+offsets -- needs live textarea selection-range access
+`OutlineTree.tsx`'s own uncontrolled-input editing model doesn't
+currently expose anywhere), auto-rewrite on commit (its own real
+trigger/debounce/exclusion-filter logic, a materially bigger separate
+feature per the plan doc's own slice sequence), Quick Assist triggers
+(Quick Assist itself doesn't exist in `web/` yet, §6.10), and provider
+fallback (deliberately deferred to slice 9 -- `callAiApi` calls
+`callAiByShape` directly for now, no retry-on-another-provider). Errors
+surface via `window.alert`, matching this project's already-established
+"no generic toast/modal system yet, use a native browser primitive"
+convention (the same one `window.confirm` already stands in for
+elsewhere). Verified end-to-end in real headless Chrome with the Gemini
+endpoint mocked via Playwright's `page.route` (so this ran with no real
+API key or network access): single-node rewrite via the toolbar plus a
+real click on the toolbar's own Undo button reverting it (Ctrl+Z itself
+needs the tree container to hold DOM focus, an unrelated pre-existing
+focus nuance the verification script didn't otherwise establish -- the
+toolbar button exercises the exact same `undo()`/`canUndo()` path either
+way), a multi-select batch rewrite via the toolbar, both context-menu
+entries (a single node not in the current selection, and the
+whole-document action), the in-flight-edit guard actually discarding a
+stale result when a node was mutated mid-flight during the test itself
+(confirmed the deliberately-edited text won, not the stale AI one), and
+rewriting with no AI key configured surfacing a clear alert rather than
+hanging or throwing silently -- zero console/page errors throughout,
+across every one of those checks.
 ```

@@ -139,6 +139,46 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see [[sibling]] for context');
   });
 
+  it('applyAiTextResult updates the node text without touching editingId (unlike commitEdit)', () => {
+    useOutlineStore.getState().startEditing(3); // a DIFFERENT node is actively being edited
+    useOutlineStore.getState().applyAiTextResult(2, 'ai-rewritten text');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('ai-rewritten text');
+    expect(useOutlineStore.getState().editingId).toBe(3); // still node 3's edit session, untouched
+  });
+
+  it('applyAiTextResult is a no-op for a node id that no longer exists', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().applyAiTextResult(999999, 'ignored');
+    expect(useOutlineStore.getState().nodes).toBe(before);
+  });
+
+  it('applyAiTextResult is a no-op (no undo checkpoint) when the text is unchanged', () => {
+    const before = useOutlineStore.getState().nodes;
+    const canUndoBefore = useOutlineStore.getState().canUndo();
+    useOutlineStore.getState().applyAiTextResult(2, useOutlineStore.getState().nodes.find((n) => n.id === 2)!.text ?? '');
+    expect(useOutlineStore.getState().nodes).toBe(before);
+    expect(useOutlineStore.getState().canUndo()).toBe(canUndoBefore);
+  });
+
+  it('applyAiTextResult rewrites [[mentions]] of the renamed node, same as commitEdit', () => {
+    useOutlineStore.setState({
+      nodes: [
+        { id: 1, depth: 0, text: 'see [[sibling]] for context', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
+        { id: 3, depth: 0, text: 'sibling', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
+      ]
+    });
+    useOutlineStore.getState().applyAiTextResult(3, 'renamed target');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 1)?.text).toBe('see [[renamed target]] for context');
+  });
+
+  it('applyAiTextResult pushes a real undo checkpoint that undo() can revert', () => {
+    const originalText = useOutlineStore.getState().nodes.find((n) => n.id === 2)!.text;
+    useOutlineStore.getState().applyAiTextResult(2, 'ai-rewritten text');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe(originalText);
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();

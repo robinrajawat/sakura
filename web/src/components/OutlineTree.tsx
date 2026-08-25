@@ -14,6 +14,7 @@ import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisio
 import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
 import { NodeText } from './NodeText';
+import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
 
 function sortButtonStyle(t: (typeof THEME_TOKENS)['light']): CSSProperties {
   return {
@@ -79,6 +80,7 @@ export function OutlineTree() {
   const multiSelectedIds = useOutlineStore((s) => s.multiSelectedIds);
   const clickNode = useOutlineStore((s) => s.clickNode);
   const selectionRootIndexes = useOutlineStore((s) => s.selectionRootIndexes);
+  const selectedIds = useOutlineStore((s) => s.selectedIds);
   const indentSelected = useOutlineStore((s) => s.indentSelected);
   const outdentSelected = useOutlineStore((s) => s.outdentSelected);
   const moveNode = useOutlineStore((s) => s.moveNode);
@@ -198,6 +200,26 @@ export function OutlineTree() {
   // included and what's deferred).
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: number } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // §6.9 slice (docs/phase6-full-parity-plan.md): Rewrite (`ai-rewrite`) and Rewrite document
+  // (`ai-rewrite-all`) context-menu entries. Matches legacy's own real dual-purpose selection
+  // semantics: if the right-clicked node is part of the current multi-selection, the whole
+  // selection is rewritten as one batch; otherwise just the right-clicked node alone (this
+  // inference isn't independently confirmed against legacy's own exact code, since the research
+  // pass for this slice didn't quote that specific branch verbatim -- documented here rather than
+  // silently assumed). Errors surface via window.alert, same "no toast/modal system yet, use a
+  // native browser primitive" convention as the Delete confirm below.
+  async function handleContextRewrite(nodeId: number): Promise<void> {
+    const currentSelection = selectedIds();
+    const targets = currentSelection.includes(nodeId) ? currentSelection : [nodeId];
+    const result = targets.length === 1 ? await rewriteNode(targets[0]) : await rewriteNodes(targets);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  async function handleRewriteDocument(): Promise<void> {
+    const result = await rewriteDocument();
+    if (!result.ok) window.alert(result.message);
+  }
 
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [draggedIds, setDraggedIds] = useState<number[] | null>(null);
@@ -1450,6 +1472,8 @@ export function OutlineTree() {
                 action: () => toggleCollapse(contextMenu.nodeId)
               },
               { label: 'Tags…', action: () => setEditingTagsId(contextMenu.nodeId) },
+              { label: '✦ Rewrite', action: () => void handleContextRewrite(contextMenu.nodeId) },
+              { label: '✦ Rewrite document', action: () => void handleRewriteDocument() },
               {
                 label: 'Delete',
                 danger: true,
