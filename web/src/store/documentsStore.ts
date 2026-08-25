@@ -57,6 +57,17 @@ function docStorageKey(id: string): string {
   return `sakura_web_doc_${id}_v1`;
 }
 
+/** Reads a single stored document's nodes by id, without touching `outlineStore`/tab state at
+ * all — a plain accessor (not a store action) for callers that just need to read a document's
+ * content from storage, e.g. `state/aiIcon.ts`'s historical-icon index build (Suggest icon, §6.9
+ * slice 7), which needs every saved document's node text as a lookup source the same way legacy's
+ * own `buildHistoricalIconIndex` reads `loadDocsIndex().forEach(...)`. Returns `[]` for an id with
+ * no stored content (deleted, or never actually saved). */
+export function loadDocNodesById(id: string): OutlineNode[] {
+  const stored = readJson<StoredDoc | null>(docStorageKey(id), null);
+  return stored?.nodes ?? [];
+}
+
 function ls(): Storage | null {
   return typeof localStorage !== 'undefined' ? localStorage : null;
 }

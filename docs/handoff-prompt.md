@@ -1637,4 +1637,64 @@ unrelated re-render happened to catch it up; fixed by also subscribing
 to `multiSelectedIds` (always a fresh array reference on every
 selection change, including plain single clicks) purely to force the
 re-render.
+
+Seventh §6.9 slice landed next in the same session: Suggest icon. New
+`state/aiIcon.ts` direct-ports legacy's real batched
+`suggestIconsForNodeIds` and single-node `suggestIconChoiceForNode`.
+Two free tiers run ahead of any AI call: a local keyword-to-emoji
+lookup (`ICON_KEYWORD_MAP`, ~44 entries ported verbatim) and an
+exact-label historical match against the live document plus every
+saved document (`documentsStore.ts` gained a plain `loadDocNodesById`
+accessor purely for this) -- only labels that miss both tiers reach
+the AI, with identical labels deduped into a single lookup per batch
+call (common in reused boilerplate text). The single-node picker path
+preserves a real legacy quirk rather than "fixing" it: it always ALSO
+queries the AI for 4 more emoji options when a key is configured, even
+when a free-tier hit already exists, merging everything into one
+candidate list -- auto-applying directly only when that adds up to
+exactly one option, otherwise handing the list to a new
+`IconPickerPopover.tsx` for the person to choose from. That popover is
+backed by a small new `iconPickerStore.ts` rather than component-local
+state, since both the toolbar button (`App.tsx`) and
+`OutlineTree.tsx`'s right-click "Suggest icon" entry need to open the
+same picker and `OutlineTree.tsx` takes no props at all -- one click
+applies a candidate and closes, Escape or an outside click dismisses
+with no change. `outlineStore.ts` gained two new actions:
+`applySuggestedIcons` (the batch path -- same in-flight-edit-guard,
+re-resolve-by-id-then-skip-if-stale pattern `aiRewrite.ts`'s own batch
+path already established, one undo checkpoint covering every entry
+that actually applies) and `applyIconChoice` (the single-node path --
+re-strips any leading icon the node's text currently has before
+prepending the new one, in case it changed since the candidates were
+computed). A new `utils/iconText.ts` holds the shared
+`splitLeadingIconCore` regex/split logic -- kept out of both
+`outlineStore.ts` and `state/aiIcon.ts` specifically to avoid a
+circular import between them (`aiIcon.ts` already imports
+`outlineStore.ts` for its own orchestration, so `outlineStore.ts`
+can't import back). One deliberate technique simplification from
+legacy, documented in `aiIcon.ts`'s/`IconPickerPopover.tsx`'s own
+headers: the picker always renders centered rather than anchored
+pixel-precisely above the node's own row the way legacy's real
+`showIconPickerPopover` does -- `web/`'s tree rows have no stable
+selector equivalent to legacy's own `.node-row[data-id]`, so this
+reuses legacy's own real fallback path for when no anchor row is found
+rather than inventing new positioning behavior. The historical-icon-
+index tier is also narrower than legacy's: live document plus every
+saved document, not templates -- `web/` has no live Templates surface
+wired up yet to read from (`templatesIndex.ts` is ported but never
+actually called from anywhere outside its own tests). Verified
+end-to-end in real headless Chrome with the Gemini endpoint mocked via
+Playwright's `page.route`: keyword-tier auto-apply with no AI key
+configured at all, confirming zero network calls were made; Undo
+correctly reverting that suggestion; a multi-select batch correctly
+mixing a free-tier hit with an AI-resolved unmatched label inside the
+same call; the single-node picker opening with the AI's 4 suggested
+candidates and applying whichever one was clicked, closing the picker;
+the same picker opening from the right-click "Suggest icon" entry, and
+Escape dismissing it with no change to the node's text; "Suggest icons
+for all nodes" running cleanly across the whole document with no
+crash; the toolbar button correctly staying enabled across a
+zero/one/multi selection change -- unlike Expand/Tags' own exactly-one
+requirement from the previous slice -- zero console/page errors
+throughout, across every one of those checks.
 ```

@@ -1371,8 +1371,22 @@ building the earlier ones):
    enabled only with exactly one node selected) — neither the right-click menu nor Quick Assist
    exist yet as surfaces for these. NOT built: legacy's icon-suggestion sibling capability
    (slice 7, separate) and any batching (both are single-node by design, unlike Rewrite).
-7. Suggest icon — batched, with the keyword/historical-index tiers ahead of any AI call, plus the
-   single-node picker-popover variant.
+7. **Suggest icon** (landed, see Status) — `state/aiIcon.ts` direct-ports legacy's real batched
+   `suggestIconsForNodeIds` (keyword tier via `ICON_KEYWORD_MAP`, then an exact-label historical
+   match against every saved document, only unmatched labels falling through to a deduped AI
+   batch call) and the single-node `suggestIconChoiceForNode` picker path (always also queries the
+   AI for 4 more options on top of any free-tier hit when a key is configured, matching legacy's
+   own real unconditional call there — auto-applies only when that adds up to exactly one
+   candidate). New `utils/iconText.ts` holds the shared `splitLeadingIconCore` (kept out of both
+   `outlineStore.ts` and `aiIcon.ts` specifically to avoid a circular import between them).
+   `outlineStore.ts` gained `applySuggestedIcons` (batch, in-flight-edit-guarded, one checkpoint)
+   and `applyIconChoice` (single, re-strips any existing icon before applying). One deliberate
+   technique simplification from legacy: the picker (`IconPickerPopover.tsx`) always renders
+   centered rather than anchored above the node's own row — `web/`'s tree rows have no stable
+   selector for that, so this reuses legacy's own real no-anchor-found fallback path rather than
+   inventing new positioning (see that component's own header). Historical-icon-index scope is
+   also narrower than legacy's: live document + every saved document, not templates (`web/` has no
+   live Templates surface to read from yet).
 8. Summarise selection — multi-node-selection-specific.
 9. Provider fallback chain UI (drag-to-reorder, per-row enable checkbox) + usage tracking
    display — both real, user-configurable, and every capability slice above already needs
@@ -1499,8 +1513,24 @@ suggestion is already present, Undo reverting an Expand) — zero console/page e
 check. A real bug was caught and fixed during that verification: the toolbar buttons' enabled
 state was computed from a value (`selectedId !== null`) that doesn't change reference or value
 across a single-select → multi-select transition, so React never re-rendered them; fixed by also
-subscribing to `multiSelectedIds`, which is always a fresh array on every selection change. Slices
-7-9 (Suggest icon, Summarise selection, fallback+usage UI) not yet started. §6.10
+subscribing to `multiSelectedIds`, which is always a fresh array on every selection change.
+**This PR**: Suggest icon — `state/aiIcon.ts` (`suggestIconsForNodeIds`/`suggestIconChoiceForNode`/
+`suggestIconForSelection`/`suggestIconsForAllDocumentNodes`, plus the pure `ICON_KEYWORD_MAP`/
+`lookupIconForTextCore`/`buildHistoricalIconIndexCore`/batch-and-options prompt-build/response-
+parse helpers), a new `utils/iconText.ts` (`splitLeadingIconCore`, shared with `outlineStore.ts`
+without a circular import), two new `outlineStore.ts` actions (`applySuggestedIcons`,
+`applyIconChoice`), a new `documentsStore.ts` accessor (`loadDocNodesById`, for the historical-
+index tier), a small `iconPickerStore.ts` + `IconPickerPopover.tsx` for the single-node candidate
+picker, and toolbar ("✦ Icon"/"✦ Icons (all)") + context-menu ("✦ Suggest icon"/"✦ Suggest icons
+for all nodes") trigger surfaces — verified end-to-end in real headless Chrome with the AI endpoint
+mocked via `page.route` (keyword-tier auto-apply with no key configured and no AI call made;
+Undo reverting it; a multi-select batch correctly mixing a free-tier hit with an AI-resolved
+unmatched label; the single-node picker opening with the AI's 4 suggested candidates and applying
+whichever one was clicked; the same picker opening from the right-click menu and Escape dismissing
+it with no change; "Suggest icons for all nodes" running cleanly; the toolbar button staying
+enabled across zero-vs-one-vs-multi selection changes, unlike Expand/Tags' exactly-one
+requirement) — zero console/page errors across every check. Slices
+8-9 (Summarise selection, fallback+usage UI) not yet started. §6.10
 onward not started. Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

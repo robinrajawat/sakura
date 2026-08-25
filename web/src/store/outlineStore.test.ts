@@ -311,6 +311,79 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes).toEqual(before);
   });
 
+  it('applySuggestedIcons applies matching entries and reports how many applied', () => {
+    const applied = useOutlineStore.getState().applySuggestedIcons([
+      { id: 2, expectedText: 'child', finalText: '🛒 child' },
+      { id: 3, expectedText: 'sibling', finalText: '🚀 sibling' }
+    ]);
+    expect(applied).toBe(2);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('🛒 child');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 3)?.text).toBe('🚀 sibling');
+  });
+
+  it('applySuggestedIcons skips an entry with an empty finalText (no usable icon found)', () => {
+    const applied = useOutlineStore.getState().applySuggestedIcons([{ id: 2, expectedText: 'child', finalText: '' }]);
+    expect(applied).toBe(0);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('child');
+  });
+
+  it('applySuggestedIcons skips an entry whose text no longer matches expectedText (in-flight-edit guard)', () => {
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, text: 'edited since' } : n))
+    });
+    const applied = useOutlineStore.getState().applySuggestedIcons([{ id: 2, expectedText: 'child', finalText: '🛒 child' }]);
+    expect(applied).toBe(0);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('edited since');
+  });
+
+  it('applySuggestedIcons skips an entry whose node no longer exists', () => {
+    const applied = useOutlineStore.getState().applySuggestedIcons([{ id: 999999, expectedText: 'x', finalText: '🛒 x' }]);
+    expect(applied).toBe(0);
+  });
+
+  it('applySuggestedIcons is a real no-op (no undo checkpoint) when nothing applies', () => {
+    const canUndoBefore = useOutlineStore.getState().canUndo();
+    useOutlineStore.getState().applySuggestedIcons([{ id: 2, expectedText: 'not the real text', finalText: '🛒 child' }]);
+    expect(useOutlineStore.getState().canUndo()).toBe(canUndoBefore);
+  });
+
+  it('applySuggestedIcons pushes one real undo checkpoint covering every applied entry', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().applySuggestedIcons([
+      { id: 2, expectedText: 'child', finalText: '🛒 child' },
+      { id: 3, expectedText: 'sibling', finalText: '🚀 sibling' }
+    ]);
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
+  it('applyIconChoice prepends the icon to the node\'s bare text', () => {
+    const ok = useOutlineStore.getState().applyIconChoice(2, '🛒');
+    expect(ok).toBe(true);
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('🛒 child');
+  });
+
+  it('applyIconChoice re-strips an existing leading icon before applying the new one', () => {
+    useOutlineStore.setState({
+      nodes: useOutlineStore.getState().nodes.map((n) => (n.id === 2 ? { ...n, text: '📌 child' } : n))
+    });
+    useOutlineStore.getState().applyIconChoice(2, '🛒');
+    expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('🛒 child');
+  });
+
+  it('applyIconChoice returns false for a node id that does not exist', () => {
+    expect(useOutlineStore.getState().applyIconChoice(999999, '🛒')).toBe(false);
+  });
+
+  it('applyIconChoice pushes a real undo checkpoint', () => {
+    const before = useOutlineStore.getState().nodes;
+    useOutlineStore.getState().applyIconChoice(2, '🛒');
+    expect(useOutlineStore.getState().canUndo()).toBe(true);
+    useOutlineStore.getState().undo();
+    expect(useOutlineStore.getState().nodes).toEqual(before);
+  });
+
   it('cancelEdit clears editingId without touching node text', () => {
     useOutlineStore.getState().startEditing(2);
     useOutlineStore.getState().cancelEdit();

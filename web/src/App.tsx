@@ -37,6 +37,9 @@ import { useAutoRewriteStore } from './store/autoRewriteStore';
 import { generateOutline, restructureText } from './state/aiOutline';
 import { expandNode, suggestTags } from './state/aiExpandTags';
 import { RestructureTextDialog } from './components/RestructureTextDialog';
+import { suggestIconForSelection, suggestIconsForAllDocumentNodes } from './state/aiIcon';
+import { useIconPickerStore } from './store/iconPickerStore';
+import { IconPickerPopover } from './components/IconPickerPopover';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -154,6 +157,37 @@ export function App() {
     setAiExpandTagsBusy(true);
     const result = await suggestTags(singleSelectedId);
     setAiExpandTagsBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  // §6.9 slice 7 (docs/phase6-full-parity-plan.md): Suggest icon. Matches legacy's real
+  // `suggestIconForSelection`/`qb-ai-icon` toolbar button exactly: a deliberate multi-selection
+  // (`currentSelectedIds.length > 1`) auto-applies as a batch, a single selection goes through the
+  // picker-capable path (auto-applies directly when there's only one real candidate, otherwise
+  // opens `IconPickerPopover.tsx` via `iconPickerStore.ts` for the person to choose). "Suggest
+  // icons for all nodes" (`ai-icon-all`) is a separate whole-document action, matching legacy's
+  // own real placement under the right-click "More" menu -- ported here to the toolbar instead
+  // since `OutlineTree.tsx`'s own context menu doesn't have a "More" submenu at all yet (see that
+  // component's own context-menu render comment for what's deliberately not built there).
+  const [aiIconBusy, setAiIconBusy] = useState(false);
+  const openIconPicker = useIconPickerStore((s) => s.open);
+
+  async function handleSuggestIcon(): Promise<void> {
+    if (!currentSelectedIds.length) return;
+    setAiIconBusy(true);
+    const outcome = await suggestIconForSelection(currentSelectedIds);
+    setAiIconBusy(false);
+    if (outcome.candidates && outcome.nodeId !== undefined) {
+      openIconPicker(outcome.nodeId, outcome.candidates);
+      return;
+    }
+    if (!outcome.ok) window.alert(outcome.message);
+  }
+
+  async function handleSuggestIconsAll(): Promise<void> {
+    setAiIconBusy(true);
+    const result = await suggestIconsForAllDocumentNodes();
+    setAiIconBusy(false);
     if (!result.ok) window.alert(result.message);
   }
 
@@ -458,8 +492,18 @@ export function App() {
         <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ marginRight: 4 }}>
           ✦ Expand
         </button>
-        <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 12 }}>
+        <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 4 }}>
           ✦ Tags
+        </button>
+        {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection may
+            open IconPickerPopover.tsx if there's more than one real candidate to choose from. */}
+        <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon" style={{ marginRight: 4 }}>
+          ✦ Icon
+        </button>
+        {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all whole-document
+            action, always auto-applying as a batch. */}
+        <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 12 }}>
+          ✦ Icons (all)
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
@@ -529,6 +573,7 @@ export function App() {
         <DocSyncPanel />
       </div>
       {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
+      <IconPickerPopover />
     </AppShell>
   );
 }
