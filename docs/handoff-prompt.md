@@ -183,10 +183,10 @@ getting explicit, separate sign-off first, same discipline as every other
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-As of this writing: `main` is at commit `4f1f661` ("feat(pad): rebuild
-Decision Log to legacy's real schema (§6.7) (#224)"), with PR #225
-(Decision Log's live-editor badges) open and its CI green, not yet
-merged. #222 closed out Audience View end to end except Whiteboard
+As of this writing: `main` is at commit `46379c0` ("feat(outline):
+Decision Log badges in the live editor (§6.7) (#225)"), with this
+session's next PR (`outline/depth-guide-lines`) about to open. #222
+closed out Audience View end to end except Whiteboard
 mirroring itself (blocked on Diagrams gaining a real `isWhiteboard`
 concept, a separately-scoped §6.3 follow-up -- see
 phase6-full-parity-plan.md's §6.6 section for the full mechanism,
@@ -279,6 +279,26 @@ just for Decision Log's own dot. Still remaining for Decision Log:
 the anchor-picker UI, and DOCX/PDF-Preview/PPTX card rendering +
 Excel export -- each its own slice, per phase6-full-parity-plan.md's
 §6.7 section.
+
+Depth guide lines were picked up next (this PR). Re-investigating
+`hideTreeLines`'s real call sites found a correction to this file's
+own prior framing: legacy's live tree actually has TWO rendering
+modes, not one. The DEFAULT (`hideTreeLines=true`) mode uses plain CSS
+`depth*18+8*editorScale`px padding -- the SAME family as `web/`'s
+existing `depth*24+8`px approach, not a fundamentally different
+architecture as previously documented -- optionally decorated with
+`.node-vguide` lines (`buildVertFlags`, already ported, always
+returns `true` for every ancestor depth so every row draws its own
+segment and consecutive rows read as one line) when `depthGuideLines`
+is also on. Only the non-default `hideTreeLines=false` toggle switches
+to the literal monospace ASCII-connector mode (`buildPrefix`) that
+really would need a bigger rewrite -- that alternate mode remains not
+started. This PR built the tractable, default-mode part: a
+`.node-vguide` equivalent in `OutlineTree.tsx` (an absolutely
+positioned 1px `<span>` per ancestor depth, reusing `buildVertFlags`
+directly) gated on `depthGuideLines`, plus a new Settings checkbox.
+Verified in real headless Chrome across three depth levels, toggling
+on/off, and persistence across reload.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
@@ -1085,9 +1105,9 @@ An AI key vault (Cloudflare Worker) proposal is recorded as an
 unscheduled appendix at the end of docs/phase6-full-parity-plan.md,
 connected to §6.9 but not committed to a slot yet.
 
-#217 through #224 all merged and their local branches deleted this
-session; PR #225 (`decision-log/outline-badges`) is the current one,
-CI green, awaiting merge. No feature branches should remain open for
+#217 through #225 all merged and their local branches deleted this
+session; `outline/depth-guide-lines` is the current one, about to
+open as a PR. No feature branches should remain open for
 review once this PR also merges (the merged
 `preview/toc-scrollspy-progress` branch's local copy was deleted; its remote copy
 could not be -- no GitHub API tool in this environment exposes a raw

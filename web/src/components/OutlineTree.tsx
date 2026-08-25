@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
-import { countDescendants, getCheckboxChildStats } from '../core/nodeQueries';
+import { countDescendants, getCheckboxChildStats, buildVertFlags } from '../core/nodeQueries';
 import { formatNow } from '../utils/formatNow';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
@@ -126,6 +126,7 @@ export function OutlineTree() {
   const editorReadingWidthEnabled = useOutlinePrefsStore((s) => s.editorReadingWidthEnabled);
   const editorReadingWidth = useOutlinePrefsStore((s) => s.editorReadingWidth);
   const rowHighlightStyle = useOutlinePrefsStore((s) => s.rowHighlightStyle);
+  const depthGuideLines = useOutlinePrefsStore((s) => s.depthGuideLines);
   const rowDensity = compactRows ? 0.78 : 1;
   const decisions = usePadStore((s) => s.decisions);
   const [editingTagsId, setEditingTagsId] = useState<number | null>(null);
@@ -619,6 +620,38 @@ export function OutlineTree() {
               borderRadius: 4
             }}
           >
+            {/* Depth guide lines -- direct port of legacy's own `.node-vguide` (legacy/index.html:
+                998): a faint 1px vertical line per ancestor depth level, giving a subtle visual
+                "this is how deep we are" cue without full tree-connector characters. Legacy's real
+                `buildVertFlags` (already ported, `core/nodeQueries.ts`) always returns `true` for
+                every depth up to the node's own -- every row draws its own full-height segment at
+                every ancestor depth, which is what makes the column read as one continuous line
+                once consecutive sibling rows stack (not a per-row "is there a sibling below"
+                computation, despite the boolean's name). Positioned at
+                `depth*24 + 8*editorScale + 8` -- legacy's own formula used its 18px indent step;
+                `web/`'s tree has always used a 24px step (a pre-existing, unrelated difference,
+                not something this slice changes), so the guide position is adapted to that step
+                rather than porting the literal pixel values, same "port the effect, not the exact
+                technique" precedent used elsewhere in this migration. `bottom: -2 * rowDensity`
+                lets each segment overlap slightly into the next row, matching legacy's own
+                `calc(-2px * var(--editor-scale) * var(--row-density))`. */}
+            {depthGuideLines &&
+              buildVertFlags(nodes, idx, 0).map((_, d) => (
+                <span
+                  key={d}
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: -2 * rowDensity,
+                    left: d * 24 + 8 * editorScale + 8,
+                    width: 1,
+                    background: t.mutedText,
+                    opacity: 0.16,
+                    pointerEvents: 'none'
+                  }}
+                />
+              ))}
             {showHighlightDot && (
               <span
                 aria-hidden="true"

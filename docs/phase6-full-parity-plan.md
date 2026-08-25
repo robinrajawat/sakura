@@ -1101,25 +1101,31 @@ Status: **in progress.**
   arguably bigger than §6.10 itself. Put to the user directly given the scope; their call: mark
   N/A and keep moving on §6.7's real, buildable items rather than block on it, the same category
   of call as the Chrome-preset N/A.
-- **Tree lines and depth guide lines (the live editor's own connectors/guides, not the
-  already-built export-only `hideTreeLines`/`treeIndentWidth`) remain not started.** A real
-  finding while investigating the Layout section above: legacy's LIVE tree does not use CSS
-  padding/border-line indentation at all -- it renders literal monospace ASCII connector
-  characters (`├──`/`└──`/`│`) as row-prefix text via `buildPrefix` (legacy/index.html:17876),
-  the SAME function `web/` already ported into `core/nodeQueries.ts` for exports only, applied
-  to the LIVE tree too via a `.node-prefix{white-space:pre;font-family:monospace}` span
-  (legacy/index.html:564) -- `treeIndentWidth`/`hideTreeLines` genuinely drive both surfaces in
-  legacy, unlike `web/`'s current architecture where they're export-only and the live tree uses
-  a completely different, simpler `depth * 24`px CSS-padding indent. Faithfully replacing
-  `web/`'s live indentation mechanism with legacy's monospace-prefix approach would be a real,
-  risky rewrite of how the whole tree renders; a CSS-based visual approximation (connector-style
-  border lines layered onto the existing padding-based rows) is the more idiomatic port for
-  `web/`'s actual architecture, matching this project's own precedent of adapting legacy's
-  *effect* to the target architecture rather than mechanically replicating its *technique* (see
-  Audience View's own store-driven-re-render vs. legacy's DOM-cloning, §6.6). Depth guide lines
-  (`.node-vguide`, legacy/index.html:998, a faint absolutely-positioned 1px line per indent
-  level) are the more tractable half and a reasonable next slice on their own. Not started in
-  this pass -- flagged as the next concrete piece of unstarted §6.7 work.
+- **Depth guide lines landed; tree lines (the monospace-connector alternate mode) remain not
+  started, and turn out to be a non-default toggle, not the live tree's only rendering path.** A
+  correction to this bullet's own prior framing, found by reading `hideTreeLines`'s real call
+  sites rather than trusting the previous investigation's summary: legacy's live tree actually
+  has TWO rendering modes gated by `hideTreeLines` (default `true`). In the DEFAULT mode --
+  `hideTreeLines=true`, real code at legacy/index.html:20293 -- rows use plain CSS
+  `paddingLeft: depth*18+8*editorScale` indentation, exactly the same family as `web/`'s existing
+  `depth*24+8` padding (18px vs. 24px is a pre-existing, unrelated step-size difference, not a
+  gap this investigation introduced), optionally decorated with `.node-vguide` lines (a faint 1px
+  vertical line per ancestor depth, legacy/index.html:998) when `depthGuideLines` is also on
+  (default `true`) -- via `buildVertFlags` (legacy/index.html:17898, already ported to
+  `core/nodeQueries.ts`), which always returns `true` for every ancestor depth (not a real
+  per-sibling check despite the name) so every row draws its own full-height segment and
+  consecutive rows read as one continuous line. Only when `hideTreeLines=false` (a real but
+  non-default toggle) does legacy switch to literal monospace ASCII-connector row-prefix text via
+  `buildPrefix` (legacy/index.html:17876) instead of CSS padding at all -- this alternate mode is
+  the part that would be a real, risky rewrite of `web/`'s whole tree-rendering mechanism (no
+  live-mode-switching capability exists yet); a CSS-based visual approximation, if ever wanted, is
+  still the more idiomatic port for `web/`'s architecture than replicating legacy's own DOM
+  technique. **Depth guide lines are now built**: `OutlineTree.tsx` renders a `.node-vguide`
+  equivalent per ancestor depth (an absolutely-positioned 1px `<span>`, using the already-ported
+  `buildVertFlags` directly) whenever `outlinePrefsStore.ts`'s `depthGuideLines` pref is on, with
+  a new Settings checkbox to toggle it; position adapted to `web/`'s real 24px indent step rather
+  than porting legacy's literal 18px-based pixel math. Remaining: the `hideTreeLines=false`
+  monospace-connector alternate mode itself, a real, separately-scoped follow-up if still wanted.
 - **Inline note/remark/Q&A previews remain not started, and are a bigger, separate feature than
   originally scoped.** Legacy's real mechanism (`alwaysExpandInlineEnabled`,
   legacy/index.html:8276) is a document-wide default (off by default) for whether every node's
@@ -1211,8 +1217,11 @@ end to end except Whiteboard mirroring itself, still blocked on Diagrams getting
 node-id-collision bug fix, #218 the first minimal Settings-panel slice, #223 the real
 legacy "Layout" settings section (compact rows/text size/limit reading width/row style),
 plus marking Editor's Choice/Documentation Mode N/A after investigating the real scope, #224
-rebuilding Decision Log to its real node-anchored schema, and #225 Decision Log's live-editor
-badges — see each section's own `Status:` line for
+rebuilding Decision Log to its real node-anchored schema, #225 Decision Log's live-editor
+badges, and this PR — depth guide lines in the live tree, plus the correction that legacy's
+default live-tree mode is CSS-padding-based (much closer to `web/`'s existing approach than
+previously documented; only a non-default toggle switches to the monospace-connector mode) —
+see each section's own `Status:` line for
 the full breakdown. §6.8 onward not started. Update each phase's own section above with a
 `Status:`
 line and PR numbers as work lands, the same way `docs/history/phase5-parity-checklist.md`'s own
