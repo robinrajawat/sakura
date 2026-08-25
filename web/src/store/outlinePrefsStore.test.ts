@@ -1,7 +1,21 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { useOutlinePrefsStore } from './outlinePrefsStore';
+import { useOutlinePrefsStore, type QuickInsertActionId } from './outlinePrefsStore';
 
-const DEFAULTS = {
+const DEFAULTS: {
+  treeIndentWidth: number;
+  hideTreeLines: boolean;
+  outlineNumbering: boolean;
+  depthGuideLines: boolean;
+  compactRows: boolean;
+  editorScale: number;
+  editorReadingWidthEnabled: boolean;
+  editorReadingWidth: number;
+  rowHighlightStyle: 'original';
+  alwaysExpandInlineEnabled: boolean;
+  quickInsertEnabled: boolean;
+  quickInsertIconOnly: boolean;
+  quickInsertActions: QuickInsertActionId[];
+} = {
   treeIndentWidth: 3,
   hideTreeLines: true,
   outlineNumbering: false,
@@ -11,7 +25,10 @@ const DEFAULTS = {
   editorReadingWidthEnabled: false,
   editorReadingWidth: 900,
   rowHighlightStyle: 'original' as const,
-  alwaysExpandInlineEnabled: false
+  alwaysExpandInlineEnabled: false,
+  quickInsertEnabled: true,
+  quickInsertIconOnly: true,
+  quickInsertActions: ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time']
 };
 
 describe('outlinePrefsStore', () => {
@@ -132,7 +149,10 @@ describe('outlinePrefsStore', () => {
       editorReadingWidthEnabled: true,
       editorReadingWidth: 1000,
       rowHighlightStyle: 'bar',
-      alwaysExpandInlineEnabled: true
+      alwaysExpandInlineEnabled: true,
+      quickInsertEnabled: true,
+      quickInsertIconOnly: true,
+      quickInsertActions: DEFAULTS.quickInsertActions
     });
   });
 
@@ -197,5 +217,41 @@ describe('outlinePrefsStore', () => {
     vi.resetModules();
     const fresh = await import('./outlinePrefsStore');
     expect(fresh.useOutlinePrefsStore.getState()).toMatchObject(DEFAULTS);
+  });
+
+  describe('Quick Insert prefs (§6.10)', () => {
+    it('setQuickInsertEnabled toggles and persists', () => {
+      useOutlinePrefsStore.getState().setQuickInsertEnabled(false);
+      expect(useOutlinePrefsStore.getState().quickInsertEnabled).toBe(false);
+    });
+
+    it('setQuickInsertIconOnly toggles and persists', () => {
+      useOutlinePrefsStore.getState().setQuickInsertIconOnly(false);
+      expect(useOutlinePrefsStore.getState().quickInsertIconOnly).toBe(false);
+    });
+
+    it('setQuickInsertActionEnabled(id, false) removes just that one action', () => {
+      useOutlinePrefsStore.getState().setQuickInsertActionEnabled('endash', false);
+      expect(useOutlinePrefsStore.getState().quickInsertActions).toEqual(['emdash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time']);
+    });
+
+    it('setQuickInsertActionEnabled(id, true) re-adds an action at its fixed order position, not the end', () => {
+      useOutlinePrefsStore.getState().setQuickInsertActionEnabled('endash', false);
+      useOutlinePrefsStore.getState().setQuickInsertActionEnabled('endash', true);
+      expect(useOutlinePrefsStore.getState().quickInsertActions).toEqual(['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time']);
+    });
+
+    it('clampQuickInsertActions drops an unknown id and reorders to the real fixed order', async () => {
+      localStorage.setItem('sakura_web_outline_prefs_v1', JSON.stringify({ quickInsertActions: ['date-time', 'not-a-real-action', 'emdash'] }));
+      vi.resetModules();
+      const fresh = await import('./outlinePrefsStore');
+      expect(fresh.useOutlinePrefsStore.getState().quickInsertActions).toEqual(['emdash', 'date-time']);
+    });
+
+    it('falls back to all 7 actions enabled when nothing is persisted', async () => {
+      vi.resetModules();
+      const fresh = await import('./outlinePrefsStore');
+      expect(fresh.useOutlinePrefsStore.getState().quickInsertActions).toEqual(DEFAULTS.quickInsertActions);
+    });
   });
 });

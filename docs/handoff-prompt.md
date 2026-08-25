@@ -1806,4 +1806,55 @@ original scope has landed: provider configuration UI, Secure Storage,
 manual Rewrite, auto-rewrite on commit, Generate Outline, Restructure
 Text, Expand node, Suggest tags, Suggest icon, Summarise selection,
 provider fallback, and usage tracking.
+
+§6.10 (Quick Assist, Quick Insert & Settings) started next in the same
+session. A research pass corrected this plan doc's own stale text
+first: the doc claimed "web/ currently has no Settings surface at
+all" (false -- `SettingsPanel.tsx` has existed since a §6.7/6.9 slice)
+and that Quick Insert was "entirely unbuilt" (also false -- a real,
+working, mouse-driven Ctrl/Cmd+Space character-insert popup already
+existed in `OutlineTree.tsx` since an earlier Phase 6.2 slice, before
+this plan doc even carved out a separate §6.10). Only Quick Assist
+itself (the Ctrl/Cmd+K command box) turned out to have genuinely zero
+scaffolding anywhere, confirmed by grep. First §6.10 slice landed:
+Quick Insert completion. The pre-existing popup was missing real
+keyboard navigation entirely (arrow keys did nothing, Enter fell
+through to the normal "commit node + create sibling" behavior instead
+of inserting the highlighted item, and the popup's own Escape handler
+could never actually fire since focus never moved into it -- the
+input kept focus throughout), always rendered as a full label list
+even though legacy's own real default is a compact icon-only row, and
+had no Settings surface at all for any of it. `outlinePrefsStore.ts`
+gained `quickInsertEnabled`/`quickInsertIconOnly`/`quickInsertActions`
+(the last already the correctly-ordered, filtered subsequence of the
+7 real actions to render -- matches legacy's own real
+`nodeQuickAssistActions` shape exactly, no separate filtering step
+needed at render time). `OutlineTree.tsx`'s `handleInputKeyDown`
+gained a direct port of legacy's real `onEditorKeyDown`'s own
+`if(_nqaState){...}` block: ArrowDown/Up cycle the active item
+(wrapping), swapping to Left/Right instead when the popup is in
+icon-row mode (matching legacy's own real `horizNav` layout swap);
+Enter/Tab commits the active item; the SAME Ctrl/Cmd+Space shortcut
+that opened it closes it without reopening (an explicit early return,
+so the open-trigger check never re-fires for that same keystroke);
+any other key closes the popup and falls through -- no early return
+-- to the rest of the handler / the browser's own default behavior,
+matching legacy's real "resuming normal typing dismisses it." New
+`components/QuickInsertSettings.tsx` provides the master enable
+toggle, the icon-only-row toggle, and 7 per-action checkboxes.
+Verified end-to-end in real headless Chrome: the popup opening on
+Ctrl+Space with the real icon-only default (just glyphs, no label
+text); arrow-key navigation plus Enter inserting the correct
+highlighted item and closing the popup; Escape closing with no
+change to the input's value; typing a regular character closing the
+popup and that character landing correctly in the input; toggling
+icon-only off in Settings switching to the full label list, with Tab
+(not just Enter) also correctly committing there; disabling one
+action in Settings removing just that one from the popup while the
+others stayed; disabling Quick Insert entirely making Ctrl+Space do
+nothing at all -- zero console/page errors throughout, across every
+one of those checks. Remaining §6.10 slices per the plan doc's own
+4-slice sequence: the Settings-panel category rail, the Quick Assist
+UI shell plus an audited subset of real toggle commands, and Quick
+Assist's Global Search integration -- none started yet.
 ```

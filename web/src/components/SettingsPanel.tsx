@@ -4,6 +4,7 @@ import { AiProviderSettings } from './AiProviderSettings';
 import { SecureStorageSettings } from './SecureStorageSettings';
 import { AutoRewriteSettings } from './AutoRewriteSettings';
 import { AiFallbackSettings } from './AiFallbackSettings';
+import { QuickInsertSettings } from './QuickInsertSettings';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -45,6 +46,11 @@ import { AiFallbackSettings } from './AiFallbackSettings';
  * new `callAiByShapeWithFallback` and `state/aiUsage.ts`'s usage counters, which every capability
  * built in earlier slices now goes through automatically -- no further per-capability wiring
  * needed.
+ *
+ * §6.10 slice: added the "Quick Insert" section (`QuickInsertSettings.tsx`) -- the master enable
+ * toggle, icon-only-row toggle, and 7 per-action checkboxes for `OutlineTree.tsx`'s Quick Insert
+ * popup (a Phase 6.2 feature that existed with real mouse interaction but no settings at all, and
+ * no real keyboard navigation, until this slice gave it both).
  */
 const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
   { value: 'original', label: 'Background tint' },
@@ -259,6 +265,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           </span>
         </label>
       </div>
+      <QuickInsertSettings t={t} />
       <AiProviderSettings t={t} />
       <AiFallbackSettings t={t} />
       <AutoRewriteSettings t={t} />
