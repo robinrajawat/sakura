@@ -27,6 +27,19 @@ interface StoredDoc {
   nodes: OutlineNode[];
 }
 
+// `outlineStore`'s own `nextId` counter (used by newChild/newSiblingBelow/newSiblingAbove/
+// splitAtCursor to mint new node ids) is meaningless unless it's kept ahead of whatever
+// document's nodes are currently loaded into that store -- every call site below that loads a
+// document's `nodes` into `useOutlineStore` must also set `nextId` from THOSE nodes, never leave
+// outlineStore's previous (possibly much lower) counter in place. Missing this caused a real bug:
+// a fresh first-ever launch loaded the welcome doc's nodes (ids 1/2/3) but never touched
+// outlineStore's own default `nextId` (2, from its module-level seedNodes()'s single node) --
+// the very first "Add child" then minted a new node with id 2, colliding with the existing
+// "This is your first document..." node and corrupting the outline (duplicate React keys).
+function nextIdForNodes(nodes: OutlineNode[]): number {
+  return nodes.reduce((max, n) => Math.max(max, n.id), 0) + 1;
+}
+
 // Distinct from legacy's own DOC_KEY_PREFIX/DOCS_INDEX_KEY (docKey()/loadDocsIndex() in
 // index.html) -- same pattern in spirit (an index of {id,title,...} plus one storage entry per
 // document), deliberately namespaced separately so nothing web/ does can ever collide with a
@@ -233,6 +246,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       const collapsedIds = new Set([...cached.collapsedIds].filter((i) => idsInDoc.has(i)));
       useOutlineStore.setState({
         nodes,
+        nextId: nextIdForNodes(nodes),
         selectedId,
         // Never resume mid-inline-edit across a tab switch -- matches legacy's own behavior of
         // not re-entering edit mode on a row just because it was mid-edit when you tabbed away.
@@ -250,6 +264,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     } else {
       useOutlineStore.setState({
         nodes,
+        nextId: nextIdForNodes(nodes),
         selectedId: nodes[0]?.id ?? null,
         editingId: null,
         multiSelectedIds: [],
@@ -283,7 +298,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     set({ docsIndex, openTabs, activeDocId, loaded: true, folders, docFolderMap });
     if (activeDocId) {
       const stored = readJson<StoredDoc | null>(docStorageKey(activeDocId), null);
-      if (stored) useOutlineStore.setState({ nodes: stored.nodes });
+      if (stored) useOutlineStore.setState({ nodes: stored.nodes, nextId: nextIdForNodes(stored.nodes) });
     }
     // Debounced autosave: without this, an edit is only ever persisted the next time a store
     // action (switch/close/new) happens to call saveActiveDocNodes -- a user who edits and
@@ -322,6 +337,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       set({ docsIndex: [summary], openTabs: [id], activeDocId: id });
       useOutlineStore.setState({
         nodes,
+        nextId: nextIdForNodes(nodes),
         selectedId: nodes[0]?.id ?? null,
         editingId: null,
         multiSelectedIds: [],
@@ -386,6 +402,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       } else {
         useOutlineStore.setState({
           nodes: [],
+          nextId: 1,
           selectedId: null,
           editingId: null,
           multiSelectedIds: [],
@@ -492,6 +509,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       } else {
         useOutlineStore.setState({
           nodes: [],
+          nextId: 1,
           selectedId: null,
           editingId: null,
           multiSelectedIds: [],
