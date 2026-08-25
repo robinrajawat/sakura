@@ -30,6 +30,8 @@ import {
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
 import { SettingsPanel } from './components/SettingsPanel';
+import { AudienceWindow } from './components/AudienceWindow';
+import { isAudienceWindow } from './state/audienceMode';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -64,6 +66,12 @@ export function App() {
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
   const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
+
+  // §6.6 slice (docs/phase6-full-parity-plan.md), Audience View step 2: checked before every
+  // other early-return branch, matching legacy's own real boot-time priority (its
+  // `sakuraAudience=1` detection runs synchronously before any other markup even paints). See
+  // AudienceWindow.tsx's own header for what this branch does and does not do yet.
+  if (isAudienceWindow(window.location.search)) return <AudienceWindow />;
 
   // §6.5 slice (docs/phase6-full-parity-plan.md), Mobile Hub: below the breakpoint, this SPA
   // swaps in the dedicated mobile Hub experience entirely rather than squeezing the desktop
