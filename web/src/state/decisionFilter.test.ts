@@ -3,10 +3,18 @@ import { decisionIsOpen, decisionVisibleItems } from './decisionFilter';
 import type { Decision } from '../store/padStore';
 
 const decision = (overrides: Partial<Decision> = {}): Decision => ({
-  id: 1,
-  title: 'Use React',
-  description: 'Chosen for the rewrite',
+  id: 'dl1',
+  anchorNodeId: null,
+  context: '',
+  decision: 'Use React',
+  rationale: '',
+  alternatives: '',
+  impact: '',
   status: 'proposed',
+  author: '',
+  timestamp: 0,
+  createdAt: 0,
+  modifiedAt: 0,
   ...overrides
 });
 
@@ -26,10 +34,10 @@ describe('decisionIsOpen', () => {
 
 describe('decisionVisibleItems', () => {
   const items: Decision[] = [
-    decision({ id: 1, status: 'proposed' }),
-    decision({ id: 2, status: 'approved' }),
-    decision({ id: 3, status: 'rejected' }),
-    decision({ id: 4, status: 'proposed' })
+    decision({ id: 'dl1', status: 'proposed' }),
+    decision({ id: 'dl2', status: 'approved' }),
+    decision({ id: 'dl3', status: 'rejected' }),
+    decision({ id: 'dl4', status: 'proposed' })
   ];
 
   it('returns all items when openOnly is false', () => {
@@ -38,6 +46,6 @@ describe('decisionVisibleItems', () => {
 
   it('filters to only proposed items when openOnly is true', () => {
     const result = decisionVisibleItems(items, true);
-    expect(result.map((d) => d.id)).toEqual([1, 4]);
+    expect(result.map((d) => d.id)).toEqual(['dl1', 'dl4']);
   });
 });

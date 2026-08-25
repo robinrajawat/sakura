@@ -60,7 +60,7 @@ export interface DecisionLogRecord {
 
 export interface AnchorableNode {
   id: number;
-  text?: string;
+  text?: string | null;
   depth?: number;
 }
 
