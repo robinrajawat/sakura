@@ -1471,6 +1471,38 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   dot), two-tier automatic backup's tier 2 (auto-backup to file), full whole-app JSON Export/
   Import, Version History, and the deliberately-excluded presence tracking noted above -- each its
   own separately-scoped slice.
+- ✅ **Real persistent sync-status top-bar dot landed.** Direct port of legacy's real
+  `account-toggle-status-dot` (legacy/index.html:482-487) and `updateSyncStatusUI`'s dot logic
+  (legacy/index.html:15583-15612) -- previously `web/` only had `DocSyncPanel.tsx`'s own
+  `syncStatus` text line, scoped to whichever document happens to be open and only visible while
+  that panel is in view. A new `components/SyncStatusIndicator.tsx`, mounted in the header next
+  to the notification bell: a small avatar (or a colored-circle initial fallback, matching
+  legacy's own real fallback exactly) with an overlay dot, hidden entirely when signed out
+  (mirrors legacy's own avatar-wrap `display:none` while signed out -- there's nothing to show a
+  status for). States match legacy's real dot classList logic exactly: `syncing` pulses the
+  accent color (a real `accountDotPulse` opacity-loop keyframe, `1<->0.35`); a completed push
+  shows bright green (`synced`) for 4000ms then settles into a dim, persistent green (`idle-ok`)
+  rather than fading to nothing -- legacy's own comment there is worth repeating: previously it
+  faded to fully transparent, so between sync events (i.e. most of the time) there was no
+  indicator on screen at all; `error` persists red until the next successful sync. A new pure
+  `syncDotVisualForStatus` (`state/syncStatusDot.ts`) is the tested resting-state mapping from
+  `docSyncStore`'s own `syncStatus` to the dot's visual state (`idle` -> `idle-ok`, matching
+  legacy's own "give the dot a baseline presence right away" behavior the moment someone is
+  signed in); the 4000ms bright-then-dim fade itself is a local component timer, matching
+  legacy's own `_syncDotFadeTimer` -- legacy doesn't express that part as a pure function either
+  (it's a bare `setTimeout` inside imperative DOM code), so this doesn't force it into one just
+  for its own sake. One real, deliberate simplification vs. legacy: no click-to-open account
+  dropdown menu -- `web/` has no account dropdown surface at all yet (`AuthPanel.tsx`/
+  `DocSyncPanel.tsx` are flat panels, not a menu), a real, separately-scoped gap already true
+  before this slice; this dot is a glanceable status indicator only, with the current status
+  available via its `title` attribute on hover. Verified with a new pure-function test suite for
+  `syncStatusDot.ts` (all four status->visual mappings) and real headless Chrome for the
+  signed-out state (a real account isn't available in this environment, same constraint as
+  every other §6.8 auth-gated slice): confirmed the dot is genuinely absent when signed out
+  alongside the notification bell, zero console/page errors. The signed-in color-transition/
+  fade-timer behavior wasn't verified end-to-end against a real account, for the same reason as
+  the sharing slice's own signed-in flow -- the pure mapping function is this slice's real
+  verification of that logic.
 - ✅ **Two-tier automatic backup's tier 2 (auto-backup to file) landed.** Direct port of legacy's
   real File System Access API auto-backup layer (legacy/index.html:31336-31474): a new
   `store/fsBackupStore.ts` with the exact same real state machine as legacy's own
@@ -1714,7 +1746,7 @@ building the earlier ones):
    `outlinePrefsStore.ts`'s own prior note on why. Deliberately NOT part of this slice: category-
    prefix search scoping, the chip-mode category picker, fuzzy matching, and every search-hit row
    — all of that is item 4 below, Quick Assist's real Global Search half.
-4. **Quick Assist search integration** (first sub-slice landed, see Status) — Global Search
+4. **Quick Assist search integration** (sub-slices 4a-4b landed, see Status) — Global Search
    across legacy's real 18 `collectSearchGroups` categories, split further once scoped in
    detail per an explicit per-category audit (not a guess): **sub-slice 4a** (landed) covers the
    6 categories with both a real legacy collector AND a real, already-existing `web/` data
@@ -1726,12 +1758,48 @@ building the earlier ones):
    grep across both files). Legacy's own real behavior for those four categories is therefore an
    unconditional empty array, always — porting real Hub search here would invent behavior legacy
    itself never had, not complete a gap, so they're excluded on principle, not because `web/`'s
-   own Hub stores lack content. Remaining, each its own separate blocker: Pad/Q&A/Diagrams/
-   Remarks (real legacy collectors, but `padStore.ts` isn't persisted per-document yet — only the
-   currently-open document's Pad content is searchable today, unlike the 6 categories above which
-   all have real per-document storage); Templates (no live UI at all in `web/`); Settings/
-   Features/Help (no searchable index for any of the three, and no underlying system to index for
-   Features at all).
+   own Hub stores lack content. **Sub-slice 4b** (landed) adds category-prefix scoping
+   ("notes: budget" scopes to just the Notes category) and the chip-mode category picker (a "⋯"
+   button, or Space on an empty input, showing verb chips + this slice's 6 real category chips as
+   click-to-insert stepping stones) — both direct ports of legacy's own real mechanism, scoped to
+   the same 6 categories sub-slice 4a built. Remaining, each its own separate blocker: Pad/Q&A/
+   Diagrams/Remarks (real legacy collectors, but `padStore.ts` isn't persisted per-document yet —
+   only the currently-open document's Pad content is searchable today, unlike the 6 categories
+   above which all have real per-document storage); Templates (no live UI at all in `web/`);
+   Settings/Features/Help (no searchable index for any of the three, and no underlying system to
+   index for Features at all).
+
+**§6.10 is closed as of sub-slice 4b** — every item within Quick Assist/Quick Insert/Settings's own
+real scope is landed. The remaining Global Search categories above are deliberately OUT OF SCOPE
+for this phase, not "not started yet" within it: each is blocked on a real gap in a DIFFERENT
+subsystem that Quick Assist search merely depends on, not something Quick Assist itself owns.
+Fixing them means:
+- **Pad/Q&A/Diagrams/Remarks search** — giving `padStore.ts` real per-document persistence (it
+  currently has none at all: no `localStorage` read/write anywhere in the file, confirmed by
+  grep — Pad content doesn't even survive a page reload for the CURRENT document today, let alone
+  a document switch). That's a real, valuable, pre-existing gap every one of `padStore.ts`'s own
+  header comments already flagged as "a real, separately-scoped follow-up if still wanted" since
+  Phase 3/§6.3 — its own project, not a Quick Assist task, and substantial enough (persistence
+  keying, load/save wiring into `documentsStore.ts`'s own doc-switch lifecycle, matching
+  `outlineStore.ts`'s own per-document pattern) to warrant its own phase if picked up.
+- **Templates search** — legacy's own real Templates system has never been built in `web/` at
+  all (confirmed in `docs/history/phase5-parity-checklist.md`); there's nothing to search until a
+  future phase builds Templates itself.
+- **Settings/Features search** — `web/` has no searchable settings-label index (would need
+  authoring one from scratch by walking every Settings section) and no feature-flags system at
+  all (nothing to search, full stop).
+- **Help search** — `web/` has no help/cheatsheet/shortcuts-registry content anywhere to index.
+- **Fuzzy matching / trash-document scanning** — legacy features with no real driver in `web/`
+  today (no trash concept at all) or genuinely low value at this corpus size (see
+  `state/quickAssistSearch.ts`'s own header on why fuzzy matching was skipped).
+
+None of these are guesses at what to build next — each is a specific, named, real gap that a
+future phase can pick up on its own terms, the same "port the effect, honestly scoped" discipline
+this whole project has used throughout.
+
+**Status: complete within scope.** All 4 planned slices landed (Quick Insert completion, the
+Settings-panel category rail, the Quick Assist command box, and Global Search sub-slices 4a-4b) —
+see the closing note above for exactly what's genuinely out of scope and why.
 
 ### 6.11 — PWA & polish pass
 Static precache strategy to match legacy's (`web/public/sw.js`'s current runtime cache-first is
@@ -1948,8 +2016,8 @@ toast with a working Undo button; Escape closes with no change; an action
 "No matching command"; the Settings toggle is present, and disabling it both hides the button and
 makes Ctrl/Cmd+K inert — zero console/page errors across every check.
 
-**This PR**: Quick Assist search integration, sub-slice 4a (slice 4 of 4, split further once
-scoped — see this doc's §6.10 slice-sequence item 4 above). New `state/quickAssistSearch.ts`
+Fourth §6.10 slice: Quick Assist search integration, sub-slice 4a (slice 4 of 4, split further
+once scoped — see this doc's §6.10 slice-sequence item 4 above). New `state/quickAssistSearch.ts`
 directly ports legacy's real `collectSearchGroups` and its per-category collectors
 (`collectDocMatches`/`collectNodeTextMatches`/`collectNoteMatches`/`collectCodeMatches`/
 `collectTagMatches`/`collectFolderMatches`), plus the shared `qaTokenizeQuery`/`qaHayMatches`/
@@ -1972,23 +2040,49 @@ right tab for Notes/Code hits, or reveals a folder in the sidebar — expanding 
 ancestor, leaving already-open ones untouched). Deliberately simplified vs. legacy's real
 collectors: plain-text snippets (no `<mark>` HTML highlighting), no trash-document scanning
 (`web/` has no trash/deleted-documents concept at all yet), no fuzzy-match fallback (same
-simplification `quickAssist.ts`'s own command matching already makes), no category-prefix scoping
-or chip-mode category picker (both real legacy features, deferred alongside the remaining search
-categories). Click-to-navigate matches this project's own already-established simplification
-(`OutlineTree.tsx`'s wikilink click-navigate: a plain `selectNode(id)`, no ancestor-expansion/
-scroll-into-view/flash animation) rather than legacy's real `jumpToNodeInDoc`/`revealNodeInDoc`.
-New: a "Search results" sub-toggle in `components/QuickAssistSettings.tsx`
-(`outlinePrefsStore.ts` gained `quickAssistSearchEnabled`, direct port of legacy's real
-`qaSearchResultsEnabled`/`#qa-search-enabled-toggle`) — separate from Quick Assist's own master
-toggle, controls only whether search hits fold into the box at all. Verified end-to-end in real
-headless Chrome: Documents/In documents groups render for the seed document's own real title/node
-text; adding a tag, a note, and a folder through the real UI and then searching for each
-surfaces the right group with the right content, and clicking a Notes hit opens the note panel on
-the correct node; disabling the new search-results toggle removes every content-hit row for a
-query that previously produced them, leaving the "No matching command or content" empty state —
-zero console/page errors across every check. Remaining: sub-slices covering Pad/Q&A/Diagrams/
-Remarks (blocked on `padStore.ts` per-document persistence), and the rest of legacy's real
-category-prefix/chip-picker/fuzzy-match machinery — not started yet.
+simplification `quickAssist.ts`'s own command matching already makes). Click-to-navigate matches
+this project's own already-established simplification (`OutlineTree.tsx`'s wikilink
+click-navigate: a plain `selectNode(id)`, no ancestor-expansion/scroll-into-view/flash animation)
+rather than legacy's real `jumpToNodeInDoc`/`revealNodeInDoc`. New: a "Search results" sub-toggle
+in `components/QuickAssistSettings.tsx` (`outlinePrefsStore.ts` gained
+`quickAssistSearchEnabled`, direct port of legacy's real `qaSearchResultsEnabled`/
+`#qa-search-enabled-toggle`) — separate from Quick Assist's own master toggle, controls only
+whether search hits fold into the box at all. Verified end-to-end in real headless Chrome:
+Documents/In documents groups render for the seed document's own real title/node text; adding a
+tag, a note, and a folder through the real UI and then searching for each surfaces the right
+group with the right content, and clicking a Notes hit opens the note panel on the correct node;
+disabling the new search-results toggle removes every content-hit row for a query that
+previously produced them, leaving the "No matching command or content" empty state — zero
+console/page errors across every check.
+
+Fifth §6.10 slice: Quick Assist search integration, sub-slice 4b — category-prefix scoping and
+the chip-mode category picker, both real legacy features scoped to the same 6 categories
+sub-slice 4a built. `state/quickAssistSearch.ts` gained direct ports of legacy's real
+`QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PREFIXES`/`QA_CATEGORY_PRIMARY_PREFIX`/
+`qaParseCategoryPrefix`, and `collectQaSearchGroups` now accepts an optional
+`scopedCategoryKey` that filters to just one category (the same shared budget-of-8 drain still
+applies, just with fewer groups left to drain from). `state/quickAssist.ts`'s `buildQaEntries`
+now parses a category prefix first (matching legacy's real `qaRender` short-circuit exactly): a
+recognized prefix like "notes: budget" skips command/action matching entirely and scopes search
+hits to just that category. New `buildQaPickerEntries`/`qaPickerInsertText`/`QA_PICKER_VERBS`
+build the chip-mode picker's own entries (4 verb chips -- Show/Hide/Toggle/Run -- plus this
+slice's 6 real category chips) as two new `QaEntry` kinds (`'verb'`/`'category'`), both stepping
+stones: picking one inserts its prefix into the input and keeps the box open, matching legacy's
+real `qaActivateSelection` skipping `setQaOpen(false)` for these two kinds specifically.
+`QuickAssistBar.tsx` gained a "⋯" category-icon button and a Space-on-empty-input trigger (both
+matching legacy's real triggers exactly) that swap the rendered list for the picker's two chip
+rows. One deliberate simplification: legacy's real chip navigation (`qaMoveChip`) does true 2D
+geometric bounding-box arrow-key nav, needed for its own 18-category chip row wrapping across
+several lines -- this port uses plain sequential nav instead, since 4 verb chips plus 6 category
+chips fit in one or two short rows at any reasonable width, a "port the effect, not the exact
+technique" call, not a functional gap. Verified end-to-end in real headless Chrome: the "⋯"
+button and Space-on-empty both open the picker; a verb chip and a category chip both render;
+clicking the Notes category chip inserts "note: " and keeps the box open; Escape from the picker
+closes the picker but leaves the box open; a category-prefixed query ("notes: welcome") shows no
+command rows and scopes search results to just that category — zero console/page errors across
+every check. Remaining: sub-slices covering Pad/Q&A/Diagrams/Remarks (blocked on `padStore.ts`
+per-document persistence) and Settings/Features/Help/Templates search (no searchable index or
+live UI exists for any of the four) — not started yet.
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.

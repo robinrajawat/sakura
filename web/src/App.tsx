@@ -19,6 +19,7 @@ import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
+import { SyncStatusIndicator } from './components/SyncStatusIndicator';
 import {
   useThemeStore,
   ACCENT_PRESETS,
@@ -336,6 +337,9 @@ export function App() {
               />
             ))}
           </div>
+          {/* §6.8 slice: the real persistent top-bar sync-status dot -- see
+              SyncStatusIndicator.tsx's own header. Renders nothing when signed out. */}
+          <SyncStatusIndicator />
           {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
               nothing when signed out. */}
           <NotificationBell />

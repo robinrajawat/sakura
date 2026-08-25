@@ -3,7 +3,7 @@ import { useOutlineStore, defaultNodeStyles, type OutlineNode } from '../store/o
 import { useDocumentsStore } from '../store/documentsStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import { useNotePanelStore } from '../store/notePanelStore';
-import { qaTokenizeQuery, qaHayMatches, buildMatchSnippet, collectQaSearchGroups } from './quickAssistSearch';
+import { qaTokenizeQuery, qaHayMatches, buildMatchSnippet, collectQaSearchGroups, qaParseCategoryPrefix, QA_SEARCH_CATEGORIES, QA_CATEGORY_PRIMARY_PREFIX } from './quickAssistSearch';
 
 function node(overrides: Partial<OutlineNode>): OutlineNode {
   return {
@@ -53,6 +53,30 @@ describe('buildMatchSnippet (pure)', () => {
   it('falls back to the first 64 chars when no token is found', () => {
     const text = 'x'.repeat(100);
     expect(buildMatchSnippet(text, ['zzz'])).toBe('x'.repeat(64));
+  });
+});
+
+describe('qaParseCategoryPrefix (pure)', () => {
+  it('parses a recognized alias prefix, returning the rest of the text', () => {
+    expect(qaParseCategoryPrefix('notes: budget')).toEqual({ categoryKey: 'notes', rest: 'budget' });
+    expect(qaParseCategoryPrefix('note:budget')).toEqual({ categoryKey: 'notes', rest: 'budget' });
+    expect(qaParseCategoryPrefix('doc: roadmap')).toEqual({ categoryKey: 'documents', rest: 'roadmap' });
+  });
+
+  it('is case-insensitive on the prefix itself', () => {
+    expect(qaParseCategoryPrefix('NOTES: budget')).toEqual({ categoryKey: 'notes', rest: 'budget' });
+  });
+
+  it('returns null for an unrecognized prefix or no colon at all', () => {
+    expect(qaParseCategoryPrefix('zzz: budget')).toBeNull();
+    expect(qaParseCategoryPrefix('just a plain query')).toBeNull();
+  });
+
+  it('every category has a working primary-prefix round-trip', () => {
+    QA_SEARCH_CATEGORIES.forEach((c) => {
+      const prefix = QA_CATEGORY_PRIMARY_PREFIX[c.key];
+      expect(qaParseCategoryPrefix(`${prefix}: x`)?.categoryKey).toBe(c.key);
+    });
   });
 });
 
@@ -210,5 +234,15 @@ describe('collectQaSearchGroups', () => {
     const total = groups.reduce((sum, g) => sum + g.items.length, 0);
     expect(total).toBeLessThanOrEqual(8);
     expect(groups[0].name).toBe('Documents');
+  });
+
+  it('a scopedCategoryKey restricts results to just that one category', () => {
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useOutlineStore.setState({ nodes: [node({ id: 1, text: 'a match here', note: '<p>a match here too</p>' })] });
+    const scoped = collectQaSearchGroups('match', 'notes');
+    expect(scoped.map((g) => g.name)).toEqual(['Notes']);
+    const unscoped = collectQaSearchGroups('match');
+    expect(unscoped.map((g) => g.name)).toContain('In documents');
+    expect(unscoped.map((g) => g.name)).toContain('Notes');
   });
 });

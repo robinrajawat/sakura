@@ -592,10 +592,22 @@ Asked next to complete two more §6.8 remainders together: **"a real
 persistent sync-status indicator (top-bar dot)"** and **"two-tier
 automatic backup's tier 2 (auto-backup to file, File System Access
 API)"** -- following this session's own established precedent (two
-items asked together still ship as separate PRs, same as email/
-password sign-in + sharing did). The top-bar dot shipped as its own PR
-(see that PR's own branch/description if this file hasn't been synced
-past it yet). Tier 2 landed here: a new `store/fsBackupStore.ts`,
+password sign-in + sharing did), the top-bar dot landed first. New
+`components/SyncStatusIndicator.tsx`, direct port of legacy's real
+`account-toggle-status-dot`/`updateSyncStatusUI` dot logic: an avatar/
+initial-fallback badge with an overlay dot in the header (next to the
+notification bell), hidden when signed out, matching legacy's exact
+state machine (syncing pulse, synced bright-for-4s then dims to a
+persistent idle-ok rather than fading to nothing, error persists). A
+new pure `state/syncStatusDot.ts` holds the tested resting-state
+mapping; the 4000ms fade is a local component timer, matching legacy's
+own un-abstracted `_syncDotFadeTimer`. Verified with a new pure-function
+test suite plus real headless Chrome for the signed-out state (dot and
+bell both correctly absent, zero console errors) -- the signed-in
+color-transition behavior itself wasn't verified against a real
+account, same constraint as every other §6.8 slice this session.
+
+Tier 2 (auto-backup to file) landed next: a new `store/fsBackupStore.ts`,
 direct port of legacy's real `initFsBackup`/`connectFsBackup`/
 `reconnectFsBackup`/`disconnectFsBackup`/`writeFsBackupNow` state
 machine, plus a new "Auto-backup to file" row in `BackupSettings.tsx`.
@@ -616,7 +628,8 @@ path's actual logic. Deliberately not built: the status-bar chip
 surface, backup-history rotation, the backup-reminder nag, and Gist/
 Drive cloud auto-push -- each a real, separately-scoped follow-up (see
 this PR's own description/the plan doc's §6.8 section for the full
-reasoning on each).
+reasoning on each). This closes out both items the user asked for
+together.
 
 §6.5 is fully complete -- all six Hub items landed. §6.6 (Preview,
 Presenter & Export) is now essentially complete for everything
@@ -2132,13 +2145,66 @@ hit opens the note panel on the correct node; disabling the new
 search-results toggle removes every content-hit row for a query that
 previously produced them, leaving the "No matching command or
 content" empty state -- zero console/page errors throughout, across
-every one of those checks. Remaining: sub-slices covering Pad/Q&A/
-Diagrams/Remarks search (blocked on `padStore.ts` gaining real
-per-document persistence -- today only the currently-open document's
-Pad content is searchable, unlike the 6 categories above which all
-have real per-document storage already), Settings/Features/Help
-search (no searchable index for any of the three, and no underlying
-system to index for Features at all), Templates (no live UI at all),
-category-prefix scoping, and the chip-mode category picker -- none
-started yet.
+every one of those checks.
+
+Fifth §6.10 slice landed: Quick Assist search integration, sub-slice
+4b -- category-prefix scoping and the chip-mode category picker, both
+real legacy features scoped to sub-slice 4a's same 6 categories.
+`state/quickAssistSearch.ts` gained direct ports of legacy's real
+`QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PREFIXES`/
+`QA_CATEGORY_PRIMARY_PREFIX`/`qaParseCategoryPrefix`, and
+`collectQaSearchGroups` now accepts an optional `scopedCategoryKey`
+that filters to just one category (the same shared budget-of-8 drain
+still applies, just with fewer groups left to drain from).
+`state/quickAssist.ts`'s `buildQaEntries` now parses a category
+prefix first, matching legacy's real `qaRender` short-circuit exactly:
+a recognized prefix like "notes: budget" skips command/action
+matching entirely and scopes search hits to just that category. New
+`buildQaPickerEntries`/`qaPickerInsertText`/`QA_PICKER_VERBS` build
+the chip-mode picker's own entries (4 verb chips -- Show/Hide/
+Toggle/Run -- plus the 6 real category chips) as two new `QaEntry`
+kinds (`'verb'`/`'category'`), both stepping stones: picking one
+inserts its prefix into the input and keeps the box open, matching
+legacy's real `qaActivateSelection` deliberately skipping
+`setQaOpen(false)` for these two kinds specifically.
+`QuickAssistBar.tsx` gained a "⋯" category-icon button and a
+Space-on-empty-input trigger (both matching legacy's real triggers
+exactly) that swap the rendered list for the picker's two chip rows.
+One deliberate simplification: legacy's real chip navigation
+(`qaMoveChip`) does true 2D geometric bounding-box arrow-key nav,
+needed for its own 18-category chip row wrapping across several lines
+-- this port uses plain sequential nav instead, since 4 verb chips
+plus 6 category chips fit in one or two short rows at any reasonable
+width, a "port the effect, not the exact technique" call, not a
+functional gap. Verified end-to-end in real headless Chrome: the "⋯"
+button and Space-on-empty both open the picker; a verb chip and a
+category chip both render and are clickable; clicking the Notes
+category chip inserts "note: " and keeps the box open; Escape from
+the picker closes just the picker, leaving the box open; a
+category-prefixed query ("notes: welcome") shows no command rows and
+scopes search results to just that category -- zero console/page
+errors throughout, across every one of those checks.
+
+§6.10 (Quick Assist, Quick Insert & Settings) is now closed as
+COMPLETE within its own real scope -- all 4 planned slices landed.
+The remaining Global Search categories (Pad/Q&A/Diagrams/Remarks,
+Templates, Settings/Features/Help, fuzzy matching) are deliberately
+marked OUT OF SCOPE for this phase in the plan doc, not "not started
+yet": each is blocked on a real gap in a DIFFERENT subsystem Quick
+Assist search merely depends on, not something Quick Assist itself
+owns. The one worth flagging explicitly for future work: `padStore.ts`
+(Pad/Decision Log/Q&A/Diagrams/Remarks/Files) has NO per-document
+persistence at all -- confirmed by grep, zero `localStorage`
+reads/writes anywhere in that file. Pad content doesn't survive a
+page reload for the CURRENT document today, let alone a document
+switch. Every one of `padStore.ts`'s own header comments already
+flagged this as "a real, separately-scoped follow-up if still wanted"
+since Phase 3/§6.3 -- it's a real, valuable gap, but its own future
+phase (persistence keying + load/save wiring into
+`documentsStore.ts`'s doc-switch lifecycle, matching `outlineStore.ts`'s
+own per-document pattern), not a Quick Assist task. Templates has
+never been built in `web/` at all (nothing to search); Settings/
+Features/Help have no searchable index or underlying system to index.
+See phase6-full-parity-plan.md's §6.10 section (its own closing note)
+for the full per-category reasoning.
 ```

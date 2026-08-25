@@ -34,7 +34,7 @@ already made and already documented at the time.
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
-| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions (§6.10 slice 3), plus a first Global Search sub-slice covering Documents/In documents/Notes/Code/Tags/Folders (§6.10 slice 4a) — Pad/Q&A/Diagrams/Remarks/Settings/Features/Help search, category-prefix scoping, and the chip-mode picker not built yet, see the Quick Assist & Quick Insert section below |
+| Quick Assist / global search | ⚠️ | §6.10 closed as complete within its own real scope: Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions, Global Search covering Documents/In documents/Notes/Code/Tags/Folders with real category-prefix scoping and a chip-mode category picker. Remaining categories (Pad/Q&A/Diagrams/Remarks/Settings/Features/Help/Templates, fuzzy matching) are deliberately out of scope, each blocked on a separate subsystem gap — see the Quick Assist & Quick Insert section below |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
@@ -42,7 +42,7 @@ already made and already documented at the time.
 | Deep theming | ⚠️ | Light/Dark toggle (Phase 3), accent color, System auto-theme, and node-text color presets, all persisted across sessions (§6.7) — no Chrome background presets (investigated (§6.7): confirmed unreachable in legacy's own UI, not a gap in this port) |
 | PWA install | ⚠️ | Manifest + service worker exist (Phase 3) — runtime cache-first, not legacy's precache strategy; single icon set, no maskable-variant distinction beyond the one icon already reused |
 | Two-tier automatic backup | ✅ | Tier 1 (local safety copy, an IndexedDB mirror of localStorage) built §6.8 — direct port of legacy's real `mirrorToIndexedDb`, 1200ms debounce on outline edits, a "Restore…" button under Settings → Data & Backup. Tier 2 (auto-backup to file, File System Access API, §6.8) now built too — direct port of legacy's real Connect…/Disconnect…/Reconnect state machine (`store/fsBackupStore.ts`), driven off the SAME 1200ms debounce timer as tier 1 (matching legacy's own `scheduleBackupWrite`, which fires both together). Chrome/Edge only — degrades to a disabled "Connect…" with an explanatory note elsewhere. Not built: backup-history rotation (5 timestamped snapshots) and the "haven't backed up in N days" reminder nag, both real, separately-scoped follow-ups |
-| Account sign-in + sync | ⚠️ | Google AND email/password sign-in (§6.8) + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project. Real debounced autosave now built too (§6.8): an outline edit queues a push 1500ms after edits settle, matching legacy's own real `queueSync`/`flushSyncQueue` timer exactly, plus a sync-status indicator (Syncing…/Synced/error text) replacing the old manual "Push to cloud" button. Full sharing/collaboration now built too (§6.8, see the Sharing row below) — still no sync health indicator beyond the text status line, no full JSON export/import, no Version History |
+| Account sign-in + sync | ⚠️ | Google AND email/password sign-in (§6.8) + bidirectional Firestore doc sync exist (Phase 4), wired to the real production project. Real debounced autosave now built too (§6.8): an outline edit queues a push 1500ms after edits settle, matching legacy's own real `queueSync`/`flushSyncQueue` timer exactly, plus a sync-status indicator (Syncing…/Synced/error text) replacing the old manual "Push to cloud" button. Full sharing/collaboration now built too (§6.8, see the Sharing row below), and now the real persistent top-bar sync-status dot too (§6.8, see the Sync health status-bar dot row below) — still no full JSON export/import, no Version History |
 | Version History | ❌ | Not built for any surface |
 
 ## Core Editing
@@ -423,11 +423,46 @@ clicking a Notes hit opens the note panel on the correct node; disabling the sea
 toggle removes every content-hit row, leaving the "No matching command or content" empty state —
 zero console/page errors throughout.
 
-Still unbuilt: Pad/Q&A/Diagrams/Remarks search (real legacy collectors, but `padStore.ts` isn't
-persisted per-document yet — only the currently-open document's Pad content is searchable);
-Templates (no live UI at all); Settings/Features/Help search (no searchable index, and no
-underlying system for Features at all); category-prefix scoping, the chip-mode category picker,
-and fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the planned slice sequence.
+**Slice 4b**: category-prefix scoping and the chip-mode category picker, both direct ports of
+legacy's real mechanism scoped to sub-slice 4a's same 6 categories. `state/quickAssistSearch.ts`
+gained `QA_SEARCH_CATEGORIES`/`QA_CATEGORY_PREFIXES`/`QA_CATEGORY_PRIMARY_PREFIX`/
+`qaParseCategoryPrefix`; `collectQaSearchGroups` now accepts an optional `scopedCategoryKey` that
+filters to just one category. `state/quickAssist.ts`'s `buildQaEntries` parses a category prefix
+first — a recognized prefix like "notes: budget" skips command/action matching entirely and
+scopes search hits to that one category, matching legacy's real `qaRender` short-circuit exactly.
+New `buildQaPickerEntries`/`qaPickerInsertText` build the chip-mode picker's own entries (4 verb
+chips — Show/Hide/Toggle/Run — plus the 6 real category chips) as two new stepping-stone `QaEntry`
+kinds: picking one inserts its prefix into the input and keeps the box open, rather than
+executing anything. `QuickAssistBar.tsx` gained a "⋯" category-icon button and a
+Space-on-empty-input trigger, both matching legacy's real triggers exactly. One deliberate
+simplification: legacy's real chip navigation does true 2D geometric bounding-box arrow-key nav
+(needed for its own 18-category chip row wrapping across several lines) — this port uses plain
+sequential nav instead, since 10 total chips fit in one or two short rows at any reasonable
+width. Verified end-to-end in real headless Chrome: the "⋯" button and Space-on-empty both open
+the picker; verb and category chips render and are clickable; clicking a category chip inserts
+its prefix and keeps the box open; Escape from the picker closes just the picker; a
+category-prefixed query shows no command rows and scopes results to that one category — zero
+console/page errors throughout.
+
+**§6.10 (Quick Assist, Quick Insert & Settings) is closed as complete within its own real scope.**
+The remaining pieces below are deliberately OUT OF SCOPE, not "not started yet" — each is blocked
+on a real gap in a DIFFERENT subsystem Quick Assist search merely depends on, not something Quick
+Assist itself owns:
+- Pad/Q&A/Diagrams/Remarks search — blocked on `padStore.ts` having no per-document persistence
+  at all (confirmed by grep: zero `localStorage` reads/writes anywhere in that file — Pad content
+  doesn't survive a page reload for the current document today, let alone a document switch).
+  Every one of `padStore.ts`'s own header comments already flags this as "a real,
+  separately-scoped follow-up if still wanted" since Phase 3/§6.3 — its own future phase, not a
+  Quick Assist task.
+- Templates search — legacy's own real Templates system has never been built in `web/` at all;
+  nothing exists yet to search.
+- Settings/Features search — `web/` has no searchable settings-label index and no feature-flags
+  system at all.
+- Help search — `web/` has no help/cheatsheet/shortcuts-registry content anywhere to index.
+- Fuzzy matching / trash-document scanning — no real driver in `web/` today (no trash concept at
+  all) or genuinely low value at this corpus size.
+
+See phase6-full-parity-plan.md's §6.10 section (its own closing note) for the full reasoning.
 
 ## Preview, Presenter Mode & Export
 
@@ -476,7 +511,7 @@ and fuzzy matching. See phase6-full-parity-plan.md's §6.10 section for the plan
 | Email/password sign-in | ✅ | Built §6.8: direct port of legacy's real `wireEmailAuthForm` (`AuthPanel.tsx`'s "Or use email" toggle) -- sign-in/create-account mode switch, "Forgot password?" via `sendPasswordResetEmail`, and legacy's real per-error-code message table (`state/authErrors.ts`). Safe regardless of whether the Email/Password provider is actually enabled in the production Firebase project (a project-level setting outside this app's control, same as legacy) -- a disabled provider surfaces a real, honest message rather than failing silently |
 | Document sync | ⚠️ | Phase 4 — bidirectional, real production Firestore collection, built to preserve legacy-only per-node fields on round-trip. Debounced autosave landed §6.8 (direct port of legacy's real `queueSync`/`flushSyncQueue`, 1500ms debounce, an `isApplyingRemoteUpdate` guard so a realtime pull never queues its own echo push) — replaced the old manual "Push to cloud" button, matching legacy's own primary sync path (which has never had a manual button either). Still: no folders/templates/settings sync, single-document only (no multi-doc concept in web/ yet) |
 | Sharing (Can view/Can edit, Share chip, Shared section, notifications) | ✅ | Built §6.8, the full feature in one PR per an explicit user decision: profile discoverability (`store/profileStore.ts`, `profiles/{uid}`, private by default, a visibility toggle in a new "Account" Settings category), grant/revoke/role-change with notifications (`store/sharingStore.ts`), name-prefix + exact-email search, the share dialog/collaborator list/"Shared with me" list (`DocSyncPanel.tsx` -- a deliberate simplification vs. legacy's own sidebar placement), a `SharedDocBanner` for a non-owned document, and a notification bell (`store/notificationsStore.ts`, wrapping the already-ported-but-previously-unwired `state/notifications.ts`). `docSyncStore.ts` gained `role`/`ownerUid` so the existing load/autosave/realtime machinery serves a shared document too; a viewer's edits are never pushed (client-side deterrent, matching legacy's `isViewerOnCurrentDoc` -- Firestore rules are the real enforcement). Deliberately not built: real-time presence (`state/presence.ts`, unwired, separately-scoped). Verified via 61 new tests across four suites plus real headless-Chrome verification of the signed-out state (the signed-in flow relies on the unit suites -- Firestore's gRPC-Web protocol isn't practically fakeable via `page.route` the way the email-auth REST calls were). One real, unverifiable risk carried over from before this slice: `loadSharedWithMe`'s collection-group query needs a Firestore Console index (`sharedWithUids`, array-contains) this project can't confirm is provisioned in production -- fails safe to an empty list either way |
-| Sync health status-bar dot | ⚠️ | A text-based sync-status line landed §6.8 in `DocSyncPanel.tsx` (Syncing…/Synced/error, matching legacy's real `updateSyncStatusUI` text states) — not yet in the persistent top-bar status-dot location legacy uses (`account-toggle-status-dot`), which needs its own real top toolbar/status-bar location in `web/`'s shell first |
+| Sync health status-bar dot | ✅ | A text-based sync-status line landed §6.8 in `DocSyncPanel.tsx` first (Syncing…/Synced/error, matching legacy's real `updateSyncStatusUI` text states), then the real persistent top-bar dot itself (§6.8, `components/SyncStatusIndicator.tsx`) — direct port of legacy's real `account-toggle-status-dot`: an avatar/initial badge with an overlay dot in the header, hidden when signed out, matching legacy's exact syncing (pulse)/synced (bright 4s)/idle-ok (dim, persists)/error (persists) state machine, including the "settles into a dim persistent green rather than fading to nothing" behavior |
 
 ## Data & Backup
 
