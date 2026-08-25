@@ -216,6 +216,18 @@ interface OutlineState {
    * unchanged -- callers are expected to have already resolved any in-flight-edit race via
    * `aiSnapshotChanged` (`state/aiRewrite.ts`) before calling this. */
   applyAiTextResult: (id: number, text: string) => void;
+  /** §6.9 slice (docs/phase6-full-parity-plan.md): Generate Outline's real insertion action.
+   * Direct port of legacy's real `insertAiOutline` (legacy/index.html:29496-29517) — nests the
+   * given `{text, depth}` rows as CHILDREN of the currently-selected node (depth offset =
+   * selected node's own depth + 1), or replaces the whole document when there's no usable
+   * selection context (an empty document, or no node currently selected). Reuses
+   * `insertParsedNodesCore` for the actual splice (the same core mutation `newChild`/
+   * `newSiblingBelow`/`newSiblingAbove` already use for a single freshly-built node), with a
+   * real undo checkpoint — unlike `applyAiTextResult` above, this is a genuine addition to
+   * content the user was already looking at, not a background-safe text substitution, so it
+   * needs to be undoable the same way any other real edit is. Returns the new nodes' ids (empty
+   * if `rows` was empty) so the caller can report a count without re-deriving it. */
+  insertGeneratedOutline: (rows: { text: string; depth: number }[]) => number[];
 
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
@@ -604,6 +616,40 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     let next = nodes.map((n) => (n.id === id ? { ...n, text } : n));
     next = renameBacklinksFor(next, oldText, text);
     set({ nodes: next });
+  },
+
+  insertGeneratedOutline: (rows) => {
+    if (!rows.length) return [];
+    const { nodes, selectedId, nextId } = get();
+    const idx = selectedId === null ? -1 : getIndex(nodes, selectedId);
+    const noContext = !nodes.length || idx < 0;
+    const baseDepth = noContext ? 0 : nodes[idx].depth + 1;
+    pushUndo();
+    let id = nextId;
+    const mapped: OutlineNode[] = rows.map((row) => ({
+      id: id++,
+      depth: row.depth + baseDepth,
+      text: row.text,
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    }));
+    const next = nodes.map((n) => ({ ...n }));
+    insertParsedNodesCore(next, idx, mapped);
+    rebuildParentIdsCore(next);
+    set({
+      nodes: next,
+      nextId: id,
+      selectedId: mapped[0].id,
+      editingId: null,
+      multiSelectedIds: [],
+      selectionAnchorId: mapped[0].id
+    });
+    return mapped.map((n) => n.id);
   },
 
   newSiblingAbove: (id) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { callAiApi, callAiApiBatchChunk, callAiApiBatch, buildBatchUserContent, parseBatchResponse } from './aiCapabilities';
+import { callAiApi, callAiApiBatchChunk, callAiApiBatch, buildBatchUserContent, parseBatchResponse, callAiApiOutline, callAiApiRestructure, AI_RESTRUCTURE_MAX_CHARS } from './aiCapabilities';
 import * as aiCall from './aiCall';
 
 function ctx(overrides: Partial<Parameters<typeof callAiApi>[2]> = {}) {
@@ -103,5 +103,45 @@ describe('callAiApiBatch', () => {
       [35, 35]
     ]);
     vi.restoreAllMocks();
+  });
+});
+
+describe('callAiApiOutline', () => {
+  it('sends "Topic: <topic>" as userContent with maxTokens=2048', async () => {
+    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('- a\n- b');
+    const result = await callAiApiOutline('competitor analysis', ctx());
+    expect(result).toBe('- a\n- b');
+    expect(spy.mock.calls[0][0].userContent).toBe('Topic: competitor analysis');
+    expect(spy.mock.calls[0][0].maxTokens).toBe(2048);
+    spy.mockRestore();
+  });
+});
+
+describe('callAiApiRestructure', () => {
+  it('sends the source text prefixed, with maxTokens=4096', async () => {
+    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('- a\n- b');
+    await callAiApiRestructure('some messy notes', ctx());
+    expect(spy.mock.calls[0][0].userContent).toBe('Text to restructure:\n\nsome messy notes');
+    expect(spy.mock.calls[0][0].maxTokens).toBe(4096);
+    spy.mockRestore();
+  });
+
+  it('truncates input longer than AI_RESTRUCTURE_MAX_CHARS and appends a truncation notice', async () => {
+    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('x');
+    const longText = 'a'.repeat(AI_RESTRUCTURE_MAX_CHARS + 500);
+    await callAiApiRestructure(longText, ctx());
+    const sent = spy.mock.calls[0][0].userContent;
+    expect(sent).toContain('[...truncated');
+    expect(sent).toContain('a'.repeat(AI_RESTRUCTURE_MAX_CHARS));
+    expect(sent).not.toContain('a'.repeat(AI_RESTRUCTURE_MAX_CHARS + 1));
+    spy.mockRestore();
+  });
+
+  it('does not truncate input at or under the limit', async () => {
+    const spy = vi.spyOn(aiCall, 'callAiByShape').mockResolvedValue('x');
+    const text = 'a'.repeat(AI_RESTRUCTURE_MAX_CHARS);
+    await callAiApiRestructure(text, ctx());
+    expect(spy.mock.calls[0][0].userContent).not.toContain('truncated');
+    spy.mockRestore();
   });
 });

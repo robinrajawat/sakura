@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
@@ -34,6 +34,8 @@ import { AudienceWindow } from './components/AudienceWindow';
 import { isAudienceWindow } from './state/audienceMode';
 import { rewriteNode, rewriteNodes } from './state/aiRewrite';
 import { useAutoRewriteStore } from './store/autoRewriteStore';
+import { generateOutline, restructureText } from './state/aiOutline';
+import { RestructureTextDialog } from './components/RestructureTextDialog';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -95,6 +97,51 @@ export function App() {
     setAiRewriteBusy(false);
     if (!result.ok) window.alert(result.message);
   }
+
+  // §6.9 slice 5 (docs/phase6-full-parity-plan.md): Generate Outline + Restructure Text. Generate
+  // Outline's topic is a short single-line entry -- `window.prompt` is a fine fit here, matching
+  // this project's established native-primitive convention (unlike Restructure Text's multi-line
+  // paste, which genuinely needs a real textarea -- see `RestructureTextDialog.tsx`'s own header
+  // for why `window.prompt` specifically isn't adequate there).
+  const [restructureDialogOpen, setRestructureDialogOpen] = useState(false);
+  const [aiOutlineBusy, setAiOutlineBusy] = useState(false);
+
+  async function handleGenerateOutline(): Promise<void> {
+    const topic = window.prompt('Generate Outline with AI\n\nDescribe what you want an outline for (e.g. "competitor analysis" or "onboarding checklist for a new hire").');
+    if (topic === null) return;
+    setAiOutlineBusy(true);
+    const result = await generateOutline(topic);
+    setAiOutlineBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  async function handleRestructureSubmit(text: string): Promise<void> {
+    setRestructureDialogOpen(false);
+    setAiOutlineBusy(true);
+    const result = await restructureText(text);
+    setAiOutlineBusy(false);
+    if (!result.ok) window.alert(result.message);
+  }
+
+  // Global keyboard shortcuts -- matches legacy's real Ctrl/Cmd+Shift+O (generateOutline) /
+  // Ctrl/Cmd+Shift+R (restructureText) exactly (legacy/index.html's own SHORTCUTS map). Unlike
+  // OutlineTree.tsx's own undo/redo shortcut (scoped to that component's own onKeyDown, needing
+  // the tree container to hold DOM focus), these are real app-wide shortcuts in legacy, so this
+  // uses a document-level listener the same way OutlineTree.tsx's own context-menu Escape
+  // handling already does, just mounted here since neither AI action is tree-specific.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent): void {
+      if ((e.key === 'o' || e.key === 'O') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault();
+        void handleGenerateOutline();
+      } else if ((e.key === 'r' || e.key === 'R') && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+        e.preventDefault();
+        setRestructureDialogOpen(true);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // §6.6 slice (docs/phase6-full-parity-plan.md), Audience View step 2: checked before every
   // other early-return branch, matching legacy's own real boot-time priority (its
@@ -361,8 +408,17 @@ export function App() {
         </button>
         {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the current
             selection (single node or a whole multi-select batch) via aiRewrite.ts. */}
-        <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 12 }}>
+        <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 4 }}>
           {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
+        </button>
+        {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as children of
+            the current selection, or replaces an empty document. */}
+        <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline" style={{ marginRight: 4 }}>
+          {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
+        </button>
+        {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new document. */}
+        <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 12 }}>
+          ✦ Restructure
         </button>
         <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
           Edit
@@ -431,6 +487,7 @@ export function App() {
         <h2 style={{ fontSize: 16 }}>Sync</h2>
         <DocSyncPanel />
       </div>
+      {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
     </AppShell>
   );
 }
