@@ -1681,6 +1681,38 @@ building the earlier ones):
    Settings/Features/Help (no searchable index for any of the three, and no underlying system to
    index for Features at all).
 
+**§6.10 is closed as of sub-slice 4b** — every item within Quick Assist/Quick Insert/Settings's own
+real scope is landed. The remaining Global Search categories above are deliberately OUT OF SCOPE
+for this phase, not "not started yet" within it: each is blocked on a real gap in a DIFFERENT
+subsystem that Quick Assist search merely depends on, not something Quick Assist itself owns.
+Fixing them means:
+- **Pad/Q&A/Diagrams/Remarks search** — giving `padStore.ts` real per-document persistence (it
+  currently has none at all: no `localStorage` read/write anywhere in the file, confirmed by
+  grep — Pad content doesn't even survive a page reload for the CURRENT document today, let alone
+  a document switch). That's a real, valuable, pre-existing gap every one of `padStore.ts`'s own
+  header comments already flagged as "a real, separately-scoped follow-up if still wanted" since
+  Phase 3/§6.3 — its own project, not a Quick Assist task, and substantial enough (persistence
+  keying, load/save wiring into `documentsStore.ts`'s own doc-switch lifecycle, matching
+  `outlineStore.ts`'s own per-document pattern) to warrant its own phase if picked up.
+- **Templates search** — legacy's own real Templates system has never been built in `web/` at
+  all (confirmed in `docs/history/phase5-parity-checklist.md`); there's nothing to search until a
+  future phase builds Templates itself.
+- **Settings/Features search** — `web/` has no searchable settings-label index (would need
+  authoring one from scratch by walking every Settings section) and no feature-flags system at
+  all (nothing to search, full stop).
+- **Help search** — `web/` has no help/cheatsheet/shortcuts-registry content anywhere to index.
+- **Fuzzy matching / trash-document scanning** — legacy features with no real driver in `web/`
+  today (no trash concept at all) or genuinely low value at this corpus size (see
+  `state/quickAssistSearch.ts`'s own header on why fuzzy matching was skipped).
+
+None of these are guesses at what to build next — each is a specific, named, real gap that a
+future phase can pick up on its own terms, the same "port the effect, honestly scoped" discipline
+this whole project has used throughout.
+
+**Status: complete within scope.** All 4 planned slices landed (Quick Insert completion, the
+Settings-panel category rail, the Quick Assist command box, and Global Search sub-slices 4a-4b) —
+see the closing note above for exactly what's genuinely out of scope and why.
+
 ### 6.11 — PWA & polish pass
 Static precache strategy to match legacy's (`web/public/sw.js`'s current runtime cache-first is
 a deliberate, documented simplification — revisit once Vite's hashed-filename asset manifest

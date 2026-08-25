@@ -34,7 +34,7 @@ already made and already documented at the time.
 | Hub (To-Dos, Meeting Notes, Journal, Library, Recap) | ⚠️ | All 5 exist (Phase 4) at basic CRUD/derived-summary level — see Hub section below |
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
-| Quick Assist / global search | ⚠️ | Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions (§6.10 slice 3), plus Global Search covering Documents/In documents/Notes/Code/Tags/Folders with real category-prefix scoping and a chip-mode category picker (§6.10 slices 4a-4b) — Pad/Q&A/Diagrams/Remarks/Settings/Features/Help search and fuzzy matching not built yet, see the Quick Assist & Quick Insert section below |
+| Quick Assist / global search | ⚠️ | §6.10 closed as complete within its own real scope: Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions, Global Search covering Documents/In documents/Notes/Code/Tags/Folders with real category-prefix scoping and a chip-mode category picker. Remaining categories (Pad/Q&A/Diagrams/Remarks/Settings/Features/Help/Templates, fuzzy matching) are deliberately out of scope, each blocked on a separate subsystem gap — see the Quick Assist & Quick Insert section below |
 | Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
@@ -444,11 +444,25 @@ its prefix and keeps the box open; Escape from the picker closes just the picker
 category-prefixed query shows no command rows and scopes results to that one category — zero
 console/page errors throughout.
 
-Still unbuilt: Pad/Q&A/Diagrams/Remarks search (real legacy collectors, but `padStore.ts` isn't
-persisted per-document yet — only the currently-open document's Pad content is searchable);
-Templates (no live UI at all); Settings/Features/Help search (no searchable index, and no
-underlying system for Features at all); fuzzy matching. See phase6-full-parity-plan.md's §6.10
-section for the planned slice sequence.
+**§6.10 (Quick Assist, Quick Insert & Settings) is closed as complete within its own real scope.**
+The remaining pieces below are deliberately OUT OF SCOPE, not "not started yet" — each is blocked
+on a real gap in a DIFFERENT subsystem Quick Assist search merely depends on, not something Quick
+Assist itself owns:
+- Pad/Q&A/Diagrams/Remarks search — blocked on `padStore.ts` having no per-document persistence
+  at all (confirmed by grep: zero `localStorage` reads/writes anywhere in that file — Pad content
+  doesn't survive a page reload for the current document today, let alone a document switch).
+  Every one of `padStore.ts`'s own header comments already flags this as "a real,
+  separately-scoped follow-up if still wanted" since Phase 3/§6.3 — its own future phase, not a
+  Quick Assist task.
+- Templates search — legacy's own real Templates system has never been built in `web/` at all;
+  nothing exists yet to search.
+- Settings/Features search — `web/` has no searchable settings-label index and no feature-flags
+  system at all.
+- Help search — `web/` has no help/cheatsheet/shortcuts-registry content anywhere to index.
+- Fuzzy matching / trash-document scanning — no real driver in `web/` today (no trash concept at
+  all) or genuinely low value at this corpus size.
+
+See phase6-full-parity-plan.md's §6.10 section (its own closing note) for the full reasoning.
 
 ## Preview, Presenter Mode & Export
 

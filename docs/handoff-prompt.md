@@ -2140,10 +2140,28 @@ category chip inserts "note: " and keeps the box open; Escape from
 the picker closes just the picker, leaving the box open; a
 category-prefixed query ("notes: welcome") shows no command rows and
 scopes search results to just that category -- zero console/page
-errors throughout, across every one of those checks. Remaining:
-sub-slices covering Pad/Q&A/Diagrams/Remarks search (blocked on
-`padStore.ts` gaining real per-document persistence), Settings/
-Features/Help search (no searchable index for any of the three, and
-no underlying system to index for Features at all), Templates (no
-live UI at all), and fuzzy matching -- none started yet.
+errors throughout, across every one of those checks.
+
+§6.10 (Quick Assist, Quick Insert & Settings) is now closed as
+COMPLETE within its own real scope -- all 4 planned slices landed.
+The remaining Global Search categories (Pad/Q&A/Diagrams/Remarks,
+Templates, Settings/Features/Help, fuzzy matching) are deliberately
+marked OUT OF SCOPE for this phase in the plan doc, not "not started
+yet": each is blocked on a real gap in a DIFFERENT subsystem Quick
+Assist search merely depends on, not something Quick Assist itself
+owns. The one worth flagging explicitly for future work: `padStore.ts`
+(Pad/Decision Log/Q&A/Diagrams/Remarks/Files) has NO per-document
+persistence at all -- confirmed by grep, zero `localStorage`
+reads/writes anywhere in that file. Pad content doesn't survive a
+page reload for the CURRENT document today, let alone a document
+switch. Every one of `padStore.ts`'s own header comments already
+flagged this as "a real, separately-scoped follow-up if still wanted"
+since Phase 3/§6.3 -- it's a real, valuable gap, but its own future
+phase (persistence keying + load/save wiring into
+`documentsStore.ts`'s doc-switch lifecycle, matching `outlineStore.ts`'s
+own per-document pattern), not a Quick Assist task. Templates has
+never been built in `web/` at all (nothing to search); Settings/
+Features/Help have no searchable index or underlying system to index.
+See phase6-full-parity-plan.md's §6.10 section (its own closing note)
+for the full per-category reasoning.
 ```
