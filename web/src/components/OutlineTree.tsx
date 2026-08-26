@@ -91,9 +91,12 @@ function composeNodeLabelStyle(node: Pick<OutlineNode, 'styles' | 'isCheckbox' |
  * parity-plan.md, "Design tokens & app shell") replaced themeStore.ts's placeholder color
  * values with real ones extracted from legacy/index.html's own CSS -- the drag/drop-indicator
  * blue below now reads `t.dropIndicator` (the real accent color) instead of a hardcoded
- * '#4285f4' that never matched legacy's actual palette. Not every color in this file is
- * tokenized yet (e.g. error/warning colors from semantic markup) -- those read fine on both
- * themes for now and are a real, separately-scoped follow-up if that stops being true.
+ * '#4285f4' that never matched legacy's actual palette. §6.11's visual pass (docs/phase6-full-
+ * parity-plan.md, "PWA & polish pass") tokenized the remaining stragglers found by that pass:
+ * the empty-node placeholder below now reads `t.mutedText` (matching its sibling call sites in
+ * PresenterSlideView.tsx/PreviewPane.tsx) instead of a hardcoded `#bbb`, and `NodeText.tsx`'s own
+ * semantic-markup colors (section/alert/code/note/link) now read the real `--sem-*`/`--accent`
+ * CSS custom properties `themeStore.ts` sets on `document.body` instead of light-theme-only hex.
  */
 export function OutlineTree() {
   const theme = useThemeStore((s) => s.theme);
@@ -1204,7 +1207,7 @@ export function OutlineTree() {
                     }}
                   />
                 ) : (
-                  <span style={{ color: '#bbb' }}>(empty)</span>
+                  <span style={{ color: t.mutedText }}>(empty)</span>
                 )}
               </span>
             )}

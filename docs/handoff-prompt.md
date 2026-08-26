@@ -2323,11 +2323,50 @@ the real `sakura-web-shell-*` cache holds all 8 expected precache
 URLs including the real hashed JS bundle (not a placeholder);
 reloading the page with the browser context set fully offline still
 shows the app shell, served from that cache -- zero console/page
-errors throughout. Remaining §6.11 slice: the full visual pass
-against Section 6.1's tokens (an initial grep found ~15 component
-files with hardcoded hex colors; most look legitimate --
-export/PDF-generation code that must bake literal colors into a
-static file format, or intentionally theme-independent
-semantic-markup colors -- but each needs individual verification) --
-not started yet.
+errors throughout.
+
+Third and final §6.11 slice landed: the full visual pass against
+Section 6.1's tokens. Audited every component an initial grep flagged
+for hardcoded hex colors individually against legacy's own real CSS.
+Most were legitimate: export/PDF-generation code baking colors into a
+static non-themed document; fixed, non-theme-varying colors for swipe
+actions, danger buttons, notification badges, and favorite stars,
+matching legacy's own real fixed choices for those same elements;
+`PresenterSlideView.tsx`'s intentional black backdrop.
+`NodeText.tsx` was real drift, though: its own header comment's claim
+that "`web/` has no theme system yet" was stale (§6.1 had already
+landed `THEME_TOKENS` and live `--sem-*`/`--accent`/`--muted` CSS
+custom properties on `document.body`), and cross-checking those
+tokens against legacy's real `body.theme-light`/`body.theme-dark` CSS
+confirmed they genuinely differ per theme -- so `NodeText.tsx`'s
+baked-in light-theme hex for semantic markup (`[Section]`, `` `code` ``,
+`!alert`, `(note)`, `[[links]]`) was a real dark-mode legibility bug.
+Fixed by switching every color to the matching live CSS custom
+property and its two rgba tints to `color-mix(in srgb, ...)` of the
+same tokens, matching legacy's own CSS exactly -- no new props or
+hooks needed since these are already set on `<body>`. Also fixed a
+smaller sibling inconsistency found in the same area:
+`OutlineTree.tsx`'s own empty-node placeholder used a hardcoded `#bbb`
+where its sibling call sites (`PresenterSlideView.tsx`,
+`PreviewPane.tsx`) already correctly used `t.mutedText` for the same
+UI element, and `NodeText.tsx`'s own internal empty-segments branch
+had the same hardcoding -- both now read the real muted-text token.
+Verified end-to-end in real headless Chrome against a real
+`vite preview` build: typed semantic markup into a live node, read
+each segment's real computed color in both light and dark theme
+(exact match against `THEME_TOKENS` both ways, confirming the colors
+now actually swap instead of staying pinned to light values), then
+confirmed the "(empty)" placeholder renders in the real dark-theme
+muted color -- zero console/page errors.
+
+**§6.11 is now complete**: all three planned slices have landed, and
+it was the last of Phase 6's eleven phase sections (6.1 through
+6.11) in `phase6-full-parity-plan.md`. Next up per that same plan
+doc is its own Section 9, "Pre-cutover gate" -- NOT a new phase
+section to build against, but a checklist to work through before any
+`deploy.yml` cutover PR: confirm `docs/history/phase5-parity-checklist.md`
+shows no remaining ❌/⚠ rows against the plan's scope, do a real
+person-driven end-to-end pass through the actual built `dist/`
+output, and re-verify against real production Firestore data before
+touching the deploy config at all.
 ```

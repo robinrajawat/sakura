@@ -1890,11 +1890,10 @@ Settings-panel category rail, the Quick Assist command box, and Global Search su
 see the closing note above for exactly what's genuinely out of scope and why.
 
 ### 6.11 — PWA & polish pass
-Static precache strategy to match legacy's (`web/public/sw.js`'s current runtime cache-first is
-a deliberate, documented simplification — revisit once Vite's hashed-filename asset manifest
-can be precached at build time), maskable-icon verification, title-bar theme-color sync, a full
-visual pass against Section 6.1's tokens now that every screen exists, to catch any component
-that drifted from the shared system during individual feature phases.
+**Status: complete.** Static precache strategy to match legacy's, maskable-icon verification,
+title-bar theme-color sync, and a full visual pass against Section 6.1's tokens now that every
+screen exists, to catch any component that drifted from the shared system during individual
+feature phases.
 
 Planned slice sequence:
 1. **Title-bar theme-color sync + maskable-icon verification** (landed, see Status) — small,
@@ -1924,13 +1923,42 @@ Planned slice sequence:
    evicts each previous deploy's now-orphaned cache (an automated adaptation of legacy's own real
    manual-bump convention, necessary since `web/`'s filenames change every build, unlike legacy's
    own rarely-changing assets).
-3. **Full visual pass against Section 6.1's tokens** — audit every component for hardcoded
-   colors/spacing that drifted from the shared `THEME_TOKENS`/CSS-custom-property system instead
-   of reading it, now that every screen in the app exists to check. Not yet scoped in detail —
-   an initial grep found ~15 component files with hardcoded hex colors; most look like legitimate
-   uses (export/PDF-generation code that must bake literal colors into a static file format, or
-   semantic-markup colors that are intentionally theme-independent) rather than real drift, but
-   each needs individual verification before ruling it in or out.
+3. **Full visual pass against Section 6.1's tokens** (landed, see Status) — audited every
+   component an initial grep flagged for hardcoded hex colors (`ExportButtons.tsx`,
+   `MobileHubTodos.tsx`, `MobileHubJournal.tsx`, `SwipeRow.tsx`, `PresenterSlideView.tsx`,
+   `PadPanel.tsx`, `OutlineTree.tsx`, `NotificationBell.tsx`, `NotePanel.tsx`, `NodeText.tsx`,
+   `HubLibraryPanel.tsx`) individually against legacy's own real CSS rather than assuming either
+   way. Most turned out to be legitimate: `ExportButtons.tsx`'s colors are baked into a static
+   PDF/print document (a genuinely different, non-themed output format, matching legacy's own
+   equivalent export code); `SwipeRow.tsx`/`MobileHubTodos.tsx`/`MobileHubJournal.tsx`'s
+   fixed reds/greens match legacy's own real fixed (non-theme-varying) swipe-action and
+   danger-button colors; `NotificationBell.tsx`'s badge red and `HubLibraryPanel.tsx`'s
+   favorite-star gold are likewise legacy's own fixed, theme-independent accent colors;
+   `PresenterSlideView.tsx`'s black backdrop is an intentional presentation-mode background, not
+   a themed surface; `OutlineTree.tsx`'s one remaining hardcoded danger-menu-item red matches
+   legacy's own real (also fixed, non-tokenized) context-menu danger color.
+   **`NodeText.tsx` was real drift**, though: its header comment claimed "`web/` has no theme
+   system yet" — stale, since §6.1 had already landed `themeStore.ts`'s real `THEME_TOKENS` and
+   live `--sem-section`/`--sem-alert`/`--sem-code`/`--muted`/`--accent` CSS custom properties on
+   `document.body`. Cross-checked against legacy's own `body.theme-light`/`body.theme-dark` CSS
+   blocks and confirmed these tokens genuinely differ per theme (e.g. `--sem-alert:#b02020` light
+   vs. `#d78a80` dark) — so `NodeText.tsx`'s baked-in light-theme hex values were a real dark-mode
+   legibility bug (semantic markup — `[Section]`, `` `code` ``, `!alert`, `(note)`, `[[links]]` —
+   kept rendering light-theme colors against a dark background). Fixed by switching every
+   `SEGMENT_STYLES` color to the matching `var(--sem-*)`/`var(--accent)`/`var(--muted)` CSS custom
+   property (already live on `<body>`, no new props or hooks needed), and its two rgba tint
+   backgrounds to `color-mix(in srgb, ...)` of the same tokens, matching legacy's own CSS exactly.
+   Also fixed a smaller, related inconsistency while in the area: `OutlineTree.tsx`'s own
+   empty-node "(empty)" placeholder used a hardcoded `#bbb` where its two sibling call sites
+   (`PresenterSlideView.tsx`, `PreviewPane.tsx`) already correctly used `t.mutedText` for the same
+   UI element — and `NodeText.tsx`'s own internal empty-segments branch had the same `#bbb`
+   hardcoding. Both now read the real muted-text token. Verified end-to-end in real headless
+   Chrome against a real `vite preview` build: typed `[Section] plain \`code\` !alert (note) end`
+   into a live node, read each segment's real computed color in light theme (matched
+   `THEME_TOKENS.light` exactly), toggled to dark theme and re-read (matched
+   `THEME_TOKENS.dark` exactly — confirming the colors now actually swap instead of staying
+   pinned), then cleared a node's text and confirmed the "(empty)" placeholder renders in the
+   real dark-theme muted color instead of the old fixed light gray — zero console/page errors.
 
 ## 9 — Pre-cutover gate (do this before touching `deploy.yml`)
 
@@ -2251,8 +2279,35 @@ auth) passed straight through untouched. Verified end-to-end against a real `vit
 in real headless Chrome: the service worker reaches the active state; the real
 `sakura-web-shell-*` cache holds all 8 expected precache URLs including the real hashed JS bundle
 (not a placeholder); reloading the page with the browser context set fully offline still shows
-the app shell, served from that cache — zero console/page errors. Remaining §6.11 slice: the full
-visual pass against Section 6.1's tokens — not started yet.
+the app shell, served from that cache — zero console/page errors.
+
+Third and final §6.11 slice: the full visual pass against Section 6.1's tokens. Audited every
+component an initial grep flagged for hardcoded hex colors individually against legacy's own real
+CSS. Most were legitimate (export/PDF-generation code baking colors into a static non-themed
+document; fixed, non-theme-varying colors for swipe actions, danger buttons, notification badges,
+and favorite stars, matching legacy's own real fixed choices for those same elements;
+`PresenterSlideView.tsx`'s intentional black backdrop). `NodeText.tsx` was real drift, though: its
+own header comment's claim that "`web/` has no theme system yet" was stale (§6.1 had already
+landed `THEME_TOKENS` and live `--sem-*`/`--accent`/`--muted` CSS custom properties on
+`document.body`), and cross-checking those tokens against legacy's real `body.theme-light`/
+`body.theme-dark` CSS confirmed they genuinely differ per theme — so `NodeText.tsx`'s baked-in
+light-theme hex for semantic markup (`[Section]`, `` `code` ``, `!alert`, `(note)`, `[[links]]`)
+was a real dark-mode legibility bug. Fixed by switching every color to the matching live CSS
+custom property and its two rgba tints to `color-mix(in srgb, ...)` of the same tokens, matching
+legacy's own CSS exactly — no new props or hooks needed since these are already set on `<body>`.
+Also fixed a smaller sibling inconsistency found in the same area: `OutlineTree.tsx`'s own
+empty-node placeholder used a hardcoded `#bbb` where its sibling call sites (`PresenterSlideView.tsx`,
+`PreviewPane.tsx`) already correctly used `t.mutedText` for the same UI element, and
+`NodeText.tsx`'s own internal empty-segments branch had the same hardcoding — both now read the
+real muted-text token. Verified end-to-end in real headless Chrome against a real `vite preview`
+build: typed semantic markup into a live node, read each segment's real computed color in both
+light and dark theme (exact match against `THEME_TOKENS` both ways, confirming the colors now
+actually swap instead of staying pinned to light values), then confirmed the "(empty)" placeholder
+renders in the real dark-theme muted color — zero console/page errors.
+
+**§6.11 is now complete**: all three planned slices (title-bar theme-color sync + maskable-icon
+verification, static precache strategy, full visual-token pass) have landed.
+
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
