@@ -173,6 +173,25 @@ export const CSS_VAR_MAP: Partial<Record<keyof ThemeTokens, string>> = {
   fcGray: '--fc-gray'
 };
 
+/** §6.11 slice (docs/phase6-full-parity-plan.md, "PWA & polish pass"): direct port of legacy's
+ * real title-bar theme-color sync -- `applyChromeColors()` (legacy/index.html:18770) reads
+ * `--tb-bg`'s current computed value and writes it into `<meta name="theme-color">` every time
+ * `setTheme()` runs, so the OS/browser title-bar chrome tracks light/dark instead of staying
+ * pinned to `index.html`'s own static initial value forever. `web/`'s `index.html` had the same
+ * static-forever gap (`<meta name="theme-color" content="#f8f8f6">`, never updated after first
+ * paint) until this slice. Reads `THEME_TOKENS[theme].toolbarBackground` directly rather than a
+ * `getComputedStyle` round-trip through the CSS custom property `applyCssVariables` above just
+ * set -- legacy's own version needs the round-trip because its real Chrome-preset feature can
+ * override `--tb-bg` to something other than the plain theme default; `web/` has no reachable
+ * Chrome-preset feature (investigated in §6.7, confirmed unreachable in legacy's own UI), so
+ * `--tb-bg` is always exactly `THEME_TOKENS[theme].toolbarBackground` here -- reading the token
+ * directly is equivalent and skips a synchronous layout/style read for no behavioral difference. */
+function syncThemeColorMeta(theme: Theme): void {
+  if (typeof document === 'undefined') return;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', THEME_TOKENS[theme].toolbarBackground);
+}
+
 /** Sets every mapped token from `THEME_TOKENS[theme]` as a real CSS custom property on
  * `document.body`, plus `--accent` from the resolved accent color -- one call handles a full
  * theme swap (`setTheme`/`toggleTheme`) and the initial mount (`useThemeStore.getState().init()`
@@ -190,6 +209,7 @@ function applyCssVariables(theme: Theme, accent: string, nodeFontColor: string):
   // `--accent` above, needed so a non-default node-text-color preset survives a theme swap
   // instead of getting silently reset back to that theme's own default node color.
   document.body.style.setProperty('--node-fg', nodeFontColor);
+  syncThemeColorMeta(theme);
 }
 
 /** Mutates ONLY `--accent`, leaving every other custom property untouched -- matches legacy's

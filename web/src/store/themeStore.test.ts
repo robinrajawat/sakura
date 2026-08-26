@@ -100,6 +100,38 @@ describe('themeStore', () => {
     });
   });
 
+  describe('title-bar theme-color meta sync (§6.11)', () => {
+    let meta: HTMLMetaElement;
+
+    beforeEach(() => {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      meta.setAttribute('content', '#000000');
+      document.head.appendChild(meta);
+    });
+
+    afterEach(() => {
+      meta.remove();
+    });
+
+    it('init() syncs <meta name="theme-color"> to the current theme\'s real toolbar background', () => {
+      useThemeStore.getState().init();
+      expect(meta.getAttribute('content')).toBe(THEME_TOKENS.light.toolbarBackground);
+    });
+
+    it('setTheme re-syncs the meta tag to the new theme\'s toolbar background', () => {
+      useThemeStore.getState().setTheme('dark');
+      expect(meta.getAttribute('content')).toBe(THEME_TOKENS.dark.toolbarBackground);
+      useThemeStore.getState().setTheme('light');
+      expect(meta.getAttribute('content')).toBe(THEME_TOKENS.light.toolbarBackground);
+    });
+
+    it('does nothing (no throw) when the meta tag is missing from the document', () => {
+      meta.remove();
+      expect(() => useThemeStore.getState().setTheme('dark')).not.toThrow();
+    });
+  });
+
   describe('persistence across sessions (§6.7)', () => {
     it('setTheme persists the new theme (and the current accent/mode/node-font-color) to localStorage', () => {
       useThemeStore.getState().setAccentPreset('moss');

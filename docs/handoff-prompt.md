@@ -2265,4 +2265,37 @@ never been built in `web/` at all (nothing to search); Settings/
 Features/Help have no searchable index or underlying system to index.
 See phase6-full-parity-plan.md's §6.10 section (its own closing note)
 for the full per-category reasoning.
+
+Moved to §6.11 (PWA & polish pass) next in the same session. First
+slice landed: title-bar theme-color sync + maskable-icon verification.
+Maskable-icon verification needed NO code change: `web/public/
+icon-512-maskable.png` is byte-identical to legacy's own real icon
+(confirmed via `md5sum`), correctly declared `"purpose": "maskable"`
+in `manifest.json`, and visually inspected to have proper safe-zone
+padding -- the parity checklist's prior "no maskable-variant
+distinction" note was stale, corrected as part of this slice.
+Theme-color sync WAS a real gap: `index.html`'s
+`<meta name="theme-color">` never updated after first paint, unlike
+legacy's real `applyChromeColors()` (called from every `setTheme()`),
+which re-writes it to the current theme's toolbar-background color on
+every light/dark change. New `themeStore.ts` `syncThemeColorMeta`,
+called from the shared `applyCssVariables` both `init()` and every
+`setTheme()` already go through, so first paint and every later theme
+swap both stay in sync -- reads `THEME_TOKENS[theme].toolbarBackground`
+directly rather than legacy's `getComputedStyle` round-trip, since
+`web/` has no reachable Chrome-preset feature that could make the real
+`--tb-bg` diverge from that plain default (investigated in §6.7,
+confirmed unreachable in legacy's own UI too). Verified end-to-end in
+real headless Chrome: light theme shows `#f8f8f6`; clicking Dark
+updates the meta tag to `#181816`; clicking back to Light restores
+`#f8f8f6` -- zero console/page errors throughout. Remaining §6.11
+slices: the static precache strategy (needs a small build-time step
+reading Vite's own asset manifest to generate a real hashed-filename
+precache list, matching legacy's real `sw.js` network-first-navigation/
+cache-first-static-assets strategy) and the full visual pass against
+Section 6.1's tokens (an initial grep found ~15 component files with
+hardcoded hex colors; most look legitimate -- export/PDF-generation
+code that must bake literal colors into a static file format, or
+intentionally theme-independent semantic-markup colors -- but each
+needs individual verification) -- neither started yet.
 ```
