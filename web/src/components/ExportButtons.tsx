@@ -414,10 +414,11 @@ export function ExportButtons() {
   // cover-page block (legacy/index.html:39681-39702) -- wordmark, document title, an accent
   // rule, and a meta line (word count, estimated read time, last-modified date). `page-break-
   // after: always` puts the outline itself on its own page after it, same as legacy's own
-  // `.has-cover-page` CSS. Scoped down: no author line (web/'s `DocSummary` has no author field
-  // yet, a document-model gap, not a small omission) and no decision-count in the meta line
-  // (Decision Log has no store/panel in web/ yet, same blocker documented for Excel export
-  // above). The wordmark (`BRANDING_TEXT`, shared with `PresenterMode.tsx`'s own presenter-bar
+  // `.has-cover-page` CSS. Scoped down: no author line (§7.3, docs/phase7-app-shell-and-dashboard-
+  // plan.md, added a real `author` field to `DocSummary`, but wiring it into this specific export
+  // meta line is a small, separately-scoped follow-up, not done as a side effect of that slice)
+  // and no decision-count in the meta line (Decision Log has no store/panel in web/ yet, same
+  // blocker documented for Excel export above). The wordmark (`BRANDING_TEXT`, shared with `PresenterMode.tsx`'s own presenter-bar
   // mark and the Word/PowerPoint exports below) is legacy's own real default
   // (`getBrandingDisplayText`'s fallback) -- hardcoded since no Settings panel exists yet to
   // hold `previewBrandingText`/`previewPresenterBranding`, same "no silent default for a live

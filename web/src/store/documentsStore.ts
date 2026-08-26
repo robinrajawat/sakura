@@ -4,11 +4,51 @@ import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
 import { useVersionHistoryStore } from './versionHistoryStore';
 
+/** Matches legacy's real `DOC_STATUSES` (legacy/index.html:11292) exactly, including the empty
+ * string for "no status set" -- not a separate `null`/`undefined` state. */
+export type DocStatus = '' | 'draft' | 'review' | 'approved' | 'rejected';
+export const DOC_STATUSES: DocStatus[] = ['', 'draft', 'review', 'approved', 'rejected'];
+
+/** Matches legacy's real two-field `docLinkedUrl`/`docLinkedUrlLabel` pair
+ * (legacy/index.html:8276, :11351-11352) collapsed into one object -- `null` means "no link set"
+ * (legacy's own equivalent: `docLinkedUrl===''`), matching `label` being meaningless without a
+ * `url` to attach it to. */
+export interface DocLink {
+  label: string;
+  url: string;
+}
+
+/**
+ * Phase 7.3 slice (docs/phase7-app-shell-and-dashboard-plan.md): `status`/`author`/`link`, direct
+ * ports of legacy's real per-document `docStatus`/`author`/`docLinkedUrl`+`docLinkedUrlLabel`
+ * fields (legacy/index.html:6506-6530's header chips read/write exactly these). Store-and-
+ * migration only in this slice -- no UI reads or writes these yet (that's §7.4's job).
+ *
+ * **One real, deliberate storage-shape simplification, not a literal byte-for-byte port:**
+ * legacy's own lightweight `docsIndex` (`loadDocsIndex`/`DOCS_INDEX_KEY`, legacy/index.html:
+ * 9900-9905) carries only `{id,title,updatedAt,icon?,trashedAt?}` -- `docStatus`/`author`/
+ * `docLinkedUrl`/`docLinkedUrlLabel` live ONLY on legacy's full per-document blob
+ * (`sakura_doc_v1_<id>`), never duplicated into the index, confirmed by grepping every
+ * `loadDocsIndex`/`saveDocsIndex` call site. `web/`'s own `DocSummary` already established a
+ * different, existing precedent for `title` specifically: it genuinely IS duplicated into both
+ * `docsIndex` (this type) AND the separate per-document `StoredDoc` blob (see
+ * `renameDocument`'s own dual-write), matching legacy's own real duplication of THAT one field
+ * for cheap sidebar-listing without loading every document's full content. Status/author/link
+ * have no such "the sidebar needs to show this cheaply" requirement today (nothing renders them
+ * there) -- so this slice adds them to `DocSummary` ONLY, not `StoredDoc`, rather than inventing
+ * a second dual-write sync path (a real source of drift bugs) for fields nothing needs read from
+ * two places. `docsIndex` is already the one place `web/`'s own architecture keeps ALL
+ * documents' metadata reactively in memory at all times, unlike `StoredDoc`, which is loaded
+ * lazily per-document -- the more natural, lower-risk home for this slice's three new fields.
+ */
 export interface DocSummary {
   id: string;
   title: string;
   createdAt: number;
   modifiedAt: number;
+  status: DocStatus;
+  author: string;
+  link: DocLink | null;
 }
 
 /** A single document folder -- matches legacy's own real shape exactly (legacy/index.html:29822's
@@ -158,6 +198,13 @@ interface DocumentsState {
   closeTab: (id: string) => void;
   switchTab: (id: string) => void;
   renameDocument: (id: string, title: string) => void;
+  /** §7.3 slice (docs/phase7-app-shell-and-dashboard-plan.md): direct ports of legacy's real
+   * `setDocStatus`/the `#sb-author` input's own commit handler/`setDocLinkedUrl`
+   * (legacy/index.html:11305-11352). `DocSummary`'s own header explains why these write only to
+   * `docsIndex`, not `StoredDoc` -- see that comment for the full reasoning. */
+  setDocStatus: (id: string, status: DocStatus) => void;
+  setDocAuthor: (id: string, author: string) => void;
+  setDocLink: (id: string, link: DocLink | null) => void;
   deleteDocument: (id: string) => void;
   saveActiveDocNodes: () => void;
   /** §6.8 slice: restores a Version History revision into the ACTIVE document only -- matches
@@ -311,7 +358,16 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
 
   init: () => {
     if (get().loaded) return;
-    const docsIndex = readJson<DocSummary[]>(_DOCS_INDEX_KEY, []);
+    // Defensive normalization for a docsIndex persisted before this slice (§7.3) added
+    // status/author/link -- an old entry simply lacks these keys entirely (not `null`/invalid
+    // values to reject, just genuinely absent), so this coerces them to their real defaults
+    // rather than leaving `undefined` sitting where the type says a real value must be.
+    const docsIndex = readJson<DocSummary[]>(_DOCS_INDEX_KEY, []).map((d) => ({
+      ...d,
+      status: DOC_STATUSES.includes(d.status) ? d.status : '',
+      author: typeof d.author === 'string' ? d.author : '',
+      link: d.link && typeof d.link.url === 'string' ? { label: typeof d.link.label === 'string' ? d.link.label : '', url: d.link.url } : null
+    }));
     const openTabs = readJson<string[]>(_OPEN_TABS_KEY, []);
     const storedActive = readJson<string | null>(_ACTIVE_DOC_KEY, null);
     const activeDocId = storedActive && openTabs.includes(storedActive) ? storedActive : (openTabs[0] ?? null);
@@ -351,7 +407,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
         { id: 3, depth: 1, text: 'Enter creates a new line, Tab indents it', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
       ];
       rebuildParentIdsCore(nodes);
-      const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now };
+      const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now, status: '', author: '', link: null };
       writeJson(docStorageKey(id), { title: summary.title, nodes });
       writeJson(_DOCS_INDEX_KEY, [summary]);
       writeJson(_OPEN_TABS_KEY, [id]);
@@ -373,7 +429,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     captureCurrentTabView();
     const id = generateDocId();
     const now = Date.now();
-    const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now };
+    const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now, status: '', author: '', link: null };
     const nodes: OutlineNode[] = [
       { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
     ];
@@ -441,6 +497,24 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     writeJson(_DOCS_INDEX_KEY, docsIndex);
     const stored = readJson<StoredDoc | null>(docStorageKey(id), null);
     if (stored) writeJson(docStorageKey(id), { ...stored, title });
+    set({ docsIndex });
+  },
+
+  setDocStatus: (id, status) => {
+    const docsIndex = get().docsIndex.map((d) => (d.id === id ? { ...d, status, modifiedAt: Date.now() } : d));
+    writeJson(_DOCS_INDEX_KEY, docsIndex);
+    set({ docsIndex });
+  },
+
+  setDocAuthor: (id, author) => {
+    const docsIndex = get().docsIndex.map((d) => (d.id === id ? { ...d, author, modifiedAt: Date.now() } : d));
+    writeJson(_DOCS_INDEX_KEY, docsIndex);
+    set({ docsIndex });
+  },
+
+  setDocLink: (id, link) => {
+    const docsIndex = get().docsIndex.map((d) => (d.id === id ? { ...d, link, modifiedAt: Date.now() } : d));
+    writeJson(_DOCS_INDEX_KEY, docsIndex);
     set({ docsIndex });
   },
 
