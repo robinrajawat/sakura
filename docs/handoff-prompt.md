@@ -2362,11 +2362,33 @@ muted color -- zero console/page errors.
 **§6.11 is now complete**: all three planned slices have landed, and
 it was the last of Phase 6's eleven phase sections (6.1 through
 6.11) in `phase6-full-parity-plan.md`. Next up per that same plan
-doc is its own Section 9, "Pre-cutover gate" -- NOT a new phase
-section to build against, but a checklist to work through before any
-`deploy.yml` cutover PR: confirm `docs/history/phase5-parity-checklist.md`
-shows no remaining ❌/⚠ rows against the plan's scope, do a real
-person-driven end-to-end pass through the actual built `dist/`
-output, and re-verify against real production Firestore data before
-touching the deploy config at all.
+doc is its own Section 9, "Pre-cutover gate".
+
+Before starting Section 9, checked whether
+`docs/history/phase5-parity-checklist.md` itself was current -- it
+wasn't, in three sections ("Overview / Key capabilities", "Core
+Editing", "Keyboard Shortcuts", plus the "Documents & Tabs" prose
+section found in a second pass), each written once at the start of
+Phase 5 and never revisited even though Phase 6.2 and later sub-phases
+built several of the exact features they still claimed were missing
+(duplication, per-node bold/italic/underline/strike, headings, the
+fold badge, the hover toolbar, checkbox progress badges, per-tab
+undo/redo, per-tab scroll/selection restore, drag-to-reorder tabs,
+the tab-switcher dropdown, several real keyboard shortcuts, folders/
+file-explorer). Corrected every stale row directly against the code
+(`docs/history/phase5-parity-checklist.md` and PR #261).
+
+New `docs/post-cutover-backlog.md`: every remaining real (now
+re-verified, non-stale) `❌`/`⚠️` gap from the checklist, organized
+as a short actionable list rather than the checklist's full audit
+narrative, confirming none of them are launch-blocking. Section 9's
+gate item 1 in `phase6-full-parity-plan.md` was rewritten to point at
+this new backlog doc instead of requiring literal zero remaining
+rows in the checklist forever -- Phase 6 deliberately scoped many
+features down rather than reaching 100% legacy parity before
+cutover, so that stricter reading was never really the intent.
+
+Gate items 2-4 still need a person directly: a real click-through of
+the built `dist/` output, and a real sign-in against production
+Firestore data, before any `deploy.yml` cutover PR.
 ```

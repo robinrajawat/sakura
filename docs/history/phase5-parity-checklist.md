@@ -76,11 +76,15 @@ strip (rename via double-click, close-preserves-content vs. delete-removes-it, m
 README's own distinction) plus a picker to reopen any existing document. Debounced autosave
 (800ms) and first-launch content adoption were both caught and fixed before shipping.
 
-Still gaps from the README's fuller description: no per-tab independent undo/redo (outlineStore
-itself has no undo/redo at all yet, tabbed or not — broader than this slice), no per-tab
-independent scroll position/selection (switching tabs resets selection), no folders/templates,
-no searchable tab-switcher dropdown for overflow, no drag-to-reorder tabs. Each a real,
-separately-scoped follow-up building on this foundation.
+Stale paragraph, corrected (checked against the code ahead of Phase 6's Section 9 pre-cutover
+gate): every gap this paragraph listed is now built. `documentsStore.ts`'s `TabViewState` caches
+`undoStack`/`redoStack` (real per-tab undo/redo — `outlineStore.ts` did gain real undo/redo since
+this paragraph was written), `scrollTop`, and the full selection state (`selectedId`/`editingId`/
+`multiSelectedIds`/`selectionAnchorId`/`collapsedIds`) per tab, restoring all of it on tab switch.
+`DocumentTabs.tsx` has real drag-to-reorder (`reorderTab`, Phase 6.1) and the searchable
+tab-switcher dropdown (▾, Phase 6.1, matching legacy's own "search open tabs"). Folders are also
+now built (`SidebarFileExplorer.tsx`, see the Overview table's "Folders/templates/file explorer"
+row) — templates remain the one real gap left from this paragraph's original list.
 
 ## Panels
 
@@ -587,3 +591,8 @@ Everything else this checklist found still missing is tracked as its own sequenc
 itself, and states the rule this checklist's audit exists to support: `www.sakura-notes.com`
 stays on `legacy/` until Phase 6's own pre-cutover gate is explicitly cleared — a real person
 using the actual built app, not a passing build alone.
+
+**Update, ahead of Section 9's pre-cutover gate:** every remaining `❌`/`⚠️` row still in this
+checklist (after the staleness corrections above) has been carried forward into
+**`docs/post-cutover-backlog.md`** — a shorter, actionable list confirming none of them are
+launch-blocking, deliberately deferred to after cutover rather than re-litigated here.
