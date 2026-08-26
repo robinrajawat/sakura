@@ -8,6 +8,14 @@
   <meta name="theme-color" content="#f8f8f6" />
   <link rel="icon" href="/icon-192-pwa.png" />
   <link rel="apple-touch-icon" href="/icon-192-pwa.png" />
+  <!-- Same real fonts and URL legacy/index.html loads (Public Sans/Inter/Fira Code) -- web/ never
+       loaded these at all, so every component's `fontFamily: 'Inter', ...` reference was silently
+       falling back to the browser's generic sans-serif the whole time. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
 </head>
 <body>
   <div id="root"></div>

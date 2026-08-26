@@ -106,7 +106,7 @@ export function AppShell({
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Public Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         background: 'var(--bg)',
         color: 'var(--fg)'
       }}
