@@ -963,3 +963,126 @@ body.theme-dark .account-visibility-badge:hover {
 .doc-link-menu-btn.primary:hover {
   filter: brightness(1.06);
 }
+
+/* §8.4d retrofit (docs/phase8-design-system-parity-plan.md) -- the real per-node action toolbar
+ * (legacy/index.html:1093-1106, `#quick-bar` and its children). `web/`'s own toolbar (App.tsx's
+ * `toolbarVisible` block) only ports six of legacy's real nine groups (History/Structure/Format/
+ * Insert/AI/Delete -- Move/Fold/Extras are out of scope, see that block's own header comment), but
+ * the six it has get the real container/group/button/separator treatment here.
+ *
+ * `.quick-btn` is placed AFTER `.icon-btn` (not before, not merged into it) on purpose: legacy's
+ * real markup always combines both classes on the same button (`class="btn icon-btn quick-btn"`),
+ * and CSS cascade means whichever rule is declared LATER in the stylesheet wins on the shared
+ * `width`/`height` property when specificity is equal -- in legacy's own real stylesheet
+ * `.quick-btn` comes after `.icon-btn`, so its 34x34 sizing (not `.icon-btn`'s own 32x32) is what
+ * actually renders on every quick-bar button. Declaring it later here reproduces that same
+ * cascade outcome.
+ *
+ * Deliberately NOT ported: the `@media (max-width:560px)` responsive bump (legacy/index.html:1106).
+ * `App.tsx` returns `<MobileHub />` entirely below the mobile breakpoint (see its own `isMobile`
+ * check) before ever reaching this toolbar's JSX, so that rule would be unreachable dead CSS here,
+ * not a real `web/`-side simplification of behavior that exists.
+ */
+#quick-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--tb-bg);
+  flex-wrap: wrap;
+}
+
+.action-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.action-group .ag-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  transition: background 0.15s;
+}
+
+.action-group:hover .ag-buttons {
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+/* Legacy hides this label by default (`display:none`), only showing it via a
+ * `body.show-toolbar-labels` class flipped by a Settings toggle `web/` doesn't have (see
+ * App.tsx's own `toolbarVisible` block header for the same reasoning already applied to the AI
+ * group's buttons). Rather than port a toggle-gated class that would leave this label permanently
+ * invisible with no way to ever reveal it -- a real regression, not a faithful port of a default
+ * that itself depends on a toggle this project hasn't built -- it's shown unconditionally here,
+ * matching `ToolbarGroup`'s own pre-existing always-visible-label behavior.
+ */
+.ag-label {
+  display: block;
+  font: 600 9px 'Inter', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) var(--accent-hint-blend), var(--hint));
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.quick-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  border-radius: 7px;
+  border-color: transparent;
+  background: transparent;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    transform 0.08s,
+    box-shadow 0.12s;
+}
+
+.quick-btn:hover {
+  background: var(--hover);
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.quick-btn:active {
+  transform: translateY(0) scale(0.94);
+  box-shadow: none;
+}
+
+.quick-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.quick-btn.danger-hover:hover {
+  border-color: transparent;
+  color: #dc2626;
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+}
+
+.quick-sep {
+  width: 1px;
+  height: 18px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  margin: 9px 3px 0;
+  flex: 0 0 auto;
+  align-self: flex-start;
+}
