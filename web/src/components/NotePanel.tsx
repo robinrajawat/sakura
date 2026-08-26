@@ -7,6 +7,7 @@ import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { sanitizeHrefUrl } from '../utils/sanitizeHrefUrl';
 import { escapeHtml } from '../utils/escapeHtml';
 import { getBacklinksTo, formatBacklinkPreview } from '../core/backlinks';
+import { CloseIcon, LinkIcon, ImageIcon } from '../icons';
 
 const RICH_TEXT_COMMANDS: { cmd: string; label: string; title: string }[] = [
   { cmd: 'bold', label: 'B', title: 'Bold' },
@@ -447,7 +448,7 @@ export function NotePanel() {
           title="Close (Esc)"
           style={{ border: 'none', background: 'none', color: t.hintText, cursor: 'pointer', padding: '2px 5px' }}
         >
-          ✕
+          <CloseIcon width={12} height={12} />
         </button>
       </div>
       <div style={{ padding: '10px 14px 6px', fontSize: 11, color: t.hintText, flexShrink: 0 }}>
@@ -511,7 +512,7 @@ export function NotePanel() {
                   cursor: 'pointer'
                 }}
               >
-                🔗
+                <LinkIcon width={12} height={12} />
               </button>
               <button
                 type="button"
@@ -531,7 +532,7 @@ export function NotePanel() {
                   cursor: 'pointer'
                 }}
               >
-                🖼
+                <ImageIcon width={12} height={12} />
               </button>
               <button
                 type="button"

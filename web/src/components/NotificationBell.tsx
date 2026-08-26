@@ -1,6 +1,7 @@
 import { useAuthStore } from '../store/authStore';
 import { useNotificationsStore } from '../store/notificationsStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { BellIcon, CloseIcon } from '../icons';
 
 /**
  * §6.8 slice: notification bell -- badge + dropdown, direct port of legacy's real bell/menu UX
@@ -35,25 +36,9 @@ export function NotificationBell() {
         aria-expanded={menuOpen}
         style={{ position: 'relative' }}
       >
-        🔔
+        <BellIcon />
         {unreadCount > 0 && (
-          <span
-            aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              minWidth: 14,
-              height: 14,
-              padding: '0 2px',
-              borderRadius: 7,
-              background: '#e5484d',
-              color: '#fff',
-              fontSize: 9,
-              lineHeight: '14px',
-              textAlign: 'center'
-            }}
-          >
+          <span className="notif-badge" aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -120,9 +105,9 @@ export function NotificationBell() {
                     onClick={() => void remove(n.id)}
                     aria-label="Dismiss notification"
                     title="Dismiss"
-                    style={{ fontSize: 10, flexShrink: 0 }}
+                    style={{ flexShrink: 0 }}
                   >
-                    ✕
+                    <CloseIcon width={10} height={10} />
                   </button>
                 </div>
               ))}

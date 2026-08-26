@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import { SidebarToggleIcon, MoonIcon, SunIcon, MonitorIcon, ClockIcon, SettingsGearIcon, SparkleIcon } from './icons';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
@@ -321,10 +322,10 @@ export function App() {
               title="Toggle file explorer"
               aria-pressed={sidebarOpen}
             >
-              ▤
+              <SidebarToggleIcon />
             </button>
             <button type="button" onClick={toggleTheme} title="Toggle theme">
-              {theme === 'light' ? '🌙' : '☀️'}
+              {theme === 'light' ? <MoonIcon /> : <SunIcon />}
             </button>
             {/* §6.7 slice (docs/phase6-full-parity-plan.md): System auto-theme. Direct port of
                 legacy's real two-mode `setThemeMode`/`applyAutoTheme` (`themeStore.ts`'s own
@@ -339,7 +340,7 @@ export function App() {
               title="Follow system theme"
               aria-pressed={themeMode === 'system'}
             >
-              🖥️
+              <MonitorIcon />
             </button>
             {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
                 legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
@@ -406,7 +407,7 @@ export function App() {
                 entirely with no document open, matching legacy's own `if(currentDocId)` guard. */}
             {activeDocId && (
               <button type="button" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
-                🕐
+                <ClockIcon />
               </button>
             )}
             {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
@@ -452,7 +453,7 @@ export function App() {
                 title="Settings"
                 aria-pressed={settingsOpen}
               >
-                ⚙
+                <SettingsGearIcon />
               </button>
               {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} initialCategory={settingsCategory} />}
             </div>
@@ -647,44 +648,49 @@ export function App() {
               </button>
             </ToolbarGroup>
             <ToolbarGroup label="AI">
-              {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the
-                  current selection (single node or a whole multi-select batch) via
-                  aiRewrite.ts. */}
-              <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite">
-                {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
+              {/* §8.2 correction (docs/phase8-design-system-parity-plan.md): this comment used to
+                  claim "✦ -- same glyph legacy's own real qb-ai-rewrite button uses" -- checking
+                  the real markup shows that's wrong: `#qb-ai-rewrite` renders a real sparkle
+                  `<svg>` (legacy/index.html:6473), never a plain "✦" character; every text-label AI
+                  entry point (context menu, command palette) pairs the same real SVG with its own
+                  label too, never a bare glyph substitute. `<SparkleIcon />` below is that real
+                  icon, ported. Rewrites the current selection (single node or a whole multi-select
+                  batch) via aiRewrite.ts. */}
+              <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> {aiRewriteBusy ? 'Rewriting…' : 'Rewrite'}
               </button>
-              {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as
+              {/* Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as
                   children of the current selection, or replaces an empty document. */}
-              <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline">
-                {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
+              <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> {aiOutlineBusy ? 'Working…' : 'Outline'}
               </button>
-              {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new
+              {/* Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new
                   document. */}
-              <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text">
-                ✦ Restructure
+              <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Restructure
               </button>
-              {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
-              <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node">
-                ✦ Expand
+              {/* Expand node / Suggest tags -- both require exactly one selected node. */}
+              <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Expand
               </button>
-              <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags">
-                ✦ Tags
+              <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Tags
               </button>
-              {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection
+              {/* Suggest icon -- a multi-selection auto-applies as a batch; a single selection
                   may open IconPickerPopover.tsx if there's more than one real candidate to choose
                   from. */}
-              <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon">
-                ✦ Icon
+              <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Icon
               </button>
-              {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all
+              {/* Suggest icons for all nodes -- matches legacy's real ai-icon-all
                   whole-document action, always auto-applying as a batch. */}
-              <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes">
-                ✦ Icons (all)
+              <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Icons (all)
               </button>
-              {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected
+              {/* Summarise selection -- inserts an AI-written parent label above 2+ selected
                   roots, indenting their whole subtrees underneath. */}
-              <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection">
-                ✦ Summarise
+              <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SparkleIcon width={12} height={12} /> Summarise
               </button>
             </ToolbarGroup>
             <ToolbarGroup label="Delete">

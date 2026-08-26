@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useVaultStore } from '../store/vaultStore';
 import type { ThemeTokens } from '../store/themeStore';
+import { LockIcon, UnlockIcon } from '../icons';
 
 /**
  * §6.9 slice 2 (docs/phase6-full-parity-plan.md): the Secure Storage vault's setup/unlock/lock/
@@ -87,12 +88,20 @@ export function SecureStorageSettings({ t }: { t: ThemeTokens }) {
     <>
       <div style={sectionHeaderStyle}>Secure Storage</div>
       <div style={{ display: 'grid', gap: 10, fontSize: 12 }}>
-        <div style={{ color: t.mutedText }}>
-          {active
-            ? unlocked
-              ? '🔓 Unlocked — AI provider keys are encrypted at rest.'
-              : '🔒 Locked — unlock to use or edit AI provider keys.'
-            : 'Off — AI provider keys are stored in plain text. Set a passphrase to encrypt them at rest.'}
+        <div style={{ color: t.mutedText, display: 'flex', alignItems: 'center', gap: 5 }}>
+          {active ? (
+            unlocked ? (
+              <>
+                <UnlockIcon width={12} height={12} /> Unlocked — AI provider keys are encrypted at rest.
+              </>
+            ) : (
+              <>
+                <LockIcon width={12} height={12} /> Locked — unlock to use or edit AI provider keys.
+              </>
+            )
+          ) : (
+            'Off — AI provider keys are stored in plain text. Set a passphrase to encrypt them at rest.'
+          )}
         </div>
 
         {!active && !formOpen && (

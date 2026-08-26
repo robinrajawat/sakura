@@ -253,10 +253,24 @@ that plan doc's own Status section for the full breakdown, including how popover
 distinct treatment. Every other new class has no visible effect yet — nothing uses them until 8.3
 (shared components) and 8.4 (retrofit).
 
-**Immediate next steps:** 8.2 (icon set: replace every emoji glyph in `web/src` with a real ported
-SVG) is next — same PR-per-slice discipline as every prior phase, hold verification to a real
-side-by-side screenshot against legacy, not just "renders/behaves correctly." Once `web/` is
-visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
+**8.2 (icon set) landed**: new `web/src/icons.tsx` (22 named icon components, each a direct
+line-cited port of a real legacy `<svg>`) applied across the header, sidebar, AI toolbar group,
+account menu, six modal/panel close buttons, and several Hub panels, replacing every confirmed
+emoji-as-icon gap. Several hits from the initial grep pass turned out to already be correct (not
+gaps) — legacy's own real toolbar quick-buttons and sidebar fold-toggles literally use plain
+Unicode glyphs, not SVG, and `aiIcon.ts`'s whole emoji-keyword feature is real, deliberate document
+content, not UI chrome — see that plan doc's own Status section for the full list of what was and
+wasn't touched, including a real correction found mid-slice (a §7.5 comment wrongly claimed "✦"
+matched legacy's own AI-button glyph; legacy actually uses a real sparkle SVG everywhere, now
+ported as `SparkleIcon`). `OutlineTree.tsx`'s per-node note/code dots and the AI status-text
+strings in `autoRewriteStore.ts`/`aiCall.ts`/`aiOutline.ts` are deliberately deferred, both named
+explicitly in that plan doc rather than silently skipped.
+
+**Immediate next steps:** 8.3 (shared React components: `Button`/`MenuItem`/`Chip`, thin wrappers
+around §8.1's new CSS classes) is next — same PR-per-slice discipline as every prior phase, hold
+verification to a real side-by-side screenshot against legacy, not just "renders/behaves
+correctly." Once `web/` is visually close enough to legacy for a person to sign off, return to
+docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
 `/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
 documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to

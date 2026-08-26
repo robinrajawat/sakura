@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { useOutlineStore, type NodeStyles, type OutlineNode } from '../store/outlineStore';
 import type { DropMode } from '../core/nodeMutations';
 import { countDescendants, getCheckboxChildStats, buildVertFlags, buildPrefix } from '../core/nodeQueries';
@@ -13,6 +13,7 @@ import { usePadStore } from '../store/padStore';
 import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisionLogQueries';
 import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
+import { SearchIcon, MoonIcon, SunIcon, SparkleIcon } from '../icons';
 import { NodeText } from './NodeText';
 import { EmptyDocState } from './EmptyDocState';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
@@ -738,8 +739,8 @@ export function OutlineTree() {
       {(focusedNode || activeTagFilter !== null) && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6, fontFamily: 'sans-serif', fontSize: 12, flexWrap: 'wrap' }}>
           {focusedNode && (
-            <span style={{ color: t.mutedText }}>
-              🔍 {focusPath().map((n) => (n.text || '(empty)') + ' › ').join('')}
+            <span style={{ color: t.mutedText, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <SearchIcon width={11} height={11} /> {focusPath().map((n) => (n.text || '(empty)') + ' › ').join('')}
               <strong style={{ color: t.text }}>{focusedNode.text || '(empty)'}</strong>{' '}
               <button type="button" onClick={exitFocus} style={sortButtonStyle(t)}>
                 Exit focus
@@ -771,8 +772,20 @@ export function OutlineTree() {
         <button type="button" onClick={() => sortChildren(null, 'depth')} style={sortButtonStyle(t)}>
           By depth
         </button>
-        <button type="button" onClick={toggleTheme} style={{ ...sortButtonStyle(t), marginLeft: 'auto' }}>
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          style={{ ...sortButtonStyle(t), marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+        >
+          {theme === 'light' ? (
+            <>
+              <MoonIcon width={12} height={12} /> Dark
+            </>
+          ) : (
+            <>
+              <SunIcon width={12} height={12} /> Light
+            </>
+          )}
         </button>
       </div>
       <div
@@ -1436,9 +1449,9 @@ export function OutlineTree() {
                 zoomIntoNode(node.id);
               }}
               title="Zoom into this node (Focus mode)"
-              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              style={{ display: 'inline-flex', color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
             >
-              🔍
+              <SearchIcon width={11} height={11} />
             </span>
             {/* Note dot -- matches legacy's own real dual-purpose click exactly (legacy/
                 index.html:20333-20340): with note text present, a plain click toggles the
@@ -1658,28 +1671,63 @@ export function OutlineTree() {
                 action: () => toggleCollapse(contextMenu.nodeId)
               },
               { label: 'Tags…', action: () => setEditingTagsId(contextMenu.nodeId) },
-              { label: '✦ Rewrite', action: () => void handleContextRewrite(contextMenu.nodeId) },
-              { label: '✦ Rewrite document', action: () => void handleRewriteDocument() },
-              { label: '✦ Suggest icon', action: () => void handleContextIcon() },
-              { label: '✦ Suggest icons for all nodes', action: () => void handleSuggestIconsAll() },
+              {
+                label: (
+                  <>
+                    <SparkleIcon width={12} height={12} /> Rewrite
+                  </>
+                ),
+                key: 'rewrite',
+                action: () => void handleContextRewrite(contextMenu.nodeId)
+              },
+              {
+                label: (
+                  <>
+                    <SparkleIcon width={12} height={12} /> Rewrite document
+                  </>
+                ),
+                key: 'rewrite-document',
+                action: () => void handleRewriteDocument()
+              },
+              {
+                label: (
+                  <>
+                    <SparkleIcon width={12} height={12} /> Suggest icon
+                  </>
+                ),
+                key: 'suggest-icon',
+                action: () => void handleContextIcon()
+              },
+              {
+                label: (
+                  <>
+                    <SparkleIcon width={12} height={12} /> Suggest icons for all nodes
+                  </>
+                ),
+                key: 'suggest-icons-all',
+                action: () => void handleSuggestIconsAll()
+              },
               {
                 label: 'Delete',
+                key: 'delete',
                 danger: true,
                 action: () => {
                   if (window.confirm('Delete this node and its subtree?')) deleteNode(contextMenu.nodeId);
                 }
               }
-            ] as { label: string; action: () => void; danger?: boolean }[]
-          ).map((item) => (
+            ] as { label: ReactNode; key?: string; action: () => void; danger?: boolean }[]
+          ).map((item, i) => (
             <button
-              key={item.label}
+              key={item.key ?? (typeof item.label === 'string' ? item.label : i)}
               type="button"
               onClick={() => {
                 item.action();
                 setContextMenu(null);
               }}
               style={{
-                display: 'block',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
                 width: '100%',
                 textAlign: 'left',
                 padding: '7px 10px',

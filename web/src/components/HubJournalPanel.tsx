@@ -5,6 +5,7 @@ import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 import type { JournalEntry } from '../state/hubJournal';
+import { CalendarIcon } from '../icons';
 
 function addDays(base: Date, delta: number): Date {
   const d = new Date(base);
@@ -405,10 +406,13 @@ export function HubJournalPanel() {
               background: t.toolbarButtonBg,
               color: t.text,
               cursor: 'pointer',
-              padding: '4px 10px'
+              padding: '4px 10px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5
             }}
           >
-            📅 Jump to date
+            <CalendarIcon width={12} height={12} /> Jump to date
           </button>
           {calendarOpen && (
             <JournalCalendarPopover

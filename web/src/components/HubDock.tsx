@@ -6,6 +6,7 @@ import { HubMeetingsPanel } from './HubMeetingsPanel';
 import { HubJournalPanel } from './HubJournalPanel';
 import { HubLibraryPanel } from './HubLibraryPanel';
 import { HubRecapPanel } from './HubRecapPanel';
+import { CloseIcon } from '../icons';
 
 const HUB_TABS: { id: HubTab; label: string; icon: ReactNode }[] = [
   {
@@ -151,8 +152,8 @@ export function HubDock() {
             </button>
           ))}
         </div>
-        <button type="button" onClick={close} aria-label="Close Hub" title="Close Hub" style={{ flexShrink: 0, margin: '0 6px', fontSize: 11 }}>
-          ✕
+        <button type="button" onClick={close} aria-label="Close Hub" title="Close Hub" style={{ flexShrink: 0, margin: '0 6px' }}>
+          <CloseIcon />
         </button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useDocumentsStore, type DocSummary } from '../store/documentsStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import { flattenFolderTree } from '../state/folderTree';
+import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon } from '../icons';
 
 /**
  * Phase 6.1's last named remaining gap (docs/phase6-full-parity-plan.md's 6.1 section): a real
@@ -203,8 +204,8 @@ export function SidebarFileExplorer() {
       >
         <span>Documents</span>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button type="button" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document" style={{ fontSize: 11 }}>
-            🎯
+          <button type="button" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document" className="sb-icon-btn">
+            <TargetIcon width={13} height={13} />
           </button>
           <button
             type="button"
@@ -212,12 +213,12 @@ export function SidebarFileExplorer() {
             title={searchOpen ? 'Hide filter box' : 'Show filter box'}
             aria-pressed={searchOpen}
             aria-label="Toggle file explorer filter box"
-            style={{ fontSize: 11 }}
+            className="sb-icon-btn"
           >
-            🔍
+            <SearchIcon width={13} height={13} />
           </button>
-          <button type="button" onClick={() => createFolder(null)} title="New folder" style={{ fontSize: 11 }}>
-            📁+
+          <button type="button" onClick={() => createFolder(null)} title="New folder" className="sb-icon-btn">
+            <NewFolderIcon width={13} height={13} />
           </button>
         </div>
       </div>
@@ -327,9 +328,9 @@ export function SidebarFileExplorer() {
                   }
                 }}
                 title="Delete folder"
-                style={{ fontSize: 10, color: 'var(--fc-red, inherit)' }}
+                style={{ color: 'var(--fc-red, inherit)' }}
               >
-                ✕
+                <CloseIcon width={11} height={11} strokeWidth={2.5} />
               </button>
             </div>
             {isOpen && (
@@ -375,10 +376,10 @@ export function SidebarFileExplorer() {
         >
           <span>Templates</span>
           <div style={{ display: 'flex', gap: 4 }}>
-            <button type="button" disabled title="New template folder — templates aren't available in web/ yet" style={{ fontSize: 11 }}>
-              📁+
+            <button type="button" disabled title="New template folder — templates aren't available in web/ yet" className="sb-icon-btn">
+              <NewFolderIcon width={13} height={13} />
             </button>
-            <button type="button" disabled title="Save / manage templates — templates aren't available in web/ yet" style={{ fontSize: 11 }}>
+            <button type="button" disabled title="Save / manage templates — templates aren't available in web/ yet" className="sb-icon-btn">
               ⋯
             </button>
           </div>

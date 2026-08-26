@@ -4,6 +4,7 @@ import { useVaultStore } from '../store/vaultStore';
 import { AI_BUILTIN_PROVIDERS, AI_CURATED_MODELS, getAiProviderById } from '../state/aiProviderCatalog';
 import { getAiUsageForProvider, formatAgoCore } from '../state/aiUsage';
 import type { ThemeTokens } from '../store/themeStore';
+import { EyeIcon, EyeOffIcon } from '../icons';
 
 /**
  * §6.9 slice (docs/phase6-full-parity-plan.md): the "AI" section of Settings — provider select,
@@ -179,7 +180,7 @@ export function AiProviderSettings({ t }: { t: ThemeTokens }) {
               style={{ font: 'inherit', padding: '4px 6px', borderRadius: 4, border: `1px solid ${t.border}`, background: t.background, color: t.text, flex: 1, minWidth: 0 }}
             />
             <button type="button" onClick={() => setShowKey((v) => !v)} aria-label={showKey ? 'Hide key' : 'Show key'} title={showKey ? 'Hide key' : 'Show key'}>
-              {showKey ? '🙈' : '👁'}
+              {showKey ? <EyeOffIcon width={13} height={13} /> : <EyeIcon width={13} height={13} />}
             </button>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
