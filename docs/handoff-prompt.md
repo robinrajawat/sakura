@@ -266,11 +266,24 @@ ported as `SparkleIcon`). `OutlineTree.tsx`'s per-node note/code dots and the AI
 strings in `autoRewriteStore.ts`/`aiCall.ts`/`aiOutline.ts` are deliberately deferred, both named
 explicitly in that plan doc rather than silently skipped.
 
-**Immediate next steps:** 8.3 (shared React components: `Button`/`MenuItem`/`Chip`, thin wrappers
-around §8.1's new CSS classes) is next — same PR-per-slice discipline as every prior phase, hold
-verification to a real side-by-side screenshot against legacy, not just "renders/behaves
-correctly." Once `web/` is visually close enough to legacy for a person to sign off, return to
-docs/phase6-full-parity-
+**8.3 (shared React components) landed**: new `web/src/components/ui/Button.tsx`/`MenuItem.tsx`/
+`Chip.tsx`, thin wrappers over §8.1's CSS classes. Found a real, separate gap while building
+`Chip.tsx`: `.doc-status-chip` (the document header's own real chip family, a solid `data-color`
+pill — `DocumentHeader.tsx`'s own `chipStyle()` helper approximates it) is a genuinely different
+class from `.status-chip` (the status bar's own, which §8.1 already ported) and was missed by that
+earlier pass entirely — now ported too, alongside a `DocChip` component. `DropdownMenu.tsx` (§7.6)
+gained a `rich` prop so `MenuItem` rows actually get the icon-column styling. Nothing in `web/`
+imports any of these three yet (that's §8.4's retrofit job) — no visible effect and no screenshot
+verification this slice, same honest "primitives only" pattern §8.1 already established; verified
+instead by full local gauntlet (2005 tests, typecheck/lint/build all clean) and direct comparison
+against the real legacy CSS/markup cited in the plan doc.
+
+**Immediate next steps:** 8.4 (retrofit existing call sites onto the new §8.3 components, split by
+area into separate reviewable PRs — app-bar/header, sidebar, document header + toolbar, dropdown
+menus + modals) is next — same PR-per-slice discipline as every prior phase, hold verification to
+a real side-by-side screenshot against legacy, not just "renders/behaves correctly," since this is
+the slice that actually puts the new components on screen. Once `web/` is visually close enough to
+legacy for a person to sign off, return to docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
 `/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
 documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to

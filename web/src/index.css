@@ -230,7 +230,15 @@ textarea:focus {
  * padded buttons. `.export-menu-rich .export-item` is the icon+label row variant (used by
  * `AccountMenu.tsx`/`ExportButtons.tsx`'s own menus); the bare `.export-item` (no icon column) is
  * the plainer variant. `.export-section-label` is the small uppercase divider-with-text
- * (`DropdownMenu.tsx` consumers currently use a plain `<div>` for this). */
+ * (`DropdownMenu.tsx` consumers currently use a plain `<div>` for this).
+ *
+ * §8.3 addition: `.export-menu-rich`'s own base `padding:6px` (legacy/index.html:477) -- missed
+ * in §8.1's own pass (only the nested nested-under-it rules were ported then); needed now that
+ * `DropdownMenu.tsx`'s new `rich` prop actually attaches this class to a real element. */
+.export-menu-rich {
+  padding: 6px;
+}
+
 .export-item {
   display: block;
   width: 100%;
@@ -358,6 +366,82 @@ textarea:focus {
 .status-author-empty {
   color: color-mix(in srgb, var(--accent) var(--accent-hint-blend), var(--hint));
   font-style: italic;
+}
+
+/* §8.3 addition (docs/phase8-design-system-parity-plan.md): `.doc-status-chip` (legacy/index.html:
+ * 3585-3595) -- a REAL, separate chip family missed by §8.1's own pass, only found while building
+ * `Chip.tsx`/`DocChip.tsx` and going to retrofit `DocumentHeader.tsx` (§7.4) onto them. Easy to
+ * miss: `.status-chip` (above) and `.doc-status-chip` sound like the same thing and share the
+ * "pill" shape, but are genuinely different real classes with different real treatments -- this
+ * one is a solid colored pill (bold, uppercase, `data-color`-driven), not `.status-chip`'s
+ * transparent bordered one. `DocumentHeader.tsx`'s own local `chipStyle()` helper (§7.4)
+ * approximates this with a plain bordered pill today; retrofitting it onto the real class is
+ * §8.4 work, not this slice's. */
+.doc-status-chip {
+  appearance: none;
+  border: none;
+  font: 700 10px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--fc-gray) 16%, transparent);
+  color: var(--fc-gray);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.doc-status-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.doc-status-chip.unset {
+  background: transparent;
+  color: var(--hint);
+  border: 1px dashed var(--border);
+  opacity: 0.7;
+}
+
+.doc-status-chip.unset:hover {
+  opacity: 1;
+  border-color: var(--muted);
+}
+
+.doc-status-chip[data-color='orange'] {
+  background: color-mix(in srgb, var(--fc-orange) 16%, transparent);
+  color: var(--fc-orange);
+}
+
+.doc-status-chip[data-color='green'] {
+  background: color-mix(in srgb, var(--fc-green) 16%, transparent);
+  color: var(--fc-green);
+}
+
+.doc-status-chip[data-color='red'] {
+  background: color-mix(in srgb, var(--fc-red) 16%, transparent);
+  color: var(--fc-red);
+}
+
+.doc-status-chip[data-color='gray'] {
+  background: color-mix(in srgb, var(--fc-gray) 16%, transparent);
+  color: var(--fc-gray);
+}
+
+/* legacy/index.html:791 -- the author input's own modifier on top of `.doc-status-chip.unset`
+ * (`class="doc-status-chip unset doc-author-chip"`): normal-case, a text caret instead of a
+ * pointer, and a fixed width so the row doesn't reflow as the person types a name. */
+.doc-author-chip {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  cursor: text;
+  width: 132px;
+  text-align: left;
 }
 
 /* Notification/account badges (legacy/index.html:495, 1439-1445, 481-486) */
