@@ -438,5 +438,74 @@ alone, matching the verification standard every Phase 6 slice was held to.
   state persists across a reload -- zero console/page errors (only the same expected Firebase
   network failure every other §7 slice hits in this sandboxed environment). Full gauntlet: 2003
   tests (7 new/updated).
-- Remaining: 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing
-  summary above.
+- ✅ **7.6 — App-bar chrome docking landed.** All four items from this section's own list:
+  1. New `components/AccountMenu.tsx`, a direct port of legacy's real `#account-toggle`/
+     `#account-menu` (legacy/index.html:4558-4569): a toggle button (avatar + green status dot
+     when signed in, "Sign in" when not) opening a real anchored dropdown, replacing the old
+     `AuthPanel.tsx` inline block at the bottom of the vertical panel dump -- `AuthPanel.tsx`
+     itself is retired (deleted), its three mount-time effects (`authStore.init()`,
+     `notificationsStore.init()`, `profileStore.ensureProfile`/`reset`) moved verbatim into
+     `AccountMenu.tsx` since it's now the one thing always mounted in its place. Signed-out shows
+     the same "sync is optional" blurb plus a "Sign in" entry; signed-in shows avatar/name/email,
+     "Manage account" (deep-links into `SettingsPanel.tsx`'s real "account" category, where
+     `ProfileVisibilitySettings.tsx` already lives -- `SettingsPanel.tsx` gained an
+     `initialCategory` prop for this), and "Sign out". Below that: "Settings", a Help section
+     ("Help"/"Send Feedback"/"About Sakura" -- three new small components, see below), and the
+     same Ko-fi support blurb/button legacy's own dropdown ends with. `authStore.ts` gained
+     `landingGateForceOpen`/`openLandingGate()`/`closeLandingGate()` so the signed-out "Sign in"
+     entry can reopen `SignInGate.tsx` (§7.1) after it was already dismissed this tab session,
+     matching legacy's real `account-signin-open-btn` -> `showLandingOverlay()` regardless of
+     prior dismissal; reset automatically once `user` becomes non-null so a stale request can
+     never resurface the gate uninvited after a later sign-out.
+  2. New `components/HubDock.tsx` + `store/hubDockStore.ts`: the five already-real Hub panels
+     (`HubTodosPanel.tsx` etc, §6.5) re-docked as a slide-in right-side tabbed panel (To-Dos/
+     Meetings/Journal/Library/Recap, real icons ported from legacy's own tab strip,
+     legacy/index.html:6812-6816) triggered by the app-bar grid-icon button
+     (`#dock-panel-appbar-toggle`, moved from `headerActions`), instead of stacked vertically in
+     the main content column. `hubDockStore.ts` ports legacy's real `dockActiveTab`/`dockLastTab`/
+     `openDockTab`/`toggleDockTab` semantics (legacy/index.html:52260-52336): a tab click always
+     shows that tab and remembers it (persisted to localStorage) as the one that reopens next; the
+     launcher button toggles closed if that tab's already open, opens the last one otherwise. No
+     panel's own internals changed -- this is purely docking chrome around them. **Real,
+     documented simplification**: renders `position:fixed` overlaying the content column/status
+     bar's right edge rather than reflowing `AppShell.tsx`'s own layout to make room (that
+     component has no dedicated dock-panel slot yet), and legacy's own maximize/restore width
+     state (`dockMaximized`) isn't ported -- both real, separately-scoped follow-ups once the
+     dock's default sizing has been checked against more real screenshots.
+  3. `ExportButtons.tsx`'s own return JSX (its export/import logic, unchanged) now renders as a
+     real `#appbar-more-toggle`-style menu (legacy/index.html:4535-4543) instead of the flat
+     inline row of buttons it used to be: a single toggle button opening a menu with three
+     top-level entries (Export/Import/Print), Export/Import each drilling into a submenu of this
+     file's own already-real actions (unchanged, just re-homed). **Real, documented
+     simplification**: "Print" maps to this file's own `exportPdf` (a separate print window with
+     a cover page) rather than legacy's real live in-page `handlePrint`/`window.print()`
+     (legacy/index.html:27121) -- `web/` has no print stylesheet for the live outline view to
+     drive that with yet, so reusing the nearest existing real action is documented, not a
+     silently different button.
+  4. `NotificationBell.tsx`/`SyncStatusIndicator.tsx` confirmed unchanged -- already real,
+     already correctly positioned in `headerActions` since §6.8; no logic or visual change needed
+     this slice.
+  New shared/supporting pieces built alongside the above: `components/DropdownMenu.tsx` (the
+  click-outside/Escape anchored-popover helper, promoted out of `DocumentHeader.tsx`'s own local
+  copy once a second and third caller needed the identical behavior -- `align="left"|"right"`
+  added so the two new right-anchored header menus don't overflow the viewport the way a
+  left-anchored copy would); `components/FeedbackModal.tsx` (a genuine, not faked, port of
+  legacy's real `submitFeedback`/`#feedback-modal-overlay` -- writes to the same real `feedback`
+  Firestore collection legacy's own build does, matching `firestore.rules`' real create-only
+  validation exactly); `components/HelpModal.tsx`/`AboutModal.tsx` (small static content --
+  `AboutModal.tsx` ports legacy's real About/Privacy copy verbatim; `HelpModal.tsx` is an honest
+  placeholder pointing at the always-visible keyboard-shortcut list and the repo, since legacy's
+  own Help target is an entire searchable multi-category help center, the same category of
+  deliberately-deferred scope this plan's own intro already allows for the Guided-tour/demo
+  content -- not attempted here); `utils/useEscapeToClose.ts` (shared by all three new modals).
+  Verified end-to-end in real headless Chrome (light and dark theme): the account menu opens/
+  shows the right signed-out content, "Sign in" correctly reopens the landing gate after a prior
+  dismissal, Help/Feedback/About modals open and close correctly, the Hub dock opens to the
+  last-active tab with real panel content, tab-switching and the toggle-closed behavior both work,
+  and the More menu's Export/Import drill-down and Back button all work -- zero console/page
+  errors (only the same expected Firebase network failure every other §7 slice hits in this
+  sandboxed environment). Full gauntlet: 2003 tests (all passing, no new tests added this slice --
+  see this entry's own summary for why: docking/menu-wiring around already-tested logic, not new
+  business logic of its own to unit-test beyond what real-browser verification above already
+  covers).
+- Remaining: 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary above.

@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { useOutlineStore, defaultNodeStyles, type OutlineNode } from '../store/outlineStore';
 import { useDocumentsStore } from '../store/documentsStore';
 import { usePadStore } from '../store/padStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
+import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { DropdownMenu } from './DropdownMenu';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
@@ -209,6 +211,19 @@ async function buildDocxImageParagraph(dataUrl: string): Promise<Paragraph | nul
   });
 }
 
+/**
+ * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): this component's own return JSX
+ * (below the export/import logic above, unchanged by this slice) is now a real anchored
+ * `#appbar-more-toggle`-style menu instead of the flat inline row of buttons it used to render --
+ * direct port of legacy's real `#appbar-more-wrap`/`#appbar-more-menu` (legacy/index.html:
+ * 4535-4543): a single toggle button opening a menu with three top-level entries (Export/Import/
+ * Print), Export/Import each drilling into a submenu of this file's own already-real actions
+ * (unchanged, just re-homed). "Print" maps to this file's own `exportPdf` (a separate print
+ * window with a cover page) rather than legacy's real live in-page `handlePrint`/`window.print()`
+ * (legacy/index.html:27121) -- `web/` has no print stylesheet for the live outline view to drive
+ * that with, so reusing the nearest existing real action is a deliberate, documented
+ * simplification, not a silently different button doing something unrelated.
+ */
 export function ExportButtons() {
   const nodes = useOutlineStore((s) => s.nodes);
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
@@ -220,6 +235,10 @@ export function ExportButtons() {
   const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
   const hideTreeLines = useOutlinePrefsStore((s) => s.hideTreeLines);
   const outlineNumbering = useOutlinePrefsStore((s) => s.outlineNumbering);
+  const theme = useThemeStore((s) => s.theme);
+  const t = THEME_TOKENS[theme];
+  const [open, setOpen] = useState(false);
+  const [section, setSection] = useState<'root' | 'export' | 'import'>('root');
   const opmlFileInputRef = useRef<HTMLInputElement>(null);
   const sakuraDocFileInputRef = useRef<HTMLInputElement>(null);
   const docxFileInputRef = useRef<HTMLInputElement>(null);
@@ -1019,35 +1038,199 @@ export function ExportButtons() {
     XLSX.writeFile(wb, 'outline-decision-log.xlsx');
   }
 
+  const menuItemStyle: CSSProperties = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
+    background: 'none',
+    border: 'none',
+    borderRadius: 6,
+    padding: '7px 8px',
+    font: 'inherit',
+    fontSize: 12.5,
+    color: t.text,
+    cursor: 'pointer'
+  };
+
+  function closeMenu(): void {
+    setOpen(false);
+    setSection('root');
+  }
+
   return (
-    <div style={{ display: 'flex', gap: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
-      <button type="button" onClick={exportClipboard}>
-        Copy as Text
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen((o) => !o);
+          setSection('root');
+        }}
+        title="Import, Export & Print"
+        aria-label="Import, Export & Print"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
       </button>
-      <button type="button" onClick={exportMarkdown}>
-        Export .md
-      </button>
-      <button type="button" onClick={exportPlainText}>
-        Export .txt
-      </button>
-      <button type="button" onClick={exportOpml}>
-        Export .opml
-      </button>
-      <button type="button" onClick={exportPdf}>
-        Export .pdf
-      </button>
-      <button type="button" onClick={exportWord}>
-        Export .docx
-      </button>
-      <button type="button" onClick={exportPowerpoint}>
-        Export .pptx
-      </button>
-      <button type="button" onClick={exportDecisionLogXlsx}>
-        Export Decision Log .xlsx
-      </button>
-      <button type="button" onClick={exportSakuraDocument}>
-        Export .sakura.json
-      </button>
+      {open && (
+        <DropdownMenu onClose={closeMenu} width={210} align="right">
+          {section === 'root' && (
+            <>
+              <button type="button" style={menuItemStyle} onClick={() => setSection('export')}>
+                Export ›
+              </button>
+              <button type="button" style={menuItemStyle} onClick={() => setSection('import')}>
+                Import ›
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportPdf();
+                  closeMenu();
+                }}
+              >
+                Print
+              </button>
+            </>
+          )}
+          {section === 'export' && (
+            <>
+              <button type="button" style={{ ...menuItemStyle, color: t.mutedText, fontSize: 11.5 }} onClick={() => setSection('root')}>
+                ‹ Back
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  void exportClipboard();
+                  closeMenu();
+                }}
+              >
+                Copy as Text
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportMarkdown();
+                  closeMenu();
+                }}
+              >
+                Export .md
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportPlainText();
+                  closeMenu();
+                }}
+              >
+                Export .txt
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportOpml();
+                  closeMenu();
+                }}
+              >
+                Export .opml
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportPdf();
+                  closeMenu();
+                }}
+              >
+                Export .pdf
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  void exportWord();
+                  closeMenu();
+                }}
+              >
+                Export .docx
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  void exportPowerpoint();
+                  closeMenu();
+                }}
+              >
+                Export .pptx
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportDecisionLogXlsx();
+                  closeMenu();
+                }}
+              >
+                Export Decision Log .xlsx
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  exportSakuraDocument();
+                  closeMenu();
+                }}
+              >
+                Export .sakura.json
+              </button>
+            </>
+          )}
+          {section === 'import' && (
+            <>
+              <button type="button" style={{ ...menuItemStyle, color: t.mutedText, fontSize: 11.5 }} onClick={() => setSection('root')}>
+                ‹ Back
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  opmlFileInputRef.current?.click();
+                }}
+              >
+                Import .opml
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  sakuraDocFileInputRef.current?.click();
+                }}
+              >
+                Import .sakura.json
+              </button>
+              <button
+                type="button"
+                style={menuItemStyle}
+                onClick={() => {
+                  docxFileInputRef.current?.click();
+                }}
+              >
+                Import .docx
+              </button>
+            </>
+          )}
+        </DropdownMenu>
+      )}
       <input
         ref={opmlFileInputRef}
         type="file"
@@ -1057,11 +1240,9 @@ export function ExportButtons() {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = ''; // allow re-selecting the same file next time
           if (file) importOpml(file);
+          closeMenu();
         }}
       />
-      <button type="button" onClick={() => opmlFileInputRef.current?.click()}>
-        Import .opml
-      </button>
       <input
         ref={sakuraDocFileInputRef}
         type="file"
@@ -1071,11 +1252,9 @@ export function ExportButtons() {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = '';
           if (file) importSakuraDocument(file);
+          closeMenu();
         }}
       />
-      <button type="button" onClick={() => sakuraDocFileInputRef.current?.click()}>
-        Import .sakura.json
-      </button>
       <input
         ref={docxFileInputRef}
         type="file"
@@ -1085,11 +1264,9 @@ export function ExportButtons() {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = '';
           if (file) importDocx(file);
+          closeMenu();
         }}
       />
-      <button type="button" onClick={() => docxFileInputRef.current?.click()}>
-        Import .docx
-      </button>
     </div>
   );
 }

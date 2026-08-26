@@ -99,8 +99,11 @@ const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
 ];
 
 /** Matches legacy's real `data-cat` values verbatim (legacy/index.html:4623-4670) -- only the
- * subset with real content in `web/` today. See this file's own header for how to add a 5th. */
-type SettingsCategory = 'general' | 'editing' | 'ai' | 'data' | 'account';
+ * subset with real content in `web/` today. See this file's own header for how to add a 5th.
+ * Exported as of §7.6 (docs/phase7-app-shell-and-dashboard-plan.md) so `AccountMenu.tsx`'s
+ * "Manage account"/"Settings" entries can request a specific starting category, matching
+ * legacy's real `account-manage-btn`/`account-settings-btn` deep-links. */
+export type SettingsCategory = 'general' | 'editing' | 'ai' | 'data' | 'account';
 
 const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string }[] = [
   { id: 'general', label: 'Appearance' },
@@ -110,7 +113,7 @@ const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string }[] = [
   { id: 'account', label: 'Account' }
 ];
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+export function SettingsPanel({ onClose, initialCategory }: { onClose: () => void; initialCategory?: SettingsCategory }) {
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
   const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
@@ -133,7 +136,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const alwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.alwaysExpandInlineEnabled);
   const setAlwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.setAlwaysExpandInlineEnabled);
   const setRowHighlightStyle = useOutlinePrefsStore((s) => s.setRowHighlightStyle);
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>(initialCategory ?? 'general');
 
   return (
     <div
