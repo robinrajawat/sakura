@@ -16,12 +16,20 @@ export function DropdownMenu({
   onClose,
   children,
   width,
-  align = 'left'
+  align = 'left',
+  rich = false
 }: {
   onClose: () => void;
   children: ReactNode;
   width?: number;
   align?: 'left' | 'right';
+  /** §8.3 addition (docs/phase8-design-system-parity-plan.md): applies the real `export-menu-rich`
+   * class legacy's own icon+label popovers carry (`class="export-menu export-menu-rich"`, e.g.
+   * `#account-menu`/`#appbar-more-menu`) -- activates the nested `.export-menu-rich .export-item`/
+   * `.export-icon`/`.export-label`/`.export-section-label` rules from `index.css` (§8.1) for any
+   * `MenuItem.tsx` (§8.3) rendered inside. Off by default since not every `DropdownMenu` holds a
+   * list of icon+label rows (`DocumentHeader.tsx`'s status/link popovers don't). */
+  rich?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const t = THEME_TOKENS[useThemeStore((s) => s.theme)];
@@ -45,6 +53,7 @@ export function DropdownMenu({
     <div
       ref={ref}
       role="menu"
+      className={rich ? 'export-menu-rich' : undefined}
       onMouseDown={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',

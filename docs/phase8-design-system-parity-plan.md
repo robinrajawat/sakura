@@ -235,5 +235,40 @@ doc let this gap through repeated verification passes already.
   toolbar group, account-menu Ko-fi button, and the feedback modal's close button all render real
   crisp line icons instead of emoji/glyphs -- zero console/page errors. Full gauntlet: 2005 tests
   still passing (no test changes needed -- pure presentation swap), typecheck/lint/build all clean.
-- Remaining: 8.3 (shared React components) → 8.4 (retrofit, split by area) → 8.5 (verification
-  fixture document), per this doc's own sequencing summary above.
+- ✅ **8.3 — Shared React components landed.** All three named in this plan, in new
+  `web/src/components/ui/`:
+  - `Button.tsx` -- `variant: 'default' | 'primary' | 'icon' | 'sidebar-icon'`, applying the §8.1
+    classes (`.primary`/`.icon-btn`/`.sb-icon-btn`); `'default'` applies no class at all since
+    that treatment is already global via `index.css`'s own bare `button` selector. `className` is
+    merged, not replaced, so a future caller can layer on a class this wrapper doesn't know about
+    yet (`.toggle-on`, `.danger`) without needing a new prop added up front.
+  - `MenuItem.tsx` -- the real `.export-item` icon+label row (legacy/index.html:476, 480-491).
+    Needs its parent `DropdownMenu` (§7.6) to pass the new `rich` prop (this slice's own addition
+    to that component) so the icon-column/label styling actually activates -- `DropdownMenu`
+    itself gained `rich?: boolean`, applying the real `export-menu-rich` class
+    (`index.css` also gained its own missing base `.export-menu-rich{padding:6px}` rule, found
+    while wiring this up -- §8.1 had only ported the rules nested *under* that class, not its own).
+  - `Chip.tsx` -- **two** real chip components, not one: `Chip` (the status-bar's real
+    `.status-chip`/`.status-chip-btn` family, legacy/index.html:619-623, exactly what the plan
+    named) and `DocChip`, a second, **genuinely separate** real chip family
+    (`.doc-status-chip`, legacy/index.html:3585-3595) discovered while building this component --
+    a solid `data-color`-driven colored pill, not `.status-chip`'s transparent bordered one; easy
+    to conflate since both are "a pill chip" but confirmed via real CSS to be two different
+    classes with different real treatments. This is the family `DocumentHeader.tsx`'s (§7.4) own
+    local `chipStyle()` helper actually approximates, not `Chip` -- a correction to this plan's own
+    "Real findings" section, which never named `.doc-status-chip` at all.
+    `index.css` gained the full real `.doc-status-chip` family this slice (base + `.unset` +
+    `[data-color]` variants + `.doc-author-chip`'s input-specific modifier), same additive/
+    line-cited discipline as every other CSS addition in this phase.
+  Deliberately **not** built: no unit tests (matching this project's established convention --
+  UI components are verified via real headless-Chrome screenshots once something actually renders
+  them, not component-level rendering tests; this codebase has never had `@testing-library/react`
+  or an equivalent installed, confirmed by checking `web/package.json` rather than assuming). No
+  real screenshot verification either, for the same honest reason §8.1's own primitives-only slice
+  already established as acceptable: nothing in `web/` imports any of these three components yet
+  (that's §8.4's job), so there is nothing on screen to verify. Every prop/class mapping was
+  instead checked directly against the real legacy CSS/markup cited above, and the full local
+  gauntlet (typecheck/lint/test/build) passed clean with zero behavior change to any existing
+  screen -- 2005 tests still passing.
+- Remaining: 8.4 (retrofit, split by area) → 8.5 (verification fixture document), per this doc's
+  own sequencing summary above.
