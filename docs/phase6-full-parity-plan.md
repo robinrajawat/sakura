@@ -2327,6 +2327,13 @@ renders in the real dark-theme muted color — zero console/page errors.
 **§6.11 is now complete**: all three planned slices (title-bar theme-color sync + maskable-icon
 verification, static precache strategy, full visual-token pass) have landed.
 
+**Post-completion finding:** the first real click-through of a deployed `web/` build (during
+Section 9's pre-cutover gate) surfaced a major gap this whole phase never scoped — legacy's
+entire sign-in gate / first-run onboarding / document-dashboard / per-document-header layer,
+never built because every Phase 6 slice assumed a document was already open. That work is
+sequenced separately in **`docs/phase7-app-shell-and-dashboard-plan.md`**, not folded back into
+this closed phase.
+
 Update each phase's own
 section above with a `Status:` line and PR numbers as work lands, the same way
 `docs/history/phase5-parity-checklist.md`'s own "Update" notes track progress.
