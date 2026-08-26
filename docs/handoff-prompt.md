@@ -198,28 +198,33 @@ post-cutover-backlog.md are untouched by it) and its own components still
 need real screenshot verification as they land, not just structural
 correctness.
 
-**Phase 7 is in progress. 7.1 through 7.4 all landed**: 7.1 sign-in gate
+**Phase 7 is in progress. 7.1 through 7.5 all landed**: 7.1 sign-in gate
 overlay, 7.2 first-run onboarding modal, 7.3 document data model
 (status/author/link fields on `DocSummary`), 7.4 the per-document header
 (status/author/link chips + a real title input) and the empty-document
-state (`components/DocumentHeader.tsx`/`EmptyDocState.tsx`). 7.4 also
-fixed a real, necessary supporting bug: `documentsStore.ts`'s
-`newDocument()` used to seed a blank node instead of legacy's real
-genuinely-empty `nodes:[]`, which meant the empty-document state could
-never actually trigger — now fixed, with a new `outlineStore.ts`
-`createFirstNode` action restoring the "start typing in an empty
-document" path. See phase7-app-shell-and-dashboard-plan.md's own Status
-section for the full breakdown of each slice, including several real
-corrections to this plan's own original text found by checking the
-actual legacy code rather than trusting the prose (worth reading before
-starting 7.5+, since the same "verify against the real code" discipline
-applies there too).
+state, 7.5 toolbar default-visibility (hidden until a new floating
+reveal toggle is clicked, matching legacy's real first-run default) +
+grouped layout (History/Structure/Format/Insert/AI/Delete) + a real
+hover-toolbar-default-off fix. 7.4 also fixed a real, necessary
+supporting bug: `documentsStore.ts`'s `newDocument()` used to seed a
+blank node instead of legacy's real genuinely-empty `nodes:[]`, which
+meant the empty-document state could never actually trigger — now
+fixed, with a new `outlineStore.ts` `createFirstNode` action restoring
+the "start typing in an empty document" path. See
+phase7-app-shell-and-dashboard-plan.md's own Status section for the
+full breakdown of each slice, including several real corrections to
+this plan's own original text found by checking the actual legacy code
+rather than trusting the prose (worth reading before starting 7.6+,
+since the same "verify against the real code" discipline applies there
+too).
 
 **Immediate next steps:** continue through docs/phase7-app-shell-and-dashboard-
-plan.md's sequenced sub-phases starting at 7.5 (toolbar default-visibility
-+ grouped layout realignment), same PR-per-slice discipline as every
-other phase. Once `web/` is close enough to legacy for a person to sign
-off, return to Section 9 gate items 2-4. Don't repoint `deploy.yml`'s
-root at `web/dist` until that gate is explicitly cleared, and remove
+plan.md's sequenced sub-phases starting at 7.6 (app-bar chrome docking:
+Account/Hub/Export menus relocated into the real header), same
+PR-per-slice discipline as every other phase. 7.6 and 7.7 are
+independent of each other per this doc's own sequencing summary. Once
+`web/` is close enough to legacy for a person to sign off, return to
+Section 9 gate items 2-4. Don't repoint `deploy.yml`'s root at
+`web/dist` until that gate is explicitly cleared, and remove
 `/web-preview/` once it is.
 ```

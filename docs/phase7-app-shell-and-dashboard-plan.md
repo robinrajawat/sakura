@@ -394,5 +394,49 @@ alone, matching the verification standard every Phase 6 slice was held to.
   render-swap frame -- a real, understood, `React`-inherent limit of any "first keystroke swaps
   which component owns the input" pattern, not reproducible at any real human typing speed, and
   not fixed further (verified: adding minimal per-character delay resolves it completely).
-- Remaining: 7.5 (toolbar realignment) → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash),
-  per this doc's own sequencing summary above.
+- ✅ **7.5 — Toolbar default-visibility & grouped layout realignment landed.**
+  `outlinePrefsStore.ts` gained `toolbarVisible` (default `false`, matching legacy's real
+  first-run default exactly) and `hoverToolbarEnabled` (default `false`, correcting §6.2's node
+  hover toolbar, which rendered unconditionally before this slice -- a real, sanctioned default
+  fix per this section's own text, not a feature removal). `App.tsx`'s per-node toolbar is now
+  hidden until revealed via a new floating bottom-right toggle button (matching legacy's real
+  `#editor-toolbar-toggle` position), and renders as labeled groups (History/Structure/Format/
+  Insert/AI/Delete, a new module-scope `ToolbarGroup` component) instead of one flat row.
+  Structure gained 4 real new buttons (Outdent/Indent/Insert-above/Add-child, wired to
+  `outlineStore.ts` actions that already existed with no toolbar button until now); Insert gained
+  a "Note" button (opens the floating Note panel via the already-existing `notePanelStore`);
+  Delete gained a real button (`deleteSelected`, `web/`'s toolbar had none before this slice).
+  Edit/Preview/Present mode-switching stays always-visible, matching legacy's real always-on
+  floating buttons living outside the collapsible toolbar entirely.
+  **Deliberately NOT ported, each named rather than silently dropped:** legacy's real Move group
+  (up/down) and Fold group's "Collapse all" have no backing `outlineStore.ts` action at all
+  (`docs/post-cutover-backlog.md`'s own Core Editing section already names "Alt+↑/↓ move" and
+  "collapse/expand-all" as real, separate gaps) -- building their toolbar buttons now would be
+  dead UI, not a shortcut past a real backend gap; Format's highlight/text-color swatch pickers
+  and the heading popover palette (kept as the pre-existing `<select>`) are the same category of
+  gap, already named in `docs/post-cutover-backlog.md`'s Core Editing row; the Extras group
+  (sort/version-history/clear-all) is redundant with entry points `web/` already has elsewhere
+  (inline Sort top-level buttons, the header Version History button). **One real, deliberate
+  divergence from legacy's own stated default, not a correction**: legacy additionally hides
+  Expand/Summarise/Tags/Icon within the AI group by default (only Outline+Rewrite show) behind a
+  Settings toggle `web/` has no equivalent of; this slice keeps all AI buttons visible instead,
+  since hiding already-shipped, already-tested capability with no way to reveal it back would be
+  a real regression, not a faithful port of a default that itself depends on a toggle this
+  project hasn't built -- explicitly reasoned in `App.tsx`'s own comment at that point, same
+  "don't silently remove working capability for a missing Settings toggle" call this project has
+  made before (e.g. §6.6's branding always-on). The 3 sibling floating buttons legacy's own
+  `#editor-toolbar-toggle` row also has (Preview/Pad/Zen toggles) are likewise deliberately not
+  built here -- Preview/Present mode switching already has its own always-visible entry point,
+  the Pad panel already renders permanently inline (no toggle concept to relocate), and `web/` has
+  no zen/maximize concept at all yet -- a real, documented scope reduction to just the one
+  required toolbar-reveal toggle. Verified end-to-end in real headless Chrome in dark theme (full
+  gauntlet also passed light-theme rendering in every earlier §7 slice's own screenshots): the
+  toolbar renders nothing by default, the floating toggle reveals it as labeled groups exactly as
+  designed, the new Structure buttons (insert-above/add-child confirmed via real row-count
+  changes) and the new Delete button all work correctly, hovering a row no longer shows the old
+  unconditional hover rail, the toggle hides the toolbar again on a second click, and the hidden
+  state persists across a reload -- zero console/page errors (only the same expected Firebase
+  network failure every other §7 slice hits in this sandboxed environment). Full gauntlet: 2003
+  tests (7 new/updated).
+- Remaining: 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing
+  summary above.

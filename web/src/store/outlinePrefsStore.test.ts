@@ -17,6 +17,8 @@ const DEFAULTS: {
   quickInsertActions: QuickInsertActionId[];
   quickAssistEnabled: boolean;
   quickAssistSearchEnabled: boolean;
+  toolbarVisible: boolean;
+  hoverToolbarEnabled: boolean;
 } = {
   treeIndentWidth: 3,
   hideTreeLines: true,
@@ -32,7 +34,9 @@ const DEFAULTS: {
   quickInsertIconOnly: true,
   quickInsertActions: ['emdash', 'endash', 'arrow', 'checkmark', 'crossmark', 'middot', 'date-time'],
   quickAssistEnabled: true,
-  quickAssistSearchEnabled: true
+  quickAssistSearchEnabled: true,
+  toolbarVisible: false,
+  hoverToolbarEnabled: false
 };
 
 describe('outlinePrefsStore', () => {
@@ -131,6 +135,20 @@ describe('outlinePrefsStore', () => {
     expect(useOutlinePrefsStore.getState().alwaysExpandInlineEnabled).toBe(true);
   });
 
+  it('setToolbarVisible toggles the value (§7.5)', () => {
+    useOutlinePrefsStore.getState().setToolbarVisible(true);
+    expect(useOutlinePrefsStore.getState().toolbarVisible).toBe(true);
+    useOutlinePrefsStore.getState().setToolbarVisible(false);
+    expect(useOutlinePrefsStore.getState().toolbarVisible).toBe(false);
+  });
+
+  it('setHoverToolbarEnabled toggles the value (§7.5)', () => {
+    useOutlinePrefsStore.getState().setHoverToolbarEnabled(true);
+    expect(useOutlinePrefsStore.getState().hoverToolbarEnabled).toBe(true);
+    useOutlinePrefsStore.getState().setHoverToolbarEnabled(false);
+    expect(useOutlinePrefsStore.getState().hoverToolbarEnabled).toBe(false);
+  });
+
   it('persists every setter to localStorage', () => {
     useOutlinePrefsStore.getState().setTreeIndentWidth(4);
     useOutlinePrefsStore.getState().setHideTreeLines(false);
@@ -158,7 +176,9 @@ describe('outlinePrefsStore', () => {
       quickInsertIconOnly: true,
       quickInsertActions: DEFAULTS.quickInsertActions,
       quickAssistEnabled: true,
-      quickAssistSearchEnabled: true
+      quickAssistSearchEnabled: true,
+      toolbarVisible: false,
+      hoverToolbarEnabled: false
     });
   });
 

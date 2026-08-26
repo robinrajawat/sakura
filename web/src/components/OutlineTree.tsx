@@ -189,6 +189,7 @@ export function OutlineTree() {
   const remarks = usePadStore((s) => s.remarks);
   const qaItems = usePadStore((s) => s.qaItems);
   const alwaysExpandInlineEnabled = useOutlinePrefsStore((s) => s.alwaysExpandInlineEnabled);
+  const hoverToolbarEnabled = useOutlinePrefsStore((s) => s.hoverToolbarEnabled);
   const noteExpandIds = useInlineExpandStore((s) => s.noteExpandIds);
   const remarkExpandIds = useInlineExpandStore((s) => s.remarkExpandIds);
   const qaExpandIds = useInlineExpandStore((s) => s.qaExpandIds);
@@ -1472,8 +1473,13 @@ export function OutlineTree() {
                 matching legacy's own default hoverToolbarActions exactly. Only rendered while
                 hovering this specific row and not mid-edit (matching legacy's own real hover-rail
                 visibility rule) -- appearing/disappearing on hover, not a fixed-width reserved
-                slot, so it doesn't shift adjacent content when absent. */}
-            {hoveredNodeId === node.id && !isEditing && (
+                slot, so it doesn't shift adjacent content when absent. §7.5 correction
+                (docs/phase7-app-shell-and-dashboard-plan.md): also gated on `hoverToolbarEnabled`
+                now, matching legacy's real default of `false` -- this rail rendered
+                unconditionally before this slice, a real gap this section's own investigation
+                found (the action SET was ported correctly in Phase 6.2, but whether the rail
+                renders at all was never gated). */}
+            {hoverToolbarEnabled && hoveredNodeId === node.id && !isEditing && (
               <span style={{ display: 'inline-flex', marginLeft: 4 }}>
                 <span
                   onMouseDown={(e) => {
