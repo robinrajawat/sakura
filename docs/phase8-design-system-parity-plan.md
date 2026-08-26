@@ -315,5 +315,49 @@ doc let this gap through repeated verification passes already.
   button, icons/dividers/section-labels), export-menu root/Export/Import all screenshotted and
   visually matching legacy's real structure. Full gauntlet clean: 2005 tests still passing (no test
   changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4b (sidebar) → 8.4c (document header + toolbar) → 8.4d (dropdown menus + modals) →
-  8.5 (verification fixture document), per this doc's own sequencing summary above.
+- ✅ **8.4b — Retrofit: sidebar (`SidebarFileExplorer.tsx`).** A real class family §8.1's own
+  pass never covered at all -- that pass scoped to the button/menu/chip/badge system, not the
+  file explorer's own distinct row/label/hover-reveal-actions visual language
+  (legacy/index.html:1524-1563, 1601-1602, 1618) -- only found while retrofitting this file's ad
+  hoc inline `style` objects onto real classes. `index.css` gained the full family: `.sb-section-
+  hdr`/`.sb-section-label`/`.sb-section-actions`, `.sfolder-row`/`.sfolder-toggle`(+`.open`)/
+  `.sfolder-name`/`.sfolder-name-input`/`.sfolder-count`/`.sfolder-actions`/`.sfolder-children`,
+  `.sdoc-item`(+`.active`)/`.sdoc-name-btn`/`.sdoc-actions`/`.sdoc-meta`/`.sdoc-action-btn`
+  (+`.danger`), `.sb-unfiled-row`/`.sb-unfiled-count`, `.sb-empty` -- scoped down from legacy's
+  full real family to what `web/` has real backing for (no `.sfolder-icon`/`.sdoc-icon`, no drag-
+  and-drop/context-menu/multi-select variants, none of which exist in `web/`).
+  **The header icon buttons themselves also moved onto the real `Button` component** (§8.3,
+  `variant="sidebar-icon"`) in place of a bare `className="sb-icon-btn"` on a plain `<button>` --
+  same visual result, but now going through the shared primitive like every other retrofit slice.
+  **A real, previously-invisible behavior gap closed**: legacy's own `.sfolder-actions`/
+  `.sdoc-actions` are `display:none` until `:hover` (revealing Move/Rename/Delete only on hover,
+  showing a doc count/relative-time meta the rest of the time) -- `web/`'s old inline-styled
+  buttons were always visible, a real, if subtle, visual difference now fixed by the CSS itself
+  (no JS hover-state needed). The fold-toggle is now a real `<button className="sfolder-toggle">`
+  rendering legacy's own single rotating `▶` glyph (`.open` rotates it via CSS `transform`), not a
+  swap between two different `▾`/`▸` characters.
+  **Two real functional gaps closed alongside the visual ones, found while comparing this file's
+  doc row against legacy's real `makeDocItem` (legacy/index.html:30033-30107)**: `web/` had *no*
+  way to delete or rename a document from the sidebar at all -- `documentsStore.ts`'s own
+  `deleteDocument`/`renameDocument` actions already existed, fully real and already covered by
+  that store's own tests, just with zero UI entry point anywhere in the app (confirmed via grep).
+  Added real `.sdoc-action-btn` Rename (`✎`, reusing this file's own already-established inline-
+  edit pattern, the folder row's `renamingFolderId`'s new sibling `renamingDocId` -- not a
+  `window.prompt`) and "Move to Trash" (`TrashIcon`, `window.confirm`, matching the folder row's
+  own already-established delete-confirmation convention) buttons, plus a relative-time
+  `.sdoc-meta` badge (`formatRelativeTime`, an already-existing, already-tested util with no
+  caller before this). Deliberately **not** added: a Duplicate button (legacy/index.html:30099-
+  30100) -- `documentsStore.ts` has no `duplicateDoc` action at all to back it with, so building
+  that button now would be dead UI, not a shortcut, matching this project's own established "no
+  dead UI" discipline (`App.tsx`'s own toolbar-group comment gives the same reasoning for its own
+  deferred buttons) -- a real, separately-scoped follow-up, not silently dropped. The move-to-
+  folder `<select>` itself (an already-documented deliberate simplification of legacy's own
+  button+popover, §7.7) is unchanged, now gated behind `folders.length > 0` matching legacy's own
+  real conditional (`if(allFolders.length>0)`) rather than always rendering.
+  Verified end-to-end in real headless Chrome: base state (folder + docs, real section labels/
+  counts), doc-row hover (actions revealed, meta hidden, real icons), folder-row hover (actions
+  revealed, count hidden) -- all screenshotted and matching legacy's real hover-reveal behavior.
+  Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
+  clean.
+- Remaining: 8.4c (document header + toolbar) → 8.4d (dropdown menus + modals) → 8.5 (verification
+  fixture document), per this doc's own sequencing summary above.

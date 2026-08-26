@@ -293,11 +293,28 @@ inline-style bug (`padding:4` always beat the real `rich`-class `padding:6` rega
 and a `MenuItem` icon-span gap (missing `.export-icon.danger` when `danger` is set). See the plan
 doc's own Status section for the full breakdown and every icon/class cited.
 
-**Immediate next steps:** 8.4b (sidebar) is next — same PR-per-slice discipline, split by area into
-separate reviewable PRs (sidebar → document header + toolbar → dropdown menus + modals remaining),
-hold verification to a real side-by-side screenshot against legacy, not just "renders/behaves
-correctly," since this is the slice that actually puts the new components on screen. Once `web/` is
-visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
+**8.4b (retrofit: sidebar) landed**: `SidebarFileExplorer.tsx` retrofit onto a real sidebar row
+class family entirely missing from `index.css` before this slice (§8.1 scoped to buttons/menus/
+chips/badges, not the file explorer's own distinct row system) — `.sb-section-hdr`/`.sfolder-row`/
+`.sfolder-toggle`/`.sfolder-name`/`.sfolder-count`/`.sfolder-actions`/`.sfolder-children`/
+`.sdoc-item`/`.sdoc-name-btn`/`.sdoc-actions`/`.sdoc-meta`/`.sdoc-action-btn`/`.sb-unfiled-row`/
+`.sb-empty`, all ported this slice. Closes a real, previously-invisible gap: legacy's row actions
+are `display:none` until `:hover` (revealing Move/Rename/Delete, hiding a count/relative-time meta)
+— `web/`'s old inline-styled buttons were always visible. The fold-toggle is now a real single
+rotating `▶` glyph via CSS `transform`, not a swap between two different characters. Also closed
+two real functional gaps found while comparing against legacy's own doc row: `web/` had no way to
+delete or rename a document from the sidebar at all — `documentsStore.ts`'s `deleteDocument`/
+`renameDocument` already existed, fully real and tested, just with zero UI entry point anywhere.
+Added real Rename/"Move to Trash" buttons plus a relative-time meta badge; deliberately did NOT add
+a Duplicate button since there's no backing `duplicateDoc` action to wire it to (dead UI otherwise
+— a real, separately-scoped follow-up). See the plan doc's own Status section for the full
+breakdown.
+
+**Immediate next steps:** 8.4c (document header + toolbar) is next — same PR-per-slice discipline,
+split by area into separate reviewable PRs (document header + toolbar → dropdown menus + modals
+remaining), hold verification to a real side-by-side screenshot against legacy, not just "renders/
+behaves correctly," since this is the slice that actually puts the new components on screen. Once
+`web/` is visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
 `/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
 documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to
