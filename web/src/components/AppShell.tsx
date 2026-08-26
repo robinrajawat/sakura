@@ -11,8 +11,10 @@ import { useSidebarStore } from '../store/sidebarStore';
  *   - `#appbar`: fixed height, legacy/index.html:361 (`height:env(titlebar-area-height,40px)`)
  *   - `#sidebar`: default/min/max width, legacy/index.html:29828-29830 (see sidebarStore.ts)
  *   - `#statusbar`: padding/font-size, legacy/index.html:619
- *   - `#doc-tab-strip-row`/`.doc-tab`: tab-bar row + individual tab chrome,
- *     legacy/index.html:1056-1073
+ *   - `#doc-tab-strip-row`/`#doc-tab-strip`/`.doc-tab`: tab-bar row + individual tab chrome,
+ *     legacy/index.html:1056-1073 (real classes/ids since §8.4e, docs/phase8-design-system-
+ *     parity-plan.md -- this component's own dimensions here were a Phase 6.1 inline-style
+ *     approximation before that)
  *
  * Colors are real CSS custom properties (`var(--bg)`, `var(--accent)`, etc.) rather than
  * `THEME_TOKENS[theme]` lookups -- themeStore.ts's own `CSS_VAR_MAP`/`applyCssVariables` sets
@@ -137,21 +139,14 @@ export function AppShell({
         </div>
       </div>
 
-      {/* #doc-tab-strip-row -- legacy/index.html:1056 */}
-      <div
-        style={{
-          flex: '0 0 auto',
-          display: 'flex',
-          alignItems: 'stretch',
-          background: 'var(--tb-bg)',
-          borderBottom: '1px solid var(--border)',
-          padding: '6px 4px 0 8px',
-          overflowX: 'auto',
-          overflowY: 'hidden'
-        }}
-      >
-        {tabBar}
-      </div>
+      {/* #doc-tab-strip-row -- legacy/index.html:1056/6336. §8.4e retrofit (docs/phase8-design-
+          system-parity-plan.md): this was a Phase 6.1 inline-style approximation, real id but
+          the wrong CSS attached to it (a duplicate of #doc-tab-strip's OWN properties, which
+          legacy keeps as a distinct, separately-scrolling inner element -- see index.css's own
+          #doc-tab-strip-row/#doc-tab-strip header comment for the real bug that came from
+          conflating the two). This row itself now carries only the real #doc-tab-strip-row
+          rule; DocumentTabs.tsx owns the inner #doc-tab-strip element and its siblings. */}
+      <div id="doc-tab-strip-row">{tabBar}</div>
 
       <div style={{ flex: '1 1 auto', display: 'flex', minHeight: 0 }}>
         {/* #sidebar -- legacy/index.html:1378,1380 (width/collapsed-state numbers live in

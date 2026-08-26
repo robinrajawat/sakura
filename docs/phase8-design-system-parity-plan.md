@@ -116,6 +116,14 @@ class family (`.editor-title-row`/`.editor-title-input`/`.editor-meta-row`, `.to
 (document header, then toolbar) rather than landing as one oversized PR -- the same "split further
 ... by whoever picks up each slice" flexibility this section's own text already reserved.
 
+**Correction found during 8.4e**: the last area, "dropdown menus + modals," turned out to already
+be fully covered by 8.4a/8.4c's own real `DropdownMenu.tsx` consumers -- there was no dropdown-menu
+work left by the time 8.4e was picked up. Real investigation found the actual remaining gaps were
+document tabs (`DocumentTabs.tsx`, split out as 8.4e itself), the Settings panel's category rail,
+the Hub dock's tab strip, and shared modal/dialog chrome -- renamed and re-split as 8.4f (see that
+slice's own Status entry for the exact classes/lines). Same "split further/resequenced" flexibility
+this section already reserves, applied twice now.
+
 ### 8.1 — CSS primitives
 Port the missing real classes into `web/src/index.css` (or a new `web/src/ui.css` if that file is
 getting unwieldy), verified 1:1 against the real legacy lines cited above: `.btn.primary`,
@@ -439,5 +447,55 @@ doc let this gap through repeated verification passes already.
   needed, pure presentation/structure swap), typecheck/lint/build all clean (lint's one warning is
   the same pre-existing unrelated `diagramGenLegend.test.ts` warning every prior 8.x slice has
   noted).
-- Remaining: 8.4e (dropdown menus + modals) → 8.5 (verification fixture document), per this doc's
-  own sequencing summary above.
+- ✅ **8.4e — Retrofit: document tabs (`DocumentTabs.tsx`).** Ports legacy's real document-tab-
+  strip family (legacy/index.html:1057-1092/6336-6349) into `index.css`: `#doc-tab-strip-row`,
+  `#doc-tab-strip`, `.doc-tab`(+`.active`/`.dragging`/`.drag-over-left`/`.drag-over-right`)/
+  `.doc-tab-title`/`.doc-tab-close`, `.doc-tab-add`, `.doc-tab-overview-wrap`/`-btn`/`-menu`/
+  `-item`(+`.active`/`.kbd-active`)/`-title`/`-empty`. `DocumentTabs.tsx` rendered every tab, the
+  "+" button, and the tab-overview dropdown entirely with ad hoc inline `style` objects before
+  this slice -- a real gap this phase's own §8.1 pass never covered (it scoped to buttons/menus/
+  chips/badges, not the tab strip's own distinct row system, the same kind of miss already found
+  for the sidebar in §8.4b and the document header in §8.4c). Deliberately not ported:
+  `.doc-tab-dirty`/`.is-dirty`/`.doc-tab-overview-dirty` (`web/` has no dirty-tracking concept --
+  autosave is the only save path, per this component's own pre-existing header comment) and
+  `.doc-tab.pinned`+`.doc-tab-pin-icon` (no `documentsStore.ts` pinning action to back it).
+  **A real, previously-invisible browser bug found and fixed while building this slice, not just
+  a missing-CSS gap**: `#doc-tab-strip-row` and `#doc-tab-strip` are TWO distinct real legacy ids,
+  not one -- legacy's actual markup (legacy/index.html:6336-6349) nests the scrollable
+  `#doc-tab-strip` (tabs only) INSIDE the non-scrolling `#doc-tab-strip-row`, with the "+" button
+  and the tab-overview dropdown as its SIBLINGS, never its descendants. An early version of this
+  slice (and, separately, `AppShell.tsx`'s own pre-existing Phase 6.1 approximation, which had
+  invented a "`#doc-tab-strip-row`" *name* for this container but never actually ported its real,
+  separate CSS rule) collapsed both into one `#doc-tab-strip` wrapping everything, which
+  reproduced a genuine Chromium layout bug: focusing the dropdown's `autoFocus` search input
+  triggered a scroll-into-view on the nearest `overflow-x:auto` ancestor -- `#doc-tab-strip`
+  itself -- even with `overflow-y:hidden` on it, silently shifting every tab and the dropdown
+  upward by the resulting scroll offset (confirmed via `scrollTop` going from 0 to a nonzero
+  value) every single time the dropdown opened, hiding the whole tab row behind it. Verified via
+  real bisection (`overflow-x`/`overflow-y`/`align-self` experiments before finding the true
+  cause) and a direct legacy-markup read, not guessed. Splitting the two ids apart to match
+  legacy's real DOM -- `AppShell.tsx`'s own wrapper now correctly carries `id="doc-tab-strip-row"`
+  with only `#doc-tab-strip-row`'s own real CSS (previously it had `#doc-tab-strip`'s properties
+  under the wrong name), and `DocumentTabs.tsx` renders its own inner `#doc-tab-strip` around just
+  the tab chips -- fixes the bug structurally, the same way legacy avoids it, rather than a JS
+  workaround (`preventScroll`, manual scroll-restore, etc.).
+  Verified end-to-end in real headless Chrome: base tab-strip state (rounded active/inactive tabs,
+  real `+`/`▾` controls) and the tab-overview dropdown open (tabs still visible alongside it, both
+  before and after the fix) -- screenshotted and matching legacy's real structure and behavior,
+  plus a direct side-by-side against a live legacy screenshot of the same interaction. Full
+  gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
+  clean.
+- Remaining: 8.4f (dropdown menus + modals -- `SettingsPanel.tsx`'s category rail, `HubDock.tsx`'s
+  tab strip, and every `role="dialog"` modal's own chrome) → 8.5 (verification fixture document).
+  **Correction found during 8.4e's own investigation**: this plan's original 8.4 area split named
+  the last retrofit slice "dropdown menus + modals," but every real `DropdownMenu.tsx` consumer
+  (`AccountMenu.tsx`, `ExportButtons.tsx`, `DocumentHeader.tsx`'s two popovers) was already
+  retrofitted in 8.4a/8.4c -- there is no dropdown-menu work left. What's actually still missing,
+  confirmed by grep against real legacy classes with zero matches in `index.css`: `.settings-rail`/
+  `.settings-rail-btn` (the Settings panel's own category sidebar, legacy/index.html:3296-3304),
+  `.dock-tab` (`HubDock.tsx`'s own tab strip, legacy/index.html:3653-3657), and the shared modal/
+  dialog chrome (header/close/footer button treatment) behind every `role="dialog"` component.
+  Renumbered 8.4e (dropdown menus + modals) to 8.4f (settings rail + hub dock tabs + modal chrome)
+  to reflect this -- same "split further/resequenced by whoever picks up each slice" flexibility
+  this doc's own Sequencing summary already reserved, matching the precedent set when 8.4c split
+  out of the original "document header + toolbar" slice.

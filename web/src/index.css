@@ -1086,3 +1086,254 @@ body.theme-dark .account-visibility-badge:hover {
   flex: 0 0 auto;
   align-self: flex-start;
 }
+
+/* §8.4e retrofit (docs/phase8-design-system-parity-plan.md) -- the real document tab strip
+ * (legacy/index.html:1056-1092/6336-6349, `#doc-tab-strip-row` and its children). `DocumentTabs.tsx`
+ * rendered every tab, the "+" button, and the tab-overview dropdown entirely with ad hoc inline
+ * `style` objects before this slice -- a real gap this phase's own §8.1 pass never covered (it
+ * scoped to buttons/menus/chips/badges, not the tab strip's own distinct row system, the same kind
+ * of miss already found for the sidebar in §8.4b and the document header in §8.4c).
+ *
+ * `#doc-tab-strip-row` and `#doc-tab-strip` are TWO real, distinct legacy ids, not one -- a real
+ * structural bug found and fixed while building this slice: legacy's real markup (legacy/
+ * index.html:6336-6349) nests `#doc-tab-strip` (the scrollable strip holding ONLY the tab chips)
+ * INSIDE `#doc-tab-strip-row` (the outer, non-scrolling flex row), with the "+" button and the
+ * tab-overview dropdown as SIBLINGS of `#doc-tab-strip`, not descendants of it. An earlier version
+ * of this slice collapsed both into a single `#doc-tab-strip` element wrapping everything
+ * (including the dropdown), which reproduced a genuine Chromium layout bug: focusing the
+ * dropdown's `autoFocus` search input triggered a `scrollIntoView`-style auto-scroll on the
+ * nearest `overflow-x:auto` ancestor -- `#doc-tab-strip` itself -- even with `overflow-y:hidden`,
+ * shifting every tab and the dropdown itself upward by that scroll offset every time the dropdown
+ * opened. Splitting the two ids apart, matching legacy's real DOM exactly, keeps the dropdown
+ * outside the scrolling container entirely, the same way legacy avoids this bug -- not a JS
+ * workaround, a structural fix.
+ *
+ * Deliberately NOT ported: `.doc-tab-dirty`/`.is-dirty` and `.doc-tab-overview-dirty` (legacy's
+ * per-tab unsaved-changes dot) -- `DocumentTabs.tsx`'s own header comment already documents that
+ * `web/` has no manual-save/dirty-tracking concept at all (autosave is the only save path), so
+ * there is no state this dot could ever represent; porting the CSS for it would be dead styling
+ * with no real consumer. Also NOT ported: `.doc-tab.pinned`+`.doc-tab-pin-icon` (no `documentsStore.ts`
+ * pinning concept exists to back it), `#sidebar-reopen-btn` (already has a real, separately-built
+ * `web/` equivalent in App.tsx's header actions), and the strip's own custom scrollbar rules
+ * (legacy/index.html:3308-3324 -- cosmetic scrollbar theming `web/` has never ported anywhere else
+ * in this codebase either, not a gap specific to this component).
+ */
+#doc-tab-strip-row {
+  display: flex;
+  align-items: stretch;
+  background: var(--tb-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+#doc-tab-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px 4px 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  min-width: 90px;
+  padding: 6px 8px 7px 12px;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--muted);
+  font: 500 12px 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-bottom: none;
+  position: relative;
+  top: 1px;
+}
+
+.doc-tab.dragging {
+  opacity: 0.48;
+}
+
+.doc-tab.drag-over-left::before,
+.doc-tab.drag-over-right::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  pointer-events: none;
+}
+
+.doc-tab.drag-over-left::before {
+  left: 0;
+}
+
+.doc-tab.drag-over-right::after {
+  right: 0;
+}
+
+.doc-tab:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.doc-tab.active {
+  background: var(--edit-bg);
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+.doc-tab .doc-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-tab .doc-tab-close {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.doc-tab .doc-tab-close:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.doc-tab-add {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  margin: 6px 2px 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: 600 15px 'Inter', sans-serif;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.doc-tab-add:hover {
+  background: var(--hover);
+  color: var(--accent);
+}
+
+.doc-tab-overview-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+}
+
+.doc-tab-overview-btn {
+  width: 22px;
+  height: 22px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doc-tab-overview-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.doc-tab-overview-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 260px;
+  max-width: 320px;
+  max-height: 360px;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  z-index: 65;
+  padding: 6px;
+}
+
+.doc-tab-overview-menu input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--edit-bg);
+  color: var(--fg);
+  font: 400 12px 'Inter', sans-serif;
+  outline: none;
+  margin-bottom: 6px;
+}
+
+.doc-tab-overview-menu input:focus {
+  border-color: var(--accent);
+}
+
+.doc-tab-overview-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--fg);
+  font: 400 12px 'Inter', sans-serif;
+}
+
+.doc-tab-overview-item .doc-tab-overview-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.doc-tab-overview-item:hover,
+.doc-tab-overview-item.kbd-active {
+  background: var(--hover);
+}
+
+.doc-tab-overview-item.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.doc-tab-overview-empty {
+  padding: 10px 8px;
+  font: 400 12px 'Inter', sans-serif;
+  color: var(--hint);
+  text-align: center;
+}
