@@ -1964,7 +1964,13 @@ Planned slice sequence:
 
 Every item below, checked in that order, before any cutover PR is even opened:
 
-1. `docs/history/phase5-parity-checklist.md` shows no remaining `❌` or `⚠` rows against this plan's scope.
+1. Every remaining `❌`/`⚠` row in `docs/history/phase5-parity-checklist.md` is accounted for in
+   **`docs/post-cutover-backlog.md`** — nothing silently dropped — and nothing left in that
+   backlog is launch-blocking (no data-loss, security, or core-workflow risk; see that doc's own
+   top note). This replaces an earlier, stricter reading of this item ("no remaining rows at
+   all") — Phase 6 deliberately scoped many features down rather than reaching literal 100%
+   legacy parity before cutover, and re-litigating each of those already-documented decisions
+   here would just re-derive what the checklist and backlog already settled.
 2. A person — not a build log — opens the actual built `web/dist/` output (locally or on a
    preview URL) and uses it end-to-end: create a document, edit, sign in, sync, export, and
    exercise Hub/Pad/Presenter, watching for anything that doesn't look or behave like `legacy/`.
