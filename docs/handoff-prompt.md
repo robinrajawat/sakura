@@ -347,9 +347,33 @@ built (no backing action, already in post-cutover-backlog.md). Full gauntlet cle
 passing, typecheck/lint/build all clean. See phase8-design-system-parity-plan.md's own Status
 section for the full breakdown.
 
-**Immediate next steps:** 8.4e (dropdown menus + modals) is the last retrofit slice, then 8.5
-(verification fixture document, can run in parallel/earlier if picked up independently). Once
-`web/` is visually close enough to legacy for a person to sign off, return to
+**8.4e (retrofit: document tabs) landed.** `DocumentTabs.tsx` retrofit onto legacy's real
+`#doc-tab-strip-row`/`#doc-tab-strip`/`.doc-tab`/`.doc-tab-add`/`.doc-tab-overview-*` class family
+(legacy/index.html:1057-1092/6336-6349), replacing every ad hoc inline `style` object it started
+with. **A real, previously-invisible Chromium bug found and fixed, not just missing CSS**:
+`#doc-tab-strip-row` and `#doc-tab-strip` are two distinct real legacy ids — legacy nests the
+scrollable `#doc-tab-strip` (tabs only) INSIDE the non-scrolling `#doc-tab-strip-row`, with the
+"+" button and the tab-overview dropdown as siblings, never descendants. Collapsing both into one
+`#doc-tab-strip` (which is what an earlier pass of this slice did, and what `AppShell.tsx`'s own
+pre-existing Phase 6.1 approximation had already mis-named without ever really separating)
+reproduced a genuine browser bug: focusing the dropdown's `autoFocus` search input triggered a
+scroll-into-view on the nearest `overflow-x:auto` ancestor even with `overflow-y:hidden` set,
+silently shifting every tab and the dropdown itself upward every time it opened and hiding the
+tab row behind it. Fixed structurally (splitting the ids to match legacy's real DOM, not a JS
+workaround) after real bisection testing confirmed the exact trigger. `AppShell.tsx`'s own wrapper
+now correctly carries `id="doc-tab-strip-row"` with that id's own real CSS. Verified with real
+headless-Chrome screenshots (tab strip base state, tab-overview dropdown open with tabs still
+visible alongside it) directly compared against a live legacy screenshot of the same interaction.
+Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean. See
+phase8-design-system-parity-plan.md's own Status section (and its Sequencing-summary correction)
+for the full breakdown, including why the plan's last slice was renamed 8.4f.
+
+**Immediate next steps:** 8.4f (renamed from "dropdown menus + modals," which turned out to
+already be fully covered by 8.4a/8.4c — see the plan doc's own correction) covers the Settings
+panel's category rail (`.settings-rail`/`.settings-rail-btn`), the Hub dock's tab strip
+(`.dock-tab`), and shared modal/dialog chrome across every `role="dialog"` component — the last
+retrofit slice. Then 8.5 (verification fixture document, can run in parallel/earlier if picked up
+independently). Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are

@@ -28,6 +28,26 @@ import { CloseIcon } from '../icons';
  * Colors are real CSS custom properties (`var(--sel)`, `var(--accent)`, etc.), matching
  * AppShell.tsx and themeStore.ts's own `CSS_VAR_MAP` -- this component no longer subscribes to
  * `theme`/`accentPreset` at all for styling purposes; see AppShell.tsx's own header for why.
+ *
+ * §8.4e retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
+ * `#doc-tab-strip`/`.doc-tab`/`.doc-tab-add`/`.doc-tab-overview-*` classes (index.css) instead of
+ * the ad hoc inline `style` objects this component started with. `.doc-tab-dirty`/`.is-dirty` and
+ * `.doc-tab.pinned` are deliberately not used here -- see index.css's own header comment on this
+ * class family for why (no dirty-tracking or pinning concept exists in `web/` to back them).
+ *
+ * The tabs themselves are wrapped in their own `#doc-tab-strip` div, matching legacy's real
+ * structure (legacy/index.html:6336-6349) exactly: `#doc-tab-strip` is a SEPARATE, narrower,
+ * `overflow-x:auto` scrolling element nested INSIDE `#doc-tab-strip-row` (AppShell.tsx's own
+ * wrapper), with the "+" button and the tab-overview dropdown as its SIBLINGS, not its
+ * descendants. A real, previously-invisible browser bug found while building this slice explains
+ * why that split matters, not just naming: an earlier version of this component wrapped
+ * everything (tabs, "+", AND the dropdown) in one `#doc-tab-strip` div, which made the dropdown a
+ * descendant of the same `overflow-x:auto` element it scrolls inside of -- focusing the
+ * dropdown's `autoFocus` search input then triggered Chromium's scroll-into-view behavior on
+ * that ancestor (even with `overflow-y:hidden`), silently shifting every tab and the dropdown
+ * itself upward by the resulting scroll offset every single time the dropdown opened. Keeping
+ * the dropdown outside `#doc-tab-strip` (matching legacy) avoids the bug structurally instead of
+ * working around it in JS.
  */
 export function DocumentTabs() {
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
@@ -99,13 +119,15 @@ export function DocumentTabs() {
   }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', fontSize: 13, marginBottom: 8 }}>
-      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+    <>
+      <div id="doc-tab-strip" role="tablist" aria-label="Open documents">
         {openTabs.map((id) => {
           const isDropTarget = dropTarget?.id === id;
+          const dragOverClass = isDropTarget ? (dropTarget.side === 'left' ? ' drag-over-left' : ' drag-over-right') : '';
           return (
             <div
               key={id}
+              className={`doc-tab${id === activeDocId ? ' active' : ''}${draggedId === id ? ' dragging' : ''}${dragOverClass}`}
               onClick={() => switchTab(id)}
               draggable={renamingId !== id}
               onDragStart={(e) => {
@@ -146,22 +168,10 @@ export function DocumentTabs() {
                 clearDrag();
               }}
               onDragEnd={clearDrag}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 8px',
-                borderRadius: 4,
-                cursor: 'pointer',
-                background: id === activeDocId ? 'var(--sel)' : 'transparent',
-                border: '1px solid var(--border)',
-                opacity: draggedId === id ? 0.4 : 1,
-                borderLeft: isDropTarget && dropTarget.side === 'left' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                borderRight: isDropTarget && dropTarget.side === 'right' ? '2px solid var(--accent)' : '1px solid var(--border)'
-              }}
             >
               {renamingId === id ? (
                 <input
+                  className="doc-tab-title"
                   autoFocus
                   defaultValue={titleFor(id)}
                   onClick={(e) => e.stopPropagation()}
@@ -176,6 +186,7 @@ export function DocumentTabs() {
                 />
               ) : (
                 <span
+                  className="doc-tab-title"
                   onDoubleClick={(e) => {
                     e.stopPropagation();
                     setRenamingId(id);
@@ -185,146 +196,101 @@ export function DocumentTabs() {
                 </span>
               )}
               <span
+                className="doc-tab-close"
                 onClick={(e) => {
                   e.stopPropagation();
                   closeTab(id);
                 }}
-                style={{ color: 'var(--muted)', cursor: 'pointer', display: 'inline-flex' }}
               >
                 <CloseIcon width={12} height={12} />
               </span>
             </div>
           );
         })}
-        <button type="button" onClick={() => newDocument()} title="New document">
-          +
+      </div>
+      <button type="button" className="doc-tab-add" onClick={() => newDocument()} title="New document">
+        +
+      </button>
+      <div ref={overviewWrapRef} className="doc-tab-overview-wrap">
+        <button
+          type="button"
+          className="doc-tab-overview-btn"
+          onClick={() => (overviewOpen ? setOverviewOpen(false) : openOverview())}
+          title="Search open tabs"
+          aria-label="Search open tabs"
+        >
+          ▾
         </button>
-        <div ref={overviewWrapRef} style={{ position: 'relative' }}>
-          <button
-            type="button"
-            onClick={() => (overviewOpen ? setOverviewOpen(false) : openOverview())}
-            title="Search open tabs"
-            aria-label="Search open tabs"
-          >
-            ▾
-          </button>
-          {overviewOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                left: 0,
-                minWidth: 260,
-                maxWidth: 320,
-                maxHeight: 360,
-                overflow: 'auto',
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                boxShadow: '0 14px 28px rgba(0,0,0,.12)',
-                zIndex: 65,
-                padding: 6
+        {overviewOpen && (
+          <div className="doc-tab-overview-menu">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search open tabs…"
+              autoComplete="off"
+              aria-label="Search open tabs"
+              value={overviewQuery}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                setOverviewQuery(e.currentTarget.value);
+                setOverviewActiveIndex(0);
               }}
-            >
-              <input
-                autoFocus
-                type="text"
-                placeholder="Search open tabs…"
-                autoComplete="off"
-                aria-label="Search open tabs"
-                value={overviewQuery}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  setOverviewQuery(e.currentTarget.value);
-                  setOverviewActiveIndex(0);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    setOverviewOpen(false);
-                  } else if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setOverviewActiveIndex((i) => moveOverviewSelection(i, overviewMatches.length, 1));
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setOverviewActiveIndex((i) => moveOverviewSelection(i, overviewMatches.length, -1));
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    activateOverviewSelection();
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '7px 9px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 7,
-                  background: 'var(--edit-bg)',
-                  color: 'var(--fg)',
-                  font: "400 12px 'Inter', sans-serif",
-                  outline: 'none',
-                  marginBottom: 6
-                }}
-              />
-              {overviewMatches.length === 0 ? (
-                <div style={{ padding: '10px 8px', font: "400 12px 'Inter', sans-serif", color: 'var(--hint)', textAlign: 'center' }}>
-                  No open tabs match &quot;{overviewQuery.trim()}&quot;
-                </div>
-              ) : (
-                overviewMatches.map((item, idx) => {
-                  const isActiveDoc = item.id === activeDocId;
-                  const isKeyboardActive = idx === overviewActiveIndex;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setOverviewOpen(false);
-                        if (!isActiveDoc) switchTab(item.id);
-                      }}
-                      onMouseEnter={() => setOverviewActiveIndex(idx)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '7px 8px',
-                        border: 'none',
-                        background: isKeyboardActive ? 'var(--hover)' : 'transparent',
-                        borderRadius: 7,
-                        cursor: 'pointer',
-                        color: isActiveDoc ? 'var(--accent)' : 'var(--fg)',
-                        fontWeight: isActiveDoc ? 600 : 400,
-                        font: "400 12px 'Inter', sans-serif",
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {item.title}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-        {closedDocs.length > 0 && (
-          <select
-            value=""
-            onChange={(e) => e.currentTarget.value && openDocument(e.currentTarget.value)}
-            style={{ fontSize: 12 }}
-          >
-            <option value="">Open document...</option>
-            {closedDocs.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.title}
-              </option>
-            ))}
-          </select>
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setOverviewOpen(false);
+                } else if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setOverviewActiveIndex((i) => moveOverviewSelection(i, overviewMatches.length, 1));
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setOverviewActiveIndex((i) => moveOverviewSelection(i, overviewMatches.length, -1));
+                } else if (e.key === 'Enter') {
+                  e.preventDefault();
+                  activateOverviewSelection();
+                }
+              }}
+            />
+            {overviewMatches.length === 0 ? (
+              <div className="doc-tab-overview-empty">No open tabs match &quot;{overviewQuery.trim()}&quot;</div>
+            ) : (
+              overviewMatches.map((item, idx) => {
+                const isActiveDoc = item.id === activeDocId;
+                const isKeyboardActive = idx === overviewActiveIndex;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`doc-tab-overview-item${isActiveDoc ? ' active' : ''}${isKeyboardActive ? ' kbd-active' : ''}`}
+                    onClick={() => {
+                      setOverviewOpen(false);
+                      if (!isActiveDoc) switchTab(item.id);
+                    }}
+                    onMouseEnter={() => setOverviewActiveIndex(idx)}
+                  >
+                    <span className="doc-tab-overview-title">{item.title}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         )}
       </div>
-    </div>
+      {closedDocs.length > 0 && (
+        <select
+          value=""
+          onChange={(e) => e.currentTarget.value && openDocument(e.currentTarget.value)}
+          style={{ fontSize: 12 }}
+        >
+          <option value="">Open document...</option>
+          {closedDocs.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.title}
+            </option>
+          ))}
+        </select>
+      )}
+    </>
   );
 }
