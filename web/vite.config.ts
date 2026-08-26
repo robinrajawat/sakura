@@ -9,6 +9,15 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  // §6.11 slice (docs/phase6-full-parity-plan.md, "PWA & polish pass"): `build.manifest` emits
+  // `dist/.vite/manifest.json` (source file -> real hashed output file mapping), which
+  // `scripts/generate-sw-precache.mjs` reads after the build to populate `sw.js`'s real
+  // `PRECACHE_URLS` list -- see that script's own header for why this exists at all (Vite's
+  // content-hashed filenames mean there's no fixed list to hand-write the way legacy's own real
+  // `sw.js` does for its single unhashed `index.html`).
+  build: {
+    manifest: true
+  },
   server: {
     port: 5175
   }
