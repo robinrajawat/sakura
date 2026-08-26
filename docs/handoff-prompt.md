@@ -198,16 +198,19 @@ post-cutover-backlog.md are untouched by it) and its own components still
 need real screenshot verification as they land, not just structural
 correctness.
 
-**Phase 7 is in progress. 7.1 (sign-in gate overlay) landed** —
-`components/SignInGate.tsx`, a direct port of legacy's real
-`#sakura-landing-overlay`, verified with real screenshots in both light
-and dark theme. See phase7-app-shell-and-dashboard-plan.md's own Status
-section for the full breakdown and what's deliberately simplified.
+**Phase 7 is in progress. 7.1 (sign-in gate overlay) and 7.2 (first-run
+onboarding modal) both landed** — `components/SignInGate.tsx` and
+`components/WelcomeModal.tsx`, direct ports of legacy's real
+`#sakura-landing-overlay` and `#welcome-overlay`/`#why-sakura-overlay`,
+both verified with real screenshots in both light and dark theme. See
+phase7-app-shell-and-dashboard-plan.md's own Status section for the full
+breakdown and what's deliberately simplified.
 
 **Immediate next steps:** continue through docs/phase7-app-shell-and-dashboard-
-plan.md's sequenced sub-phases starting at 7.2 (first-run onboarding
-modal), same PR-per-slice discipline as every other phase. Once `web/` is
-close enough to legacy for a person to sign off, return to Section 9 gate
-items 2-4. Don't repoint `deploy.yml`'s root at `web/dist` until that gate
-is explicitly cleared, and remove `/web-preview/` once it is.
+plan.md's sequenced sub-phases starting at 7.3 (document data model:
+status/author/link fields), same PR-per-slice discipline as every other
+phase. Once `web/` is close enough to legacy for a person to sign off,
+return to Section 9 gate items 2-4. Don't repoint `deploy.yml`'s root at
+`web/dist` until that gate is explicitly cleared, and remove
+`/web-preview/` once it is.
 ```
