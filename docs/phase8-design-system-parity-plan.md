@@ -270,5 +270,50 @@ doc let this gap through repeated verification passes already.
   instead checked directly against the real legacy CSS/markup cited above, and the full local
   gauntlet (typecheck/lint/test/build) passed clean with zero behavior change to any existing
   screen -- 2005 tests still passing.
-- Remaining: 8.4 (retrofit, split by area) → 8.5 (verification fixture document), per this doc's
-  own sequencing summary above.
+- ✅ **8.4a — Retrofit: app-bar/header (`AccountMenu.tsx`/`ExportButtons.tsx`).** First of the
+  §8.4 area-scoped retrofit slices (app-bar/header → sidebar → document header + toolbar → dropdown
+  menus + modals, per this doc's own sequencing). Header icon buttons themselves (sidebar-toggle,
+  theme, hub, settings-gear, version-history) needed **no** retrofit at all -- confirmed against
+  legacy/index.html:813-820 that legacy's own app-bar buttons carry no `.icon-btn`/similar class,
+  relying solely on the `#appbar button` selector §8.1 already ported; the real remaining gap was
+  the two `DropdownMenu` consumers actually anchored in the header row.
+  - `AccountMenu.tsx`: retired its own local `MenuItem`/`Divider` helpers for the shared
+    `ui/MenuItem.tsx` inside a real `<DropdownMenu rich>`, added real icons per row
+    (`IdCardIcon`/`LoginIcon`/`LogoutIcon`/`BookIcon`/`MessageIcon`/`InfoIcon`, all new this slice,
+    each a line-cited port of legacy/index.html:4570-4595), and the real `.export-section-label`
+    class for "Help"/"Support" (the latter previously missing entirely -- legacy/index.html:4597
+    has it, `web/` never did).
+    **A real structural duplication found and fixed**: `SyncStatusIndicator.tsx` (§6.8) rendered a
+    SECOND avatar next to `AccountMenu`'s own toggle button specifically because that toggle's
+    status dot was a hardcoded green circle -- its own header comment said as much ("no click-to-
+    open account dropdown menu... a real, separately-scoped gap"). Legacy has exactly one avatar
+    doing both jobs (`#account-toggle`). Folded the live sync-status logic (`state/syncStatusDot.ts`
+    plus the same 4000ms bright-then-dim fade timer) into `AccountMenu`'s own toggle button and
+    deleted `SyncStatusIndicator.tsx` and its `App.tsx` mount point -- one real avatar, matching
+    legacy, not two.
+  - `ExportButtons.tsx`: same `MenuItem`/`rich` retrofit, plus real section grouping the flat menu
+    never had (`Copy`/`Document`/`Send a copy`/`Data` for Export, `From a file` for Import, direct
+    port of legacy/index.html:6222-6253's own real structure) and 12 new per-row icons
+    (`UploadTrayIcon`/`DownloadTrayIcon`/`PrinterIcon`/`ClipboardIcon`/`MarkdownFileIcon`/
+    `TreeLinesIcon`/`DocFileIcon`/`PdfFileIcon`/`PptFileIcon`/`OpmlIcon`/`SakuraDocIcon`/
+    `XlsxFileIcon`), plus the real muted `.export-ext` suffix span for each format's extension
+    (`Markdown .md`, `Word .docx`, ...). The root two-level "Export ›/Import ›" in-place submenu
+    structure itself is unchanged -- already a documented, deliberate simplification vs. legacy's
+    own two-panel click-through (§7.6's own header comment), not something this retrofit revisits.
+  **Two more real CSS gaps found and fixed while wiring these two up** (both §8.1 misses, same
+  "only the nested rules were ported, not everything around them" pattern §8.3 already caught
+  twice): `.export-menu-rich .export-divider` (legacy/index.html:515) and `.export-menu-rich
+  .export-ext` (legacy/index.html:514) -- neither existed in `index.css` at all before this slice.
+  **A real bug found and fixed in `DropdownMenu.tsx` itself**: its own inline `style={{padding:4}}`
+  always beat the real `.export-menu-rich{padding:6px}` class regardless of the `rich` prop, since
+  inline style outranks a class selector -- invisible until this slice gave it its first real `rich`
+  consumers to expose it. Now `padding: rich ? 6 : 4`.
+  **A real gap in `ui/MenuItem.tsx` itself found and fixed**: its icon `<span>` never carried the
+  real `.export-icon.danger` modifier (legacy/index.html:4587) even when the row's own `danger` prop
+  was set -- missed in §8.3 since it had no real consumer yet to expose it.
+  Verified end-to-end in real headless Chrome: account-menu (signed-out state, real primary Sign-in
+  button, icons/dividers/section-labels), export-menu root/Export/Import all screenshotted and
+  visually matching legacy's real structure. Full gauntlet clean: 2005 tests still passing (no test
+  changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4b (sidebar) → 8.4c (document header + toolbar) → 8.4d (dropdown menus + modals) →
+  8.5 (verification fixture document), per this doc's own sequencing summary above.

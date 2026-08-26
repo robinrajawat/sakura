@@ -1,45 +1,27 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useProfileStore } from '../store/profileStore';
 import { useNotificationsStore } from '../store/notificationsStore';
+import { useDocSyncStore } from '../store/docSyncStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { syncDotVisualForStatus, type SyncDotVisual } from '../state/syncStatusDot';
 import type { SettingsCategory } from './SettingsPanel';
 import { DropdownMenu } from './DropdownMenu';
+import { MenuItem } from './ui/MenuItem';
+import { Button } from './ui/Button';
 import { FeedbackModal } from './FeedbackModal';
 import { HelpModal } from './HelpModal';
 import { AboutModal } from './AboutModal';
-import { KofiIcon } from '../icons';
+import { KofiIcon, IdCardIcon, LoginIcon, LogoutIcon, SettingsGearIcon, BookIcon, MessageIcon, InfoIcon } from '../icons';
 
 type Tokens = (typeof THEME_TOKENS)['light'];
 
-function MenuItem({ onClick, danger, t, children }: { onClick: () => void; danger?: boolean; t: Tokens; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      style={{
-        display: 'block',
-        width: '100%',
-        textAlign: 'left',
-        background: 'none',
-        border: 'none',
-        borderRadius: 6,
-        padding: '7px 8px',
-        font: 'inherit',
-        fontSize: 12.5,
-        color: danger ? 'var(--fc-red)' : t.text,
-        cursor: 'pointer'
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Divider({ t }: { t: Tokens }) {
-  return <div style={{ height: 1, background: t.border, margin: '4px 0' }} />;
-}
+const STATUS_LABEL: Record<SyncDotVisual, string> = {
+  syncing: 'Syncing…',
+  synced: 'Synced',
+  'idle-ok': 'Sync up to date',
+  error: 'Sync error — will retry on your next change'
+};
 
 function Avatar({ user, size, t }: { user: { photoURL: string | null; displayName: string | null; email: string | null }; size: number; t: Tokens }) {
   if (user.photoURL) {
@@ -91,6 +73,19 @@ function Avatar({ user, size, t }: { user: { photoURL: string | null; displayNam
  * profile-visibility badge inline in the signed-in header row -- it already has a real home in
  * Settings → Account (`ProfileVisibilitySettings.tsx`), so duplicating it here would just be two
  * copies of the same toggle to keep in sync, not a new gap.
+ *
+ * §8.4 retrofit (docs/phase8-design-system-parity-plan.md): every menu row now renders through the
+ * shared `MenuItem` (§8.3) inside a real `<DropdownMenu rich>`, with the real `.export-divider`/
+ * `.export-section-label` classes (the divider was itself a §8.1 gap, found and fixed this slice --
+ * see `index.css`'s own comment on `.export-menu-rich .export-divider`) in place of the old ad hoc
+ * inline-styled rows, and real icons per row (legacy/index.html:4586-4595) instead of bare text
+ * labels. The toggle button's status dot is also no longer a hardcoded green circle: it now shares
+ * the exact live sync-status logic `SyncStatusIndicator.tsx` used to own (`state/syncStatusDot.ts`'s
+ * pure mapping plus the same 4000ms bright-then-dim fade timer) -- that component rendered a
+ * SECOND avatar next to this one specifically because this button's own dot was static, a real
+ * duplication legacy never has (legacy has exactly one avatar, `#account-toggle`, doing both jobs).
+ * Folding the live status into this button's own dot retires that duplication; `SyncStatusIndicator`
+ * is deleted this slice as a result (its `App.tsx` mount point removed alongside it).
  */
 export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: SettingsCategory) => void }) {
   const user = useAuthStore((s) => s.user);
@@ -101,6 +96,7 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
   const ensureProfile = useProfileStore((s) => s.ensureProfile);
   const resetProfile = useProfileStore((s) => s.reset);
   const initNotifications = useNotificationsStore((s) => s.init);
+  const syncStatus = useDocSyncStore((s) => s.syncStatus);
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
 
@@ -108,6 +104,8 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [dotVisual, setDotVisual] = useState<SyncDotVisual>('idle-ok');
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     init();
@@ -129,6 +127,26 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  useEffect(() => {
+    if (fadeTimerRef.current) {
+      clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+    if (syncStatus === 'synced') {
+      setDotVisual('synced');
+      fadeTimerRef.current = setTimeout(() => setDotVisual('idle-ok'), 4000);
+      return;
+    }
+    setDotVisual(syncDotVisualForStatus(syncStatus));
+  }, [syncStatus]);
+
+  useEffect(
+    () => () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    },
+    []
+  );
+
   function goToSettings(category?: SettingsCategory): void {
     setOpen(false);
     onOpenSettings(category);
@@ -145,19 +163,16 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
         style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
       >
         {user ? (
-          <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <span style={{ position: 'relative', display: 'inline-flex' }} title={STATUS_LABEL[dotVisual]}>
             <Avatar user={user} size={20} t={t} />
-            <span
-              aria-hidden="true"
-              style={{ position: 'absolute', bottom: -1, right: -1, width: 7, height: 7, borderRadius: '50%', background: '#2ecc71', border: `1.5px solid ${t.background}` }}
-            />
+            <span aria-hidden="true" className={`account-status-dot ${dotVisual}`} />
           </span>
         ) : (
           <span style={{ fontSize: 12.5 }}>Sign in</span>
         )}
       </button>
       {open && (
-        <DropdownMenu onClose={() => setOpen(false)} width={230} align="right">
+        <DropdownMenu onClose={() => setOpen(false)} width={230} align="right" rich>
           {loading ? (
             <div style={{ padding: '8px 10px', fontSize: 12, color: t.mutedText }}>Checking sign-in status...</div>
           ) : user ? (
@@ -173,11 +188,11 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
                   )}
                 </div>
               </div>
-              <MenuItem t={t} onClick={() => goToSettings('account')}>
+              <MenuItem icon={<IdCardIcon />} onClick={() => goToSettings('account')}>
                 Manage account
               </MenuItem>
               <MenuItem
-                t={t}
+                icon={<LogoutIcon />}
                 danger
                 onClick={() => {
                   setOpen(false);
@@ -193,26 +208,26 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
                 Sign in to sync everything — documents, Hub, and settings — across devices. Fully optional — everything keeps working
                 locally if you skip this.
               </div>
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={() => {
                   setOpen(false);
                   openLandingGate();
                 }}
-                style={{ width: '100%', fontWeight: 600 }}
+                style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, border: 'none' }}
               >
-                Sign in
-              </button>
+                <LoginIcon width={14} height={14} /> Sign in
+              </Button>
             </div>
           )}
-          <Divider t={t} />
-          <MenuItem t={t} onClick={() => goToSettings()}>
+          <div className="export-divider" />
+          <MenuItem icon={<SettingsGearIcon />} onClick={() => goToSettings()}>
             Settings
           </MenuItem>
-          <Divider t={t} />
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: t.mutedText, padding: '2px 8px 4px' }}>Help</div>
+          <div className="export-divider" />
+          <div className="export-section-label">Help</div>
           <MenuItem
-            t={t}
+            icon={<BookIcon />}
             onClick={() => {
               setOpen(false);
               setHelpOpen(true);
@@ -221,7 +236,7 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
             Help
           </MenuItem>
           <MenuItem
-            t={t}
+            icon={<MessageIcon />}
             onClick={() => {
               setOpen(false);
               setFeedbackOpen(true);
@@ -230,7 +245,7 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
             Send Feedback
           </MenuItem>
           <MenuItem
-            t={t}
+            icon={<InfoIcon />}
             onClick={() => {
               setOpen(false);
               setAboutOpen(true);
@@ -238,7 +253,8 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
           >
             About Sakura
           </MenuItem>
-          <Divider t={t} />
+          <div className="export-divider" />
+          <div className="export-section-label">Support</div>
           <div style={{ padding: '0 8px 6px', fontSize: 10.5, lineHeight: 1.5, color: t.mutedText }}>
             Sakura stays free, with no ads and no locked features — built by one person in their spare time. A tip is appreciated
             but never expected.

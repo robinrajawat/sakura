@@ -66,7 +66,11 @@ export function DropdownMenu({
         borderRadius: 8,
         boxShadow: '0 14px 28px rgba(0,0,0,.16)',
         zIndex: 95,
-        padding: 4,
+        // §8.4 correction (docs/phase8-design-system-parity-plan.md): a bare inline `padding: 4`
+        // here always beat the real `.export-menu-rich{padding:6px}` class (§8.1/§8.3) regardless
+        // of `rich`, since inline style outranks a class selector -- only noticed once a real
+        // `rich` consumer (AccountMenu.tsx, this slice) existed to expose it.
+        padding: rich ? 6 : 4,
         font: "400 12.5px 'Inter', sans-serif"
       }}
     >

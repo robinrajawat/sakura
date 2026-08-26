@@ -301,6 +301,27 @@ textarea:focus {
   font: 400 13px 'Inter', sans-serif;
 }
 
+/* §8.4 correction (docs/phase8-design-system-parity-plan.md): `.export-menu-rich .export-divider`
+ * (legacy/index.html:515) -- a real class entirely missed by §8.1's own pass (only the row/label/
+ * icon rules around it were ported), only found while retrofitting `AccountMenu.tsx` onto this
+ * system and needing its real real `<div class="export-divider">` separators (legacy/index.html:
+ * 4589/4591/4596), not the ad hoc inline-styled divider `web/` used before this slice. */
+.export-menu-rich .export-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+/* §8.4 correction: `.export-menu-rich .export-ext` (legacy/index.html:514) -- the muted file-
+ * extension suffix on every real export/import row (`Markdown .md`, `Word .docx`, ...), another
+ * real class §8.1's own pass missed, found alongside `.export-divider` above while retrofitting
+ * `ExportButtons.tsx` onto this system. */
+.export-menu-rich .export-ext {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 2px;
+}
+
 .account-danger-item:hover {
   background: color-mix(in srgb, #e5484d 12%, transparent);
   color: #e5484d;

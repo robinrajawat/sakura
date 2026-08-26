@@ -275,6 +275,211 @@ export function MonitorIcon(props: IconProps = {}) {
   );
 }
 
+/** legacy/index.html:4586 (`#account-manage-btn`'s own icon) */
+export function IdCardIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="M5 16c.6-1.6 2.1-2.5 4-2.5s3.4.9 4 2.5" />
+      <line x1="14" y1="9" x2="18" y2="9" />
+      <line x1="14" y1="12" x2="18" y2="12" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4570 (`#account-signin-open-btn`'s own icon) */
+export function LoginIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <polyline points="10 17 15 12 10 7" />
+      <line x1="15" y1="12" x2="3" y2="12" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4587 (`#account-signout-btn`'s own icon) */
+export function LogoutIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4593 (`#account-help-btn`'s own icon) */
+export function BookIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4594 (`#account-feedback-btn`'s own icon, same shape as the toolbar's real
+ * `#qb-note` -- App.tsx's own inline `<svg>` there, not yet retrofit onto this shared icon). */
+export function MessageIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4595 (`#account-about-btn`'s own icon) */
+export function InfoIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4540/6233 (`#appbar-more-export-btn`/`#export-toggle`'s own icon) */
+export function UploadTrayIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4541/6221 (`#appbar-more-import-btn`/`#import-toggle`'s own icon) */
+export function DownloadTrayIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:4542/6220 (`#appbar-more-print-btn`/`#print-btn`'s own icon) */
+export function PrinterIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6236 (`Copy as Text`'s own icon) */
+export function ClipboardIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6225/6242 (Word `.docx` import/export's own icon, no ruled lines) */
+export function DocFileIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6240 (Markdown `.md` export's own icon -- `DocFileIcon` plus two full-width
+ * ruled lines) */
+export function MarkdownFileIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6243 (PDF `.pdf` export's own icon -- `DocFileIcon` plus one full-width and
+ * one short ruled line, distinct from `MarkdownFileIcon`'s two full-width lines) */
+export function PdfFileIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="13" y2="17" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6251 (Decision Log `.xlsx` export's own icon -- `MarkdownFileIcon` plus one
+ * extra short top ruled line) */
+export function XlsxFileIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+      <line x1="8" y1="9" x2="10" y2="9" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6241 (Tree `.txt` export's own icon) */
+export function TreeLinesIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="8" y1="12" x2="20" y2="12" />
+      <line x1="12" y1="18" x2="20" y2="18" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6244 (PowerPoint `.pptx` export's own icon) */
+export function PptFileIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <rect x="3" y="4" width="18" height="14" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="18" x2="12" y2="21" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6224/6245 (OPML `.opml` import/export's own icon -- three connected nodes) */
+export function OpmlIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <circle cx="6" cy="6" r="2.4" />
+      <circle cx="6" cy="18" r="2.4" />
+      <circle cx="17" cy="12" r="2.4" />
+      <path d="M8 6h4a4 4 0 0 1 4 4" />
+      <path d="M8 18h4a4 4 0 0 0 4-4" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:6226/6248 (Sakura Document `.sakura.json` import/export's own icon) */
+export function SakuraDocIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M5 20c1.5-4 3-6.5 5.5-8.5S15 8 18 5" />
+      <circle cx="18" cy="5" r="2.1" />
+      <circle cx="10.5" cy="11.5" r="1.7" />
+    </svg>
+  );
+}
+
 /** legacy/index.html:4593 area (`#account-support-btn`'s own Ko-fi mark) */
 export function KofiIcon(props: IconProps = {}) {
   return (
