@@ -14,6 +14,7 @@ import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisio
 import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
 import { NodeText } from './NodeText';
+import { EmptyDocState } from './EmptyDocState';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
 import { useAutoRewriteStore } from '../store/autoRewriteStore';
 import { shouldAutoRewriteNode } from '../state/autoRewrite';
@@ -716,6 +717,14 @@ export function OutlineTree() {
       setEditingTagsId(null);
     }
   }
+
+  // §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): the empty-document state --
+  // matches legacy's own real render() branch order exactly (its `!nodes.length` check
+  // replaces the ENTIRE pane, including any sort/focus chrome, not just the row list) -- see
+  // EmptyDocState.tsx's own header for the full port. All hooks above this point still run
+  // unconditionally on every render regardless of node count, so this early return doesn't
+  // violate the Rules of Hooks.
+  if (nodes.length === 0) return <EmptyDocState />;
 
   const visible = visibleIndexes();
   const focusedNode = focusedId !== null ? nodes.find((n) => n.id === focusedId) : undefined;

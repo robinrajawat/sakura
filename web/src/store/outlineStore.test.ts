@@ -436,6 +436,35 @@ describe('outlineStore', () => {
     expect(useOutlineStore.getState().nodes.find((n) => n.id === 2)?.text).toBe('child');
   });
 
+  describe('createFirstNode (§7.4, docs/phase7-app-shell-and-dashboard-plan.md)', () => {
+    beforeEach(() => {
+      useOutlineStore.setState({ nodes: [], selectedId: null, editingId: null, nextId: 1, undoStack: [], redoStack: [] });
+    });
+
+    it('creates a single root node with the given text, selected and in edit mode', () => {
+      useOutlineStore.getState().createFirstNode('hello');
+      const { nodes, selectedId, editingId } = useOutlineStore.getState();
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0]).toMatchObject({ text: 'hello', depth: 0, parentId: null });
+      expect(selectedId).toBe(nodes[0].id);
+      expect(editingId).toBe(nodes[0].id);
+    });
+
+    it('is undoable back to a genuinely empty document', () => {
+      useOutlineStore.getState().createFirstNode('hello');
+      expect(useOutlineStore.getState().canUndo()).toBe(true);
+      useOutlineStore.getState().undo();
+      expect(useOutlineStore.getState().nodes).toEqual([]);
+    });
+
+    it('is a no-op when the document already has nodes', () => {
+      useOutlineStore.getState().createFirstNode('first');
+      const afterFirst = useOutlineStore.getState().nodes;
+      useOutlineStore.getState().createFirstNode('second');
+      expect(useOutlineStore.getState().nodes).toEqual(afterFirst);
+    });
+  });
+
   it('newSiblingBelow inserts a new empty node at the same depth, right after the subtree, selected and in edit mode', () => {
     useOutlineStore.getState().newSiblingBelow(2);
     const { nodes, selectedId, editingId } = useOutlineStore.getState();

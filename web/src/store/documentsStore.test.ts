@@ -17,7 +17,9 @@ describe('documentsStore', () => {
     expect(docsIndex).toHaveLength(1);
     expect(openTabs).toEqual([docsIndex[0].id]);
     expect(activeDocId).toBe(docsIndex[0].id);
-    expect(useOutlineStore.getState().nodes).toHaveLength(1);
+    // §7.4: a new document starts genuinely empty (matching legacy's real `createDoc`), not
+    // pre-seeded with a single blank node -- see EmptyDocState.tsx's own header for why.
+    expect(useOutlineStore.getState().nodes).toHaveLength(0);
   });
 
   it('newDocument saves the previously active document before switching', () => {
@@ -54,7 +56,7 @@ describe('documentsStore', () => {
     expect(useDocumentsStore.getState().docsIndex.map((d) => d.id)).toEqual([id]);
     // Reopening brings its content back.
     useDocumentsStore.getState().openDocument(id);
-    expect(useOutlineStore.getState().nodes).toHaveLength(1);
+    expect(useOutlineStore.getState().nodes).toHaveLength(0);
   });
 
   it('closeTab on the active tab falls back to another open tab', () => {
@@ -234,8 +236,9 @@ describe('documentsStore', () => {
       useDocumentsStore.getState().newDocument();
       const secondId = useDocumentsStore.getState().activeDocId!;
       expect(secondId).not.toBe(firstId);
-      // Switching to the new doc resets selection to ITS first node -- no cache for it yet.
-      expect(useOutlineStore.getState().selectedId).toBe(useOutlineStore.getState().nodes[0].id);
+      // Switching to the new (genuinely empty, §7.4) doc resets selection to null -- no cache
+      // for it yet, and there's no first node to select either.
+      expect(useOutlineStore.getState().selectedId).toBeNull();
 
       useDocumentsStore.getState().switchTab(firstId);
       // Back on the first doc: selection is restored to node 2, not reset to node 1.
@@ -265,6 +268,7 @@ describe('documentsStore', () => {
     it('never resumes mid-inline-edit across a tab switch', () => {
       useDocumentsStore.getState().newDocument();
       const firstId = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('a');
       const nodeId = useOutlineStore.getState().nodes[0].id;
       useOutlineStore.getState().startEditing(nodeId);
       expect(useOutlineStore.getState().editingId).toBe(nodeId);
@@ -298,6 +302,7 @@ describe('documentsStore', () => {
     it('deleteDocument evicts the tab-view cache so a later document reusing storage never inherits stale view state', () => {
       useDocumentsStore.getState().newDocument();
       const id = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('a');
       useOutlineStore.getState().selectNode(useOutlineStore.getState().nodes[0].id);
       useDocumentsStore.getState().newDocument();
       useDocumentsStore.getState().deleteDocument(id);
@@ -507,6 +512,7 @@ describe('documentsStore', () => {
     it('each tab keeps its own undo history -- undoing on tab A does not touch tab B', () => {
       useDocumentsStore.getState().newDocument();
       const a = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('a');
       const nodeAId = useOutlineStore.getState().nodes[0].id;
       useOutlineStore.getState().commitEdit(nodeAId, 'edited on tab A');
       expect(useOutlineStore.getState().canUndo()).toBe(true);
@@ -517,6 +523,7 @@ describe('documentsStore', () => {
       // Brand-new tab -- its own undo history starts empty, unaffected by tab A's edit.
       expect(useOutlineStore.getState().canUndo()).toBe(false);
 
+      useOutlineStore.getState().createFirstNode('b');
       const nodeBId = useOutlineStore.getState().nodes[0].id;
       useOutlineStore.getState().commitEdit(nodeBId, 'edited on tab B');
       useOutlineStore.getState().undo();
@@ -533,6 +540,7 @@ describe('documentsStore', () => {
     it('undoing an edit on tab A, switching to tab B and back, then redoing on tab A still works', () => {
       useDocumentsStore.getState().newDocument();
       const a = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('a');
       const nodeAId = useOutlineStore.getState().nodes[0].id;
       useOutlineStore.getState().commitEdit(nodeAId, 'first edit');
       useOutlineStore.getState().undo();
@@ -555,6 +563,7 @@ describe('documentsStore', () => {
     it('closing and reopening a tab preserves its undo history (same in-memory-session cache as selection/scroll)', () => {
       useDocumentsStore.getState().newDocument();
       const id = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('a');
       const nodeId = useOutlineStore.getState().nodes[0].id;
       useOutlineStore.getState().commitEdit(nodeId, 'edited before close');
       expect(useOutlineStore.getState().canUndo()).toBe(true);
@@ -573,6 +582,11 @@ describe('documentsStore', () => {
     it('saveActiveDocNodes hands the PREVIOUS stored content to maybeCapture, matching legacy\'s "before overwrite" trigger', () => {
       useDocumentsStore.getState().newDocument();
       const id = useDocumentsStore.getState().activeDocId!;
+      useOutlineStore.getState().createFirstNode('original');
+      // Flush the seeded node to storage first -- newDocument() itself persists an empty node
+      // list (§7.4), so without this, "the previous stored content" the assertion below checks
+      // against would genuinely be empty, not the seeded node.
+      useDocumentsStore.getState().saveActiveDocNodes();
       const spy = vi.spyOn(useVersionHistoryStore.getState(), 'maybeCapture').mockResolvedValue(undefined);
 
       const originalNodes = useOutlineStore.getState().nodes;

@@ -351,5 +351,48 @@ alone, matching the verification standard every Phase 6 slice was held to.
   test confirming a freshly created document's persisted shape carries the correct defaults with
   zero console/page errors (only the same expected Firebase network failure from every other §7
   slice's own verification).
-- Remaining: 7.4 (per-doc header + empty state) → 7.5 (toolbar realignment) → 7.6 (app-bar
-  docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary above.
+- ✅ **7.4 — Per-document header (status/author/link) + empty-document state landed.** New
+  `components/DocumentHeader.tsx` (title input + status/author/link chips) and
+  `components/EmptyDocState.tsx` (the illustration/greeting/hint/buttons block), both direct
+  ports of legacy's real `#editor-title-row`/`#editor-meta-row` and `.empty-state.doc-empty`.
+  **Three real corrections to this section's own original text, each found by checking the
+  actual code rather than trusting the prose (documented in full in `DocumentHeader.tsx`'s own
+  header comment):** (1) `web/` never had a standalone title input at all before this slice (only
+  a tab-strip inline-rename) — this section's own intro wrongly assumed one "already existed," so
+  this slice built it too, reusing `renameDocument`; (2) the status chip is a real 5-option
+  `role="menu"` popover (matching legacy's own `#doc-status-menu` exactly), not a cycle-button —
+  `HubTodosPanel.tsx`'s own status control, which this section's text cited as the pattern to
+  reuse, is actually a plain cycle button, checked directly before writing this; (3) presence/
+  share chips stay deferred, but not because "§6.8 is still not started" as this section's text
+  claimed — §6.8 is actually complete except real-time presence tracking itself
+  (`docs/post-cutover-backlog.md`'s own Account/Sync section names only that one real gap). The
+  real, still-valid reason to defer both: `docSyncStore.ts`/`sharingStore.ts`/`state/presence.ts`
+  all exist but have never been wired into a per-document-header UI surface like this one.
+  **A real, necessary supporting fix, found only once this slice made the empty state actually
+  reachable and testable**: `documentsStore.ts`'s `newDocument()` used to seed every new document
+  with a single blank-text node, matching neither legacy's real `createDoc()` (`nodes:[]`,
+  genuinely empty) nor leaving any real path to trigger `EmptyDocState` at all — fixed to seed
+  `nodes:[]` exactly like legacy, which is also what makes 7.3's whole `DocSummary` status/author/
+  link work meaningfully visible for once-empty documents too. This needed a new
+  `outlineStore.ts` action, `createFirstNode`, to restore the "start typing in an empty document"
+  path legacy's own `createRootAndEdit` provides — wired into `EmptyDocState.tsx`'s own focused
+  wrapper `<div>`'s keydown handler (Enter or any single printable character). A real, subtle bug
+  was caught and fixed during that verification, not just confirmed: a plain `autoFocus` prop on
+  that wrapper lost the focus race against the native browser behavior of the "New document"
+  button (whichever one was just clicked) staying focused — verified concretely: typing into a
+  freshly created empty document with `autoFocus` alone caused the space in "Hello world" to
+  silently re-trigger that still-focused button (a native "Space activates the focused button"
+  browser behavior, not application logic), creating a SECOND new document instead of typing text.
+  Fixed with an explicit `useEffect`-driven `.focus()` call, which reliably wins that race.
+  Verified end-to-end in real headless Chrome in both light/dark theme and via full gauntlet
+  (2001 tests, 23 new/updated): status/author/link chips all save, persist, and reload correctly
+  (including the popover interactions and Escape/click-outside dismissal); the empty state renders
+  correctly for a genuinely empty document; typing at a realistic cadence into a fresh empty
+  document correctly creates and commits the first node with the typed text, with zero extra
+  documents created; a deliberately-unrealistic zero-delay synthetic keystroke burst (Playwright's
+  default) was found to occasionally drop characters typed during the very first
+  render-swap frame -- a real, understood, `React`-inherent limit of any "first keystroke swaps
+  which component owns the input" pattern, not reproducible at any real human typing speed, and
+  not fixed further (verified: adding minimal per-character delay resolves it completely).
+- Remaining: 7.5 (toolbar realignment) → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash),
+  per this doc's own sequencing summary above.

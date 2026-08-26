@@ -275,6 +275,12 @@ interface OutlineState {
    * or `null` on abort. */
   applySummaryParent: (rootIds: number[], label: string) => number | null;
 
+  /** §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): creates the very first node in a
+   * genuinely empty document (`nodes.length===0`) and opens it for editing immediately, matching
+   * legacy's real `createRootAndEdit` (legacy/index.html:27110's own call site: pressing Enter or
+   * typing any character while the pane shows the empty state). A no-op if the document already
+   * has nodes -- `EmptyDocState.tsx` is the one real caller, and only renders when there are none. */
+  createFirstNode: (text: string) => void;
   newSiblingBelow: (id: number) => void;
   /** Inserts a blank node at the SAME depth immediately BEFORE `id` (not after its subtree,
    * unlike newSiblingBelow) -- matches legacy's own real insertSiblingBefore exactly
@@ -839,6 +845,32 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     rebuildParentIdsCore(next);
     set({
       nodes: next,
+      nextId: nextId + 1,
+      selectedId: newNode.id,
+      editingId: newNode.id,
+      multiSelectedIds: [],
+      selectionAnchorId: newNode.id
+    });
+  },
+
+  createFirstNode: (text) => {
+    const { nodes, nextId } = get();
+    if (nodes.length > 0) return;
+    pushUndo();
+    const newNode: OutlineNode = {
+      id: nextId,
+      depth: 0,
+      text,
+      parentId: null,
+      isCheckbox: false,
+      checked: false,
+      note: '',
+      codeBlock: null,
+      tags: [],
+      styles: defaultNodeStyles()
+    };
+    set({
+      nodes: [newNode],
       nextId: nextId + 1,
       selectedId: newNode.id,
       editingId: newNode.id,

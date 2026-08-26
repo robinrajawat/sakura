@@ -19,6 +19,7 @@ import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { SignInGate } from './components/SignInGate';
 import { WelcomeModal } from './components/WelcomeModal';
+import { DocumentHeader } from './components/DocumentHeader';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
@@ -607,6 +608,11 @@ export function App() {
             <code>`code`</code> — matches legacy's real styling, delimiters hidden
           </li>
         </ul>
+        {/* §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): the per-document header row
+            (title + status/author/link chips) -- see DocumentHeader.tsx's own header. Always
+            present above whichever content pane is active, matching legacy's own real DOM order
+            (`#editor-title-row` is the first child of `#editor-wrap`, before the node rows). */}
+        <DocumentHeader />
         {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
         <NotePanel />
         <div style={{ marginTop: 16 }}>

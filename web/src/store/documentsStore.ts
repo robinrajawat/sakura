@@ -430,9 +430,13 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
     const id = generateDocId();
     const now = Date.now();
     const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now, status: '', author: '', link: null };
-    const nodes: OutlineNode[] = [
-      { id: 1, depth: 0, text: '', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
-    ];
+    // §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): a genuinely empty node list, not
+    // a single blank-text node -- matches legacy's real `createDoc` exactly (`nodes:[]`,
+    // legacy/index.html:10783), and is what makes `EmptyDocState.tsx`'s own empty-state branch in
+    // `OutlineTree.tsx` (`nodes.length===0`) actually reachable through the real "New document"
+    // entry point, not just theoretically. `outlineStore.ts`'s new `createFirstNode` action is the
+    // real path back to a non-empty document once the person starts typing.
+    const nodes: OutlineNode[] = [];
     writeJson(docStorageKey(id), { title: summary.title, nodes });
     const docsIndex = [...get().docsIndex, summary];
     const openTabs = [...get().openTabs, id];

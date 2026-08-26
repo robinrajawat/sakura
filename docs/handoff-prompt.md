@@ -198,25 +198,28 @@ post-cutover-backlog.md are untouched by it) and its own components still
 need real screenshot verification as they land, not just structural
 correctness.
 
-**Phase 7 is in progress. 7.1 (sign-in gate overlay), 7.2 (first-run
-onboarding modal), and 7.3 (document data model: status/author/link)
-all landed** — `components/SignInGate.tsx` and `components/WelcomeModal.tsx`
-(direct ports of legacy's real `#sakura-landing-overlay` and
-`#welcome-overlay`/`#why-sakura-overlay`, both verified with real
-screenshots in both light and dark theme), plus real `status`/`author`/
-`link` fields + setter actions on `documentsStore.ts`'s `DocSummary`
-(store-only, no UI yet — that's 7.4's job). See
-phase7-app-shell-and-dashboard-plan.md's own Status section for the full
-breakdown and what's deliberately simplified, including one real
-storage-shape correction found in 7.3 (these three fields live on
-`DocSummary` only, not duplicated into `StoredDoc` the way legacy's own
-`title` field is — see that section's own reasoning).
+**Phase 7 is in progress. 7.1 through 7.4 all landed**: 7.1 sign-in gate
+overlay, 7.2 first-run onboarding modal, 7.3 document data model
+(status/author/link fields on `DocSummary`), 7.4 the per-document header
+(status/author/link chips + a real title input) and the empty-document
+state (`components/DocumentHeader.tsx`/`EmptyDocState.tsx`). 7.4 also
+fixed a real, necessary supporting bug: `documentsStore.ts`'s
+`newDocument()` used to seed a blank node instead of legacy's real
+genuinely-empty `nodes:[]`, which meant the empty-document state could
+never actually trigger — now fixed, with a new `outlineStore.ts`
+`createFirstNode` action restoring the "start typing in an empty
+document" path. See phase7-app-shell-and-dashboard-plan.md's own Status
+section for the full breakdown of each slice, including several real
+corrections to this plan's own original text found by checking the
+actual legacy code rather than trusting the prose (worth reading before
+starting 7.5+, since the same "verify against the real code" discipline
+applies there too).
 
 **Immediate next steps:** continue through docs/phase7-app-shell-and-dashboard-
-plan.md's sequenced sub-phases starting at 7.4 (per-document header:
-status/author/link chips + the empty-document state), same PR-per-slice
-discipline as every other phase. Once `web/` is close enough to legacy
-for a person to sign off, return to Section 9 gate items 2-4. Don't
-repoint `deploy.yml`'s root at `web/dist` until that gate is explicitly
-cleared, and remove `/web-preview/` once it is.
+plan.md's sequenced sub-phases starting at 7.5 (toolbar default-visibility
++ grouped layout realignment), same PR-per-slice discipline as every
+other phase. Once `web/` is close enough to legacy for a person to sign
+off, return to Section 9 gate items 2-4. Don't repoint `deploy.yml`'s
+root at `web/dist` until that gate is explicitly cleared, and remove
+`/web-preview/` once it is.
 ```
