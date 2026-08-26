@@ -198,7 +198,7 @@ post-cutover-backlog.md are untouched by it) and its own components still
 need real screenshot verification as they land, not just structural
 correctness.
 
-**Phase 7 is in progress. 7.1 through 7.6 all landed**: 7.1 sign-in gate
+**Phase 7 is complete. 7.1 through 7.7 all landed**: 7.1 sign-in gate
 overlay, 7.2 first-run onboarding modal, 7.3 document data model
 (status/author/link fields on `DocSummary`), 7.4 the per-document header
 (status/author/link chips + a real title input) and the empty-document
@@ -219,17 +219,27 @@ turned into a real Export/Import/Print menu instead of a flat button
 row, plus three small new entry points inside the account dropdown
 (`HelpModal.tsx`/`FeedbackModal.tsx`/`AboutModal.tsx` — Feedback is a
 genuine Firestore write to the same real `feedback` collection legacy
-uses, not a stub). See phase7-app-shell-and-dashboard-plan.md's own
-Status section for the full breakdown of each slice, including several
-real corrections to this plan's own original text found by checking
-the actual legacy code rather than trusting the prose (worth reading
-before starting 7.7, since the same "verify against the real code"
-discipline applies there too).
+uses, not a stub). 7.7 finished the sidebar: a real filter box
+(`SidebarFileExplorer.tsx` narrows the folder tree + Unfiled bucket to
+matching titles), "Locate the open document" (a new `documentsStore.ts`
+`openFolderChain` action opens every ancestor folder, then scrolls/
+flashes the row), a Templates section shell (chrome only — no real
+template system exists in `web/` yet, confirmed still out of scope by
+docs/post-cutover-backlog.md), and a Trash section shell (collapsible
+row + live count, always 0/"Trash is empty" today since `web/` has no
+soft-delete concept at all — also already confirmed in that same
+backlog doc). See phase7-app-shell-and-dashboard-plan.md's own Status
+section for the full breakdown of every slice, including several real
+corrections to this plan's own original text found by checking the
+actual legacy code rather than trusting the prose.
 
-**Immediate next steps:** 7.7 (sidebar Templates/Trash) is the last
-sub-phase in docs/phase7-app-shell-and-dashboard-plan.md — same
-PR-per-slice discipline as every other phase. Once `web/` is close
-enough to legacy for a person to sign off, return to Section 9 gate
-items 2-4. Don't repoint `deploy.yml`'s root at `web/dist` until that
-gate is explicitly cleared, and remove `/web-preview/` once it is.
+**Immediate next steps:** Phase 7 has no further sub-phases. The next
+real step is docs/phase6-full-parity-plan.md's own Section 9 pre-cutover
+gate, items 2-4 (a person clicking through the real `/web-preview/`
+build end-to-end; signing in with a real account to confirm
+production-synced documents round-trip; the actual `deploy.yml` cutover
+PR) — none of which are appropriate to attempt unilaterally; they need
+the account owner directly. Don't repoint `deploy.yml`'s root at
+`web/dist` until that gate is explicitly cleared, and remove
+`/web-preview/` once it is.
 ```

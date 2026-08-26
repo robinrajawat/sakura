@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDocumentsStore, type DocSummary } from '../store/documentsStore';
+import { useSidebarStore } from '../store/sidebarStore';
 import { flattenFolderTree } from '../state/folderTree';
 
 /**
@@ -26,33 +27,86 @@ import { flattenFolderTree } from '../state/folderTree';
  *   invented substitute.
  * - No subtree document-count badge on folder rows (legacy shows "3 directly · 12 total incl.
  *   subfolders" via `folderSubtreeDocCount`) -- just a direct-count badge.
- * - No search-time filtering/force-expand, no right-click context menu, no manual per-bucket
- *   doc reordering (`docOrderMap`), no delete confirmation dialog or undo toast (a plain
- *   `window.confirm` stands in for legacy's own custom modal here).
- * - No templates (a separate system in legacy entirely, out of scope per this project's own
- *   discussion of Phase 6.1's folder work).
+ * - No right-click context menu, no manual per-bucket doc reordering (`docOrderMap`), no delete
+ *   confirmation dialog beyond a plain `window.confirm` standing in for legacy's own custom modal.
+ *
+ * §7.7 slice (docs/phase7-app-shell-and-dashboard-plan.md) added the four items this file's own
+ * header used to name as gaps:
+ * - **Filter box** (`#sb-toggle-search-btn`/`#sidebar-search`, legacy/index.html:6262-6268,
+ *   6294-6299): a header icon toggles a title-filter input; typing narrows both the Documents
+ *   tree AND the Unfiled bucket to matching titles, force-opens every folder along the way to a
+ *   match (a folder with no matching doc anywhere in its own subtree is hidden entirely, matching
+ *   legacy's real `folderSubtreeHasMatch`), and shows "No matching documents" if nothing matches.
+ *   One real, deliberate wording deviation from legacy's own placeholder ("Filter docs &
+ *   templates…"): this project's own Templates section (below) has no real items to filter yet
+ *   (see its own note), so the placeholder here only mentions documents.
+ * - **"Locate the open document"** (`#sb-locate-doc-btn`, legacy/index.html:6294-6296): direct
+ *   port of legacy's real `revealDocInSidebar` (legacy/index.html:31148-31166) -- opens the
+ *   sidebar if collapsed, clears any active filter, opens every ancestor folder of the active
+ *   document (`documentsStore.ts`'s new `openFolderChain`, an idempotent "open along this chain"
+ *   action distinct from `toggleFolderOpen`), then scrolls that row into view with a brief
+ *   background flash. Disabled (not a `showToast('No document open')`, since this project has no
+ *   toast infrastructure yet) when nothing is open.
+ * - **Templates section shell** (`#sb-templates-section`, legacy/index.html:6314-6328): the real
+ *   section header (label + "New template folder"/"Save · manage templates" icon buttons) and an
+ *   empty-state list -- deliberately NOT the full save-as-template flow. Templates are "a
+ *   separate system entirely" in legacy (docs/phase6-full-parity-plan.md's own 6.1 note,
+ *   reconfirmed in docs/post-cutover-backlog.md: "Templates ... never got a system at all") --
+ *   `web/` has no template store/data of any kind to back real buttons with yet, so both icon
+ *   buttons render disabled with an explanatory title rather than either faking the flow or
+ *   silently omitting the chrome a real user would expect to see here.
+ * - **Trash section** (`#sb-trash-list`, legacy/index.html:6329): the same real collapsible-row-
+ *   plus-live-count chrome as legacy's own `renderSidebarTrash` (legacy/index.html:30528-30538),
+ *   not the restore/purge/bulk-select system behind it -- `web/` has no soft-delete concept at
+ *   all yet (`deleteDocument` in `documentsStore.ts` is a real, immediate hard delete; also
+ *   already named in docs/post-cutover-backlog.md: "no trash concept exists"), so the count is
+ *   always 0 and the expanded state always shows "Trash is empty" -- both real and always
+ *   currently true, not placeholder text pretending otherwise.
  */
 export function SidebarFileExplorer() {
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
   const folders = useDocumentsStore((s) => s.folders);
   const docFolderMap = useDocumentsStore((s) => s.docFolderMap);
+  const activeDocId = useDocumentsStore((s) => s.activeDocId);
   const openDocument = useDocumentsStore((s) => s.openDocument);
   const newDocument = useDocumentsStore((s) => s.newDocument);
   const createFolder = useDocumentsStore((s) => s.createFolder);
   const renameFolder = useDocumentsStore((s) => s.renameFolder);
   const deleteFolder = useDocumentsStore((s) => s.deleteFolder);
   const toggleFolderOpen = useDocumentsStore((s) => s.toggleFolderOpen);
+  const openFolderChain = useDocumentsStore((s) => s.openFolderChain);
   const setFolderForDoc = useDocumentsStore((s) => s.setFolderForDoc);
+  const sidebarOpen = useSidebarStore((s) => s.open);
+  const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
   const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [trashOpen, setTrashOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const q = searchQuery.toLowerCase().trim();
 
   function docsInFolder(folderId: string | null): DocSummary[] {
     return docsIndex.filter((d) => (docFolderMap[d.id] ?? null) === folderId).sort((a, b) => b.modifiedAt - a.modifiedAt);
   }
 
+  function matchesQuery(doc: DocSummary): boolean {
+    return !q || doc.title.toLowerCase().includes(q);
+  }
+
+  // Direct port of legacy's real `folderSubtreeHasMatch` -- a folder is worth showing during a
+  // search if it (or any descendant folder) directly holds a matching document, regardless of
+  // its own open/closed state (search force-opens every matching folder, same as legacy).
+  function folderSubtreeHasMatch(folderId: string): boolean {
+    if (docsInFolder(folderId).some(matchesQuery)) return true;
+    return folders.filter((f) => f.parentId === folderId).some((f) => folderSubtreeHasMatch(f.id));
+  }
+
   // A folder's rows (and everything inside it) are only rendered while every ancestor up to
   // the root is open -- matches legacy's own `sfolder-children` `hidden` class toggling, just
   // computed here instead of via CSS class since this is real conditional rendering, not a
-  // stylesheet.
+  // stylesheet. Bypassed entirely while a search is active (every matching folder renders
+  // force-open instead, same as legacy's own search behavior).
   function isVisible(entry: { folder: { parentId: string | null }; depth: number }): boolean {
     if (entry.depth === 0) return true;
     let current = entry.folder.parentId;
@@ -64,8 +118,28 @@ export function SidebarFileExplorer() {
     return true;
   }
 
-  const flatFolders = flattenFolderTree(folders).filter(isVisible);
-  const unfiledDocs = docsInFolder(null);
+  const flatFolders = flattenFolderTree(folders).filter((entry) => (q ? folderSubtreeHasMatch(entry.folder.id) : isVisible(entry)));
+  const unfiledDocs = docsInFolder(null).filter(matchesQuery);
+  const noResults = q.length > 0 && flatFolders.length === 0 && unfiledDocs.length === 0;
+
+  function locateActiveDoc(): void {
+    if (!activeDocId) return;
+    if (!sidebarOpen) toggleSidebarOpen();
+    if (searchQuery) setSearchQuery('');
+    const folderId = docFolderMap[activeDocId];
+    if (folderId) openFolderChain(folderId);
+    setTimeout(() => {
+      const row = scrollRef.current?.querySelector<HTMLElement>(`[data-doc-id="${CSS.escape(activeDocId)}"]`);
+      if (!row) return;
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const prevBackground = row.style.background;
+      row.style.transition = 'background .2s';
+      row.style.background = 'var(--sel)';
+      setTimeout(() => {
+        row.style.background = prevBackground;
+      }, 900);
+    }, 30);
+  }
 
   function moveToFolderSelect(doc: DocSummary) {
     const currentFolderId = docFolderMap[doc.id] ?? '';
@@ -91,6 +165,7 @@ export function SidebarFileExplorer() {
     return (
       <div
         key={doc.id}
+        data-doc-id={doc.id}
         onClick={() => openDocument(doc.id)}
         style={{
           display: 'flex',
@@ -113,7 +188,7 @@ export function SidebarFileExplorer() {
   }
 
   return (
-    <div style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
+    <div ref={scrollRef} style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
       <div
         style={{
           display: 'flex',
@@ -127,16 +202,53 @@ export function SidebarFileExplorer() {
         }}
       >
         <span>Documents</span>
-        <button type="button" onClick={() => createFolder(null)} title="New folder" style={{ fontSize: 11 }}>
-          📁+
-        </button>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document" style={{ fontSize: 11 }}>
+            🎯
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchOpen((open) => !open)}
+            title={searchOpen ? 'Hide filter box' : 'Show filter box'}
+            aria-pressed={searchOpen}
+            aria-label="Toggle file explorer filter box"
+            style={{ fontSize: 11 }}
+          >
+            🔍
+          </button>
+          <button type="button" onClick={() => createFolder(null)} title="New folder" style={{ fontSize: 11 }}>
+            📁+
+          </button>
+        </div>
       </div>
+
+      {searchOpen && (
+        <div style={{ padding: '0 4px 8px' }}>
+          <input
+            autoFocus
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape') return;
+              if (searchQuery) setSearchQuery('');
+              else setSearchOpen(false);
+            }}
+            placeholder="Filter documents…"
+            aria-label="Filter documents"
+            autoComplete="off"
+            spellCheck={false}
+            style={{ width: '100%', boxSizing: 'border-box', fontSize: 12, padding: '4px 6px' }}
+          />
+        </div>
+      )}
 
       {flatFolders.map((entry) => {
         const folder = entry.folder;
-        const directDocs = docsInFolder(folder.id);
-        const hasChildFolder = folders.some((f) => f.parentId === folder.id);
+        const directDocs = docsInFolder(folder.id).filter(matchesQuery);
+        const hasChildFolder = folders.some((f) => f.parentId === folder.id && (!q || folderSubtreeHasMatch(f.id)));
         const isEmpty = directDocs.length === 0 && !hasChildFolder;
+        const isOpen = q.length > 0 || folder.open;
         return (
           <div key={folder.id} style={{ marginLeft: entry.depth * 14 }}>
             <div
@@ -155,7 +267,7 @@ export function SidebarFileExplorer() {
                 onClick={() => toggleFolderOpen(folder.id)}
                 style={{ width: 12, display: 'inline-block', color: 'var(--muted)', cursor: 'pointer' }}
               >
-                {folder.open ? '▾' : '▸'}
+                {isOpen ? '▾' : '▸'}
               </span>
               {renamingFolderId === folder.id ? (
                 <input
@@ -220,7 +332,7 @@ export function SidebarFileExplorer() {
                 ✕
               </button>
             </div>
-            {folder.open && (
+            {isOpen && (
               <div style={{ marginLeft: 16 }}>
                 {isEmpty ? (
                   <div style={{ color: 'var(--hint)', padding: '2px 4px', fontSize: 11 }}>Empty folder</div>
@@ -238,11 +350,57 @@ export function SidebarFileExplorer() {
           Unfiled
         </div>
       )}
-      {docsIndex.length === 0 ? (
+      {noResults ? (
+        <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>No matching documents</div>
+      ) : docsIndex.length === 0 ? (
         <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>No documents yet</div>
       ) : (
         unfiledDocs.map((d) => <DocRow key={d.id} doc={d} />)
       )}
+
+      {/* §7.7 slice: Templates section shell -- see this file's own header for exactly what's
+          real here (the chrome) vs. deliberately not (the save-as-template flow itself). */}
+      <div style={{ marginTop: 14 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: 'var(--hint)',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            fontSize: 10,
+            padding: '4px 4px 6px'
+          }}
+        >
+          <span>Templates</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button type="button" disabled title="New template folder — templates aren't available in web/ yet" style={{ fontSize: 11 }}>
+              📁+
+            </button>
+            <button type="button" disabled title="Save / manage templates — templates aren't available in web/ yet" style={{ fontSize: 11 }}>
+              ⋯
+            </button>
+          </div>
+        </div>
+        <div style={{ color: 'var(--hint)', padding: '2px 4px', fontSize: 11 }}>No templates yet</div>
+      </div>
+
+      {/* §7.7 slice: Trash section shell -- see this file's own header for why the count is
+          always 0 and the expanded state always shows "Trash is empty" today. */}
+      <div style={{ marginTop: 10, paddingTop: 6, borderTop: '1px solid var(--border)' }}>
+        <div
+          onClick={() => setTrashOpen((open) => !open)}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 4px', borderRadius: 6, cursor: 'pointer' }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <span style={{ width: 12, display: 'inline-block', color: 'var(--muted)' }}>{trashOpen ? '▾' : '▸'}</span>
+          <span style={{ flex: '1 1 auto' }}>Trash</span>
+          <span style={{ color: 'var(--hint)', fontSize: 10 }}>0</span>
+        </div>
+        {trashOpen && <div style={{ color: 'var(--hint)', padding: '2px 4px 0 24px', fontSize: 11 }}>Trash is empty</div>}
+      </div>
     </div>
   );
 }

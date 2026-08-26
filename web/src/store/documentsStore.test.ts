@@ -407,6 +407,32 @@ describe('documentsStore', () => {
       expect(persisted[0].open).toBe(false);
     });
 
+    it('openFolderChain opens every ancestor of a folder, leaving already-open ones alone', () => {
+      const grandparent = useDocumentsStore.getState().createFolder();
+      const parent = useDocumentsStore.getState().createFolder(grandparent);
+      const child = useDocumentsStore.getState().createFolder(parent);
+      useDocumentsStore.getState().toggleFolderOpen(grandparent);
+      useDocumentsStore.getState().toggleFolderOpen(parent);
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === grandparent)?.open).toBe(false);
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === parent)?.open).toBe(false);
+
+      useDocumentsStore.getState().openFolderChain(child);
+
+      const folders = useDocumentsStore.getState().folders;
+      expect(folders.find((f) => f.id === grandparent)?.open).toBe(true);
+      expect(folders.find((f) => f.id === parent)?.open).toBe(true);
+      expect(folders.find((f) => f.id === child)?.open).toBe(true);
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_folders_v1')!);
+      expect(persisted.every((f: { open: boolean }) => f.open)).toBe(true);
+    });
+
+    it('openFolderChain on an unknown folder id is a safe no-op', () => {
+      const id = useDocumentsStore.getState().createFolder();
+      useDocumentsStore.getState().toggleFolderOpen(id);
+      useDocumentsStore.getState().openFolderChain('not-a-real-id');
+      expect(useDocumentsStore.getState().folders.find((f) => f.id === id)?.open).toBe(false);
+    });
+
     it('setFolderForDoc files a document into a folder and persists it', () => {
       useDocumentsStore.getState().newDocument();
       const docId = useDocumentsStore.getState().activeDocId!;
