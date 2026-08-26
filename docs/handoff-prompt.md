@@ -243,8 +243,18 @@ any one feature gap. Scoped into **docs/phase8-design-system-parity-plan.md** �
 directly for its real current status; it cites the exact legacy CSS lines behind every primitive
 it names, not assumption.
 
-**Immediate next steps:** Phase 8 (design system parity) is next, starting at 8.1 (CSS
-primitives) — same PR-per-slice discipline as every prior phase, but hold verification to a real
+**8.1 (CSS primitives) landed**: every button/icon-button/menu-row/chip/badge class named in
+phase8-design-system-parity-plan.md's own investigation, ported into `web/src/index.css` and
+verified against the real legacy lines. Included a real, high-impact bonus find: legacy's own
+`#appbar .btn` scoped override (borderless/muted/25px header buttons, not the generic bordered-pill
+look) — `AppShell.tsx` gained real `id="appbar"`/`id="header-actions"` attributes for this. See
+that plan doc's own Status section for the full breakdown, including how popover/modal buttons
+(`role="menu"`/`role="dialog"`) are excluded from the new app-bar rule so they keep their own
+distinct treatment. Every other new class has no visible effect yet — nothing uses them until 8.3
+(shared components) and 8.4 (retrofit).
+
+**Immediate next steps:** 8.2 (icon set: replace every emoji glyph in `web/src` with a real ported
+SVG) is next — same PR-per-slice discipline as every prior phase, hold verification to a real
 side-by-side screenshot against legacy, not just "renders/behaves correctly." Once `web/` is
 visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real

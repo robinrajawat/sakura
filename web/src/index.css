@@ -27,6 +27,9 @@
 :root {
   --accent-text-blend: 45%;
   --accent-border-blend: 30%;
+  /* §8.1 addition -- legacy/index.html:311's own third real blend constant, needed by
+   * `.status-author-empty` below; the other two were already ported by §6.1. */
+  --accent-hint-blend: 25%;
 }
 
 button,
@@ -81,4 +84,391 @@ input[type='password']:focus,
 textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* §8.1 (docs/phase8-design-system-parity-plan.md): the real button/icon-button/menu/chip/badge
+ * *variants* legacy's own CSS defines on top of the flat base rule above (`.btn.primary`,
+ * `.icon-btn`, `.sb-icon-btn`, `.export-item`, `.status-chip`, `.notif-badge`, ...) -- the §6.1
+ * fix above only ever ported the base rule; every one of these was still missing, which is why a
+ * real side-by-side screenshot against legacy still looked nothing alike even after that fix
+ * "closed" the gap. See that plan doc's own header for the full story and exact legacy line
+ * citations; every selector below is verified against the same real lines, not assumption.
+ *
+ * `#appbar button`/`#header-actions button` (legacy/index.html:813-820): legacy's own app-bar
+ * buttons are a scoped, borderless, muted-color, fixed-25px-height override on top of `.btn`'s own
+ * base -- NOT the generic bordered-pill look the base rule alone gives every button. This is
+ * almost certainly the single highest-impact rule in this whole slice, since it's every button in
+ * the header row a real user sees first. Excludes any button inside a `role="menu"`/`role="dialog"`
+ * descendant (this project's own established convention for every popover/modal --
+ * `DropdownMenu.tsx`, `SettingsPanel.tsx`, `FeedbackModal.tsx`/`HelpModal.tsx`/`AboutModal.tsx`,
+ * `VersionHistoryPanel.tsx`, `RestructureTextDialog.tsx`, `QuickAssistBar.tsx`'s own popover, all
+ * already use one or the other) -- those buttons are DOM descendants of `#appbar` (React renders
+ * them in place, not portaled), but need their own distinct treatment (`.export-item` etc. below,
+ * or a dialog's own real buttons), not the app-bar's flat icon-row look. `AppShell.tsx` gained
+ * real `id="appbar"`/`id="header-actions"` attributes this slice specifically so these selectors
+ * have something to attach to (previously comment-only annotations, per that file's own header).
+ */
+#appbar button:not(:is([role='menu'], [role='dialog']) button),
+#appbar select:not(:is([role='menu'], [role='dialog']) select) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  box-shadow: none;
+  height: 25px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+#appbar button:not(:is([role='menu'], [role='dialog']) button):hover {
+  border-color: transparent;
+  background: var(--hover);
+  color: var(--fg);
+  box-shadow: none;
+}
+
+#header-actions button:not(:is([role='menu'], [role='dialog']) button) {
+  padding: 4px 10px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* `.primary`/`.toggle-on` (legacy/index.html:383, as `.btn.primary`/`.btn.toggle-on`) -- a solid
+ * accent-filled CTA variant and a pressed/active-state variant, neither of which `web/` has ever
+ * used (every "primary" action -- Sign in, Send Feedback, etc. -- has rendered identically to
+ * every secondary button up to this slice). Standalone classes here, not `.btn.primary` compound
+ * classes, since the base treatment above is already global via the bare element selectors --
+ * nothing in `web/` attaches a `.btn` class to opt into it the way legacy's own markup does. */
+.primary {
+  border-color: var(--accent);
+  color: #fff;
+  background: color-mix(in srgb, var(--accent) 82%, var(--tb-bg) 18%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, var(--tb-bg) 12%);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+#appbar .primary,
+#appbar .primary:hover {
+  color: #fff;
+}
+
+#appbar .primary {
+  background: color-mix(in srgb, var(--accent) 82%, var(--tb-bg) 18%);
+}
+
+#appbar .primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, var(--tb-bg) 12%);
+}
+
+.toggle-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* `.icon-btn` (legacy/index.html:391, real markup always combines it with `.btn`, e.g.
+ * `class="btn icon-btn quick-btn"` on the toolbar's own Undo/Redo/Indent buttons) -- a fixed
+ * 32x32 centered icon-only square, composing with the base treatment the same way `.primary`
+ * above does. `.sb-icon-btn` (legacy/index.html:1528) is a DIFFERENT, deliberately lighter-weight
+ * sidebar-specific icon button -- borderless, `var(--hint)`-colored, tight padding -- not the same
+ * component at a different size; the sidebar's own icon row (Documents section actions, folder-row
+ * actions) uses this one, not `.icon-btn`. */
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 16px;
+}
+
+.sb-icon-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--hint);
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  transition:
+    color 0.1s,
+    background 0.1s;
+}
+
+.sb-icon-btn:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+
+.sb-icon-btn.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.sb-icon-btn.danger:hover {
+  color: #dc2626;
+  background: color-mix(in srgb, #dc2626 10%, transparent);
+}
+
+/* Dropdown-menu-row system (legacy/index.html:476-491) -- the real component behind every
+ * `DropdownMenu.tsx` (§7.6) consumer's own menu rows, which today just approximate it with plain
+ * padded buttons. `.export-menu-rich .export-item` is the icon+label row variant (used by
+ * `AccountMenu.tsx`/`ExportButtons.tsx`'s own menus); the bare `.export-item` (no icon column) is
+ * the plainer variant. `.export-section-label` is the small uppercase divider-with-text
+ * (`DropdownMenu.tsx` consumers currently use a plain `<div>` for this). */
+.export-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 10px 12px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.export-item:hover {
+  background: var(--hover);
+}
+
+.export-item:active {
+  background: var(--sel);
+}
+
+.export-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.export-menu-rich .export-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  margin: 0 2px;
+  padding: 5px 10px;
+  width: auto;
+}
+
+.export-menu-rich .export-section-label {
+  font: 600 10px 'Inter', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 10px 2px;
+}
+
+.export-menu-rich .export-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.export-menu-rich .export-icon.danger {
+  color: #e5484d;
+}
+
+.export-menu-rich .export-label {
+  font: 400 13px 'Inter', sans-serif;
+}
+
+.account-danger-item:hover {
+  background: color-mix(in srgb, #e5484d 12%, transparent);
+  color: #e5484d;
+}
+
+/* Status-bar pill chip system (legacy/index.html:619-623) -- the same real shape
+ * `DocumentHeader.tsx`'s own local `chipStyle()` helper (§7.4) approximates today with a plain
+ * bordered pill instead of this real class pair. */
+.status-chip {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) var(--accent-border-blend), var(--border));
+  border-radius: 999px;
+  background: transparent;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.status-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-chip-icon svg {
+  flex-shrink: 0;
+}
+
+.status-chip-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: color-mix(in srgb, var(--accent) var(--accent-text-blend), var(--muted));
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.status-chip-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.status-chip-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.status-divider {
+  opacity: 0.4;
+}
+
+.status-passive {
+  padding: 2px 0;
+}
+
+.status-strong {
+  color: var(--fg);
+}
+
+.status-author-empty {
+  color: color-mix(in srgb, var(--accent) var(--accent-hint-blend), var(--hint));
+  font-style: italic;
+}
+
+/* Notification/account badges (legacy/index.html:495, 1439-1445, 481-486) */
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--fc-red);
+  color: #fff;
+  font: 700 8.5px/1 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  border: 1.5px solid var(--tb-bg);
+  box-sizing: content-box;
+  background-clip: padding-box;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.account-visibility-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 10px 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  appearance: none;
+  border: none;
+  transition:
+    filter 0.12s,
+    box-shadow 0.12s;
+}
+
+.account-visibility-badge:hover {
+  filter: brightness(0.94);
+}
+
+body.theme-dark .account-visibility-badge:hover {
+  filter: brightness(1.18);
+}
+
+.account-visibility-badge:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.account-visibility-badge.is-private {
+  background: color-mix(in srgb, var(--fc-gray) 16%, transparent);
+  color: var(--fc-gray);
+}
+
+.account-visibility-badge.is-public {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.account-visibility-badge svg {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Account sync-status dot (legacy/index.html:483-487) -- a small state indicator anchored to the
+ * account avatar corner, four real states (syncing/synced/error/idle-ok), not just an on/off
+ * dot. `AccountMenu.tsx` currently renders a single hardcoded green dot when signed in -- wiring
+ * the real state variants is retrofit work (§8.4), this slice only ports the CSS itself. */
+.account-status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg);
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.account-status-dot.syncing {
+  background: var(--accent);
+  animation: accountDotPulse 1s ease-in-out infinite;
+}
+
+.account-status-dot.synced {
+  background: #2fa84f;
+}
+
+.account-status-dot.error {
+  background: #e5484d;
+}
+
+.account-status-dot.idle-ok {
+  background: color-mix(in srgb, #2fa84f 42%, transparent);
+}
+
+@keyframes accountDotPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }

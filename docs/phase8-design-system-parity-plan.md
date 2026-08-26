@@ -149,6 +149,36 @@ doc let this gap through repeated verification passes already.
 
 ## Status
 
-**Not started.** This document is the first output of Phase 8 — written from a real investigation
-of legacy's actual CSS (cited by exact line above), not from re-reading the prose of prior phase
-docs' own "closed" claims. Next: 8.1.
+**In progress.**
+
+- ✅ **8.1 — CSS primitives landed.** Every class named in this plan's own "Real findings" section
+  ported into `web/src/index.css`, verified against the exact legacy lines cited there: `.primary`/
+  `.toggle-on` (standalone classes, not `.btn.primary` compounds, since `web/`'s base treatment is
+  already global via bare element selectors -- see the CSS's own comment for why), `.icon-btn`/
+  `.sb-icon-btn`, the `.export-item`/`.export-icon`/`.export-label`/`.export-section-label` menu-row
+  system (plain and `.export-menu-rich` variants), `.status-chip`/`.status-chip-btn`/`.status-
+  divider`/`.status-passive`/`.status-strong`/`.status-author-empty`, `.notif-badge`,
+  `.account-visibility-badge` (+ `.is-private`/`.is-public`), `.account-danger-item`, and
+  `.account-status-dot` (+ its four real sync-state variants). `:root` gained the missing third real
+  blend constant, `--accent-hint-blend` (legacy/index.html:311 has three; §6.1 only ported two).
+  **A real, unplanned but high-value addition found during this slice**: legacy's own `#appbar
+  .btn`/`#header-actions .btn` scoped override (legacy/index.html:813-820) -- the app-bar's real
+  buttons are borderless/muted/25px-tall, NOT the generic bordered-pill look the base rule alone
+  produces, and this is arguably the single highest-impact rule in the whole plan since it's every
+  button in the header row a real user sees first. Porting it needed real `id="appbar"`/
+  `id="header-actions"` attributes added to `AppShell.tsx` (previously comment-only annotations)
+  and an explicit exclusion for any button nested inside a `role="menu"`/`role="dialog"` descendant
+  (this project's own established convention for every popover/modal, confirmed by grep across
+  `DropdownMenu.tsx`, `SettingsPanel.tsx`, the three new §7.6 modals, `VersionHistoryPanel.tsx`,
+  `RestructureTextDialog.tsx`, and `QuickAssistBar.tsx`'s own popover) -- those need their own
+  distinct treatment, not the app-bar's flat icon-row look, and are real DOM descendants of
+  `#appbar` (React renders them in place, not portaled), so a plain descendant selector would have
+  wrongly caught them too. Verified end-to-end in real headless Chrome, both themes: the header row
+  is now visibly borderless/muted/flat matching legacy, while the account-menu dropdown and Settings
+  panel (both `role`-excluded) render exactly as before -- zero console/page errors, zero test
+  regressions (2005 tests still passing; this slice added CSS only, no new logic to unit-test).
+  Every other class ported this slice has no visible effect yet -- nothing in `web/` uses them until
+  8.3 builds the shared components and 8.4 retrofits existing call sites onto them, matching this
+  plan's own sequencing.
+- Remaining: 8.2 (icon set) → 8.3 (shared React components) → 8.4 (retrofit, split by area) → 8.5
+  (verification fixture document), per this doc's own sequencing summary above.

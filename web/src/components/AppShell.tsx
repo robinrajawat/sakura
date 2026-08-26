@@ -111,8 +111,12 @@ export function AppShell({
         color: 'var(--fg)'
       }}
     >
-      {/* #appbar -- legacy/index.html:361,364 */}
+      {/* #appbar -- legacy/index.html:361,364. A real `id` (not just a comment) as of §8.1
+          (docs/phase8-design-system-parity-plan.md) -- `index.css`'s new `#appbar .primary`/etc.
+          scoped overrides need a real selector to attach to, matching legacy's own real
+          `#appbar .btn{...}` scoped rule (legacy/index.html:813) exactly. */}
       <div
+        id="appbar"
         style={{
           flex: '0 0 auto',
           height: 40,
@@ -128,7 +132,9 @@ export function AppShell({
         <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.015em', color: 'var(--accent)' }}>
           {title}
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{headerActions}</div>
+        <div id="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {headerActions}
+        </div>
       </div>
 
       {/* #doc-tab-strip-row -- legacy/index.html:1056 */}
