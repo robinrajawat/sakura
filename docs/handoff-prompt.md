@@ -323,14 +323,69 @@ the plan's original "document header + toolbar" slice once investigation showed 
 needed this much — see the plan doc's own Sequencing summary correction and Status section for the
 full breakdown.
 
-**Immediate next steps:** 8.4d (toolbar) is next — same PR-per-slice discipline, split by area into
-separate reviewable PRs (toolbar → dropdown menus + modals remaining), hold verification to a real
-side-by-side screenshot against legacy, not just "renders/behaves correctly," since this is the
-slice that actually puts the new components on screen. Once
-`web/` is visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
-`/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
-documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to
-attempt unilaterally; they need the account owner directly. Don't repoint `deploy.yml`'s root at
-`web/dist` until that gate is explicitly cleared, and remove `/web-preview/` once it is.
+**8.4d (toolbar) is IN PROGRESS, mid-investigation, no code/CSS changes committed yet** — handed
+off here because the driving session was about to exhaust its context window. Picking this up:
+
+- Branch `claude/sakura-phase8-retrofit-toolbar` already exists locally (created off `main` at
+  commit `96bcbf4`, the §8.4c merge) but has **zero commits** — just `git checkout` it (or recreate
+  it fresh off current `main` if it's gone) and start from the investigation below, no half-finished
+  edits to reconcile.
+- **Investigation done so far** (confirmed via grep — none of these classes exist in
+  `web/src/index.css` yet, a real §8.1-scope miss same as every other 8.4 slice): legacy's real
+  toolbar/quick-bar class family, all in `legacy/index.html` lines 1093-1106:
+  - `#quick-bar{display:flex;align-items:flex-start;gap:4px;padding:7px 12px;border-bottom:1px
+    solid var(--border);background:var(--tb-bg);flex-wrap:wrap}` — the toolbar's own real
+    container styling (`web/`'s current wrapper in `App.tsx` just uses a bare inline
+    `flexWrap`/`gap` style, no border/background/padding).
+  - `.action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0
+    auto;max-width:100%}` + `.action-group .ag-buttons{...padding:3px;border-radius:10px;
+    background:color-mix(in srgb,var(--fg) 4%,transparent);...}` (+`:hover` brightens) — the real
+    grouped-buttons-in-a-subtly-tinted-pill look behind each group (History/Structure/Format/
+    Insert/AI/Delete). `App.tsx`'s own `ToolbarGroup` component (around line 59) currently renders
+    a plain flex column with no group background at all.
+  - `.ag-label{display:none;font:600 9px ...}` + `body.show-toolbar-labels .ag-label{display:
+    block}` — **a real behavior difference, not just missing CSS**: legacy hides each group's own
+    caption label by default, only showing it when a `show-toolbar-labels` Settings toggle (which
+    `web/` doesn't have) is on. `ToolbarGroup` currently always renders its label — check whether
+    to (a) match legacy's real default and hide it (a small, real regression risk: `web/` has no
+    toggle to ever reveal it again, so the labels would become permanently invisible dead weight)
+    or (b) keep it always-visible as a deliberate, documented `web/`-only simplification (same
+    "no toggle exists yet to gate this" reasoning already used elsewhere in this codebase, e.g.
+    `App.tsx`'s AI toolbar group comment). Decide and document whichever way this goes — don't
+    silently drop the question.
+  - `.quick-sep{width:1px;height:18px;background:color-mix(in srgb,var(--border) 70%,transparent);
+    margin:9px 3px 0;...}` — a real vertical separator BETWEEN groups that `web/` doesn't render at
+    all today (groups just sit side by side via flex gap).
+  - `.quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;
+    background:transparent;transition:...}` + `:hover` (lift + shadow), `:active` (press-scale),
+    `:disabled`, `.danger-hover:hover` (lines 1099-1103) — **overrides** `.icon-btn`'s already-
+    ported 32×32 sizing (legacy's real markup always combines `class="btn icon-btn quick-btn"`
+    together; per real CSS cascade/source order, whichever of the two is declared LATER in the
+    stylesheet wins on the sizing property, and in legacy `.quick-btn` comes after `.icon-btn` —
+    so when porting into `web/src/index.css`, add `.quick-btn` AFTER the existing `.icon-btn` block
+    so the same 34×34 override wins there too). A responsive `@media (max-width:560px)` bump to
+    36×36 exists too (line 1106) — decide whether to port that or leave `web/` non-responsive here
+    (check whether any other §8.1-era class already handles a mobile breakpoint before deciding).
+- **Not yet started**: reading `App.tsx`'s actual toolbar JSX (the `ToolbarGroup` usages and each
+  quick-bar button, roughly the History/Structure/Format/Insert/AI/Delete groups) to plan the
+  concrete retrofit — swap each button onto `<Button variant="icon" className="quick-btn">` (or
+  extend `ui/Button.tsx`'s own `VARIANT_CLASS` map with a new variant if that reads cleaner),
+  restructure the group wrapper markup onto `.action-group`/`.ag-buttons`/`.ag-label`, add
+  `.quick-sep` between groups, and give the toolbar's own outer wrapper the real `#quick-bar`
+  container styling (as a class, matching this phase's own established convention of porting
+  legacy IDs to classes for component-scoped chrome — see `.editor-title-row` etc. from §8.4c).
+  No component file has been touched yet.
+- Full gauntlet (typecheck/lint/test:unit/build) + real headless-Chrome screenshot verification
+  (toolbar revealed, each group's hover-tinted background, the group separator, hover/active/
+  disabled states on a quick-btn) still needs to happen before this ships, same as every prior
+  8.4 slice.
+- After 8.4d lands (merge → sync main → delete branches, same as every prior slice): 8.4e (dropdown
+  menus + modals) is the last retrofit slice, then 8.5 (verification fixture document, can run in
+  parallel/earlier if picked up independently). Once `web/` is visually close enough to legacy for
+  a person to sign off, return to docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate,
+  items 2-4 (a person clicking through the real `/web-preview/` build end-to-end; signing in with a
+  real account to confirm production-synced documents round-trip; the actual `deploy.yml` cutover
+  PR) — none of which are appropriate to attempt unilaterally; they need the account owner
+  directly. Don't repoint `deploy.yml`'s root at `web/dist` until that gate is explicitly cleared,
+  and remove `/web-preview/` once it is.
 ```
