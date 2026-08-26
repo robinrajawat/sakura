@@ -73,6 +73,78 @@ describe('documentsStore', () => {
     expect(useDocumentsStore.getState().docsIndex[0].title).toBe('My Plan');
   });
 
+  describe('status/author/link (§7.3, docs/phase7-app-shell-and-dashboard-plan.md)', () => {
+    it('a new document defaults to no status, no author, and no link', () => {
+      useDocumentsStore.getState().newDocument();
+      const doc = useDocumentsStore.getState().docsIndex[0];
+      expect(doc.status).toBe('');
+      expect(doc.author).toBe('');
+      expect(doc.link).toBeNull();
+    });
+
+    it('setDocStatus updates only the targeted document', () => {
+      useDocumentsStore.getState().newDocument();
+      const firstId = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().newDocument();
+      const secondId = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().setDocStatus(firstId, 'approved');
+      const { docsIndex } = useDocumentsStore.getState();
+      expect(docsIndex.find((d) => d.id === firstId)!.status).toBe('approved');
+      expect(docsIndex.find((d) => d.id === secondId)!.status).toBe('');
+    });
+
+    it('setDocAuthor sets the author field', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().setDocAuthor(id, 'Robin');
+      expect(useDocumentsStore.getState().docsIndex[0].author).toBe('Robin');
+    });
+
+    it('setDocLink sets and clears the link field', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().setDocLink(id, { label: 'PROJ-123', url: 'https://example.com/PROJ-123' });
+      expect(useDocumentsStore.getState().docsIndex[0].link).toEqual({ label: 'PROJ-123', url: 'https://example.com/PROJ-123' });
+      useDocumentsStore.getState().setDocLink(id, null);
+      expect(useDocumentsStore.getState().docsIndex[0].link).toBeNull();
+    });
+
+    it('all three setters persist to localStorage, not just in-memory state', () => {
+      useDocumentsStore.getState().newDocument();
+      const id = useDocumentsStore.getState().activeDocId!;
+      useDocumentsStore.getState().setDocStatus(id, 'draft');
+      useDocumentsStore.getState().setDocAuthor(id, 'Robin');
+      useDocumentsStore.getState().setDocLink(id, { label: '', url: 'https://example.com' });
+      const persisted = JSON.parse(localStorage.getItem('sakura_web_docs_index_v1')!);
+      expect(persisted[0]).toMatchObject({ status: 'draft', author: 'Robin', link: { label: '', url: 'https://example.com' } });
+    });
+
+    it('init() normalizes a pre-§7.3 docsIndex entry missing status/author/link to real defaults', () => {
+      localStorage.setItem('sakura_web_docs_index_v1', JSON.stringify([{ id: 'old-doc', title: 'Old', createdAt: 1, modifiedAt: 1 }]));
+      localStorage.setItem('sakura_web_open_tabs_v1', JSON.stringify(['old-doc']));
+      localStorage.setItem('sakura_web_active_doc_v1', JSON.stringify('old-doc'));
+      useDocumentsStore.getState().init();
+      const doc = useDocumentsStore.getState().docsIndex[0];
+      expect(doc.status).toBe('');
+      expect(doc.author).toBe('');
+      expect(doc.link).toBeNull();
+    });
+
+    it('init() normalizes an invalid persisted status to the empty default rather than trusting it', () => {
+      localStorage.setItem(
+        'sakura_web_docs_index_v1',
+        JSON.stringify([{ id: 'old-doc', title: 'Old', createdAt: 1, modifiedAt: 1, status: 'not-a-real-status', author: 42, link: { url: 5 } }])
+      );
+      localStorage.setItem('sakura_web_open_tabs_v1', JSON.stringify(['old-doc']));
+      localStorage.setItem('sakura_web_active_doc_v1', JSON.stringify('old-doc'));
+      useDocumentsStore.getState().init();
+      const doc = useDocumentsStore.getState().docsIndex[0];
+      expect(doc.status).toBe('');
+      expect(doc.author).toBe('');
+      expect(doc.link).toBeNull();
+    });
+  });
+
   it('deleteDocument removes the document entirely, not just the tab', () => {
     useDocumentsStore.getState().newDocument();
     const id = useDocumentsStore.getState().activeDocId!;
@@ -521,7 +593,7 @@ describe('documentsStore', () => {
       // Bypasses newDocument() (which writes storage immediately) to construct the genuine
       // "activeDocId is set but docStorageKey(activeDocId) has never been written" case.
       useDocumentsStore.setState({
-        docsIndex: [{ id: 'never-saved', title: 'Untitled', createdAt: 0, modifiedAt: 0 }],
+        docsIndex: [{ id: 'never-saved', title: 'Untitled', createdAt: 0, modifiedAt: 0, status: '', author: '', link: null }],
         openTabs: ['never-saved'],
         activeDocId: 'never-saved'
       });

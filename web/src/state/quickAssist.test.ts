@@ -363,7 +363,7 @@ describe('buildQaEntries / navigableQaEntries', () => {
 
   describe('category-prefix scoping (§6.10 slice 4b)', () => {
     beforeEach(() => {
-      useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a', openTabs: ['a'], folders: [], docFolderMap: {} });
+      useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a', openTabs: ['a'], folders: [], docFolderMap: {} });
       useOutlineStore.setState({ nodes: [{ id: 1, depth: 0, text: 'toggle dark mode notes', parentId: null, isCheckbox: false, checked: false, note: '<p>toggle dark mode notes</p>', codeBlock: null, tags: [], styles: defaultNodeStyles() }] });
     });
 

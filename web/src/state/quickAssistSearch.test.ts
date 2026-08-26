@@ -96,8 +96,8 @@ describe('collectQaSearchGroups', () => {
   it('Documents: matches by title, marks the current document', () => {
     useDocumentsStore.setState({
       docsIndex: [
-        { id: 'a', title: 'Budget Plan', createdAt: 1, modifiedAt: 1 },
-        { id: 'b', title: 'Roadmap', createdAt: 1, modifiedAt: 1 }
+        { id: 'a', title: 'Budget Plan', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null },
+        { id: 'b', title: 'Roadmap', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }
       ],
       activeDocId: 'a'
     });
@@ -111,8 +111,8 @@ describe('collectQaSearchGroups', () => {
   it('Documents: navigates via openDocument when switching to a non-active document', () => {
     useDocumentsStore.setState({
       docsIndex: [
-        { id: 'a', title: 'Budget Plan', createdAt: 1, modifiedAt: 1 },
-        { id: 'b', title: 'Roadmap', createdAt: 1, modifiedAt: 1 }
+        { id: 'a', title: 'Budget Plan', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null },
+        { id: 'b', title: 'Roadmap', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }
       ],
       activeDocId: 'a'
     });
@@ -123,7 +123,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('In documents: matches the active document live via outlineStore, not stale storage', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({ nodes: [node({ id: 1, text: 'the quarterly forecast' })] });
     const groups = collectQaSearchGroups('quarterly');
     const hit = groups.find((g) => g.name === 'In documents')?.items[0];
@@ -134,8 +134,8 @@ describe('collectQaSearchGroups', () => {
   it('In documents: matches another (non-active) document from its stored nodes', () => {
     useDocumentsStore.setState({
       docsIndex: [
-        { id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 },
-        { id: 'b', title: 'Doc B', createdAt: 1, modifiedAt: 1 }
+        { id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null },
+        { id: 'b', title: 'Doc B', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }
       ],
       activeDocId: 'a'
     });
@@ -151,7 +151,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('caps node-text matches at 2 per document and 6 total', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({
       nodes: Array.from({ length: 5 }, (_, i) => node({ id: i + 1, text: `match ${i}` }))
     });
@@ -160,7 +160,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('Notes: strips HTML before matching and snippeting, opens the note panel on click', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({ nodes: [node({ id: 2, note: '<p>remember the <b>onboarding</b> checklist</p>' })] });
     const groups = collectQaSearchGroups('onboarding');
     const hit = groups.find((g) => g.name === 'Notes')?.items[0];
@@ -174,7 +174,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('Code: matches raw code text, opens the note panel on the code tab', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({ nodes: [node({ id: 3, codeBlock: { lang: 'js', code: 'function computeTotal(){}' } })] });
     // Mixed-case query on purpose -- collectQaSearchGroups lowercases defensively (see its own header).
     const groups = collectQaSearchGroups('computeTotal');
@@ -186,7 +186,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('Tags: matches a tag, not the node text, labels with a # prefix', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({ nodes: [node({ id: 4, text: 'quarterly review', tags: ['urgent', 'finance'] })] });
     const groups = collectQaSearchGroups('urgent');
     const hit = groups.find((g) => g.name === 'Tags')?.items[0];
@@ -226,7 +226,7 @@ describe('collectQaSearchGroups', () => {
 
   it('drains a single shared budget of 8 across every group, in group order', () => {
     useDocumentsStore.setState({
-      docsIndex: Array.from({ length: 6 }, (_, i) => ({ id: `d${i}`, title: `match doc ${i}`, createdAt: 1, modifiedAt: 1 })),
+      docsIndex: Array.from({ length: 6 }, (_, i) => ({ id: `d${i}`, title: `match doc ${i}`, createdAt: 1, modifiedAt: 1, status: '', author: '', link: null })),
       activeDocId: 'd0'
     });
     useOutlineStore.setState({ nodes: [node({ id: 1, text: 'a match here' })] });
@@ -237,7 +237,7 @@ describe('collectQaSearchGroups', () => {
   });
 
   it('a scopedCategoryKey restricts results to just that one category', () => {
-    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1 }], activeDocId: 'a' });
+    useDocumentsStore.setState({ docsIndex: [{ id: 'a', title: 'Doc A', createdAt: 1, modifiedAt: 1, status: '', author: '', link: null }], activeDocId: 'a' });
     useOutlineStore.setState({ nodes: [node({ id: 1, text: 'a match here', note: '<p>a match here too</p>' })] });
     const scoped = collectQaSearchGroups('match', 'notes');
     expect(scoped.map((g) => g.name)).toEqual(['Notes']);

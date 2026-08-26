@@ -321,6 +321,35 @@ alone, matching the verification standard every Phase 6 slice was held to.
   right placeholder alert and dismisses, and the `seen` flag persists across a reload — zero
   console/page errors (only the same expected Firebase/Google network failures from §7.1's own
   verification, not application errors).
-- Remaining: 7.3 (doc data model) → 7.4 (per-doc header + empty state) → 7.5 (toolbar realignment)
-  → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary
-  above.
+- ✅ **7.3 — Document data model: status, author, link landed.** `DocSummary`
+  (`web/src/store/documentsStore.ts`) gained `status: DocStatus` (`'' | 'draft' | 'review' |
+  'approved' | 'rejected'`, matching legacy's real `DOC_STATUSES` exactly), `author: string`, and
+  `link: DocLink | null` (`{label, url}`, matching legacy's real two-field `docLinkedUrl`+
+  `docLinkedUrlLabel` pair collapsed into one object), plus three new setter actions
+  (`setDocStatus`/`setDocAuthor`/`setDocLink`) mirroring the existing `renameDocument`'s own
+  read-modify-write-and-persist pattern exactly. Store-and-migration only, no UI yet (that's
+  7.4's job) — `init()` now defensively normalizes a pre-7.3 persisted `docsIndex` entry missing
+  these fields (or carrying invalid values) to real defaults, the same "normalize on read"
+  convention every other store in this project already uses. **One real, deliberate
+  storage-shape correction from this plan's own original text, found by checking legacy's actual
+  code rather than trusting the prose:** legacy's own lightweight `docsIndex`
+  (`loadDocsIndex`/`DOCS_INDEX_KEY`) carries only `{id,title,updatedAt,icon?,trashedAt?}` —
+  `docStatus`/`author`/`docLinkedUrl`/`docLinkedUrlLabel` live ONLY on legacy's full per-document
+  blob, never duplicated into its index (confirmed by grepping every `loadDocsIndex`/
+  `saveDocsIndex` call site). This plan's own text said "Add ... to `DocSummary`" without noting
+  that distinction; `DocSummary`'s own new header comment explains the call made here: these
+  three fields go on `DocSummary` ONLY (not `web/`'s own `StoredDoc`, the closer analogue to
+  legacy's full per-document blob) since nothing needs them duplicated into a second, harder-to-
+  keep-in-sync location the way `title` genuinely is (for legacy's real cheap-sidebar-listing
+  reason, which `renameDocument`'s own existing dual-write already mirrors) — a deliberate
+  architectural simplification for fields with no such requirement, not an oversight. Verified
+  with 7 new tests (`documentsStore.test.ts`): defaults on a new document, each setter updating
+  only its targeted document, both setting and clearing a link, persistence to `localStorage` (not
+  just in-memory state), and `init()`'s normalization of both a missing-fields entry and an
+  entry carrying invalid values (a non-`DOC_STATUSES` status, a non-string author, a link with a
+  non-string `url`) — full gauntlet green (1988 tests total), plus a real headless-Chrome smoke
+  test confirming a freshly created document's persisted shape carries the correct defaults with
+  zero console/page errors (only the same expected Firebase network failure from every other §7
+  slice's own verification).
+- Remaining: 7.4 (per-doc header + empty state) → 7.5 (toolbar realignment) → 7.6 (app-bar
+  docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary above.
