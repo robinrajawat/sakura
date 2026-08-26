@@ -1647,12 +1647,13 @@ auto-backup-to-file), full Export/Import (whole-app JSON), Version History.
   prior whole-app import (chained together with the Export/Import slice's own real flow), zero
   console/page errors throughout.
 
-### 6.9 — AI Features
+### 6.9 — AI Features ✅ COMPLETE
 Provider configuration UI, API key storage (with Secure Storage encryption), all seven
 providers, Rewrite (incl. auto-rewrite on commit), Generate Outline, Restructure Text, Expand
 node, Suggest tags, Suggest icon, Summarise selection, provider fallback, usage tracking. This
-is the single largest unbuilt section in the checklist — budget accordingly, and expect it to be
-its own multi-PR sub-sequence.
+was the single largest section in the checklist and shipped as its own 9-slice PR sub-sequence
+(#230–#242) — every item named in its original scope has landed. See the completion summary at
+the end of this section and the Overview table's "AI features" row for the full rundown.
 
 **Research pass (this PR's own predecessor step) read legacy's real implementation end to end**
 (`AI_BUILTIN_PROVIDERS`/`AI_CURATED_MODELS`, `callAiByShape`/`callAiByShapeWithFallback`, the
