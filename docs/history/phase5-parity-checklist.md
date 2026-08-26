@@ -6,6 +6,14 @@ against `web/`'s actual current state — not a guess, a checklist. Written at t
 
 Status key: ✅ Done · ⚠️ Partial (a real, deliberately scoped-down slice exists) · ❌ Not started
 
+**Staleness note (checked against the code ahead of Phase 6's Section 9 pre-cutover gate):** the
+"Overview / Key capabilities", "Core Editing", and "Keyboard Shortcuts" sections' rows were
+written once at the start of Phase 5 and — unlike the later detail sections (Panels/Hub/Export/
+Theming/etc.), which got kept current PR-by-PR throughout Phase 6 — were never revisited as
+Phase 6's own sub-phases (6.2 in particular) landed several of the exact features they still
+claimed were missing. Re-verified every ❌/⚠️ row in those three sections directly against the
+current `web/src` code; rows marked "Stale row, corrected" below were wrong before this pass.
+
 This is a large gap by design — Phases 2–4 each explicitly scoped every slice down from
 legacy's real feature set, documenting every deferral inline as it happened (see each
 component's own header comment for specifics). This checklist is where those many small,
@@ -19,11 +27,11 @@ already made and already documented at the time.
 | Capability | Status | Note |
 |---|---|---|
 | Nested outline editing (indent/outdent, drag reorder/nest, multi-select) | ✅ | Phase 2, full fidelity to ported core logic |
-| Duplication | ❌ | `duplicateSelected` not ported/built |
-| Bold/italic/underline/strike/highlight/color per node | ❌ | Rich per-node formatting not built; only semantic markup (below) exists |
-| Heading 1–6 per node | ❌ | Not built |
+| Duplication | ✅ | Stale row, corrected: `duplicateSelected` is built and wired to the toolbar (⧉ button), the right-click context menu, and the node hover toolbar |
+| Bold/italic/underline/strike/highlight/color per node | ⚠️ | Stale row, corrected: bold/italic/underline/strike are built (`toggleNodeStyle`, toolbar buttons + real Ctrl/Cmd+B/I/U/Shift+S keyboard shortcuts, confirmed working in `OutlineTree.tsx`'s own keydown handler). Highlight/color per node are still NOT built — `outlineStore.ts`'s `NodeStyles` reserves `highlight`/`color` fields but nothing in the UI ever sets them |
+| Heading 1–6 per node | ✅ | Stale row, corrected: `applyHeadingOption` is built (toolbar Heading select), applies real per-level font-size/weight styling, and matches legacy's own toggle-off-on-repeat-click semantics exactly |
 | Semantic styling `[Section]`/`(note)`/`!alert`/`` `code` `` | ✅ | Phase 2, matches legacy exactly |
-| Fold/unfold, "+N hidden" badge | ⚠️ | Fold/unfold works; no "+N" badge UI |
+| Fold/unfold, "+N hidden" badge | ✅ | Stale row, corrected: the "+N hidden" fold badge is built (matches legacy's own badge, no click handler, same as legacy) |
 | `#tags` | ✅ | Phase 5 (PRs #118–#119) — toggle, filter, chips |
 | `[[@mention]]` backlinks | ✅ | §6.4 complete (#159-#161, #163: pure query layer, wikilink render/click-navigate, `@`-mention insert, cleanup/rename-on-edit wiring) plus §6.3 item 7 (#164: the Note panel's own Backlinks section display) |
 | Focus mode | ✅ | Phase 5 (PRs #118–#119) — zoom-in, breadcrumb, exit |
@@ -35,7 +43,7 @@ already made and already documented at the time.
 | Diagrams embedding in exports | ❌ | No diagram editor exists at all |
 | AI features | ✅ | §6.9 complete: provider configuration UI, Secure Storage vault setup/unlock/lock/disable UI, manual Rewrite, auto-rewrite on commit, Generate Outline/Restructure Text (real heuristic parser, dedicated restructure dialog, both keyboard shortcuts), Expand node/Suggest tags, Suggest icon (keyword/historical-index free tiers, batch + single-node picker), Summarise selection, and the provider fallback chain + usage tracking — see AI Features section below |
 | Quick Assist / global search | ⚠️ | §6.10 closed as complete within its own real scope: Ctrl/Cmd+K command box with an audited subset of real toggle commands/actions, Global Search covering Documents/In documents/Notes/Code/Tags/Folders with real category-prefix scoping and a chip-mode category picker. Remaining categories (Pad/Q&A/Diagrams/Remarks/Settings/Features/Help/Templates, fuzzy matching) are deliberately out of scope, each blocked on a separate subsystem gap — see the Quick Assist & Quick Insert section below |
-| Folders/templates/file explorer | ❌ | Not built — web/ has no document-management shell yet, only a single in-memory outline |
+| Folders/templates/file explorer | ⚠️ | Stale row, corrected: a real file explorer + folder system is built (`SidebarFileExplorer.tsx` — a "Documents" sidebar section, "New folder" creation, per-document "Move to folder" picker). Templates are still genuinely not built (no templates system exists anywhere in `web/`) |
 | Presenter Mode | ⚠️ | Slide grouping, Prev/Next/arrow-keys (Phase 3), plus timer, blackout, laser pointer, overview grid, closing slide, a floating Notes/Q&A panel, and now a real, working **Audience View/dual-screen** (§6.6): an "Open Audience View" button opens a second real browser window (`?sakuraAudience=1`, same-origin, no routing needed) showing a passive, driven presenting surface (`PresenterSlideView.tsx`) that live-mirrors slide navigation, blackout, and the laser pointer via a `window`-exposed cross-window bridge (`state/audienceBridge.ts`) pushing `usePresenterStore` state through — direct architectural analog of legacy's own real mechanism, verified end-to-end with two real coordinated browser windows. Only Whiteboard mirroring remains, blocked on Diagrams gaining a real `isWhiteboard` concept. See phase6-full-parity-plan.md's §6.6 section for the full mechanism |
 | Export: Word/PDF/PowerPoint/Markdown/OPML/plain text/clipboard/Sakura Document/Excel | ⚠️ | Word/PDF/PowerPoint/Markdown/OPML exist (Phase 3) at a genuinely functional but heavily scoped-down level; plain text (.txt), clipboard ("Copy as Text"), and Sakura Document (.sakura.json, outline only — see Sakura Document row below) are now full-parity (§6.6) — see Export section below. Preview/PDF/Word/PowerPoint decision-log cards, and a new Decision-Log-specific Excel (.xlsx) export, now built too (§6.7) |
 | Multiple document tabs | ⚠️ | Phase 5 — real tab strip, document index, persistence, debounced autosave; no per-tab undo/redo, no folders/templates |
@@ -52,11 +60,11 @@ already made and already documented at the time.
 | Enter / Shift+Enter (split) / Ctrl+Enter | ✅ | Phase 2 |
 | Tab / Shift+Tab | ✅ | Phase 2 |
 | Drag reorder/nest | ✅ | Phase 2 |
-| Right-click sort children | ⚠️ | Sort exists (Phase 2) but as a toolbar button, not a context menu — web/ has no context menu system at all yet |
-| Fold arrow + "+N" badge | ⚠️ | Fold works; no badge |
+| Right-click sort children | ⚠️ | Sort exists (Phase 2) as a toolbar button. Reason corrected: a real right-click context menu WAS later built (Phase 6.2, #147) — but "sort this node's children" was never added as one of its entries, so the underlying gap (no per-node sort-children context-menu entry point) is still real, just not for the "no context menu system at all" reason this row previously gave |
+| Fold arrow + "+N" badge | ✅ | Stale row, corrected: the "+N hidden" fold badge is built, same as the Overview table's row above |
 | Inline semantic markup | ✅ | Phase 2 |
-| Node hover toolbar | ❌ | Not built |
-| Checkboxes (toolbar + `[ ]`/`[x]` auto-convert, progress badge) | ⚠️ | Auto-convert + toggle + cascade/propagate exist (Phase 2); no toolbar button, no progress badge on parent |
+| Node hover toolbar | ✅ | Stale row, corrected: built in Phase 6.2 — hover a row to reveal insert-above/add-child/insert-below actions, matching legacy's own default `hoverToolbarActions` set exactly |
+| Checkboxes (toolbar + `[ ]`/`[x]` auto-convert, progress badge) | ✅ | Stale row, corrected: auto-convert/toggle/cascade (Phase 2), a real toolbar button ("Toggle checkbox on selected node"), and a real "X/Y done" progress badge on parent checkbox nodes (`getCheckboxChildStats`) are all built |
 | Quick Insert | ✅ | Ctrl/Cmd+Space character-insert menu, real keyboard nav (arrow keys + Enter/Tab to commit), icon-only-row and per-action-enable Settings, all 7 actions (§6.10) — see the Quick Assist & Quick Insert section below |
 
 ## Documents & Tabs
@@ -474,7 +482,7 @@ See phase6-full-parity-plan.md's §6.10 section (its own closing note) for the f
 | PDF export | ⚠️ | Browser print-to-PDF (Phase 3); cover page, per-page branding, page margins (20mm), a date/page-count footer, per-node note/code-block rendering (§6.6, real CSS `@page` margin-box rules), and decision-log cards (§6.7) now built; still not rendered from a real Preview-equivalent (a separate parallel HTML-string renderer, matching this project's own established pattern) |
 | PowerPoint export | ⚠️ | Real .pptx via `pptxgenjs` (Phase 3), same slide breakdown as Presenter Mode; Notepad slide, Q&A slide, closing slide, per-slide branding, real overflow "(cont'd)" pagination (canvas-measured wrapped-line height, covering per-node slides AND Notepad/Q&A sections), per-node note-image embedding (aspect-ratio-scaled image row, legacy's own `pptxLayoutImageRow` ported, §6.6), and decision-log cards (§6.7, packed as one more item in the same per-node pagination loop so an oversized card can overflow onto a "(cont'd)" slide; non-image slides only) now built; no rich-list field parsing, no auto-scale-to-fit (matches the Word/PDF cards' own simplifications) |
 | Branding | ✅ | Built (§6.6): wordmark in the Word page footer, PowerPoint slide corners, PDF cover page + every printed page (CSS `@page{@bottom-right{...}}`), and the live Presenter Mode bar — always on, no Settings toggle/custom text yet |
-| Accent-color-in-exports toggle | ❌ | Not applicable yet — no accent color system exists |
+| Accent-color-in-exports toggle | ❌ | Reason corrected: a real accent color system DOES exist (§6.7, 7 presets, live CSS custom property). Still genuinely not built, though: export code (`ExportButtons.tsx`) uses its own fixed colors throughout, never reads the live accent, and there's no "Use accent color in exports" toggle anywhere in Settings |
 | Markdown / OPML export | ✅ | Phase 3, wraps already-ported (Phase 1) serializeMarkdown/serializeOpmlCore exactly |
 | Plain text (.txt) / clipboard export | ✅ | §6.6, wraps already-ported (Phase 1) serializeTreeTextCore/serializeClipboardHtmlCore exactly; clipboard writes both text/plain and text/html via ClipboardItem, execCommand fallback |
 | Excel (Decision Log .xlsx) export | ✅ | Built (§6.7): direct port of legacy's real `exportDecisionLogXlsx` via `xlsx` (SheetJS, pinned to the same 0.18.5 version legacy loads), one row per decision, 9 columns matching legacy's own real schema (timestamp, author, linked node text, 5 structured fields, status). Legacy's own comment claims community-edition cell styling (bold header, wrapped body cells) works; verified in a real Node script that it does not (style *writing* is Pro-only in SheetJS CE) -- column widths (a plain worksheet property) are set, the no-op `.s` style assignments are not |
@@ -546,7 +554,13 @@ hardcoded to a single behavior with no toggle.
 | Ctrl/Cmd+Enter / new child | ✅ |
 | Tab / Shift+Tab | ✅ |
 | Delete (multi-select aware) | ✅ (not in README's table by this exact name, but functionally covers "delete selected") |
-| Everything else in the README's table (F2 edit, Alt+↑/↓ move, formatting shortcuts, heading shortcuts, collapse/expand-all, hide tree lines, Focus, search, Quick Assist/Insert, panel-open shortcuts, AI shortcuts, save/new-doc/copy/select-all/undo-redo) | ❌ | Not built |
+| Formatting (Ctrl/Cmd+B/I/U, Ctrl/Cmd+Shift+S) | ✅ | Stale row, corrected: real keyboard shortcuts, confirmed in `OutlineTree.tsx`'s own keydown handler (not just toolbar-button tooltips) |
+| Undo/redo (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y) | ✅ | Stale row, corrected: real keyboard shortcuts, confirmed in `OutlineTree.tsx`'s own keydown handler |
+| Quick Assist (Ctrl/Cmd+K) | ✅ | Stale row, corrected: built §6.10 — see the Quick Assist & Quick Insert section |
+| Quick Insert (Ctrl/Cmd+Space) | ✅ | Stale row, corrected: built §6.10 — see the row above in this table's Overview section |
+| AI shortcuts (Generate Outline Ctrl/Cmd+Shift+O, Restructure Text Ctrl/Cmd+Shift+R) | ✅ | Stale row, corrected: built §6.9 |
+| Heading level shortcut keys | ❌ | Still genuinely not built — heading levels are settable only via the toolbar's Heading select, no keyboard shortcut exists for them (unlike bold/italic/underline/strike, which do have real key bindings) |
+| F2 edit, Alt+↑/↓ move, collapse/expand-all, hide-tree-lines toggle, Focus-mode shortcut, save/new-doc/copy/select-all | ❌ | Still genuinely not built — confirmed no matching keydown handler exists anywhere in `App.tsx`/`OutlineTree.tsx` for any of these (New Document, Copy as Text, etc. all exist as real features, just with no keyboard shortcut bound to them) |
 
 ## Browser Support / Known Limitations
 
