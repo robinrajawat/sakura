@@ -17,6 +17,7 @@ import { HubMeetingsPanel } from './components/HubMeetingsPanel';
 import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
+import { SignInGate } from './components/SignInGate';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
@@ -252,383 +253,391 @@ export function App() {
   if (isMobile) return <MobileHub />;
 
   return (
-    <AppShell
-      title="Sakura"
-      headerActions={
-        <>
+    <>
+      {/* §7.1 slice (docs/phase7-app-shell-and-dashboard-plan.md): the full-screen sign-in gate --
+          see SignInGate.tsx's own header. Renders as a fixed-position overlay on top of the app
+          below (which keeps booting underneath, matching legacy's own real behavior), and renders
+          nothing once signed in, dismissed for this tab session, or while auth state is still
+          resolving. */}
+      <SignInGate />
+      <AppShell
+        title="Sakura"
+        headerActions={
+          <>
+            <button
+              type="button"
+              onClick={toggleSidebarOpen}
+              title="Toggle file explorer"
+              aria-pressed={sidebarOpen}
+            >
+              ▤
+            </button>
+            <button type="button" onClick={toggleTheme} title="Toggle theme">
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+            {/* §6.7 slice (docs/phase6-full-parity-plan.md): System auto-theme. Direct port of
+                legacy's real two-mode `setThemeMode`/`applyAutoTheme` (`themeStore.ts`'s own
+                header comment has the full story, including why there's no third "Schedule" mode
+                despite a leftover legacy comment mentioning one -- it doesn't actually exist in
+                legacy's real code either). Clicking the theme button above still works while this
+                is on -- it starts a temporary override, matching legacy's real UX, until the OS
+                preference naturally catches up and agrees with it again. */}
+            <button
+              type="button"
+              onClick={() => setThemeMode(themeMode === 'system' ? 'manual' : 'system')}
+              title="Follow system theme"
+              aria-pressed={themeMode === 'system'}
+            >
+              🖥️
+            </button>
+            {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
+                legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
+                same order, same radiogroup semantics -- as a small round-button row next to the
+                theme toggle rather than inside a dedicated Settings panel, since `web/` has no
+                Settings surface at all yet (a real, separately-scoped follow-up covering every
+                other toggle this phase and later ones reference, not just this one). The
+                `setAccentPreset` action itself has existed since Phase 6.1; this is the first UI
+                that actually calls it. */}
+            <div role="radiogroup" aria-label="Accent color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {ACCENT_PRESET_ORDER.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  role="radio"
+                  aria-checked={accentPreset === preset}
+                  aria-label={ACCENT_PRESET_LABELS[preset]}
+                  title={ACCENT_PRESET_LABELS[preset]}
+                  onClick={() => setAccentPreset(preset)}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    padding: 0,
+                    borderRadius: '50%',
+                    border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                    background: ACCENT_PRESETS[preset][theme],
+                    cursor: 'pointer'
+                  }}
+                />
+              ))}
+            </div>
+            {/* §6.7 slice (docs/phase6-full-parity-plan.md): node-text-color picker. Direct port of
+                legacy's real `#node-font-swatch-row` (legacy/index.html:4707-4711) -- a separate
+                color axis from accent above (this one recolors node text itself, `--node-fg`, not
+                the accent highlight), same 4 presets/order/radiogroup semantics. Unlike the accent
+                picker, `setNodeFontColorPreset` itself is new in this slice, not just its UI --
+                `web/` had no node-text-color axis at all before this. */}
+            <div role="radiogroup" aria-label="Node text color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {NODE_FONT_COLOR_PRESET_ORDER.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  role="radio"
+                  aria-checked={nodeFontColorPreset === preset}
+                  aria-label={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                  title={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                  onClick={() => setNodeFontColorPreset(preset)}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    padding: 0,
+                    borderRadius: '50%',
+                    border: nodeFontColorPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                    background: NODE_FONT_COLOR_PRESETS[preset][theme],
+                    cursor: 'pointer'
+                  }}
+                />
+              ))}
+            </div>
+            {/* §6.8 slice: Version History for the active document -- direct port of legacy's
+                real "More" menu "Version history…" entry point (legacy/index.html:6489), moved to
+                the header toolbar since `web/` has no "More" menu of its own yet, same convention
+                already used for the Settings/notification-bell/sync-dot entry points. Hidden
+                entirely with no document open, matching legacy's own `if(currentDocId)` guard. */}
+            {activeDocId && (
+              <button type="button" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
+                🕐
+              </button>
+            )}
+            {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
+            {/* §6.8 slice: the real persistent top-bar sync-status dot -- see
+                SyncStatusIndicator.tsx's own header. Renders nothing when signed out. */}
+            <SyncStatusIndicator />
+            {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
+                nothing when signed out. */}
+            <NotificationBell />
+            {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
+                surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
+                button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see
+                SettingsPanel.tsx's own header for exactly what it holds and why it's deliberately
+                minimal (a single flat section, not legacy's own multi-category rail). */}
+            <div style={{ position: 'relative' }}>
+              <button type="button" onClick={() => setSettingsOpen((open) => !open)} title="Settings" aria-pressed={settingsOpen}>
+                ⚙
+              </button>
+              {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+            </div>
+            {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist -- see
+                QuickAssistBar.tsx's own header for what this covers and what it deliberately
+                doesn't yet (search-hit rows, category scoping -- slice 4). */}
+            <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
+          </>
+        }
+        tabBar={<DocumentTabs />}
+        sidebar={<SidebarFileExplorer />}
+        statusLeft={<span>Phase 6.2, in progress</span>}
+        statusRight={
+          <>
+            {/* §6.9 slice 4 (docs/phase6-full-parity-plan.md): the auto-rewrite status chip --
+                direct port of legacy's real sb-auto-rewrite-chip, a left-click toggle showing live
+                queue/paused/rewriting state. */}
+            <button type="button" onClick={() => setAutoRewriteEnabled(!autoRewriteEnabled)} title="Toggle auto-rewrite on commit" aria-pressed={autoRewriteEnabled} style={{ marginRight: 10 }}>
+              {autoRewriteStatusText()}
+            </button>
+            <span>{mode}</span>
+          </>
+        }
+        contentRef={registerScrollContainer}
+      >
+        <div style={{ marginBottom: 12 }}>
+          {/* ↶/↷ -- same icons and tooltip text as legacy's own #undo-btn/#redo-btn
+              (legacy/index.html:6359-6360). Undo/redo is core-outline scoped this slice
+              (outlineStore.ts's own header) -- disabled outside of edit mode, since Preview/
+              Present don't touch outline content at all. */}
           <button
             type="button"
-            onClick={toggleSidebarOpen}
-            title="Toggle file explorer"
-            aria-pressed={sidebarOpen}
+            onClick={undo}
+            disabled={mode !== 'edit' || !canUndo}
+            title="Undo (Ctrl/Cmd+Z)"
+            aria-label="Undo"
+            style={{ marginRight: 4 }}
           >
-            ▤
+            ↶
           </button>
-          <button type="button" onClick={toggleTheme} title="Toggle theme">
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
-          {/* §6.7 slice (docs/phase6-full-parity-plan.md): System auto-theme. Direct port of
-              legacy's real two-mode `setThemeMode`/`applyAutoTheme` (`themeStore.ts`'s own
-              header comment has the full story, including why there's no third "Schedule" mode
-              despite a leftover legacy comment mentioning one -- it doesn't actually exist in
-              legacy's real code either). Clicking the theme button above still works while this
-              is on -- it starts a temporary override, matching legacy's real UX, until the OS
-              preference naturally catches up and agrees with it again. */}
           <button
             type="button"
-            onClick={() => setThemeMode(themeMode === 'system' ? 'manual' : 'system')}
-            title="Follow system theme"
-            aria-pressed={themeMode === 'system'}
+            onClick={redo}
+            disabled={mode !== 'edit' || !canRedo}
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+            aria-label="Redo"
+            style={{ marginRight: 12 }}
           >
-            🖥️
+            ↷
           </button>
-          {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
-              legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
-              same order, same radiogroup semantics -- as a small round-button row next to the
-              theme toggle rather than inside a dedicated Settings panel, since `web/` has no
-              Settings surface at all yet (a real, separately-scoped follow-up covering every
-              other toggle this phase and later ones reference, not just this one). The
-              `setAccentPreset` action itself has existed since Phase 6.1; this is the first UI
-              that actually calls it. */}
-          <div role="radiogroup" aria-label="Accent color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            {ACCENT_PRESET_ORDER.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                role="radio"
-                aria-checked={accentPreset === preset}
-                aria-label={ACCENT_PRESET_LABELS[preset]}
-                title={ACCENT_PRESET_LABELS[preset]}
-                onClick={() => setAccentPreset(preset)}
-                style={{
-                  width: 16,
-                  height: 16,
-                  padding: 0,
-                  borderRadius: '50%',
-                  border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
-                  background: ACCENT_PRESETS[preset][theme],
-                  cursor: 'pointer'
-                }}
-              />
-            ))}
-          </div>
-          {/* §6.7 slice (docs/phase6-full-parity-plan.md): node-text-color picker. Direct port of
-              legacy's real `#node-font-swatch-row` (legacy/index.html:4707-4711) -- a separate
-              color axis from accent above (this one recolors node text itself, `--node-fg`, not
-              the accent highlight), same 4 presets/order/radiogroup semantics. Unlike the accent
-              picker, `setNodeFontColorPreset` itself is new in this slice, not just its UI --
-              `web/` had no node-text-color axis at all before this. */}
-          <div role="radiogroup" aria-label="Node text color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            {NODE_FONT_COLOR_PRESET_ORDER.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                role="radio"
-                aria-checked={nodeFontColorPreset === preset}
-                aria-label={NODE_FONT_COLOR_PRESET_LABELS[preset]}
-                title={NODE_FONT_COLOR_PRESET_LABELS[preset]}
-                onClick={() => setNodeFontColorPreset(preset)}
-                style={{
-                  width: 16,
-                  height: 16,
-                  padding: 0,
-                  borderRadius: '50%',
-                  border: nodeFontColorPreset === preset ? '2px solid currentColor' : '1px solid transparent',
-                  background: NODE_FONT_COLOR_PRESETS[preset][theme],
-                  cursor: 'pointer'
-                }}
-              />
-            ))}
-          </div>
-          {/* §6.8 slice: Version History for the active document -- direct port of legacy's
-              real "More" menu "Version history…" entry point (legacy/index.html:6489), moved to
-              the header toolbar since `web/` has no "More" menu of its own yet, same convention
-              already used for the Settings/notification-bell/sync-dot entry points. Hidden
-              entirely with no document open, matching legacy's own `if(currentDocId)` guard. */}
-          {activeDocId && (
-            <button type="button" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
-              🕐
-            </button>
-          )}
-          {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
-          {/* §6.8 slice: the real persistent top-bar sync-status dot -- see
-              SyncStatusIndicator.tsx's own header. Renders nothing when signed out. */}
-          <SyncStatusIndicator />
-          {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
-              nothing when signed out. */}
-          <NotificationBell />
-          {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
-              surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
-              button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see
-              SettingsPanel.tsx's own header for exactly what it holds and why it's deliberately
-              minimal (a single flat section, not legacy's own multi-category rail). */}
-          <div style={{ position: 'relative' }}>
-            <button type="button" onClick={() => setSettingsOpen((open) => !open)} title="Settings" aria-pressed={settingsOpen}>
-              ⚙
-            </button>
-            {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
-          </div>
-          {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist -- see
-              QuickAssistBar.tsx's own header for what this covers and what it deliberately
-              doesn't yet (search-hit rows, category scoping -- slice 4). */}
-          <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
-        </>
-      }
-      tabBar={<DocumentTabs />}
-      sidebar={<SidebarFileExplorer />}
-      statusLeft={<span>Phase 6.2, in progress</span>}
-      statusRight={
-        <>
-          {/* §6.9 slice 4 (docs/phase6-full-parity-plan.md): the auto-rewrite status chip --
-              direct port of legacy's real sb-auto-rewrite-chip, a left-click toggle showing live
-              queue/paused/rewriting state. */}
-          <button type="button" onClick={() => setAutoRewriteEnabled(!autoRewriteEnabled)} title="Toggle auto-rewrite on commit" aria-pressed={autoRewriteEnabled} style={{ marginRight: 10 }}>
-            {autoRewriteStatusText()}
+          {/* ⧉ -- same icon and tooltip text as legacy's own #qb-duplicate
+              (legacy/index.html:6371). Duplicates the current selection's root(s); see
+              duplicateRootIndexesCore's own header (outlineStore.ts) for exact behavior,
+              including the deliberately-reproduced legacy quirk that checkbox/code-block/tag
+              state does NOT carry over to the duplicate. */}
+          <button
+            type="button"
+            onClick={duplicateSelected}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Duplicate"
+            aria-label="Duplicate"
+            style={{ marginRight: 12 }}
+          >
+            ⧉
           </button>
-          <span>{mode}</span>
-        </>
-      }
-      contentRef={registerScrollContainer}
-    >
-      <div style={{ marginBottom: 12 }}>
-        {/* ↶/↷ -- same icons and tooltip text as legacy's own #undo-btn/#redo-btn
-            (legacy/index.html:6359-6360). Undo/redo is core-outline scoped this slice
-            (outlineStore.ts's own header) -- disabled outside of edit mode, since Preview/
-            Present don't touch outline content at all. */}
-        <button
-          type="button"
-          onClick={undo}
-          disabled={mode !== 'edit' || !canUndo}
-          title="Undo (Ctrl/Cmd+Z)"
-          aria-label="Undo"
-          style={{ marginRight: 4 }}
-        >
-          ↶
-        </button>
-        <button
-          type="button"
-          onClick={redo}
-          disabled={mode !== 'edit' || !canRedo}
-          title="Redo (Ctrl/Cmd+Shift+Z)"
-          aria-label="Redo"
-          style={{ marginRight: 12 }}
-        >
-          ↷
-        </button>
-        {/* ⧉ -- same icon and tooltip text as legacy's own #qb-duplicate
-            (legacy/index.html:6371). Duplicates the current selection's root(s); see
-            duplicateRootIndexesCore's own header (outlineStore.ts) for exact behavior,
-            including the deliberately-reproduced legacy quirk that checkbox/code-block/tag
-            state does NOT carry over to the duplicate. */}
-        <button
-          type="button"
-          onClick={duplicateSelected}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Duplicate"
-          aria-label="Duplicate"
-          style={{ marginRight: 12 }}
-        >
-          ⧉
-        </button>
-        {/* B/I/U/S -- same visual treatment (<strong>B</strong>, <em>I</em>, <u>U</u>, <s>S</s>)
-            and tooltip text (including the Ctrl/Cmd shortcut hint) as legacy's own real
-            `.fmt-btn` quick-bar buttons (legacy/index.html:6386-6389). Applies to every
-            currently-selected node directly (not root-subtree-cascading) via
-            outlineStore.ts's own toggleNodeStyle -- see that action's own header for the exact
-            multi-select semantics. */}
-        <button
-          type="button"
-          onClick={() => toggleNodeStyle('bold')}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Bold (Ctrl/Cmd+B)"
-          aria-label="Bold"
-          style={{ marginRight: 2 }}
-        >
-          <strong>B</strong>
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleNodeStyle('italic')}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Italic (Ctrl/Cmd+I)"
-          aria-label="Italic"
-          style={{ marginRight: 2 }}
-        >
-          <em>I</em>
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleNodeStyle('underline')}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Underline (Ctrl/Cmd+U)"
-          aria-label="Underline"
-          style={{ marginRight: 2 }}
-        >
-          <u>U</u>
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleNodeStyle('strike')}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Strike (Ctrl/Cmd+Shift+S)"
-          aria-label="Strike"
-          style={{ marginRight: 6 }}
-        >
-          <s>S</s>
-        </button>
-        {/* Heading level -- a plain <select> standing in for legacy's own custom popover palette
-            (legacy/index.html:6426-6444's real #heading-toggle-btn/#heading-palette widget) --
-            same simplification this project uses elsewhere for palette-style pickers (e.g.
-            SidebarFileExplorer.tsx's own "move to folder" select in place of drag-and-drop).
-            Legacy's palette also offers a 7th "Section" option, but that routes to an entirely
-            different existing feature (the [Text] bracket semantic-markup convention
-            NodeText.tsx already renders), not a real numbered heading level -- out of scope
-            here, not silently dropped. */}
-        <select
-          value=""
-          disabled={mode !== 'edit' || !hasSelection}
-          onChange={(e) => {
-            const level = Number(e.currentTarget.value);
-            if (!Number.isNaN(level)) applyHeadingOption(level);
-            e.currentTarget.value = '';
-          }}
-          title="Heading style"
-          aria-label="Heading style"
-          style={{ marginRight: 12, fontSize: 12 }}
-        >
-          <option value="" disabled>
-            Heading…
-          </option>
-          <option value="0">Body text</option>
-          <option value="1">Heading 1</option>
-          <option value="2">Heading 2</option>
-          <option value="3">Heading 3</option>
-          <option value="4">Heading 4</option>
-          <option value="5">Heading 5</option>
-          <option value="6">Heading 6</option>
-        </select>
-        {/* Same icon (a checkmark-in-box SVG) and tooltip text as legacy's own real
-            #qb-checkbox toolbar button (legacy/index.html:6462) -- see
-            outlineStore.ts's own toggleCheckboxType header for the exact toggle semantics
-            (any-checkbox-selected removes from all; none-selected adds to all). */}
-        <button
-          type="button"
-          onClick={toggleCheckboxType}
-          disabled={mode !== 'edit' || !hasSelection}
-          title="Toggle checkbox on selected node"
-          aria-label="Toggle checkbox"
-          style={{ marginRight: 12 }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <path d="M9 12l2.5 2.5L15 9" />
-          </svg>
-        </button>
-        {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the current
-            selection (single node or a whole multi-select batch) via aiRewrite.ts. */}
-        <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 4 }}>
-          {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
-        </button>
-        {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as children of
-            the current selection, or replaces an empty document. */}
-        <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline" style={{ marginRight: 4 }}>
-          {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
-        </button>
-        {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new document. */}
-        <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 4 }}>
-          ✦ Restructure
-        </button>
-        {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
-        <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ marginRight: 4 }}>
-          ✦ Expand
-        </button>
-        <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 4 }}>
-          ✦ Tags
-        </button>
-        {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection may
-            open IconPickerPopover.tsx if there's more than one real candidate to choose from. */}
-        <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon" style={{ marginRight: 4 }}>
-          ✦ Icon
-        </button>
-        {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all whole-document
-            action, always auto-applying as a batch. */}
-        <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 4 }}>
-          ✦ Icons (all)
-        </button>
-        {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected roots,
-            indenting their whole subtrees underneath. */}
-        <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection" style={{ marginRight: 12 }}>
-          ✦ Summarise
-        </button>
-        <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
-          Edit
-        </button>
-        <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'} style={{ marginRight: 6 }}>
-          Preview
-        </button>
-        <button type="button" onClick={() => setMode('present')} disabled={mode === 'present'}>
-          Present
-        </button>
-      </div>
-      <ul style={{ fontSize: '0.9em', color: '#555' }}>
-        <li>Click to select, double-click to edit</li>
-        <li>
-          <kbd>Enter</kbd> — new sibling below; <kbd>Ctrl/Cmd+Enter</kbd> — new child
-        </li>
-        <li>
-          <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — indent / outdent
-        </li>
-        <li>
-          <kbd>Backspace</kbd> on empty text — delete the node
-        </li>
-        <li>Click the ▾/▸ arrow to collapse/expand a subtree</li>
-        <li>
-          Drag a row onto another — top third = above, bottom third = below, middle third =
-          nest as child
-        </li>
-        <li>
-          Semantic markup: <code>[Section]</code>, <code>(note)</code>, <code>!alert</code>,{' '}
-          <code>`code`</code> — matches legacy's real styling, delimiters hidden
-        </li>
-      </ul>
-      {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
-      <NotePanel />
-      <div style={{ marginTop: 16 }}>
-        <ExportButtons />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <PadPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Hub — To-Dos</h2>
-        <HubTodosPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Hub — Journal</h2>
-        <HubJournalPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Hub — Meeting Notes</h2>
-        <HubMeetingsPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Hub — Library</h2>
-        <HubLibraryPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Hub — Recap</h2>
-        <HubRecapPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Account</h2>
-        <AuthPanel />
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>Sync</h2>
-        <DocSyncPanel />
-      </div>
-      {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
-      <IconPickerPopover />
-    </AppShell>
+          {/* B/I/U/S -- same visual treatment (<strong>B</strong>, <em>I</em>, <u>U</u>, <s>S</s>)
+              and tooltip text (including the Ctrl/Cmd shortcut hint) as legacy's own real
+              `.fmt-btn` quick-bar buttons (legacy/index.html:6386-6389). Applies to every
+              currently-selected node directly (not root-subtree-cascading) via
+              outlineStore.ts's own toggleNodeStyle -- see that action's own header for the exact
+              multi-select semantics. */}
+          <button
+            type="button"
+            onClick={() => toggleNodeStyle('bold')}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Bold (Ctrl/Cmd+B)"
+            aria-label="Bold"
+            style={{ marginRight: 2 }}
+          >
+            <strong>B</strong>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleNodeStyle('italic')}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Italic (Ctrl/Cmd+I)"
+            aria-label="Italic"
+            style={{ marginRight: 2 }}
+          >
+            <em>I</em>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleNodeStyle('underline')}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Underline (Ctrl/Cmd+U)"
+            aria-label="Underline"
+            style={{ marginRight: 2 }}
+          >
+            <u>U</u>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleNodeStyle('strike')}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Strike (Ctrl/Cmd+Shift+S)"
+            aria-label="Strike"
+            style={{ marginRight: 6 }}
+          >
+            <s>S</s>
+          </button>
+          {/* Heading level -- a plain <select> standing in for legacy's own custom popover palette
+              (legacy/index.html:6426-6444's real #heading-toggle-btn/#heading-palette widget) --
+              same simplification this project uses elsewhere for palette-style pickers (e.g.
+              SidebarFileExplorer.tsx's own "move to folder" select in place of drag-and-drop).
+              Legacy's palette also offers a 7th "Section" option, but that routes to an entirely
+              different existing feature (the [Text] bracket semantic-markup convention
+              NodeText.tsx already renders), not a real numbered heading level -- out of scope
+              here, not silently dropped. */}
+          <select
+            value=""
+            disabled={mode !== 'edit' || !hasSelection}
+            onChange={(e) => {
+              const level = Number(e.currentTarget.value);
+              if (!Number.isNaN(level)) applyHeadingOption(level);
+              e.currentTarget.value = '';
+            }}
+            title="Heading style"
+            aria-label="Heading style"
+            style={{ marginRight: 12, fontSize: 12 }}
+          >
+            <option value="" disabled>
+              Heading…
+            </option>
+            <option value="0">Body text</option>
+            <option value="1">Heading 1</option>
+            <option value="2">Heading 2</option>
+            <option value="3">Heading 3</option>
+            <option value="4">Heading 4</option>
+            <option value="5">Heading 5</option>
+            <option value="6">Heading 6</option>
+          </select>
+          {/* Same icon (a checkmark-in-box SVG) and tooltip text as legacy's own real
+              #qb-checkbox toolbar button (legacy/index.html:6462) -- see
+              outlineStore.ts's own toggleCheckboxType header for the exact toggle semantics
+              (any-checkbox-selected removes from all; none-selected adds to all). */}
+          <button
+            type="button"
+            onClick={toggleCheckboxType}
+            disabled={mode !== 'edit' || !hasSelection}
+            title="Toggle checkbox on selected node"
+            aria-label="Toggle checkbox"
+            style={{ marginRight: 12 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <path d="M9 12l2.5 2.5L15 9" />
+            </svg>
+          </button>
+          {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the current
+              selection (single node or a whole multi-select batch) via aiRewrite.ts. */}
+          <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 4 }}>
+            {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
+          </button>
+          {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as children of
+              the current selection, or replaces an empty document. */}
+          <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline" style={{ marginRight: 4 }}>
+            {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
+          </button>
+          {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new document. */}
+          <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 4 }}>
+            ✦ Restructure
+          </button>
+          {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
+          <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ marginRight: 4 }}>
+            ✦ Expand
+          </button>
+          <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 4 }}>
+            ✦ Tags
+          </button>
+          {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection may
+              open IconPickerPopover.tsx if there's more than one real candidate to choose from. */}
+          <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon" style={{ marginRight: 4 }}>
+            ✦ Icon
+          </button>
+          {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all whole-document
+              action, always auto-applying as a batch. */}
+          <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 4 }}>
+            ✦ Icons (all)
+          </button>
+          {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected roots,
+              indenting their whole subtrees underneath. */}
+          <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection" style={{ marginRight: 12 }}>
+            ✦ Summarise
+          </button>
+          <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
+            Edit
+          </button>
+          <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'} style={{ marginRight: 6 }}>
+            Preview
+          </button>
+          <button type="button" onClick={() => setMode('present')} disabled={mode === 'present'}>
+            Present
+          </button>
+        </div>
+        <ul style={{ fontSize: '0.9em', color: '#555' }}>
+          <li>Click to select, double-click to edit</li>
+          <li>
+            <kbd>Enter</kbd> — new sibling below; <kbd>Ctrl/Cmd+Enter</kbd> — new child
+          </li>
+          <li>
+            <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — indent / outdent
+          </li>
+          <li>
+            <kbd>Backspace</kbd> on empty text — delete the node
+          </li>
+          <li>Click the ▾/▸ arrow to collapse/expand a subtree</li>
+          <li>
+            Drag a row onto another — top third = above, bottom third = below, middle third =
+            nest as child
+          </li>
+          <li>
+            Semantic markup: <code>[Section]</code>, <code>(note)</code>, <code>!alert</code>,{' '}
+            <code>`code`</code> — matches legacy's real styling, delimiters hidden
+          </li>
+        </ul>
+        {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
+        <NotePanel />
+        <div style={{ marginTop: 16 }}>
+          <ExportButtons />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <PadPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Hub — To-Dos</h2>
+          <HubTodosPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Hub — Journal</h2>
+          <HubJournalPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Hub — Meeting Notes</h2>
+          <HubMeetingsPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Hub — Library</h2>
+          <HubLibraryPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Hub — Recap</h2>
+          <HubRecapPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Account</h2>
+          <AuthPanel />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 16 }}>Sync</h2>
+          <DocSyncPanel />
+        </div>
+        {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
+        <IconPickerPopover />
+      </AppShell>
+    </>
   );
 }

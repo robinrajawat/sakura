@@ -42,6 +42,7 @@ const FIREBASE_CONFIG = {
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let inited = false;
 
 function getFirebaseAuth(): Auth {
   if (!app) app = initializeApp(FIREBASE_CONFIG);
@@ -107,6 +108,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   init: () => {
+    // Idempotent -- both AuthPanel.tsx and SignInGate.tsx (§7.1) call this on mount, and
+    // attaching onAuthStateChanged twice would be wasteful (harmless, since both listeners
+    // would just set the same eventual state, but there's no reason to pay for it), same guard
+    // pattern notificationsStore.ts's own init() already established.
+    if (inited) return;
+    inited = true;
     onAuthStateChanged(getFirebaseAuth(), (user) => {
       set({ user, loading: false });
     });
