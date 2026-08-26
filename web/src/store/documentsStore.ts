@@ -233,6 +233,13 @@ interface DocumentsState {
    * decide (e.g. confirming before calling), not this store's job. */
   deleteFolder: (id: string) => void;
   toggleFolderOpen: (id: string) => void;
+  /** §7.7 slice (docs/phase7-app-shell-and-dashboard-plan.md): opens every ancestor folder of
+   * `folderId` (itself included), leaving already-open folders alone -- an idempotent "set open"
+   * along a chain, unlike `toggleFolderOpen`'s per-folder toggle, which would risk CLOSING an
+   * already-open ancestor if called along the same chain. Used by `SidebarFileExplorer.tsx`'s new
+   * "Locate the open document" button, direct port of legacy's real `revealDocInSidebar`'s own
+   * ancestor-opening walk (legacy/index.html:31148-31157). */
+  openFolderChain: (folderId: string) => void;
   /** Files `docId` into `folderId`, or unfiles it (removes the map entry) when `folderId` is
    * `null` -- matches legacy's own `setFolderForDoc` (legacy/index.html:29875) exactly. */
   setFolderForDoc: (docId: string, folderId: string | null) => void;
@@ -563,6 +570,19 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
 
   toggleFolderOpen: (id) => {
     const folders = get().folders.map((f) => (f.id === id ? { ...f, open: !f.open } : f));
+    writeJson(_FOLDERS_KEY, folders);
+    set({ folders });
+  },
+
+  openFolderChain: (folderId) => {
+    const existing = get().folders;
+    const chain = new Set<string>();
+    let current: string | null = folderId;
+    while (current) {
+      chain.add(current);
+      current = existing.find((f) => f.id === current)?.parentId ?? null;
+    }
+    const folders = existing.map((f) => (chain.has(f.id) && !f.open ? { ...f, open: true } : f));
     writeJson(_FOLDERS_KEY, folders);
     set({ folders });
   },

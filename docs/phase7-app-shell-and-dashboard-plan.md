@@ -508,4 +508,57 @@ alone, matching the verification standard every Phase 6 slice was held to.
   see this entry's own summary for why: docking/menu-wiring around already-tested logic, not new
   business logic of its own to unit-test beyond what real-browser verification above already
   covers).
-- Remaining: 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary above.
+- ✅ **7.7 — Sidebar completeness: Templates & Trash landed.** All four items from this
+  section's own list, in `SidebarFileExplorer.tsx`:
+  1. **Filter box** (`#sb-toggle-search-btn`/`#sidebar-search`, legacy/index.html:6262-6268,
+     6294-6299): a new header icon toggles a title-filter `<input>`; typing narrows both the
+     folder tree and the Unfiled bucket to matching document titles, force-opens every folder
+     along the way to a match, hides a folder with no matching descendant anywhere in its own
+     subtree entirely (a new `folderSubtreeHasMatch` helper, direct port of legacy's own
+     same-named real function), and shows "No matching documents" when nothing matches. One real,
+     deliberate wording deviation from legacy's own placeholder ("Filter docs & templates…"):
+     since this slice's own Templates section (below) has no real items to filter yet, the
+     placeholder here only mentions documents.
+  2. **"Locate the open document"** (`#sb-locate-doc-btn`): direct port of legacy's real
+     `revealDocInSidebar` (legacy/index.html:31148-31166) -- opens the sidebar if collapsed,
+     clears any active filter, opens every ancestor folder of the active document, then scrolls
+     that row into view with a brief background flash. `documentsStore.ts` gained a new
+     `openFolderChain` action for this (an idempotent "open every folder along this chain,
+     leaving already-open ones alone" action, distinct from the existing per-folder
+     `toggleFolderOpen` -- toggling along a chain would risk closing an already-open ancestor).
+     Disabled (not a `showToast`, since this project has no toast infrastructure yet) when no
+     document is open.
+  3. **Templates section shell** (`#sb-templates-section`, legacy/index.html:6314-6328): the real
+     section header (label + "New template folder"/"Save · manage templates" icon buttons,
+     disabled with an explanatory title) and an empty-state list. Deliberately NOT the full
+     save-as-template flow -- confirmed still real and separately-scoped by both
+     `docs/phase6-full-parity-plan.md`'s own 6.1 note ("templates -- a separate system entirely")
+     and `docs/post-cutover-backlog.md` ("Templates ... never got a system at all"); `web/` has no
+     template store/data of any kind to back real buttons with yet, so disabling them with an
+     explanatory title is honest chrome, not a faked flow.
+  4. **Trash section** (`#sb-trash-list`, legacy/index.html:6329): the same real collapsible-row-
+     plus-live-count chrome as legacy's own `renderSidebarTrash` (legacy/index.html:30528-30538),
+     not the restore/purge/bulk-select system behind it -- confirmed via `documentsStore.ts`'s own
+     `deleteDocument` (a real, immediate hard delete, no soft-delete concept at all) and
+     `docs/post-cutover-backlog.md`'s own "no trash concept exists" line that this really is a
+     separate, unbuilt system. The count is always 0 and the expanded state always shows "Trash is
+     empty" -- both real and currently always true, not placeholder text pretending otherwise.
+  New test coverage: `documentsStore.test.ts` gained 2 tests for `openFolderChain` (opens a full
+  ancestor chain including already-closed folders; a safe no-op on an unknown id). No new
+  component test file (matching this project's established convention: UI components are verified
+  via real headless-Chrome browser testing, not component-level unit tests -- store/state/utils
+  logic is what gets unit tests here). Verified end-to-end in real headless Chrome (dark theme):
+  creating a folder+doc renders the new header icons correctly; filtering to a non-matching string
+  hides everything with "No matching documents"; filtering to "Welcome" shows only the matching
+  Unfiled doc and hides the non-matching folder; clearing the filter and toggling Trash open shows
+  "Trash is empty"; opening the Welcome doc and clicking "Locate the open document" clears the
+  filter, scrolls to, and visibly flashes the correct row -- zero console/page errors (only the
+  same expected Firebase network failure every other §7 slice hits in this sandboxed environment).
+  Full gauntlet: 2005 tests (2 new).
+
+**Phase 7 is now complete** -- 7.1 through 7.7 all landed. Per docs/handoff-prompt.md's own
+Current state and this plan's own §9-equivalent framing (docs/phase6-full-parity-plan.md's real
+Section 9 pre-cutover gate), the next real step is returning to that gate's items 2-4 (a person
+clicking through the real `/web-preview/` build end-to-end; signing in with a real account to
+confirm production-synced documents round-trip; the actual `deploy.yml` cutover PR) -- none of
+which are appropriate to attempt unilaterally; they need the account owner's direct involvement.
