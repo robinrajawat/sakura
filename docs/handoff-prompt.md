@@ -2391,4 +2391,31 @@ cutover, so that stricter reading was never really the intent.
 Gate items 2-4 still need a person directly: a real click-through of
 the built `dist/` output, and a real sign-in against production
 Firestore data, before any `deploy.yml` cutover PR.
+
+To actually get a real, reachable URL for that click-through (no
+preview link auto-exposed in this session, and Artifacts can't run a
+page needing real Firestore/AI network access), `deploy.yml` gained a
+TEMPORARY addition: it now also builds `web/dist` (with
+`base=/web-preview/` via a direct `vite` invocation, so
+`web/vite.config.ts` and its own `npm run build` script stay
+untouched) and publishes it alongside `legacy/` in the same Pages
+artifact, at `www.sakura-notes.com/web-preview/` -- legacy's own root
+is completely untouched. Remove those two added build steps (revert
+the final artifact-upload path back to `legacy/dist` directly) once
+the gate clears and the real cutover replaces this file's meaning.
+
+That real click-through immediately paid off: a screenshot of
+`/web-preview/` showed every button/select/input rendering with the
+bare browser default (no rounding, no accent border/text tint, wrong
+font) -- §6.1 ("Design tokens & app shell") had built the *token
+system* but never actually applied it as base CSS to generic form
+controls, and `web/index.html` never loaded the Google Fonts
+(Public Sans/Inter/Fira Code) legacy uses either. Every prior
+verification in this project checked specific computed-style
+properties or behavior, never a full visual screenshot, so this sat
+unnoticed through all of Phase 6. Fixed with a new global
+`web/src/index.css` (legacy's real `.btn,.select,.meta-input`
+treatment ported to bare element selectors, since nothing in `web/`
+ever attaches a class) plus the missing font `<link>` tags -- verified
+via real before/after screenshots in both themes.
 ```

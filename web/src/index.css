@@ -1,0 +1,84 @@
+/* §6.1 gap found and fixed post-Phase-6 (via a real visual click-through of the deployed
+ * /web-preview/ build -- exactly what Section 9 gate item 2 exists to catch): web/ never had ANY
+ * base styling for generic form controls. Every component in this codebase renders a plain
+ * `<button>`/`<select>`/`<input>` with no `className` at all (confirmed: zero `className=` usage
+ * anywhere in App.tsx/OutlineTree.tsx), relying only on ad-hoc inline `style` for things like
+ * spacing -- appearance (background/border/radius/font) was never addressed, so every one of
+ * those elements rendered with the bare browser UA default the whole time. This is legacy's own
+ * real `.btn,.select,.meta-input` treatment (legacy/index.html:372-389) ported to bare element
+ * selectors instead of a class, since nothing in web/ ever attaches one -- an inline `style` on
+ * any individual button/select (e.g. the accent-swatch radio buttons' own circular styling)
+ * still wins over these rules regardless, so this is purely additive, not a risk of clobbering
+ * anything already deliberately styled.
+ *
+ * `--accent-text-blend`/`--accent-border-blend` are legacy's own real fixed (non-theme-varying)
+ * blend constants (`:root{...--accent-text-blend:45%;--accent-border-blend:30%;...}`,
+ * legacy/index.html:311) -- themeStore.ts's CSS_VAR_MAP never had a reason to set these before
+ * now, since no other consumer needed them.
+ *
+ * One deliberate simplification: `<select>` keeps its native OS appearance (no
+ * `appearance:none`) rather than legacy's fully custom-arrow treatment (`.select-arrow`,
+ * `.select-wrap`) -- web/'s plain `<select>` elements have no wrapper span for a replacement
+ * arrow glyph, so stripping the native one would leave no visual indicator at all that the
+ * control is a dropdown. Every other property (border/radius/color/font/hover/focus) still
+ * matches legacy's real treatment.
+ */
+
+:root {
+  --accent-text-blend: 45%;
+  --accent-border-blend: 30%;
+}
+
+button,
+select,
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='password'],
+textarea {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) var(--accent-border-blend), var(--border));
+  color: color-mix(in srgb, var(--accent) var(--accent-text-blend), var(--muted));
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  transition:
+    border-color 0.12s,
+    color 0.12s,
+    background 0.12s,
+    box-shadow 0.12s;
+}
+
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+button:hover,
+select:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+select:focus,
+button:focus,
+input[type='text']:focus,
+input[type='search']:focus,
+input[type='email']:focus,
+input[type='password']:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}

@@ -77,6 +77,19 @@ gap one level up.
   own header (no drag-to-file, a "move to folder" select instead; no templates -- a separate
   system entirely, out of scope for this phase).
 
+**Gap found and fixed post-Phase-6, via a real visual click-through of the deployed
+`/web-preview/` build** (exactly what Section 9 gate item 2 exists to catch, and did): this phase
+built the color/typography *token system* (`THEME_TOKENS`, CSS custom properties) but never
+actually applied it as base styling to generic form controls -- every `<button>`/`<select>`/
+`<input>` in the whole app rendered with the bare browser default the entire time (confirmed: zero
+`className` usage anywhere in `App.tsx`/`OutlineTree.tsx`), which every prior verification in this
+project missed since each one checked specific computed-style properties or behavior, never a full
+visual screenshot. Fixed with a new global `src/index.css` (legacy's real `.btn,.select,.meta-
+input` treatment ported to bare element selectors, since nothing attaches a class) plus the
+missing Google Fonts `<link>` (`web/index.html` never loaded Public Sans/Inter/Fira Code at all,
+so every `fontFamily` reference silently fell back to the browser's generic sans-serif). Verified
+via real screenshots in both themes before and after -- see PR for the exact diff.
+
 ### 6.2 — Undo/redo (foundational) & core editing parity
 `outlineStore.ts` has no undo/redo at all yet — not a per-tab gap, a store-level absence
 (`docs/history/phase5-parity-checklist.md`'s Documents & Tabs section and its Keyboard Shortcuts table
