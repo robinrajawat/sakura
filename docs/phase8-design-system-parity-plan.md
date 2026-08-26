@@ -120,9 +120,12 @@ class family (`.editor-title-row`/`.editor-title-input`/`.editor-meta-row`, `.to
 be fully covered by 8.4a/8.4c's own real `DropdownMenu.tsx` consumers -- there was no dropdown-menu
 work left by the time 8.4e was picked up. Real investigation found the actual remaining gaps were
 document tabs (`DocumentTabs.tsx`, split out as 8.4e itself), the Settings panel's category rail,
-the Hub dock's tab strip, and shared modal/dialog chrome -- renamed and re-split as 8.4f (see that
-slice's own Status entry for the exact classes/lines). Same "split further/resequenced" flexibility
-this section already reserves, applied twice now.
+the Hub dock's tab strip, and shared modal/dialog chrome -- renamed and re-split as 8.4f. A second
+correction found during 8.4f itself: the modal/dialog chrome piece alone touches 10 separate
+`role="dialog"` components, too much surface for one PR alongside the rail/tab-strip work, so it
+split out again into its own 8.4g (see that slice's own Status entry for the exact classes/lines
+and component list). Same "split further/resequenced" flexibility this section already reserves,
+applied three times now.
 
 ### 8.1 — CSS primitives
 Port the missing real classes into `web/src/index.css` (or a new `web/src/ui.css` if that file is
@@ -485,8 +488,7 @@ doc let this gap through repeated verification passes already.
   plus a direct side-by-side against a live legacy screenshot of the same interaction. Full
   gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
   clean.
-- Remaining: 8.4f (dropdown menus + modals -- `SettingsPanel.tsx`'s category rail, `HubDock.tsx`'s
-  tab strip, and every `role="dialog"` modal's own chrome) → 8.5 (verification fixture document).
+- ✅ **8.4f — Retrofit: Settings rail + Hub dock tabs (`SettingsPanel.tsx`/`HubDock.tsx`).**
   **Correction found during 8.4e's own investigation**: this plan's original 8.4 area split named
   the last retrofit slice "dropdown menus + modals," but every real `DropdownMenu.tsx` consumer
   (`AccountMenu.tsx`, `ExportButtons.tsx`, `DocumentHeader.tsx`'s two popovers) was already
@@ -495,7 +497,49 @@ doc let this gap through repeated verification passes already.
   `.settings-rail-btn` (the Settings panel's own category sidebar, legacy/index.html:3296-3304),
   `.dock-tab` (`HubDock.tsx`'s own tab strip, legacy/index.html:3653-3657), and the shared modal/
   dialog chrome (header/close/footer button treatment) behind every `role="dialog"` component.
-  Renumbered 8.4e (dropdown menus + modals) to 8.4f (settings rail + hub dock tabs + modal chrome)
-  to reflect this -- same "split further/resequenced by whoever picks up each slice" flexibility
-  this doc's own Sequencing summary already reserved, matching the precedent set when 8.4c split
-  out of the original "document header + toolbar" slice.
+  Renumbered 8.4e (dropdown menus + modals) to 8.4f (settings rail + hub dock tabs), splitting the
+  modal/dialog chrome back out again into its own 8.4g once investigation showed it touches 10
+  separate `role="dialog"` components (`SignInGate.tsx`, `VersionHistoryPanel.tsx`,
+  `WelcomeModal.tsx`, `FeedbackModal.tsx`, `HelpModal.tsx`, `IconPickerPopover.tsx`,
+  `NotificationBell.tsx`, `QuickAssistBar.tsx`, `RestructureTextDialog.tsx`, `AboutModal.tsx`) --
+  too much surface area for one reviewable PR alongside the rail/tab-strip work, the same "split
+  further/resequenced by whoever picks up each slice" flexibility this doc's own Sequencing
+  summary already reserved, matching the precedent set when 8.4c split out of the original
+  "document header + toolbar" slice.
+  **Settings rail** (`SettingsPanel.tsx`): ports `.settings-panel`/`.settings-header`/
+  `.settings-body`/`.settings-rail`/`.settings-rail-btn`(+`.active`)/`.settings-content` (legacy/
+  index.html:392-397, 3288-3302) -- legacy's real merged base-anchored-popover-plus-rail-layout
+  rule, combined into one block here since `web/` only ever renders the "has a rail" shape legacy
+  reaches via a later cascade override. Real nested structure ported too (`.settings-header` above
+  a bordered-top `.settings-body` holding `.settings-rail` + `.settings-content`), not the single
+  flat container this component started with. **A real icon gap found and fixed**: legacy's rail
+  buttons have always had real per-category icons (legacy/index.html:4622-4670); `web/`'s rail
+  (§6.10 slice 2) never did -- text-only buttons. Three new icons ported to `icons.tsx`
+  (`AppearanceIcon`/`EditPencilIcon`/`DatabaseIcon`, each a direct port at legacy's real 14x14/
+  `stroke-width:1.8` sizing, different from this file's own 24x24 convention since that's what
+  legacy's rail actually ships), plus two reused: `IdCardIcon` (byte-identical path data to
+  legacy's own `data-cat="account"` icon) and `SparkleIcon` (legacy's own `data-cat="ai"` icon).
+  Deliberately not ported: the `@media (max-width:700px)` responsive collapse (same reasoning as
+  §8.4d's toolbar decision -- `SettingsPanel.tsx` is only ever mounted from within `App()`, which
+  returns `<MobileHub />` entirely below that breakpoint, making the rule unreachable dead CSS),
+  the settings-search box treatment (no real `web/` feature, already named as out of scope in this
+  file's own header), and the "features" rail button's unread-dot indicator (no "features"
+  category exists in `web/`'s subset).
+  **Hub dock tabs** (`HubDock.tsx`): ports `#dock-tabstrip`/`.dock-tab`(+`.active`) (legacy/
+  index.html:3650-3659) -- a real horizontal icon+label row with an accent underline on the active
+  tab, replacing this component's original vertical icon-over-label stack splitting the row into
+  equal-width columns. `#dock-tabstrip`'s own `display:none`/`.active{display:flex}` toggle is
+  skipped (a real, documented `web/`-specific simplification): `HubDock.tsx` already returns
+  `null` outright when no tab is open, so the conditional render already does what the class
+  toggle does in legacy. `#dock-tabstrip-spacer` ported as a real `.dock-tabstrip-spacer` class
+  (not inline style, matching this phase's own "no ad hoc styling" standard even for a one-property
+  rule); `#dock-tabstrip-maximize` (legacy's "expand to full view" control) deliberately NOT
+  ported -- `web/`'s dock has no maximize/full-view concept to back it, so building that button
+  now would be dead UI.
+  Verified end-to-end in real headless Chrome: Settings panel (rail with all 5 real icons, active-
+  category highlight, category switching to a second category) and the Hub dock tab strip (icon+
+  label tabs, accent underline on the active tab) -- both screenshotted and matching legacy's real
+  structure. Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/
+  lint/build all clean.
+- Remaining: 8.4g (modal/dialog chrome across the 10 `role="dialog"` components named above) →
+  8.5 (verification fixture document).

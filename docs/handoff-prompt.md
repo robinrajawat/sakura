@@ -368,12 +368,33 @@ Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean. See
 phase8-design-system-parity-plan.md's own Status section (and its Sequencing-summary correction)
 for the full breakdown, including why the plan's last slice was renamed 8.4f.
 
-**Immediate next steps:** 8.4f (renamed from "dropdown menus + modals," which turned out to
-already be fully covered by 8.4a/8.4c — see the plan doc's own correction) covers the Settings
-panel's category rail (`.settings-rail`/`.settings-rail-btn`), the Hub dock's tab strip
-(`.dock-tab`), and shared modal/dialog chrome across every `role="dialog"` component — the last
-retrofit slice. Then 8.5 (verification fixture document, can run in parallel/earlier if picked up
-independently). Once `web/` is visually close enough to legacy for a person to sign off, return to
+**8.4f (Settings rail + Hub dock tabs) landed.** `SettingsPanel.tsx`'s category rail retrofit onto
+legacy's real `.settings-panel`/`.settings-header`/`.settings-body`/`.settings-rail`/
+`.settings-rail-btn`/`.settings-content` structure (legacy/index.html:392-397/3288-3302), including
+a real, previously-missing gap: the rail never had per-category icons at all (text-only buttons) —
+three new icons ported (`AppearanceIcon`/`EditPencilIcon`/`DatabaseIcon`), two reused
+(`IdCardIcon`/`SparkleIcon`, both byte-identical to legacy's own rail icons). `HubDock.tsx`'s tab
+strip retrofit onto `#dock-tabstrip`/`.dock-tab` — a real horizontal icon+label row with an accent
+underline on the active tab, replacing the original vertical icon-over-label column stack.
+Deliberately not ported: the Settings mobile breakpoint (same `<MobileHub />` reasoning as §8.4d),
+the settings-search box (no `web/` feature), and the Hub dock's "maximize" button (no `web/`
+feature). Verified with real headless-Chrome screenshots (Settings rail with all 5 icons + category
+switching; Hub dock tabs with the accent underline). Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean. **A second scope correction found mid-slice**: the modal/dialog
+chrome piece of the renamed 8.4f touches 10 separate `role="dialog"` components — too much for one
+PR alongside the rail/tab-strip work, so it split out again into its own 8.4g. See
+phase8-design-system-parity-plan.md's own Status section for the full breakdown and component list.
+
+**Immediate next steps:** 8.4g covers shared modal/dialog chrome (`.app-modal-overlay`/
+`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`, legacy/index.html:
+926-936) across `SignInGate.tsx`, `VersionHistoryPanel.tsx`, `WelcomeModal.tsx`,
+`FeedbackModal.tsx`, `HelpModal.tsx`, `IconPickerPopover.tsx`, `NotificationBell.tsx`,
+`QuickAssistBar.tsx`, `RestructureTextDialog.tsx`, and `AboutModal.tsx` — worth checking each
+component's real legacy counterpart individually first, since some may be anchored popovers
+(matching `.settings-panel`'s own pattern) rather than true full-screen `.app-modal-overlay`
+dialogs; not every one may need the same treatment. The last retrofit slice, then 8.5
+(verification fixture document, can run in parallel/earlier if picked up independently). Once
+`web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are

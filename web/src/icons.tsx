@@ -488,3 +488,42 @@ export function KofiIcon(props: IconProps = {}) {
     </svg>
   );
 }
+
+/** §8.4f (docs/phase8-design-system-parity-plan.md): the Settings panel's own real category-rail
+ * icons (legacy/index.html:4622-4670), ported for the first time since `SettingsPanel.tsx`'s
+ * rail (§6.10 slice 2) never had icons at all -- text-only rail buttons. Sized to legacy's real
+ * 14x14 viewBox/stroke-width for these specific icons rather than the 24x24 convention most of
+ * this file otherwise uses, since that's what legacy's own rail actually ships. Only the 3 with
+ * no existing equivalent: "Account" reuses `IdCardIcon` above (byte-identical path data to
+ * legacy's own `data-cat="account"` icon), and "AI" reuses `SparkleIcon` (legacy's own real
+ * `data-cat="ai"` icon is a solid sparkle, matching `SparkleIcon`'s own shape already). */
+function railIconProps(props: IconProps): IconProps {
+  return { width: 14, height: 14, viewBox: '0 0 14 14', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', ...props };
+}
+
+export function AppearanceIcon(props: IconProps = {}) {
+  return (
+    <svg {...railIconProps(props)}>
+      <circle cx="7" cy="7" r="2.1" />
+      <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.76 2.76l1.41 1.41M9.83 9.83l1.41 1.41M2.76 11.24l1.41-1.41M9.83 4.17l1.41-1.41" />
+    </svg>
+  );
+}
+
+export function EditPencilIcon(props: IconProps = {}) {
+  return (
+    <svg {...railIconProps(props)}>
+      <path d="M9.4 1.6l3 3L4.3 12.7l-3.2.6.6-3.2z" />
+    </svg>
+  );
+}
+
+export function DatabaseIcon(props: IconProps = {}) {
+  return (
+    <svg {...railIconProps(props)}>
+      <ellipse cx="7" cy="3.1" rx="5.5" ry="2" />
+      <path d="M1.5 3.1v7.8c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V3.1" />
+      <path d="M1.5 7c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2" />
+    </svg>
+  );
+}

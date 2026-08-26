@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePrefsStore';
 import { AiProviderSettings } from './AiProviderSettings';
@@ -10,7 +10,7 @@ import { QuickAssistSettings } from './QuickAssistSettings';
 import { BackupSettings } from './BackupSettings';
 import { DataIoSettings } from './DataIoSettings';
 import { ProfileVisibilitySettings } from './ProfileVisibilitySettings';
-import { CloseIcon } from '../icons';
+import { CloseIcon, AppearanceIcon, EditPencilIcon, SparkleIcon, DatabaseIcon, IdCardIcon } from '../icons';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -106,12 +106,12 @@ const ROW_STYLE_OPTIONS: { value: RowHighlightStyle; label: string }[] = [
  * legacy's real `account-manage-btn`/`account-settings-btn` deep-links. */
 export type SettingsCategory = 'general' | 'editing' | 'ai' | 'data' | 'account';
 
-const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string }[] = [
-  { id: 'general', label: 'Appearance' },
-  { id: 'editing', label: 'Editing' },
-  { id: 'ai', label: 'AI' },
-  { id: 'data', label: 'Data & Backup' },
-  { id: 'account', label: 'Account' }
+const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string; icon: ReactNode }[] = [
+  { id: 'general', label: 'Appearance', icon: <AppearanceIcon /> },
+  { id: 'editing', label: 'Editing', icon: <EditPencilIcon /> },
+  { id: 'ai', label: 'AI', icon: <SparkleIcon /> },
+  { id: 'data', label: 'Data & Backup', icon: <DatabaseIcon /> },
+  { id: 'account', label: 'Account', icon: <IdCardIcon /> }
 ];
 
 export function SettingsPanel({ onClose, initialCategory }: { onClose: () => void; initialCategory?: SettingsCategory }) {
@@ -140,33 +140,15 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>(initialCategory ?? 'general');
 
   return (
-    <div
-      role="dialog"
-      aria-label="Settings"
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 8px)',
-        right: 0,
-        zIndex: 120,
-        width: 460,
-        maxWidth: '92vw',
-        background: t.background,
-        border: `1px solid ${t.border}`,
-        borderRadius: 12,
-        boxShadow: '0 14px 28px rgba(0,0,0,.12)',
-        padding: '14px 16px',
-        fontFamily: 'sans-serif',
-        color: t.text
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <h3 style={{ fontSize: 13, margin: 0 }}>Settings</h3>
+    <div role="dialog" aria-label="Settings" className="settings-panel">
+      <div className="settings-header">
+        <h3>Settings</h3>
         <button type="button" onClick={onClose} aria-label="Close settings" title="Close">
           <CloseIcon />
         </button>
       </div>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <div role="tablist" aria-label="Settings categories" style={{ display: 'flex', flexDirection: 'column', gap: 2, width: 96, flexShrink: 0 }}>
+      <div className="settings-body">
+        <div role="tablist" aria-label="Settings categories" className="settings-rail">
           {SETTINGS_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -174,24 +156,14 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
               role="tab"
               aria-selected={activeCategory === cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              style={{
-                textAlign: 'left',
-                font: 'inherit',
-                fontSize: 12,
-                padding: '6px 8px',
-                borderRadius: 6,
-                border: 'none',
-                cursor: 'pointer',
-                background: activeCategory === cat.id ? t.hoverBg : 'transparent',
-                color: activeCategory === cat.id ? t.text : t.mutedText,
-                fontWeight: activeCategory === cat.id ? 600 : 400
-              }}
+              className={`settings-rail-btn${activeCategory === cat.id ? ' active' : ''}`}
             >
-              {cat.label}
+              {cat.icon}
+              <span>{cat.label}</span>
             </button>
           ))}
         </div>
-        <div style={{ flex: 1, minWidth: 0, maxHeight: 440, overflowY: 'auto' }}>
+        <div className="settings-content">
       <div style={{ display: activeCategory === 'general' ? 'block' : 'none' }}>
       <div
         style={{
