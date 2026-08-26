@@ -10,6 +10,7 @@ import { QuickAssistSettings } from './QuickAssistSettings';
 import { BackupSettings } from './BackupSettings';
 import { DataIoSettings } from './DataIoSettings';
 import { ProfileVisibilitySettings } from './ProfileVisibilitySettings';
+import { CloseIcon } from '../icons';
 
 /**
  * §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings surface.
@@ -160,8 +161,8 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <h3 style={{ fontSize: 13, margin: 0 }}>Settings</h3>
-        <button type="button" onClick={onClose} aria-label="Close settings" title="Close" style={{ fontSize: 11 }}>
-          ✕
+        <button type="button" onClick={onClose} aria-label="Close settings" title="Close">
+          <CloseIcon />
         </button>
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>

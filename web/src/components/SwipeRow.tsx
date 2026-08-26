@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { TrashIcon } from '../icons';
 
 /**
  * §6.5 slice (docs/phase6-full-parity-plan.md), Mobile Hub. Direct port of legacy's real
@@ -198,10 +199,10 @@ export function SwipeRow({
               onSwipeLeft(id);
               closeRow();
             }}
-            style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}
             aria-label="Delete"
           >
-            🗑
+            <TrashIcon width={18} height={18} strokeWidth={1.8} />
           </button>
         </div>
       )}

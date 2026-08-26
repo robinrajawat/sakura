@@ -4,6 +4,7 @@ import { sortLibraryItemsCore, librarySearchMatchCore, libraryUrlHref } from '..
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { sanitizeRichHtml } from '../utils/sanitizeRichHtml';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
+import { StarIcon, ExternalLinkIcon } from '../icons';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
 
 /**
@@ -102,7 +103,7 @@ export function HubLibraryPanel() {
             aria-pressed={expandedItem.favorite}
             title={expandedItem.favorite ? 'Remove from favorites' : 'Favorite this entry'}
           >
-            {expandedItem.favorite ? '★' : '☆'}
+            <StarIcon width={15} height={15} filled={expandedItem.favorite} />
           </button>
           <div style={{ flex: 1 }} />
           <button
@@ -157,10 +158,10 @@ export function HubLibraryPanel() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontSize: 11, color: t.text, alignSelf: 'center', textDecoration: 'none' }}
+              style={{ color: t.text, alignSelf: 'center', textDecoration: 'none', display: 'inline-flex' }}
               title="Open link"
             >
-              ↗
+              <ExternalLinkIcon width={12} height={12} />
             </a>
           )}
         </div>
@@ -322,11 +323,10 @@ export function HubLibraryPanel() {
             border: 'none',
             background: 'none',
             color: favoritesOnly ? '#e0a020' : t.hintText,
-            cursor: 'pointer',
-            fontSize: 14
+            cursor: 'pointer'
           }}
         >
-          {favoritesOnly ? '★' : '☆'}
+          <StarIcon width={14} height={14} filled={favoritesOnly} />
         </button>
         <button type="button" onClick={createItem} style={{ fontSize: 12 }}>
           + New
@@ -368,7 +368,7 @@ export function HubLibraryPanel() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <strong style={{ color: t.text, flex: 1 }}>{item.title || <span style={{ fontStyle: 'italic', color: t.hintText }}>Untitled</span>}</strong>
-            {item.favorite && <span style={{ color: '#e0a020', fontSize: 11 }}>★</span>}
+            {item.favorite && <StarIcon width={11} height={11} filled style={{ color: '#e0a020', flexShrink: 0 }} />}
           </div>
           {item.url && (
             <a

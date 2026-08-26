@@ -1,5 +1,6 @@
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useEscapeToClose } from '../utils/useEscapeToClose';
+import { CloseIcon } from '../icons';
 
 /**
  * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): "Help", one of the account
@@ -43,8 +44,8 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
           <h3 style={{ margin: 0, fontSize: 15 }}>Help</h3>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close" style={{ fontSize: 11 }}>
-            ✕
+          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+            <CloseIcon />
           </button>
         </div>
         <div style={{ fontSize: 12.5, lineHeight: 1.6, color: t.mutedText }}>

@@ -8,6 +8,7 @@ import { DropdownMenu } from './DropdownMenu';
 import { FeedbackModal } from './FeedbackModal';
 import { HelpModal } from './HelpModal';
 import { AboutModal } from './AboutModal';
+import { KofiIcon } from '../icons';
 
 type Tokens = (typeof THEME_TOKENS)['light'];
 
@@ -261,7 +262,7 @@ export function AccountMenu({ onOpenSettings }: { onOpenSettings: (category?: Se
                 background: 'linear-gradient(160deg,#f0c869,#d4a544)'
               }}
             >
-              ☕ Buy me a coffee
+              <KofiIcon /> Buy me a coffee
             </button>
           </div>
         </DropdownMenu>

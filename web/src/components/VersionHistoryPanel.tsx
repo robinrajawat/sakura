@@ -3,6 +3,7 @@ import { useDocumentsStore } from '../store/documentsStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { useVersionHistoryStore } from '../store/versionHistoryStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { CloseIcon } from '../icons';
 
 /**
  * §6.8 slice: Version History panel for the active document -- direct port of legacy's real
@@ -77,8 +78,8 @@ export function VersionHistoryPanel({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <h3 style={{ margin: 0, fontSize: 15 }}>Version History -- {title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close" style={{ fontSize: 11 }}>
-            ✕
+          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+            <CloseIcon />
           </button>
         </div>
         <p style={{ fontSize: 11, color: t.mutedText, margin: '0 0 10px' }}>Keeps the last 20 versions per document.</p>

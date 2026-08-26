@@ -1,5 +1,6 @@
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useEscapeToClose } from '../utils/useEscapeToClose';
+import { CloseIcon } from '../icons';
 
 /**
  * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): "About Sakura", one of the account
@@ -44,8 +45,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
           <h3 style={{ margin: 0, fontSize: 15 }}>About Sakura</h3>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close" style={{ fontSize: 11 }}>
-            ✕
+          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+            <CloseIcon />
           </button>
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.6, color: t.mutedText, display: 'grid', gap: 8 }}>

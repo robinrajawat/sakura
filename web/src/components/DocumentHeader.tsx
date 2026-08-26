@@ -3,6 +3,7 @@ import { useDocumentsStore, DOC_STATUSES, type DocStatus } from '../store/docume
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { docStatusLabelCore, docStatusColorKeyCore, normalizeDocLinkedUrlCore, docLinkUrlLabelCore } from '../state/docHeader';
 import { DropdownMenu } from './DropdownMenu';
+import { LinkIcon } from '../icons';
 
 type Tokens = (typeof THEME_TOKENS)['light'];
 
@@ -193,9 +194,10 @@ export function DocumentHeader() {
             aria-expanded={linkMenuOpen}
             onClick={() => (linkMenuOpen ? setLinkMenuOpen(false) : openLinkMenu())}
             title="Link this document to a URL — e.g. a JIRA story or Epic"
-            style={chipStyle(t, !doc.link)}
+            style={{ ...chipStyle(t, !doc.link), display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
-            🔗 {doc.link ? linkShownLabel : 'Add link'}
+            <LinkIcon width={10} height={10} strokeWidth={2.4} />
+            {doc.link ? linkShownLabel : 'Add link'}
           </button>
           {linkMenuOpen && (
             <DropdownMenu onClose={() => setLinkMenuOpen(false)} width={260}>

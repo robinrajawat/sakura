@@ -4,6 +4,7 @@ import { useDocumentsStore } from '../store/documentsStore';
 import { useAuthStore } from '../store/authStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { generateOutline } from '../state/aiOutline';
+import { SparkleIcon } from '../icons';
 
 /** Direct port of legacy's real `getGreetingTimePrefix` (legacy/index.html:13569) -- a plain
  * time-of-day greeting, no persisted state. */
@@ -128,8 +129,13 @@ export function EmptyDocState() {
           <button type="button" onClick={() => newDocument(activeFolderId)}>
             New document
           </button>
-          <button type="button" onClick={() => void handleGenerateWithAi()} disabled={busy}>
-            {busy ? '✦ Working…' : '✦ Generate with AI'}
+          <button
+            type="button"
+            onClick={() => void handleGenerateWithAi()}
+            disabled={busy}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+          >
+            <SparkleIcon width={12} height={12} /> {busy ? 'Working…' : 'Generate with AI'}
           </button>
         </div>
       </div>

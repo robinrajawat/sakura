@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDocumentsStore } from '../store/documentsStore';
 import { filterTabsByTitle, moveOverviewSelection } from '../state/tabOrder';
+import { CloseIcon } from '../icons';
 
 /**
  * Phase 5 slice (docs/framework-migration-plan.md): Documents & Tabs, part 2 -- the UI. A tab
@@ -188,9 +189,9 @@ export function DocumentTabs() {
                   e.stopPropagation();
                   closeTab(id);
                 }}
-                style={{ color: 'var(--muted)', cursor: 'pointer', fontSize: 11 }}
+                style={{ color: 'var(--muted)', cursor: 'pointer', display: 'inline-flex' }}
               >
-                ✕
+                <CloseIcon width={12} height={12} />
               </span>
             </div>
           );

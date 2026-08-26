@@ -3,6 +3,7 @@ import { addDoc, collection, getFirestore } from 'firebase/firestore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useAuthStore, getFirebaseApp } from '../store/authStore';
 import { useEscapeToClose } from '../utils/useEscapeToClose';
+import { CloseIcon } from '../icons';
 
 /**
  * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): "Send Feedback", one of the account
@@ -81,8 +82,8 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
             <h3 style={{ margin: 0, fontSize: 15 }}>Send Feedback</h3>
             <div style={{ fontSize: 11.5, color: t.mutedText, marginTop: 2 }}>Bug reports, missing features, anything that felt off — this goes straight to Robin.</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close" style={{ fontSize: 11 }}>
-            ✕
+          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+            <CloseIcon />
           </button>
         </div>
         <textarea

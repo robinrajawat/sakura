@@ -180,5 +180,60 @@ doc let this gap through repeated verification passes already.
   Every other class ported this slice has no visible effect yet -- nothing in `web/` uses them until
   8.3 builds the shared components and 8.4 retrofits existing call sites onto them, matching this
   plan's own sequencing.
-- Remaining: 8.2 (icon set) → 8.3 (shared React components) → 8.4 (retrofit, split by area) → 8.5
-  (verification fixture document), per this doc's own sequencing summary above.
+- ✅ **8.2 — Icon set landed.** A real `grep` pass across every `.ts`/`.tsx` file in `web/src`
+  (not a guess) for emoji/glyph ranges, cross-checked against real legacy markup for each hit
+  before touching it -- several hits turned out to be **already correct**, not gaps: legacy's own
+  real toolbar quick-buttons literally contain plain Unicode glyphs, not SVG (`↶`/`↷`/`⇤`/`⇥`/`⤴`
+  for Undo/Redo/Outdent/Indent/Insert-above, confirmed at legacy/index.html:6359-6369), Quick
+  Insert's `➜`/`✓`/`✗`/`📅` are literal insertable document content (not UI chrome) matching
+  legacy's own `QUICK_INSERT_ITEMS`, the sidebar's `▸`/`▾` fold-toggles and `✎`/`⋯` glyphs match
+  legacy's own real inline `textContent` assignments (legacy/index.html:30779, 30977), and
+  `aiIcon.ts`'s whole `ICON_KEYWORD_MAP` (plus `iconText.ts` and every test referencing it) is a
+  real, deliberate content feature -- the AI assigns a literal emoji prefix to a node's own text,
+  matching legacy's real behavior -- not a UI icon at all, so none of it was touched.
+  New `web/src/icons.tsx`: 22 named icon components, each a direct line-cited port of a real
+  legacy `<svg>` (`SettingsGearIcon`, `EyeIcon`/`EyeOffIcon`, `LockIcon`, `TargetIcon`,
+  `SearchIcon`, `NewFolderIcon`, `LinkIcon`, `ExternalLinkIcon`, `TrashIcon`, `BellIcon`,
+  `CloseIcon`, `CalendarIcon`, `ImageIcon`, `StarIcon`, `SparkleIcon`, `ClockIcon`,
+  `SidebarToggleIcon`, `KofiIcon`), plus four with **no legacy equivalent at all** and explicitly
+  documented as such rather than presented as ports: `UnlockIcon` (legacy only has a locked-state
+  icon), and `MoonIcon`/`SunIcon`/`MonitorIcon` (legacy has no header theme-toggle button
+  whatsoever -- theme lives only in Settings → Appearance as text-label segmented buttons; these
+  four are built in the same stroke-based style for visual consistency with their new SVG
+  neighbors, not ported from anything).
+  **A real correction found mid-slice**: §7.5's own header comment claimed "✦ -- same glyph
+  legacy's own real qb-ai-rewrite button uses" -- checking the actual markup shows that's wrong;
+  `#qb-ai-rewrite` (legacy/index.html:6473) renders a real sparkle `<svg>`, and every text-label AI
+  entry point (the right-click context menu, the command palette) pairs that same real SVG with
+  its own label, never a bare "✦" substitute anywhere. Fixed across `App.tsx`'s 7 AI toolbar
+  buttons, `OutlineTree.tsx`'s context-menu AI entries (which needed `label` widened from `string`
+  to `ReactNode` plus an explicit `key` field, since the label itself was doing double duty as the
+  list key), and `EmptyDocState.tsx`'s "Generate with AI" button.
+  Applied across `App.tsx` (sidebar-toggle/theme/system-theme/version-history/settings-gear),
+  `SidebarFileExplorer.tsx` (locate/filter/new-folder/delete-folder -- also picked up the real
+  `.sb-icon-btn` class from §8.1 on the three header buttons while touching them),
+  `SecureStorageSettings.tsx` (lock/unlock status line), `AiProviderSettings.tsx` (show/hide key),
+  `DocumentHeader.tsx` (Add link chip), `HubJournalPanel.tsx` (Jump to date),
+  `HubLibraryPanel.tsx` (favorite star ×3, external-link), `SwipeRow.tsx` (mobile delete),
+  `AccountMenu.tsx` (Ko-fi), `NotificationBell.tsx` (bell icon + the real `.notif-badge` class
+  from §8.1, replacing a hand-rolled approximation of it), and six modal/panel close buttons
+  (`HelpModal`/`AboutModal`/`FeedbackModal`/`HubDock`/`VersionHistoryPanel`/`SettingsPanel`) plus
+  `DocumentTabs.tsx`'s tab-close and `NotePanel.tsx`'s close/link/image toolbar buttons -- all
+  confirmed against a real legacy close-button SVG (legacy/index.html:10660's `.doc-tab-close`)
+  shown to be identical everywhere legacy uses a close affordance.
+  **Deliberately deferred, each named rather than silently skipped**: `OutlineTree.tsx`'s per-node
+  note/code dots (legacy/index.html:20319+ shows a much larger real system here -- decision-log,
+  diagram, file, remark, meeting, todo, and mind-map dots all sharing the `.node-note-dot` class,
+  most backed by features `web/` hasn't built at all yet) -- a real, separately-scoped retrofit,
+  not attempted in this pass given the risk of touching this component's hot per-row render path
+  without the full real system behind it. `autoRewriteStore.ts`'s `statusText()`/`aiCall.ts`/
+  `aiOutline.ts`'s message strings (which also use "✦") are plain data-layer string contracts
+  asserted on by exact-equality tests (`autoRewriteStore.test.ts`) -- changing them to carry a real
+  icon needs a return-shape change (text + icon flag) and touches test contracts, not just
+  presentation, so left alone as a separate, real follow-up.
+  Verified end-to-end in real headless Chrome (dark theme): the header row, sidebar icon row, AI
+  toolbar group, account-menu Ko-fi button, and the feedback modal's close button all render real
+  crisp line icons instead of emoji/glyphs -- zero console/page errors. Full gauntlet: 2005 tests
+  still passing (no test changes needed -- pure presentation swap), typecheck/lint/build all clean.
+- Remaining: 8.3 (shared React components) → 8.4 (retrofit, split by area) → 8.5 (verification
+  fixture document), per this doc's own sequencing summary above.
