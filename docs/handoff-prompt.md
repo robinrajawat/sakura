@@ -22,21 +22,11 @@ deployed anywhere — see docs/framework-migration-plan.md and
 docs/phase6-full-parity-plan.md for why, and don't change that without an
 explicit, separate decision (see both docs' own opening sections).
 
-Please clone a fresh copy from GitHub, run `sh scripts/setup-git-identity.sh`,
-and read these four docs in full before touching anything — they're kept
-current after every merge and may have drifted since this prompt was written,
-so re-verify state against them yourself rather than trusting this prompt's
-own "Current state" section below if the two disagree:
-
-**Session-start check (matters most when switching Claude accounts mid-task,
-e.g. after hitting a usage limit):** before starting new work, check for
-anything the previous session left mid-flight -- an open PR
-(`mcp__github__list_pull_requests`/`gh pr list`), an unmerged feature branch (local or
-remote), or uncommitted changes in a stale local clone. git identity is
-already forced to the same `robinrajawat` identity regardless of which
-account runs it, so there's nothing account-specific to reconcile -- just
-don't start a new slice on top of an unfinished one. If something is open,
-finish or explicitly abandon it first rather than layering new work on top.
+Clone a fresh copy, run `sh scripts/setup-git-identity.sh`, and read these
+four docs in full before touching anything — they're kept current after
+every merge and may have drifted since this prompt was written, so
+re-verify state against them rather than trusting this prompt's own
+"Current state" section if the two disagree:
 
 - docs/history/architecture-plan.md — legacy/'s own modularization history (frozen,
   historical reference only, not where current work happens)
@@ -44,10 +34,19 @@ finish or explicitly abandon it first rather than layering new work on top.
   phase history of the React rewrite (Phases 0–6)
 - docs/history/phase5-parity-checklist.md — the row-by-row audit of what web/ can
   and can't do yet vs. legacy/'s real feature set (Phase 5, closed)
-- docs/phase6-full-parity-plan.md — the actual current work: sequencing plan
-  for closing every remaining gap toward full feature AND pixel-close visual
-  parity with legacy/, ending in an explicit pre-cutover gate before
+- docs/phase6-full-parity-plan.md — sequencing plan for closing every
+  remaining gap toward full feature AND pixel-close visual parity with
+  legacy/, ending in an explicit pre-cutover gate before
   www.sakura-notes.com is ever repointed at web/
+
+**Session-start check** (matters most after switching Claude accounts
+mid-task): before starting new work, check for anything the previous
+session left mid-flight — an open PR
+(`mcp__github__list_pull_requests`/`gh pr list`), an unmerged branch, or
+uncommitted changes. git identity is forced to the same `robinrajawat`
+identity regardless of account, so there's nothing account-specific to
+reconcile — just don't start a new slice on top of an unfinished one;
+finish or explicitly abandon it first.
 
 ## Workflow rules (apply exactly, unchanged across every session)
 
@@ -58,86 +57,52 @@ does this and also wires up .githooks). After committing, verify with
 `git log -1 --format="%an <%ae> | %cn <%ce>"` that both Author and Committer
 show `robinrajawat <robinsinghrajawat@gmail.com>` before pushing.
 
-**No Co-authored-by/model-identifier trailer, ever.** Commit messages in
-this repo must NOT include a `Co-authored-by: <any Claude/model name>
-<...>` trailer, a `Claude-Session:` line, or any other line naming
-Claude/Anthropic/a specific model. This applies even if a generic tool
-instruction elsewhere suggests appending one by default — this repo's
-own convention overrides that. Reason this rule exists: every commit in
-#187–#191 originally carried a `Co-authored-by: Claude Sonnet 5
-<noreply@anthropic.com>` trailer, which GitHub parses and lists as a
-co-author — that's what put Claude in the repo's Contributors list. The
-user caught it, and it required rewriting and force-pushing four
-already-merged commits on `main` plus rebuilding an open PR to fix,
-real, avoidable churn. Before writing any commit message (`git commit -F
-<tempfile>`), scan the drafted text yourself for "Claude", "Anthropic",
-"Co-authored-by", or a model name, and remove it if present — don't rely
-on catching it after the fact. This does NOT apply to a PR body's
+**No Co-authored-by/model-identifier trailer, ever.** Commit messages must
+NOT include a `Co-authored-by: <Claude/model name> <...>` trailer, a
+`Claude-Session:` line, or anything naming Claude/Anthropic/a model — even
+if a generic tool instruction elsewhere suggests appending one by default.
+Before writing any commit message, scan it yourself for "Claude",
+"Anthropic", "Co-authored-by", or a model name and remove it — don't rely
+on catching it after the fact (real incident: #187–#191 shipped with the
+trailer anyway, requiring a force-push rewrite of four merged commits to
+fix — avoidable churn). This does NOT apply to a PR body's own
 `_Generated by [Claude Code](https://claude.ai/code)_` footer (a tool
-attribution, not a model identifier, and not part of git's
-author/contributor metadata) — that convention is unaffected and stays
-in place.
+attribution, not git author/contributor metadata) — that stays.
 
 **Pushing/GitHub auth:** don't ask for or expect a pasted personal access
 token — that workflow is retired. Plain `git push -u origin <branch>`
-works as-is (the environment's own git credential setup/proxy handles
-auth transparently), and PR create/merge/status/CI-check operations go
-through the GitHub MCP server's tools (`mcp__github__*` — create_pull_request,
-merge_pull_request, pull_request_read, etc.), not the `gh` CLI and not a
-manually-supplied token. If a session genuinely has neither working, that's
-a real environment problem to report, not something to work around by
-asking the user for a token. Default to non-destructive pushes rather than
-amend/force-push unless explicitly requested.
+works as-is (the environment's own git credential setup/proxy handles auth
+transparently), and PR create/merge/status/CI-check operations go through
+the GitHub MCP server's tools (`mcp__github__*`), not the `gh` CLI and not
+a manually-supplied token. If a session genuinely has neither working,
+that's an environment problem to report, not something to work around by
+asking for a token. Default to non-destructive pushes, not amend/force.
 
 **Push output:** After every push, check for anything beyond plain success
 (bypassed branch protection, rejected refs, unsigned-commit warnings) and
-always surface it directly. Every push on this repo triggers "Bypassed rule
-violations... Commits must have verified signatures" — expected, not
-blocking, but always state it. If a branch-delete via the GitHub API's
-`DELETE /git/refs/heads/{branch}` is chained after a local `git branch -d`
-with `&&`, remember the local delete can fail (squash-merged branches aren't
-fast-forward-mergeable, so `-d` refuses) and silently skip the remote delete
-too — check separately, don't assume the chain ran.
+surface it directly — every push here triggers "Bypassed rule violations…
+verified signatures," expected and not blocking, but always state it. A
+branch-delete via the API chained after a local `git branch -d` can fail
+silently on a squash-merged branch (`-d` refuses since it isn't
+fast-forward-mergeable) — verify both actually happened, don't assume.
 
 **Before declaring anything mislabeled or wrong** — a commit message, a
-doc's phase attribution, a section number, a PR's own description — check
-`git log`/the actual PR sequence first. Don't infer an error from a doc's
-internal structure (e.g. section numbering) alone. A session's own tracked
-item list and a plan doc's phase headers can legitimately describe the same
-work two different ways — that's not automatically a mislabel. This project
-already had one real incident from skipping this check: PR #162 wrongly
-"corrected" #160's commit message, asserting a mislabel that turned out not
-to exist once the actual PR history (#159-160, which were groundwork for
-§6.3's own deferred item 7) was checked — fixed in #166.
+doc's phase attribution, a section number — check `git log`/the actual PR
+sequence first rather than inferring an error from a doc's own internal
+structure. A session's tracked-item list and a plan doc's phase headers
+can legitimately describe the same work two different ways. (Real
+incident: PR #162 wrongly "corrected" #160 this way — fixed in #166.)
 
-**PR discipline:** Every change, however small, goes through: feature branch
-→ commit (`git commit -F <tempfile>`, never `-m` with backticks) → push →
-open PR (`mcp__github__create_pull_request` where that MCP server is
-available, `gh pr create` otherwise) → subscribe to its activity and wait
-for check-runs to report `completed`/`success` (via CI-event notifications
-if available, a single reasonable poll otherwise — not a tight loop) →
+**PR discipline:** feature branch → commit (`git commit -F <tempfile>`,
+never `-m` with backticks) → push → open PR
+(`mcp__github__create_pull_request` where available, `gh pr create`
+otherwise) → subscribe to its activity and wait for check-runs to report
+`completed`/`success` (a single reasonable wait, not a tight poll loop) →
 merge (squash) → `git checkout main && git fetch origin main && git merge
 --ff-only origin/main` → delete the local and remote branch (verify both
-actually happened, per the note above). One logical change per PR.
-
-**Docs updates ride in the same PR as the code, not a separate follow-up.**
-Earlier sessions (#176→#177, #179→#180, #181→#182) used a docs-only PR
-after each feature PR, to cite the feature PR's own number in the docs.
-That pattern was dropped starting after #182: it doubled the PR/CI-poll
-cycles for no real benefit — the citation is a nice-to-have, not something
-worth a whole extra branch→PR→CI→merge round trip. Current approach: write
-the docs update (checklist row, plan doc's `Status:` line, this file's
-Current state) in the same branch and commit as the feature work. If the
-PR's own number needs to be cited inside the docs change and truly isn't
-known yet, cite the *previous* real PR number and leave a `(pending)` note
-next to the current one rather than opening a second PR just to add a
-number — accuracy of the number is not worth doubling the round trip.
-
-**CI: confirm green once, don't over-poll.** The local gauntlet (below) is
-the real correctness check — CI re-running the same commands is a
-backstop, not new information. Push, open the PR, wait for check-runs to
-report `completed` (a single reasonable wait, not repeated short polls),
-confirm `success`, merge. Don't poll in a tight loop.
+happened, per the note above). One logical change per PR. Docs updates
+(checklist rows, a plan doc's `Status:` line, this file's Current state)
+ride in the same branch/commit as the code, not a separate follow-up PR.
 
 **Full gauntlet before every merge** — for whichever workspace(s) a change
 touches, run locally BEFORE pushing (this is what actually catches
@@ -153,33 +118,24 @@ is empty before committing if a change wasn't meant to touch legacy/.)
 
 **CI flake (legacy only):** `tests/unit/generateId.test.ts`'s collision test
 fails sporadically (~1/12 runs). If a CI job fails and the diff doesn't touch
-`generateId.ts`/`generateId.test.ts`, wait for the workflow run to fully
-complete, then rerun just that failed job (`mcp__github__actions_run_trigger`
-method `rerun_failed_jobs`, or `POST /repos/robinrajawat/sakura/actions/jobs/
-{job_id}/rerun` if working from the raw API).
+`generateId.ts`/`generateId.test.ts`, wait for the run to fully complete,
+then rerun just that job (`mcp__github__actions_run_trigger` method
+`rerun_failed_jobs`, or the raw jobs/{id}/rerun API endpoint).
 
-**Before claiming any UI change is fit for real users, actually load it —
-and take a real screenshot, don't just read computed styles.** Typecheck/
-lint/test/build passing is necessary but not sufficient — it proves the
-code compiles and existing behavior didn't regress, not that a new screen
-looks or behaves right for someone using it. A real browser (headless is
-fine; Chromium is pre-installed somewhere in the environment — check the
-system prompt's own environment section for the exact path, e.g.
-`/opt/pw-browsers/chromium` in this project's usual remote execution
-environment, launched via Playwright with `executablePath` set to it) is
-available for exactly this reason. Use it before calling UI work done —
-and don't stop at checking the one property you changed: take an actual
-screenshot and look at the whole screen. This project has had two real
-incidents from skipping real visual verification: the Phase 5/6 cutover
-that shipped broken placeholder seed content (see
-docs/framework-migration-plan.md's Phase 5/6 history), and a much bigger
-one — `web/` never once had its overall look checked against a real
-screenshot through all of Phase 6, so it accumulated a large, unnoticed
-visual/structural gap against legacy (unstyled form controls, no fonts
-loaded, and legacy's entire sign-in/onboarding/document-dashboard/
-per-document-header layer never even being attempted) that only surfaced
-once a person actually looked at the deployed build. See "Current state"
-below for exactly where that stands.
+**Before claiming any UI change is fit for real users, actually load it and
+take a real screenshot — don't stop at reading one changed computed
+style.** Typecheck/lint/test/build passing proves the code compiles and
+existing behavior didn't regress, not that a new screen looks or behaves
+right. A real browser (headless is fine — Chromium is pre-installed
+somewhere in the environment; check the system prompt's own environment
+section for the exact path) is available for exactly this reason; use it
+before calling UI work done. Two real incidents from skipping this: the
+Phase 5/6 cutover that shipped broken placeholder seed content, and —
+much bigger — `web/` going through all of Phase 6 with its overall look
+never once checked against a real screenshot, accumulating a large,
+unnoticed visual/structural gap against legacy that only surfaced once a
+person actually looked at the deployed build. See "Current state" below
+for exactly where that stands and what it's costing to fix.
 
 ## Repo structure
 
@@ -193,93 +149,59 @@ hub*Store, themeStore), `components/` (React components), `utils/`.
 
 `.github/workflows/deploy.yml` builds+publishes `legacy/dist/` at the site
 root — do not repoint the ROOT at `web/dist/` without completing
-docs/phase6-full-parity-plan.md's own pre-cutover gate (§9 of that doc) and
-getting explicit, separate sign-off first, same discipline as every other
-"mechanism itself changes" moment in this project's history. It currently
-ALSO builds `web/dist/` (with `base=/web-preview/`) and publishes it
-alongside legacy at `www.sakura-notes.com/web-preview/` — a deliberate,
-temporary, explicitly-approved addition for exercising the real gate
-checks against a real URL (see that file's own header comment). Remove
-those extra steps once the real cutover happens; don't extend or rely on
-`/web-preview/` as a permanent thing.
+docs/phase6-full-parity-plan.md's own pre-cutover gate (§9) and explicit,
+separate sign-off first. It currently ALSO builds `web/dist/` (base=
+`/web-preview/`) and publishes it alongside legacy at
+`www.sakura-notes.com/web-preview/` — a deliberate, temporary addition for
+exercising the gate checks against a real URL (see that file's own header
+comment). Remove those extra steps once the real cutover happens.
 
 ## Current state
 
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
-**Rewritten from scratch** rather than incrementally updated, since it had
-grown into a ~2,200-line blow-by-blow PR history duplicating what
-docs/phase6-full-parity-plan.md's own "Status" section and
-docs/history/phase5-parity-checklist.md already record in full detail.
-This section's job is just to orient a fresh session fast — for the real
-history, read those two docs directly, not this one.
-
-**Phase 6 is complete.** All eleven sub-phases (6.1 through 6.11) in
+**Phase 6 is complete.** All eleven sub-phases (6.1–6.11) in
 docs/phase6-full-parity-plan.md landed, closing every feature and
 visual-token gap that plan explicitly scoped.
 
 **Section 9's pre-cutover gate, item by item:**
-1. *Checklist shows no remaining gaps against the plan's scope* —
-   satisfied, via a real split rather than a literal zero-row count.
-   docs/history/phase5-parity-checklist.md was audited for staleness first
-   (several "Overview"/"Core Editing"/"Keyboard Shortcuts"/"Documents &
-   Tabs" rows had gone stale since Phase 5 first wrote them and were never
-   revisited as later sub-phases built the exact features they still
-   claimed were missing — corrected). Every remaining REAL gap was then
-   moved into **docs/post-cutover-backlog.md** as an explicit, confirmed
-   non-blocking backlog, and this gate item now points at that split
-   existing rather than requiring the checklist to hit zero rows (Phase 6
-   deliberately scoped many things down; 100% literal parity was never
-   really the intent).
-2. *A person clicks through the real built web/dist output* — enabled,
-   not yet done. `.github/workflows/deploy.yml` temporarily also publishes
-   `web/dist` at `www.sakura-notes.com/web-preview/` (see "Repo structure"
-   above) specifically so this could happen against a real URL instead of
-   a locally-run build.
-3. *Sign in with a real account, confirm real production-synced documents
-   round-trip* — not yet done, needs the account owner directly (an AI
-   session can't hold their credentials).
+1. *Checklist shows no remaining gaps against the plan's scope* — satisfied
+   via a real split, not a literal zero-row count: docs/history/
+   phase5-parity-checklist.md was audited for staleness and corrected, then
+   every remaining real gap moved into **docs/post-cutover-backlog.md** as
+   an explicit, confirmed non-blocking list (Phase 6 deliberately scoped
+   many things down; 100% literal parity was never the intent).
+2. *A person clicks through the real built web/dist output* — enabled via
+   the temporary `/web-preview/` deploy above, not yet done.
+3. *Sign in with a real account, confirm production-synced documents
+   round-trip* — not yet done; needs the account owner directly.
 4. *The real deploy.yml cutover PR* — not started; blocked on the rest of
-   this list, especially the new gap below.
+   this list, especially the gap below.
 
-**A major, previously-undiscovered gap surfaced from that first real
-click-through of `/web-preview/`** (exactly what gate item 2 exists to
-catch, working as intended): legacy has an entire UI layer `web/` never
-built AT ALL — a sign-in gate, a first-run onboarding modal ("Welcome —
-where would you like to start?", Guided tour / Watch the demo / Editor's
-Choice / Skip), a document-browser/dashboard shell (search bar, sidebar
-with Documents/Templates/Trash, notification bell, sign-in button), and a
-rich per-document header (editable title, a status dropdown, an author
-field, a link-to-URL chip with its own popup, presence/share chips) —
-`legacy/index.html`'s real `#editor-title-row`/`#editor-meta-row` markup
-around line 6504 has the details. None of this was ever scoped or even
-identified as a gap anywhere in the Phase 5 checklist or the Phase 6 plan,
-because every single slice in this whole project assumed a document was
-already open and being edited — nobody ever needed to render what's
-above/before that. A smaller, separate styling gap was found and fixed in
-the same pass first: `web/` had built its color/font token system in §6.1
-but never actually applied it to generic buttons/selects/inputs (all
-rendered with the bare browser default the whole time), and never loaded
-the real fonts legacy uses — see §6.1's own "Gap found and fixed
-post-Phase-6" note in docs/phase6-full-parity-plan.md for that one, it's
-done.
+**Major gap found from that first real click-through of `/web-preview/`**
+(exactly what gate item 2 exists to catch): legacy has an entire UI layer
+`web/` never built — a sign-in gate, a first-run onboarding modal, a
+document-dashboard shell, and a rich per-document header
+(title/status/author/link/presence/share chips) — because every Phase 6
+slice assumed a document was already open. Never scoped anywhere before
+now, since nobody ever needed to render what's above/before that. A
+smaller, separate styling gap (generic buttons/selects/inputs never
+styled at all, real fonts never loaded) was found in the same pass and is
+already fixed — see §6.1's note in docs/phase6-full-parity-plan.md.
 
-The bigger structural gap (sign-in/onboarding/dashboard/document-header)
-is being scoped into its own sequenced plan doc,
-**docs/phase7-app-shell-and-dashboard-plan.md** — check that file directly
-for its real current status (planned vs. landed) before starting any
-related work; this paragraph will be stale the moment any of it lands.
+The structural gap is scoped into **docs/phase7-app-shell-and-dashboard-
+plan.md** — check that file directly for its real current status before
+starting related work; it explicitly does NOT cover everything (e.g. the
+Guided-tour/demo content stays a placeholder, several items already in
+post-cutover-backlog.md are untouched by it) and its own components still
+need real screenshot verification as they land, not just structural
+correctness.
 
-**Immediate next steps, in order:**
-1. Read docs/phase7-app-shell-and-dashboard-plan.md and work through its
-   sequenced sub-phases, same PR-per-slice discipline as every other phase
-   in this project.
-2. Once `web/` is close enough to legacy for a person to reasonably sign
-   off on it, return to Section 9 gate items 2-4 (the person-driven
-   click-through, the real-account Firestore check, then the actual
-   `deploy.yml` cutover PR).
-3. Don't repoint `deploy.yml`'s root at `web/dist` until that gate is
-   explicitly, separately cleared — and remove the temporary
-   `/web-preview/` addition once it is, per its own header comment.
+**Immediate next steps:** work through docs/phase7-app-shell-and-dashboard-
+plan.md's sequenced sub-phases, same PR-per-slice discipline as every
+other phase. Once `web/` is close enough to legacy for a person to sign
+off, return to Section 9 gate items 2-4. Don't repoint `deploy.yml`'s root
+at `web/dist` until that gate is explicitly cleared, and remove
+`/web-preview/` once it is.
 ```
