@@ -2,7 +2,9 @@ import { useRef, useState } from 'react';
 import { useDocumentsStore, type DocSummary } from '../store/documentsStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import { flattenFolderTree } from '../state/folderTree';
-import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon } from '../icons';
+import { formatRelativeTime } from '../utils/formatRelativeTime';
+import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon, TrashIcon } from '../icons';
+import { Button } from './ui/Button';
 
 /**
  * Phase 6.1's last named remaining gap (docs/phase6-full-parity-plan.md's 6.1 section): a real
@@ -63,6 +65,34 @@ import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon } from '../icons';
  *   already named in docs/post-cutover-backlog.md: "no trash concept exists"), so the count is
  *   always 0 and the expanded state always shows "Trash is empty" -- both real and always
  *   currently true, not placeholder text pretending otherwise.
+ *
+ * §8.4b retrofit (docs/phase8-design-system-parity-plan.md): every row/label/action here now
+ * carries legacy's own real `.sb-section-hdr`/`.sfolder-row`/`.sfolder-toggle`/`.sfolder-name`/
+ * `.sfolder-count`/`.sfolder-actions`/`.sfolder-children`/`.sdoc-item`/`.sdoc-name-btn`/
+ * `.sdoc-actions`/`.sdoc-meta`/`.sdoc-action-btn`/`.sb-unfiled-row`/`.sb-empty` classes
+ * (legacy/index.html:1524-1563, 1601-1602, 1618) -- an entire real class family §8.1's own pass
+ * never covered (that pass scoped to buttons/menus/chips/badges, not the file explorer's own
+ * distinct row system), including the hover-reveal-actions behavior every row/folder actually has
+ * in legacy (`.sdoc-actions`/`.sfolder-actions` are `display:none` until `:hover`) that `web/`'s
+ * old always-visible inline-styled buttons never matched. The fold-toggle is now a real `<button
+ * className="sfolder-toggle">` rendering legacy's own single rotating `▶` glyph (`.open` rotates
+ * it via CSS `transform`), not a swap between two different `▾`/`▸` characters.
+ *
+ * Also added this slice: real Rename/"Move to Trash" buttons on each document row
+ * (`.sdoc-action-btn`, `✎` glyph + `TrashIcon`, matching legacy's real `renBtn`/`delBtn` at
+ * legacy/index.html:30097-30104) -- both call store actions (`renameDocument`/`deleteDocument`)
+ * that already existed with zero UI entry point anywhere in `web/` before this (confirmed via
+ * grep: neither was ever called outside `documentsStore.ts` itself, `DocumentTabs.tsx`, and
+ * `DocumentHeader.tsx`'s own title-rename input -- none of which cover the sidebar row). Filling
+ * this in is a real gap closed, not new capability invented for this slice: the backing logic was
+ * already real and tested, just missing the row-level entry point legacy always has. Rename
+ * reuses this file's own existing inline-edit pattern (`renamingFolderId`'s sibling,
+ * `renamingDocId`), not a `window.prompt`, matching the folder row's own already-established UX.
+ * Deliberately NOT added: a Duplicate button (`⧉`, legacy/index.html:30099-30100) -- unlike
+ * Rename/Delete, `documentsStore.ts` has no `duplicateDoc` action at all to back it with, so
+ * building that button now would be dead UI, not a shortcut (same reasoning `App.tsx`'s own
+ * toolbar-group comment already gives for other deferred buttons) -- a real, separately-scoped
+ * follow-up, not silently dropped.
  */
 export function SidebarFileExplorer() {
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
@@ -77,9 +107,12 @@ export function SidebarFileExplorer() {
   const toggleFolderOpen = useDocumentsStore((s) => s.toggleFolderOpen);
   const openFolderChain = useDocumentsStore((s) => s.openFolderChain);
   const setFolderForDoc = useDocumentsStore((s) => s.setFolderForDoc);
+  const renameDocument = useDocumentsStore((s) => s.renameDocument);
+  const deleteDocument = useDocumentsStore((s) => s.deleteDocument);
   const sidebarOpen = useSidebarStore((s) => s.open);
   const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
   const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [renamingDocId, setRenamingDocId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [trashOpen, setTrashOpen] = useState(false);
@@ -163,63 +196,78 @@ export function SidebarFileExplorer() {
   }
 
   function DocRow({ doc }: { doc: DocSummary }) {
+    const isRenaming = renamingDocId === doc.id;
     return (
-      <div
-        key={doc.id}
-        data-doc-id={doc.id}
-        onClick={() => openDocument(doc.id)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '5px 6px',
-          borderRadius: 6,
-          cursor: 'pointer',
-          color: 'var(--fg)'
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-      >
-        <span style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {doc.title}
-        </span>
-        {moveToFolderSelect(doc)}
+      <div key={doc.id} data-doc-id={doc.id} className={doc.id === activeDocId ? 'sdoc-item active' : 'sdoc-item'} onClick={() => openDocument(doc.id)}>
+        {isRenaming ? (
+          <input
+            autoFocus
+            defaultValue={doc.title}
+            onClick={(e) => e.stopPropagation()}
+            onBlur={(e) => {
+              renameDocument(doc.id, e.currentTarget.value || 'Untitled');
+              setRenamingDocId(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className="sfolder-name-input"
+          />
+        ) : (
+          <span className="sdoc-name-btn">{doc.title}</span>
+        )}
+        <span className="sdoc-meta">{formatRelativeTime(doc.modifiedAt)}</span>
+        <div className="sdoc-actions">
+          {folders.length > 0 && moveToFolderSelect(doc)}
+          <button
+            type="button"
+            className="sdoc-action-btn"
+            title="Rename"
+            onClick={(e) => {
+              e.stopPropagation();
+              setRenamingDocId(doc.id);
+            }}
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            className="sdoc-action-btn danger"
+            title="Move to Trash"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm('Delete this document? This cannot be undone.')) {
+                deleteDocument(doc.id);
+              }
+            }}
+          >
+            <TrashIcon width={11} height={11} strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div ref={scrollRef} style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          color: 'var(--hint)',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          fontSize: 10,
-          padding: '4px 4px 6px'
-        }}
-      >
-        <span>Documents</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button type="button" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document" className="sb-icon-btn">
+      <div className="sb-section-hdr">
+        <span className="sb-section-label">Documents</span>
+        <div className="sb-section-actions">
+          <Button variant="sidebar-icon" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document">
             <TargetIcon width={13} height={13} />
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="sidebar-icon"
             onClick={() => setSearchOpen((open) => !open)}
             title={searchOpen ? 'Hide filter box' : 'Show filter box'}
             aria-pressed={searchOpen}
             aria-label="Toggle file explorer filter box"
-            className="sb-icon-btn"
           >
             <SearchIcon width={13} height={13} />
-          </button>
-          <button type="button" onClick={() => createFolder(null)} title="New folder" className="sb-icon-btn">
+          </Button>
+          <Button variant="sidebar-icon" onClick={() => createFolder(null)} title="New folder">
             <NewFolderIcon width={13} height={13} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -252,24 +300,10 @@ export function SidebarFileExplorer() {
         const isOpen = q.length > 0 || folder.open;
         return (
           <div key={folder.id} style={{ marginLeft: entry.depth * 14 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 4px',
-                borderRadius: 6,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <span
-                onClick={() => toggleFolderOpen(folder.id)}
-                style={{ width: 12, display: 'inline-block', color: 'var(--muted)', cursor: 'pointer' }}
-              >
-                {isOpen ? '▾' : '▸'}
-              </span>
+            <div className="sfolder-row">
+              <button type="button" className={isOpen ? 'sfolder-toggle open' : 'sfolder-toggle'} onClick={() => toggleFolderOpen(folder.id)}>
+                ▶
+              </button>
               {renamingFolderId === folder.id ? (
                 <input
                   autoFocus
@@ -282,64 +316,62 @@ export function SidebarFileExplorer() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.currentTarget.blur();
                   }}
-                  style={{ fontSize: 12, flex: '1 1 auto', minWidth: 0 }}
+                  className="sfolder-name-input"
                 />
               ) : (
                 <span
+                  className="sfolder-name"
                   onClick={() => toggleFolderOpen(folder.id)}
                   onDoubleClick={(e) => {
                     e.stopPropagation();
                     setRenamingFolderId(folder.id);
                   }}
-                  style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
                   {folder.name}
                 </span>
               )}
-              <span style={{ color: 'var(--hint)', fontSize: 10 }}>{directDocs.length}</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  newDocument(folder.id);
-                }}
-                title="New document in this folder"
-                style={{ fontSize: 10 }}
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setRenamingFolderId(folder.id);
-                }}
-                title="Rename folder"
-                style={{ fontSize: 10 }}
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm('Delete this folder? Documents inside will move to Unfiled.')) {
-                    deleteFolder(folder.id);
-                  }
-                }}
-                title="Delete folder"
-                style={{ color: 'var(--fc-red, inherit)' }}
-              >
-                <CloseIcon width={11} height={11} strokeWidth={2.5} />
-              </button>
+              <span className="sfolder-count">{directDocs.length}</span>
+              <div className="sfolder-actions">
+                <button
+                  type="button"
+                  className="sdoc-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    newDocument(folder.id);
+                  }}
+                  title="New document in this folder"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  className="sdoc-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRenamingFolderId(folder.id);
+                  }}
+                  title="Rename folder"
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  className="sdoc-action-btn danger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Delete this folder? Documents inside will move to Unfiled.')) {
+                      deleteFolder(folder.id);
+                    }
+                  }}
+                  title="Delete folder"
+                >
+                  <CloseIcon width={11} height={11} strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
             {isOpen && (
-              <div style={{ marginLeft: 16 }}>
-                {isEmpty ? (
-                  <div style={{ color: 'var(--hint)', padding: '2px 4px', fontSize: 11 }}>Empty folder</div>
-                ) : (
-                  directDocs.map((d) => <DocRow key={d.id} doc={d} />)
-                )}
+              <div className="sfolder-children">
+                {isEmpty ? <div className="sb-empty">Empty folder</div> : directDocs.map((d) => <DocRow key={d.id} doc={d} />)}
               </div>
             )}
           </div>
@@ -347,14 +379,15 @@ export function SidebarFileExplorer() {
       })}
 
       {folders.length > 0 && unfiledDocs.length > 0 && (
-        <div style={{ color: 'var(--hint)', fontSize: 10, padding: '8px 4px 4px', fontWeight: 600, textTransform: 'uppercase' }}>
-          Unfiled
+        <div className="sb-unfiled-row">
+          <span style={{ flex: 1 }}>Unfiled</span>
+          <span className="sb-unfiled-count">{unfiledDocs.length}</span>
         </div>
       )}
       {noResults ? (
-        <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>No matching documents</div>
+        <div className="sb-empty">No matching documents</div>
       ) : docsIndex.length === 0 ? (
-        <div style={{ color: 'var(--hint)', padding: '4px 4px' }}>No documents yet</div>
+        <div className="sb-empty">No documents yet</div>
       ) : (
         unfiledDocs.map((d) => <DocRow key={d.id} doc={d} />)
       )}
@@ -362,45 +395,42 @@ export function SidebarFileExplorer() {
       {/* §7.7 slice: Templates section shell -- see this file's own header for exactly what's
           real here (the chrome) vs. deliberately not (the save-as-template flow itself). */}
       <div style={{ marginTop: 14 }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: 'var(--hint)',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            fontSize: 10,
-            padding: '4px 4px 6px'
-          }}
-        >
-          <span>Templates</span>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button type="button" disabled title="New template folder — templates aren't available in web/ yet" className="sb-icon-btn">
+        <div className="sb-section-hdr">
+          <span className="sb-section-label">Templates</span>
+          <div className="sb-section-actions">
+            <Button variant="sidebar-icon" disabled title="New template folder — templates aren't available in web/ yet">
               <NewFolderIcon width={13} height={13} />
-            </button>
-            <button type="button" disabled title="Save / manage templates — templates aren't available in web/ yet" className="sb-icon-btn">
+            </Button>
+            <Button variant="sidebar-icon" disabled title="Save / manage templates — templates aren't available in web/ yet">
               ⋯
-            </button>
+            </Button>
           </div>
         </div>
-        <div style={{ color: 'var(--hint)', padding: '2px 4px', fontSize: 11 }}>No templates yet</div>
+        <div className="sb-empty">No templates yet</div>
       </div>
 
       {/* §7.7 slice: Trash section shell -- see this file's own header for why the count is
           always 0 and the expanded state always shows "Trash is empty" today. */}
       <div style={{ marginTop: 10, paddingTop: 6, borderTop: '1px solid var(--border)' }}>
-        <div
-          onClick={() => setTrashOpen((open) => !open)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 4px', borderRadius: 6, cursor: 'pointer' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-        >
-          <span style={{ width: 12, display: 'inline-block', color: 'var(--muted)' }}>{trashOpen ? '▾' : '▸'}</span>
-          <span style={{ flex: '1 1 auto' }}>Trash</span>
-          <span style={{ color: 'var(--hint)', fontSize: 10 }}>0</span>
+        <div className="sfolder-row" onClick={() => setTrashOpen((open) => !open)}>
+          <button
+            type="button"
+            className={trashOpen ? 'sfolder-toggle open' : 'sfolder-toggle'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setTrashOpen((open) => !open);
+            }}
+          >
+            ▶
+          </button>
+          <span className="sfolder-name">Trash</span>
+          <span className="sfolder-count">0</span>
         </div>
-        {trashOpen && <div style={{ color: 'var(--hint)', padding: '2px 4px 0 24px', fontSize: 11 }}>Trash is empty</div>}
+        {trashOpen && (
+          <div className="sfolder-children">
+            <div className="sb-empty">Trash is empty</div>
+          </div>
+        )}
       </div>
     </div>
   );
