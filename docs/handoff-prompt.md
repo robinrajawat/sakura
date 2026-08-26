@@ -2288,14 +2288,46 @@ directly rather than legacy's `getComputedStyle` round-trip, since
 confirmed unreachable in legacy's own UI too). Verified end-to-end in
 real headless Chrome: light theme shows `#f8f8f6`; clicking Dark
 updates the meta tag to `#181816`; clicking back to Light restores
-`#f8f8f6` -- zero console/page errors throughout. Remaining §6.11
-slices: the static precache strategy (needs a small build-time step
-reading Vite's own asset manifest to generate a real hashed-filename
-precache list, matching legacy's real `sw.js` network-first-navigation/
-cache-first-static-assets strategy) and the full visual pass against
-Section 6.1's tokens (an initial grep found ~15 component files with
-hardcoded hex colors; most look legitimate -- export/PDF-generation
-code that must bake literal colors into a static file format, or
-intentionally theme-independent semantic-markup colors -- but each
-needs individual verification) -- neither started yet.
+`#f8f8f6` -- zero console/page errors throughout.
+
+Second §6.11 slice landed: the static precache strategy. Direct port
+of legacy's real `sw.js` (network-first for navigation requests with
+a cached fallback, cache-first for static asset destinations,
+everything else -- Firestore, AI provider calls, auth -- passed
+straight through untouched) onto a build where, unlike legacy's own
+single unhashed `index.html`, Vite emits content-hashed filenames
+that change every build, so there's no fixed list to hand-write.
+`vite.config.ts` gained `build.manifest: true` (emits
+`dist/.vite/manifest.json`). New `scripts/swPrecache.mjs` (pure,
+unit-tested: `buildPrecacheUrls`/`hashedAssetUrlsFromManifest`/
+`templateServiceWorker`) and `scripts/generate-sw-precache.mjs` (the
+file-I/O wrapper, chained onto `npm run build`) read that manifest
+after every build and rewrite `dist/sw.js`'s `PRECACHE_URLS`
+placeholder with the real list -- the fixed unhashed files every
+build always has (app shell, PWA manifest, 3 icon files -- no
+external CDN library/font URLs, since `web/` bundles its own
+dependencies via Vite and doesn't load Google Fonts via a `<link>`
+tag the way legacy does) plus every real hashed JS/CSS/asset file.
+Also appends a content hash of that real list onto `CACHE_NAME`
+automatically every build -- a deliberate departure from legacy's own
+real convention (a developer bumps the cache version by hand
+whenever a precached asset's content changes, since legacy's own
+assets change rarely); `web/`'s hashed filenames change on every
+single build, so `activate()`'s cache-eviction needs a name that
+actually changes too, or the previous deploy's now-orphaned cached
+assets would never get cleaned up. `public/sw.js` is the checked-in
+template (its own placeholder lines never served to a real browser
+as-is). Verified end-to-end against a real `vite preview` server in
+real headless Chrome: the service worker reaches the active state;
+the real `sakura-web-shell-*` cache holds all 8 expected precache
+URLs including the real hashed JS bundle (not a placeholder);
+reloading the page with the browser context set fully offline still
+shows the app shell, served from that cache -- zero console/page
+errors throughout. Remaining §6.11 slice: the full visual pass
+against Section 6.1's tokens (an initial grep found ~15 component
+files with hardcoded hex colors; most look legitimate --
+export/PDF-generation code that must bake literal colors into a
+static file format, or intentionally theme-independent
+semantic-markup colors -- but each needs individual verification) --
+not started yet.
 ```
