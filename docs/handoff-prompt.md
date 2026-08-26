@@ -233,13 +233,23 @@ section for the full breakdown of every slice, including several real
 corrections to this plan's own original text found by checking the
 actual legacy code rather than trusting the prose.
 
-**Immediate next steps:** Phase 7 has no further sub-phases. The next
-real step is docs/phase6-full-parity-plan.md's own Section 9 pre-cutover
-gate, items 2-4 (a person clicking through the real `/web-preview/`
-build end-to-end; signing in with a real account to confirm
-production-synced documents round-trip; the actual `deploy.yml` cutover
-PR) — none of which are appropriate to attempt unilaterally; they need
-the account owner directly. Don't repoint `deploy.yml`'s root at
-`web/dist` until that gate is explicitly cleared, and remove
-`/web-preview/` once it is.
+**Real gap found from a direct side-by-side screenshot comparison** (a real `/web-preview/`
+screenshot against a real, content-bearing legacy screenshot, not the empty `Welcome` seed doc):
+every phase 6/7 slice built its own UI on top of `web/`'s base button/input styling (§6.1) but
+never legacy's real button/icon/chip *variants* (`.btn.primary`, `.icon-btn`/`.sb-icon-btn`,
+`.export-item`, `.status-chip`, etc.) or its real icon set (several `web/` components use raw
+emoji as a shortcut instead of legacy's real inline SVGs) — a missing shared component layer, not
+any one feature gap. Scoped into **docs/phase8-design-system-parity-plan.md** — check that file
+directly for its real current status; it cites the exact legacy CSS lines behind every primitive
+it names, not assumption.
+
+**Immediate next steps:** Phase 8 (design system parity) is next, starting at 8.1 (CSS
+primitives) — same PR-per-slice discipline as every prior phase, but hold verification to a real
+side-by-side screenshot against legacy, not just "renders/behaves correctly." Once `web/` is
+visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
+plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
+`/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
+documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to
+attempt unilaterally; they need the account owner directly. Don't repoint `deploy.yml`'s root at
+`web/dist` until that gate is explicitly cleared, and remove `/web-preview/` once it is.
 ```
