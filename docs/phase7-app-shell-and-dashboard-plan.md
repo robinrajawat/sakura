@@ -262,9 +262,40 @@ the toolbar's default-hidden behavior, sidebar Templates/Trash) has no existing 
 
 ## Status
 
-**Not started.** No slice in this plan has landed. This document itself is the first output of
-Phase 7 — written from a real interactive investigation (build `legacy/dist`, serve it locally,
-drive it with headless-Chrome Playwright through the sign-in gate → onboarding → empty dashboard
-→ document creation → toolbar reveal → header chips → app-bar icons, screenshotting each real
-state), not from reading markup alone, matching the verification standard every Phase 6 slice
-was held to.
+**In progress.** This document itself was the first output of Phase 7 — written from a real
+interactive investigation (build `legacy/dist`, serve it locally, drive it with headless-Chrome
+Playwright through the sign-in gate → onboarding → empty dashboard → document creation → toolbar
+reveal → header chips → app-bar icons, screenshotting each real state), not from reading markup
+alone, matching the verification standard every Phase 6 slice was held to.
+
+- ✅ **7.1 — Sign-in gate overlay landed.** New `components/SignInGate.tsx`, a direct port of
+  legacy's real `#sakura-landing-overlay` (legacy/index.html:4498-4526) and its
+  `shouldShowLandingOverlay`/`dismissLandingOverlay` logic (legacy/index.html:13848-13872): the
+  Sakura mark, "Your outline, wherever you go" heading, subtitle, "Sign in with Google" button, an
+  "or" divider, a "Sign in with email" toggle revealing the sign-in/create-account form (reusing
+  `authStore.ts`'s existing actions directly, no new auth logic), and "Continue without signing
+  in" as an underlined text link. Dismissal (the continue link, Escape, or a successful sign-in)
+  is scoped to the current tab session via `sessionStorage` under a distinct
+  `sakura_web_landing_dismissed` key (not legacy's bare `sakura_landing_dismissed`, so the two
+  apps' dismissal state can't leak across each other on a shared origin like `/web-preview/`).
+  Renders as a fixed-position overlay (`position:fixed;inset:0`) on top of `App.tsx`'s existing
+  tree rather than replacing it, matching legacy's own real behavior of the app continuing to boot
+  underneath. Gated on `authStore`'s `loading`/`user` so it never flashes at an already-signed-in
+  visitor, matching legacy's own real "decide only once the async auth restore has resolved"
+  behavior; `authStore.ts`'s own `init()` gained an idempotency guard (matching
+  `notificationsStore.ts`'s established pattern) since both `AuthPanel.tsx` and this new component
+  now call it. One real, deliberate simplification vs. legacy, named in the component's own
+  header: legacy's own version skips its async Firebase wait entirely for a device that has never
+  signed in before (a `localStorage` fast-path check) -- not replicated here, so a brand-new
+  visitor may see a brief flash of the un-gated app before the gate appears; a real,
+  separately-scoped follow-up if that's ever visibly bothersome in practice. Verified end-to-end in
+  real headless Chrome against a real `vite preview` build in both light and dark theme (the gate's
+  CSS custom properties track the live theme correctly): the gate renders on first load, the email
+  form and signup-mode toggle both work, Escape dismisses it, the dismissal persists across a
+  reload in the same tab (matching legacy's real per-tab-session `sessionStorage` semantics), and
+  the full existing app underneath renders correctly once dismissed -- zero console/page errors
+  (only expected network failures from Firebase/Google endpoints being unreachable in this
+  environment, not application errors).
+- Remaining: 7.2 (first-run onboarding modal) → 7.3 (doc data model) → 7.4 (per-doc header + empty
+  state) → 7.5 (toolbar realignment) → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per
+  this doc's own sequencing summary above.
