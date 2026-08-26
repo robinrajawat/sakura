@@ -394,5 +394,50 @@ doc let this gap through repeated verification passes already.
   selected row + checkmark), link popover open (real bordered inputs, solid primary Save button)
   -- all screenshotted and matching legacy's real structure. Full gauntlet clean: 2005 tests still
   passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4d (toolbar) → 8.4e (dropdown menus + modals) → 8.5 (verification fixture
-  document), per this doc's own sequencing summary above.
+- ✅ **8.4d — Retrofit: toolbar (`App.tsx`'s `ToolbarGroup`/quick-bar block).** Ported the real
+  `#quick-bar`/`.action-group`/`.ag-buttons`/`.ag-label`/`.quick-btn`/`.quick-sep` family
+  (legacy/index.html:1093-1106) into `index.css`, placing `.quick-btn` AFTER `.icon-btn` in file
+  order so the cascade produces the same 34x34 sizing win legacy's own source order does (legacy's
+  real markup always combines both classes on one button). `ToolbarGroup` itself now renders
+  through `.action-group`/`.ag-buttons`/`.ag-label` instead of its original ad hoc inline `style`
+  objects, and every icon-only button in the History/Structure/Format/Insert/Delete groups now
+  goes through `<Button variant="icon" className="quick-btn">` (the Delete button additionally
+  gets `danger-hover`, matching legacy's own real class on that same button). A `.quick-sep`
+  divider now sits between every group, and the wrapper itself carries a real `id="quick-bar"`
+  for the ported container styling (border-bottom/background/padding), same convention as
+  `#appbar`/`#header-actions` from §8.1.
+  **Two real scoping decisions made and documented, not silently dropped** (both flagged as open
+  questions in this slice's own handoff): (1) legacy hides `.ag-label` by default behind a
+  `body.show-toolbar-labels` class flipped by a Settings toggle `web/` doesn't have -- ported as
+  unconditionally visible instead (`index.css`'s own `.ag-label` comment), matching
+  `ToolbarGroup`'s pre-existing always-visible-label behavior and this project's own established
+  "no toggle exists yet to gate this" precedent (e.g. the AI group's own already-visible buttons),
+  rather than porting a toggle-gated default that would leave the label permanently invisible with
+  no way to ever reveal it. (2) the `@media (max-width:560px)` responsive bump (legacy/index.html:
+  1106) was deliberately NOT ported -- confirmed via `App.tsx`'s own `isMobile` check that it
+  returns `<MobileHub />` entirely below the mobile breakpoint before ever reaching this toolbar's
+  JSX, so the rule would be unreachable dead CSS in `web/`, not a real simplification of behavior
+  that exists.
+  **The AI group's buttons deliberately do NOT get `.quick-btn`'s fixed 34x34 sizing**, found while
+  implementing this slice: legacy's own real AI quick-bar buttons (`#qb-ai-outline` etc.,
+  legacy/index.html:6468-6478) are icon-only, same as every other group -- but `web/`'s AI group
+  (an already-documented §7.5 simplification) pairs each icon with a real word label
+  ("Rewrite"/"Outline"/"Expand"/...) that a fixed-width icon square can't hold without clipping.
+  Left on the base default button treatment instead, inside the same real `.action-group`/
+  `.ag-buttons`/`.ag-label` wrapper as every other group -- a real, deliberate, documented
+  deviation for this one group's buttons specifically, not a gap in the retrofit.
+  **A real side-by-side screenshot comparison against legacy's own live toolbar** (both loaded
+  fresh, sign-in skipped, onboarding dismissed, toolbar revealed via each app's own real reveal
+  control) confirmed the retrofit matches: same grouped-pill tinted backgrounds, same uppercase
+  small-caps group labels, same icon-only square buttons with the same rounded-corner hover lift,
+  same thin group separators. Legacy's own screenshot also re-confirmed two pre-existing, already-
+  documented `web/` scope gaps as real and unrelated to this slice: legacy's real default hides
+  4 of its 6 AI actions (Expand/Summarise/Tags/Icon) behind a Settings toggle `web/` doesn't have
+  (§7.5's own comment already named this), and legacy has a "Move" group (up/down) `web/` has never
+  built (no backing action exists yet, already named as a post-cutover-backlog gap) -- neither
+  touched by this retrofit slice. Full gauntlet clean: 2005 tests still passing (no test changes
+  needed, pure presentation/structure swap), typecheck/lint/build all clean (lint's one warning is
+  the same pre-existing unrelated `diagramGenLegend.test.ts` warning every prior 8.x slice has
+  noted).
+- Remaining: 8.4e (dropdown menus + modals) → 8.5 (verification fixture document), per this doc's
+  own sequencing summary above.
