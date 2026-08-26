@@ -822,3 +822,144 @@ body.theme-dark .account-visibility-badge:hover {
   font: 400 11px 'Inter', sans-serif;
   color: var(--hint);
 }
+
+/* §8.4c (docs/phase8-design-system-parity-plan.md, document header + toolbar retrofit): the real
+ * document-header row system (legacy/index.html:790, 797-801) -- ported as classes (`.editor-*`)
+ * rather than legacy's own IDs (`#editor-title-row`/`#header-title`/`#editor-meta-row`), since
+ * this project's convention throughout Phase 8 has been ID selectors only for real singleton DOM
+ * anchors (`#appbar`), not component-scoped styling. `DocumentHeader.tsx`'s own local `chipStyle()`
+ * helper approximated all of this with a flat bordered-pill inline style; the real `.doc-status-
+ * chip` family it should have been using was already ported in §8.3 (`Chip.tsx`'s own `DocChip`).
+ */
+.editor-title-row {
+  padding: 20px 14px 2px 26px;
+  background: var(--canvas-bg);
+}
+
+.editor-title-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 2px 2px 4px;
+  font: 800 28px/1.25 'Inter', sans-serif;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+  border-radius: 4px;
+}
+
+.editor-title-input:focus {
+  box-shadow: none;
+}
+
+.editor-title-input::placeholder {
+  color: var(--hint);
+  opacity: 1;
+}
+
+.editor-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 2px 16px;
+}
+
+/* Dropdown-select-style popover system (legacy/index.html:3703-3723) -- a real, DIFFERENT menu-row
+ * family from `.export-item` (§8.1): a `role="menuitemradio"`-style direct-select list with a
+ * checkmark on the active row, not an icon+label action row. Backs the document header's own real
+ * status popover (`#doc-status-menu`) -- scoped to what that popover actually uses; legacy's own
+ * icon-row variant (`.todo-dd-item-icon`) and the `dd-check` checkmark slot have no consumer in
+ * `web/` yet (the status menu's own checkmark is already a plain inline `✓`, matching legacy's own
+ * real fallback for a menu without per-row icons), so left unported until a real consumer needs
+ * them.
+ */
+.todo-dd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font: 400 12.5px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.todo-dd-item:hover {
+  background: var(--hover);
+}
+
+.todo-dd-item:active {
+  background: var(--sel);
+}
+
+.todo-dd-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.todo-dd-item.selected {
+  color: var(--accent);
+}
+
+/* Link-chip popover's own real form/button styling (legacy/index.html:3704-3711) -- the document
+ * header's Add-link popover (`#doc-link-menu`) is the one real `web/` consumer for this family. */
+.doc-link-menu-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.doc-link-menu-inner .meta-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: 400 12.5px 'Inter', sans-serif;
+  padding: 7px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--edit-bg);
+  color: var(--fg);
+}
+
+.doc-link-menu-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.doc-link-menu-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: 600 11.5px 'Inter', sans-serif;
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.doc-link-menu-btn:hover {
+  background: var(--hover);
+}
+
+.doc-link-menu-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.doc-link-menu-btn.primary:hover {
+  filter: brightness(1.06);
+}

@@ -310,10 +310,23 @@ a Duplicate button since there's no backing `duplicateDoc` action to wire it to 
 — a real, separately-scoped follow-up). See the plan doc's own Status section for the full
 breakdown.
 
-**Immediate next steps:** 8.4c (document header + toolbar) is next — same PR-per-slice discipline,
-split by area into separate reviewable PRs (document header + toolbar → dropdown menus + modals
-remaining), hold verification to a real side-by-side screenshot against legacy, not just "renders/
-behaves correctly," since this is the slice that actually puts the new components on screen. Once
+**8.4c (retrofit: document header) landed**: `DocumentHeader.tsx` retrofit onto a real class family
+entirely missing from `index.css` before this slice — `.editor-title-row`/`.editor-title-input`
+(the title's real `800 28px` weight/size, not the `700 22px` its old local `chipStyle()` helper's
+neighbor inline style used, plus a real canvas-background wrapper that didn't exist at all),
+`.editor-meta-row`, `.todo-dd-item`(+`.selected`, a real menu-row family DIFFERENT from
+`.export-item`, backing the status popover), `.doc-link-menu-inner`/`.meta-input`/
+`.doc-link-menu-btn`(+`.primary`, the link popover's own real form/button styling). Status/link
+chips now render through §8.3's `DocChip` directly; the author field (a real `<input>`, not a
+`<button>`) applies the same classes directly since `DocChip` only renders a button. Split out of
+the plan's original "document header + toolbar" slice once investigation showed the header alone
+needed this much — see the plan doc's own Sequencing summary correction and Status section for the
+full breakdown.
+
+**Immediate next steps:** 8.4d (toolbar) is next — same PR-per-slice discipline, split by area into
+separate reviewable PRs (toolbar → dropdown menus + modals remaining), hold verification to a real
+side-by-side screenshot against legacy, not just "renders/behaves correctly," since this is the
+slice that actually puts the new components on screen. Once
 `web/` is visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
 `/web-preview/` build end-to-end; signing in with a real account to confirm production-synced

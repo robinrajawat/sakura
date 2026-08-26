@@ -103,11 +103,18 @@ every prior phase: pixel-close, verified against real legacy source and real scr
 ## Sequencing summary
 
 8.1 (CSS primitives) → 8.2 (icon set) → 8.3 (shared React components) → 8.4 (retrofit, split by
-area: app-bar/header, sidebar, document header + toolbar, dropdown menus + modals) → 8.5 (real
+area: app-bar/header, sidebar, document header, toolbar, dropdown menus + modals) → 8.5 (real
 verification fixture document). 8.1-8.3 build the layer; 8.4 is the bulk of the visible fix and
 can be split further/resequenced by whoever picks up each slice; 8.5 can run in parallel with 8.4
 once the fixture itself is ready, and should land early enough that later 8.4 slices already use
 it for their own verification.
+
+**Correction found during 8.4c**: this plan's own original area split bundled "document header +
+toolbar" as one slice -- real investigation of `DocumentHeader.tsx` alone surfaced an entire real
+class family (`.editor-title-row`/`.editor-title-input`/`.editor-meta-row`, `.todo-dd-item`,
+`.doc-link-menu-*`) big enough to be its own PR, so the two areas split into separate slices
+(document header, then toolbar) rather than landing as one oversized PR -- the same "split further
+... by whoever picks up each slice" flexibility this section's own text already reserved.
 
 ### 8.1 — CSS primitives
 Port the missing real classes into `web/src/index.css` (or a new `web/src/ui.css` if that file is
@@ -359,5 +366,33 @@ doc let this gap through repeated verification passes already.
   revealed, count hidden) -- all screenshotted and matching legacy's real hover-reveal behavior.
   Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
   clean.
-- Remaining: 8.4c (document header + toolbar) → 8.4d (dropdown menus + modals) → 8.5 (verification
-  fixture document), per this doc's own sequencing summary above.
+- ✅ **8.4c — Retrofit: document header (`DocumentHeader.tsx`).** Split out of the plan's original
+  "document header + toolbar" slice (see this doc's own Sequencing summary correction above) once
+  investigation showed the document header alone needed a real class family entirely missing from
+  `index.css` -- another real §8.1-scope miss (that pass covered buttons/menus/chips/badges, not
+  this component's own row/input/popover system), only found while retrofitting this file's local
+  `chipStyle()` helper (an ad hoc flat bordered-pill approximation) onto the real classes.
+  `index.css` gained: `.editor-title-row`/`.editor-title-input`/`.editor-meta-row`
+  (legacy/index.html:790, 797-801 -- the title's real `800 28px` weight/size, not the `700 22px`
+  `chipStyle()`'s neighbor inline style used, plus the real canvas-background/padding wrapper
+  neither existed at all), `.todo-dd-item`(+`.selected`) (legacy/index.html:3703-3723 -- a real,
+  DIFFERENT menu-row family from `.export-item`, backing the status popover's direct-select rows;
+  scoped down to what this popover actually uses, no `.todo-dd-item-icon`/`.dd-check` variants
+  since nothing in `web/` needs them yet), and `.doc-link-menu-inner`/`.meta-input`/
+  `.doc-link-menu-actions`/`.doc-link-menu-btn`(+`.primary`) (legacy/index.html:3704-3711 -- the
+  link popover's own real form/button styling, including its real solid-accent primary Save
+  button, which this component never had before).
+  The status/link chips now render through §8.3's `DocChip` component directly; the author field
+  (a real `<input>`, not a `<button>`, per `Chip.tsx`'s own header comment anticipating exactly
+  this) applies the same `doc-status-chip`/`.unset`/`.doc-author-chip` classes directly, since
+  `DocChip` itself only renders a button. A small `STATUS_COLOR_KEY_TO_DOC_CHIP` map bridges
+  `docStatusColorKeyCore`'s pre-existing `ThemeTokens`-preset-key return shape (`'fcOrange'` etc.,
+  still used by other callers) to `DocChip`'s own `DocChipColor` (`'orange'` etc.) rather than
+  changing that shared function's return type for one caller.
+  Verified end-to-end in real headless Chrome: base state (real 28px title on canvas background,
+  solid status pill, author chip, dashed "Add link" chip), status popover open (accent-colored
+  selected row + checkmark), link popover open (real bordered inputs, solid primary Save button)
+  -- all screenshotted and matching legacy's real structure. Full gauntlet clean: 2005 tests still
+  passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4d (toolbar) → 8.4e (dropdown menus + modals) → 8.5 (verification fixture
+  document), per this doc's own sequencing summary above.
