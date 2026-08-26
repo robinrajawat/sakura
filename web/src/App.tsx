@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
@@ -50,6 +50,23 @@ import { summariseSelectionIntoParent } from './state/aiSummarise';
 import { useQuickAssistStore } from './store/quickAssistStore';
 import { QuickAssistBar } from './components/QuickAssistBar';
 import { useOutlinePrefsStore } from './store/outlinePrefsStore';
+import { useNotePanelStore } from './store/notePanelStore';
+
+/**
+ * §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): a labeled cluster of toolbar
+ * buttons, direct visual match of legacy's real `.action-group`/`.ag-buttons`/`.ag-label`
+ * structure (legacy/index.html:6357 area) -- a row of buttons with a small caption underneath.
+ * Defined at module scope (not nested inside `App()`) so it isn't redefined -- and every button
+ * inside it remounted -- on every render.
+ */
+function ToolbarGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+      <div style={{ display: 'flex', gap: 2 }}>{children}</div>
+      <span style={{ fontSize: 10, color: 'var(--muted)' }}>{label}</span>
+    </div>
+  );
+}
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md). Now wrapped in AppShell.tsx's real
@@ -83,10 +100,21 @@ export function App() {
   const canRedo = useOutlineStore((s) => s.canRedo());
   const duplicateSelected = useOutlineStore((s) => s.duplicateSelected);
   const hasSelection = useOutlineStore((s) => s.selectedId !== null);
+  const selectedId = useOutlineStore((s) => s.selectedId);
+  const outdentSelected = useOutlineStore((s) => s.outdentSelected);
+  const indentSelected = useOutlineStore((s) => s.indentSelected);
+  const newSiblingAbove = useOutlineStore((s) => s.newSiblingAbove);
+  const newChild = useOutlineStore((s) => s.newChild);
+  const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleNodeStyle = useOutlineStore((s) => s.toggleNodeStyle);
   const applyHeadingOption = useOutlineStore((s) => s.applyHeadingOption);
   const toggleCheckboxType = useOutlineStore((s) => s.toggleCheckboxType);
   const selectedIds = useOutlineStore((s) => s.selectedIds);
+  // §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): matches legacy's real
+  // `toolbarVisible` default (false) -- see outlinePrefsStore.ts's own header for the full story.
+  const toolbarVisible = useOutlinePrefsStore((s) => s.toolbarVisible);
+  const setToolbarVisible = useOutlinePrefsStore((s) => s.setToolbarVisible);
+  const openNotePanel = useNotePanelStore((s) => s.openPanel);
   const [aiRewriteBusy, setAiRewriteBusy] = useState(false);
   const autoRewriteEnabled = useAutoRewriteStore((s) => s.enabled);
   const setAutoRewriteEnabled = useAutoRewriteStore((s) => s.setEnabled);
@@ -407,176 +435,11 @@ export function App() {
         }
         contentRef={registerScrollContainer}
       >
+        {/* §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): Edit/Preview/Present mode
+            switching stays always-visible, matching legacy's real always-on floating mode
+            buttons -- these are NOT part of the collapsible per-node toolbar below (legacy's own
+            `#editor-preview-toggle` sits in its own floating row, never inside `#quick-bar`). */}
         <div style={{ marginBottom: 12 }}>
-          {/* ↶/↷ -- same icons and tooltip text as legacy's own #undo-btn/#redo-btn
-              (legacy/index.html:6359-6360). Undo/redo is core-outline scoped this slice
-              (outlineStore.ts's own header) -- disabled outside of edit mode, since Preview/
-              Present don't touch outline content at all. */}
-          <button
-            type="button"
-            onClick={undo}
-            disabled={mode !== 'edit' || !canUndo}
-            title="Undo (Ctrl/Cmd+Z)"
-            aria-label="Undo"
-            style={{ marginRight: 4 }}
-          >
-            ↶
-          </button>
-          <button
-            type="button"
-            onClick={redo}
-            disabled={mode !== 'edit' || !canRedo}
-            title="Redo (Ctrl/Cmd+Shift+Z)"
-            aria-label="Redo"
-            style={{ marginRight: 12 }}
-          >
-            ↷
-          </button>
-          {/* ⧉ -- same icon and tooltip text as legacy's own #qb-duplicate
-              (legacy/index.html:6371). Duplicates the current selection's root(s); see
-              duplicateRootIndexesCore's own header (outlineStore.ts) for exact behavior,
-              including the deliberately-reproduced legacy quirk that checkbox/code-block/tag
-              state does NOT carry over to the duplicate. */}
-          <button
-            type="button"
-            onClick={duplicateSelected}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Duplicate"
-            aria-label="Duplicate"
-            style={{ marginRight: 12 }}
-          >
-            ⧉
-          </button>
-          {/* B/I/U/S -- same visual treatment (<strong>B</strong>, <em>I</em>, <u>U</u>, <s>S</s>)
-              and tooltip text (including the Ctrl/Cmd shortcut hint) as legacy's own real
-              `.fmt-btn` quick-bar buttons (legacy/index.html:6386-6389). Applies to every
-              currently-selected node directly (not root-subtree-cascading) via
-              outlineStore.ts's own toggleNodeStyle -- see that action's own header for the exact
-              multi-select semantics. */}
-          <button
-            type="button"
-            onClick={() => toggleNodeStyle('bold')}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Bold (Ctrl/Cmd+B)"
-            aria-label="Bold"
-            style={{ marginRight: 2 }}
-          >
-            <strong>B</strong>
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleNodeStyle('italic')}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Italic (Ctrl/Cmd+I)"
-            aria-label="Italic"
-            style={{ marginRight: 2 }}
-          >
-            <em>I</em>
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleNodeStyle('underline')}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Underline (Ctrl/Cmd+U)"
-            aria-label="Underline"
-            style={{ marginRight: 2 }}
-          >
-            <u>U</u>
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleNodeStyle('strike')}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Strike (Ctrl/Cmd+Shift+S)"
-            aria-label="Strike"
-            style={{ marginRight: 6 }}
-          >
-            <s>S</s>
-          </button>
-          {/* Heading level -- a plain <select> standing in for legacy's own custom popover palette
-              (legacy/index.html:6426-6444's real #heading-toggle-btn/#heading-palette widget) --
-              same simplification this project uses elsewhere for palette-style pickers (e.g.
-              SidebarFileExplorer.tsx's own "move to folder" select in place of drag-and-drop).
-              Legacy's palette also offers a 7th "Section" option, but that routes to an entirely
-              different existing feature (the [Text] bracket semantic-markup convention
-              NodeText.tsx already renders), not a real numbered heading level -- out of scope
-              here, not silently dropped. */}
-          <select
-            value=""
-            disabled={mode !== 'edit' || !hasSelection}
-            onChange={(e) => {
-              const level = Number(e.currentTarget.value);
-              if (!Number.isNaN(level)) applyHeadingOption(level);
-              e.currentTarget.value = '';
-            }}
-            title="Heading style"
-            aria-label="Heading style"
-            style={{ marginRight: 12, fontSize: 12 }}
-          >
-            <option value="" disabled>
-              Heading…
-            </option>
-            <option value="0">Body text</option>
-            <option value="1">Heading 1</option>
-            <option value="2">Heading 2</option>
-            <option value="3">Heading 3</option>
-            <option value="4">Heading 4</option>
-            <option value="5">Heading 5</option>
-            <option value="6">Heading 6</option>
-          </select>
-          {/* Same icon (a checkmark-in-box SVG) and tooltip text as legacy's own real
-              #qb-checkbox toolbar button (legacy/index.html:6462) -- see
-              outlineStore.ts's own toggleCheckboxType header for the exact toggle semantics
-              (any-checkbox-selected removes from all; none-selected adds to all). */}
-          <button
-            type="button"
-            onClick={toggleCheckboxType}
-            disabled={mode !== 'edit' || !hasSelection}
-            title="Toggle checkbox on selected node"
-            aria-label="Toggle checkbox"
-            style={{ marginRight: 12 }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <path d="M9 12l2.5 2.5L15 9" />
-            </svg>
-          </button>
-          {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the current
-              selection (single node or a whole multi-select batch) via aiRewrite.ts. */}
-          <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite" style={{ marginRight: 4 }}>
-            {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
-          </button>
-          {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as children of
-              the current selection, or replaces an empty document. */}
-          <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline" style={{ marginRight: 4 }}>
-            {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
-          </button>
-          {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new document. */}
-          <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text" style={{ marginRight: 4 }}>
-            ✦ Restructure
-          </button>
-          {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
-          <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node" style={{ marginRight: 4 }}>
-            ✦ Expand
-          </button>
-          <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags" style={{ marginRight: 4 }}>
-            ✦ Tags
-          </button>
-          {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection may
-              open IconPickerPopover.tsx if there's more than one real candidate to choose from. */}
-          <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon" style={{ marginRight: 4 }}>
-            ✦ Icon
-          </button>
-          {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all whole-document
-              action, always auto-applying as a batch. */}
-          <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes" style={{ marginRight: 4 }}>
-            ✦ Icons (all)
-          </button>
-          {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected roots,
-              indenting their whole subtrees underneath. */}
-          <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection" style={{ marginRight: 12 }}>
-            ✦ Summarise
-          </button>
           <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
             Edit
           </button>
@@ -587,6 +450,211 @@ export function App() {
             Present
           </button>
         </div>
+        {/* §7.5 slice: the real per-node action toolbar (legacy's own `#quick-bar`), hidden by
+            default (matches legacy's real `toolbarVisible=false` first-run default -- this whole
+            block used to render unconditionally, matching no real legacy default) and, once
+            shown, laid out as labeled groups instead of one flat row (History/Structure/Format/
+            Insert/AI/Delete -- see ToolbarGroup's own header). Legacy's real Move/Fold/Extras
+            groups and Format's highlight/text-color swatches are deliberately NOT ported here:
+            each needs a backing action `web/` doesn't have yet (move up/down, collapse-all,
+            per-node highlight/color -- all three already named as real, separately-scoped gaps in
+            docs/post-cutover-backlog.md), so building their toolbar buttons now would be dead UI,
+            not a shortcut. Unlike legacy's own real default (which additionally hides
+            Expand/Summarise/Tags/Icon within the AI group behind a Settings toggle `web/` has no
+            equivalent of yet), every AI button stays visible here -- hiding already-shipped,
+            already-tested capability with no way to reveal it back would be a real regression,
+            not a faithful port of a default that itself depends on a toggle this project hasn't
+            built. */}
+        {toolbarVisible && (
+          <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'flex-end' }}>
+            <ToolbarGroup label="History">
+              {/* ↶/↷ -- same icons and tooltip text as legacy's own #undo-btn/#redo-btn
+                  (legacy/index.html:6359-6360). Undo/redo is core-outline scoped this slice
+                  (outlineStore.ts's own header) -- disabled outside of edit mode, since Preview/
+                  Present don't touch outline content at all. */}
+              <button type="button" onClick={undo} disabled={mode !== 'edit' || !canUndo} title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">
+                ↶
+              </button>
+              <button type="button" onClick={redo} disabled={mode !== 'edit' || !canRedo} title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">
+                ↷
+              </button>
+            </ToolbarGroup>
+            <ToolbarGroup label="Structure">
+              {/* Outdent/Indent/Insert-above/Add-child -- new in this slice, matching legacy's
+                  real #qb-outdent/#qb-indent/#qb-above/#qb-child exactly. Each already had a real
+                  outlineStore.ts action with no toolbar button until now (indentSelected/
+                  outdentSelected operate on the whole current selection; insert-above/add-child
+                  need a single target node, so they're scoped to exactly one selection like
+                  legacy's own real cursor-context behavior). */}
+              <button type="button" onClick={outdentSelected} disabled={mode !== 'edit' || !hasSelection} title="Outdent (Shift+Tab)" aria-label="Outdent">
+                ⇤
+              </button>
+              <button type="button" onClick={indentSelected} disabled={mode !== 'edit' || !hasSelection} title="Indent (Tab)" aria-label="Indent">
+                ⇥
+              </button>
+              <button
+                type="button"
+                onClick={() => selectedId !== null && newSiblingAbove(selectedId)}
+                disabled={mode !== 'edit' || selectedId === null}
+                title="Insert node above"
+                aria-label="Insert above"
+              >
+                ⤴
+              </button>
+              <button
+                type="button"
+                onClick={() => selectedId !== null && newChild(selectedId)}
+                disabled={mode !== 'edit' || selectedId === null}
+                title="Add child (Ctrl/Cmd+Enter)"
+                aria-label="Add child"
+              >
+                ＋
+              </button>
+              {/* ⧉ -- same icon and tooltip text as legacy's own #qb-duplicate
+                  (legacy/index.html:6371). Duplicates the current selection's root(s); see
+                  duplicateRootIndexesCore's own header (outlineStore.ts) for exact behavior,
+                  including the deliberately-reproduced legacy quirk that checkbox/code-block/tag
+                  state does NOT carry over to the duplicate. */}
+              <button type="button" onClick={duplicateSelected} disabled={mode !== 'edit' || !hasSelection} title="Duplicate" aria-label="Duplicate">
+                ⧉
+              </button>
+            </ToolbarGroup>
+            <ToolbarGroup label="Format">
+              {/* B/I/U/S -- same visual treatment (<strong>B</strong>, <em>I</em>, <u>U</u>,
+                  <s>S</s>) and tooltip text (including the Ctrl/Cmd shortcut hint) as legacy's
+                  real `.fmt-btn` quick-bar buttons (legacy/index.html:6386-6389). Applies to
+                  every currently-selected node directly (not root-subtree-cascading) via
+                  outlineStore.ts's own toggleNodeStyle -- see that action's own header for the
+                  exact multi-select semantics. */}
+              <button type="button" onClick={() => toggleNodeStyle('bold')} disabled={mode !== 'edit' || !hasSelection} title="Bold (Ctrl/Cmd+B)" aria-label="Bold">
+                <strong>B</strong>
+              </button>
+              <button type="button" onClick={() => toggleNodeStyle('italic')} disabled={mode !== 'edit' || !hasSelection} title="Italic (Ctrl/Cmd+I)" aria-label="Italic">
+                <em>I</em>
+              </button>
+              <button type="button" onClick={() => toggleNodeStyle('underline')} disabled={mode !== 'edit' || !hasSelection} title="Underline (Ctrl/Cmd+U)" aria-label="Underline">
+                <u>U</u>
+              </button>
+              <button type="button" onClick={() => toggleNodeStyle('strike')} disabled={mode !== 'edit' || !hasSelection} title="Strike (Ctrl/Cmd+Shift+S)" aria-label="Strike">
+                <s>S</s>
+              </button>
+              {/* Heading level -- a plain <select> standing in for legacy's own custom popover
+                  palette (legacy/index.html:6426-6444's real #heading-toggle-btn/#heading-palette
+                  widget) -- same simplification this project uses elsewhere for palette-style
+                  pickers (e.g. SidebarFileExplorer.tsx's own "move to folder" select in place of
+                  drag-and-drop). Legacy's palette also offers a 7th "Section" option, but that
+                  routes to an entirely different existing feature (the [Text] bracket
+                  semantic-markup convention NodeText.tsx already renders), not a real numbered
+                  heading level -- out of scope here, not silently dropped. */}
+              <select
+                value=""
+                disabled={mode !== 'edit' || !hasSelection}
+                onChange={(e) => {
+                  const level = Number(e.currentTarget.value);
+                  if (!Number.isNaN(level)) applyHeadingOption(level);
+                  e.currentTarget.value = '';
+                }}
+                title="Heading style"
+                aria-label="Heading style"
+                style={{ fontSize: 12 }}
+              >
+                <option value="" disabled>
+                  Heading…
+                </option>
+                <option value="0">Body text</option>
+                <option value="1">Heading 1</option>
+                <option value="2">Heading 2</option>
+                <option value="3">Heading 3</option>
+                <option value="4">Heading 4</option>
+                <option value="5">Heading 5</option>
+                <option value="6">Heading 6</option>
+              </select>
+            </ToolbarGroup>
+            <ToolbarGroup label="Insert">
+              {/* Same icon (a checkmark-in-box SVG) and tooltip text as legacy's own real
+                  #qb-checkbox toolbar button (legacy/index.html:6462) -- see outlineStore.ts's own
+                  toggleCheckboxType header for the exact toggle semantics (any-checkbox-selected
+                  removes from all; none-selected adds to all). */}
+              <button type="button" onClick={toggleCheckboxType} disabled={mode !== 'edit' || !hasSelection} title="Toggle checkbox on selected node" aria-label="Toggle checkbox">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <path d="M9 12l2.5 2.5L15 9" />
+                </svg>
+              </button>
+              {/* Note -- same purpose as legacy's real #qb-note (legacy/index.html:6461): open
+                  the floating Note/Code panel for the selected node, always on its Note tab
+                  (matching legacy's own "Note / comment on selected node" tooltip, a dedicated
+                  entry point distinct from the per-row +note/+code toggles OutlineTree.tsx's own
+                  rows already have). */}
+              <button
+                type="button"
+                onClick={() => selectedId !== null && openNotePanel(selectedId, false, false, 'note')}
+                disabled={mode !== 'edit' || selectedId === null}
+                title="Note / comment on selected node"
+                aria-label="Note"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </button>
+            </ToolbarGroup>
+            <ToolbarGroup label="AI">
+              {/* ✦ -- same glyph legacy's own real qb-ai-rewrite button uses. Rewrites the
+                  current selection (single node or a whole multi-select batch) via
+                  aiRewrite.ts. */}
+              <button type="button" onClick={handleAiRewrite} disabled={mode !== 'edit' || !hasSelection || aiRewriteBusy} title="AI Rewrite" aria-label="AI Rewrite">
+                {aiRewriteBusy ? '✦ Rewriting…' : '✦ Rewrite'}
+              </button>
+              {/* ✦ Generate Outline (Ctrl/Cmd+Shift+O) -- nests the AI-generated outline as
+                  children of the current selection, or replaces an empty document. */}
+              <button type="button" onClick={() => void handleGenerateOutline()} disabled={mode !== 'edit' || aiOutlineBusy} title="Generate Outline with AI (Ctrl/Cmd+Shift+O)" aria-label="Generate Outline">
+                {aiOutlineBusy ? '✦ Working…' : '✦ Outline'}
+              </button>
+              {/* ✦ Restructure Text (Ctrl/Cmd+Shift+R) -- always lands in a brand-new
+                  document. */}
+              <button type="button" onClick={() => setRestructureDialogOpen(true)} disabled={mode !== 'edit' || aiOutlineBusy} title="Restructure Text into a Tree (Ctrl/Cmd+Shift+R)" aria-label="Restructure Text">
+                ✦ Restructure
+              </button>
+              {/* ✦ Expand node / ✦ Suggest tags -- both require exactly one selected node. */}
+              <button type="button" onClick={() => void handleExpandNode()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Expand node with AI" aria-label="Expand Node">
+                ✦ Expand
+              </button>
+              <button type="button" onClick={() => void handleSuggestTags()} disabled={mode !== 'edit' || singleSelectedId === null || aiExpandTagsBusy} title="Suggest tags with AI" aria-label="Suggest Tags">
+                ✦ Tags
+              </button>
+              {/* ✦ Suggest icon -- a multi-selection auto-applies as a batch; a single selection
+                  may open IconPickerPopover.tsx if there's more than one real candidate to choose
+                  from. */}
+              <button type="button" onClick={() => void handleSuggestIcon()} disabled={mode !== 'edit' || !currentSelectedIds.length || aiIconBusy} title="Suggest icon with AI" aria-label="Suggest Icon">
+                ✦ Icon
+              </button>
+              {/* ✦ Suggest icons for all nodes -- matches legacy's real ai-icon-all
+                  whole-document action, always auto-applying as a batch. */}
+              <button type="button" onClick={() => void handleSuggestIconsAll()} disabled={mode !== 'edit' || aiIconBusy} title="Suggest icons for all nodes with AI" aria-label="Suggest Icons for All Nodes">
+                ✦ Icons (all)
+              </button>
+              {/* ✦ Summarise selection -- inserts an AI-written parent label above 2+ selected
+                  roots, indenting their whole subtrees underneath. */}
+              <button type="button" onClick={() => void handleSummariseSelection()} disabled={mode !== 'edit' || currentSelectedIds.length < 2 || aiSummariseBusy} title="Summarise selection into a parent node with AI" aria-label="Summarise Selection">
+                ✦ Summarise
+              </button>
+            </ToolbarGroup>
+            <ToolbarGroup label="Delete">
+              {/* Same icon and tooltip text as legacy's own real #qb-delete
+                  (legacy/index.html:6482). Deletes every currently-selected node's whole subtree
+                  -- see outlineStore.ts's own deleteSelected header for exact semantics. */}
+              <button type="button" onClick={deleteSelected} disabled={mode !== 'edit' || !hasSelection} title="Delete (Del)" aria-label="Delete">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            </ToolbarGroup>
+          </div>
+        )}
         <ul style={{ fontSize: '0.9em', color: '#555' }}>
           <li>Click to select, double-click to edit</li>
           <li>
@@ -613,7 +681,43 @@ export function App() {
             present above whichever content pane is active, matching legacy's own real DOM order
             (`#editor-title-row` is the first child of `#editor-wrap`, before the node rows). */}
         <DocumentHeader />
-        {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
+        <div style={{ position: 'relative' }}>
+          {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
+          {/* §7.5 slice: the floating toolbar-reveal toggle, matching legacy's real
+              `#editor-toolbar-toggle` (legacy/index.html:2259-2264, 6572) -- bottom-right of the
+              editor pane. Legacy positions this alongside three sibling floating buttons
+              (`#editor-preview-toggle`/`#editor-pad-toggle`/`#editor-zen-toggle`); this slice
+              deliberately doesn't relocate Preview/Present mode switching or the always-inline
+              Pad panel into that same floating cluster, and doesn't build a zen/maximize concept
+              at all (`web/` has none) -- a real, documented scope reduction to just this one
+              required toggle, not an oversight. */}
+          <button
+            type="button"
+            onClick={() => setToolbarVisible(!toolbarVisible)}
+            title={toolbarVisible ? 'Hide toolbar' : 'Show toolbar'}
+            aria-label="Toggle toolbar"
+            aria-pressed={toolbarVisible}
+            style={{
+              position: 'absolute',
+              bottom: 14,
+              right: 14,
+              width: 28,
+              height: 28,
+              borderRadius: 7,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              opacity: 0.7
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="4" rx="1" />
+              <rect x="3" y="10" width="18" height="4" rx="1" />
+              <rect x="3" y="16" width="18" height="4" rx="1" />
+            </svg>
+          </button>
+        </div>
         <NotePanel />
         <div style={{ marginTop: 16 }}>
           <ExportButtons />

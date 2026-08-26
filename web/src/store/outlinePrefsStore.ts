@@ -81,6 +81,8 @@ interface OutlinePrefs {
   quickInsertActions?: unknown;
   quickAssistEnabled?: unknown;
   quickAssistSearchEnabled?: unknown;
+  toolbarVisible?: unknown;
+  hoverToolbarEnabled?: unknown;
 }
 
 interface ResolvedOutlinePrefs {
@@ -123,6 +125,19 @@ interface ResolvedOutlinePrefs {
    * whether content-search hits are folded in below command/action matches, not Quick Assist's
    * own on/off. Default `true`, matching legacy's own real default. */
   quickAssistSearchEnabled: boolean;
+  /** §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): matches legacy's real
+   * `toolbarVisible` (legacy/index.html:8276) exactly — default `false`. Legacy's real editor
+   * toolbar (`#quick-bar`) renders nothing at all on a first-run profile; a floating reveal
+   * button (`#editor-toolbar-toggle`) turns it on. `web/`'s own toolbar was always-on before this
+   * slice, matching no real legacy default. */
+  toolbarVisible: boolean;
+  /** §7.5 slice: matches legacy's real `hoverToolbarEnabled` (legacy/index.html:8276) exactly —
+   * default `false`. §6.2's own node-hover-toolbar slice ported the right ACTION set
+   * (`hoverToolbarActions`) but never gated whether the rail renders at all, so it rendered
+   * unconditionally before this slice -- a real, corrected default, not a feature removal (no
+   * Settings toggle exists yet to turn it back on, matching this plan's own explicit call: "this
+   * slice should default the rail off in code even without a UI toggle to flip it back on"). */
+  hoverToolbarEnabled: boolean;
 }
 
 /** Matches legacy's own real `setTreeIndentWidth` clamp (legacy/index.html:18991) exactly:
@@ -180,7 +195,9 @@ function loadOutlinePrefs(): ResolvedOutlinePrefs {
     quickInsertIconOnly: raw.quickInsertIconOnly === undefined ? true : !!raw.quickInsertIconOnly,
     quickInsertActions: clampQuickInsertActions(raw.quickInsertActions),
     quickAssistEnabled: raw.quickAssistEnabled === undefined ? true : !!raw.quickAssistEnabled,
-    quickAssistSearchEnabled: raw.quickAssistSearchEnabled === undefined ? true : !!raw.quickAssistSearchEnabled
+    quickAssistSearchEnabled: raw.quickAssistSearchEnabled === undefined ? true : !!raw.quickAssistSearchEnabled,
+    toolbarVisible: !!raw.toolbarVisible,
+    hoverToolbarEnabled: !!raw.hoverToolbarEnabled
   };
 }
 
@@ -208,6 +225,8 @@ interface OutlinePrefsState extends ResolvedOutlinePrefs {
   setQuickInsertActionEnabled: (id: QuickInsertActionId, enabled: boolean) => void;
   setQuickAssistEnabled: (on: boolean) => void;
   setQuickAssistSearchEnabled: (on: boolean) => void;
+  setToolbarVisible: (on: boolean) => void;
+  setHoverToolbarEnabled: (on: boolean) => void;
 }
 
 export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
@@ -231,7 +250,9 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
       quickInsertIconOnly: s.quickInsertIconOnly,
       quickInsertActions: s.quickInsertActions,
       quickAssistEnabled: s.quickAssistEnabled,
-      quickAssistSearchEnabled: s.quickAssistSearchEnabled
+      quickAssistSearchEnabled: s.quickAssistSearchEnabled,
+      toolbarVisible: s.toolbarVisible,
+      hoverToolbarEnabled: s.hoverToolbarEnabled
     });
   }
 
@@ -298,6 +319,14 @@ export const useOutlinePrefsStore = create<OutlinePrefsState>((set, get) => {
     },
     setQuickAssistSearchEnabled: (on) => {
       set({ quickAssistSearchEnabled: !!on });
+      persist();
+    },
+    setToolbarVisible: (on) => {
+      set({ toolbarVisible: !!on });
+      persist();
+    },
+    setHoverToolbarEnabled: (on) => {
+      set({ hoverToolbarEnabled: !!on });
       persist();
     }
   };
