@@ -1,23 +1,20 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { useDocumentsStore, DOC_STATUSES, type DocStatus } from '../store/documentsStore';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { docStatusLabelCore, docStatusColorKeyCore, normalizeDocLinkedUrlCore, docLinkUrlLabelCore } from '../state/docHeader';
 import { DropdownMenu } from './DropdownMenu';
+import { DocChip, type DocChipColor } from './ui/Chip';
 import { LinkIcon } from '../icons';
 
-type Tokens = (typeof THEME_TOKENS)['light'];
-
-function chipStyle(t: Tokens, unset: boolean, color?: string): CSSProperties {
-  return {
-    fontSize: 11.5,
-    padding: '3px 8px',
-    borderRadius: 999,
-    border: `1px solid ${t.border}`,
-    color: unset ? t.hintText : (color ?? t.text),
-    fontStyle: unset ? 'italic' : 'normal',
-    background: 'transparent'
-  };
-}
+/** legacy/index.html:11294's own real status->color mapping, re-expressed against `DocChip`'s
+ * `data-color` values (`docStatusColorKeyCore`'s `ThemeTokens`-preset-key shape predates §8.3 and
+ * still returns those keys for other callers, so this is a small translation, not a duplicate
+ * source of truth). */
+const STATUS_COLOR_KEY_TO_DOC_CHIP: Record<'fcGray' | 'fcOrange' | 'fcGreen' | 'fcRed', DocChipColor> = {
+  fcGray: 'gray',
+  fcOrange: 'orange',
+  fcGreen: 'green',
+  fcRed: 'red'
+};
 
 /**
  * Phase 7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): the per-document header row --
@@ -72,8 +69,6 @@ function chipStyle(t: Tokens, unset: boolean, color?: string): CSSProperties {
  * §7.6 docks that panel properly, not a backend gap.
  */
 export function DocumentHeader() {
-  const theme = useThemeStore((s) => s.theme);
-  const t = THEME_TOKENS[theme];
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
   const doc = useDocumentsStore((s) => s.docsIndex.find((d) => d.id === s.activeDocId));
   const renameDocument = useDocumentsStore((s) => s.renameDocument);
@@ -103,11 +98,13 @@ export function DocumentHeader() {
   }
 
   const linkShownLabel = doc.link ? doc.link.label || docLinkUrlLabelCore(doc.link.url) : '';
+  const docChipColor = statusColorKey ? STATUS_COLOR_KEY_TO_DOC_CHIP[statusColorKey] : undefined;
 
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div className="editor-title-row">
       <input
         key={activeDocId}
+        className="editor-title-input"
         defaultValue={doc.title}
         placeholder="Untitled"
         aria-label="Title"
@@ -116,32 +113,19 @@ export function DocumentHeader() {
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        style={{
-          display: 'block',
-          width: '100%',
-          boxSizing: 'border-box',
-          border: 'none',
-          background: 'transparent',
-          fontSize: 22,
-          fontWeight: 700,
-          fontFamily: "'Inter', sans-serif",
-          color: t.text,
-          padding: '2px 0',
-          marginBottom: 6
-        }}
       />
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="editor-meta-row">
         <div style={{ position: 'relative' }}>
-          <button
-            type="button"
+          <DocChip
+            color={docChipColor}
+            unset={!doc.status}
             aria-haspopup="true"
             aria-expanded={statusMenuOpen}
             onClick={() => setStatusMenuOpen((open) => !open)}
             title="Document status"
-            style={chipStyle(t, !doc.status, statusColorKey ? t[statusColorKey] : undefined)}
           >
             {docStatusLabelCore(doc.status)}
-          </button>
+          </DocChip>
           {statusMenuOpen && (
             <DropdownMenu onClose={() => setStatusMenuOpen(false)}>
               {DOC_STATUSES.map((s) => (
@@ -154,18 +138,7 @@ export function DocumentHeader() {
                     setDocStatus(activeDocId, s as DocStatus);
                     setStatusMenuOpen(false);
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    textAlign: 'left',
-                    border: 'none',
-                    background: doc.status === s ? t.hoverBg : 'transparent',
-                    padding: '6px 9px',
-                    borderRadius: 5,
-                    color: t.text
-                  }}
+                  className={doc.status === s ? 'todo-dd-item selected' : 'todo-dd-item'}
                 >
                   {docStatusLabelCore(s)}
                   {doc.status === s && <span aria-hidden="true">✓</span>}
@@ -176,6 +149,7 @@ export function DocumentHeader() {
         </div>
         <input
           key={`author-${activeDocId}`}
+          className={doc.author ? 'doc-status-chip doc-author-chip' : 'doc-status-chip unset doc-author-chip'}
           defaultValue={doc.author}
           placeholder="+ Add author"
           title="Document author"
@@ -185,57 +159,60 @@ export function DocumentHeader() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          style={{ ...chipStyle(t, !doc.author), width: 110, fontStyle: 'normal' }}
         />
         <div style={{ position: 'relative' }}>
-          <button
-            type="button"
+          <DocChip
+            unset={!doc.link}
             aria-haspopup="true"
             aria-expanded={linkMenuOpen}
             onClick={() => (linkMenuOpen ? setLinkMenuOpen(false) : openLinkMenu())}
             title="Link this document to a URL — e.g. a JIRA story or Epic"
-            style={{ ...chipStyle(t, !doc.link), display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
             <LinkIcon width={10} height={10} strokeWidth={2.4} />
             {doc.link ? linkShownLabel : 'Add link'}
-          </button>
+          </DocChip>
           {linkMenuOpen && (
             <DropdownMenu onClose={() => setLinkMenuOpen(false)} width={260}>
-              <div style={{ display: 'grid', gap: 6 }}>
+              <div className="doc-link-menu-inner">
                 <input
                   autoFocus
+                  className="meta-input"
                   value={linkLabelDraft}
                   onChange={(e) => setLinkLabelDraft(e.currentTarget.value)}
                   placeholder="Display text (optional) — e.g. PROJ-1234"
                   aria-label="Link display text"
-                  style={{ width: '100%', boxSizing: 'border-box', fontSize: 12 }}
                 />
                 <input
+                  className="meta-input"
                   value={linkUrlDraft}
                   onChange={(e) => setLinkUrlDraft(e.currentTarget.value)}
                   placeholder="https://yourteam.atlassian.net/browse/PROJ-123"
                   aria-label="Document URL"
-                  style={{ width: '100%', boxSizing: 'border-box', fontSize: 12 }}
                 />
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                <div className="doc-link-menu-actions">
                   {doc.link && (
                     <button
                       type="button"
+                      className="doc-link-menu-btn"
                       onClick={() => {
                         setDocLink(activeDocId, null);
                         setLinkMenuOpen(false);
                       }}
-                      style={{ fontSize: 11.5 }}
                     >
                       Remove
                     </button>
                   )}
                   {doc.link && (
-                    <button type="button" onClick={() => window.open(doc.link!.url, '_blank', 'noopener,noreferrer')} style={{ fontSize: 11.5 }}>
+                    <button
+                      type="button"
+                      className="doc-link-menu-btn"
+                      onClick={() => window.open(doc.link!.url, '_blank', 'noopener,noreferrer')}
+                    >
                       Open
                     </button>
                   )}
-                  <button type="button" onClick={saveLink} style={{ fontSize: 11.5, fontWeight: 600 }}>
+                  <button type="button" className="doc-link-menu-btn primary" onClick={saveLink}>
                     Save
                   </button>
                 </div>
