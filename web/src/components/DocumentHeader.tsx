@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useDocumentsStore, DOC_STATUSES, type DocStatus } from '../store/documentsStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { docStatusLabelCore, docStatusColorKeyCore, normalizeDocLinkedUrlCore, docLinkUrlLabelCore } from '../state/docHeader';
+import { DropdownMenu } from './DropdownMenu';
 
 type Tokens = (typeof THEME_TOKENS)['light'];
 
@@ -15,53 +16,6 @@ function chipStyle(t: Tokens, unset: boolean, color?: string): CSSProperties {
     fontStyle: unset ? 'italic' : 'normal',
     background: 'transparent'
   };
-}
-
-/** A small `role="menu"` popover, direct port of legacy's real `.todo-dd-menu` positioning/
- * dismiss behavior -- the same click-outside/Escape pattern `AnchorPicker.tsx` already
- * established, reused here rather than reinvented. */
-function DropdownMenu({ onClose, children, width }: { onClose: () => void; children: ReactNode; width?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const t = THEME_TOKENS[useThemeStore((s) => s.theme)];
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent): void {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    }
-    function onEscape(e: KeyboardEvent): void {
-      if (e.key === 'Escape') onClose();
-    }
-    document.addEventListener('mousedown', onClickOutside);
-    document.addEventListener('keydown', onEscape);
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside);
-      document.removeEventListener('keydown', onEscape);
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      ref={ref}
-      role="menu"
-      onMouseDown={(e) => e.stopPropagation()}
-      style={{
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        marginTop: 4,
-        width: width ?? 200,
-        background: t.background,
-        border: `1px solid ${t.border}`,
-        borderRadius: 8,
-        boxShadow: '0 14px 28px rgba(0,0,0,.16)',
-        zIndex: 95,
-        padding: 4,
-        font: "400 12.5px 'Inter', sans-serif"
-      }}
-    >
-      {children}
-    </div>
-  );
 }
 
 /**

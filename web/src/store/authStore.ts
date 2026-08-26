@@ -62,12 +62,22 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  /** §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): lets `AccountMenu.tsx`'s
+   * signed-out "Sign in" entry re-open `SignInGate.tsx` after it's already been dismissed for
+   * this tab session -- matching legacy's real `account-signin-open-btn` handler, which calls
+   * `showLandingOverlay()` directly regardless of whether the overlay was dismissed earlier.
+   * `SignInGate.tsx` ORs this into its own `dismissed`-from-sessionStorage check and resets it
+   * back to false once dismissed again (or once `user` becomes non-null), so a stale `true`
+   * here can never make the gate reappear uninvited after a later sign-out. */
+  landingGateForceOpen: boolean;
   init: () => void;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<boolean>;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
+  openLandingGate: () => void;
+  closeLandingGate: () => void;
 }
 
 /**
@@ -106,9 +116,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
   error: null,
+  landingGateForceOpen: false,
 
   init: () => {
-    // Idempotent -- both AuthPanel.tsx and SignInGate.tsx (§7.1) call this on mount, and
+    // Idempotent -- both AccountMenu.tsx (§7.6, replacing the retired AuthPanel.tsx) and
+    // SignInGate.tsx (§7.1) call this on mount, and
     // attaching onAuthStateChanged twice would be wasteful (harmless, since both listeners
     // would just set the same eventual state, but there's no reason to pay for it), same guard
     // pattern notificationsStore.ts's own init() already established.
@@ -168,5 +180,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Sign-out failed' });
     }
-  }
+  },
+
+  openLandingGate: () => set({ landingGateForceOpen: true }),
+  closeLandingGate: () => set({ landingGateForceOpen: false })
 }));

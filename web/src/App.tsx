@@ -11,12 +11,9 @@ import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
 import { PadPanel } from './components/PadPanel';
-import { HubTodosPanel } from './components/HubTodosPanel';
-import { HubJournalPanel } from './components/HubJournalPanel';
-import { HubMeetingsPanel } from './components/HubMeetingsPanel';
-import { HubLibraryPanel } from './components/HubLibraryPanel';
-import { HubRecapPanel } from './components/HubRecapPanel';
-import { AuthPanel } from './components/AuthPanel';
+import { HubDock } from './components/HubDock';
+import { useHubDockStore } from './store/hubDockStore';
+import { AccountMenu } from './components/AccountMenu';
 import { SignInGate } from './components/SignInGate';
 import { WelcomeModal } from './components/WelcomeModal';
 import { DocumentHeader } from './components/DocumentHeader';
@@ -35,7 +32,7 @@ import {
 } from './store/themeStore';
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
-import { SettingsPanel } from './components/SettingsPanel';
+import { SettingsPanel, type SettingsCategory } from './components/SettingsPanel';
 import { AudienceWindow } from './components/AudienceWindow';
 import { isAudienceWindow } from './state/audienceMode';
 import { rewriteNode, rewriteNodes } from './state/aiRewrite';
@@ -80,7 +77,24 @@ function ToolbarGroup({ label, children }: { label: string; children: ReactNode 
 export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory | undefined>(undefined);
+  const hubDockActiveTab = useHubDockStore((s) => s.activeTab);
+  const hubDockLastTab = useHubDockStore((s) => s.lastTab);
+  const toggleHubDockTab = useHubDockStore((s) => s.toggleTab);
   const isMobile = useIsMobileViewport();
+
+  /** §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): a single open-Settings entry
+   * point shared by the header's own gear button (always opens on the default category, same as
+   * before this slice) and `AccountMenu.tsx`'s "Manage account"/"Settings" dropdown entries
+   * (which can request a specific starting category, matching legacy's real
+   * `account-manage-btn`/`account-settings-btn` deep-links) -- `SettingsPanel.tsx` only reads its
+   * `initialCategory` prop once at mount (`useState(initialCategory ?? 'general')`), which stays
+   * correct here since it's only ever mounted fresh (`{settingsOpen && <SettingsPanel .../>}`
+   * below unmounts it on every close). */
+  function openSettings(category?: SettingsCategory): void {
+    setSettingsCategory(category);
+    setSettingsOpen(true);
+  }
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const accentPreset = useThemeStore((s) => s.accentPreset);
@@ -402,21 +416,55 @@ export function App() {
             {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
                 nothing when signed out. */}
             <NotificationBell />
+            {/* §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): the Hub launcher --
+                direct port of legacy's real `#dock-panel-appbar-toggle`
+                (legacy/index.html:4534) -- toggles the docked Hub panel (`HubDock.tsx`, rendered
+                below in the main content column) open/closed, reopening whichever tab was open
+                last (`hubDockStore.ts`'s own `lastTab`), matching legacy's real
+                `toggleDockTab(dockActiveTab||dockLastTab)` exactly. */}
+            <button
+              type="button"
+              onClick={() => toggleHubDockTab(hubDockActiveTab ?? hubDockLastTab)}
+              title="Hub — To-Dos, Meetings, Journal, Library & Recap"
+              aria-label="Open Hub"
+              aria-pressed={hubDockActiveTab !== null}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </button>
+            {/* §7.6 slice: Export/Import/Print, now a real `#appbar-more-toggle`-style menu --
+                see ExportButtons.tsx's own header (added this slice) for exactly what moved and
+                what stayed a documented simplification. */}
+            <ExportButtons />
             {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
                 surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
                 button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see
                 SettingsPanel.tsx's own header for exactly what it holds and why it's deliberately
                 minimal (a single flat section, not legacy's own multi-category rail). */}
             <div style={{ position: 'relative' }}>
-              <button type="button" onClick={() => setSettingsOpen((open) => !open)} title="Settings" aria-pressed={settingsOpen}>
+              <button
+                type="button"
+                onClick={() => (settingsOpen ? setSettingsOpen(false) : openSettings())}
+                title="Settings"
+                aria-pressed={settingsOpen}
+              >
                 ⚙
               </button>
-              {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+              {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} initialCategory={settingsCategory} />}
             </div>
             {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist -- see
                 QuickAssistBar.tsx's own header for what this covers and what it deliberately
                 doesn't yet (search-hit rows, category scoping -- slice 4). */}
             <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
+            {/* §7.6 slice: the real header account entry point -- see AccountMenu.tsx's own
+                header for what moved here from the old `AuthPanel.tsx` inline block (now
+                retired) and what it deliberately doesn't duplicate (the profile-visibility badge,
+                already real in Settings → Account). */}
+            <AccountMenu onOpenSettings={openSettings} />
           </>
         }
         tabBar={<DocumentTabs />}
@@ -720,34 +768,7 @@ export function App() {
         </div>
         <NotePanel />
         <div style={{ marginTop: 16 }}>
-          <ExportButtons />
-        </div>
-        <div style={{ marginTop: 16 }}>
           <PadPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Hub — To-Dos</h2>
-          <HubTodosPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Hub — Journal</h2>
-          <HubJournalPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Hub — Meeting Notes</h2>
-          <HubMeetingsPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Hub — Library</h2>
-          <HubLibraryPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Hub — Recap</h2>
-          <HubRecapPanel />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Account</h2>
-          <AuthPanel />
         </div>
         <div style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: 16 }}>Sync</h2>
@@ -756,6 +777,12 @@ export function App() {
         {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
         <IconPickerPopover />
       </AppShell>
+      {/* §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): the docked Hub -- see
+          HubDock.tsx's own header. Renders nothing (`null`) while closed, same convention every
+          other conditionally-rendered overlay in this file already uses. Mounted as a sibling of
+          AppShell, not inside it, since it's a fixed-position overlay rather than part of
+          AppShell's own content flow (see HubDock.tsx's own header for why). */}
+      <HubDock />
     </>
   );
 }

@@ -37,12 +37,21 @@ function readDismissed(): boolean {
  * (typically fast, but non-zero) `onAuthStateChanged` round-trip regardless, so a brand-new
  * visitor may see a brief flash of the un-gated app before the gate appears. A real, separately-
  * scoped follow-up if that flash is ever visibly bothersome in practice, not attempted here.
+ *
+ * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): also reopens after a real dismissal
+ * when `authStore.ts`'s `landingGateForceOpen` is set -- `AccountMenu.tsx`'s signed-out "Sign in"
+ * entry does this, matching legacy's real `account-signin-open-btn` (`showLandingOverlay()`
+ * regardless of prior dismissal). Reset back to false on the next dismissal, or as soon as
+ * `user` becomes non-null (a plain effect below), so a stale request can never resurface the
+ * gate uninvited after a later sign-out.
  */
 export function SignInGate() {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   const error = useAuthStore((s) => s.error);
   const init = useAuthStore((s) => s.init);
+  const forceOpen = useAuthStore((s) => s.landingGateForceOpen);
+  const closeLandingGate = useAuthStore((s) => s.closeLandingGate);
   const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
@@ -59,11 +68,12 @@ export function SignInGate() {
   useEffect(() => {
     init();
     // init() only needs to run once per app lifetime -- see authStore.ts's own idempotency
-    // guard, added alongside this slice specifically because AuthPanel.tsx also calls it.
+    // guard, added alongside this slice specifically because AccountMenu.tsx (§7.6, replacing
+    // the retired AuthPanel.tsx) also calls it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const visible = !loading && !user && !dismissed;
+  const visible = !loading && !user && (forceOpen || !dismissed);
 
   function dismiss(): void {
     try {
@@ -74,7 +84,16 @@ export function SignInGate() {
       // THIS render, not persisting it, is what matters most.
     }
     setDismissed(true);
+    closeLandingGate();
   }
+
+  useEffect(() => {
+    if (user) closeLandingGate();
+    // Resets a stale force-open request once a sign-in actually completes, regardless of which
+    // surface (this gate's own form, or a sign-in started elsewhere) resolved it -- see this
+    // component's own header for why this matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     if (!visible) return;
@@ -83,6 +102,11 @@ export function SignInGate() {
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
+    // dismiss() is a plain function re-created every render, not memoized -- re-running this
+    // effect on every render just to satisfy exhaustive-deps would add/remove the listener far
+    // more than needed for no behavioral change, since dismiss() itself always reads the latest
+    // render's closeLandingGate/setDismissed regardless.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   if (!visible) return null;
