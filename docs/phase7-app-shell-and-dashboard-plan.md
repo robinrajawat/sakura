@@ -296,6 +296,31 @@ alone, matching the verification standard every Phase 6 slice was held to.
   the full existing app underneath renders correctly once dismissed -- zero console/page errors
   (only expected network failures from Firebase/Google endpoints being unreachable in this
   environment, not application errors).
-- Remaining: 7.2 (first-run onboarding modal) → 7.3 (doc data model) → 7.4 (per-doc header + empty
-  state) → 7.5 (toolbar realignment) → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per
-  this doc's own sequencing summary above.
+- ✅ **7.2 — First-run onboarding modal landed.** New `components/WelcomeModal.tsx`, a direct
+  port of legacy's real `#welcome-overlay`/`#welcome-modal` plus its stacked-on-top
+  `#why-sakura-overlay` (legacy/index.html:7639-7708, 34551-34582, 36506-36528, 36587-36596):
+  the "Guided tour"/"Watch the demo" choice cards, the "Why an outliner"/"Apply Editor's Choice"
+  links, "Skip for now", and the full "Why an outliner — and why Sakura?" secondary modal (all
+  five real rows plus the closing caveat). All four real dismiss paths work (a choice, skip,
+  backdrop click, Escape — with Escape's real priority order preserved: it closes the stacked
+  "Why an outliner" modal first if that's open, only reaching the welcome modal itself once
+  that's closed). One real, deliberate trigger-condition scoping, named in the component's own
+  header: legacy gates on `!welcome_seen && !tour_seen && zero documents ever created`; `web/`'s
+  `documentsStore.ts` already auto-creates a real "Welcome" seed document synchronously on a
+  brand-new profile's first load (Phase 5, unrelated to this slice), so "zero documents" is never
+  an observable signal here — this slice uses only the `sakura_web_welcome_seen` flag (legacy's
+  own primary signal) instead. Picking "Guided tour" or "Watch the demo" closes the modal and
+  shows a plain `window.alert` "not built here yet" placeholder (this project's established
+  no-toast-system convention); the "Apply Editor's Choice" link's own placeholder is worded
+  differently on purpose, since that preset was already marked N/A by explicit user decision in
+  `docs/phase6-full-parity-plan.md` §6.7, not merely deferred. Verified end-to-end in real
+  headless Chrome in both light and dark theme: the modal opens ~500ms after boot (matching
+  legacy's own real delay) once the sign-in gate is dismissed, both overlays stack correctly (a
+  live screenshot confirms "Why an outliner" renders on top with the welcome modal still mounted
+  underneath), Escape's two-stage priority works exactly as above, picking a choice shows the
+  right placeholder alert and dismisses, and the `seen` flag persists across a reload — zero
+  console/page errors (only the same expected Firebase/Google network failures from §7.1's own
+  verification, not application errors).
+- Remaining: 7.3 (doc data model) → 7.4 (per-doc header + empty state) → 7.5 (toolbar realignment)
+  → 7.6 (app-bar docking) → 7.7 (sidebar Templates/Trash), per this doc's own sequencing summary
+  above.

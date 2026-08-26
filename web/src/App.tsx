@@ -18,6 +18,7 @@ import { HubLibraryPanel } from './components/HubLibraryPanel';
 import { HubRecapPanel } from './components/HubRecapPanel';
 import { AuthPanel } from './components/AuthPanel';
 import { SignInGate } from './components/SignInGate';
+import { WelcomeModal } from './components/WelcomeModal';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
 import { SyncStatusIndicator } from './components/SyncStatusIndicator';
@@ -260,6 +261,13 @@ export function App() {
           nothing once signed in, dismissed for this tab session, or while auth state is still
           resolving. */}
       <SignInGate />
+      {/* §7.2 slice (docs/phase7-app-shell-and-dashboard-plan.md): the first-run onboarding
+          modal -- see WelcomeModal.tsx's own header. Mounted alongside SignInGate at a LOWER
+          z-index (1200 vs. the gate's 3000) rather than sequenced to open only after the gate is
+          dismissed -- matches legacy's own real stacking behavior exactly (both overlays can be
+          simultaneously "open" in the DOM; only the higher z-index one is actually visible), so
+          no extra "wait for the gate to close" coordination logic is needed here. */}
+      <WelcomeModal />
       <AppShell
         title="Sakura"
         headerActions={
